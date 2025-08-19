@@ -1,0 +1,3504 @@
+﻿{
+    "floors": {
+        "floor_1": {
+            "mob": "Baby Hase",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Weicher Kaninchenpelz"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Hasenfuß"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Hasenschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Kaninchenohr"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Magisches Kaninchenhaar"
+                    ]
+                }
+            }
+        },
+        "floor_2": {
+            "mob": "Baby Huhn",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Hühnerfeder"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Hühnerfuß"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Hühnerkralle"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Hühnerflügel"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Regenbogen-Eierschale"
+                    ]
+                }
+            }
+        },
+        "floor_3": {
+            "mob": "Baby Schwein",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Schweinborsten"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Schweineschwanzquaste"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Rosa Schweineohr"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Schweinerippe"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Kräftiger Schweinehuf"
+                    ]
+                }
+            }
+        },
+        "floor_4": {
+            "mob": "Baby Schaf",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Wollfaden"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Schafshuf"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Schafswolle"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Schafsglocke"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Schafsmähne"
+                    ]
+                }
+            }
+        },
+        "floor_5": {
+            "mob": "Baby Kuh",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Rissiges Leder"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Kuhklaue"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Kuhknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Kuhschwanz"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Kuhhorn"
+                    ]
+                }
+            }
+        },
+        "floor_6": {
+            "mob": "Baby Pferd",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Pferdehaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Pferdehuf"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Pferdemähne"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Pferdeschwanz"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Hufeisen"
+                    ]
+                }
+            }
+        },
+        "floor_7": {
+            "mob": "Baby Esel",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Eselhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Eselhaut"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Eselknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Eselhuf"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Eselohr"
+                    ]
+                }
+            }
+        },
+        "floor_8": {
+            "mob": "Baby Lama",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Lamahaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Lamafell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Lamaschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Lamaknochen"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Lama-Decke"
+                    ]
+                }
+            }
+        },
+        "floor_9": {
+            "mob": "Baby Kamel",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Kamelhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Kamelfell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Kamelknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Kamelschwanz"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Kamelhuf"
+                    ]
+                }
+            }
+        },
+        "floor_10": {
+            "mob": "Baby Ozelot",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Ocelot Haar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Ocelothaut"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Ocelotschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Ocelotzahn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Ozelot-Klaue"
+                    ]
+                }
+            }
+        },
+        "floor_11": {
+            "mob": "Baby Ziege",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Ziegenhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Ziegenfell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Ziegenknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Ziegenhuf"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Ziegenhorn"
+                    ]
+                }
+            }
+        },
+        "floor_12": {
+            "mob": "Baby Fuchs",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Fuchshaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Fuchspelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Fuchszahn"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Fuchspfote"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Fuchsschwanz"
+                    ]
+                }
+            }
+        },
+        "floor_13": {
+            "mob": "Baby Schildkröte",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Panzer-Schuppe"   
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Schildkrötenklaue"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Schildkrötenknochen"  
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Schildkrötenbiss"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Schildkrötenpanzer"
+                    ]
+                }
+            }
+        },
+        "floor_14": {
+            "mob": "Baby Wolf",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Wolfshaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Wolfspelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Wolfsschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Wolfsklaue"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Wolfszahn"
+                    ]
+                }
+            }
+        },
+        "floor_15": {
+            "mob": "Baby Panda",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Pandahaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Pandapelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Panda Ohr"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Pandazahn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Pandapfote"
+                    ]
+                }
+            }
+        },
+        "floor_16": {
+            "mob": "Baby Polarbär",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Polarbärhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Polarbär Fell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Polarbärknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Polarbär Zahn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Polarbärpfote"
+                    ]
+                }
+            }
+        },
+        "floor_17": {
+            "mob": "Baby Axolotl",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Axolotl-Haut"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Axolotl-Bein"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Axolotl-Schwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Axolotl-Flosse"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Axolotl-Kiemen"
+                    ]
+                }
+            }
+        },
+        "floor_18": {
+            "mob": "Hilfsgeist",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Zerbröstelter Keks"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Amethystsplitter"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Plattenspieler"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Allayflügel"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Magische Allay Überreste"
+                    ]
+                }
+            }
+        },
+        "floor_19": {
+            "mob": "Baby Biene",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Rissiges Chitin"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Bienenflügel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Bienenwachs"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Bienenfühler"  
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Bienenstachel"
+                    ]
+                }
+            }
+        },
+        "floor_20": {
+            "mob": "Papagei",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Papageienfeder"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Papageienknochen"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Papageienflügel"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Papageinkralle"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Papageienschnabel"
+                    ]
+                }
+            }
+        },
+        "floor_21": {
+            "mob": "Fledermaus",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Fledermausfell"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Fledermausklaue"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Fledermausohr"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Fledermausflügel"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Vampirzähne"
+                    ]
+                }
+            }
+        },
+        "floor_22": {
+            "mob": "Hase",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Kaninchenfellfaden"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Kaninchenpelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Kaninchenklopfer"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Hasenzahn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Goldene Hasenpfote"
+                    ]
+                }
+            }
+        },
+        "floor_23": {
+            "mob": "Huhn",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Große Feder"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prachtvolle Feder"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Hühnerschnabel"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Hühnerkamm"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Göttliche Feder"
+                    ]
+                }
+            }
+        },
+        "floor_24": {
+            "mob": "Schwein",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Schweineknochen"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Schweinehuf"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvolles Schweineohr"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Goldene Schweineschnauze"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Legendärer Eberzahn"
+                    ]
+                }
+            }
+        },
+        "floor_25": {
+            "mob": "Schaf",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Schafsflaum"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Weicher Schafsflaum"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Verstärkter Schafshuf"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prachtvolles Schafshorn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Regenbogenwolle"
+                    ]
+                }
+            }
+        },
+        "floor_26": {
+            "mob": "Kuh",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Kuhhut"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Kuhleder"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvolles Kuhhorn"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Goldene Kuhglocke" 
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Donnernderhuf"
+                    ]
+                }
+            }
+        },
+        "floor_27": {
+            "mob": "Pferd",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prächtiges Pferdehaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Robuste Pferdehaut"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prächtiger Pferdeschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Goldene Pferdemähne"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Flammenderhuf"
+                    ]
+                }
+            }
+        },
+        "floor_28": {
+            "mob": "Esel",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prächtiges Eselhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Eselschwanz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Eselzahn"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prachtvoller Eselschwanz"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Goldeselzahn"
+                    ]
+                }
+            }
+        },
+        "floor_29": {
+            "mob": "Lama",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prächtiges Lamahaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiger Lama-Pelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Lama Huf"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prachtvoller Lamaschwanz"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Magische Lamaglocke"
+                    ]
+                }
+            }
+        },
+        "floor_30": {
+            "mob": "Kamel",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prachtvolles Kamelhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiges Kamelfell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvoller Kamelschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prachtvoller Kamelknochen"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Huf des Osiris"
+                    ]
+                }
+            }
+        },
+        "floor_31": {
+            "mob": "Ozelot",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prachtvolles Ocelothaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prachtvoller Ocelotpelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prächtiger Ocelotschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Scharfer Ocelotzahn"   
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Blutklaue"
+                    ]
+                }
+            }
+        },
+        "floor_32": {
+            "mob": "Ziege",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prachtvolles Ziegenhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiges Ziegenfell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvoller Ziegenknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Steinhuf"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Horn des Thor"
+                    ]
+                }
+            }
+        },
+        "floor_33": {
+            "mob": "Fuchs",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prachtvolles Fuchshaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiges Fuchsfell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Scharfer Fuchszahn"
+                    ]   
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Goldener Fuchspelz"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Kuramas Schweif"
+                    ]
+                }
+            }
+        },
+        "floor_34": {
+            "mob": "Schildkröte",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prächtige Panzerschuppe"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prachtvolle Schildkrötenklaue"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvoller Schildkrötenknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prachtvoller Schildkrötenpanzer"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Titanpanzer"
+                    ]
+                }
+            }
+        },
+        "floor_35": {
+            "mob": "Wolf",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prachtvolles Wolfhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prachtvoller Wolfspelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvoller Wolfsschwanz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Klaue des Frostwolfes"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Zahn des Fenrir"
+                    ]
+                }
+            }
+        },
+        "floor_36": {
+            "mob": "Panda",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prachtvolles Pandahaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiges Pandafell"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Verstärkte Pandakralle"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Ebisus Zahn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Ebisus Pranke"
+                    ]
+                }
+            }
+        },
+        "floor_37": {
+            "mob": "Polarbär",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prächtiges Polarbärenhaar"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prachtvoller Polarbärpelz"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvoller Polarbärknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Scharfer Polarbärenzahn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Eisige Pranke"
+                    ]
+                }
+            }
+        },
+        "floor_38": {
+            "mob": "Axolotl",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prächtige Axolotl-Haut"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiges Axolotl-Bein"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prächtige Axolotl-Flosse"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prächtiger Axolotl-Kiemen"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Poseidons Zacken"
+                    ]
+                }
+            }
+        },
+        "floor_39": {
+            "mob": "Frosch",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Prächtige Froschhaut"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiger Froschschenkel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Verstärkter Froschknochen"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prächtiges Froschauge"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Kwoloks Zunge"
+                    ]
+                }
+            }
+        },
+        "floor_40": {
+            "mob": "Biene",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Chitin"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Prächtiger Bienenflügel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Prachtvoller Bienenwachs"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Prachtvoller Bienenfühler"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Giftiger Bienenstachel"
+                    ]
+                }
+            }
+        },
+        "floor_41": {
+            "mob": "Tintenfisch",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Tinte"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Tentakel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Perlmuttfaser"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Perle"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Herz der Tiefsee"
+                    ]
+                }
+            }
+        },
+        "floor_42": {
+            "mob": "Killerhase",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Killer Kaninchenfell"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Verstärkter Lederflicken"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Scharfer Hasenzahn"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Ohr des Schreckens"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Höllenzahn"
+                    ]
+                }
+            }
+        },
+        "floor_43": {
+            "mob": "Spinne",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Faden"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Spinnenauge"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Spinnenbeutel"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Seelenfaden"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Herz der Schwarzen Witwe"
+                    ]
+                }
+            }
+        },
+        "floor_44": {
+            "mob": "Goblin",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Goblinohr"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Alte Schriftrolle"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Goblinherz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Edelsteinscherbe"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Regenbogenkristall"
+                    ]
+                }
+            }
+        },
+        "floor_45": {
+            "mob": "Baby Zombie",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Verottetes Fleisch"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Verwelkte Blume"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Magische Essenz"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Verkorkter Schrei"
+                    ]   
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Verkorkte Seele"
+                    ]
+                }
+            }
+        },
+        "floor_46": {
+            "mob": "Zombie",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Zombie Überreste"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Faule Kartoffel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Magischer Rüstungssplitter"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Magischer Waffensplitter"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Antike Seele"
+                    ]
+                }
+            }
+        },
+        "floor_47": {
+            "mob": "Feuerzombie",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Verkokelte Überreste"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Brennende Kartoffel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Feuriger Rüstungssplitter"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Glühender Waffensplitter"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Geist des Feuers"
+                    ]
+                }
+            }
+        },
+        "floor_48": {
+            "mob": "Wasserzombie",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Wässrige Überreste"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Wässrige Karotte"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Umwobener Rüstungssplitter"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Magischer Dreizacksplitter"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Geist des Ozeans"
+                    ]
+                }
+            }
+        },
+        "floor_49": {
+            "mob": "Steinzombie",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Steinige Überreste"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Erdiger Apfel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Magischer Erdsplitter"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Magische Felsspitze"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Geist Des Bodenreiches"
+                    ]
+                }
+            }
+        },
+        "floor_50": {
+            "mob": "Zombie Dorfbewohner",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Durchstochener Strohut"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Frischer Kartoffel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Magisches Rüstungsfragment"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Magische Waffenklinge"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Umher Streuende Seele"
+                    ]
+                }
+            }
+        },
+        "floor_51": {
+            "mob": "Mumie",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Leinenstoff"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Schädelfragment"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Papyrusfragment"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Juwel des Osiris"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Nephthys Schleier"
+                    ]
+                }
+            }
+        },
+        "floor_52": {
+            "mob": "Diener",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Zerbrochener Axtgriff"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Verzauberte Axtklinge"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Kampfplakette"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Vortex-Kristall"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Arkane Siegelrolle"
+                    ]
+                }
+            }
+        },
+        "floor_53": {
+            "mob": "Skelett",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Knochensplitter"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Pfeilspitze"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Knochenschädel"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Herz der Untoten"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Knochenkristall"
+                    ]
+                }
+            }
+        },
+        "floor_54": {
+            "mob": "Kleiner Schleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Schleimball"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Glimmender Glibber"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Schleimiges Juwel"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Schleimkern"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Schleimherz"
+                    ]
+                }
+            }
+        },
+        "floor_55": {
+            "mob": "Hexe",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Besenstiel"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Hexenkrautbündel"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Dunkle Runenrolle"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Zauberkristall"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Seelensphäre"
+                    ]
+                }
+            }
+        },
+        "floor_56": {
+            "mob": "Streuner",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Frostiger Knochensplitter"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Frostiger Lederfetzen"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Eisfragment"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Frostschattenkristall"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Eiskönigsphäre"
+                    ]
+                }
+            }
+        },
+        "floor_57": {
+            "mob": "Ertrunkener",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Seetang"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Muschelfragment"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Tiefenkoralle"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Geisterschattenperle"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Geist des Leviathan"
+                    ]
+                }
+            }
+        },
+        "floor_58": {
+            "mob": "Plünderer",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Armbrustbolzen"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Raubtierkralle"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Kriegsfahne"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Kriegshorn"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Drachenbanner"
+                    ]
+                }
+            }
+        },
+        "floor_59": {
+            "mob": "Creeper",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Creeperstaub"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Sprengpulver"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Creeperkopf"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Explosionskristall"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Creeperherz"
+                    ]
+                }
+            }
+        },
+        "floor_60": {
+            "mob": "Magier",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Totemfragment"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Totemrahmen"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Magische Runenrolle"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Totem"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Phantomherz"
+                    ]
+                }
+            }
+        },
+        "floor_61": {
+            "mob": "Silberfisch",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Brüchige Schuppe"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Schimmerndeschuppe"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Silberfischhaut"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Silberfischgräte"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Silberfischflosse"
+                    ]
+                }
+            }
+        },
+        "floor_62": {
+            "mob": "Wächter",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Schuppenfragment"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Wächterflosse"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Wächterstachel"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Meereskristall"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Wächterauge"
+                    ]
+                }
+            }
+        },
+        "floor_63": {
+            "mob": "Schleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_64": {
+            "mob": "Spinnenreiter",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_65": {
+            "mob": "Höhlenspinne",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_66": {
+            "mob": "Skelettpferd",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_67": {
+            "mob": "Pilzkuh",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_68": {
+            "mob": "Hühnchenreiter",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_69": {
+            "mob": "Kleiner Magmaschleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_70": {
+            "mob": "Skelettpferdreiter",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_71": {
+            "mob": "Verwüster",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_72": {
+            "mob": "Eisengolem",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_73": {
+            "mob": "Schnüffler",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_74": {
+            "mob": "Schneegolem",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_75": {
+            "mob": "Schweini",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_76": {
+            "mob": "Schreiter",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_77": {
+            "mob": "Zombie-Schweini",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_78": {
+            "mob": "Zombie-Eberlein",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_79": {
+            "mob": "Schweini-Grobian",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_80": {
+            "mob": "Lohe",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_81": {
+            "mob": "Mittlerer Magmaschleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_82": {
+            "mob": "Ghast",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_83": {
+            "mob": "Leuchttintenfisch",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_84": {
+            "mob": "Geladener Ceeper",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_85": {
+            "mob": "Phantom",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_86": {
+            "mob": "Endermite",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_87": {
+            "mob": "Vex",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_88": {
+            "mob": "Großer Schleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_89": {
+            "mob": "Eberlein",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_90": {
+            "mob": "Shulker",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_91": {
+            "mob": "Enderman",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_92": {
+            "mob": "Großer Magmaschleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_93": {
+            "mob": "Witherskelett",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_94": {
+            "mob": "Verwüsterreiter",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_95": {
+            "mob": "Riesiger Schleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_96": {
+            "mob": "Riese",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_97": {
+            "mob": "Wächterältesten",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_98": {
+            "mob": "Riesiger Magmaschleim",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_99": {
+            "mob": "Wither",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        },
+        "floor_100": {
+            "mob": "Warden",
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        ""
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        ""
+                    ]
+                }
+            }
+        }
+    }
+}

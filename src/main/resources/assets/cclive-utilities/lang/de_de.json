@@ -1,0 +1,10 @@
+{
+
+  "key.cclive-utilities.toggle-animation-blocker": "Animation Blocker umschalten",
+  "key.cclive-utilities.toggle-blueprint-viewer": "Bauplan-Tracker umschalten",
+  "key.cclive-utilities.next-blueprint-rarity": "Nächste Bauplan-Seltenheit",
+  "key.cclive-utilities.previous-blueprint-rarity": "Vorherige Bauplan-Seltenheit",
+
+  "key.categories.cclive-utilities.blueprints": "CCLive Utilities - Baupläne",
+    "key.categories.cclive-utilities": "CCLive Utilities"
+} 

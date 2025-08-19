@@ -1,0 +1,419 @@
+{
+    "essences": [
+        {
+            "name": "Pferde [Essenz] Tier 1",
+            "wave": 701
+        },
+        {
+            "name": "Pferde [Essenz] Tier 4",
+            "wave": 2319
+        },
+        {
+            "name": "Pferde [Essenz] Tier 8",
+            "wave": 5292
+        },
+        {
+            "name": "Pferde [Essenz] Tier 10",
+            "wave": 6658
+        },
+        {
+            "name": "Pferde [Essenz] Tier 12",
+            "wave": 9994
+        },
+        {
+            "name": "Lohen [Essenz] Tier 1",
+            "wave": 358
+        },
+        {
+            "name": "Lohen [Essenz] Tier 2",
+            "wave": 1410
+        },
+        {
+            "name": "Lohen [Essenz] Tier 3",
+            "wave": 1942
+        },
+        {
+            "name": "Lohen [Essenz] Tier 4",
+            "wave": 2706
+        },
+        {
+            "name": "Lohen [Essenz] Tier 5",
+            "wave": 3504
+        },
+        {
+            "name": "Lohen [Essenz] Tier 6",
+            "wave": 3730
+        },
+        {
+            "name": "Lohen [Essenz] Tier 7",
+            "wave": 4596
+        },
+        {
+            "name": "Lohen [Essenz] Tier 8",
+            "wave": 5115
+        },
+        {
+            "name": "Witherskelett [Essenz] Tier 1",
+            "wave": 827
+        },
+        {
+            "name": "Witherskelett [Essenz] Tier 3",
+            "wave": 2148
+        },
+        {
+            "name": "Witherskelett [Essenz] Tier 4",
+            "wave": 2393
+        },
+        {
+            "name": "Witherskelett [Essenz] Tier 5",
+            "wave": 3405
+        },
+        {
+            "name": "Witherskelett [Essenz] Tier 8",
+            "wave": 5452
+        },
+        {
+            "name": "Witherskelett [Essenz] Tier 9",
+            "wave": 6386
+        },
+        {
+            "name": "Zombie [Essenz] Tier 1",
+            "wave": 526
+        },
+        {
+            "name": "Zombie [Essenz] Tier 7",
+            "wave": 4262
+        },
+        {
+            "name": "Wolf [Essenz] Tier 1",
+            "wave": 608
+        },
+        {
+            "name": "Wolf [Essenz] Tier 2",
+            "wave": 1112
+        },
+        {
+            "name": "Wolf [Essenz] Tier 4",
+            "wave": 2569
+        },
+        {
+            "name": "Wolf [Essenz] Tier 7",
+            "wave": 4376
+        },
+        {
+            "name": "Wolf [Essenz] Tier 12",
+            "wave": 9446
+        },
+        {
+            "name": "Stray [Essenz] Tier 1",
+            "wave": 541
+        },
+        {
+            "name": "Stray [Essenz] Tier 6",
+            "wave": 4030
+        },
+        {
+            "name": "Stray [Essenz] Tier 7",
+            "wave": 4483
+        },
+        {
+            "name": "Stray [Essenz] Tier 12",
+            "wave": 9111
+        },
+        {
+            "name": "Ziegen [Essenz] Tier 1",
+            "wave": 884
+        },
+        {
+            "name": "Ziegen [Essenz] Tier 2",
+            "wave": 1191
+        },
+        {
+            "name": "Ziegen [Essenz] Tier 7",
+            "wave": 4562
+        },
+        {
+            "name": "Bienen [Essenz] Tier 1",
+            "wave": 836
+        },
+        {
+            "name": "Bienen [Essenz] Tier 3",
+            "wave": 2380
+        },
+        {
+            "name": "Bienen [Essenz] Tier 4",
+            "wave": 3006
+        },
+        {
+            "name": "Bienen [Essenz] Tier 11",
+            "wave": 8973
+        },
+        {
+            "name": "Piglin [Essenz] Tier 1",
+            "wave": 1034
+        },
+        {
+            "name": "Piglin [Essenz] Tier 2",
+            "wave": 1429
+        },
+        {
+            "name": "Piglin [Essenz] Tier 3",
+            "wave": 1925
+        },
+        {
+            "name": "Piglin [Essenz] Tier 6",
+            "wave": 4544
+        },
+        {
+            "name": "Piglin [Essenz] Tier 7",
+            "wave": 5142
+        },
+        {
+            "name": "Piglin [Essenz] Tier 8",
+            "wave": 5332
+        },
+        {
+            "name": "Piglin [Essenz] Tier 9",
+            "wave": 6233
+        },
+        {
+            "name": "Piglin [Essenz] Tier 11",
+            "wave": 9889
+        },
+        {
+            "name": "Hühner [Essenz] Tier 2",
+            "wave": 1262
+        },
+        {
+            "name": "Hühner [Essenz] Tier 3",
+            "wave": 2186
+        },
+        {
+            "name": "Hühner [Essenz] Tier 5",
+            "wave": 3227
+        },
+        {
+            "name": "Hühner [Essenz] Tier 6",
+            "wave": 4046
+        },
+        {
+            "name": "Hühner [Essenz] Tier 12",
+            "wave": 9883
+        },
+        {
+            "name": "Endermite [Essenz] Tier 2",
+            "wave": 1374
+        },
+        {
+            "name": "Endermite [Essenz] Tier 6",
+            "wave": 4111
+        },
+        {
+            "name": "Endermite [Essenz] Tier 10",
+            "wave": 7125
+        },
+        {
+            "name": "Skelett [Essenz] Tier 3",
+            "wave": 1850
+        },
+        {
+            "name": "Skelett [Essenz] Tier 7",
+            "wave": 4442
+        },
+        {
+            "name": "Skelett [Essenz] Tier 10",
+            "wave": 7201
+        },
+        {
+            "name": "Schneemann [Essenz] Tier 2",
+            "wave": 2365
+        },
+        {
+            "name": "Schneemann [Essenz] Tier 5",
+            "wave": 4396
+        },
+        {
+            "name": "Schneemann [Essenz] Tier 6",
+            "wave": 5043
+        },
+        {
+            "name": "Schneemann [Essenz] Tier 10",
+            "wave": 9645
+        },
+        {
+            "name": "Wächter [Essenz] Tier 3",
+            "wave": 2664
+        },
+        {
+            "name": "Wächter [Essenz] Tier 4",
+            "wave": 3422
+        },
+        {
+            "name": "Wächter [Essenz] Tier 8",
+            "wave": 5836
+        },
+        {
+            "name": "Wächter [Essenz] Tier 10",
+            "wave": 7382
+        },
+        {
+            "name": "Wächter [Essenz] Tier 11",
+            "wave": 7870
+        },
+        {
+            "name": "Fuchs [Essenz] Tier 2",
+            "wave": 2460
+        },
+        {
+            "name": "Fuchs [Essenz] Tier 8",
+            "wave": 6721
+        },
+        {
+            "name": "Creeper [Essenz] Tier 3",
+            "wave": 2854
+        },
+        {
+            "name": "Creeper [Essenz] Tier 4",
+            "wave": 2854
+        },
+        {
+            "name": "Creeper [Essenz] Tier 9",
+            "wave": 6895
+        },
+        {
+            "name": "Creeper [Essenz] Tier 11",
+            "wave": 8802
+        },
+        {
+            "name": "Zombifizierter Piglin [Essenz] Tier 3",
+            "wave": 2836
+        },
+        {
+            "name": "Zombifizierter Piglin [Essenz] Tier 9",
+            "wave": 7293
+        },
+        {
+            "name": "Hoglin [Essenz] Tier 4",
+            "wave": 3233
+        },
+        {
+            "name": "Hoglin [Essenz] Tier 5",
+            "wave": 4191
+        },
+        {
+            "name": "Hoglin [Essenz] Tier 7",
+            "wave": 5768
+        },
+        {
+            "name": "Frosch [Essenz] Tier 3",
+            "wave": 3506
+        },
+        {
+            "name": "Frosch [Essenz] Tier 9",
+            "wave": 7301
+        },
+        {
+            "name": "Vindicator [Essenz] Tier 3",
+            "wave": 3362
+        },
+        {
+            "name": "Vindicator [Essenz] Tier 10",
+            "wave": 9772
+        },
+        {
+            "name": "Hexe [Essenz] Tier 4",
+            "wave": 3827
+        },
+        {
+            "name": "Schildkröten [Essenz] Tier 5",
+            "wave": 4078
+        },
+        {
+            "name": "Schildkröten [Essenz] Tier 8",
+            "wave": 5591
+        },
+        {
+            "name": "Schildkröten [Essenz] Tier 10",
+            "wave": 7471
+        },
+        {
+            "name": "Schildkröten [Essenz] Tier 11",
+            "wave": 9598
+        },
+        {
+            "name": "Spinnen [Essenz] Tier 5",
+            "wave": 3868
+        },
+        {
+            "name": "Spinnen [Essenz] Tier 7",
+            "wave": 4739
+        },
+        {
+            "name": "Spinnen [Essenz] Tier 8",
+            "wave": 5332
+        },
+        {
+            "name": "Spinnen [Essenz] Tier 11",
+            "wave": 9335
+        },
+        {
+            "name": "Axolotl [Essenz] Tier 5",
+            "wave": 3488
+        },
+        {
+            "name": "Axolotl [Essenz] Tier 7",
+            "wave": 5188
+        },
+        {
+            "name": "Axolotl [Essenz] Tier 10",
+            "wave": 7022
+        },
+        {
+            "name": "Axolotl [Essenz] Tier 11",
+            "wave": 8101
+        },
+        {
+            "name": "Enderman [Essenz] Tier 3",
+            "wave": 3743
+        },
+        {
+            "name": "Zombie Eberlein [Essenz] Tier 4",
+            "wave": 4874
+        },
+        {
+            "name": "Zombie Eberlein [Essenz] Tier 7",
+            "wave": 6856
+        },
+        {
+            "name": "Panda [Essenz] Tier 6",
+            "wave": 5657
+        },
+        {
+            "name": "Magier [Essenz] Tier 6",
+            "wave": 6994
+        },
+        {
+            "name": "Magier [Essenz] Tier 7",
+            "wave": 7428
+        },
+        {
+            "name": "Magier [Essenz] Tier 8",
+            "wave": 8114
+        },
+        {
+            "name": "Ertrunkener [Essenz] Tier 8",
+            "wave": 7482
+        },
+        {
+            "name": "Ocelot [Essenz] Tier 12",
+            "wave": 8379
+        },
+        {
+            "name": "Zombiepferde [Essenz] Tier 8",
+            "wave": 7555
+        }
+
+        
+        
+    ]
+}

@@ -1,0 +1,17 @@
+{
+  "key.cclive-utilities.kills-toggle": "Toggle Kill Tracker",
+  "key.cclive-utilities.kills-reset": "Reset Kill Tracker",
+  "category.cclive-utilities.kills": "CCLive Utilities - Kill Tracker",
+  "key.cclive-utilities.material-toggle": "Toggle Material Tracker",
+  "category.cclive-utilities.material": "CCLive Utilities - Material Tracker",
+  "key.cclive-utilities.cards-toggle": "Toggle Cards & Statues",
+  "category.cclive-utilities.cards": "CCLive Utilities - Cards & Statues",
+
+  "key.cclive-utilities.toggle-animation-blocker": "Toggle Animation Blocker",
+  "key.cclive-utilities.toggle-blueprint-viewer": "Toggle Blueprint Tracker",
+  "key.cclive-utilities.next-blueprint-rarity": "Next Blueprint Rarity",
+  "key.cclive-utilities.previous-blueprint-rarity": "Previous Blueprint Rarity",
+
+  "key.categories.cclive-utilities.blueprints": "CCLive Utilities - Blueprints",
+    "key.categories.cclive-utilities": "CCLive Utilities"
+}

@@ -1,0 +1,5393 @@
+{
+    "floors": {
+      "floor_1": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Anfänger Hacke",
+              "Anfänger Axt",
+              "Anfänger Spitzhacke",
+              "Gebeulte Handgelenkmanschetten",
+              "Kopfgeldjägerring"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Erzbrecherballiste",
+              "Ergiebiger Langbogen",
+              "Pelzgewand des Eiswanderers",
+              "Rissiger Zwergentöter",
+              "Rubinbrustkleid"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Halskette des Bezwingers",
+              "Eroberers Schulterpanzer",
+              "Schädelspalter",
+              "Stählernde Sabatons",
+              "Flora Panzerbrust"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Drachenzahn",
+              "Rubinrote Kriegshose",
+              "Ewiges Lichtband",
+              "Eisengestärkter Fußharnisch",
+              "Enderstahl Waffengurt",
+              "Rote Sandalen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Drachenlederhelm",
+              "Drachenschuppen Kriegshelm",
+              "Drachenschuppen Kriegsgürtel"
+  
+            ]
+          }
+        }
+      },
+      "floor_2": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Kupferring",
+              "Solide Stahlfingerlinge",
+              "Axt des Lehrlings",
+              "Rostiger Piekser",
+              "Holzhacke"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Zeitloser Lederband",
+              "Kappe des Forschers",
+              "Fortgeschrittener Bogen",
+              "Rumreicher Kopfschutz",
+              "Champions Wappengurt"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Minimalistische Lederschulterpolster",
+              "Bogen des Windläufers",
+              "Der Bambusspalter",
+              "Demonischer Gürtel",
+              "Natürliche Lederfinger"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Assassinenabwehr",
+              "Panzerbrecher",
+              "Rubinrote Kriegsschultern",
+              "Ewiges Lichtamulett",
+              "Rote Lederhandschuhe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Drachenlederrüstung",
+              "Drachenlederleggins",
+              "Göttliche Plattenläufer",
+              "Drachenlederschuhe"
+  
+            ]
+          }
+        }
+      },
+      "floor_3": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Solider Stirnschild",
+              "Hölzernes Beinkleid",
+              "Eisenanhänger",
+              "Bequemer Lederstreifen",
+              "Stumpfe Klinge"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Klare Lederschulterpolster",
+              "Bogen des Peinigers",
+              "Verstärkter Wurzelspalter",
+              "Zirkonband",
+              "Robuste Plattenstiefel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Königliche Treter",
+              "Flammenpfeilschleuder",
+              "Blutige Fleischhackeraxt",
+              "Einfache Schlupfstiefel",
+              "Berserkeraxt"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Excalibur",
+              "Smaragdschinder",
+              "Stilvolle Ornamentweste",
+              "Rubinrote Kriegshandschuhe",
+              "Roter Lederhelm",
+              "Rote Lederschultern"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Felsspalter des Kaktusmeister",
+              "Drachenlederband",
+              "Drachenschuppen Kriegshandschuhe"
+  
+            ]
+          }
+        }
+      },
+      "floor_4": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Robuster Plattenhelm",
+              "Handpanzerhandschuhe",
+              "Soldatenarmbrust",
+              "Geflochtener Kupferring",
+              "Leichte Ledermütze"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kriegsherren Panzergürtel",
+              "Hyänentöter",
+              "Wächteraxt",
+              "Stahlschutzschultern",
+              "Aufseher Stiefel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Phantomstahl Plattenschuhe",
+              "Anhänger des Windes",
+              "Seidenbeinkleid des Tänzers",
+              "Verstärktes Lederband",
+              "Rubinstaub Schrammer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Rubin Sichel",
+              "Witwengruß",
+              "Rote Lederschützer",
+              "Rote Lederrüstung",
+              "Rubinroter Kriegshelm",
+              "Samurai Handschützer"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Götterhieb",
+              "Drachenschuppen Kriegsschultern",
+              "Drachenschuppen Kriegsbrustplatte"
+  
+            ]
+          }
+        }
+      },
+      "floor_5": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Stumpfe Schere",
+              "Abgenutzte Dezimierungsspitze",
+              "Verstärkter Eisengürtel",
+              "Verstärkte Plattenbeinschützer",
+              "Schlichte Lederschutz"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Imperialer Plattenhelm",
+              "Stahlschutzkrone",
+              "Splitteraxt",
+              "Hacke des Fleißigen",
+              "Zeitlose Lederschutzhüllen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Seelengeschmiedete Plattenschuhe",
+              "Höllenfeuerschleuder",
+              "Eisenschuppenstiefel",
+              "Nietenverstärkte Schulterpanzer",
+              "Blutrünstige Brustplatte"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Gesang der Pfeile",
+              "Gnorags Qüaler",
+              "Rubinroter Kriegsharnisch",
+              "Roter Ledergürtel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Seelenschnitter",
+              "Drachenschuppen Kriegshosen",
+              "Drachenlederhandschuhe",
+              "Fäustlinge der Ahnen",
+              "Drachenblutband"
+  
+            ]
+          }
+        }
+      },
+      "floor_6": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Anfängerdegen",
+              "Leichtes Lederhemd",
+              "Leichte Lederkappe",
+              "Regenstiefel des Anglers",
+              "Leichte Lederhose"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Langbogen des Jägers",
+              "Dämonenhauer",
+              "Wächterschwerter",
+              "Arkane Großaxt",
+              "Kette des Windes"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Kaktuszermalmer",
+              "Nietenverstärkter Brustharnisch",
+              "Makellose Schulterpolster",
+              "Ritterliche Schulterhaube",
+              "Makellose Handschutzstulpen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Dämonischer Bolzenwerfer",
+              "Titanstahl-Dschungelholzhacker",
+              "Enderstahl Plattenpanzer",
+              "Kosmisches Siegel",
+              "Weltenwandererstiefel",
+              "Rubinroter Kriegsgürtel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Dunkelmond Gamaschen",
+              "Drachenblutamulett",
+              "Dunkelmond Helmvisier"
+  
+            ]
+          }
+        }
+      },
+      "floor_7": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Moosbrustkleid",
+              "Zinkband",
+              "Einfache Holzarmbrust",
+              "Schlichte Lederbeinkleider",
+              "Moosiger Ledergurt"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Plattenstahlhelm",
+              "Traditioneller Ledergürtel",
+              "Piraten Armbrust",
+              "Lederschulterumhänge",
+              "Schlichte Ledertretter"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Mithrilschuhe",
+              "Knochenspalter",
+              "Halsband der Heilung",
+              "Plattenbeinkleider des Kolosses",
+              "Phantomstahl Plattenhandschuhe"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Mondklinge",
+              "Hawkeyes Compoundbogen",
+              "Der Hummelflug",
+              "Frostfänger-Eisenzerstörung",
+              "Enderstahl Kriegshandschuhe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Dunkelmond Panzerhandbuckel",
+              "Drachenlederschultern",
+              "Band der dunklen Herrschaft",
+              "Nebelverhangener Lederhelm"
+  
+            ]
+          }
+        }
+      },
+      "floor_8": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Knochengriffbeil",
+              "Rostiger Dolch",
+              "Alte Holfälleraxt",
+              "Bequeme Lederhandschuhe",
+              "Kupfer Halskette"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Laufkappe des Wanderers",
+              "Silberglanz",
+              "Klassischer Lederkappe",
+              "Bruderschafts Brustpanzer",
+              "Ruhmreicher Plattengürtel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Kampferprobte Armbrust",
+              "Knochenzahnbogen",
+              "Plattenschuhe des Kolosses",
+              "Robuste Lederhosen",
+              "Meisterlicher Dornenreißer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Edler Saphirgräber",
+              "Blutschrei",
+              "Enderstahl Beinschützer",
+              "Besondere Tarnkappe",
+              "Enderstahl Schulterplatten"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Dunkelmond Schulterbuckel",
+              "Nebelverhangener Ledergürtel",
+              "Angus Abzeichen der Dunkelheit",
+              "Sabatons der Ahnen"
+  
+            ]
+          }
+        }
+      },
+      "floor_9": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Kleine Brustplatte",
+              "Zerrissenes Schulterleder",
+              "Einfacher Ledergürtel",
+              "Weiche Lederschutzhandschuhe",
+              "Rostige Plattenbeinkleider"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Zeitlose Lederschutzhandschuhe",
+              "Leichte Lederweste",
+              "Grobes Wehrschwert",
+              "Ring der Flamme",
+              "Armbrust des Regenten"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Seidenschleier des Tänzers",
+              "Dezente Lederkappe",
+              "Eisenverstärkte Plattenhose",
+              "Wellen Läufer",
+              "Dämmerauge"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Seelenbohrer",
+              "Höllenfeuerhieb",
+              "Schmieds Lendenschutz",
+              "Kosmisches Medaillon",
+              "Verzauberter Magiegürtel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Mondschatten",
+              "Die Klinge des Geisteskriegers",
+              "Nebelverhangene Lederhandschuhe",
+              "Nebelverhangene Lederschutzweste"
+  
+            ]
+          }
+        }
+      },
+      "floor_10": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Schlammige Fingerlinge",
+              "Gediegene Lederschlacks",
+              "Gurt des Hirten",
+              "Eisenband",
+              "Gärtners Hacke"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Schlichte Lederschutzweste",
+              "Zeitlose Halbschuhe",
+              "Wanderers Bogen",
+              "Edelstein Halsband",
+              "Aufseher Fingerlinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Killerdolch",
+              "Demonisches Beinkleid",
+              "Eroberer Cassis",
+              "Stilvoller Gürtel des Gerbers",
+              "Riffaxt"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Höllenspalter",
+              "Flammenfuror",
+              "Enderstahl Schutzhelm",
+              "Schattenschulterringe",
+              "Enderstahlstiefel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Die Feuerschlange",
+              "Glimmernde Spitzhacke des Lichts",
+              "Gürtel der Ahnen",
+              "Sternenstahlstiefel"
+  
+            ]
+          }
+        }
+      },
+      "floor_11": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Schmutzige Lederweste",
+              "Verstärkte Eisenhandschuhe",
+              "Maroder Knochenbogen",
+              "Bastardschwert",
+              "Zerrissenes Lederhemd"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Traditionelle Lederkappe",
+              "Sternenbedecktes Band",
+              "Berserkerjäger",
+              "Eisenstampfer",
+              "Förmige Kobaltaxt"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Halskette der Präzision",
+              "Feuerseelen Hüftband",
+              "Leichtes Taillenband",
+              "Blutmond Helmpanzer",
+              "Gediegene Wanderloafer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Vulkanklinge",
+              "Blutmond",
+              "Glühende Schulterpolster"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Nebelverhangene Lederschlappen",
+              "Göttergleiterstiefel",
+              "Nebelverhangene Lederschultern",
+              "Pranken des Eisbären",
+              "Dunkelmond Brustpanzer",
+              "Beinkleid der Ahnen"
+  
+            ]
+          }
+        }
+      },
+      "floor_12": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Grüne Kultivatorhacke",
+              "Bambuspfeil Armbrust",
+              "Lederriemenhose",
+              "Steingemeißeltes Amulett",
+              "Bleiarmband"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Runenverzierte Stahlschultern",
+              "Leinen Fäustlinge",
+              "Herausforderers Panzerfinger",
+              "Rosenblütenbeil",
+              "Stabile Feuersteinklinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Leuchtende Glaskrone",
+              "Unverziertes Lederband",
+              "Feuerseelen Schulterplatten",
+              "Ritterliche Gurtband",
+              "Natürliche Lederhülle"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Schmerzwerfer",
+              "Jadeschinder",
+              "Glanzlicht-Lederhose",
+              "Glutkreuz Brustpanzer"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Klinge des Schatzmeisters",
+              "Die Dunkelheit",
+              "Nebelverhangene Mokassins",
+              "Dunkelmond Gurt",
+              "Ring der Ahnen"
+  
+            ]
+          }
+        }
+      },
+      "floor_13": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Einfacher Krumsäbel",
+              "Leichte Reisestiefel",
+              "Einfache Wollhandschuhe",
+              "Abgenutzer Kopfpanzer",
+              "Weicher Lederschutz"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kupferedelsteinband",
+              "Stabiler Kornpflücker",
+              "Schlichter Lederschutz",
+              "Wappengurt der Bruderschaft",
+              "Imperialer Plattengürtel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Wallwacht Handkappe",
+              "Zweckmäßige Ledergamaschen",
+              "Knochengefertigte Armbrust",
+              "Elfenbein Schulterpads",
+              "Berserkerbogen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Infernospalter",
+              "Engelssichel",
+              "Flammenstich",
+              "Saphirumhüllte Feldhacke",
+              "Zeitlose Schulterplatten"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Lautloser Schattentod",
+              "Robe des Lichts",
+              "Kranz des Sonnenkönigs",
+              "Schulterpanzer der Ahnen"
+  
+            ]
+          }
+        }
+      },
+      "floor_14": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Verstärkte Plattenstiefel",
+              "Silberscheife",
+              "Einweghandschuhe des Anglers",
+              "Alter Enthaupter"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Leichte Lederhandrüstung",
+              "Kultisten Plattenharnisch",
+              "Eisiges Amulett",
+              "Stabiler Kohlespitzhammer",
+              "Herausforderer Kriegshosen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Feenhafte Schulterstücke",
+              "Wüstenblitz",
+              "Gesegneter Gürtel",
+              "Lässige Schlupfschuhe",
+              "Gastraphetes"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Obsidianstachelschütze",
+              "Phönixschweifklinge",
+              "Xardos letzter Wille",
+              "Glühendes Schutzband",
+              "Diamantgewebter Helmpanzer"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Enderdrachen Füße",
+              "Plattenhelm der Ahnen",
+              "Kriegspanzer der Ahnen",
+              "Yin Yang Schultern"
+  
+            ]
+          }
+        }
+      },
+      "floor_15": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Gebeulte Stahlbeinkleider",
+              "Restaurierte Beinschienen",
+              "Schülerarmbrust",
+              "Kurzschwert"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Hydraulischer Zertrümmerer",
+              "Pantherkrallenklinge",
+              "Waldläuferbogen",
+              "Silbriger Schulterschutz",
+              "Leichte Lederriemenbrust"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Donnergroll-Bodenbeißaxt",
+              "Verzierter Lederriemen",
+              "Bequeme Ledergamaschen",
+              "Demonische Panzerhandschuhe",
+              "Nebelschutz Schultern"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Höllenreiniger",
+              "Glanzlicht-Lederschulterhaube",
+              "Diamantgewebte Schulterhaube",
+              "Glanzlicht-Lederkappe",
+              "Plattenschuhe des Legionärs",
+              "Glanzlicht-Lederhandhaube",
+              "Leuchtende Sternenrobe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Amulett der Ahnen",
+              "Kristallverzierter Seidengürtel"
+  
+            ]
+          }
+        }
+      },
+      "floor_16": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Hölzerner Brustpanzer",
+              "Zahnstocher",
+              "Lässiger Kopfschützer",
+              "Schlichte Lederschulterpolster",
+              "Reflektierende Plattenhose"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Blutring",
+              "Verlässlicher Bogen",
+              "Fährtenbogen",
+              "Ring des Kämpfers",
+              "Panzerhandschuhe der Bruderschaft"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Diamantgeschnittene Hacke",
+              "Minimalistische Lederhülle",
+              "Phantomstahl Panzerhelm",
+              "Stählerner Gürtel",
+              "Smaragdornament Bogen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Chaosklinge",
+              "Bezwinger der Dunkelheit",
+              "Diamantgewebte Handhaube",
+              "Lederner Reitergürtel",
+              "Eiskaltes Band",
+              "Glanzlicht-Ledergürtel",
+              "Diamantgewebte Brustplatte"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Vollmondnacht",
+              "Blitzzorn"
+  
+            ]
+          }
+        }
+      },
+      "floor_17": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Maroder Kurzbogen",
+              "Schlichter Ledergürtel",
+              "Regenjacke des Anglers",
+              "Bequeme Leinenschultern"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Elfenblick",
+              "Robuster Pilzforsthauer",
+              "Kultisten Hüftband",
+              "Robuste Bronzekette",
+              "Ziegenhornklinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Leichte Alltagsschuhe",
+              "Edler Jadehut",
+              "Weiche Polsterschultern",
+              "Tigerband",
+              "Wellen Armflossen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Sonnenherz",
+              "Donnerknall",
+              "Schutz des Pharao",
+              "Glanzlicht-Lederschutz",
+              "Ninja Handschuhe",
+              "Herz des Winters",
+              "Zentaurenbeine",
+              "Diamantgewebte Beinkleider",
+              "Glanzlicht-Trekkingsandalen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Surrender Todesbogen"
+  
+            ]
+          }
+        }
+      },
+      "floor_18": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Zweckmäßige Lederhose",
+              "Schlichte Lederhandrüstung",
+              "Reparierte Sabatons",
+              "Minimalistischer Lederharnisch",
+              "Kadettenarmbrust"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Runenverzierter Kopfpanzer",
+              "Bauchstecher",
+              "Holzzerschmetterer",
+              "Geprägter Plattenhelm",
+              "Leichte Lederschutzhandschuhe"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Halskette des Sturms",
+              "Gediegene Gewandung",
+              "Juwelenspalter",
+              "Falken Klinge",
+              "Werkzeug des Goldgräbers"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Schwert des Zusammenhalts",
+              "Diamantgewebter Gürtelschutz",
+              "Glühende Plattenschuhe",
+              "Tadellos polierte Stahlstiefel",
+              "Sonnengewobene Kriegshose",
+              "Dämonenband",
+              "Glanzvoller Lederriemen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Bambus-Zerberster-Holzhacker",
+              "Poseidons Schulterschützer"
+  
+            ]
+          }
+        }
+      },
+      "floor_19": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Knappenstiefel",
+              "Gediegene Lederschulterpolster",
+              "Jagdbogen",
+              "Deformierte Schulterpanzer",
+              "Kupferbesetzter Ledergurt"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Farbige Lederhandschuhe",
+              "Kobold Lederriemen",
+              "Geprägtes Lederband",
+              "Edler Gardedegen",
+              "Leichte Wanderläufer"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Diamantgeschnittener Eisenerzdezimierer",
+              "Sting",
+              "Flora Plattenbeinschützer",
+              "Wächters Kampfbeil",
+              "Lederbrust des Gerbermeisters"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Engelsschuss",
+              "Kleiner Kaktussporn",
+              "Obsidianschuss",
+              "Dämonen Talisman",
+              "Glanzvolle Heldenlaufen",
+              "Glühender Helmpanzer",
+              "Glühende Plattenhose"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Glutgewobener Plattenhelm",
+              "Poseidons Brust"
+  
+            ]
+          }
+        }
+      },
+      "floor_20": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Robuster Plattenpanzer",
+              "Aluminiumbogen",
+              "Starke Armbrust",
+              "Deformierter Plattengürtel",
+              "Bequeme Lauflatschen"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Silberner Plattengürtel",
+              "Klassiche Schnürloafer",
+              "Ruhmreicher Brustharnisch",
+              "Verzierte Schulterschützer",
+              "Plattenbeinkleider"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Kolossale Helmklappe",
+              "Makellose Beinkleder",
+              "Ritterschwert",
+              "Flora Helmhaube"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Stimme des Berges",
+              "Hexenschuss",
+              "Sternenlaufschuhe",
+              "Glühende Fäustlinge",
+              "Schattenrobe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Sturmfeuer Brandbeil",
+              "Axt des Bambusmeister",
+              "Höllischer Enthaupter",
+              "Die Sternschnuppe",
+              "Drachentöter Plattenhandpanzer"
+  
+            ]
+          }
+        }
+      },
+      "floor_21": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Einfaches Leder Shirt",
+              "Wurzelholzaxt",
+              "Kupferbrustschutz",
+              "Messingring",
+              "Krude Schulterplatten"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Rubinornamentgürtel",
+              "Stahlumhänge",
+              "Halbmond-Stiefel",
+              "Wolffell Gürtel",
+              "Breite Axt"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Lässige Lederhandrüstung",
+              "Leder Shorts",
+              "Donnergroll-Eisenschwinge",
+              "Goldene Fäustlinge",
+              "Natürliche Laufpantoffeln"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Doppelbogen des Gladiators",
+              "Gifthagelschütze",
+              "Der Enthaupter",
+              "Herzensbrecher",
+              "Ring der Erleuchtung",
+              "Glanzvolle Lederpanzerung"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Drachenzorn",
+              "Glutgewebtes Beinkleid",
+              "Poseidons Wellenkrone"
+            ]
+          }
+        }
+      },
+      "floor_22": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Primitiver Langbogen",
+              "Primitiver Gurt",
+              "Stolze Kriegshose",
+              "Basahlthalskette",
+              "Bernstein Talisman"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Leichte Lederschlappen",
+              "Repetier Armbrust",
+              "Marode Kriegsaxt",
+              "Auroraklinge",
+              "Solide Ackerhacke"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Armbrustschützen Kappe",
+              "Geisterbrustschild",
+              "Gediegene Lederhandschuhe",
+              "Blutrausch Plattenstiefel",
+              "Seidenstich"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Longclaw",
+              "Giftdorn",
+              "Sonnengewobene Kriegshandschuhe",
+              "Glanzvolle Heldenhosen",
+              "Sonnengewobener Kriegsharnisch",
+              "Sonnengewobener Kriegsgürtel",
+              "Amulett der Erleuchtung"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Glutgewebtes Schulterpolster",
+              "Poseidons Wellenriemen"
+            ]
+          }
+        }
+      },
+      "floor_23": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Primitive Haube",
+              "Schlichte Ledertreter",
+              "Langbogen",
+              "Robuste Plattenbeinkleider",
+              "Stolze Plattenschuhe"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Knochenbrecher Balliste",
+              "Stahlschutzgurt",
+              "Plattenstahlschärpe",
+              "Elfenklinge",
+              "Das Ass im Ärmel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Zweckmäßige Lederschale",
+              "Blutrünstige Schulterpanzer",
+              "Armbrustschützen Lederhandschützer",
+              "Trollprügler",
+              "Axt des Lehrmeisters"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Diamantornament Axt",
+              "Titanstahl-Kupferabbauhammer",
+              "Sonnengewobene Kriegsschultern",
+              "Glanzvolle Heldenpanzerung",
+              "Sonnengewobener Kriegshelm",
+              "Glanzvolle Lederschultern",
+              "Glanzvolle Lederrüstungshandschuhe"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Siegelring des Drachentöters",
+              "Talisman des Drachentöters"
+  
+            ]
+          }
+        }
+      },
+      "floor_24": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Prächtiger Brustschutz",
+              "Schmutziges Erdbeil",
+              "Gesplitterter Kurzbogen",
+              "Verfluchter Brustpanzer",
+              "Kupferkette"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Seelengeschmiedete Fäustlinge",
+              "Eiserne Beinkleider",
+              "Pilzaxt",
+              "Herausforderer Kriegshelm",
+              "Bequeme Gewandschale"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Wallwacht Kopfschutz",
+              "Unaufdringlicher Ledergürtel",
+              "Königskrone",
+              "Königsklinge",
+              "Geister Lederband"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Orkanruf Schneide",
+              "Kristallphäler",
+              "Flammentretter",
+              "Morgentau-Lederschultern",
+              "Morgentau-Lederfinger"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Poseidons Dreizackgriffe",
+              "Glutgewobener Gürtel",
+              "Poseidons Beinschutz"
+            ]
+          }
+        }
+      },
+      "floor_25": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Tigeraugen Kette",
+              "Stumpfes Beil",
+              "Verzierte Fäustlinge",
+              "Stolze Handrüstung",
+              "Reflektierende Schulterhaube"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Zeitlose Ledergamaschen",
+              "Adeptenklinge",
+              "Gravierter Gürtel",
+              "Dornen Hacke",
+              "Durchbohrer"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Flammenband",
+              "Kurzbogen des Drachentöters",
+              "Demonischer Helm",
+              "Geisterleggings",
+              "Gemütlicher Ledergurt"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Fledermausjäger",
+              "Drachenschnitt",
+              "Dämmerstahl Helmhaube",
+              "Dämmerstahl Schulterplatten",
+              "Morgentau-Lederkürass"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Phantomfluch",
+              "Drachenherz Brustpanzer",
+              "Gultgewebte Treter",
+              "Poseidons Flossen"
+            ]
+          }
+        }
+      },
+      "floor_26": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Natürliche Lederweste",
+              "Zweckmäßiger Lederhaube",
+              "Einfache Holzaxt",
+              "Trainingsdegen",
+              "Marodes Schwert"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Edle Axt",
+              "Panzerschuppentretter",
+              "Saphirverzierte Schultern",
+              "Trolltöter",
+              "Klassischer Lederriemen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Stählerne Schulterplatten",
+              "Cryo-Klinge",
+              "Blutmond Stiefel",
+              "Königliches Beinkleid",
+              "Eroberers Beinpanzer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Dämmerstahl Gurtband",
+              "Dämmerstahl Beinkleider",
+              "Obsidian Pranken",
+              "Morgentau-Lederband",
+              "Dämmerstahl Brustpanzerung"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Sternenflug",
+              "Angus Dunkler Blick",
+              "Odysseus Bogen",
+              "Uraltes Titanenband"
+            ]
+          }
+        }
+      },
+      "floor_27": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Knappen Gurt",
+              "Siedleraxt",
+              "Knochenmesser",
+              "Trainingskampfaxt",
+              "Einfache Handhaube"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Schuhe eines Champions",
+              "Smaragdener Schulterschutz",
+              "Wolfszahn Talisman",
+              "Pelzschuhe des Eiswanderers",
+              "Magischer Eisenring"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Assassinen Dolch",
+              "Blutdorn Brustschutz",
+              "Edle Fingerlinge",
+              "Professioneller Bogen",
+              "Natürliche Lederschultern"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Armbrust der Himmelschmiede",
+              "Die Drachenschwinge",
+              "Giftiger Stachelhelm",
+              "Magisches Platinband",
+              "Morgentau-Lederhelm",
+              "Morgentau-Trekkingschuhe"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Göttlicher Kaktusernter",
+              "Ätherische Samthose",
+              "Ewiger Brustharnisch"
+            ]
+          }
+        }
+      },
+      "floor_28": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Struppige Strohfingerlinge",
+              "Reflektierender Schutzgürtel",
+              "Gebeulter Kopfpanzer",
+              "Abgenutze Plattenstampfer",
+              "Struppiges Strohhemd"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Rubinschuhe",
+              "Herausforderers Kriegsharnisch",
+              "Edle Samthose",
+              "Champions Schulterpanzer",
+              "Wikingerbeil"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Frostschleier",
+              "Schiefer Gürtel",
+              "Medusagiftdolch",
+              "Zwergenstolz",
+              "Flora Schulterhaube"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Donnerrichter",
+              "Morgentau-Lederleggins",
+              "Raimondos Anhänger",
+              "Raimondos Siegelring",
+              "Dämmerstahl Panzerhandschuhe"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Wechsel der Gezeiten",
+              "Der Lichtblitz",
+              "Strahlende Hacke des Lichts",
+              "Ätherische Samtschulterhauben"
+            ]
+          }
+        }
+      },
+      "floor_29": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Altes Spaltbeil",
+              "Schmutziger Lederhut",
+              "Steinschwert",
+              "Regenschutzhose des Anglers",
+              "Unglückliche Plattenstiefel"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Jägerschleuder",
+              "Panzerschuppen Gürtel",
+              "Kristallband",
+              "Champions Brustharnisch",
+              "Leichter Jagdbogen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Schlangenzunge",
+              "Schiefer Schulterbuckel",
+              "Flora Handhaube",
+              "Feuerseelen Kopfschutz",
+              "Bequeme Ledertreter"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Giftiger Stachelpanzer",
+              "Giftige Stachelschuhe",
+              "Magisches Platinamulett",
+              "Obsidian Ledergurt",
+              "Obsidian Schulterpanzer"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Kaktusmeisters Axt",
+              "Enthaupter des Gladiators",
+              "Ätherische Samtfingerlinge",
+              "Zeitlose Plattenhose"
+            ]
+          }
+        }
+      },
+      "floor_30": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Solider Stahlgurt",
+              "Rostige Schulterpanzer",
+              "Primitiver Wolfjäger",
+              "Dornenentferner",
+              "Anfängerbogen"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Klassische Lederrüstung",
+              "Eiserner Kopfpanzer",
+              "Ring des Schutzes",
+              "Champions Gamaschen",
+              "Bequemer Ledergurt"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Medaillon der Wallwacht",
+              "Stählener Wille",
+              "Meisterliche Dezimierungsmeißel",
+              "Kolossale Brustpanzerung",
+              "Schlichte Lederhandhaube"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Obsidianbeinschutz",
+              "Giftiger Gürtel",
+              "Giftige Stachelhandschuhe",
+              "Obsidianfußschutz"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Meisterschwert",
+              "Blitzschleuder",
+              "Majestätische Pilzaxt",
+              "Zeitlose Plattenschuhe",
+              "Zeitlose Schulterpanzer"
+            ]
+          }
+        }
+      },
+      "floor_31": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Schmutzige Lederschultern",
+              "Gediegener Erzspaltungsmeißel",
+              "Deformierte Plattenschuhe",
+              "Stramme Plattenhandschuhe",
+              "Plattengürtel"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Alter Freund",
+              "Verstärkter Wurzelspaltaxt",
+              "Wildjägerbogen",
+              "Gravierte Plattenhose",
+              "Aufseher Helmvisir"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Ring des Aufstiegs",
+              "Zwecksmäßige Ledersandalen",
+              "Phönixfedern-Kultivator",
+              "Donnerknall Medaillon"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Gladiatorenbohrer",
+              "Obsidianbrustschutz",
+              "Giftige Leggings",
+              "Obsidiankappe",
+              "Giftiger Schulterschutz"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Schattenspalter",
+              "Das Auge des Osiris",
+              "Lichtschuss",
+              "Ätherischer Samtgurt",
+              "Zeitloser Fingerschutz"
+            ]
+          }
+        }
+      },
+      "floor_32": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Unglückliche Brustplatte",
+              "Einfacher Kopfschutz",
+              "Alter Fäller",
+              "Verfluchte Fäustlinge",
+              "Schlammige Plattenschuhe"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Bequeme Lederschulterpolster",
+              "Verteidigungsbogen",
+              "Gepräte Panzerbeinschützer",
+              "Adeptenaxt",
+              "Breite Klinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Glutgamaschen",
+              "Giftpfeilschuss",
+              "Leuchtender Silberring",
+              "Einfache Lederschultern",
+              "Blutrünstige Plattenbeinschützer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Schuppenschwert",
+              "Obsidianschuppen Gurt",
+              "Flammenfedergurt"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Verlorene Spitzhacke des Erzchampions",
+              "Ätherische Pantoffeln",
+              "Frostbiss Plattenhandschuhe",
+              "Gleißender Talisman der Wallwacht",
+              "Brust des Gleichgewichts",
+              "Zeitloser Helmpanzer"
+            ]
+          }
+        }
+      },
+      "floor_33": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Kadettenbogen",
+              "Weiche Lederschützer",
+              "Talisman der Verachtung",
+              "Fingerkappenlederhandschuhe",
+              "Erneuerte Schulterplatten"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Schmerzreperierarmbrust",
+              "Gravierte Plattenhandschuhe",
+              "Schädelring",
+              "Verzierter Silberanhänger",
+              "Unprätentiöse Lederschulterhaube"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Plattenstiefel des Eroberers",
+              "Duell Klinge",
+              "Trollspalter",
+              "Runenbogen",
+              "Trophäenjäger"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Geschmolzener Schlächter",
+              "Obsidianschuppen Schulterumhänge",
+              "Flammenfedertunika"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Anduril",
+              "Der Himmelsflug",
+              "Zeitloser Waffengurt",
+              "Ätherisches Samthemd",
+              "Ätherischer Samthut",
+              "Schuhe des Gleichgewichts"
+            ]
+          }
+        }
+      },
+      "floor_34": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Minimalistische Lederpantalons",
+              "Plattenpanzerstiefel",
+              "Marodes Beil",
+              "Abgenutzte Eisenschulterstücke"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kreuzritter Plattenhelm",
+              "Seelengeschmiedete Schulterpanzer",
+              "Edles Katana",
+              "Aufseher Leggings",
+              "Stabiler Dschungelholzabholzer"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Verstärkte Lederhandrüstung",
+              "Falkenauge",
+              "Blutsucher",
+              "Rüstungszerberster",
+              "Klarer Ledergürtel"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Höllenfeuer Felsbrecher",
+              "Sternenhagel",
+              "Unterweltband",
+              "Obsidianschuppen Helmdeckung"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Talisman der Ewigkeit",
+              "Frostbiss Kriegshelm",
+              "Band der Ewigkeit",
+              "Handschuhe des Gleichgewichts",
+              "Hose des Gleichgewichts",
+              "Frostbiss Plattenschuhe"
+            ]
+          }
+        }
+      },
+      "floor_35": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Steinaxt",
+              "Alter Waldbogen",
+              "Kette des Schutzes",
+              "Schmutziger Leinengürtel",
+              "Laminierter Bogen"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Herausforderer Schulterschutz",
+              "Koboldhautpanzer",
+              "Plattenstampfer",
+              "Seelengeschmiedete Plattenhose",
+              "Imperialer Schulterpanzer",
+              "Stiefel der Bruderschaft"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Platinwächter",
+              "Harter Lederharnisch",
+              "Halsband des Lebens",
+              "Lässiger Lederkopfschutz"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Obsidianstich",
+              "Kampfschwert des Heerführers",
+              "Schreckenssog Sabatons",
+              "Flammenfederschutz",
+              "Eichenherz Panzerhandschuhe"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Drachentöter",
+              "Frostbiss Plattengürtel",
+              "Helm des Gleichgewichts",
+              "Frostbiss Schulterplatten"
+            ]
+          }
+        }
+      },
+      "floor_36": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Lehmstiefel",
+              "Schlundarmbrust",
+              "Unglücklicher Kopfschutz",
+              "Holzplatten Handschützer",
+              "Steintalisman"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Bernstein Schulterringe",
+              "Verstärkter Kupferzerstörer",
+              "Stahlsturm Brustharnisch",
+              "Pelzschal des Eiswanderers",
+              "Verlässliche Klinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Nietenverstärkter Helmpanzer",
+              "Band des Sturms",
+              "Rubinversetzter Langbogen",
+              "Nietenverstärkte Plattenstiefel",
+              "Beil des Försters"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Dämonenbeil",
+              "Mondsichel-Bodengrabber",
+              "Samtfinger des Adeligen",
+              "Eichenherz Plattengürtel"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Zeitverzerrer",
+              "Gürtel des Gleichgewichts",
+              "Frostbiss Plattenhose",
+              "CACTUS_CLICKER.armors.eternal_balance_leggings",
+              "Frost Mantel"
+            ]
+          }
+        }
+      },
+      "floor_37": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Besessener Schulterpanzer",
+              "Rostige Axt",
+              "Deformierte Beinschützer",
+              "Moosmokassins",
+              "Verstärktes Kupferband"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Schädelkette",
+              "Feuerfalken Armbrust",
+              "Panzerschuppen Fingerlinge",
+              "Kantige Dornenaxt",
+              "Schlächtermesser"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Eisenverstärkte Schulterrüstung",
+              "Schlanker Lederriemen",
+              "Donnergroll-Bodenspalter",
+              "Phönixfedern-Kupferzerstörer",
+              "Blutmond Hüftband"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Withertöter",
+              "Flammenfederschuhe",
+              "Samtumhang des Adeligen",
+              "Obsidianschuppen Panzerhose",
+              "Götteranhänger",
+              "Drachenherzhalskette"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Alkatars Sehne",
+              "Lichtschild-Lederriemen",
+              "Titanentretter"
+            ]
+          }
+        }
+      },
+      "floor_38": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Steinsohlen",
+              "Schlichter Lederhelm",
+              "Gebeulter Plattengurt",
+              "Rostiges Kettenbeil",
+              "Marode Kriegsaxt"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Honigschrämmer",
+              "Pelzgewand des Eiswanderers",
+              "Amulett der Flamme",
+              "Kobaltstiefel",
+              "Klare Ledergamaschen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Armbrust des Wächters",
+              "Gürtel des Lehrlings",
+              "Dunkler Sucher",
+              "Wallwacht Panzerharnisch",
+              "Samurai Klinge"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Flammenfedergamaschen",
+              "Obsidianschuppen Brustpanzer",
+              "Obsidianschuppen Fingerlinge",
+              "Flammenfederschulterpanzer",
+              "Flammenfederschutzhandschuhe"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Weltenfresser",
+              "Nekromantenblick",
+              "Blitzsturm Schulterbuckel",
+              "Wurzelring des Lebens"
+            ]
+          }
+        }
+      },
+      "floor_39": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Wiederverwerteter Gürtel",
+              "Weiche Pirschsandalen",
+              "Rostiger Glücksbringer",
+              "Primitiver Bogen",
+              "Unglückliches Beinkleid"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Thorium Plattenhelm",
+              "Glorreiche Schulterrüstung",
+              "Dreifachschuss Armbrust",
+              "Rubin Schulterornament",
+              "Klassische Lederfinger"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Feuerseelen Handschützer",
+              "Weroks Reißzahn",
+              "Titanstahl Felsbrecher",
+              "Walküren Lederriemen",
+              "Daltons Schwur"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Gesang der Liebe",
+              "Sonnenbrecher",
+              "Göttersegen",
+              "Eichenherz Plattenschuhe",
+              "Eichenherz Plattenbrust"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Azurblitz",
+              "Höllenfeuer Flammenhose",
+              "Lichtschild-Trekkingschuhe",
+              "Blitzsturm Helmdeckung"
+            ]
+          }
+        }
+      },
+      "floor_40": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Einfacher Bolzenwerfer",
+              "Sandsteinhacker",
+              "Reflektierende Plattenhandschuhe",
+              "Mooshauptschutz",
+              "Leichte Lederfäustlinge"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Stahlbrustschutz",
+              "Herausforderer  Eisenstiefel",
+              "Leichte Gewandpanzerung",
+              "Silber Schulterschalen",
+              "Verzierter Silberring"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Goldene Beinschützer",
+              "Flora Gurtband",
+              "Ritterliche Plattenbeinkleider",
+              "Nietenvertärkter Gürtel",
+              "Edle Halbschuhe"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Kältebringer",
+              "Obsidianbeil",
+              "Hornissenstachel",
+              "Eichenherz Schulterschützer",
+              "Sandalen des Adeligen",
+              "Beinkleid des Adeligen"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Amulett des Ewigenfeuers",
+              "Kristalline Schulterpanzer",
+              "Lichtschild-Lederhaube"
+            ]
+          }
+        }
+      },
+      "floor_41": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Berstender Holzbogen",
+              "Matte Kupferschultern",
+              "Moosbeinkleid",
+              "Zinkanhänger"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Thorium Beinschützer",
+              "Stabile Waldaxt",
+              "Gesegnete Plattenschuhe",
+              "Laufschultern des Wanderers",
+              "Jadehieb"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Hochlandring",
+              "Eisenverstärkte Handrüstung",
+              "Kehlennadler",
+              "Eroberer Kriegshandschuhe",
+              "Windhauch"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Kadaverzerleger",
+              "Eichenherz Plattenhose",
+              "Samtriemen des Adeligen",
+              "Samtmütze des Adeligen",
+              "Eichenherz Schutzhelm",
+              "Samtkleid des Adeligen"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Drachenfluch",
+              "Spitzhacke des Kaktusmeister",
+              "Sculkwanderer Plattenschuhe",
+              "Blitzsturm Gurt"
+            ]
+          }
+        }
+      },
+      "floor_42": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Gediegene Lederpanzerung",
+              "Rostiger Stahlbogen",
+              "Schultern des Anglers",
+              "Leichte Lederfingerlinge",
+              "Kartonschwert"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Zwergenstürmer",
+              "Schlichtes Lederband",
+              "Robuster Bronzering",
+              "Koboldschuhe",
+              "Robuste Kupferaxt"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Schwarze Lederhose",
+              "Geister Schulterhaube",
+              "Sengenderschuss",
+              "Klare Lederhülle",
+              "Kolossale Schulterplatten"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Rubin Beil",
+              "Mondschein",
+              "Seelengebundener Helm",
+              "Arbeitshose des Schlächters",
+              "Seelengebundener Waffengurt"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Göttliche Balester",
+              "Sternenschütze",
+              "Höllenfeuer Flammenfinger",
+              "Lichtschild-Lederhülle"
+            ]
+          }
+        }
+      },
+      "floor_43": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Küchenmesser",
+              "Leichtes Lederband",
+              "Verzierter Brustharnisch",
+              "Morsche Spitzhacke",
+              "Besessene Panzerhandschuhe"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Unprätentiöse Sandalen",
+              "Stahlaxt",
+              "Eisenhalskette",
+              "Stabiler Compundbogen",
+              "Unprätentiöse Lederkappe"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Donnerhagel",
+              "Klassische Lederschulterpolster",
+              "Fichtenstecher",
+              "Blutmond Handhaube",
+              "Talisman des Mutes"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Seelenstrang",
+              "Alptraumhafter Spalter",
+              "Haube des Schlächters",
+              "Seelengebundene Plattenschuhe"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Blitzsturm Panzerhandbuckel",
+              "Blitzsturm Brustpanzer",
+              "Ring der Unsterblichkeit",
+              "Lichtschild-Ledergamaschen"
+            ]
+          }
+        }
+      },
+      "floor_44": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Zinnamulett",
+              "Steifer Bogen",
+              "Verstärker Kopfschützer",
+              "Kupfersiegelring",
+              "Schmales Beinkleid"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Geprägter Panzergurt",
+              "Klare Tretsohlen",
+              "Verlässliche Axt",
+              "Zeitloser Lederschutz",
+              "Runenverzierte Stahlhandschuhe"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Armbrustschützen Beinschutz",
+              "Meeres Furcher",
+              "Amulett der Stille",
+              "Antike Lederhaube"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Höllenwächter",
+              "Säbel des Piratenkönigs",
+              "Blutfinger des Schlächters",
+              "Lederschultern des Schlächters",
+              "Hosenträger des Schlächters"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Streitaxt des Odin",
+              "Mondstrahl",
+              "Lichtschild-Lederschulterhaube",
+              "Lichtschild-Lederhandhaube",
+              "Blitzsturm Gamaschen"
+            ]
+          }
+        }
+      },
+      "floor_45": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Knappen Kappe",
+              "Brüchiger Langbogen",
+              "Ring der Verachtung",
+              "Enge Plattenschuhe"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Traditionelle Lederschulterhaube",
+              "Armbrust des Verweigerers",
+              "Solide Dunkleichenaxt",
+              "Äxte der Walküre",
+              "Robuster Bodengräber"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Wallwacht Gürtelschutz",
+              "Königlicher Händeschutz",
+              "Minimalistischer Lederhelm",
+              "Runeninfundierte Panzerhandschuhe",
+              "Wellenschuppenhemd"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Auge der Flammen",
+              "Seelengebundener Plattenpanzer",
+              "Seelengebundene Fäustlinge",
+              "Amulett der Unendlichkeit",
+              "Seelengebundene Plattenschultern"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Klinge des Lehrmeisters",
+              "Titanklinge des Henkers",
+              "Höllenfeuer Laufschuhe",
+              "Kristallkürass",
+              "Höllenfeuer Flammengürtel"
+            ]
+          }
+        }
+      },
+      "floor_46": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Rostiger Plattengurt",
+              "Abgenutzer Plattenpanzer",
+              "Besessene Plattentretter",
+              "Knochenarmbrust",
+              "Kupferbeinschutz"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Sensenaxt",
+              "Bequeme Lederhandschuhe",
+              "Kriegsherren Panzerschultern",
+              "Eiserner Stahlgurt",
+              "Leichter Kopfpanzer"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Runengeschmiedete Plattenhose",
+              "Walkürenhelm",
+              "Stählende Klinge",
+              "Flammenamulett"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Eissplitterbogen",
+              "Morastbogen",
+              "Arbeitsschuhe des Schlächters",
+              "Ring der Unendlichkeit",
+              "Arbeitsschürze des Schlächters"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Göttliche Pilzfällaxt",
+              "Der Blutzorn",
+              "Eisenerz-Zerberster",
+              "Götterbeil",
+              "Kristalliner Helmpanzer"
+            ]
+          }
+        }
+      },
+      "floor_47": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Solide Plattenrüstung",
+              "Marode Armbrust",
+              "Zweckmäßige Wildlederstiefel",
+              "Lässiger Lederriemen",
+              "Einfache Lederhose"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Schlichte Lederschutzhüllen",
+              "Ruhmreiches Beinkleid",
+              "Stahlmedaillon",
+              "Haube des Diebs",
+              "Plattenfäustlinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Aufwändiger Strickgürtel",
+              "Korallenbogen",
+              "Hassgeformter Enthaupter",
+              "Schattentänzer",
+              "Windbohrer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Saphirumhüllte Bambusaxt",
+              "Rubinrache",
+              "Donnerfaust-Eisenspitzwerkzeug",
+              "Frostbiss",
+              "Edle Lederschulterpolster"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Dimensionsreißer",
+              "Höllenfeuer Flammenstirn",
+              "Kristalline Plattenhandschuhe",
+              "Amulett der Unsterblichkeit"
+            ]
+          }
+        }
+      },
+      "floor_48": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Eckiger Kupferring",
+              "Zerrissene Handschuhe",
+              "Bleihalsband",
+              "Plattenbrust",
+              "Hölzerner Steinspalter"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Flachlandbogen",
+              "Traditionelle Lederrüstung",
+              "Mächtige Armbrust",
+              "Unprätentiöse Lederpantalon",
+              "Klare Lederschutzkrone"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Phantomstahl Plattengürtel",
+              "Eisiger Frostbiss",
+              "Geisterläufer",
+              "Königliches Gewand",
+              "Meerüberwinder"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Inferno Klinge",
+              "Apollonschneide",
+              "Sternenstahl Helmschale",
+              "Edle Schattenstiefel"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Leuchtende Axt des Lichts",
+              "Höllenfeuer Flammenschulter",
+              "Kristalline Plattenhose",
+              "Kristallenes Schutzband",
+              "Höllenfeuer Flammenbrust"
+            ]
+          }
+        }
+      },
+      "floor_49": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Moos Handpelz",
+              "Zerfallene Spitzhacke",
+              "Einfache Hacke",
+              "Zerrissene Sehne",
+              "Restaurierter Topfhelm"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Harpyienstachel",
+              "Plattenschuhe des Kriegers",
+              "Panzerschuppen Schulterstücke",
+              "Gravierter Plattenhelm",
+              "Hose des Minenarbeiters"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Stählerner Helm",
+              "Adlerschnabel",
+              "Bernsteindorn",
+              "Perfektes Titanstahlbeil"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Zyklop Bolzenschleuder",
+              "Eiswandererklinge",
+              "Sternenstahl Gürtelschutz",
+              "Band der Sterne",
+              "Edle Lederpantalons",
+              "Edle Lederkrone"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Weltenwächter Brustpanzer",
+              "Karmesin Fingerlinge",
+              "Thors Donnerschulterembleme",
+              "Alkatars Gluttalisman"
+            ]
+          }
+        }
+      },
+      "floor_50": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Stahlfußlatschen",
+              "Natürliche Lederschulterhaube",
+              "Kunststoff Hacke",
+              "Einfache Schulterhaube",
+              "Weicher Ledergürtel"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Laufgürtel des Wanderers",
+              "Edler Lederhut",
+              "Kaltmacherklinge",
+              "Schmerzende Dornenkrone",
+              "Kreuzritter Panzerhose"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Seidenkleid des Tänzers",
+              "Blutrausch Fingerpanzer",
+              "Edelsteinsiegel",
+              "Salvenschütze"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Schädelbohrer",
+              "Zerberster",
+              "Halsband der Sterne",
+              "Zerrissene Goldseidenhose",
+              "Edle Lederhandrüstung",
+              "Sternenstahl Handrüstung"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Vipernbiss",
+              "Teufelsbeil",
+              "Thors Donnerbrustpanzer",
+              "Karmesin Beinkleid"
+            ]
+          }
+        }
+      },
+  "floor_51": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Struppige Strohhose",
+              "Natürlicher Ledergurt",
+              "Verzierter Helm",
+              "Natürliche Lederhandhaube"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Anglerbogen",
+              "Stahlfunkenwerfer",
+              "Pferdelederpanzer",
+              "Kobold Schulterzacken"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Handbandagen der Mummie",
+              "Hammer des Bergarbeiters",
+              "Axt mit Seidengriff",
+              "Eisenverstärkter Gürtelschutz",
+              "Blutmond Plattenpanzer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Der Wellenbrecher",
+              "Saphirumhüllter Kohle Zertrümmer",
+              "Edle Lederschutzweste",
+              "Sternenstahl Schulterrüstung",
+              "Mithril Sabatons"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Angus Dunkler Hass",
+              "Die Todesstunde",
+              "Crimson Plattenhelm",
+              "Thors Donnerläufer",
+              "Thors Donnerbeinschützer"
+  
+            ]
+          }
+        }
+      },
+      "floor_52": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Umflochtener Kupferring",
+              "Laminierte Armbrust",
+              "Abgenutze Rüstungskappe",
+              "Alter Feuersteindolch",
+              "Rostiges Kriegsbeil"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Automatikbogen",
+              "Plattenstahl Brustpanzer",
+              "Beinkleid der Bruderschaft",
+              "Krallenschwert",
+              "Blutbolzenarmbrust"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Zweckmäßige Lederschulterhaube",
+              "Leichte Lederkrone",
+              "Wolfsfell Handschützer",
+              "Walküren Nackenschutz"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Klammbrecher",
+              "Stählernde Stiefel des Mutes",
+              "Donnerfaust Panzerhandbuckel",
+              "Sternenstahl Leggings",
+              "Edler Lederriemen",
+              "Sternenstahl Brustpanzer",
+              "Brise-Lederhaube"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Alkatars Feuerband",
+              "Thors Donnerriemen",
+              "Karmesin Stiefel"
+  
+            ]
+          }
+        }
+      },
+      "floor_53": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Rückstoßbogen",
+              "Abgenutzer Stahlpanzergurt",
+              "Einfacher Amulettanhänger",
+              "Leichte Lederschuhe",
+              "Schwere Armbrust"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Bequeme Lederschürze",
+              "Eichenfäller",
+              "Edelsteinband",
+              "Ruhmreiche Fingerrüstung",
+              "Skalpell des Arztes"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Runenschwert",
+              "Makelloser Helmschutz",
+              "Kopfschuss",
+              "Söldneraxt",
+              "Phantomstahl Plattenschultern"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Zwergenstahl Plattenpanzer",
+              "Schattenstapfer",
+              "Verzauberte Magierrobe",
+              "Mithril Schulterhaube",
+              "Meisterhaube des Gerbers"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Karmesin Schulterbuckel",
+              "Thors Donnerfäuste",
+              "Karmesin Gurt",
+              "Thors Donnervisierhelm"
+  
+            ]
+          }
+        }
+      },
+      "floor_54": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Reflektierende Plattenstiefel",
+              "Bequeme Lederhaube",
+              "Rostiges Hackmesser",
+              "Primitive Leggings",
+              "Weicher Lederschutz"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Smaragbeinschutz",
+              "Froststachelbogen",
+              "Zarter Ledergürtel",
+              "Salvenschussbogen",
+              "Nadelschussarmbrust"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Halskette der Stärke",
+              "Blutrausch Schulterplatten",
+              "Gesegnete Brustplatte",
+              "Edelsteinanhänger",
+              "Schiefer Panzerhandbuckel"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Valhallavermächtnis",
+              "Zwergenstahl Plattenhandschuhe",
+              "Donnerfaust Gurt",
+              "Mithril Band",
+              "Brise-Lufttreter"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Kaktusernter",
+              "Majestätische Kaktushacke",
+              "Titanenhalsband",
+              "Titanenring"
+  
+            ]
+          }
+        }
+      },
+      "floor_55": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Weiche Lederschutzhüllen",
+              "Armbrust des Lehrlings",
+              "Barbarenaxt",
+              "Weite Schulterplatten",
+              "Gebrochenes Messer"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Rubinbeinkleid",
+              "Zweiklinger",
+              "Bogen des Jünglings",
+              "Stahlgeflecht",
+              "Edle Klinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Eisenbesohlte Stiefel",
+              "Gesegnete Panzerhandschuhe",
+              "Minimalistische Lederhandrüstung",
+              "Schieferplattenhose",
+              "Makellose Plattentretter"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Alptraumhafter Schwur",
+              "Meißel des Zwergenkönigs",
+              "Noble Jagdhandwärmer",
+              "Donnerfaust Brustpanzerung",
+              "Sternenfeuer-Anhänger",
+              "Donnerfaust Schulterbuckel",
+              "Mithril Kopfschutz"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Titanstahl Helmdeckung",
+              "Titanumhüllter Ledergurt"
+  
+            ]
+          }
+        }
+      },
+      "floor_56": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Einfache Hanfhose",
+              "Geflickte Handrüstung",
+              "Antike Armbrust",
+              "Lässige Lederschultern",
+              "Verbeulte Plattenstiefel"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Bogen der Maid",
+              "Saphirschritte",
+              "Zedernholz Axt",
+              "Saphirärmel",
+              "Magieerfüllte Plattenschuhe"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Schlichter Lederhelm",
+              "Meisterlicher Dunkleichen-Holzhauer",
+              "Nietenverstärkte Panzerfinger",
+              "Maroder Schweineschlachter",
+              "Kampfbogen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Samurai Lederriemen",
+              "Feine Schultern des Gerbers",
+              "Sternenfeuer-Ring",
+              "Brise-Lederweste",
+              "Mithril Gamaschen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Phantomklinge",
+              "Mithril Brustplatte",
+              "Titanumhüllte Lederkürass",
+              "Titanstahl Gurt"
+  
+            ]
+          }
+        }
+      },
+      "floor_57": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Simple Bambusklinge",
+              "Schlammiger Talisman",
+              "Kupferband",
+              "Plattenbeinschützer"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Einfaches Lederkleid",
+              "Hosenträger des Wirtes",
+              "Holzfäller Axt",
+              "Runenverzierter Brustpanzer",
+              "Thorium Plattengürtel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Leichte Alltagshosen",
+              "Waldgeist",
+              "Edler Steinsprenger",
+              "Scharfschützen Armbrust"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Zorn der Götter",
+              "Seelenschnitt",
+              "Donnerfaust Helmdeckung",
+              "Brise-Lederschulterhaube",
+              "Brise-Lederhandrüstung"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Sonnengesang",
+              "Himmelstrürmers Lichthieb",
+              "Titanumhüllte Lederfinger",
+              "Titanumhüllte Pirschstiefel",
+              "Titanstahl Schulterumhänge"
+  
+            ]
+          }
+        }
+      },
+      "floor_58": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Leichte Lederschultertücher",
+              "Leichter Bambusbogen",
+              "Verbeulte Axt",
+              "CACTUS_CLICKER.tools.rusty_destroyer"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Korrosionspfeilschütze",
+              "Grobe Trollbrust",
+              "Schlichte Stiefeletten",
+              "Stahlstulpen",
+              "Präzisionsstahl"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Armbrustschützen Lederriemen",
+              "Eleganter Piratensäbel",
+              "Gesegneter Kopfschutz",
+              "Blutrausch Waffengurt",
+              "Runeninfudierter Brustpanzer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Brise-Lederhosen",
+              "Geistertränenband",
+              "Steinwurzstampfer",
+              "Amulett der Geisterträne",
+              "Donnerfaust Plattenhose"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Götterstahl-Dschungelholzhacker",
+              "Titanstahl Gamaschen",
+              "Mithril Handpanzer",
+              "Götterstahl Schulterpanzer"
+  
+            ]
+          }
+        }
+      },
+      "floor_59": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Deformierte Handpanzer",
+              "Verfluchte Läufer",
+              "Silberhalsband",
+              "Natürliche Lederkappe",
+              "Leichte Armbrust"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kriegsherren Plattenhelm",
+              "Stabiles Breitschwert",
+              "Legiertes Metallbeil",
+              "Silbriges Beinkleid",
+              "Elfenbeinschwert"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Feuerseelen Gamaschen",
+              "Seidengürtel des Tänzers",
+              "Plattenstiefel der Wallwacht",
+              "Feuriger Brustharnisch"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Schneebogen",
+              "Drachenherzdurchbohrer",
+              "Werkzeug des Schlächters",
+              "Brise-Ledergürtel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Titanumhüllte Lederschulterpolster",
+              "Göttliches Band",
+              "Göttliche Lederhülle",
+              "Göttliches Amulett",
+              "Titanumhüllte Lederpantalon"
+  
+            ]
+          }
+        }
+      },
+      "floor_60": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Faulende Eichenarmbrust",
+              "Robuster Plattengurt",
+              "Schlammige Schulterumhänge",
+              "Gediegener Dschungelzerteiler",
+              "Gebrochene Plattentretter"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Heulender Schuss",
+              "Dreckige Ledergriffe",
+              "Unprätentiöse Panzertunika",
+              "Kristallanhänger"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Ring des Eises",
+              "Zweckmäßige Lederfinger",
+              "Drachenauge",
+              "Falchion"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Asbest Splitter",
+              "Frostschutz Schulterschilde",
+              "Dornenpanzer Plattenhose",
+              "Sturmbeinkleid"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Geistdurchdringer",
+              "Götterstahl-Kohledezimierer",
+              "Meteoritenhieb",
+              "Titanumhüllter Lederkopfschutz",
+              "Todesläufer",
+              "Götterstahl Gürtelschutz"
+  
+            ]
+          }
+        }
+      },
+      "floor_61": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Unbequeme Lederhose",
+              "Abgenutzte Stahlschultern",
+              "Messingkette",
+              "Besessene Plattenhose"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Wächters Schutzbogen",
+              "Scharfe Kohlespaltung",
+              "Massiver Enthaupter",
+              "Runenverzierter Stahlgurt",
+              "Silbrige Fingerlinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Phönixfedern-Bambusholzhacker",
+              "Klassische Lederhaube",
+              "Perfekte Handschützer des Gerbers",
+              "Giftstachel",
+              "Hackbeil des Metzgers"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Leichenmacher",
+              "Kometenjäger",
+              "Dornenpanzer Schulterplatten",
+              "Leuchtende Glasschuhe",
+              "Frostschuppenbrustpanzer"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Göttliche Lederhandhaube",
+              "Sabatons des Weltenfresser",
+              "Göttlicher Ledergürtel",
+              "Götterstahl Brustpanzer"
+  
+            ]
+          }
+        }
+      },
+      "floor_62": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Abgenutzer Eisengürtel",
+              "Durchnässte Armbrust",
+              "Unglücklicher Gürtel",
+              "Rostige Handpanzer"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Thorium Schulterplatten",
+              "Halsband der Wellen",
+              "Hornbogen",
+              "Distelring",
+              "Strahlende Plattenstiefel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Plattenhose der Wallwacht",
+              "Walkürenbrustschutz",
+              "Seidenhandschützer des Tänzers",
+              "Verzauberte Wanderstiefel",
+              "Prunkvolle Pilzfällaxt"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Mondsichel-Kohledezimierer",
+              "Moskitoflug",
+              "Sonnensturmbeil",
+              "Lichtspalter",
+              "Medaillon des Blutzorns"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Göttergefertigte Laufschuhe",
+              "Götterstahl Panzerhandschuhe",
+              "Göttliche Lederschutz",
+              "Götterstahl Helmpanzer"
+            ]
+          }
+        }
+      },
+      "floor_63": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Knappen Fingerlinge",
+              "Malachit Anhänger",
+              "Rostige Grubenschar",
+              "Sanfte Lederhose",
+              "Getragene Eisenfingerfesseln"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Laufschuhe des Wanderers",
+              "Seelengeschmiedeter Brustpanzer",
+              "Zeitloser Lederhelm",
+              "Gravierte Plattenschultern",
+              "Sternensiegel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Wallwacht Schulterkappen",
+              "Runeninfudierter Gürtel",
+              "Minimalistische Stiefel",
+              "Schlichte Lederweste"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Mondsichel-Bodenholzhacker",
+              "Geisterfällerklinge",
+              "Stachelblitztreffer",
+              "Chu-ko-nu",
+              "Klinge der Wallwach"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Titanenklinge",
+              "Göttliche Lederschulterhaube",
+              "Göttliche Ledergamaschen",
+              "Götterstahl Beinschützer"
+  
+            ]
+          }
+        }
+      },
+      "floor_64": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Leichte Lederschulterumhänge",
+              "Robuste Schulterpanzer",
+              "Abgenutze Metallhose",
+              "Einfache Gewandung"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Präzise Axt",
+              "Stahlschutzfinger",
+              "Stumpes Claymore",
+              "Rostiges Kriegsbeil",
+              "Nachsicht Pfeilschleuder"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Schöner Silberdolch",
+              "Schattenschuss",
+              "Gesegnete Beinschützer",
+              "Klassische Trekkingsandalen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Der Felsspalter",
+              "Seelenschlinger",
+              "Dornenpanzer Helmschutz",
+              "Dornenpanzer Plattenhandschuhe",
+              "Goldverzierte Handkappen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Funke der Titanen",
+              "Ring der Macht",
+              "Ätherischer Nebel-Lederschutz",
+              "Arkanstahl Helmschutz",
+              "Arkanstahl Gurt"
+  
+            ]
+          }
+        }
+      },
+      "floor_65": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Leichte Lederrüstung",
+              "Beschmierte Armbrust",
+              "Alter Filzhut",
+              "Schlichter Kupfermeißel"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Traditionelle Lederschlüpfer",
+              "Traditionelle Lederhandhaube",
+              "Schwerer Langbogen",
+              "Robuster Bolzenwerfer",
+              "Koboldhauthose"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Blutrünstiger Gurt",
+              "Baum des Lebens Axt",
+              "Gesegnete Schulterbuckel",
+              "Schlichte Halbschuhe"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Alkatars Segen",
+              "Band der Vernichtung",
+              "Dornenpanzer Plattengürtel",
+              "Dornenpanzer Brustplatte",
+              "Schattentarnkappe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Zephyr Schredder",
+              "Kristalltretter",
+              "Arkanstahl Brustpanzer",
+              "Halskette der Macht",
+              "Ätherischer Nebel-Lederhelm"
+  
+            ]
+          }
+        }
+      },
+      "floor_66": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Struppige Strohschulterpolster",
+              "Kupferhelm",
+              "Kriegsschwert",
+              "Stahlkreis"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Gravierter Plattenharnisch",
+              "Flinker Schütze",
+              "Stabiler Bauernklöppel",
+              "Champions Handpanzer",
+              "Seelengeschmiedeter Kopfschutz"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Kristalltreter",
+              "Prunkvolle Scherpe",
+              "Diamantgeschnittene Pilzaxt",
+              "Schürze des Kochs",
+              "Eroberers Kriegsharnisch"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Klinge der Gezeiten",
+              "Die Wolkenklinge",
+              "Dämmerbogen",
+              "Dornenpanzer Plattenstampfer",
+              "Teufelssehnen Gürtel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Ätherische Lederhandhaube",
+              "Arkanstahl Handhaube",
+              "Ätherischer Lederriemen",
+              "Ätherischer Nebel-Mokassin"
+  
+            ]
+          }
+        }
+      },
+      "floor_67": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Gediegene Schnürschuhe",
+              "Regenkappe des Anglers",
+              "Kupferbesetzter Handschuh",
+              "Wolfsgeheul",
+              "Kupferklampen"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Panzerschuppen Helm",
+              "Imperiale Plattenbeinschützer",
+              "Magieerfüllte Brustplatte",
+              "Umhang der Bruderschaft",
+              "Robuste Knochenaxt"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Silbriger Degen",
+              "Leichte Lederschürze",
+              "Unaufdringliche Lederfinger",
+              "Bequeme Lederpanzerung"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Dämonischer Spalter",
+              "Delfin Schultern",
+              "Delfinschuppengurt",
+              "Himmlischer Wächter"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Gläsernes Prinzessinenbeil",
+              "Todbringer",
+              "Engelsring",
+              "Ätherische Nebel-Lederhose",
+              "Sternenfeuer Plattengurt"
+  
+            ]
+          }
+        }
+      },
+      "floor_68": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Holzplatten Lederriemen",
+              "Sombrero",
+              "Zinnring",
+              "Schmutzige Erdfäuste"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Massive Armbrust",
+              "Klassische Lederschlappen",
+              "Kupfernes Amulett",
+              "Kultisten Haube",
+              "Ewige Klinge"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Seidenläufer des Tänzers",
+              "Juwelenklinge",
+              "Große Bauchtasche",
+              "Traditioneller Gürtel"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Seelenhauer",
+              "Zorn des Scharfschützen",
+              "Astralstahlschwert",
+              "Traumwandler Fingerlinge",
+              "Traumwandlers Brustschutz"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Schlitzer",
+              "Ätherische Lederschulterhaube",
+              "Arkanstahl Schulterhaube",
+              "Sternenfeuer Kopfschutz",
+              "Arkanstahl Gamaschen"
+  
+            ]
+          }
+        }
+      },
+      "floor_69": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Rostige Säge",
+              "Hölzerner Kopfschutz",
+              "Zerschmettere Armbrust",
+              "Tannenknacker"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Bären Bauchgurt",
+              "Zorn der Wallwacht",
+              "Schlichte Lederhaube",
+              "Kristallring",
+              "Flammberg des Ritters"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Drachenspalter",
+              "Ritterliche Brustplatte",
+              "Band des Mutes",
+              "Edelsteinherzband",
+              "Einfache Lederhülle"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Giftiger Reißzahn",
+              "Obsidian Zerhacker",
+              "Delfin Seitenflossen",
+              "Delfinschwanz",
+              "Traumwandler Hose",
+              "Traumwandler Schulterpolster"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Himmelshüter Sandalen",
+              "Sternenfeuer Schulterschutz",
+              "Wirbelwind Beinkleid"
+  
+            ]
+          }
+        }
+      },
+      "floor_70": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Restaurierter Brustpanzer",
+              "Lederfußlatschen",
+              "Einfacher Jägerbogen",
+              "Einfaches Gurtband"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Talisman des Kämpfers",
+              "Pelzgewand des Eiswanderers",
+              "Kreuzritter Schulterplatten",
+              "Lederschutzhandschuhe",
+              "Smaragdbrustschutz"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Geister Fäustlinge",
+              "Zwergtöter",
+              "Blutrausch Gamaschen",
+              "Ring des Donners",
+              "Wellen Schulter"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Titanstahl-Wurzelbrecher",
+              "Traumwandler Kopfschutz",
+              "Träumers Stiefel",
+              "Delfinflossen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Blutmondwacht",
+              "Titanen Entzweier",
+              "Sternschnuppengurt",
+              "Umhang der Unsichtbarkeit",
+              "Mondlicht Schulterornamente"
+  
+            ]
+          }
+        }
+      },
+      "floor_71": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Rostige Plattenbrust",
+              "Kaputter Bronzering",
+              "Betäubungsbogen",
+              "Übungsschwert"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kobold Finger",
+              "Eisener Blick",
+              "Thoriumstiefel",
+              "Bernstein Fingerlinge",
+              "Leichte Lederschutzhüllen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Gemütliche Lederpanzerung",
+              "Gediegene Lederschultern",
+              "Stechbogen",
+              "Organische Ledergamaschen",
+              "Goldener Wappengurt"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Prototype X01",
+              "Traumwandler Hüftband",
+              "Himmlischer Talisman",
+              "Delfinrücken",
+              "Delfinschnauze"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Die Morgenröte",
+              "Verlorene Hacke des Kaktus Champions",
+              "Sternenfeuer Leggings",
+              "Sternenfeuer Fingerlinge"
+  
+            ]
+          }
+        }
+      },
+      "floor_72": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Leichtes Samthemd",
+              "Minimalistische Lederschultern",
+              "Stolzer Gürtelschutz",
+              "Wasserfester Gürtel des Anglers",
+              "Struppiger Strohhut"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Koboldbeil",
+              "Bequeme Spazierpantoffeln",
+              "Einfache Raubklinge",
+              "Magieerfüllter Kopfpanzer",
+              "Babarenarmbrust"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Amulett des Aufstiegs",
+              "Das Kettenglied",
+              "Jadehauer",
+              "Aerodynamische Schultern"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Marbans Urteil",
+              "Saphirumhüllte Schulterpolster",
+              "Mondblick-Lederpantalon"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Meister Spaltaxt",
+              "Sternenfeuer Brustschutz",
+              "Sternenfeuer Plattenstiefel",
+              "Himmlisches Medaillon",
+              "Die Linke Hand",
+              "Maske des Pharao"
+  
+            ]
+          }
+        }
+      },
+      "floor_73": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Leichte Plattenstiefel",
+              "Moosbedeckter Langbogen",
+              "Verschlissene Armbrust",
+              "Gebeulte Plattenrüstung"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kriegsherrn Beinschützer",
+              "Scharmützelaxt",
+              "Robuster Feldfurcher",
+              "Saphirbeinlinge",
+              "Imperialer Panzerhandschuh"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Stählernder Panzer",
+              "Gediegener Lederschutz",
+              "Ziegenhörner Haube",
+              "Schlichte Lederschulterhaube"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Abyssalwächter",
+              "Die Trefferquote",
+              "Saphirumhüllte Panzerfinger",
+              "Saphirumhüllter Gürtel",
+              "Mondblick-Halbschuhe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Vampirsäbel",
+              "Mondlicht Titanhalsband",
+              "Schattenstahl Schulterpanzer",
+              "Kristallklarer Ledergurt",
+              "Mitternachts Handpanzer"
+  
+            ]
+          }
+        }
+      },
+      "floor_74": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Krumme Klinge",
+              "Simpler Gurtstrick",
+              "Verzierte Schulterplatten",
+              "Lässige Lederhandschuhe",
+              "Abgenutze Armbrust"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Pelzhände des Eiswanderers",
+              "Brustalle Balliste",
+              "Schlichte Lederhose",
+              "Scharfkantiger Bambusfäller",
+              "Imperiale Plattentretter"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Höllenstein Brustschutz",
+              "Heiliger Schwur",
+              "Brandpfeilschuss",
+              "Infudierte Runenschuhe"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Mondblick-Lederschutz",
+              "Mondblick-Lederschulterumhänge",
+              "Band der Drachen",
+              "Halsband der Dämmerung",
+              "Drachenstahlstiefel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Göttliche Erzzerstörung",
+              "Der Phönixschrei",
+              "Auroras Schritte",
+              "Kristallklarer Lederhelm"
+  
+            ]
+          }
+        }
+      },
+      "floor_75": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Einfacher Metallring",
+              "Reflektierender Brustpanzer",
+              "Bronze Armbrust",
+              "Brüchiger Schnitt"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Aufseher Schulterumhang",
+              "Knochenlangbogen",
+              "Klare Lederhülle",
+              "Elfenbeil",
+              "Imperialer Brustschutz"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Antikes Lederband",
+              "Blutrünstige Panzerfinger",
+              "Talisman des Mondes",
+              "Bolzen des Marodeur"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Obsidian Hacke",
+              "Ewiges Erbe",
+              "Saphirumhüllter Brustpanzer",
+              "Saphirumhüllte Beinschützer",
+              "Stahltretter der Tapferkeit"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Eiskalter Henker",
+              "Verlorene Bambusaxt des Champions",
+              "Dunkelsonnen Panzerstiefel",
+              "Schattenstahl Panzerhandschuhe",
+              "Kristallklare Lederschultern"
+  
+            ]
+          }
+        }
+      },
+      "floor_76": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Solide Stahlschultern",
+              "Eisenschwert",
+              "Kleine Handaxt",
+              "Dünner Eisenhelm"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Saphir Band",
+              "Bequemer Kopfschutz",
+              "Panzerschuppen Beinkleider",
+              "Solider Eisenschlund",
+              "Glutfunken Anhänger"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Feuerstein Beil",
+              "Lange Sehne",
+              "Smaragdschütze",
+              "Klassische Lederpantalon"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Klinge des Richters",
+              "Mondblick-Lederschutz",
+              "Band der Wallwacht",
+              "Dämmerungsflug-Lederstiefel",
+              "Mondblick-Lederhandschuhe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Kristallklare Laufsohlen",
+              "Mondschatten-Lederfinger",
+              "Schattenstahl Gürtelschutz",
+              "Mondschatten-Lederschulterpolster",
+              "Band des Heldens"
+  
+            ]
+          }
+        }
+      },
+      "floor_77": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Brüchige Armbrust",
+              "Verstärkter Bogen",
+              "Bambusklopfer",
+              "Leichte Lederschienen",
+              "Knappen Schulterpolster"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Klare Lederfingerlinge",
+              "Eiserne Plattentretter",
+              "Bernstein-Brogues",
+              "Bolzenschütze",
+              "Kräftiges Gefechtsbeil"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Stilvolle Feenrobe",
+              "Ring der Stärke",
+              "Heiliger Schnitt",
+              "Einfache Lederhandschuhe"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Saphirumhüllter Helmschild",
+              "Amulett des Drachen",
+              "Dämmerungsflug-Lederweste",
+              "Mondblick-Lederriemen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Großer Kaktussporn",
+              "Kristallklare Lederschutzweste",
+              "Mitternachts Beinschützer",
+              "Mitternachts Helmpanzer",
+              "Mondschatten-Lederkappe"
+  
+            ]
+          }
+        }
+      },
+      "floor_78": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Zerschmetterer Langbogen",
+              "Gewarteter Eisenhelm",
+              "Leichtes Bambusmesser",
+              "Axt des Schülers"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Automatik Armbrust",
+              "Stahlbeinschützer",
+              "Farmers Pflugwerkzeug",
+              "Runenverzierte Plattenstampfer",
+              "Kreuzritter Plattengürtel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Goldene Brustplatte",
+              "Großartiger Bolzenwerfer",
+              "Makellose Brustplatte",
+              "Bequeme Lederhandrüstung",
+              "Froschbeine"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Schattenschlitzer",
+              "Titanstahl Gürtelschutz",
+              "Dämmerungsflug-Lederhaube",
+              "Blutstein Handschützer",
+              "Dämmerungsflug-Lederschulterumhänge"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Majestätische Kupfervernichtung",
+              "Schattenstahl Brustpanzer",
+              "Mondschatten-Lederschutz",
+              "Mitternachts Schulterpanzer"
+  
+            ]
+          }
+        }
+      },
+      "floor_79": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Verfluchter Schulterumhang",
+              "Primitiver Lehrlingsbogen",
+              "Robuste Handpanzerhandschuhe",
+              "Schlammige Riemenschärpe"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Gehörnter Helm der Bruderschaft",
+              "Lederstreifenhose",
+              "Laufhose des Wanderers",
+              "Schlichte Lederschulterumhänge",
+              "Höhlenforscherspitzhacke"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Herzensucher",
+              "Königlicher Brustschutz",
+              "Bärenfell Fäustlinge",
+              "Mondbogen",
+              "Wirbelaxt"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Klinge des Diebes",
+              "Der Frosthammer",
+              "Schattenzahn",
+              "Dämmerungsflug-Lederriemen",
+              "Titanstahl Brustplatte"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Talisman der Helden",
+              "Mondschatten-Ledergurt",
+              "Angus Schattenband",
+              "Schattenstahl Helmpanzer"
+  
+            ]
+          }
+        }
+      },
+      "floor_80": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Abgenutzer Brustschutz",
+              "Holzpantoffel",
+              "Gediegener Pflugspaten",
+              "Verfluchter Kopfschutz",
+              "Verschlissener Bogen"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Blutige Armbrust",
+              "Unprätentiöser Ledergürtel",
+              "Weicher Jagdgurt",
+              "Geprägte Panzerhandschuhe",
+              "Geprägter Plattenschutz"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Lässige Lederschulterumhänge",
+              "Nebelklinge",
+              "Splittermal",
+              "Nebelschuhe"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Sturmgesang",
+              "Titanstahl Helmschale",
+              "Dämmerungsflug-Lederhose",
+              "Titanstahl Handrüstung",
+              "Titanstahl Schulterrüstung"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Tosen der Fluten",
+              "Schattenstahl Leggings",
+              "Kristallklare Lederhandrüstung",
+              "Kristallklare Lederschlappen"
+  
+            ]
+          }
+        }
+      },
+      "floor_81": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Abgenutzte Eisenfingerlinge",
+              "Kurzbogen",
+              "Bequemer Lederbrustharnisch",
+              "Primitive Handschuhe",
+              "Morscher Jagdbogen"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Knochen Spitzhacke",
+              "Leichte Feenhose",
+              "Kolossale Spaltaxt",
+              "Magieerfüllte Stahlhandschuhe",
+              "Polierte Armbrust"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Goldene Haube",
+              "Schlichte Lederschulterhaube",
+              "Eispfeilarmbrust",
+              "Leuchtender Silberanhänger"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Meisterdolch des Ninja",
+              "Donnerzorn",
+              "Hand des Todes",
+              "Phantom Schulterhaut",
+              "Blutstein Panzergurt"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Mondschatten-Wanderschuhe",
+              "Mitternachts Brustpanzer",
+              "Mitternachts Gürtelschutz",
+              "Mondschatten-Lederhosen"
+            ]
+          }
+        }
+      },
+      "floor_82": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Maroder Piratendolch",
+              "Knochenschwinger",
+              "Stolze Schulterhaube",
+              "Solide Plattenbeinkleider"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Lumineszenzbogen",
+              "Lauffingerlinge des Wanderers",
+              "Sternenbedecktes Halsband",
+              "Tiegerszahn",
+              "Seelengeschmiedeter Gürtel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Schattenkralle",
+              "Geistergruselkopf",
+              "Lässige Ledergamaschen",
+              "Rissbrecher",
+              "Schieferplattenstiefel"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Armors Bogen",
+              "Phantom Flügelriemen",
+              "Titanstahl Plattenbeinschützer",
+              "Dämmerungsflug-Lederhandschuhe"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Bergversetzer",
+              "Sandalen des Sonnengottes",
+              "Kristallring Kometenband",
+              "Himmelsstürmer Schwingenschultern",
+              "Nebelwacht Plattenpanzer"
+  
+            ]
+          }
+        }
+      },
+      "floor_83": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Rostiger Kopfpanzer",
+              "Bronzekette",
+              "Strohschuhe",
+              "Zweckmäßige Lederhandhaube"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kultisten Schulterumhang",
+              "Ewiges Beil",
+              "Robuster Eisenerzvernichter",
+              "Schwert des Lehrlings",
+              "Knochenkieferarmbrust"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Geisterjäger",
+              "Wellenriemen",
+              "Nietenverstärkte Plattenbeinkleider",
+              "Blutrünstiger Helmpanzer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Orkansturmbogen",
+              "Donnerfaust-Pilzspalteraxt",
+              "Blutstein Panzerstiefel",
+              "Phantombeinkleid",
+              "Blutstein Schulterplatten"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Engelstöter",
+              "Robe des Magiermeisters",
+              "Nebel Schreiter",
+              "Nebelwächter Stulpen",
+              "Nebelwächter Gamaschen"
+  
+            ]
+          }
+        }
+      },
+      "floor_84": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Abgenutzte Erdbrecher",
+              "Beschädigter Kurzbogen",
+              "Besessenes Hüftband",
+              "Langschwert",
+              "Natürliche Lederleggings"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Einfacher Piratensäbel",
+              "Leichte Lederhose",
+              "Magieerfüllte Plattenhosen",
+              "Geprägte Plattentretter"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Haube der Meerjungfrau",
+              "Meisterhauer",
+              "Ring des Windes",
+              "Phantomstahl Brustpanzer",
+              "Goldener Schulterpanzer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Phantomflug",
+              "Phantomschuhe",
+              "Phantom Krallen",
+              "Blutstein Stirnschild",
+              "Phantomkleid"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Nebelwächter Schulterhaube",
+              "Visage der Unterwelt",
+              "Kosmischer Anhänger",
+              "Schattenritter Gurtriemen"
+  
+            ]
+          }
+        }
+      },
+      "floor_85": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Unglückliche Handschuhe",
+              "Lässige Lederschale",
+              "Rostige Plattenstiefel",
+              "Einfache Wanderstiefel",
+              "Alte Kriegsklinge"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Leichte Lederschützer",
+              "Eichenpranke",
+              "Elfenbogen",
+              "Eiserne Stahlschulterpolster",
+              "Krone des Champions"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Ritterliche Helmhaube",
+              "Edelstein Segen",
+              "Prunkvolle Kaktushacke",
+              "Eisenverstärkte Brustplatte"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Raimondos Unheil",
+              "Blutstein Brustpanzer",
+              "Anhänger des Todesblick",
+              "Blutstein Gamaschen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Drachenzahn",
+              "Nebelwacht Schutzband",
+              "Zeitverzerr Hose",
+              "Nebelwächter Helm",
+              "Die Rechte Hand"
+  
+            ]
+          }
+        }
+      },
+      "floor_86": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Verfluchte Kriegshosen",
+              "Verfluchter Gürtel",
+              "Trollhaut Schultern",
+              "Besessene Haube",
+              "Abgenutzter Pilzhauer"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Breitschwert",
+              "Sengender Langbogen",
+              "Kreuzritter Sabatons",
+              "Herausforderer Schutzband"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Stählerner Handschuh",
+              "Leichte Ledertunika",
+              "Walkürenbeinschutz",
+              "Band des Monds",
+              "Schallbruch Klinge"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Donner Ernter",
+              "Goltains Stolz",
+              "Frosthagel",
+              "Phantomkrone"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Mitternachtsregen",
+              "Das Weltenende",
+              "Himmlischer Panzerhelm",
+              "Himmlische Plattenhandschuhe",
+              "Engels Füße"
+            ]
+          }
+        }
+      },
+      "floor_87": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Einfache Lederkappe",
+              "Primitiver Schulterschutz",
+              "Unglücklicher Schulterumhang",
+              "Knappen Brustschutz",
+              "Morsche Armbrust"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Magieerfüllter Stahlgürtel",
+              "Kreuzritter Kriegshandschuhe",
+              "Silbriger Kopfschutz",
+              "Eiserner Brustpanzer",
+              "Adeptenbogen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Goldene Sabatons",
+              "Prunkvoller Kupfer Vernichter",
+              "Hauer der Dorkahn",
+              "Eisenbestücke Florastampfer"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Klinge des Kriegsfürsten",
+              "Hydrahauer",
+              "Frostfänger-Erdschneider",
+              "Himmelsstahl Fußschützer",
+              "Frostschuppenhose"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Verwüstender Schneider",
+              "Ragnarök",
+              "Himmlischer Gürtel",
+              "Anhänger des Himmels"
+  
+            ]
+          }
+        }
+      },
+      "floor_88": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Zweckmäßiger Ledergürtel",
+              "Wirbelrankenbeil",
+              "Verzierte Stiefel",
+              "Rostige Klinge"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Wüstensandalen",
+              "Thorium Brustschutz",
+              "Kräftiger Erdspaten",
+              "Sternenanhänger",
+              "Primitives Kriegsbeil"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Gediegene Leinenpantalon",
+              "Freigiebiger Langbogen",
+              "Armbrustschützen Lederschulterschützer",
+              "Armbrustschützen Brustschutz"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Verdammnis Bringer",
+              "Lehrmeisterarmbrust",
+              "Ring der scharfen Klinge",
+              "Mondsichel Handpanzer",
+              "Edler Ornamentriemen"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Sehne des Todes",
+              "Aurora-Flügelkopfschutz",
+              "Schwarze Schattenhände",
+              "Ätherische Schwingen Schulterstücke",
+              "Ragnaröks Schulterbuckel"
+  
+            ]
+          }
+        }
+      },
+      "floor_89": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Smaragd-Eichenfällaxt",
+              "Minimalistische Schlupfschuhe",
+              "Leichter Schnurrgurt",
+              "Primitive Armbrust",
+              "Schlammige Brustschutz"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Saphir Handhaube",
+              "Talisman des Schützen",
+              "Gnadenlose Streitaxt",
+              "Kreuzritter Brustharnisch"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Wellenhaupt",
+              "Goblin Hacke",
+              "Bequeme Lederschulterumhänge",
+              "Schimmersturm",
+              "Saphirverzierter Kurzbogen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Sonnenuntergangsdegen",
+              "Himmelsstahl Brustpanzer",
+              "Himmelsstahl Fingerschützer",
+              "Nachtsicht Brille"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Drachenodem",
+              "Quelderas Lichtzorn",
+              "Glamouröse Beinkleider",
+              "Himmlische Treter",
+              "Donnerkraft-Lederpantalon"
+  
+            ]
+          }
+        }
+      },
+      "floor_90": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Abgenutzer Kurzbogen",
+              "Primitive Brustplatte",
+              "Lässige Laufpantoffeln",
+              "Gediegener Ledergürtel"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Kräftige Bärenklaue",
+              "Tödlicher Stahl",
+              "Pelzgurt des Eiswanderers",
+              "Militärische Armbrust"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Walküren Fingerschutz",
+              "Blutmond Beinschienen",
+              "Anhänger des Eises",
+              "Versuchter Langbogen",
+              "Kolossale Panzerhandschuhe"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Obsidianene Spitzhacke",
+              "Arglistige Schneide",
+              "Donnergroll-Lederschulterpolster",
+              "Himmelsstahl Schulterplatten"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Dunkle Vollstreckung",
+              "Kaktuskönigsspalter",
+              "Sternenlicht Helmschale",
+              "Aurora-Flügelschuhe",
+              "Himmlische Plattenhose",
+              "Ring des Himmels"
+  
+            ]
+          }
+        }
+      },
+      "floor_91": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Reflektierender Plattenhelm",
+              "Minimalistischer Lederschutz",
+              "Verzierte Plattenhose",
+              "Holzaxt"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Magieerfüllte Stahlschultern",
+              "Silberne Treter",
+              "Kriegsherren Panzerhandschuhe",
+              "Smaragdversetzter Ledergurt",
+              "Ledergriffaxt"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Verzierte Lederweste",
+              "Band des Bezwingers",
+              "Makelloser Gürtelschutz",
+              "Armbrustschützen Sandalen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Wellenbrecherschleuder",
+              "Vampirkiller",
+              "Drachenhauch",
+              "Feine Handschuhe des Diebs"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Vulkanfeuerklinge",
+              "Zephyrspitze",
+              "Ragnaröks Brustpanzerung",
+              "Halsband des Meisterschützen",
+              "Himmlische Schulteplatten",
+              "Schrecklicher Hexenumhang"
+            ]
+          }
+        }
+      },
+      "floor_92": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Gediegene Lederhandrüstung",
+              "Schmierige Plattenstiefel",
+              "Leichtes Kampfbeil",
+              "Enger Gurt",
+              "Besessener Brustpanzer"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Schlichte Lederpanzerung",
+              "Kultisten Beinkleid",
+              "Thorium Handpanzerhandschuhe",
+              "Geprägte Panzerschultern"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Platinanhänger",
+              "Rubinblick",
+              "Seidenschultern des Tänzers",
+              "Ring der Präzision",
+              "Stählernde Plattenhosen"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Elfenherzspalter",
+              "Astralklinge",
+              "Himmelsstahl Wappengurt",
+              "Wertvolle Pilzkuhlerderbrust"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Rubin Schatz Erlöser",
+              "Kaktus Zerberster",
+              "Riemen des Dshinns",
+              "Himmlischer Brustharnisch",
+              "Krone des Siegers"
+  
+            ]
+          }
+        }
+      },
+      "floor_93": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Schulterplatten",
+              "Lässige Lederhosen",
+              "Struppiger Strohgürtel",
+              "Einfache Holzschultern",
+              "Verstärkte Plattenrüstung"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Smaragdstiefel",
+              "Dornenwerfer",
+              "Leichter Lederhelm",
+              "Rubin Hand",
+              "Kräftiger Erzbrecher"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Band der Heilung",
+              "Anhänger des Blickes",
+              "Kolossaler Gurt",
+              "Schiefer Helmbuckel"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Gimlis Axt",
+              "Sengende Flammenschleuder",
+              "Frostfänger-Erdschneider",
+              "Letzter Wille",
+              "Zephyrschritte"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Flammende Phönixklinge",
+              "Aurora-Flügelhülle",
+              "Donnerknalltretter",
+              "Ragnaröks Panzerhandbuckel"
+  
+            ]
+          }
+        }
+      },
+      "floor_94": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Zweckmäßige Lederschulterhaube",
+              "Anfängerarmbrust",
+              "Knappen Leggings",
+              "Gebeulte Schulterpolster",
+              "Kupfer Siegelband"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Magischer Eisenanhänger",
+              "Schlichte Lederleggins",
+              "Panzerschuppen Brustschutz",
+              "Giftige Geschosse"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Eroberer Waffengurt",
+              "Walkürentretter",
+              "Feurige Treter",
+              "Saphir Hacke",
+              "Drachenschlächter"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Adlersfänge",
+              "Himmelsstahl Beinschienen",
+              "Band der Ahnen",
+              "Himmelsstahl Plattenhelm",
+              "Drachenleder Schulterpolster"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Der Sonnenuntergang",
+              "Teuflische Kaktushacke",
+              "Götterschmiede",
+              "Aurora-Flügel-Lederschultern"
+  
+            ]
+          }
+        }
+      },
+      "floor_95": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Bauernaxt",
+              "Primitive Stampfer",
+              "Abgenutze Kriegshosen",
+              "Deformierter Brustschutz"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Runenverzierte Beinkleider",
+              "Kriegsherren Brustpanzer",
+              "Smaragdversetzter Handschuh",
+              "Zweihandaxt",
+              "Klassische Lederschultern"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Runenbedeckter Helm",
+              "Runeninfundierte Schulterpanzer",
+              "Meisterschwert",
+              "Demonische Plattenschuhe",
+              "Bernsteinkiefer Armbrust"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Donnerfaust-Erdspalter",
+              "Stürmische Sehne",
+              "Leichenschnitt",
+              "Anhänger der Klinge",
+              "Mondsichel Gürtel"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Artemis Armbrust",
+              "Aurora-Flügelriemen",
+              "Phönixring",
+              "Ragnaröks Helmdeckung",
+              "Kosmische Gamaschen"
+  
+            ]
+          }
+        }
+      },
+      "floor_96": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Verstärkte Eisenschulterstücke",
+              "Schlammige Beinschienen",
+              "Minimalistisches Lederband",
+              "Natürliche Lederstiefel"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Geflochtene Messingkette",
+              "Distanzschuss Armbrust",
+              "Unprätentiöse Lederhandhaube",
+              "Ewiger Langbogen",
+              "Baumwoll Schultertücher"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Hacke des Maulwurfs",
+              "Schieferbrustpanzer",
+              "Eisenverstärkter Helmschutz",
+              "Band des Lebens",
+              "Knochenballiste"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Rubinschneide",
+              "Azurklinge",
+              "Eisenballastsabatons",
+              "Donnergroll-Lederhelm"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Meteoritenhagel",
+              "Ragnaröks Gurt",
+              "Göttliches Amulett",
+              "Sternenlicht Handrüstung",
+              "Aurora-Flügelhosen",
+              "Wertvolle Zephyrweste"
+  
+            ]
+          }
+        }
+      },
+      "floor_97": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Verzierter Gürtel",
+              "Minimalistische Lederfinger",
+              "Moos Schultermantel",
+              "Einfaches Beil"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Scharfkantiger Bodenhauer",
+              "Mondschein Armbrust",
+              "Spitzzahnbogen",
+              "Armbrust des Jägermanns",
+              "Traditionelle Wildlederpantoffeln"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Ring der Stille",
+              "Lässiger Lederkürass",
+              "Schlichte Lederschlüpfer",
+              "Wellenschuppenhose",
+              "Smaragd Gräber"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Drachenklinge",
+              "Donnergroll-Lederfinger",
+              "Donnergroll-Lederhülle",
+              "Mondsichel Schulterpanzer"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Lichtschildstampfer",
+              "Ring des Meisterschützen",
+              "Donnerkraft-Lederpanzerung",
+              "Ragnaröks Beinkleider",
+              "Aurora-Flügel-Lederhandschuhe",
+              "Phönixhaupt",
+              "Flügelklappe"
+  
+            ]
+          }
+        }
+      },
+      "floor_98": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Rostige Eisenaxt",
+              "Einfache Kaktusspitzhacke",
+              "Deformierter Kopfpanzer",
+              "Kleine Pfeilschleuder",
+              "Grober Stammspalter"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Eiserne Stahlhandgelenkmanschetten",
+              "Runder Steinring",
+              "Aufseher Brustschutz",
+              "Aufsehers Gürtel",
+              "Dekorierte Plattenstiefel"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Felsenzertrümmerer",
+              "Blutmond Schulterschutz",
+              "Wandermanns Axt",
+              "Ritterliche Handhaube"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "CACTUS_CLICKER.tools.titan_reinforced_master_hoe",
+              "Mondsichel Beinschutz",
+              "Schattenweber Halsband"
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Donnerkraft-Lederweste",
+              "Sternenlicht Gürtel",
+              "Phönixflügelläufer",
+              "Sternenlicht Brustplatte",
+              "Donnerkraft-Lederschulterumhänge",
+              "Phönixfeder Hüftband",
+              "Schwarzer Gürtel"
+            ]
+          }
+        }
+      },
+      "floor_99": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Rostige Bambushackeraxt",
+              "Schlammiger Stirnschild",
+              "Zweckmäßiger Lederkürass",
+              "Kupfergeflotenes Amulett"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Verziehrter Stahlmeißel",
+              "Stolzer Adlerbogen",
+              "Bolzenwerfer",
+              "Koboldhieb",
+              "Geflochtener Messingring"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Unaufdringliche Lederhülle",
+              "Zwergenballiste",
+              "Demonische Schulterhaube",
+              "Helm des Wahnsinns"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Schneewind",
+              "Donnergroll-Lederleggins"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Götterstahl-Erdscharfer",
+              "Der Drachenschnitter",
+              "Wächter der Zeit Lederstiefel",
+              "Donnerkraft-Halbschuhe",
+              "Phönixfeder Beinkleid",
+              "Donnerkraft-Lederhandrüstung",
+              "Sternenlicht Beinkleider",
+              "Phönixfeuer Handschützer",
+              "Seidenhandschuhe der Prinzessin"
+            ]
+          }
+        }
+      },
+      "floor_100": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Gediegener Lederhelm",
+              "Morsche Holzaxt",
+              "Kopfpanzer"
+            ]
+          },
+          "uncommon": {
+            "color": "GREEN",
+            "items": [
+              "Laufhemd des Wanderers",
+              "Schlichte Lederschutzhandschuhe",
+              "Wendiges Schwert",
+              "Stahlkieferarmbrust",
+              "Ring des Schützen"
+            ]
+          },
+          "rare": {
+            "color": "BLUE",
+            "items": [
+              "Dezentes Lederband",
+              "Schattenumhüllte Lederbeinkleider",
+              "Blutrünstige Sabatons",
+              "Phantomstahl Plattenhose",
+              "Höllenbeil"
+            ]
+          },
+          "epic": {
+            "color": "PURPLE",
+            "items": [
+              "Höllischer Kriegsbogen",
+              "Donnergroll-Mokassins",
+              "Mondsichel Panzerharnisch",
+              "Donnergroll-Lederband",
+              "Mondsichel Helmvisier"
+  
+            ]
+          },
+          "legendary": {
+            "color": "GOLD",
+            "items": [
+              "Sternschnuppen Sehne",
+              "Phönixanhänger",
+              "Sonneneruption",
+              "Sternenlicht Schulterrüstung",
+              "Donnerkraft-Ledergürtel",
+              "Phönixfeder Schulterumhang",
+              "Sternenlicht Schulterring"
+  
+            ]
+          }
+        }
+      }
+    }
+  }
