@@ -131,8 +131,6 @@ public class InformationenUtility {
 						// Skip the next line since we just added essence info
 						i++;
 						continue; // Skip other processing for this line
-					} else {
-						System.out.println("DEBUG: No essence info found for: '" + essenceNameToSearch + "'");
 					}
 				}
 				
@@ -245,7 +243,6 @@ public class InformationenUtility {
 		// For now, we'll use a simple approach - check if we're hovering over a blueprint item
 		// In a real implementation, you'd need to access the current tooltip content
 		// This is a placeholder that will be improved
-		System.out.println("DEBUG: Shift pressed, checking for blueprint items...");
 		
 		// Since we can't easily access the current tooltip content from here,
 		// we'll use a different approach - we'll modify the tooltip callback to also update the overlay
@@ -299,12 +296,10 @@ public class InformationenUtility {
 					
 					// Insert aspect name at the target position
 					lines.add(targetPosition, aspectNameText);
-					System.out.println("DEBUG: Added aspect name to tooltip at position " + targetPosition);
 					
 					// Add empty line after aspect name
 					Text emptyLineText = Text.literal(" ");
 					lines.add(targetPosition + 1, emptyLineText);
-					System.out.println("DEBUG: Added empty line after aspect name at position " + (targetPosition + 1));
 					
 					break; // Only process the first blueprint line
 				}
@@ -317,10 +312,6 @@ public class InformationenUtility {
 	 */
 	private static void checkForAspectInformationAndUpdateOverlay(List<Text> lines, MinecraftClient client) {
 		// Debug output
-		System.out.println("DEBUG: Checking for aspect information and updating overlay...");
-		System.out.println("DEBUG: Lines count: " + lines.size());
-		System.out.println("DEBUG: Aspects database size: " + aspectsDatabase.size());
-		
 		// Find blueprint line and update overlay
 		for (int i = 0; i < lines.size(); i++) {
 			Text line = lines.get(i);
@@ -331,11 +322,8 @@ public class InformationenUtility {
 				continue;
 			}
 			
-			System.out.println("DEBUG: Line " + i + ": '" + lineText + "'");
-			
 			// Check if this is a blueprint line
 			if (lineText.contains("[Bauplan]")) {
-				System.out.println("DEBUG: Found blueprint line: '" + lineText + "'");
 				
 				// Update the overlay with this blueprint information
 				AspectOverlay.updateFromBlueprintName(lineText);
@@ -358,12 +346,6 @@ public class InformationenUtility {
 	 * Checks for aspect information in blueprint items and adds it to the tooltip
 	 */
 	private static void checkForAspectInformation(List<Text> lines, MinecraftClient client) {
-		// Debug output
-		System.out.println("DEBUG: Checking for aspect information...");
-		System.out.println("DEBUG: Lines count: " + lines.size());
-		System.out.println("DEBUG: Aspects database size: " + aspectsDatabase.size());
-		System.out.println("DEBUG: Available keys in aspects database: " + aspectsDatabase.keySet());
-		
 		// Find blueprint line and add aspect information
 		for (int i = 0; i < lines.size(); i++) {
 			Text line = lines.get(i);
@@ -374,11 +356,8 @@ public class InformationenUtility {
 				continue;
 			}
 			
-			System.out.println("DEBUG: Line " + i + ": '" + lineText + "'");
-			
 			// Check if this is a blueprint line
 			if (lineText.contains("[Bauplan]")) {
-				System.out.println("DEBUG: Found blueprint line: '" + lineText + "'");
 				
 				// Extract the item name (everything before "[Bauplan]")
 				String itemName = lineText.substring(0, lineText.indexOf("[Bauplan]")).trim();
@@ -398,18 +377,12 @@ public class InformationenUtility {
 				itemName = itemName.replaceAll("[\\u3400-\\u4DBF]", "");
 				itemName = itemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s]", "").trim();
 				
-				System.out.println("DEBUG: Extracted item name: '" + itemName + "'");
-				
 				// Look for this item in the aspects database
 				AspectInfo aspectInfo = aspectsDatabase.get(itemName);
-				System.out.println("DEBUG: Aspect info found: " + (aspectInfo != null));
 				
 				if (aspectInfo != null && !aspectInfo.aspectName.isEmpty()) {
-					System.out.println("DEBUG: Adding aspect info for: " + aspectInfo.aspectName);
-					
 					// Calculate position: 5th line from bottom (2 lines higher)
 					int targetPosition = Math.max(0, lines.size() - 5);
-					System.out.println("DEBUG: Target position: " + targetPosition);
 					
 					// Create aspect name text
 					Text aspectNameText = Text.literal("Enthält: ")
@@ -419,12 +392,10 @@ public class InformationenUtility {
 					
 					// Insert aspect name at the target position
 					lines.add(targetPosition, aspectNameText);
-					System.out.println("DEBUG: Added aspect name at position " + targetPosition);
 					
 					// Add empty line after aspect name
 					Text emptyLineText = Text.literal(" ");
 					lines.add(targetPosition + 1, emptyLineText);
-					System.out.println("DEBUG: Added empty line after aspect name at position " + (targetPosition + 1));
 					
 					// Add aspect description right after the empty line (only if shift is pressed)
 					boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
@@ -433,7 +404,6 @@ public class InformationenUtility {
 																   InputUtil.GLFW_KEY_RIGHT_SHIFT);
 					
 					if (isShiftPressed && !aspectInfo.aspectDescription.isEmpty()) {
-						System.out.println("DEBUG: Shift pressed, adding description");
 						Text aspectDescText = Text.literal("  ")
 							.styled(style -> style.withColor(0xC0C0C0)) // Light gray
 							.append(Text.literal(aspectInfo.aspectDescription)
@@ -441,15 +411,9 @@ public class InformationenUtility {
 						
 						// Insert description after the empty line
 						lines.add(targetPosition + 2, aspectDescText);
-						System.out.println("DEBUG: Added aspect description at position " + (targetPosition + 2));
-					} else if (!isShiftPressed) {
-						System.out.println("DEBUG: Shift not pressed, description hidden");
 					}
 					
 					break; // Only process the first blueprint line
-				} else {
-					System.out.println("DEBUG: No aspect info found for item: '" + itemName + "'");
-					System.out.println("DEBUG: Available keys in aspects database: " + aspectsDatabase.keySet());
 				}
 			}
 		}
@@ -547,38 +511,26 @@ public class InformationenUtility {
 	 */
 	private static void loadAspectsDatabase() {
 		try {
-			System.out.println("DEBUG: Loading aspects database...");
-			
 			// Load from mod resources
 			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
 				.orElseThrow(() -> new RuntimeException("Mod container not found"))
 				.findPath(ASPECTS_CONFIG_FILE)
 				.orElseThrow(() -> new RuntimeException("Aspects config file not found"));
 			
-			System.out.println("DEBUG: Found aspects config file: " + resource);
-			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
 					JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-					
-					System.out.println("DEBUG: Parsed JSON with " + json.keySet().size() + " items");
 					
 					for (String itemName : json.keySet()) {
 						JsonObject itemData = json.getAsJsonObject(itemName);
 						String aspectName = itemData.get("aspect_name").getAsString();
 						String aspectDescription = itemData.get("aspect_description").getAsString();
 						
-						System.out.println("DEBUG: Item: '" + itemName + "' -> Aspect: '" + aspectName + "'");
-						
 						// Only store items that have aspect information
 						if (!aspectName.isEmpty() || !aspectDescription.isEmpty()) {
 							aspectsDatabase.put(itemName, new AspectInfo(aspectName, aspectDescription));
-							System.out.println("DEBUG: Added to database: '" + itemName + "'");
 						}
 					}
-					
-					System.out.println("DEBUG: Final aspects database size: " + aspectsDatabase.size());
-					System.out.println("DEBUG: Database keys: " + aspectsDatabase.keySet());
 				}
 			}
 		} catch (Exception e) {

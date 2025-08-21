@@ -22,9 +22,7 @@ public class AspectOverlay {
     private static final String ASPECTS_CONFIG_FILE = "assets/cclive-utilities/Aspekte.json";
     
     public static void initialize() {
-        System.out.println("DEBUG: AspectOverlay.initialize() called");
         loadAspectsDatabase();
-        System.out.println("DEBUG: AspectOverlay initialization complete");
     }
     
     public static void updateAspectInfo(ItemStack itemStack) {
@@ -34,7 +32,6 @@ public class AspectOverlay {
             currentAspectName = "";
             currentAspectDescription = "";
             currentItemName = "";
-            System.out.println("DEBUG: No item hovered - overlay hidden");
             return;
         }
         
@@ -46,7 +43,6 @@ public class AspectOverlay {
             currentAspectName = "";
             currentAspectDescription = "";
             currentItemName = "";
-            System.out.println("DEBUG: Not a blueprint item - overlay hidden");
             return;
         }
         
@@ -68,9 +64,6 @@ public class AspectOverlay {
         cleanItemName = cleanItemName.replaceAll("[\\u3400-\\u4DBF]", "");
         cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s]", "").trim();
         
-        System.out.println("DEBUG: Cleaned item name: '" + cleanItemName + "'");
-        System.out.println("DEBUG: Available aspects: " + aspectsDatabase.keySet());
-        
         // Look for this item in the aspects database
         AspectInfo aspectInfo = aspectsDatabase.get(cleanItemName);
         if (aspectInfo != null && !aspectInfo.aspectName.isEmpty()) {
@@ -79,17 +72,12 @@ public class AspectOverlay {
             currentItemName = cleanItemName;
             isCurrentlyHovering = true; // Set to true when hovering over a valid blueprint item
             // Don't set shouldShow to true here - it will be controlled by Shift key in render method
-            System.out.println("DEBUG: Found aspect info for: " + cleanItemName);
-            System.out.println("DEBUG: Aspect name: " + currentAspectName);
-            System.out.println("DEBUG: Aspect description: " + currentAspectDescription);
-            System.out.println("DEBUG: Overlay will only show when SHIFT is pressed AND hovering");
         } else {
             shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
             currentItemName = "";
-            System.out.println("DEBUG: No aspect info found for: " + cleanItemName + " - overlay hidden");
         }
     }
     
@@ -109,17 +97,13 @@ public class AspectOverlay {
      */
     public static void onHoverStopped() {
         isCurrentlyHovering = false;
-        System.out.println("DEBUG: Hover stopped - overlay will not show even if SHIFT is pressed");
     }
     
     /**
      * Updates the overlay with aspect information from a blueprint item name
      */
     public static void updateFromBlueprintName(String blueprintName) {
-        System.out.println("DEBUG: updateFromBlueprintName called with: '" + blueprintName + "'");
-        
         if (blueprintName == null || !blueprintName.contains("[Bauplan]")) {
-            System.out.println("DEBUG: Blueprint name is null or doesn't contain [Bauplan]");
             shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
@@ -146,10 +130,6 @@ public class AspectOverlay {
         cleanItemName = cleanItemName.replaceAll("[\\u3400-\\u4DBF]", "");
         cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s]", "").trim();
         
-        System.out.println("DEBUG: Blueprint name: '" + blueprintName + "'");
-        System.out.println("DEBUG: Cleaned blueprint name: '" + cleanItemName + "'");
-        System.out.println("DEBUG: Available aspects: " + aspectsDatabase.keySet());
-        
         // Look for this item in the aspects database
         AspectInfo aspectInfo = aspectsDatabase.get(cleanItemName);
         if (aspectInfo != null && !aspectInfo.aspectName.isEmpty()) {
@@ -158,17 +138,12 @@ public class AspectOverlay {
             currentItemName = cleanItemName;
             isCurrentlyHovering = true; // Set to true when hovering over a valid blueprint item
             // Don't set shouldShow to true here - it will be controlled by Shift key in render method
-            System.out.println("DEBUG: Overlay updated with aspect info for: " + cleanItemName);
-            System.out.println("DEBUG: Aspect name: " + currentAspectName);
-            System.out.println("DEBUG: Aspect description: " + currentAspectDescription);
-            System.out.println("DEBUG: Overlay will only show when SHIFT is pressed AND hovering");
         } else {
             shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
             currentItemName = "";
-            System.out.println("DEBUG: No aspect info found for: " + cleanItemName);
         }
     }
     
@@ -207,10 +182,6 @@ public class AspectOverlay {
             return;
         }
         
-        System.out.println("DEBUG: Rendering aspect overlay in foreground for: " + currentItemName);
-        System.out.println("DEBUG: Aspect name: " + currentAspectName);
-        System.out.println("DEBUG: Aspect description: " + currentAspectDescription);
-        
         // Position on the left side of the screen
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
@@ -221,22 +192,17 @@ public class AspectOverlay {
         int overlayX = 15;
         int overlayY = (screenHeight - overlayHeight) / 2;
         
-        System.out.println("DEBUG: Drawing overlay at position: " + overlayX + ", " + overlayY + " with size: " + overlayWidth + "x" + overlayHeight);
-        
         // Draw background with better transparency
         context.fill(overlayX, overlayY, overlayX + overlayWidth, overlayY + overlayHeight, 0xCC000000);
-        System.out.println("DEBUG: Background drawn");
         
         // Draw border with better visibility
         context.fill(overlayX, overlayY, overlayX + 2, overlayY + overlayHeight, 0xFFFFFF00); // Left border
         context.fill(overlayX + overlayWidth - 2, overlayY, overlayX + overlayWidth, overlayY + overlayHeight, 0xFFFFFF00); // Right border
         context.fill(overlayX, overlayY, overlayX + overlayWidth, overlayY + 2, 0xFFFFFF00); // Top border
         context.fill(overlayX, overlayY + overlayHeight - 2, overlayX + overlayWidth, overlayY + overlayHeight, 0xFFFFFF00); // Bottom border
-        System.out.println("DEBUG: Border drawn");
         
         // Draw header background with better color
         context.fill(overlayX, overlayY, overlayX + overlayWidth, overlayY + 30, 0xCCFFD700);
-        System.out.println("DEBUG: Header background drawn");
         
         // Try different text rendering methods with very high contrast colors
         try {
@@ -248,25 +214,19 @@ public class AspectOverlay {
             
             // Use very high contrast colors - pure white on black background
             context.drawText(client.textRenderer, titleText, overlayX + 10, overlayY + 8, 0xFFFFFFFF, false);
-            System.out.println("DEBUG: Title drawn with Text object - pure white");
             
             context.drawText(client.textRenderer, itemText, overlayX + 10, overlayY + 40, 0xFFFFFFFF, false);
-            System.out.println("DEBUG: Item name drawn with Text object - pure white");
             
             context.drawText(client.textRenderer, aspectText, overlayX + 10, overlayY + 60, 0x00FF00FF, false);
-            System.out.println("DEBUG: Aspect name drawn with Text object - pure green");
             
             // Draw aspect description (wrapped to fit) with very high contrast
             String[] descriptionLines = wrapText(currentAspectDescription, 40);
-            System.out.println("DEBUG: Description wrapped into " + descriptionLines.length + " lines");
             for (int i = 0; i < descriptionLines.length; i++) {
                 Text descText = Text.literal(descriptionLines[i]);
                 context.drawText(client.textRenderer, descText, overlayX + 10, overlayY + 85 + (i * 14), 0xFFFFFFFF, false);
-                System.out.println("DEBUG: Description line " + i + " drawn: '" + descriptionLines[i] + "' - pure white");
             }
             
             context.drawText(client.textRenderer, instructionText, overlayX + 10, overlayY + overlayHeight - 20, 0xFFFFFFFF, false);
-            System.out.println("DEBUG: Instruction text drawn with Text object - pure white");
             
         } catch (Exception e) {
             System.err.println("Error rendering text: " + e.getMessage());
@@ -277,7 +237,6 @@ public class AspectOverlay {
                 context.drawText(client.textRenderer, "Aspekt Information", overlayX + 10, overlayY + 8, 0xFFFFFFFF, false);
                 context.drawText(client.textRenderer, "Item: " + currentItemName, overlayX + 10, overlayY + 40, 0xFFFFFFFF, false);
                 context.drawText(client.textRenderer, "Aspekt: " + currentAspectName, overlayX + 10, overlayY + 60, 0x00FF00FF, false);
-                System.out.println("DEBUG: Fallback text rendering completed with high contrast colors");
             } catch (Exception e2) {
                 System.err.println("Fallback text rendering also failed: " + e2.getMessage());
             }
@@ -285,17 +244,11 @@ public class AspectOverlay {
         
         // Alternative method: Try rendering with different approach
         try {
-            System.out.println("DEBUG: Trying alternative text rendering method...");
-            
             // Render text with different color format
             context.drawText(client.textRenderer, "TEST TEXT VISIBLE", overlayX + 10, overlayY + 100, 0xFF0000, false);
-            System.out.println("DEBUG: Test text drawn in red");
-            
         } catch (Exception e) {
             System.err.println("Alternative text rendering failed: " + e.getMessage());
         }
-        
-        System.out.println("DEBUG: Aspect overlay rendered successfully in foreground");
     }
     
     /**
@@ -331,14 +284,8 @@ public class AspectOverlay {
         
         // Additional safety check: ensure we're still hovering over a valid item
         if (!isCurrentlyHovering) {
-            System.out.println("DEBUG: Overlay hidden - not currently hovering over a valid blueprint item");
             return;
         }
-        
-        System.out.println("DEBUG: Rendering aspect overlay in FOREGROUND for: " + currentItemName);
-        System.out.println("DEBUG: Aspect name: " + currentAspectName);
-        System.out.println("DEBUG: Aspect description: " + currentAspectDescription);
-        System.out.println("DEBUG: Currently hovering: " + isCurrentlyHovering);
         
         // Get configurable position from config
         int configX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX;
@@ -387,14 +334,9 @@ public class AspectOverlay {
             overlayY = screenHeight - overlayHeight; // Ensure bottom edge doesn't go off screen
         }
         
-        System.out.println("DEBUG: Screen size: " + screenWidth + "x" + screenHeight);
-        System.out.println("DEBUG: Config positions: X=" + configX + " (from right), Y=" + configY + " (from top)");
-        System.out.println("DEBUG: Drawing overlay at position: " + overlayX + ", " + overlayY + " with size: " + overlayWidth + "x" + overlayHeight);
-        
         // Draw background only if enabled in config
         if (showBackground) {
             context.fill(overlayX, overlayY, overlayX + overlayWidth, overlayY + overlayHeight, 0xCC000000);
-            System.out.println("DEBUG: Background drawn");
         }
         
         // Draw simple border
@@ -402,24 +344,17 @@ public class AspectOverlay {
         context.fill(overlayX + overlayWidth - 1, overlayY, overlayX + overlayWidth, overlayY + overlayHeight, 0xFFFFFFFF); // Right border
         context.fill(overlayX, overlayY, overlayX + overlayWidth, overlayY + 1, 0xFFFFFFFF); // Top border
         context.fill(overlayX, overlayY + overlayHeight - 1, overlayX + overlayWidth, overlayY + overlayHeight, 0xFFFFFFFF); // Bottom border
-        System.out.println("DEBUG: Border drawn");
         
         // Draw aspect name on its own line with custom color #FCA800
         context.drawText(client.textRenderer, currentAspectName, overlayX + 10, overlayY + 10, 0xFFFCA800, false);
-        System.out.println("DEBUG: Aspect name header drawn with color #FCA800");
         
         // Draw aspect description (wrapped to fit) with colored text - numbers and special characters in light green
-        System.out.println("DEBUG: Description wrapped into " + descriptionLines.length + " lines");
         for (int i = 0; i < descriptionLines.length; i++) {
             drawColoredText(context, client.textRenderer, descriptionLines[i], overlayX + 10, overlayY + 35 + (i * 12));
-            System.out.println("DEBUG: Description line " + i + " drawn with colors: '" + descriptionLines[i] + "'");
         }
         
         // Draw instruction text with simple gray text
         context.drawText(client.textRenderer, "Halte SHIFT gedrückt", overlayX + 10, overlayY + overlayHeight - 15, 0xCCCCCC, false);
-        System.out.println("DEBUG: Instruction text drawn");
-        
-        System.out.println("DEBUG: Aspect overlay rendered successfully in FOREGROUND");
     }
     
     private static String[] wrapText(String text, int maxLength) {
@@ -476,22 +411,15 @@ public class AspectOverlay {
      */
     private static void loadAspectsDatabase() {
         try {
-            System.out.println("DEBUG: Loading aspects database for overlay...");
-            System.out.println("DEBUG: Looking for file: " + ASPECTS_CONFIG_FILE);
-            
             // Load from mod resources
             var resource = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("cclive-utilities")
                 .orElseThrow(() -> new RuntimeException("Mod container not found"))
                 .findPath(ASPECTS_CONFIG_FILE)
                 .orElseThrow(() -> new RuntimeException("Aspects config file not found"));
             
-            System.out.println("DEBUG: Found resource at: " + resource);
-            
             try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
                 try (var reader = new java.io.InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8)) {
                     com.google.gson.JsonObject json = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
-                    
-                    System.out.println("DEBUG: JSON loaded successfully, processing " + json.size() + " items");
                     
                     int loadedCount = 0;
                     for (String itemName : json.keySet()) {
@@ -500,25 +428,15 @@ public class AspectOverlay {
                             String aspectName = itemData.get("aspect_name").getAsString();
                             String aspectDescription = itemData.get("aspect_description").getAsString();
                             
-                            System.out.println("DEBUG: Processing item: " + itemName);
-                            System.out.println("DEBUG:   aspect_name: '" + aspectName + "'");
-                            System.out.println("DEBUG:   aspect_description: '" + aspectDescription + "'");
-                            
                             // Only store items that have both aspect name and description
                             if (!aspectName.isEmpty() && !aspectDescription.isEmpty()) {
                                 aspectsDatabase.put(itemName, new AspectInfo(aspectName, aspectDescription));
                                 loadedCount++;
-                                System.out.println("DEBUG: Loaded aspect for: " + itemName + " -> " + aspectName);
-                            } else {
-                                System.out.println("DEBUG: Skipping item with empty aspect info: " + itemName);
                             }
                         } catch (Exception e) {
                             System.err.println("Failed to parse aspect data for item: " + itemName + " - " + e.getMessage());
                         }
                     }
-                    
-                    System.out.println("DEBUG: Overlay Aspects database loaded with " + loadedCount + " items");
-                    System.out.println("DEBUG: Available aspects: " + aspectsDatabase.keySet());
                 }
             }
         } catch (Exception e) {

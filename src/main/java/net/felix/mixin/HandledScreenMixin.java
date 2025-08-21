@@ -16,12 +16,9 @@ public class HandledScreenMixin {
      */
     @Inject(method = "drawForeground", at = @At("TAIL"))
     private void onDrawForeground(DrawContext context, int mouseX, int mouseY, CallbackInfo ci) {
-        System.out.println("DEBUG: HandledScreenMixin.onDrawForeground called!");
-        
         // Render the aspect overlay in the foreground
         try {
             net.felix.utilities.AspectOverlay.renderForeground(context);
-            System.out.println("DEBUG: AspectOverlay.renderForeground completed successfully");
         } catch (Exception e) {
             System.err.println("Error in HandledScreenMixin.drawForeground: " + e.getMessage());
             e.printStackTrace();

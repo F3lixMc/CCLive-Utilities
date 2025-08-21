@@ -199,9 +199,6 @@ public class AspectInfoGUI extends Screen {
         // Create a temporary DrawContext for rendering
         // Note: This is a simplified approach - in a real implementation you'd need to
         // properly integrate with the rendering pipeline
-        System.out.println("DEBUG: Rendering aspect GUI at position: " + guiX + ", " + guiY);
-        System.out.println("DEBUG: Aspect: " + currentAspectName);
-        System.out.println("DEBUG: Description: " + currentAspectDescription);
     }
     
     private String[] wrapText(String text, int maxLength) {
@@ -251,8 +248,6 @@ public class AspectInfoGUI extends Screen {
      */
     private static void loadAspectsDatabase() {
         try {
-            System.out.println("DEBUG: Loading aspects database for GUI...");
-            
             // Load from mod resources
             var resource = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer("cclive-utilities")
                 .orElseThrow(() -> new RuntimeException("Mod container not found"))
@@ -268,14 +263,12 @@ public class AspectInfoGUI extends Screen {
                         String aspectName = itemData.get("aspect_name").getAsString();
                         String aspectDescription = itemData.get("aspect_description").getAsString();
                         
-                        // Only store items that have aspect information
-                        if (!aspectName.isEmpty() || !aspectDescription.isEmpty()) {
-                            aspectsDatabase.put(itemName, new AspectInfo(aspectName, aspectDescription));
-                        }
+                                            // Only store items that have aspect information
+                    if (!aspectName.isEmpty() || !aspectDescription.isEmpty()) {
+                        aspectsDatabase.put(itemName, new AspectInfo(aspectName, aspectDescription));
                     }
-                    
-                    System.out.println("DEBUG: GUI Aspects database loaded with " + aspectsDatabase.size() + " items");
                 }
+            }
             }
         } catch (Exception e) {
             System.err.println("Failed to load aspects database for GUI: " + e.getMessage());

@@ -9,7 +9,6 @@ public class AspectOverlayRenderer {
     public static void initialize() {
         // Note: We now use a Mixin approach for foreground rendering
         // The old HUD renderer is disabled since it renders in the background
-        System.out.println("DEBUG: AspectOverlayRenderer initialized - using Mixin for foreground rendering");
         
         // Uncomment the following lines if you want to fall back to HUD rendering
         /*
