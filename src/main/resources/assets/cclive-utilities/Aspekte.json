@@ -1,0 +1,38 @@
+{
+    "Drachenlederhelm": {
+      "aspect_name": "Aspekt der Drachenkraft",
+      "aspect_description": "Erhöht deine Verteidigung um 5% - 15% und gibt dir eine Chance von 2% - 8% auf Feuerresistenz für 10 Sekunden bei jedem Treffer."
+    },
+    "Drachenschuppen Kriegshelm": {
+      "aspect_name": "Aspekt der Wahrensicht",
+      "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 1% - 5% das deine kritische Treffer Chance für 3 - 7 Sek um 3% - 10% erhöht wird."
+    },
+    "Drachenschuppen Kriegsgürtel": {
+      "aspect_name": "Aspekt der Opferung",
+      "aspect_description": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqWenn du einen Gegner der von einem Blutungseffekt betroffen ist besiegst, besteht eine Chance von 10% - 15% das du dich um 5% - 10% heilst."
+    },
+    "Drachenlederrüstung": {
+      "aspect_name": "Aspekt der Unverwundbarkeit",
+      "aspect_description": "Bei jedem kritischen Treffer erhältst du für 3 - 6 Sekunden einen Schild der 20% - 40% des eingehenden Schadens absorbiert."
+    },
+    "Drachenlederleggins": {
+      "aspect_name": "Aspekt der Geschwindigkeit",
+      "aspect_description": "Deine Bewegungsgeschwindigkeit wird um 10% - 25% erhöht und du erhältst eine Chance von 5% - 15% auf einen kurzen Geschwindigkeitsschub bei jedem Treffer."
+    },
+    "Göttliche Plattenläufer": {
+      "aspect_name": "Aspekt der Kaskade",
+      "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+    },
+    "Drachenlederschuhe": {
+      "aspect_name": "Aspekt der Leichtigkeit",
+      "aspect_description": "Du kannst 1 - 3 Blöcke höher springen und erhältst eine Chance von 8% - 20% auf Schwebeeffekt für 2 - 5 Sekunden bei jedem Sprung."
+    },
+    "Felsspalter des Kaktusmeister": {
+      "aspect_name": "Aspekt der Zerstörung",
+      "aspect_description": "Deine Angriffe haben eine Chance von 15% - 30% auf zusätzlichen Explosionsschaden und können Blöcke in einem Radius von 2 - 5 Blöcken zerstören."
+    },
+    "Drachenlederband": {
+      "aspect_name": "Aspekt der Vitalität",
+      "aspect_description": "Erhöht deine maximale Gesundheit um 10% - 20% und gibt dir eine passive Regeneration von 1 - 3 Herzen alle 10 Sekunden."
+    }
+}

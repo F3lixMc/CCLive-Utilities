@@ -181,6 +181,38 @@
             "wave": 9889
         },
         {
+            "name": "Pigling [Essenz] Tier 1",
+            "wave": 1034
+        },
+        {
+            "name": "Pigling [Essenz] Tier 2",
+            "wave": 1429
+        },
+        {
+            "name": "Pigling [Essenz] Tier 3",
+            "wave": 1925
+        },
+        {
+            "name": "Pigling [Essenz] Tier 6",
+            "wave": 4544
+        },
+        {
+            "name": "Pigling [Essenz] Tier 7",
+            "wave": 5142
+        },
+        {
+            "name": "Pigling [Essenz] Tier 8",
+            "wave": 5332
+        },
+        {
+            "name": "Pigling [Essenz] Tier 9",
+            "wave": 6233
+        },
+        {
+            "name": "Pigling [Essenz] Tier 11",
+            "wave": 9889
+        },
+        {
             "name": "Hühner [Essenz] Tier 2",
             "wave": 1262
         },
@@ -377,11 +409,11 @@
             "wave": 3743
         },
         {
-            "name": "Zombie Eberlein [Essenz] Tier 4",
+            "name": "Zoglin [Essenz] Tier 4",
             "wave": 4874
         },
         {
-            "name": "Zombie Eberlein [Essenz] Tier 7",
+            "name": "Zoglin [Essenz] Tier 7",
             "wave": 6856
         },
         {
@@ -389,15 +421,15 @@
             "wave": 5657
         },
         {
-            "name": "Magier [Essenz] Tier 6",
+            "name": "Evoker [Essenz] Tier 6",
             "wave": 6994
         },
         {
-            "name": "Magier [Essenz] Tier 7",
+            "name": "Evoker [Essenz] Tier 7",
             "wave": 7428
         },
         {
-            "name": "Magier [Essenz] Tier 8",
+            "name": "Evoker [Essenz] Tier 8",
             "wave": 8114
         },
         {

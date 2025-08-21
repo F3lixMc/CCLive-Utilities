@@ -1196,7 +1196,7 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        "Prachtvolles Wolfhaar"
+                        "Prachtvolles Wolfshaar"
                     ]
                 },
                 "uncommon": {
@@ -1961,7 +1961,7 @@
             }
         },
         "floor_57": {
-            "mob": "Ertrunkener",
+            "mob": "Ertunkener",
             "materials": {
                 "common": {
                     "color": "WHITE",

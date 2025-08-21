@@ -294,6 +294,21 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean blueprintViewerShowBackground = true; // Schwarzer Hintergrund für Blueprint Viewer
 
+    // Aspect Overlay Settings
+    @SerialEntry
+    public boolean aspectOverlayEnabled = true;
+    
+    @SerialEntry
+    public boolean showAspectOverlay = true;
+    
+    @SerialEntry
+    public int aspectOverlayX = 10; // X-Position des Aspect Overlays (Pixel vom rechten Rand)
+    
+    @SerialEntry
+    public int aspectOverlayY = 100; // Y-Position des Aspect Overlays (Pixel vom oberen Rand)
+    
+    @SerialEntry
+    public boolean aspectOverlayShowBackground = true; // Schwarzer Hintergrund für Aspect Overlay
 
 
     public static Screen createConfigScreen(Screen parent) {
@@ -796,6 +811,40 @@ public class CCLiveUtilitiesConfig {
                                 .name(Text.literal("Hintergrund anzeigen"))
                                 .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Blueprint Tracker anzeigen oder ausblenden")))
                                 .binding(true, () -> HANDLER.instance().blueprintViewerShowBackground, newVal -> HANDLER.instance().blueprintViewerShowBackground = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.literal("Aspect Overlay"))
+                        .tooltip(Text.literal("Einstellungen für das Aspect Overlay"))
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Aspect Overlay aktivieren"))
+                                .description(OptionDescription.of(Text.literal("Aspect Overlay aktivieren oder deaktivieren")))
+                                .binding(true, () -> HANDLER.instance().aspectOverlayEnabled, newVal -> HANDLER.instance().aspectOverlayEnabled = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Aspect Overlay anzeigen"))
+                                .description(OptionDescription.of(Text.literal("Aspect Overlay Overlay anzeigen oder ausblenden")))
+                                .binding(true, () -> HANDLER.instance().showAspectOverlay, newVal -> HANDLER.instance().showAspectOverlay = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.<Integer>createBuilder()
+                                .name(Text.literal("X Position (vom rechten Rand)"))
+                                .description(OptionDescription.of(Text.literal("Horizontale Position des Aspect Overlays (Pixel vom rechten Bildschirmrand)")))
+                                .binding(10, () -> HANDLER.instance().aspectOverlayX, newVal -> HANDLER.instance().aspectOverlayX = newVal)
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(-2000, 2000).step(1))
+                                .build())
+                        .option(Option.<Integer>createBuilder()
+                                .name(Text.literal("Y Position (vom oberen Rand)"))
+                                .description(OptionDescription.of(Text.literal("Vertikale Position des Aspect Overlays (Pixel vom oberen Bildschirmrand)")))
+                                .binding(100, () -> HANDLER.instance().aspectOverlayY, newVal -> HANDLER.instance().aspectOverlayY = newVal)
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(-2000, 2000).step(1))
+                                .build())
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Hintergrund anzeigen"))
+                                .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Aspect Overlay anzeigen oder ausblenden")))
+                                .binding(true, () -> HANDLER.instance().aspectOverlayShowBackground, newVal -> HANDLER.instance().aspectOverlayShowBackground = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .build())
