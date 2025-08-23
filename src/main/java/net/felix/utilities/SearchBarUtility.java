@@ -903,76 +903,16 @@ public class SearchBarUtility {
 					cursorPosition = selectionStart;
 					clearSelection();
 				} else {
-					// Strg+Backspace: Lösche ganzes Wort
-					if (modifiers == 2) { // 2 = Strg
-						int wordStart = findWordStart(searchText, cursorPosition);
-						searchText = searchText.substring(0, wordStart) + searchText.substring(cursorPosition);
-						cursorPosition = wordStart;
-					} else {
-						// Normaler Backspace: Lösche ein Zeichen
-						searchText = searchText.substring(0, cursorPosition - 1) + searchText.substring(cursorPosition);
-						cursorPosition--;
-					}
+					// Normaler Backspace: Lösche ein Zeichen
+					searchText = searchText.substring(0, cursorPosition - 1) + searchText.substring(cursorPosition);
+					cursorPosition--;
 				}
 				performSearch();
 			}
 			return true;
 		}
 		
-		// STRG-Kombinationen
-		if (modifiers == 2) { // 2 = STRG
-			switch (keyCode) {
-				case 65: // STRG + A - Alles auswählen
-					selectionStart = 0;
-					selectionEnd = searchText.length();
-					cursorPosition = searchText.length();
-					return true;
-					
-				case 67: // STRG + C - Kopieren
-					// Kopiere den selektierten Text oder den gesamten Text
-					if (hasSelection()) {
-						String selectedText = searchText.substring(selectionStart, selectionEnd);
-						client.keyboard.setClipboard(selectedText);
-					} else if (!searchText.isEmpty()) {
-						client.keyboard.setClipboard(searchText);
-					}
-					return true;
-					
-				case 86: // STRG + V - Einfügen
-					// Füge Text aus der Zwischenablage ein
-					String clipboardText = client.keyboard.getClipboard();
-					if (clipboardText != null && !clipboardText.isEmpty()) {
-						searchText = searchText.substring(0, cursorPosition) + clipboardText + searchText.substring(cursorPosition);
-						cursorPosition += clipboardText.length();
-						performSearch();
-					}
-					return true;
-					
-				case 88: // STRG + X - Ausschneiden
-					// Schneide den selektierten Text aus oder den gesamten Text
-					if (hasSelection()) {
-						String selectedText = searchText.substring(selectionStart, selectionEnd);
-						client.keyboard.setClipboard(selectedText);
-						searchText = searchText.substring(0, selectionStart) + searchText.substring(selectionEnd);
-						cursorPosition = selectionStart;
-						clearSelection();
-						performSearch();
-					} else if (!searchText.isEmpty()) {
-						client.keyboard.setClipboard(searchText);
-						searchText = "";
-						cursorPosition = 0;
-						performSearch();
-					}
-					return true;
-					
-				case 90: // STRG + Z - Rückgängig (wird als "Lösche alles" behandelt)
-					// Da wir keinen Undo-Stack haben, löschen wir den gesamten Text
-					searchText = "";
-					cursorPosition = 0;
-					performSearch();
-					return true;
-			}
-		}
+
 		
 		// Pfeiltasten
 		if (keyCode == 263) {
@@ -989,28 +929,9 @@ public class SearchBarUtility {
 			return true;
 		}
 		
-		// STRG + Pfeiltasten für Wort-weises Navigieren
-		if (modifiers == 2) { // 2 = STRG
-			if (keyCode == 263) { // STRG + Links
-				cursorPosition = findWordStart(searchText, cursorPosition);
-				return true;
-			}
-			if (keyCode == 262) { // STRG + Rechts
-				cursorPosition = findWordEnd(searchText, cursorPosition);
-				return true;
-			}
-		}
+
 		
-		// Home/End Tasten
-		if (keyCode == 268) { // Home
-			cursorPosition = 0;
-			return true;
-		}
-		
-		if (keyCode == 269) { // End
-			cursorPosition = searchText.length();
-			return true;
-		}
+
 		
 		// Leertaste
 		if (keyCode == 32) {
