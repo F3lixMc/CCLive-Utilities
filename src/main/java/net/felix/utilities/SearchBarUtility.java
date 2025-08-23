@@ -21,6 +21,8 @@ public class SearchBarUtility {
 	private static String searchText = "";
 	private static boolean isSearchBarFocused = false;
 	private static int cursorPosition = 0;
+	private static int selectionStart = -1; // Start der Text-Selektion (-1 = keine Selektion)
+	private static int selectionEnd = -1;   // Ende der Text-Selektion
 	private static int selectionStart = 0;
 	private static int selectionEnd = 0;
 	private static int searchBarX = 0;
@@ -35,6 +37,11 @@ public class SearchBarUtility {
 	private static int helpButtonY = 0;
 	private static int helpButtonSize = 16;
 	private static boolean helpScreenOpen = false;
+	
+	// @-Button Variablen (für MacBook-Nutzer)
+	private static int atButtonX = 0;
+	private static int atButtonY = 0;
+	private static int atButtonSize = 16;
 	
 	private static Set<Integer> matchingSlots = new HashSet<>();
 	private static final int SLOT_SIZE = 16;
@@ -99,6 +106,21 @@ public class SearchBarUtility {
 			isSearchBarVisible = false;
 			clearSearchBar();
 		}
+	}
+	
+	/**
+	 * Überprüft ob eine Text-Selektion aktiv ist
+	 */
+	private static boolean hasSelection() {
+		return selectionStart >= 0 && selectionEnd > selectionStart;
+	}
+	
+	/**
+	 * Löscht die aktuelle Text-Selektion
+	 */
+	private static void clearSelection() {
+		selectionStart = -1;
+		selectionEnd = -1;
 	}
 	
 	/**
@@ -204,9 +226,16 @@ public class SearchBarUtility {
 		// Hilfe-Button Position (links neben der Suchleiste)
 		helpButtonX = searchBarX - helpButtonSize - 5;
 		helpButtonY = searchBarY + 2;
+		
+		// @-Button Position (rechts neben der Suchleiste)
+		atButtonX = searchBarX + searchBarWidth + 5;
+		atButtonY = searchBarY + 2;
 
 		// Hilfe-Button zeichnen
 		drawHelpButton(context, client);
+		
+		// @-Button zeichnen
+		drawAtButton(context, client);
 		
 		// Hintergrund nur wenn aktiviert
 		if (CCLiveUtilitiesConfig.HANDLER.instance().searchBarShowBackground) {
@@ -221,7 +250,7 @@ public class SearchBarUtility {
 
 		// Text mit Scrolling
 		String displayText = searchText.isEmpty() ? "Suche..." : searchText;
-		int textColor = searchText.isEmpty() ? 0x80808080 : 0xFFFFFFFF;
+		int textColor = searchText.isEmpty() ? 0x80808080 : 0xFFFFFFFF; // Weißer Text wie gewohnt
 		
 		// Berechne Text-Position mit Scrolling
 		int textX = searchBarX + 5;
@@ -237,15 +266,11 @@ public class SearchBarUtility {
 				
 				// Zeichne nur den sichtbaren Teil des Texts
 				String visibleText = getVisibleText(displayText, scrollOffset, availableWidth, client.textRenderer);
-				context.drawText(
-					client.textRenderer,
-					visibleText,
-					textX,
-					searchBarY + 6,
-					textColor,
-					true
-				);
+				drawTextWithSelection(context, client, visibleText, textX, searchBarY + 6, textColor, scrollOffset);
 			} else {
+
+				// Text passt - zeichne normal
+				drawTextWithSelection(context, client, displayText, textX, searchBarY + 6, textColor, 0);
 				// Text passt - zeichne normal mit Auswahl-Highlight
 				if (hasSelection() && isSearchBarFocused) {
 					renderTextWithSelection(context, client, displayText, textX, searchBarY + 6, textColor);
@@ -262,14 +287,14 @@ public class SearchBarUtility {
 			}
 		} else {
 			// Placeholder-Text
-		context.drawText(
-			client.textRenderer,
-			displayText,
+			context.drawText(
+				client.textRenderer,
+				displayText,
 				textX,
-			searchBarY + 6,
-			textColor,
-			true
-		);
+				searchBarY + 6,
+				textColor,
+				true
+			);
 		}
 
 		// Cursor mit Scrolling
@@ -302,6 +327,49 @@ public class SearchBarUtility {
 		// Hilfe-Screen zeichnen wenn geöffnet
 		if (helpScreenOpen) {
 			drawHelpScreen(context, client);
+		}
+	}
+	
+	/**
+	 * Zeichnet Text mit Selektion (Minecraft-typischer Negativ-Effekt)
+	 */
+	private static void drawTextWithSelection(DrawContext context, MinecraftClient client, String text, int x, int y, int textColor, int scrollOffset) {
+		if (!hasSelection()) {
+			// Keine Selektion - zeichne normal
+			context.drawText(client.textRenderer, text, x, y, textColor, true);
+			return;
+		}
+		
+		// Berechne die sichtbaren Selektion-Grenzen
+		int visibleSelectionStart = Math.max(0, selectionStart - scrollOffset);
+		int visibleSelectionEnd = Math.min(text.length(), selectionEnd - scrollOffset);
+		
+		if (visibleSelectionStart >= text.length() || visibleSelectionEnd <= 0) {
+			// Selektion ist nicht sichtbar - zeichne normal
+			context.drawText(client.textRenderer, text, x, y, textColor, true);
+			return;
+		}
+		
+		// ZUERST: Zeichne den weißen Hintergrund für die Selektion (80% Deckkraft)
+		if (visibleSelectionEnd > visibleSelectionStart) {
+			String selectedText = text.substring(visibleSelectionStart, visibleSelectionEnd);
+			int selectionX = x + client.textRenderer.getWidth(text.substring(0, visibleSelectionStart));
+			int selectionWidth = client.textRenderer.getWidth(selectedText);
+			
+			// Weißer Hintergrund mit 80% Deckkraft
+			context.fill(selectionX, y - 1, selectionX + selectionWidth, y + 9, 0xCCFFFFFF); // 0xCC = 80% Deckkraft
+		}
+		
+		// DANN: Zeichne den gesamten Text normal darüber
+		context.drawText(client.textRenderer, text, x, y, textColor, true);
+		
+		// ZULETZT: Zeichne den selektierten Text in einer anderen Farbe über dem normalen Text
+		if (visibleSelectionEnd > visibleSelectionStart) {
+			String selectedText = text.substring(visibleSelectionStart, visibleSelectionEnd);
+			int selectionX = x + client.textRenderer.getWidth(text.substring(0, visibleSelectionStart));
+			
+			// Dunkelblauer Text für besseren Kontrast auf dem weißen Hintergrund
+			context.drawText(client.textRenderer, selectedText, selectionX, y, 0x000080, false); // Dunkelblau für besseren Kontrast
 		}
 	}
 	
@@ -803,6 +871,25 @@ public class SearchBarUtility {
 			}
 		}
 		
+		// @-Button Klick prüfen
+		if (mouseX >= atButtonX && mouseX <= atButtonX + atButtonSize &&
+			mouseY >= atButtonY && mouseY <= atButtonY + atButtonSize) {
+			
+			if (button == 0) {
+				// @-Symbol in die Suchleiste einfügen
+				searchText = searchText.substring(0, cursorPosition) + "@" + searchText.substring(cursorPosition);
+				cursorPosition++;
+				
+				// Selektion löschen falls vorhanden
+				clearSelection();
+				
+				// Suche durchführen
+				performSearch();
+				
+				return true;
+			}
+		}
+		
 		// Hilfe-Screen Schließen-Button prüfen
 		if (helpScreenOpen) {
 			MinecraftClient client = MinecraftClient.getInstance();
@@ -852,6 +939,9 @@ public class SearchBarUtility {
 				// Cursor beim ersten Klick sichtbar machen und Blink-Timer starten
 				cursorVisible = true;
 				cursorBlinkTime = System.currentTimeMillis();
+				
+				// Selektion löschen bei Klick
+				clearSelection();
 				return true;
 			}
 		} else {
@@ -938,6 +1028,14 @@ public class SearchBarUtility {
 		
 		// Backspace-Taste
 		if (keyCode == 259) {
+
+			if (cursorPosition > 0) {
+				// Wenn eine Selektion aktiv ist, lösche den selektierten Text
+				if (hasSelection()) {
+					searchText = searchText.substring(0, selectionStart) + searchText.substring(selectionEnd);
+					cursorPosition = selectionStart;
+					clearSelection();
+
 			if (hasSelection()) {
 				// Lösche markierten Text
 				int start = Math.min(selectionStart, selectionEnd);
@@ -952,6 +1050,7 @@ public class SearchBarUtility {
 					int wordStart = findWordStart(searchText, cursorPosition);
 					searchText = searchText.substring(0, wordStart) + searchText.substring(cursorPosition);
 					cursorPosition = wordStart;
+
 				} else {
 					// Normaler Backspace: Lösche ein Zeichen
 					searchText = searchText.substring(0, cursorPosition - 1) + searchText.substring(cursorPosition);
@@ -962,6 +1061,9 @@ public class SearchBarUtility {
 			return true;
 		}
 		
+
+
+
 		// Delete-Taste
 		if (keyCode == 261) {
 			if (hasSelection()) {
@@ -979,6 +1081,7 @@ public class SearchBarUtility {
 			}
 			return true;
 		}
+
 		
 		// Pfeiltasten
 		if (keyCode == 263) {
@@ -997,9 +1100,26 @@ public class SearchBarUtility {
 			return true;
 		}
 		
+
+		
+
+		
 		// Leertaste
 		if (keyCode == 32) {
+
+			// Wenn eine Selektion aktiv ist, ersetze den selektierten Text
+			if (hasSelection()) {
+				searchText = searchText.substring(0, selectionStart) + " " + searchText.substring(selectionEnd);
+				cursorPosition = selectionStart + 1;
+				clearSelection();
+			} else {
+				searchText = searchText.substring(0, cursorPosition) + " " + searchText.substring(cursorPosition);
+				cursorPosition++;
+			}
+			performSearch();
+
 			insertCharacter(' ');
+
 			return true;
 		}
 		
@@ -1186,7 +1306,22 @@ public class SearchBarUtility {
 		// Zahlen 0-9
 		if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
 			char number = (char) keyCode;
+
+			
+			// Wenn eine Selektion aktiv ist, ersetze den selektierten Text
+			if (hasSelection()) {
+				searchText = searchText.substring(0, selectionStart) + number + searchText.substring(selectionEnd);
+				cursorPosition = selectionStart + 1;
+				clearSelection();
+			} else {
+				searchText = searchText.substring(0, cursorPosition) + number + searchText.substring(cursorPosition);
+				cursorPosition++;
+			}
+			
+			performSearch();
+
 			insertCharacter(number);
+
 			return true;
 		}
 
@@ -1204,7 +1339,21 @@ public class SearchBarUtility {
 				letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
 			}
 			
+
+			// Wenn eine Selektion aktiv ist, ersetze den selektierten Text
+			if (hasSelection()) {
+				searchText = searchText.substring(0, selectionStart) + letter + searchText.substring(selectionEnd);
+				cursorPosition = selectionStart + 1;
+				clearSelection();
+			} else {
+				searchText = searchText.substring(0, cursorPosition) + letter + searchText.substring(cursorPosition);
+				cursorPosition++;
+			}
+			
+			performSearch();
+
 			insertCharacter(letter);
+
 			return true;
 		}
 
@@ -1313,6 +1462,30 @@ public class SearchBarUtility {
 	}
 	
 	/**
+	 * Zeichnet den @-Button
+	 */
+	private static void drawAtButton(DrawContext context, MinecraftClient client) {
+		// Button-Hintergrund
+		context.fill(atButtonX, atButtonY, atButtonX + atButtonSize, atButtonY + atButtonSize, 0x80000000);
+		
+		// Button-Rahmen
+		context.fill(atButtonX, atButtonY, atButtonX + atButtonSize, atButtonY + 1, 0xFFFFFFFF);
+		context.fill(atButtonX, atButtonY + atButtonSize - 1, atButtonX + atButtonSize, atButtonY + atButtonSize, 0xFFFFFFFF);
+		context.fill(atButtonX, atButtonY, atButtonX + 1, atButtonY + atButtonSize, 0xFFFFFFFF);
+		context.fill(atButtonX + atButtonSize - 1, atButtonY, atButtonX + atButtonSize, atButtonY + atButtonSize, 0xFFFFFFFF);
+		
+		// @-Zeichen
+		context.drawText(
+			client.textRenderer,
+			"@",
+			atButtonX + 5,
+			atButtonY + 3,
+			0xFFFFFFFF,
+			true
+		);
+	}
+	
+	/**
 	 * Findet den Anfang des Wortes an der gegebenen Position
 	 */
 	private static int findWordStart(String text, int position) {
@@ -1334,6 +1507,30 @@ public class SearchBarUtility {
 		}
 		
 		return wordStart;
+	}
+	
+	/**
+	 * Findet das Ende des Wortes an der gegebenen Position
+	 */
+	private static int findWordEnd(String text, int position) {
+		if (position >= text.length()) {
+			return text.length();
+		}
+		
+		// Gehe vorwärts bis zum Ende des Wortes
+		int wordEnd = position;
+		
+		// Überspringe Leerzeichen und Sonderzeichen am Anfang
+		while (wordEnd < text.length() && isWordSeparator(text.charAt(wordEnd))) {
+			wordEnd++;
+		}
+		
+		// Gehe weiter vorwärts bis zum Ende des Wortes
+		while (wordEnd < text.length() && !isWordSeparator(text.charAt(wordEnd))) {
+			wordEnd++;
+		}
+		
+		return wordEnd;
 	}
 	
 	/**
