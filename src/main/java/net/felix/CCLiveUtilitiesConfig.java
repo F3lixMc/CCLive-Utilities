@@ -310,27 +310,7 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean aspectOverlayShowBackground = true; // Schwarzer Hintergrund für Aspect Overlay
 
-    // Monster Tracker Settings
-    @SerialEntry
-    public boolean wellenTrackerEnabled = true;
-    
-    @SerialEntry
-    public boolean showWellenTracker = true;
-    
-    @SerialEntry
-    public int wellenTrackerX = -150; // X-Position des Monster Trackers (Pixel vom rechten Rand)
-    
-    @SerialEntry
-    public int wellenTrackerY = 200; // Y-Position des Monster Trackers (Pixel vom oberen Rand)
-    
-    @SerialEntry
-    public boolean wellenTrackerShowBackground = true; // Schwarzer Hintergrund für Monster Tracker
-    
-    @SerialEntry
-    public Color wellenTrackerHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
-    
-    @SerialEntry
-    public Color wellenTrackerTextColor = new Color(0xE6FFFFFF); // Textfarbe (Weiß mit Transparenz)
+
 
 
     public static Screen createConfigScreen(Screen parent) {
@@ -600,52 +580,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .build())
-                .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Monster Tracker"))
-                        .tooltip(Text.literal("Einstellungen für den Monster Tracker"))
-                        .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Monster Tracker aktivieren"))
-                                .description(OptionDescription.of(Text.literal("Monster Tracker aktivieren oder deaktivieren")))
-                                .binding(true, () -> HANDLER.instance().wellenTrackerEnabled, newVal -> HANDLER.instance().wellenTrackerEnabled = newVal)
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Monster Tracker anzeigen"))
-                                .description(OptionDescription.of(Text.literal("Monster Tracker Overlay anzeigen oder ausblenden")))
-                                .binding(true, () -> HANDLER.instance().showWellenTracker, newVal -> HANDLER.instance().showWellenTracker = newVal)
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .option(Option.<Integer>createBuilder()
-                                .name(Text.literal("X Position (vom rechten Rand)"))
-                                .description(OptionDescription.of(Text.literal("Horizontale Position des Monster Trackers (Pixel vom rechten Bildschirmrand)")))
-                                .binding(-150, () -> HANDLER.instance().wellenTrackerX, newVal -> HANDLER.instance().wellenTrackerX = newVal)
-                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(-2000, 2000).step(1))
-                                .build())
-                        .option(Option.<Integer>createBuilder()
-                                .name(Text.literal("Y Position (vom oberen Rand)"))
-                                .description(OptionDescription.of(Text.literal("Vertikale Position des Monster Trackers (Pixel vom oberen Bildschirmrand)")))
-                                .binding(200, () -> HANDLER.instance().wellenTrackerY, newVal -> HANDLER.instance().wellenTrackerY = newVal)
-                                .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(-2000, 2000).step(1))
-                                .build())
-                        .option(Option.<Color>createBuilder()
-                                .name(Text.literal("Überschriftenfarbe"))
-                                .description(OptionDescription.of(Text.literal("Farbe für die Überschriften im Monster Tracker")))
-                                .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().wellenTrackerHeaderColor, newVal -> HANDLER.instance().wellenTrackerHeaderColor = newVal)
-                                .controller(ColorControllerBuilder::create)
-                                .build())
-                        .option(Option.<Color>createBuilder()
-                                .name(Text.literal("Textfarbe"))
-                                .description(OptionDescription.of(Text.literal("Farbe für den Text im Monster Tracker")))
-                                .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().wellenTrackerTextColor, newVal -> HANDLER.instance().wellenTrackerTextColor = newVal)
-                                .controller(ColorControllerBuilder::create)
-                                .build())
-                        .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Hintergrund anzeigen"))
-                                .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Monster Tracker anzeigen oder ausblenden")))
-                                .binding(true, () -> HANDLER.instance().wellenTrackerShowBackground, newVal -> HANDLER.instance().wellenTrackerShowBackground = newVal)
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .build())
+
                 .category(ConfigCategory.createBuilder()
                         .name(Text.literal("Suchleiste"))
                         .tooltip(Text.literal("Einstellungen für die Suchleiste"))

@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "cclive-utilities",
-	"version": "1.4.1",
+	"version": "1.4.3",
 	"name": "CCLive-Utilities",
 	"description": "Diese Mod fügt verschiedene Funktionen und Features zu Kaktus Klicker hinzu",
 	"authors": [
@@ -10,8 +10,11 @@
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
+		"discord": "https://discord.gg/7geExrDeqF",
 		"sources": "https://github.com/F3lixMc/CCLive-Utilities"
+	
 	},
+
 	"license": "CC0-1.0",
 	"icon": "assets/cclive-utilities/icon.png",
 	"environment": "*",

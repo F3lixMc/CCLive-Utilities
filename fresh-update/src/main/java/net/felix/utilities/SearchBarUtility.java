@@ -23,6 +23,8 @@ public class SearchBarUtility {
 	private static int cursorPosition = 0;
 	private static int selectionStart = -1; // Start der Text-Selektion (-1 = keine Selektion)
 	private static int selectionEnd = -1;   // Ende der Text-Selektion
+	private static int selectionStart = 0;
+	private static int selectionEnd = 0;
 	private static int searchBarX = 0;
 	private static int searchBarY = 0;
 	private static int searchBarWidth = 200;
@@ -788,7 +790,20 @@ public class SearchBarUtility {
 		previousInventory.clear();
 	}
 	
-
+	/**
+	 * Prüft ob Text markiert ist
+	 */
+	private static boolean hasSelection() {
+		return selectionStart != selectionEnd;
+	}
+	
+	/**
+	 * Löscht die aktuelle Textauswahl
+	 */
+	private static void clearSelection() {
+		selectionStart = 0;
+		selectionEnd = 0;
+	}
 	
 	/**
 	 * Fügt ein Zeichen ein und ersetzt dabei markierten Text falls vorhanden
@@ -1013,6 +1028,14 @@ public class SearchBarUtility {
 		
 		// Backspace-Taste
 		if (keyCode == 259) {
+
+			if (cursorPosition > 0) {
+				// Wenn eine Selektion aktiv ist, lösche den selektierten Text
+				if (hasSelection()) {
+					searchText = searchText.substring(0, selectionStart) + searchText.substring(selectionEnd);
+					cursorPosition = selectionStart;
+					clearSelection();
+
 			if (hasSelection()) {
 				// Lösche markierten Text
 				int start = Math.min(selectionStart, selectionEnd);
@@ -1027,6 +1050,7 @@ public class SearchBarUtility {
 					int wordStart = findWordStart(searchText, cursorPosition);
 					searchText = searchText.substring(0, wordStart) + searchText.substring(cursorPosition);
 					cursorPosition = wordStart;
+
 				} else {
 					// Normaler Backspace: Lösche ein Zeichen
 					searchText = searchText.substring(0, cursorPosition - 1) + searchText.substring(cursorPosition);
@@ -1082,7 +1106,20 @@ public class SearchBarUtility {
 		
 		// Leertaste
 		if (keyCode == 32) {
+
+			// Wenn eine Selektion aktiv ist, ersetze den selektierten Text
+			if (hasSelection()) {
+				searchText = searchText.substring(0, selectionStart) + " " + searchText.substring(selectionEnd);
+				cursorPosition = selectionStart + 1;
+				clearSelection();
+			} else {
+				searchText = searchText.substring(0, cursorPosition) + " " + searchText.substring(cursorPosition);
+				cursorPosition++;
+			}
+			performSearch();
+
 			insertCharacter(' ');
+
 			return true;
 		}
 		
@@ -1269,7 +1306,22 @@ public class SearchBarUtility {
 		// Zahlen 0-9
 		if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
 			char number = (char) keyCode;
+
+			
+			// Wenn eine Selektion aktiv ist, ersetze den selektierten Text
+			if (hasSelection()) {
+				searchText = searchText.substring(0, selectionStart) + number + searchText.substring(selectionEnd);
+				cursorPosition = selectionStart + 1;
+				clearSelection();
+			} else {
+				searchText = searchText.substring(0, cursorPosition) + number + searchText.substring(cursorPosition);
+				cursorPosition++;
+			}
+			
+			performSearch();
+
 			insertCharacter(number);
+
 			return true;
 		}
 
@@ -1287,7 +1339,21 @@ public class SearchBarUtility {
 				letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
 			}
 			
+
+			// Wenn eine Selektion aktiv ist, ersetze den selektierten Text
+			if (hasSelection()) {
+				searchText = searchText.substring(0, selectionStart) + letter + searchText.substring(selectionEnd);
+				cursorPosition = selectionStart + 1;
+				clearSelection();
+			} else {
+				searchText = searchText.substring(0, cursorPosition) + letter + searchText.substring(cursorPosition);
+				cursorPosition++;
+			}
+			
+			performSearch();
+
 			insertCharacter(letter);
+
 			return true;
 		}
 
@@ -1374,8 +1440,8 @@ public class SearchBarUtility {
 			"Beispiele:",
 			"• Göttlich - Makiert alle items mit Göttlich im Namen",
 			"• @Rüstung>50 - Items mit Rüstung>50",
-			"• @Ring, @Rüstung>50 - Ringe mit mehr als 50 Rüstung und",
-			"  Göttlich im Namen",
+			"• @Ring, @Rüstung>50 - Ringe mit mehr als 50 Rüstung",
+			"• @Ring, @Rüstung>50, Göttlich - Ringe mit mehr als 50 Rüstung und Göttlich im Namen",
 			""
 		};
 		
@@ -1524,4 +1590,4 @@ public class SearchBarUtility {
 			}
 		}
 	}
-}
+} 

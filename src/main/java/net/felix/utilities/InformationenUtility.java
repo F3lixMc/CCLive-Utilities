@@ -312,20 +312,23 @@ public class InformationenUtility {
 					// Calculate position: 5th line from bottom
 					int targetPosition = Math.max(0, lines.size() - 5);
 					
-					// Create aspect name text with "(Shift)" suffix
+					// Create aspect name text without "(Shift)" suffix
 					Text aspectNameText = Text.literal("Enthält: ")
 						.styled(style -> style.withColor(0xFFFFFFFF)) // White color
 						.append(Text.literal(aspectInfo.aspectName)
-							.styled(style -> style.withColor(0xFFFCA800))) // Same color as overlay (#FCA800)
-						.append(Text.literal(" (Shift)")
-							.styled(style -> style.withColor(0xFFCCCCCC))); // Light gray color for (Shift)
+							.styled(style -> style.withColor(0xFFFCA800))); // Same color as overlay (#FCA800)
 					
 					// Insert aspect name at the target position
 					lines.add(targetPosition, aspectNameText);
 					
-					// Add empty line after aspect name
+					// Add "(Shift für mehr Info)" on the next line
+					Text shiftInfoText = Text.literal("(Shift für mehr Info)")
+						.styled(style -> style.withColor(0xFFCCCCCC)); // Light gray color
+					lines.add(targetPosition + 1, shiftInfoText);
+					
+					// Add empty line after shift info
 					Text emptyLineText = Text.literal(" ");
-					lines.add(targetPosition + 1, emptyLineText);
+					lines.add(targetPosition + 2, emptyLineText);
 					
 					break; // Only process the first blueprint line
 				}
