@@ -249,9 +249,33 @@ public class InformationenUtility {
 	}
 	
 	/**
-	 * Adds aspect name to tooltip (always visible)
+	 * Adds aspect name to tooltip (only in specific blueprint inventories)
 	 */
 	private static void addAspectNameToTooltip(List<Text> lines, MinecraftClient client) {
+		// Check if we're in a blueprint inventory that should show aspect information
+		if (client.currentScreen == null) {
+			return;
+		}
+		
+		String screenTitle = client.currentScreen.getTitle().getString();
+		
+		// Remove Minecraft formatting codes and Unicode characters for comparison
+		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
+											.replaceAll("[\\u3400-\\u4DBF]", "");
+		
+		// Only show aspect information in specific blueprint inventories
+		boolean isBlueprintInventory = cleanScreenTitle.contains("Baupläne [Waffen]") ||
+									  cleanScreenTitle.contains("Baupläne [Rüstung]") ||
+									  cleanScreenTitle.contains("Baupläne [Werkzeuge]") ||
+									  cleanScreenTitle.contains("Bauplan [Shop]") || 
+									  cleanScreenTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
+									  cleanScreenTitle.contains("Favorisierte [Waffenbaupläne]") ||
+									  cleanScreenTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
+		
+		if (!isBlueprintInventory) {
+			return; // Don't show aspect information in other inventories
+		}
+		
 		// Find blueprint line and add aspect name to tooltip
 		for (int i = 0; i < lines.size(); i++) {
 			Text line = lines.get(i);
@@ -280,19 +304,21 @@ public class InformationenUtility {
 				// Remove Minecraft formatting codes and Unicode characters
 				itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
 				itemName = itemName.replaceAll("[\\u3400-\\u4DBF]", "");
-				itemName = itemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s]", "").trim();
+				itemName = itemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 				
 				// Look for this item in the aspects database
 				AspectInfo aspectInfo = aspectsDatabase.get(itemName);
-				if (aspectInfo != null && !aspectInfo.aspectName.isEmpty()) {
+				if (aspectInfo != null) {
 					// Calculate position: 5th line from bottom
 					int targetPosition = Math.max(0, lines.size() - 5);
 					
-					// Create aspect name text
+					// Create aspect name text with "(Shift)" suffix
 					Text aspectNameText = Text.literal("Enthält: ")
 						.styled(style -> style.withColor(0xFFFFFFFF)) // White color
 						.append(Text.literal(aspectInfo.aspectName)
-							.styled(style -> style.withColor(0xFFFCA800))); // Same color as overlay (#FCA800)
+							.styled(style -> style.withColor(0xFFFCA800))) // Same color as overlay (#FCA800)
+						.append(Text.literal(" (Shift)")
+							.styled(style -> style.withColor(0xFFCCCCCC))); // Light gray color for (Shift)
 					
 					// Insert aspect name at the target position
 					lines.add(targetPosition, aspectNameText);

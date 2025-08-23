@@ -2176,31 +2176,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Klebriger Schleimball"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Glibbrige Haute"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Kleine Schleimperle"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Schleimiger Edelstein"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Schleimkristall"
                     ]
                 }
             }
@@ -2211,31 +2211,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Klenriger Faden"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Spinnenbein"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Giftpfeilspitzen"  
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Spinnenzahn"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Wehrsekret"
                     ]
                 }
             }
@@ -2246,31 +2246,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Kräftiger Spinnenfaden"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Grünes Spinnenauge"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Spinnenherz"   
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Giftzahn"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Giftiges Sekret"
                     ]
                 }
             }
@@ -2281,31 +2281,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Rostiger Hufnagel"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Rostiges Hufeisen"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Sehnige Hufröhre"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Knochenkette"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Seele des Untotenreiters"
                     ]
                 }
             }
@@ -2316,31 +2316,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Pilzige Kuhhaut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Zerbrochener Pilz"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Pilzknochenfragmente"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Arkane Pilzsporen"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Strahlendes Pilzhorn"
                     ]
                 }
             }
@@ -2351,31 +2351,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Hühnerbeinsplitter"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Gerupfte Feder"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Sattledecke"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Kräftiger Schnabel"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Arkane Hühnerzügel"
                     ]
                 }
             }
@@ -2386,31 +2386,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Magmafragment"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Versengte Schleimhaut"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Glühender Schleimtropfen"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Magmakristallsplitter"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Magmaessenz"
                     ]
                 }
             }
@@ -2421,31 +2421,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Knochenhuf"   
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Knochenlanze"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Leuchtender Knochensplitter"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Blitzknochen"  
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Blitzessenz"
                     ]
                 }
             }
@@ -2456,31 +2456,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Fetziger Ravagerpelz"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Zerfetzte Hornspitze"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Ravagerhuf"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Eiserne Hufkappe"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Kräftiges Ravagerhorn"
                     ]
                 }
             }
@@ -2491,31 +2491,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Eisenklumpen"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Großes Zahnrad"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Eisenplatte"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Golemkopf"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Eisenherz"
                     ]
                 }
             }
@@ -2526,31 +2526,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Moosiger Pelz"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Snifferborste"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Snifferhuf"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Snifferschuppe"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Antikerkern"
                     ]
                 }
             }
@@ -2561,31 +2561,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Schneebrocken"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Morscher Ast"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Eiszapfen"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Karottenstück"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Eiskristall"
                     ]
                 }
             }
@@ -2596,31 +2596,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Piglinleder"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Piglinhuf"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Piglinhauer"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Goldstaub"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Goldnugget"
                     ]
                 }
             }
@@ -2631,31 +2631,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Striderhaut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Striderhuf"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Striderhaar"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Glutkiemen"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Gluthaar"
                     ]
                 }
             }
@@ -2666,31 +2666,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Verrottete Haut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Bröckliger Huf"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Verwesende Rippe"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Fauler Knochen"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Säureessenz"
                     ]
                 }
             }
@@ -2701,31 +2701,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Zoglinhaut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Zoglinklaue"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Zoglinknochen"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Zoglinhuf"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Zoglinhauer"
                     ]
                 }
             }
@@ -2736,31 +2736,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Rostige Axtklinge"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Großer Zahn"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Mächtiger Hauer"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Goldener Armreif"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Goldene Gürtelschnalle"
                     ]
                 }
             }
@@ -2771,31 +2771,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Erloschene Rute"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Lohenrute"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Glühende Asche"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Lohenauge"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Flammenkristall"
                     ]
                 }
             }
@@ -2806,31 +2806,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Magmatröpfchen"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Magmakugel"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Magmaharz"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Magmasekret"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Magmaherz"
                     ]
                 }
             }
@@ -2841,31 +2841,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Ghastgewebe"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Ghastträne"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Ghasttentakel"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Ghastauge"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Ghastkern"
                     ]
                 }
             }
@@ -2876,31 +2876,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Leuchtende Schuppe"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Leuchtender Tentakel"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Glitzernde Tinte"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Leuchtende Haut"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Glänzender Schnabel"   
                     ]
                 }
             }
@@ -2911,31 +2911,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Geladene Haut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Geladenes Auge"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Mächtiges Zündpulver"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Geladener Creeperkopf"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Donnerkristall"
                     ]
                 }
             }
@@ -2946,31 +2946,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Phantomhaut"   
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Phantomschuppe"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Phantomflügel"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Phantomkralle"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Nachtkristall"
                     ]
                 }
             }
@@ -2981,31 +2981,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Endermitehaut" 
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Endermiteschuppe"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Endermiteauge"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Endemriteseele"    
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Kristall der Dunkelheit"
                     ]
                 }
             }
@@ -3016,31 +3016,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Vex Haut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Vex Flügel"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Vex Klinge"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Vex Kristall"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Vex Seele"
                     ]
                 }
             }
@@ -3051,31 +3051,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Schleimige Haut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Schleimschuppe"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Schleimperle"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Schleimblock"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Glibberblitz"
                     ]
                 }
             }
@@ -3086,31 +3086,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Hoglinhaut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Hoglinborste"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Hoglinzahn"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Hoglinhuf"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Hoglinhauer"
                     ]
                 }
             }
@@ -3121,31 +3121,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Schalenstück"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Shulkerschale"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Shulkerschale"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Shulkerkopf"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Luftkristall"
                     ]
                 }
             }
@@ -3156,31 +3156,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Enderman Haut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Enderman Arm"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Enderman Bein"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Enderman Auge"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Enderman Seele"
                     ]
                 }
             }
@@ -3191,31 +3191,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Magmaschleimreste"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Magmaschleimhaut"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Magmaschleimperle"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Magmakern"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Magmakristall"
                     ]
                 }
             }
@@ -3226,31 +3226,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Dunkles Knochenfragment"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Dunkler Knochen"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Tödliche Rippe"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Witherskelettschädel"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Kristall der Dunkelheit"
                     ]
                 }
             }
@@ -3261,31 +3261,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Zerfetzter Sattelgurt"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Sattelschnalle"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Verblichene Zügel"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Arkanes Sattelleder"   
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Aegis des Reiters"
                     ]
                 }
             }
@@ -3296,31 +3296,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "CACTUS_CLICKER.giant_slime_skin"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Riesiger Schleimball"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Riesige Schleimperle"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Glibberkristall"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Schleimiges Herz"
                     ]
                 }
             }
@@ -3331,31 +3331,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Riesenhaut"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Riesenknochen"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Riesenklaue"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Riesenkopf"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Herz des Titanen"
                     ]
                 }
             }
@@ -3366,31 +3366,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Elder Schuppe"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Elder Stachel"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Elder Floße"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Elder Auge"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Elder Herz"
                     ]
                 }
             }
@@ -3401,31 +3401,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Riesige Magmareste"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Riesiger Magmatropfen"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Riesiger Magmakern"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Riesiges Magmasekret"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Riesige Magmaessenz"
                     ]
                 }
             }
@@ -3436,31 +3436,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Witherstaubpartikel"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Verdorrte Witherhaut"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Witherkopf"    
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Witheressenz"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Kristall des Todes"
                     ]
                 }
             }
@@ -3471,31 +3471,31 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        ""
+                        "Wardenpanzer"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        ""
+                        "Wardenklaue"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        ""
+                        "Wardenhorn"
                     ]
                 },
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        ""
+                        "Wardenrippe"
                     ]
                 },
                 "legendary": {
                     "color": "GOLD",
                     "materials": [
-                        ""
+                        "Wardenherz"
                     ]
                 }
             }

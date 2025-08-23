@@ -21,6 +21,8 @@ public class SearchBarUtility {
 	private static String searchText = "";
 	private static boolean isSearchBarFocused = false;
 	private static int cursorPosition = 0;
+	private static int selectionStart = 0;
+	private static int selectionEnd = 0;
 	private static int searchBarX = 0;
 	private static int searchBarY = 0;
 	private static int searchBarWidth = 200;
@@ -70,7 +72,10 @@ public class SearchBarUtility {
 				cleanTitle.contains("Umschmieden") || cleanTitle.contains("Zerlegen") || 
 				cleanTitle.contains("Ausrüstung") || cleanTitle.contains("Essenz") || 
 				cleanTitle.contains("Essenz-Tasche") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") ||
-				cleanTitle.contains("Runen [Baupläne]")) {
+				cleanTitle.contains("Runen [Baupläne]") || cleanTitle.contains("Werkzeug Sammlung") ||
+				cleanTitle.contains("Waffen Sammlung") || cleanTitle.contains("Rüstungs Sammlung") ||
+				cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
+				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools")) {
 				isSearchBarVisible = true;
 				
 				// Überprüfe Inventaränderungen
@@ -144,6 +149,9 @@ public class SearchBarUtility {
 		} else if (cleanTitle.contains("Essenz")) {
 			// Slots für Essenz-Menüs (umfassender Bereich)
 			return new int[]{9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43};
+		} else if (cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("Waffen Sammlung") || cleanTitle.contains("Rüstungs Sammlung")) {
+			// Slots für Sammlungs-Menüs (umfassender Bereich)
+			return new int[]{10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
 		} else {
 			// Standard-Slots für Bauplan-Menüs und andere
 			return new int[]{10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
@@ -238,15 +246,19 @@ public class SearchBarUtility {
 					true
 				);
 			} else {
-				// Text passt - zeichne normal
-				context.drawText(
-					client.textRenderer,
-					displayText,
-					textX,
-					searchBarY + 6,
-					textColor,
-					true
-				);
+				// Text passt - zeichne normal mit Auswahl-Highlight
+				if (hasSelection() && isSearchBarFocused) {
+					renderTextWithSelection(context, client, displayText, textX, searchBarY + 6, textColor);
+				} else {
+					context.drawText(
+						client.textRenderer,
+						displayText,
+						textX,
+						searchBarY + 6,
+						textColor,
+						true
+					);
+				}
 			}
 		} else {
 			// Placeholder-Text
@@ -699,6 +711,8 @@ public class SearchBarUtility {
 	private static void clearSearchBar() {
 		searchText = "";
 		cursorPosition = 0;
+		selectionStart = 0;
+		selectionEnd = 0;
 		isSearchBarFocused = false;
 		matchingSlots.clear();
 		cursorVisible = false;
@@ -706,6 +720,72 @@ public class SearchBarUtility {
 		
 		// Inventar-Tracking zurücksetzen
 		previousInventory.clear();
+	}
+	
+	/**
+	 * Prüft ob Text markiert ist
+	 */
+	private static boolean hasSelection() {
+		return selectionStart != selectionEnd;
+	}
+	
+	/**
+	 * Löscht die aktuelle Textauswahl
+	 */
+	private static void clearSelection() {
+		selectionStart = 0;
+		selectionEnd = 0;
+	}
+	
+	/**
+	 * Fügt ein Zeichen ein und ersetzt dabei markierten Text falls vorhanden
+	 */
+	private static void insertCharacter(char character) {
+		if (hasSelection()) {
+			// Ersetze markierten Text
+			int start = Math.min(selectionStart, selectionEnd);
+			int end = Math.max(selectionStart, selectionEnd);
+			searchText = searchText.substring(0, start) + character + searchText.substring(end);
+			cursorPosition = start + 1;
+			clearSelection();
+		} else {
+			// Füge an Cursor-Position ein
+			searchText = searchText.substring(0, cursorPosition) + character + searchText.substring(cursorPosition);
+			cursorPosition++;
+		}
+		performSearch();
+	}
+	
+	/**
+	 * Rendert Text mit Auswahl-Highlighting
+	 */
+	private static void renderTextWithSelection(DrawContext context, MinecraftClient client, String text, int x, int y, int textColor) {
+		int start = Math.min(selectionStart, selectionEnd);
+		int end = Math.max(selectionStart, selectionEnd);
+		
+		// Zeichne Text vor der Auswahl
+		if (start > 0) {
+			String beforeSelection = text.substring(0, start);
+			context.drawText(client.textRenderer, beforeSelection, x, y, textColor, true);
+		}
+		
+		// Berechne Position für die Auswahl
+		int selectionX = x + client.textRenderer.getWidth(text.substring(0, start));
+		String selectedText = text.substring(start, end);
+		int selectionWidth = client.textRenderer.getWidth(selectedText);
+		
+		// Zeichne Auswahl-Hintergrund
+		context.fill(selectionX, y - 1, selectionX + selectionWidth, y + 9, 0xFF0078D4); // Blauer Auswahl-Hintergrund
+		
+		// Zeichne ausgewählten Text (weiß auf blau)
+		context.drawText(client.textRenderer, selectedText, selectionX, y, 0xFFFFFFFF, true);
+		
+		// Zeichne Text nach der Auswahl
+		if (end < text.length()) {
+			String afterSelection = text.substring(end);
+			int afterX = selectionX + selectionWidth;
+			context.drawText(client.textRenderer, afterSelection, afterX, y, textColor, true);
+		}
 	}
 	
 	public static boolean handleMouseClick(double mouseX, double mouseY, int button) {
@@ -758,6 +838,7 @@ public class SearchBarUtility {
 			
 			if (button == 0) {
 				isSearchBarFocused = true;
+				clearSelection(); // Auswahl löschen beim Klick
 				
 				// Cursor-Position basierend auf Mausklick berechnen
 				MinecraftClient client = MinecraftClient.getInstance();
@@ -814,9 +895,58 @@ public class SearchBarUtility {
 		return true;
 		}
 		
+		// Strg-Funktionen
+		if (modifiers == 2) { // 2 = Strg
+			switch (keyCode) {
+				case 67: // Strg+C - Kopieren
+					if (hasSelection()) {
+						// Kopiere markierten Text
+						String selectedText = searchText.substring(Math.min(selectionStart, selectionEnd), Math.max(selectionStart, selectionEnd));
+						client.keyboard.setClipboard(selectedText);
+					} else if (!searchText.isEmpty()) {
+						// Kopiere gesamten Text wenn nichts markiert ist
+						client.keyboard.setClipboard(searchText);
+					}
+					return true;
+				case 86: // Strg+V - Einfügen
+					String clipboardText = client.keyboard.getClipboard();
+					if (clipboardText != null && !clipboardText.isEmpty()) {
+						if (hasSelection()) {
+							// Ersetze markierten Text
+							int start = Math.min(selectionStart, selectionEnd);
+							int end = Math.max(selectionStart, selectionEnd);
+							searchText = searchText.substring(0, start) + clipboardText + searchText.substring(end);
+							cursorPosition = start + clipboardText.length();
+							clearSelection();
+						} else {
+							// Füge an Cursor-Position ein
+							searchText = searchText.substring(0, cursorPosition) + clipboardText + searchText.substring(cursorPosition);
+							cursorPosition += clipboardText.length();
+						}
+						performSearch();
+					}
+					return true;
+				case 65: // Strg+A - Alles markieren
+					if (!searchText.isEmpty()) {
+						selectionStart = 0;
+						selectionEnd = searchText.length();
+						cursorPosition = searchText.length();
+					}
+					return true;
+			}
+		}
+		
 		// Backspace-Taste
 		if (keyCode == 259) {
-			if (cursorPosition > 0) {
+			if (hasSelection()) {
+				// Lösche markierten Text
+				int start = Math.min(selectionStart, selectionEnd);
+				int end = Math.max(selectionStart, selectionEnd);
+				searchText = searchText.substring(0, start) + searchText.substring(end);
+				cursorPosition = start;
+				clearSelection();
+				performSearch();
+			} else if (cursorPosition > 0) {
 				// Strg+Backspace: Lösche ganzes Wort
 				if (modifiers == 2) { // 2 = Strg
 					int wordStart = findWordStart(searchText, cursorPosition);
@@ -832,8 +962,27 @@ public class SearchBarUtility {
 			return true;
 		}
 		
+		// Delete-Taste
+		if (keyCode == 261) {
+			if (hasSelection()) {
+				// Lösche markierten Text
+				int start = Math.min(selectionStart, selectionEnd);
+				int end = Math.max(selectionStart, selectionEnd);
+				searchText = searchText.substring(0, start) + searchText.substring(end);
+				cursorPosition = start;
+				clearSelection();
+				performSearch();
+			} else if (cursorPosition < searchText.length()) {
+				// Delete: Lösche Zeichen nach dem Cursor
+				searchText = searchText.substring(0, cursorPosition) + searchText.substring(cursorPosition + 1);
+				performSearch();
+			}
+			return true;
+		}
+		
 		// Pfeiltasten
 		if (keyCode == 263) {
+			clearSelection(); // Auswahl löschen
 			if (cursorPosition > 0) {
 				cursorPosition--;
 			}
@@ -841,6 +990,7 @@ public class SearchBarUtility {
 		}
 		
 		if (keyCode == 262) {
+			clearSelection(); // Auswahl löschen
 			if (cursorPosition < searchText.length()) {
 				cursorPosition++;
 			}
@@ -849,74 +999,54 @@ public class SearchBarUtility {
 		
 		// Leertaste
 		if (keyCode == 32) {
-			searchText = searchText.substring(0, cursorPosition) + " " + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter(' ');
 			return true;
 		}
 		
 		// Einfache Sonderzeichen
 		if (keyCode == 188) {
-			searchText = searchText.substring(0, cursorPosition) + ',' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter(',');
 			return true;
 		}
 		
 		if (keyCode == 190) {
-			searchText = searchText.substring(0, cursorPosition) + '.' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('.');
 			return true;
 		}
 		
 		// Alternative KeyCodes für QWERTZ-Layout
 		if (keyCode == 44) { // Alternative für Komma
-			searchText = searchText.substring(0, cursorPosition) + ',' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter(',');
 			return true;
 		}
 		
 		if (keyCode == 46) { // Alternative für Punkt
-			searchText = searchText.substring(0, cursorPosition) + '.' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('.');
 			return true;
 		}
 		
 		if (keyCode == 189) {
-			searchText = searchText.substring(0, cursorPosition) + '-' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('-');
 			return true;
 		}
 		
 		if (keyCode == 187) {
-			searchText = searchText.substring(0, cursorPosition) + '+' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('+');
 			return true;
 		}
 		
 		if (keyCode == 186) {
-			searchText = searchText.substring(0, cursorPosition) + ';' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter(';');
 			return true;
 		}
 		
 		if (keyCode == 222) {
-			searchText = searchText.substring(0, cursorPosition) + '"' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('"');
 			return true;
 		}
 		
 		if (keyCode == 192) {
-			searchText = searchText.substring(0, cursorPosition) + '`' + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('`');
 			return true;
 		}
 		
@@ -925,28 +1055,23 @@ public class SearchBarUtility {
 		if (modifiers == 6) {
 			switch (keyCode) {
 				case 56:
-					searchText = searchText.substring(0, cursorPosition) + '[' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('[');
 					handled = true;
 					break;
 				case 57:
-					searchText = searchText.substring(0, cursorPosition) + ']' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter(']');
 					handled = true;
 					break;
 				case 55:
-					searchText = searchText.substring(0, cursorPosition) + '{' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('{');
 					handled = true;
 					break;
 				case 48:
-					searchText = searchText.substring(0, cursorPosition) + '}' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('}');
 					handled = true;
 					break;
 				case 81:
-					searchText = searchText.substring(0, cursorPosition) + '@' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('@');
 					handled = true;
 					break;
 			}
@@ -956,148 +1081,112 @@ public class SearchBarUtility {
 		if (modifiers == 1) {
 			switch (keyCode) {
 				case 55:
-					searchText = searchText.substring(0, cursorPosition) + '/' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('/');
 					handled = true;
 					break;
 				case 56:
-					searchText = searchText.substring(0, cursorPosition) + '(' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('(');
 					handled = true;
 					break;
 				case 57:
-					searchText = searchText.substring(0, cursorPosition) + ')' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter(')');
 					handled = true;
 					break;
 				case 48:
-					searchText = searchText.substring(0, cursorPosition) + '=' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('=');
 					handled = true;
 					break;
 				case 220:
-					searchText = searchText.substring(0, cursorPosition) + '|' + searchText.substring(cursorPosition);
-					cursorPosition++;
+					insertCharacter('|');
 					handled = true;
 					break;
 			}
 		}
 		
 		if (keyCode == 53 && modifiers == 1) {
-			searchText = searchText.substring(0, cursorPosition) + "%" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('%');
 			return true;
 		}
 		
 		// Separate Sonderzeichen-Tasten
 		if (keyCode == 92) {
-			searchText = searchText.substring(0, cursorPosition) + "#" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('#');
 			return true;
 		}
 		
 		if (keyCode == 93) {
-			searchText = searchText.substring(0, cursorPosition) + "+" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('+');
 			return true;
 		}
 		
 		if (keyCode == 47) {
-			searchText = searchText.substring(0, cursorPosition) + "-" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('-');
 			return true;
 		}
 		
 		if (keyCode == 162 && modifiers == 0) {
-			searchText = searchText.substring(0, cursorPosition) + "<" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('<');
 			return true;
 		}
 		
 		if (keyCode == 162 && modifiers == 1) {
-			searchText = searchText.substring(0, cursorPosition) + ">" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('>');
 			return true;
 		}
 		
 		// Separate ß-Taste
 		if (keyCode == 45) {
-			searchText = searchText.substring(0, cursorPosition) + "ß" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('ß');
 			return true;
 		}
 		
 		// Separate Umlaut-Tasten
 		if (keyCode == 39) { // ä
-			searchText = searchText.substring(0, cursorPosition) + "ä" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('ä');
 			return true;
 		}
 		
 		if (keyCode == 59) { // ö
-			searchText = searchText.substring(0, cursorPosition) + "ö" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('ö');
 			return true;
 		}
 		
 		if (keyCode == 91) { // ü
-			searchText = searchText.substring(0, cursorPosition) + "ü" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('ü');
 			return true;
 		}
 		
 		// Numpad-Tasten
 		if (keyCode == 334) {
-			searchText = searchText.substring(0, cursorPosition) + "+" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('+');
 			return true;
 		}
 		
 		if (keyCode == 333) {
-			searchText = searchText.substring(0, cursorPosition) + "-" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('-');
 			return true;
 		}
 		
 		// Numpad-Zahlen 0-9
 		if (keyCode == 320) {
-			searchText = searchText.substring(0, cursorPosition) + "0" + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter('0');
 			return true;
 		}
 		
 		if (keyCode >= 321 && keyCode <= 329) {
 			char number = (char) ('0' + (keyCode - 321 + 1));
-			searchText = searchText.substring(0, cursorPosition) + number + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter(number);
 			return true;
 		}
 
 		if (handled) {
-			performSearch();
 			return true;
 		}
 
 		// Zahlen 0-9
 		if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
 			char number = (char) keyCode;
-			searchText = searchText.substring(0, cursorPosition) + number + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter(number);
 			return true;
 		}
 
@@ -1115,9 +1204,7 @@ public class SearchBarUtility {
 				letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
 			}
 			
-			searchText = searchText.substring(0, cursorPosition) + letter + searchText.substring(cursorPosition);
-			cursorPosition++;
-			performSearch();
+			insertCharacter(letter);
 			return true;
 		}
 

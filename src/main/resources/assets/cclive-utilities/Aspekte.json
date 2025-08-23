@@ -1,38 +1,1734 @@
 {
-    "Drachenlederhelm": {
-      "aspect_name": "Aspekt der Drachenkraft",
-      "aspect_description": "Erhöht deine Verteidigung um 5% - 15% und gibt dir eine Chance von 2% - 8% auf Feuerresistenz für 10 Sekunden bei jedem Treffer."
-    },
-    "Drachenschuppen Kriegshelm": {
-      "aspect_name": "Aspekt der Wahrensicht",
-      "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 1% - 5% das deine kritische Treffer Chance für 3 - 7 Sek um 3% - 10% erhöht wird."
-    },
-    "Drachenschuppen Kriegsgürtel": {
-      "aspect_name": "Aspekt der Opferung",
-      "aspect_description": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqWenn du einen Gegner der von einem Blutungseffekt betroffen ist besiegst, besteht eine Chance von 10% - 15% das du dich um 5% - 10% heilst."
-    },
-    "Drachenlederrüstung": {
-      "aspect_name": "Aspekt der Unverwundbarkeit",
-      "aspect_description": "Bei jedem kritischen Treffer erhältst du für 3 - 6 Sekunden einen Schild der 20% - 40% des eingehenden Schadens absorbiert."
-    },
-    "Drachenlederleggins": {
-      "aspect_name": "Aspekt der Geschwindigkeit",
-      "aspect_description": "Deine Bewegungsgeschwindigkeit wird um 10% - 25% erhöht und du erhältst eine Chance von 5% - 15% auf einen kurzen Geschwindigkeitsschub bei jedem Treffer."
-    },
-    "Göttliche Plattenläufer": {
-      "aspect_name": "Aspekt der Kaskade",
-      "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
-    },
-    "Drachenlederschuhe": {
-      "aspect_name": "Aspekt der Leichtigkeit",
-      "aspect_description": "Du kannst 1 - 3 Blöcke höher springen und erhältst eine Chance von 8% - 20% auf Schwebeeffekt für 2 - 5 Sekunden bei jedem Sprung."
-    },
-    "Felsspalter des Kaktusmeister": {
-      "aspect_name": "Aspekt der Zerstörung",
-      "aspect_description": "Deine Angriffe haben eine Chance von 15% - 30% auf zusätzlichen Explosionsschaden und können Blöcke in einem Radius von 2 - 5 Blöcken zerstören."
-    },
-    "Drachenlederband": {
-      "aspect_name": "Aspekt der Vitalität",
-      "aspect_description": "Erhöht deine maximale Gesundheit um 10% - 20% und gibt dir eine passive Regeneration von 1 - 3 Herzen alle 10 Sekunden."
-    }
+  "Drachenlederhelm": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Drachenschuppen Kriegshelm": {
+    "aspect_name": "Aspekt der Wahrensicht",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 1% - 5% das deine kritische Treffer Chance für 3 - 7 Sekunden um 3% - 10% erhöht wird."
+  },
+  "Drachenschuppen Kriegsgürtel": {
+    "aspect_name": "Aspekt der Opferung",
+    "aspect_description": "Wenn du einen Gegner der von einem Blutungseffekt betroffen ist besiegst, besteht eine Chance von 10% - 15% das du dich um 5% - 10% heilst."
+  },
+  "Drachenlederrüstung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Drachenlederleggins": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Göttliche Plattenläufer": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Drachenlederschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Felsspalter des Kaktusmeister": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Drachenlederband": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Drachenschuppen Kriegshandschuhe": {
+    "aspect_name": "Aspekt der Flamme",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sekunden in Brand zu setzen wodurch er 5% - 10% Schaden in höhe deines Basisschadens erleidet."
+  },
+  "Götterhieb": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Drachenschuppen Kriegsschultern": {
+    "aspect_name": "Aspekt des Sturzfluges",
+    "aspect_description": "Deine Angriffe richten 10% - 20% mehr Schaden an fliegenden Gegnern an."
+  },
+  "Drachenschuppen Kriegsbrustplatte": {
+    "aspect_name": "Aspekt des Forschers",
+    "aspect_description": "Jedes mal wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das deine aktuell laufende Forschung um 1 - 2 Sekunden verringert wird."
+  },
+  "Seelenschnitter": {
+    "aspect_name": "Aspekt des Seelenschnitter",
+    "aspect_description": "Deine Angriffe haben eine Chance von 0% - 1% Seelen in Höhe von 5% - 10% deiner bisher höchst erreichten Welle zu generieren."
+  },
+  "Drachenschuppen Kriegshosen": {
+    "aspect_name": "Aspekt des Windes",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 20% - 50% das deine Laufgeschwindigkeit für 10 - 15 Sekunden um 7% - 15% erhöht wird."
+  },
+  "Drachenlederhandschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Fäustlinge der Ahnen": {
+    "aspect_name": "Aspekt des Blitzes",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das Blitze auf Gegner in einem Umkreis von 2 - 8 Blöcken niedergehen die 5% - 10% Schaden deines generellen Schadens anrichten und die Gegner zu 30% - 50% für 1 - 3 Sekunden betäuben."
+  },
+  "Drachenblutband": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Dunkelmond Gamaschen": {
+    "aspect_name": "Aspekt des Mondes",
+    "aspect_description": "Deine Angriffe erhöhen für 3 - 5 Sekunden deine Angriffsgeschwindigkeit um 1% - 3%, bis zu 2 - 5 mal Stapelbar. Erreichst du die maximalen Stapel erlebst du für 3 - 10 Sekunden einen Vampirrausch der deinen Schaden um 3% - 10% erhöht und dir 3% - 10% mehr Bewegungsgeschwindigkeit verleiht."
+  },
+  "Drachenblutamulett": {
+    "aspect_name": "Aspekt der Opferung",
+    "aspect_description": "Wenn du einen Gegner der von einem Blutungseffekt betroffen ist besiegst, besteht eine Chance von 10% - 15% das du dich um 5% - 10% heilst."
+  },
+  "Dunkelmond Helmvisier": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Dunkelmond Panzerhandbuckel": {
+    "aspect_name": "Aspekt des Wissens",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das die gewonnene Erfahrung um 1% - 5% erhöht ist."
+  },
+  "Drachenlederschultern": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Band der dunklen Herrschaft": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelverhangener Lederhelm": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Dunkelmond Schulterbuckel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelverhangener Ledergürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Angus Abzeichen der Dunkelheit": {
+    "aspect_name": "Aspekt des Verdorrenen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sekunden in Verdorrenheit zu setzen wodurch er 5% - 10% Schaden in Höhe deines Basisschadens erleidet."
+  },
+  "Sabatons der Ahnen": {
+    "aspect_name": "Aspekt des Meteors",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das auf einem zufälligen Gegner im Radius von 5 - 12 Blöcken ein Meteor niedergeht der 10% - 20% Schaden deines generellen Schadens im Umkreis von 3 - 5 Blöcken anrichtet."
+  },
+  "Mondschatten": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Die Klinge des Geisteskriegers": {
+    "aspect_name": "Aspekt des Todeszorn",
+    "aspect_description": "Dein nächster Angriff nach 3 - 8 besiegten Gegnern verursacht um 10% - 25% erhöhten Schaden."
+  },
+  "Nebelverhangene Lederhandschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelverhangene Lederschutzweste": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Die Feuerschlange": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Glimmernde Spitzhacke des Lichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Gürtel der Ahnen": {
+    "aspect_name": "Aspekt des Reichtums",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20% deine Münzmenge um 5% - 10% für 10 - 20 Sekunden zu erhöhen."
+  },
+  "Sternenstahlstiefel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelverhangene Lederschlappen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Göttergleiterstiefel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelverhangene Lederschultern": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Pranken des Eisbären": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Dunkelmond Brustpanzer": {
+    "aspect_name": "Aspekt des Seelenschnitter",
+    "aspect_description": "Deine Angriffe haben eine Chance von 0% - 1% Seelen in Höhe von 5% - 10% deiner bisher höchst erreichten Welle zu generieren."
+  },
+  "Beinkleid der Ahnen": {
+    "aspect_name": "Aspekt der Substanz",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20% deine Dropchance um 5% - 10% für 10 - 20 Sekunden zu erhöhen."
+  },
+  "Klinge des Schatzmeisters": {
+    "aspect_name": "Aspekt des Reichtums",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20% deine Münzmenge um 5% - 10% für 10 - 20 Sekunden zu erhöhen."
+  },
+  "Die Dunkelheit": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelverhangene Mokassins": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Dunkelmond Gurt": {
+    "aspect_name": "Aspekt des Mondes",
+    "aspect_description": "Deine Angriffe erhöhen für 3 - 5 Sekunden deine Angriffsgeschwindigkeit um 1% - 3%, bis zu 2 - 5 mal Stapelbar. Erreichst du die maximalen Stapel erlebst du für 3 - 10 Sekunden einen Vampirrausch der deinen Schaden um 3% - 10% erhöht und dir 3% - 10% mehr Bewegungsgeschwindigkeit verleiht."
+  },
+  "Ring der Ahnen": {
+    "aspect_name": "Aspekt der Gier",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20% deine Münzchance um 5% - 10% für 10 - 20 Sekunden zu erhöhen."
+  },
+  "Lautloser Schattentod": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Robe des Lichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kranz des Sonnenkönigs": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schulterpanzer der Ahnen": {
+    "aspect_name": "Aspekt des Schwertes",
+    "aspect_description": "Angriffe mit einem Schwert fügen 3% - 10% mehr Schaden zu."
+  },
+  "Enderdrachen Füße": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Plattenhelm der Ahnen": {
+    "aspect_name": "Aspekt der Hinrichtung",
+    "aspect_description": "Du verursachst 10% - 25% mehr Schaden an Gegnern die weniger als 50% Leben besitzen."
+  },
+  "Kriegspanzer der Ahnen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Yin Yang Schultern": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Amulett der Ahnen": {
+    "aspect_name": "Aspekt des Gelehrten",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% dass deine gewonnene Erfahrung für die nächsten 2 - 7 Sekunden um 3% - 10% erhöht ist."
+  },
+  "Kristallverzierter Seidengürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Vollmondnacht": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Blitzzorn": {
+    "aspect_name": "Aspekt des Blitzes",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das Blitze auf Gegner in einem Umkreis von 2 - 8 Blöcken niedergehen die 5% - 10% Schaden deines generellen Schadens anrichten und die Gegner zu 30% - 50% für 1 - 3 Sekunden betäuben."
+  },
+  "Surrender Todesbogen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Bambus-Zerberster-Holzhacker": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Poseidons Schulterschützer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Glutgewobener Plattenhelm": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Poseidons Brust": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sturmfeuer Brandbeil": {
+    "aspect_name": "Aspekt des Blitzfokus",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% deine Ausweichchance für 3 - 10 Sekunden um 1% - 3% zu erhöhen. Der Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Axt des Bambusmeister": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Höllischer Enthaupter": {
+    "aspect_name": "Aspekt der Hinrichtung",
+    "aspect_description": "Du verursachst 10% - 25% mehr Schaden an Gegnern die weniger als 50% Leben besitzen."
+  },
+  "Die Sternschnuppe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Drachentöter Plattenhandpanzer": {
+    "aspect_name": "Aspekt der Opferung",
+    "aspect_description": "Wenn du einen Gegner der von einem Blutungseffekt betroffen ist besiegst, besteht eine Chance von 10% - 15% das du dich um 5% - 10% heilst."
+  },
+  "Drachenzorn": {
+    "aspect_name": "Aspekt der Pyrolyse",
+    "aspect_description": "Deine Angriffe haben eine 80% - 100% Chance, bei einem tödlichen Treffer Gegner mit einem Brandeffekt explodieren zu lassen, was 30% - 50% ihres maximalen Lebens als Schaden im Umkreis von 2 - 6 Blöcken verursacht."
+  },
+  "Glutgewebtes Beinkleid": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Poseidons Wellenkrone": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Glutgewebtes Schulterpolster": {
+    "aspect_name": "Aspekt der Pyrolyse",
+    "aspect_description": "Deine Angriffe haben eine 80% - 100% Chance, bei einem tödlichen Treffer Gegner mit einem Brandeffekt explodieren zu lassen, was 30% - 50% ihres maximalen Lebens als Schaden im Umkreis von 2 - 6 Blöcken verursacht."
+  },
+  "Poseidons Wellenriemen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Siegelring des Drachentöters": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Talisman des Drachentöters": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Poseidons Dreizackgriffe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Glutgewobener Gürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Poseidons Beinschutz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phantomfluch": {
+    "aspect_name": "Aspekt des Todeszorn",
+    "aspect_description": "Dein nächster Angriff nach 3 - 8 besiegten Gegnern verursacht um 10% - 25% erhöhten Schaden."
+  },
+  "Drachenherz Brustpanzer": {
+    "aspect_name": "Aspekt der Hinrichtung",
+    "aspect_description": "Du verursachst 10% - 25% mehr Schaden an Gegnern die weniger als 50% Leben besitzen."
+  },
+  "Gultgewebte Treter": {
+    "aspect_name": "Aspekt der Pyrolyse",
+    "aspect_description": "Deine Angriffe haben eine 80% - 100% Chance, bei einem tödlichen Treffer Gegner mit einem Brandeffekt explodieren zu lassen, was 30% - 50% ihres maximalen Lebens als Schaden im Umkreis von 2 - 6 Blöcken verursacht."
+  },
+  "Poseidons Flossen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenflug": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Angus Dunkler Blick": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Odysseus Bogen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Uraltes Titanenband": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Göttlicher Kaktusernter": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherische Samthose": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ewiger Brustharnisch": {
+    "aspect_name": "Aspekt der Meisterschaft",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% deine kritisch Treffer Chance für 3 - 7 Sekunden um 1% - 4% zu erhöhen. Der Effekt ist 1 - 3 mal Stapelbar."
+  },
+  "Wechsel der Gezeiten": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Lichtblitz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Strahlende Hacke des Lichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherische Samtschulterhauben": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kaktusmeisters Axt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Enthaupter des Gladiators": {
+    "aspect_name": "Aspekt des Wirbelwinds",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% einen Wirbelangriff auszulösen der 30% - 50% Schaden in höhe deines Basisschadens in einem Umkreis von 2 - 5 Blöcken anrichtet."
+  },
+  "Ätherische Samtfingerlinge": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Zeitlose Plattenhose": {
+    "aspect_name": "Aspekt der Telekinese",
+    "aspect_description": "Deine Angriffe haben eine Chance von 5% - 15% dich zum nächst gelegenen Gegner innerhalb von 10 - 30 Blöcken zu teleportieren."
+  },
+  "Meisterschwert": {
+    "aspect_name": "Aspekt der Substanz",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20% deine Dropchance um 5% - 10% für 10 - 20 Sekunden zu erhöhen."
+  },
+  "Blitzschleuder": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Majestätische Pilzaxt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Zeitlose Plattenschuhe": {
+    "aspect_name": "Aspekt der Axt",
+    "aspect_description": "Angriffe mit der Axt fügen 3% - 10% mehr Schaden zu."
+  },
+  "Zeitlose Schulterpanzer": {
+    "aspect_name": "Aspekt der Münze",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das seine fallen gelassenen Münzen um 5% - 12% erhöht sind."
+  },
+  "Der Schattenspalter": {
+    "aspect_name": "Aspekt der Gravitation",
+    "aspect_description": "Deine Angriffe haben eine Chance von 2% - 12% Gegner im Umkreis von X Blöcken zu dir heran zu ziehen."
+  },
+  "Das Auge des Osiris": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschuss": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherischer Samtgurt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Zeitloser Fingerschutz": {
+    "aspect_name": "Aspekt des Assassine",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das dein kritisch Trefferschaden für die nächsten 3- 8 Sekunden um 5% - 10% erhöht wird."
+  },
+  "Verlorene Spitzhacke des Erzchampions": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherische Pantoffeln": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Frostbiss Plattenhandschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Gleißender Talisman der Wallwacht": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Brust des Gleichgewichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Zeitloser Helmpanzer": {
+    "aspect_name": "Aspekt der Gravitation",
+    "aspect_description": "Deine Angriffe haben eine Chance von 2% - 12% Gegner im Umkreis von X Blöcken zu dir heran zu ziehen."
+  },
+  "Anduril": {
+    "aspect_name": "Aspekt der Gravitation",
+    "aspect_description": "Deine Angriffe haben eine Chance von 2% - 12% Gegner im Umkreis von X Blöcken zu dir heran zu ziehen."
+  },
+  "Der Himmelsflug": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Zeitloser Waffengurt": {
+    "aspect_name": "Aspekt des Schnitters",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% deinen kritisch Trefferschaden für 3 - 8 Sekunden um 3% - 5% zu erhöhen. Der Effekt is bis zu 2 - 5 mal Stapelbar."
+  },
+  "Ätherisches Samthemd": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherischer Samthut": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schuhe des Gleichgewichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Talisman der Ewigkeit": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Frostbiss Kriegshelm": {
+    "aspect_name": "Aspekt des Glücks",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das dein Glückslevel für die nächsten 3 - 8 Sekunden um 1 - 5 erhöht wird."
+  },
+  "Band der Ewigkeit": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Handschuhe des Gleichgewichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Hose des Gleichgewichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Frostbiss Plattenschuhe": {
+    "aspect_name": "Aspekt der Gravitation",
+    "aspect_description": "Deine Angriffe haben eine Chance von 2% - 12% Gegner im Umkreis von X Blöcken zu dir heran zu ziehen."
+  },
+  "Der Drachentöter": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Frostbiss Plattengürtel": {
+    "aspect_name": "Aspekt der Kälte",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% Gegner für 1 - 3 Sekunden einzufrieren."
+  },
+  "Helm des Gleichgewichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Frostbiss Schulterplatten": {
+    "aspect_name": "Aspekt der Schwäche",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% dem Gegner 3% - 10% mehr Schaden auf Basis deines generellen Schadens zuzufügen und zusätzlich wird der Schaden des Gegners für 2 - 7 Sekunden um 3% - 10% reduziert."
+  },
+  "Der Zeitverzerrer": {
+    "aspect_name": "Aspekt der Telekinese",
+    "aspect_description": "Deine Angriffe haben eine Chance von 5% - 15% dich zum nächst gelegenen Gegner innerhalb von 10 - 30 Blöcken zu teleportieren."
+  },
+  "Gürtel des Gleichgewichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Frostbiss Plattenhose": {
+    "aspect_name": "Aspekt der Kontrolle",
+    "aspect_description": "Deine Angriffe fügen Bewegungsunfähigen, eingefrorenen oder betäubten Gegnern 5% - 15% mehr Schaden zu."
+  },
+  "CACTUS_CLICKER.armors.eternal_balance_leggings": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Frost Mantel": {
+    "aspect_name": "Aspekt des Kaktus",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das du Kaktus von 1% - 5% deines maximalen Kaktus generierst."
+  },
+  "Alkatars Sehne": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschild-Lederriemen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanentretter": {
+    "aspect_name": "Aspekt des Titanen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% bei einem Boss Gegner 3% - 10% mehr Schaden anzurichten."
+  },
+  "Weltenfresser": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Nekromantenblick": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Blitzsturm Schulterbuckel": {
+    "aspect_name": "Aspekt des Blitzes",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das Blitze auf Gegner in einem Umkreis von 2 - 8 Blöcken niedergehen die 5% - 10% Schaden deines generellen Schadens anrichten und die Gegner zu 30% - 50% für 1 - 3 Sek betäuben."
+  },
+  "Wurzelring des Lebens": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Azurblitz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Höllenfeuer Flammenhose": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschild-Trekkingschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Blitzsturm Helmdeckung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Amulett des Ewigenfeuers": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristalline Schulterpanzer": {
+    "aspect_name": "Aspekt des Kriegers",
+    "aspect_description": "Angriffe mit dem Schwert oder einer Axt haben eine Chance von 1% - 3% deine Stärke für 3 - 8 Sek um 3% - 10% zu erhöhen."
+  },
+  "Lichtschild-Lederhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Drachenfluch": {
+    "aspect_name": "Aspekt des Schlächters",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% den Gegner für 3 - 7 Sek Blutung zuzufügen wodurch er 5% - 10% Schaden in höhe deines generellen Schadens erleidet."
+  },
+  "Spitzhacke des Kaktusmeister": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sculkwanderer Plattenschuhe": {
+    "aspect_name": "Aspekt des Todsuchers",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das für die nächsten 3 - 8 Sek deine kritisch Trefferchance um 3% - 8% und dein kritisch Trefferschaden um 5% - 10% erhöht wird."
+  },
+  "Blitzsturm Gurt": {
+    "aspect_name": "Aspekt des Glücks",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das dein Glückslevel für die nächsten 3 - 8 Sek um 1 - 5 erhöht wird."
+  },
+  "Göttliche Balester": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenschütze": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Höllenfeuer Flammenfinger": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschild-Lederhülle": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Blitzsturm Panzerhandbuckel": {
+    "aspect_name": "Aspekt der Blutfessel",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20%, Gegner die unter einem Blutungseffekt stehen für 3 - 5 Sekunden zu betäuben."
+  },
+  "Blitzsturm Brustpanzer": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Ring der Unsterblichkeit": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschild-Ledergamaschen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Streitaxt des Odin": {
+    "aspect_name": "Aspekt der Kälte",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% Gegner für 1 - 3 Sekunden einzufrieren."
+  },
+  "Mondstrahl": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschild-Lederschulterhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschild-Lederhandhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Blitzsturm Gamaschen": {
+    "aspect_name": "Aspekt der Flinkheit",
+    "aspect_description": "Deine Angriffe erhöhen deine Bewegungsgeschwindigkeit pro Treffer um 1% - 3%, dieser Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Klinge des Lehrmeisters": {
+    "aspect_name": "Aspekt des Gelehrten",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% dass deine gewonnene Erfahrung für die nächsten 2 - 7 Sekunden um 3% - 10% erhöht ist."
+  },
+  "Titanklinge des Henkers": {
+    "aspect_name": "Aspekt des Titanen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% bei einem Boss Gegner 3% - 10% mehr Schaden anzurichten."
+  },
+  "Höllenfeuer Laufschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristallkürass": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Höllenfeuer Flammengürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Göttliche Pilzfällaxt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Blutzorn": {
+    "aspect_name": "Aspekt der Opferung",
+    "aspect_description": "Wenn du einen Gegner der von einem Blutungseffekt betroffen ist besiegst, besteht eine Chance von 10% - 15% das du dich um 5% - 10% heilst."
+  },
+  "Eisenerz-Zerberster": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterbeil": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Kristalliner Helmpanzer": {
+    "aspect_name": "Aspekt des Bergs",
+    "aspect_description": "Jeder deine Angriffe hat eine Chance von 7% - 15% deine Rüstung um 1% - 5% für 10 - 20 Sekunden zu erhöhen. Der Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Dimensionsreißer": {
+    "aspect_name": "Aspekt der Telekinese",
+    "aspect_description": "Deine Angriffe haben eine Chance von 5% - 15% dich zum nächst gelegenen Gegner innerhalb von 10 - 30 Blöcken zu teleportieren."
+  },
+  "Höllenfeuer Flammenstirn": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristalline Plattenhandschuhe": {
+    "aspect_name": "Aspekt der Kälte",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% Gegner für 1 - 3 Sekunden einzufrieren."
+  },
+  "Amulett der Unsterblichkeit": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Leuchtende Axt des Lichts": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Höllenfeuer Flammenschulter": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristalline Plattenhose": {
+    "aspect_name": "Aspekt des Schmieds",
+    "aspect_description": "Jedes mal wenn du einen Gegner besiegst besteht eine Chance von 1% - 5% das der aktuelle Produktion im Amboss einen Wert von 20 - 50 Geschwindigkeit hinzugefügt wird."
+  },
+  "Kristallenes Schutzband": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Höllenfeuer Flammenbrust": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Weltenwächter Brustpanzer": {
+    "aspect_name": "Aspekt des Todeszorn",
+    "aspect_description": "Dein nächster Angriff nach 3 - 8 besiegten Gegnern verursacht um 10% - 25% erhöhten Schaden."
+  },
+  "Karmesin Fingerlinge": {
+    "aspect_name": "Aspekt des Kaktus",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das du Kaktus von 1% - 5% deines maximalen Kaktus generierst."
+  },
+  "Thors Donnerschulterembleme": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Alkatars Gluttalisman": {
+    "aspect_name": "Aspekt der Gravitation",
+    "aspect_description": "Deine Angriffe haben eine Chance von 2% - 12% Gegner im Umkreis von X Blöcken zu dir heran zu ziehen."
+  },
+  "Vipernbiss": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Teufelsbeil": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Thors Donnerbrustpanzer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Karmesin Beinkleid": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Angus Dunkler Hass": {
+    "aspect_name": "Aspekt des Todsuchers",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das für die nächsten 3 - 8 Sek deine kritisch Trefferchance um 3% - 8% und dein kritisch Trefferschaden um 5% - 10% erhöht wird."
+  },
+  "Die Todesstunde": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Crimson Plattenhelm": {
+    "aspect_name": "Aspekt des Schlächters",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% den Gegner für 3 - 7 Sek Blutung zuzufügen wodurch er 5% - 10% Schaden in höhe deines generellen Schadens erleidet."
+  },
+  "Thors Donnerläufer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Thors Donnerbeinschützer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Alkatars Feuerband": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Thors Donnerriemen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Karmesin Stiefel": {
+    "aspect_name": "Aspekt des Giftes",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sek zu vergiften wodurch er 5% - 10% Schaden in höhe deines Basisschadens erleidet."
+  },
+  "Karmesin Schulterbuckel": {
+    "aspect_name": "Aspekt der Raserei",
+    "aspect_description": "Nach jedem 3 - 8 besiegten Gegner erhöht sich deine Angriffgeschwindigkeit für 3 - 5 Sekunden um 5% - 10%."
+  },
+  "Thors Donnerfäuste": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Karmesin Gurt": {
+    "aspect_name": "Aspekt des Schlächters",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% den Gegner für 3 - 7 Sekunden Blutung zuzufügen wodurch er 5% - 10% Schaden in höhe deines generellen Schadens erleidet."
+  },
+  "Thors Donnervisierhelm": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Kaktusernter": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Majestätische Kaktushacke": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanenhalsband": {
+    "aspect_name": "Aspekt des Bergs",
+    "aspect_description": "Jeder deine Angriffe hat eine Chance von 7% - 15% deine Rüstung um 1% - 5% für 10 - 20 Sekunden zu erhöhen. Der Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Titanenring": {
+    "aspect_name": "Aspekt des Titanen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% bei einem Boss Gegner 3% - 10% mehr Schaden anzurichten."
+  },
+  "Titanstahl Helmdeckung": {
+    "aspect_name": "Aspekt des Wissens",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das die gewonnene Erfahrung um 1% - 5% erhöht ist."
+  },
+  "Titanumhüllter Ledergurt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phantomklinge": {
+    "aspect_name": "Aspekt des Assassine",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das dein kritisch Trefferschaden für die nächsten 3- 8 Sekunden um 5% - 10% erhöht wird."
+  },
+  "Mithril Brustplatte": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanumhüllte Lederkürass": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanstahl Gurt": {
+    "aspect_name": "Aspekt des Bergs",
+    "aspect_description": "Jeder deine Angriffe hat eine Chance von 7% - 15% deine Rüstung um 1% - 5% für 10 - 20 Sekunden zu erhöhen. Der Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Sonnengesang": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Himmelstrürmers Lichthieb": {
+    "aspect_name": "Aspekt der Meisterschaft",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% deine kritisch Treffer Chance für 3 - 7 Sekunden um 1% - 4% zu erhöhen. Der Effekt ist 1 - 3 mal Stapelbar."
+  },
+  "Titanumhüllte Lederfinger": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanumhüllte Pirschstiefel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanstahl Schulterumhänge": {
+    "aspect_name": "Aspekt der Meisterschaft",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 5% deine kritisch Treffer Chance für 3 - 7 Sekunden um 1% - 4% zu erhöhen. Der Effekt ist 1 - 3 mal Stapelbar."
+  },
+  "Götterstahl-Dschungelholzhacker": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanstahl Gamaschen": {
+    "aspect_name": "Aspekt des Gelehrten",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% dass deine gewonnene Erfahrung für die nächsten 2 - 7 Sekunden um 3% - 10% erhöht ist."
+  },
+  "Mithril Handpanzer": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Götterstahl Schulterpanzer": {
+    "aspect_name": "Aspekt des Forschers",
+    "aspect_description": "Jedes mal wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das deine aktuell laufende Forschung um 1 - 2 Sekunden verringert wird."
+  },
+  "Titanumhüllte Lederschulterpolster": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Göttliches Band": {
+    "aspect_name": "Aspekt des Blitzes",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das Blitze auf Gegner in einem Umkreis von 2 - 8 Blöcken niedergehen die 5% - 10% Schaden deines generellen Schadens anrichten und die Gegner zu 30% - 50% für 1 - 3 Sekunden betäuben."
+  },
+  "Göttliche Lederhülle": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Göttliches Amulett": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Titanumhüllte Lederpantalon": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Geistdurchdringer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterstahl-Kohledezimierer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Meteoritenhieb": {
+    "aspect_name": "Aspekt des Meteors",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das auf einem zufälligen Gegner im Radius von 5 - 12 Blöcken ein Meteor niedergeht der 10% - 20% Schaden deines generellen Schadens im Umkreis von 3 - 5 Blöcken anrichtet."
+  },
+  "Titanumhüllter Lederkopfschutz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Todesläufer": {
+    "aspect_name": "Aspekt der Blutfessel",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20%, Gegner die unter einem Blutungseffekt stehen für 3 - 5 Sek zu betäuben."
+  },
+  "Götterstahl Gürtelschutz": {
+    "aspect_name": "Aspekt des Heiligenlichts",
+    "aspect_description": "Deine Angriffe richten 10% - 20% mehr Schaden an Untoten an."
+  },
+  "Göttliche Lederhandhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sabatons des Weltenfresser": {
+    "aspect_name": "Aspekt des Wirbelwinds",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% einen Wirbelangriff auszulösen der 30% - 50% Schaden in höhe deines Basisschadens in einem Umkreis von 2 - 5 Blöcken anrichtet."
+  },
+  "Göttlicher Ledergürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterstahl Brustpanzer": {
+    "aspect_name": "Aspekt der Seele",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das du Seelen im Wert von 1% - 5% deiner bisher höchst erreichten Welle generierst."
+  },
+  "Göttergefertigte Laufschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterstahl Panzerhandschuhe": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Göttliche Lederschutz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterstahl Helmpanzer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanenklinge": {
+    "aspect_name": "Aspekt des Titanen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% bei einem Boss Gegner 3% - 10% mehr Schaden anzurichten."
+  },
+  "Göttliche Lederschulterhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Göttliche Ledergamaschen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterstahl Beinschützer": {
+    "aspect_name": "Aspekt der Inneren Ruhe",
+    "aspect_description": "Deine Angriffe verursachen um 5% - 10% erhöhten Schaden für 5 - 10 Sek, so lange du still stehst."
+  },
+  "Funke der Titanen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ring der Macht": {
+    "aspect_name": "Aspekt des Mondes",
+    "aspect_description": "Deine Angriffe erhöhen für 3 - 5 Sekunden deine Angriffsgeschwindigkeit um 1% - 3%, bis zu 2 - 5 mal Stapelbar. Erreichst du die maximalen Stapel erlebst du für 3 - 10 Sekunden einen Vampirrausch der deinen Schaden um 3% - 10% erhöht und dir 3% - 10% mehr Bewegungsgeschwindigkeit verleiht."
+  },
+  "Ätherischer Nebel-Lederschutz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Arkanstahl Helmschutz": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Arkanstahl Gurt": {
+    "aspect_name": "Aspekt des Mondes",
+    "aspect_description": "Deine Angriffe erhöhen für 3 - 5 Sekunden deine Angriffsgeschwindigkeit um 1% - 3%, bis zu 2 - 5 mal Stapelbar. Erreichst du die maximalen Stapel erlebst du für 3 - 10 Sekunden einen Vampirrausch der deinen Schaden um 3% - 10% erhöht und dir 3% - 10% mehr Bewegungsgeschwindigkeit verleiht."
+  },
+  "Zephyr Schredder": {
+    "aspect_name": "Aspekt des Windes",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 20% - 50% das deine Laufgeschwindigkeit für 10 - 15 Sekunden um 7% - 15% erhöht wird."
+  },
+  "Kristalltretter": {
+    "aspect_name": "Aspekt der Tiefsee",
+    "aspect_description": "Deine Angriffe richten 10% - 20% mehr Schaden an Unterwasser Gegnern an."
+  },
+  "Arkanstahl Brustpanzer": {
+    "aspect_name": "Aspekt des Glücks",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das dein Glückslevel für die nächsten 3 - 8 Sekunden um 1 - 5 erhöht wird."
+  },
+  "Halskette der Macht": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherischer Nebel-Lederhelm": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherische Lederhandhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Arkanstahl Handhaube": {
+    "aspect_name": "Aspekt der flinken Wut",
+    "aspect_description": "Jeder besiegte Gegner erhöht deine Angriffsgeschwindigkeit um 1% - 3% für 3 - 10 Sekunden. Der Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Ätherischer Lederriemen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherischer Nebel-Mokassin": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Gläsernes Prinzessinenbeil": {
+    "aspect_name": "Aspekt der Schwäche",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% dem Gegner 3% - 10% mehr Schaden auf Basis deines generellen Schadens zuzufügen und zusätzlich wird der Schaden des Gegners für 2 - 7 Sekunden um 3% - 10% reduziert."
+  },
+  "Todbringer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Engelsring": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Ätherische Nebel-Lederhose": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenfeuer Plattengurt": {
+    "aspect_name": "Aspekt der Münze",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das seine fallen gelassenen Münzen um 5% - 12% erhöht sind."
+  },
+  "Der Schlitzer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherische Lederschulterhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Arkanstahl Schulterhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenfeuer Kopfschutz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Arkanstahl Gamaschen": {
+    "aspect_name": "Aspekt des Schnitters",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% deinen kritisch Trefferschaden für 3 - 8 Sek um 3% - 5% zu erhöhen. Der Effekt is bis zu 2 - 5 mal Stapelbar."
+  },
+  "Himmelshüter Sandalen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenfeuer Schulterschutz": {
+    "aspect_name": "Aspekt des Bezwingers",
+    "aspect_description": "Deine Angriffe richten gegen Boss Gegner 5% - 15% mehr Schaden an."
+  },
+  "Wirbelwind Beinkleid": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Blutmondwacht": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Titanen Entzweier": {
+    "aspect_name": "Aspekt des Kriegers",
+    "aspect_description": "Angriffe mit dem Schwert oder einer Axt haben eine Chance von 1% - 3% deine Stärke für 3 - 8 Sek um 3% - 10% zu erhöhen."
+  },
+  "Sternschnuppengurt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Umhang der Unsichtbarkeit": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mondlicht Schulterornamente": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Die Morgenröte": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Verlorene Hacke des Kaktus Champions": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenfeuer Leggings": {
+    "aspect_name": "Aspekt der flinken Wut",
+    "aspect_description": "Jeder besiegte Gegner erhöht deine Angriffsgeschwindigkeit um 1% - 3% für 3 - 10 Sekunden. Der Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Sternenfeuer Fingerlinge": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Meister Spaltaxt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenfeuer Brustschutz": {
+    "aspect_name": "Aspekt des Meteors",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das auf einem zufälligen Gegner im Radius von 5 - 12 Blöcken ein Meteor niedergeht der 10% - 20% Schaden deines generellen Schadens im Umkreis von 3 - 5 Blöcken anrichtet."
+  },
+  "Sternenfeuer Plattenstiefel": {
+    "aspect_name": "Aspekt der Hast",
+    "aspect_description": "Deine kritischen Treffer haben eine Chance von 1% - 5% deine Angriffsgeschwindigkeit um 5% - 10% für 3 - 7 Sekunden zu erhöhen."
+  },
+  "Himmlisches Medaillon": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Die Linke Hand": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Maske des Pharao": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Vampirsäbel": {
+    "aspect_name": "Aspekt des Mondes",
+    "aspect_description": "Deine Angriffe erhöhen für 3 - 5 Sekunden deine Angriffsgeschwindigkeit um 1% - 3%, bis zu 2 - 5 mal Stapelbar. Erreichst du die maximalen Stapel erlebst du für 3 - 10 Sekunden einen Vampirrausch der deinen Schaden um 3% - 10% erhöht und dir 3% - 10% mehr Bewegungsgeschwindigkeit verleiht."
+  },
+  "Mondlicht Titanhalsband": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schattenstahl Schulterpanzer": {
+    "aspect_name": "Aspekt des Verdorrenen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sekunden in Verdorrenheit zu setzen wodurch er 5% - 10% Schaden in Höhe deines Basisschadens erleidet."
+  },
+  "Kristallklarer Ledergurt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mitternachts Handpanzer": {
+    "aspect_name": "Aspekt des Todsuchers",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das für die nächsten 3 - 8 Sekunden deine kritisch Trefferchance um 3% - 8% und dein kritisch Trefferschaden um 5% - 10% erhöht wird."
+  },
+  "Göttliche Erzzerstörung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Phönixschrei": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Auroras Schritte": {
+    "aspect_name": "Aspekt der Gier",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20% deine Münzchance um 5% - 10% für 10 - 20 Sekunden zu erhöhen."
+  },
+  "Kristallklarer Lederhelm": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Eiskalter Henker": {
+    "aspect_name": "Aspekt der Axt",
+    "aspect_description": "Angriffe mit der Axt fügen 3% - 10% mehr Schaden zu."
+  },
+  "Verlorene Bambusaxt des Champions": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Dunkelsonnen Panzerstiefel": {
+    "aspect_name": "Aspekt der Raserei",
+    "aspect_description": "Nach jedem 3 - 8 besiegten Gegner erhöht sich deine Angriffgeschwindigkeit für 3 - 5 Sekunden um 5% - 10%."
+  },
+  "Schattenstahl Panzerhandschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristallklare Lederschultern": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristallklare Laufsohlen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mondschatten-Lederfinger": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schattenstahl Gürtelschutz": {
+    "aspect_name": "Aspekt der Telekinese",
+    "aspect_description": "Deine Angriffe haben eine Chance von 5% - 15% dich zum nächst gelegenen Gegner innerhalb von 10 - 30 Blöcken zu teleportieren."
+  },
+  "Mondschatten-Lederschulterpolster": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Band des Heldens": {
+    "aspect_name": "Aspekt des Kriegers",
+    "aspect_description": "Angriffe mit dem Schwert oder einer Axt haben eine Chance von 1% - 3% deine Stärke für 3 - 8 Sekunden um 3% - 10% zu erhöhen."
+  },
+  "Großer Kaktussporn": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristallklare Lederschutzweste": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mitternachts Beinschützer": {
+    "aspect_name": "Aspekt des Verdorrenen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sekunden in Verdorrenheit zu setzen wodurch er 5% - 10% Schaden in Höhe deines Basisschadens erleidet."
+  },
+  "Mitternachts Helmpanzer": {
+    "aspect_name": "Aspekt des Seelenschnitter",
+    "aspect_description": "Deine Angriffe haben eine Chance von 0% - 1% Seelen in Höhe von 5% - 10% deiner bisher höchst erreichten Welle zu generieren."
+  },
+  "Mondschatten-Lederkappe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Majestätische Kupfervernichtung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schattenstahl Brustpanzer": {
+    "aspect_name": "Aspekt des Giftes",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sekunden zu vergiften wodurch er 5% - 10% Schaden in höhe deines Basisschadens erleidet."
+  },
+  "Mondschatten-Lederschutz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mitternachts Schulterpanzer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Talisman der Helden": {
+    "aspect_name": "Aspekt des Schwertes",
+    "aspect_description": "Angriffe mit einem Schwert fügen 3% - 10% mehr Schaden zu."
+  },
+  "Mondschatten-Ledergurt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Angus Schattenband": {
+    "aspect_name": "Aspekt der Telekinese",
+    "aspect_description": "Deine Angriffe haben eine Chance von 5% - 15% dich zum nächst gelegenen Gegner innerhalb von 10 - 30 Blöcken zu teleportieren."
+  },
+  "Schattenstahl Helmpanzer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Tosen der Fluten": {
+    "aspect_name": "Aspekt der Tiefsee",
+    "aspect_description": "Deine Angriffe richten 10% - 20% mehr Schaden an Unterwasser Gegnern an."
+  },
+  "Schattenstahl Leggings": {
+    "aspect_name": "Aspekt der Schwäche",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% dem Gegner 3% - 10% mehr Schaden auf Basis deines generellen Schadens zuzufügen und zusätzlich wird der Schaden des Gegners für 2 - 7 Sek um 3% - 10% reduziert."
+  },
+  "Kristallklare Lederhandrüstung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristallklare Lederschlappen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mondschatten-Wanderschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mitternachts Brustpanzer": {
+    "aspect_name": "Aspekt des Ausbruchs",
+    "aspect_description": "Wenn du einen tödlichen Angriff an einem Gegner der unter einem Gift oder Verdorren Effekt steht landest, besteht eine Chance von 80% - 100% das der Effekt auf 5 - 10 Gegner im Umkreis von 10 - 30 Blöcken überspringt und 10% - 25% Schaden in höhe deines Basisschadens über 3 - 8 Sekunden verursacht."
+  },
+  "Mitternachts Gürtelschutz": {
+    "aspect_name": "Aspekt des Kriegers",
+    "aspect_description": "Angriffe mit dem Schwert oder einer Axt haben eine Chance von 1% - 3% deine Stärke für 3 - 8 Sekunden um 3% - 10% zu erhöhen."
+  },
+  "Mondschatten-Lederhosen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Bergversetzer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sandalen des Sonnengottes": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kristallring Kometenband": {
+    "aspect_name": "Aspekt des Meteors",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das auf einem zufälligen Gegner im Radius von 5 - 12 Blöcken ein Meteor niedergeht der 10% - 20% Schaden deines generellen Schadens im Umkreis von 3 - 5 Blöcken anrichtet."
+  },
+  "Himmelsstürmer Schwingenschultern": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelwacht Plattenpanzer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Engelstöter": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Robe des Magiermeisters": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebel Schreiter": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelwächter Stulpen": {
+    "aspect_name": "Aspekt des Titanen",
+    "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% bei einem Boss Gegner 3% - 10% mehr Schaden anzurichten."
+  },
+  "Nebelwächter Gamaschen": {
+    "aspect_name": "Aspekt des Bezwingers",
+    "aspect_description": "Deine Angriffe richten gegen Boss Gegner 5% - 15% mehr Schaden an."
+  },
+  "Nebelwächter Schulterhaube": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Visage der Unterwelt": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kosmischer Anhänger": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schattenritter Gurtriemen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Drachenzahn": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelwacht Schutzband": {
+    "aspect_name": "Aspekt des Ausbruchs",
+    "aspect_description": "Wenn du einen tödlichen Angriff an einem Gegner der unter einem Gift oder Verdorren Effekt steht landest, besteht eine Chance von 80% - 100% das der Effekt auf 5 - 10 Gegner im Umkreis von 10 - 30 Blöcken überspringt und 10% - 25% Schaden in höhe deines Basisschadens über 3 - 8 Sekunden verursacht."
+  },
+  "Zeitverzerr Hose": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Nebelwächter Helm": {
+    "aspect_name": "Aspekt der Inneren Ruhe",
+    "aspect_description": "Deine Angriffe verursachen um 5% - 10% erhöhten Schaden für 5 - 10 Sekunden, so lange du still stehst."
+  },
+  "Die Rechte Hand": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Mitternachtsregen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Das Weltenende": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Himmlischer Panzerhelm": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Himmlische Plattenhandschuhe": {
+    "aspect_name": "Aspekt der Pyrolyse",
+    "aspect_description": "Deine Angriffe haben eine 80% - 100% Chance, bei einem tödlichen Treffer Gegner mit einem Brandeffekt explodieren zu lassen, was 30% - 50% ihres maximalen Lebens als Schaden im Umkreis von 2 - 6 Blöcken verursacht."
+  },
+  "Engels Füße": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Verwüstender Schneider": {
+    "aspect_name": "Aspekt der Raserei",
+    "aspect_description": "Nach jedem 3 - 8 besiegten Gegner erhöht sich deine Angriffgeschwindigkeit für 3 - 5 Sekunden um 5% - 10%."
+  },
+  "Ragnarök": {
+    "aspect_name": "Aspekt des Kriegers",
+    "aspect_description": "Angriffe mit dem Schwert oder einer Axt haben eine Chance von 1% - 3% deine Stärke um 3% - 10% zu erhöhen."
+  },
+  "Himmlischer Gürtel": {
+    "aspect_name": "Aspekt der Wahrensicht",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 1% - 5% das deine kritische Treffer Chance für 3 - 7 Sekunden um 3% - 10% erhöht wird."
+  },
+  "Anhänger des Himmels": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sehne des Todes": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Aurora-Flügelkopfschutz": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schwarze Schattenhände": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ätherische Schwingen Schulterstücke": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ragnaröks Schulterbuckel": {
+    "aspect_name": "Aspekt des Gelehrten",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% dass deine gewonnene Erfahrung für die nächsten 2 - 7 Sekunden um 3% - 10% erhöht ist."
+  },
+  "Drachenodem": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Quelderas Lichtzorn": {
+    "aspect_name": "Aspekt der Wahrensicht",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 1% - 5% das deine kritische Treffer Chance für 3 - 7 Sekunden um 3% - 10% erhöht wird."
+  },
+  "Glamouröse Beinkleider": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Himmlische Treter": {
+    "aspect_name": "Aspekt des Schwertes",
+    "aspect_description": "Angriffe mit einem Schwert fügen 3% - 10% mehr Schaden zu."
+  },
+  "Donnerkraft-Lederpantalon": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Dunkle Vollstreckung": {
+    "aspect_name": "Aspekt der Kaskade",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% auf Gegner im Umkreis von 5 - 12 Blöcken überzuspringen, mit jedem Übersprung verringert sich der Schaden des Angriffs um 20% - 50%."
+  },
+  "Kaktuskönigsspalter": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenlicht Helmschale": {
+    "aspect_name": "Aspekt der Eitelkeit",
+    "aspect_description": "Deine Angriffe verursachen um 3% - 8% erhöhten Schaden so lange du ein Schild besitzt."
+  },
+  "Aurora-Flügelschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Himmlische Plattenhose": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ring des Himmels": {
+    "aspect_name": "Aspekt des Reichtums",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 20% deine Münzmenge um 5% - 10% für 10 - 20 Sekunden zu erhöhen."
+  },
+  "Vulkanfeuerklinge": {
+    "aspect_name": "Aspekt der Flamme",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sekunden in Brand zu setzen wodurch er 5% - 10% Schaden in höhe deines Basisschadens erleidet."
+  },
+  "Zephyrspitze": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ragnaröks Brustpanzerung": {
+    "aspect_name": "Aspekt des Kriegers",
+    "aspect_description": "Angriffe mit dem Schwert oder einer Axt haben eine Chance von 1% - 3% deine Stärke für 3 - 8 Sekunden um 3% - 10% zu erhöhen."
+  },
+  "Halsband des Meisterschützen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Himmlische Schulteplatten": {
+    "aspect_name": "Aspekt des Windes",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 20% - 50% das deine Laufgeschwindigkeit für 10 - 15 Sekunden um 7% - 15% erhöht wird."
+  },
+  "Schrecklicher Hexenumhang": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Rubin Schatz Erlöser": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Kaktus Zerberster": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Riemen des Dshinns": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Himmlischer Brustharnisch": {
+    "aspect_name": "Aspekt des Heiligenlichts",
+    "aspect_description": "Deine Angriffe richten 10% - 20% mehr Schaden an Untoten an."
+  },
+  "Krone des Siegers": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Flammende Phönixklinge": {
+    "aspect_name": "Aspekt der Flamme",
+    "aspect_description": "Deine Angriffe haben eine Chance von 10% - 25% den Gegner für 3 - 7 Sekunden in Brand zu setzen wodurch er 5% - 10% Schaden in höhe deines Basisschadens erleidet."
+  },
+  "Aurora-Flügelhülle": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Donnerknalltretter": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ragnaröks Panzerhandbuckel": {
+    "aspect_name": "Aspekt des Wirbelwinds",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% einen Wirbelangriff auszulösen der 30% - 50% Schaden in höhe deines Basisschadens in einem Umkreis von 2 - 5 Blöcken anrichtet."
+  },
+  "Der Sonnenuntergang": {
+    "aspect_name": "Aspekt des Blitzes",
+    "aspect_description": "Deine Angriffe haben eine Chance von 3% - 10% das Blitze auf Gegner in einem Umkreis von 2 - 8 Blöcken niedergehen die 5% - 10% Schaden deines generellen Schadens anrichten und die Gegner zu 30% - 50% für 1 - 3 Sekunden betäuben."
+  },
+  "Teuflische Kaktushacke": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterschmiede": {
+    "aspect_name": "Aspekt des Schmieds",
+    "aspect_description": "Jedes mal wenn du einen Gegner besiegst besteht eine Chance von 1% - 5% das der aktuelle Produktion im Amboss einen Wert von 20 - 50 Geschwindigkeit hinzugefügt wird."
+  },
+  "Aurora-Flügel-Lederschultern": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Artemis Armbrust": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Aurora-Flügelriemen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phönixring": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ragnaröks Helmdeckung": {
+    "aspect_name": "Aspekt der Axt",
+    "aspect_description": "Angriffe mit der Axt fügen 3% - 10% mehr Schaden zu."
+  },
+  "Kosmische Gamaschen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Meteoritenhagel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ragnaröks Gurt": {
+    "aspect_name": "Aspekt der Kontrolle",
+    "aspect_description": "Deine Angriffe fügen Bewegungsunfähigen, eingefrorenen oder betäubten Gegnern 5% - 15% mehr Schaden zu."
+  },
+  "Sternenlicht Handrüstung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Aurora-Flügelhosen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Wertvolle Zephyrweste": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Lichtschildstampfer": {
+    "aspect_name": "Aspekt des Kaktusmeister",
+    "aspect_description": "Deine Angriffe haben eine Chance von 0% - 1% Kaktus in höhe von 2% - 5% deiner maximalen Kakteen zu generieren."
+  },
+  "Ring des Meisterschützen": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Donnerkraft-Lederpanzerung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Ragnaröks Beinkleider": {
+    "aspect_name": "Aspekt des Todeszorn",
+    "aspect_description": "Dein nächster Angriff nach 3 - 8 besiegten Gegnern verursacht um 10% - 25% erhöhten Schaden."
+  },
+  "Aurora-Flügel-Lederhandschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phönixhaupt": {
+    "aspect_name": "Aspekt der Seele",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das du Seelen im Wert von 1% - 5% deiner bisher höchst erreichten Welle generierst."
+  },
+  "Flügelklappe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Donnerkraft-Lederweste": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenlicht Gürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phönixflügelläufer": {
+    "aspect_name": "Aspekt des Schmieds",
+    "aspect_description": "Jedes mal wenn du einen Gegner besiegst besteht eine Chance von 1% - 5% das der aktuelle Produktion im Amboss einen Wert von 20 - 50 Geschwindigkeit hinzugefügt wird."
+  },
+  "Sternenlicht Brustplatte": {
+    "aspect_name": "Aspekt des Assassine",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das dein kritisch Trefferschaden für die nächsten 3- 8 Sekunden um 5% - 10% erhöht wird."
+  },
+  "Donnerkraft-Lederschulterumhänge": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phönixfeder Hüftband": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Schwarzer Gürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Götterstahl-Erdscharfer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Der Drachenschnitter": {
+    "aspect_name": "Aspekt des Bezwingers",
+    "aspect_description": "Deine Angriffe richten gegen Boss Gegner 5% - 15% mehr Schaden an."
+  },
+  "Wächter der Zeit Lederstiefel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Donnerkraft-Halbschuhe": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phönixfeder Beinkleid": {
+    "aspect_name": "Aspekt des Kaktusmeister",
+    "aspect_description": "Deine Angriffe haben eine Chance von 0% - 1% Kaktus in höhe von 2% - 5% deiner maximalen Kakteen zu generieren."
+  },
+  "Donnerkraft-Lederhandrüstung": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternenlicht Beinkleider": {
+    "aspect_name": "Aspekt der Münze",
+    "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 5% das seine fallen gelassenen Münzen um 5% - 12% erhöht sind."
+  },
+  "Phönixfeuer Handschützer": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Seidenhandschuhe der Prinzessin": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sternschnuppen Sehne": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phönixanhänger": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Sonneneruption": {
+    "aspect_name": "Aspekt der Gravitation",
+    "aspect_description": "Deine Angriffe haben eine Chance von 2% - 12% Gegner im Umkreis von X Blöcken zu dir heran zu ziehen."
+  },
+  "Sternenlicht Schulterrüstung": {
+    "aspect_name": "Aspekt der Heilung",
+    "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
+  },
+  "Donnerkraft-Ledergürtel": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  },
+  "Phönixfeder Schulterumhang": {
+    "aspect_name": "Aspekt der Flinkheit",
+    "aspect_description": "Deine Angriffe erhöhen deine Bewegungsgeschwindigkeit pro Treffer um 1% - 3%, dieser Effekt ist bis zu 2 - 5 mal Stapelbar."
+  },
+  "Sternenlicht Schulterring": {
+    "aspect_name": "-",
+    "aspect_description": "Kein Aspekt auf diesem Bauplan"
+  }
 }

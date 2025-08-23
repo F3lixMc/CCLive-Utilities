@@ -4,7 +4,10 @@
   "key.cclive-utilities.toggle-blueprint-viewer": "Bauplan-Tracker umschalten",
   "key.cclive-utilities.next-blueprint-rarity": "Nächste Bauplan-Seltenheit",
   "key.cclive-utilities.previous-blueprint-rarity": "Vorherige Bauplan-Seltenheit",
+  "key.cclive-utilities.wellen-toggle": "Monster Tracker umschalten",
+  "key.cclive-utilities.wellen-debug": "Monster Tracker Debug Info",
 
   "key.categories.cclive-utilities.blueprints": "CCLive Utilities - Baupläne",
+  "key.categories.cclive-utilities.wellen": "CCLive Utilities - Monster Tracker",
     "key.categories.cclive-utilities": "CCLive Utilities"
 } 
