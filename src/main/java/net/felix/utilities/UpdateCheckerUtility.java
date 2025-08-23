@@ -9,6 +9,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
+import net.felix.CCLiveUtilitiesConfig;
 
 import java.io.IOException;
 import java.net.URI;
@@ -37,6 +38,11 @@ public class UpdateCheckerUtility {
     }
     
     private static void checkForUpdates() {
+        // Prüfe ob der Update-Checker aktiviert ist
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().updateCheckerEnabled) {
+            return;
+        }
+        
         CompletableFuture.runAsync(() -> {
             try {
                 // Erstelle HTTP-Request
