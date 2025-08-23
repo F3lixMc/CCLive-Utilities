@@ -25,6 +25,10 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean showDebugInfo = false;
+    
+    // Debug Settings
+    @SerialEntry
+    public boolean updateCheckerEnabled = true;
 
     // Equipment Display Settings
     @SerialEntry
@@ -906,6 +910,17 @@ public class CCLiveUtilitiesConfig {
                                 .name(Text.literal("Hintergrund anzeigen"))
                                 .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Blueprint Tracker anzeigen oder ausblenden")))
                                 .binding(true, () -> HANDLER.instance().blueprintViewerShowBackground, newVal -> HANDLER.instance().blueprintViewerShowBackground = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .build())
+
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.literal("Debug"))
+                        .tooltip(Text.literal("Debug-Einstellungen für Entwickler und fortgeschrittene Benutzer"))
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Update Checker aktivieren"))
+                                .description(OptionDescription.of(Text.literal("Automatische Update-Prüfung beim Server-Beitritt aktivieren oder deaktivieren")))
+                                .binding(true, () -> HANDLER.instance().updateCheckerEnabled, newVal -> HANDLER.instance().updateCheckerEnabled = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .build())
