@@ -12,7 +12,6 @@
 		"ActionBarMixin",
 		"LivingEntityMixin",
 		"BossBarMixin",
-
 		"TitleMixin"
 	],
 	"injectors": {

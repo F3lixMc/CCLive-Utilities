@@ -62,11 +62,11 @@ public class AspectOverlay {
         // Remove Minecraft formatting codes and Unicode characters
         cleanItemName = cleanItemName.replaceAll("§[0-9a-fk-or]", "");
         cleanItemName = cleanItemName.replaceAll("[\\u3400-\\u4DBF]", "");
-        cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s]", "").trim();
+        cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
         
         // Look for this item in the aspects database
         AspectInfo aspectInfo = aspectsDatabase.get(cleanItemName);
-        if (aspectInfo != null && !aspectInfo.aspectName.isEmpty()) {
+        if (aspectInfo != null) {
             currentAspectName = aspectInfo.aspectName;
             currentAspectDescription = aspectInfo.aspectDescription;
             currentItemName = cleanItemName;
@@ -128,11 +128,11 @@ public class AspectOverlay {
         // Remove Minecraft formatting codes and Unicode characters
         cleanItemName = cleanItemName.replaceAll("§[0-9a-fk-or]", "");
         cleanItemName = cleanItemName.replaceAll("[\\u3400-\\u4DBF]", "");
-        cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s]", "").trim();
+        cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
         
         // Look for this item in the aspects database
         AspectInfo aspectInfo = aspectsDatabase.get(cleanItemName);
-        if (aspectInfo != null && !aspectInfo.aspectName.isEmpty()) {
+        if (aspectInfo != null) {
             currentAspectName = aspectInfo.aspectName;
             currentAspectDescription = aspectInfo.aspectDescription;
             currentItemName = cleanItemName;

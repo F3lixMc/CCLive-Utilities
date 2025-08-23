@@ -6,6 +6,9 @@
   "category.cclive-utilities.material": "CCLive Utilities - Material Tracker",
   "key.cclive-utilities.cards-toggle": "Toggle Cards & Statues",
   "category.cclive-utilities.cards": "CCLive Utilities - Cards & Statues",
+  "key.cclive-utilities.wellen-toggle": "Toggle Monster Tracker",
+  "key.cclive-utilities.wellen-debug": "Monster Tracker Debug Info",
+  "category.cclive-utilities.wellen": "CCLive Utilities - Monster Tracker",
 
   "key.cclive-utilities.toggle-animation-blocker": "Toggle Animation Blocker",
   "key.cclive-utilities.toggle-blueprint-viewer": "Toggle Blueprint Tracker",
