@@ -9,9 +9,9 @@ import net.felix.utilities.CardsStatuesUtility;
 import net.felix.utilities.KillsUtility;
 import net.felix.utilities.InformationenUtility;
 import net.felix.utilities.WellenTrackerUtility;
-
 import net.felix.utilities.AnimationBlockerUtility;
 import net.felix.utilities.BPViewerUtility;
+import net.felix.utilities.UpdateCheckerUtility;
 
 
 import java.nio.file.Path;
@@ -42,9 +42,9 @@ public class CCLiveUtilities implements ModInitializer {
 		KillsUtility.initialize();
 		InformationenUtility.initialize();
 		WellenTrackerUtility.initialize();
-
 		AnimationBlockerUtility.initialize();
 		BPViewerUtility.initialize();
+		UpdateCheckerUtility.initialize();
 
 	}
 
