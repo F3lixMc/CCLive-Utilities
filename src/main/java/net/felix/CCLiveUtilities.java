@@ -8,7 +8,6 @@ import net.felix.utilities.BossHPUtility;
 import net.felix.utilities.CardsStatuesUtility;
 import net.felix.utilities.KillsUtility;
 import net.felix.utilities.InformationenUtility;
-
 import net.felix.utilities.AnimationBlockerUtility;
 import net.felix.utilities.BPViewerUtility;
 import net.felix.utilities.UpdateCheckerUtility;
@@ -41,7 +40,6 @@ public class CCLiveUtilities implements ModInitializer {
 		CardsStatuesUtility.initialize();
 		KillsUtility.initialize();
 		InformationenUtility.initialize();
-
 		AnimationBlockerUtility.initialize();
 		BPViewerUtility.initialize();
 		UpdateCheckerUtility.initialize();
