@@ -1,6 +1,7 @@
 package net.felix.utilities;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.DrawItemStackOverlayCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -53,6 +54,8 @@ public class SchmiedTrackerUtility {
 	// Slot-Größe für Rahmen
 	private static final int SLOT_SIZE = 16;
 
+    private static record ForgingCondition(String letter, int color) {}
+
 	public static void initialize() {
 		if (isInitialized) {
 			return;
@@ -82,6 +85,17 @@ public class SchmiedTrackerUtility {
 			slotColors.clear();
 			return;
 		}
+
+        // Zeigt mit einem Buchstaben den Schmiedezustand an.
+        DrawItemStackOverlayCallback.EVENT.register((context, textRenderer, itemStack, x, y) -> {
+            if (itemStack.getFormattedName().getString().contains("geschmiedet")) {
+                ForgingCondition forgingCondition = getForgingCondition(itemStack);
+
+                context.getMatrices().pushMatrix();
+                context.drawText(textRenderer, forgingCondition.letter, x + 19 - 2 - textRenderer.getWidth(forgingCondition.letter), y + 6 + 3, forgingCondition.color, true);
+                context.getMatrices().popMatrix();
+            }
+        });
 
 		// Überprüfe ob wir in einem "Zerlegen" Kisteninventar sind
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
@@ -1080,4 +1094,19 @@ public class SchmiedTrackerUtility {
 		
 		return debug.toString();
 	}
+
+    // Sucht anhand des Item-Namens nach dem Schmiedetyp und gibt die entsprechende Farbe und kürzel zurück
+    private static ForgingCondition getForgingCondition(ItemStack stack) {
+        String itemName = stack.getFormattedName().getString();
+
+        if (itemName.contains("Frostgeschmiedet")) return new ForgingCondition("F", CCLiveUtilitiesConfig.HANDLER.instance().frostgeschmiedetColor.getRGB());
+        if (itemName.contains("Lavageschmiedet")) return new ForgingCondition("L", CCLiveUtilitiesConfig.HANDLER.instance().lavageschmiedetColor.getRGB());
+        if (itemName.contains("Titangeschmiedet")) return new ForgingCondition("T", CCLiveUtilitiesConfig.HANDLER.instance().titangeschmiedetColor.getRGB());
+        if (itemName.contains("Drachengeschmiedet")) return new ForgingCondition("D", CCLiveUtilitiesConfig.HANDLER.instance().drachengeschmiedetColor.getRGB());
+        if (itemName.contains("Dämonengeschmiedet")) return new ForgingCondition("D", CCLiveUtilitiesConfig.HANDLER.instance().daemonengeschmiedetColor.getRGB());
+        if (itemName.contains("Blitzgeschmiedet")) return new ForgingCondition("B", CCLiveUtilitiesConfig.HANDLER.instance().blitzgeschmiedetColor.getRGB());
+        if (itemName.contains("Sternengeschmiedet")) return new ForgingCondition("S", CCLiveUtilitiesConfig.HANDLER.instance().sternengeschmiedetColor.getRGB());
+
+        return new ForgingCondition(" ", CCLiveUtilitiesConfig.HANDLER.instance().frostgeschmiedetColor.getRGB());
+    }
 } 
