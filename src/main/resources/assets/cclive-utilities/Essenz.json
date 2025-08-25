@@ -6,7 +6,7 @@
         },
         {
             "name": "Pferde [Essenz] Tier 4",
-            "wave": 2319
+            "wave": 2312
         },
         {
             "name": "Pferde [Essenz] Tier 8",
@@ -20,9 +20,11 @@
             "name": "Pferde [Essenz] Tier 12",
             "wave": 9994
         },
+
+
         {
             "name": "Lohen [Essenz] Tier 1",
-            "wave": 358
+            "wave": 385
         },
         {
             "name": "Lohen [Essenz] Tier 2",
@@ -53,6 +55,13 @@
             "wave": 5115
         },
         {
+            "name": "Lohen [Essenz] Tier 11",
+            "wave": 7075
+        },
+
+
+
+        {
             "name": "Witherskelett [Essenz] Tier 1",
             "wave": 827
         },
@@ -76,6 +85,10 @@
             "name": "Witherskelett [Essenz] Tier 9",
             "wave": 6386
         },
+
+
+
+
         {
             "name": "Zombie [Essenz] Tier 1",
             "wave": 526
@@ -84,6 +97,9 @@
             "name": "Zombie [Essenz] Tier 7",
             "wave": 4262
         },
+
+
+
         {
             "name": "Wolf [Essenz] Tier 1",
             "wave": 608
@@ -104,6 +120,10 @@
             "name": "Wolf [Essenz] Tier 12",
             "wave": 9446
         },
+
+
+
+
         {
             "name": "Stray [Essenz] Tier 1",
             "wave": 541
@@ -120,6 +140,10 @@
             "name": "Stray [Essenz] Tier 12",
             "wave": 9111
         },
+
+
+
+
         {
             "name": "Ziegen [Essenz] Tier 1",
             "wave": 884
@@ -132,6 +156,10 @@
             "name": "Ziegen [Essenz] Tier 7",
             "wave": 4562
         },
+
+
+
+
         {
             "name": "Bienen [Essenz] Tier 1",
             "wave": 836
@@ -148,6 +176,10 @@
             "name": "Bienen [Essenz] Tier 11",
             "wave": 8973
         },
+
+
+
+
         {
             "name": "Piglin [Essenz] Tier 1",
             "wave": 1034
@@ -212,6 +244,10 @@
             "name": "Pigling [Essenz] Tier 11",
             "wave": 9889
         },
+
+
+
+
         {
             "name": "Hühner [Essenz] Tier 2",
             "wave": 1262
@@ -232,6 +268,10 @@
             "name": "Hühner [Essenz] Tier 12",
             "wave": 9883
         },
+
+
+
+
         {
             "name": "Endermite [Essenz] Tier 2",
             "wave": 1374
@@ -244,6 +284,10 @@
             "name": "Endermite [Essenz] Tier 10",
             "wave": 7125
         },
+
+
+
+
         {
             "name": "Skelett [Essenz] Tier 3",
             "wave": 1850
@@ -256,6 +300,10 @@
             "name": "Skelett [Essenz] Tier 10",
             "wave": 7201
         },
+
+
+
+
         {
             "name": "Schneemann [Essenz] Tier 2",
             "wave": 2365
@@ -272,6 +320,10 @@
             "name": "Schneemann [Essenz] Tier 10",
             "wave": 9645
         },
+
+
+
+
         {
             "name": "Wächter [Essenz] Tier 3",
             "wave": 2664
@@ -292,6 +344,10 @@
             "name": "Wächter [Essenz] Tier 11",
             "wave": 7870
         },
+
+
+
+
         {
             "name": "Fuchs [Essenz] Tier 2",
             "wave": 2460
@@ -300,13 +356,17 @@
             "name": "Fuchs [Essenz] Tier 8",
             "wave": 6721
         },
+
+
+
+
         {
             "name": "Creeper [Essenz] Tier 3",
             "wave": 2854
         },
         {
             "name": "Creeper [Essenz] Tier 4",
-            "wave": 2854
+            "wave": 3583
         },
         {
             "name": "Creeper [Essenz] Tier 9",
@@ -316,6 +376,10 @@
             "name": "Creeper [Essenz] Tier 11",
             "wave": 8802
         },
+
+
+
+
         {
             "name": "Zombifizierter Piglin [Essenz] Tier 3",
             "wave": 2836
@@ -324,6 +388,10 @@
             "name": "Zombifizierter Piglin [Essenz] Tier 9",
             "wave": 7293
         },
+
+
+
+
         {
             "name": "Hoglin [Essenz] Tier 4",
             "wave": 3233
@@ -336,6 +404,10 @@
             "name": "Hoglin [Essenz] Tier 7",
             "wave": 5768
         },
+
+
+
+
         {
             "name": "Frosch [Essenz] Tier 3",
             "wave": 3506
@@ -344,6 +416,10 @@
             "name": "Frosch [Essenz] Tier 9",
             "wave": 7301
         },
+
+
+
+
         {
             "name": "Vindicator [Essenz] Tier 3",
             "wave": 3362
@@ -352,10 +428,18 @@
             "name": "Vindicator [Essenz] Tier 10",
             "wave": 9772
         },
+
+
+
+
         {
             "name": "Hexe [Essenz] Tier 4",
             "wave": 3827
         },
+
+
+
+
         {
             "name": "Schildkröten [Essenz] Tier 5",
             "wave": 4078
@@ -372,6 +456,10 @@
             "name": "Schildkröten [Essenz] Tier 11",
             "wave": 9598
         },
+
+
+
+
         {
             "name": "Spinnen [Essenz] Tier 5",
             "wave": 3868
@@ -388,6 +476,10 @@
             "name": "Spinnen [Essenz] Tier 11",
             "wave": 9335
         },
+
+
+
+
         {
             "name": "Axolotl [Essenz] Tier 5",
             "wave": 3488
@@ -404,10 +496,18 @@
             "name": "Axolotl [Essenz] Tier 11",
             "wave": 8101
         },
+
+
+
+
         {
             "name": "Enderman [Essenz] Tier 3",
             "wave": 3743
         },
+
+
+
+
         {
             "name": "Zoglin [Essenz] Tier 4",
             "wave": 4874
@@ -416,10 +516,21 @@
             "name": "Zoglin [Essenz] Tier 7",
             "wave": 6856
         },
+
+
+
+        {
+            "name": "Panda [Essenz] Tier 5",
+            "wave": 5607
+        },  
         {
             "name": "Panda [Essenz] Tier 6",
             "wave": 5657
         },
+
+
+
+
         {
             "name": "Evoker [Essenz] Tier 6",
             "wave": 6994
@@ -432,19 +543,38 @@
             "name": "Evoker [Essenz] Tier 8",
             "wave": 8114
         },
+
+
+
+
         {
             "name": "Ertrunkener [Essenz] Tier 8",
             "wave": 7482
         },
+
+
+
+
         {
             "name": "Ocelot [Essenz] Tier 12",
             "wave": 8379
         },
+
+
+
+
         {
             "name": "Zombiepferde [Essenz] Tier 8",
             "wave": 7555
-        }
+        },
 
+
+
+
+        {
+            "name": "Husk [Essenz] Tier 11",
+            "wave": 7332
+        }
         
         
     ]
