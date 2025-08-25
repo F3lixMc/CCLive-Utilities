@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "cclive-utilities",
-	"version": "1.4.3",
+	"version": "1.4.4",
 	"name": "CCLive-Utilities",
 	"description": "Diese Mod fügt verschiedene Funktionen und Features zu Kaktus Klicker hinzu",
 	"authors": [
@@ -12,9 +12,7 @@
 		"homepage": "https://fabricmc.net/",
 		"discord": "https://discord.gg/7geExrDeqF",
 		"sources": "https://github.com/F3lixMc/CCLive-Utilities"
-	
 	},
-
 	"license": "CC0-1.0",
 	"icon": "assets/cclive-utilities/icon.png",
 	"environment": "*",
@@ -37,12 +35,17 @@
 		"minecraft": ">=1.21.7",
 		"java": ">=21",
 		"fabric-api": "*",
-		 "yet_another_config_lib_v3": "*",
-		 "modmenu": "*"
-		 
+		"yet_another_config_lib_v3": "*",
+		"modmenu": "*"
 	},
 	"suggests": {
 		"another-mod": "*"
-		
+	},
+	"custom": {
+		"modmenu": {
+			"links": {
+				"Discord Server": "https://discord.gg/7geExrDeqF"
+			}
+		}
 	}
 }

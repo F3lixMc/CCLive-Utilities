@@ -48,6 +48,7 @@ public class SchmiedTrackerUtility {
 		SMITHING_CONFIG_KEYS.put("[Dämonengeschmiedet]", "daemonengeschmiedet");
 		SMITHING_CONFIG_KEYS.put("[Blitzgeschmiedet]", "blitzgeschmiedet");
 		SMITHING_CONFIG_KEYS.put("[Sterngeschmiedet]", "sternengeschmiedet");
+		SMITHING_CONFIG_KEYS.put("[Sternengeschmiedet]", "sternengeschmiedet");
 	}
 	
 	// Slot-Größe für Rahmen
@@ -102,7 +103,12 @@ public class SchmiedTrackerUtility {
 				if (hideUncraftableActive) {
 					updateBlueprintItems(handledScreen, client);
 				}
-			} else if (title.contains("Zerlegen") || title.contains("Umschmieden") || title.contains("Ausrüstung [Auswählen]") || title.contains("Aufwerten") || title.contains("Rüstungs Sammlung") || title.contains("Waffen Sammlung") || title.contains("Werkzeug Sammlung") || title.contains("CACTUS_CLICKER.CACTUS_CLICKER") || title.contains("Geschützte Items")) {
+			} else if (title.contains("Zerlegen") || title.contains("Umschmieden") || 
+			title.contains("Ausrüstung [Auswählen]") || title.contains("Aufwerten") || 
+			title.contains("Rüstungs Sammlung") || title.contains("Waffen Sammlung") || 
+			title.contains("Werkzeug Sammlung") || title.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
+			title.contains("Geschützte Items") ||
+			title.contains("㬥") || title.contains("㬦") || title.contains("㬧") || title.contains("㬨")) {
 				isInDisassembleChest = true;
 				isInBlueprintInventory = false;
 				updateSlotColors(handledScreen, client);
@@ -137,6 +143,11 @@ public class SchmiedTrackerUtility {
 
 	private static void updateSlotColors(HandledScreen<?> screen, MinecraftClient client) {
 		slotColors.clear();
+		
+		// Prüfe ob Schmiedezustände in Ausrüstungs-Menüs angezeigt werden sollen
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().showSchmiedezustaendeInAusrüstungsMenü) {
+			return;
+		}
 		
 		// Prüfe Slots 9-44
 		for (int slotIndex = 9; slotIndex <= 44; slotIndex++) {

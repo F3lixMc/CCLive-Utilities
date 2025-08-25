@@ -85,6 +85,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showMaterialTooltips = true; // Material tooltips in hover events
     
+    @SerialEntry
+    public boolean showSchmiedezustaendeInAusrüstungsMenü = true; // Schmiedezustände in Ausrüstungs-Menüs anzeigen
+    
     // Informationen Utility Settings
     @SerialEntry
     public boolean informationenUtilityEnabled = true; // Informationen Utility aktivieren
@@ -94,6 +97,29 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean showEbenenInNormalInventories = true; // Ebenen in normalen Inventaren anzeigen
+    
+    @SerialEntry
+    public boolean rareMobTimerEnabled = true; // Seltene Mob Timer aktivieren
+    
+    @SerialEntry
+    public boolean showRareMobTimer = true; // Seltene Mob Timer anzeigen
+    
+    @SerialEntry
+    public int rareMobTimerX = 5; // X-Position des seltenen Mob Timers (Pixel vom linken Rand)
+    
+    @SerialEntry
+    public int rareMobTimerY = 200; // Y-Position des seltenen Mob Timers (Pixel vom oberen Rand)
+    
+    @SerialEntry
+    public Color rareMobTimerHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
+    
+    @SerialEntry
+    public Color rareMobTimerTextColor = new Color(0xE6FFFFFF); // Textfarbe (Weiß mit Transparenz)
+    
+    @SerialEntry
+    public boolean rareMobTimerShowBackground = true; // Schwarzer Hintergrund für seltenen Mob Timer
+    
+
     
     @SerialEntry
     public int schmiedTrackerX = 5; // X-Position des Schmied Trackers (optimiert)
@@ -376,12 +402,6 @@ public class CCLiveUtilitiesConfig {
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Material Ebenen anzeigen"))
-                                .description(OptionDescription.of(Text.literal("Ebenen-Informationen in Material-Tooltips anzeigen oder ausblenden")))
-                                .binding(true, () -> HANDLER.instance().showMaterialTooltips, newVal -> HANDLER.instance().showMaterialTooltips = newVal)
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .option(Option.<Boolean>createBuilder()
                                 .name(Text.literal("Hide Uncraftable Button"))
                                 .description(OptionDescription.of(Text.literal("Hide Uncraftable Button in Baupläne Inventaren aktivieren")))
                                 .binding(true, () -> HANDLER.instance().hideUncraftableEnabled, newVal -> HANDLER.instance().hideUncraftableEnabled = newVal)
@@ -555,6 +575,51 @@ public class CCLiveUtilitiesConfig {
                                 .description(OptionDescription.of(Text.literal("Materialien Ebenen anzeigen oder ausblenden")))
                                 .binding(true, () -> HANDLER.instance().showEbenenInNormalInventories, newVal -> HANDLER.instance().showEbenenInNormalInventories = newVal)
                                 .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Seltener Mob Timer"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Seltener Mob Timer aktivieren"))
+                                        .description(OptionDescription.of(Text.literal("Timer für seltene Mobs aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().rareMobTimerEnabled, newVal -> HANDLER.instance().rareMobTimerEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Timer anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Seltener Mob Timer anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().showRareMobTimer, newVal -> HANDLER.instance().showRareMobTimer = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Integer>createBuilder()
+                                        .name(Text.literal("X Position (vom linken Rand)"))
+                                        .description(OptionDescription.of(Text.literal("Horizontale Position des seltenen Mob Timers (Pixel vom linken Bildschirmrand)")))
+                                        .binding(5, () -> HANDLER.instance().rareMobTimerX, newVal -> HANDLER.instance().rareMobTimerX = newVal)
+                                        .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(-2000, 2000).step(1))
+                                        .build())
+                                .option(Option.<Integer>createBuilder()
+                                        .name(Text.literal("Y Position (vom oberen Rand)"))
+                                        .description(OptionDescription.of(Text.literal("Vertikale Position des seltenen Mob Timers (Pixel vom oberen Bildschirmrand)")))
+                                        .binding(200, () -> HANDLER.instance().rareMobTimerY, newVal -> HANDLER.instance().rareMobTimerY = newVal)
+                                        .controller(opt -> IntegerSliderControllerBuilder.create(opt).range(-2000, 2000).step(1))
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Text.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschrift im seltenen Mob Timer")))
+                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().rareMobTimerHeaderColor, newVal -> HANDLER.instance().rareMobTimerHeaderColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Text.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Text.literal("Farbe für den Text im seltenen Mob Timer")))
+                                        .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().rareMobTimerTextColor, newVal -> HANDLER.instance().rareMobTimerTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem seltenen Mob Timer anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().rareMobTimerShowBackground, newVal -> HANDLER.instance().rareMobTimerShowBackground = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Aspekt Info"))
