@@ -50,8 +50,7 @@ public class InformationenUtility {
 		AspectOverlay.initialize();
 		AspectOverlayRenderer.initialize();
 		
-		// Initialize rare mob timer utility
-		RareMobTimerUtility.initialize();
+
 		
 		// Register tooltip callback for material information
 		ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
