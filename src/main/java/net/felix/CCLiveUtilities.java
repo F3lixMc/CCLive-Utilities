@@ -11,6 +11,7 @@ import net.felix.utilities.InformationenUtility;
 import net.felix.utilities.AnimationBlockerUtility;
 import net.felix.utilities.BPViewerUtility;
 import net.felix.utilities.UpdateCheckerUtility;
+import net.felix.utilities.OverlayEditorUtility;
 
 
 import java.nio.file.Path;
@@ -31,18 +32,23 @@ public class CCLiveUtilities implements ModInitializer {
 
 		// Initialize configuration
 		CCLiveUtilitiesConfig.HANDLER.load();
+		
+		// Migriere Overlay-Typ von String zu Enum
+		CCLiveUtilitiesConfig.migrateOverlayType();
 
 		// Initialisiere alle Utility-Klassen
 		EquipmentDisplayUtility.initialize();
 		SchmiedTrackerUtility.initialize();
 		MaterialTrackerUtility.initialize();
 		BossHPUtility.initialize();
-		CardsStatuesUtility.initialize();
 		KillsUtility.initialize();
 		InformationenUtility.initialize();
 		AnimationBlockerUtility.initialize();
 		BPViewerUtility.initialize();
 		UpdateCheckerUtility.initialize();
+		OverlayEditorUtility.initialize();
+		// CardsStatuesUtility muss zuletzt initialisiert werden, damit die Overlays über den Standard-Overlays erscheinen
+		CardsStatuesUtility.initialize();
 
 	}
 

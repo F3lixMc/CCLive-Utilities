@@ -47,5 +47,11 @@
 				"Discord Server": "https://discord.gg/7geExrDeqF"
 			}
 		}
+	},
+	"keybindings": {
+		"key.cclive-utilities.overlay-editor": {
+			"category": "category.cclive-utilities.overlay",
+			"default": "key.keyboard.f6"
+		}
 	}
 }

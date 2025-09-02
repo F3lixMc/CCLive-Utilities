@@ -10,6 +10,7 @@ import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.client.render.RenderTickCounter;
 import net.felix.CCLiveUtilitiesConfig;
+import org.joml.Matrix3x2fStack;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -335,29 +336,41 @@ public class KillsUtility {
 		int xPosition = screenWidth - overlayWidth - xOffset;
 		int yPosition = yOffset;
 		
-		// Draw semi-transparent background only if enabled
+		// Verwende Matrix-Transformationen für Skalierung
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Skaliere basierend auf der Config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale;
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Übersetze zur Position und skaliere von dort aus
+		matrices.translate(xPosition, yPosition);
+		matrices.scale(scale, scale);
+		
+		// Draw semi-transparent background only if enabled (skaliert)
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowBackground) {
-			context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+			context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
 		}
 		
-		// Draw title
+		// Draw title (skaliert)
 		int titleColor = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityHeaderColor.getRGB();
 		context.drawText(
 			client.textRenderer,
 			title,
-			xPosition + PADDING,
-			yPosition + PADDING,
+			PADDING,
+			PADDING,
 			titleColor,
 			true
 		);
 		
-		// Draw KPM
-		int currentY = yPosition + PADDING + 15;
+		// Draw KPM (skaliert)
+		int currentY = PADDING + 15;
 		int textColor = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityTextColor.getRGB();
 		context.drawText(
 			client.textRenderer,
 			kpmText,
-			xPosition + PADDING,
+			PADDING,
 			currentY,
 			textColor,
 			true
@@ -365,28 +378,31 @@ public class KillsUtility {
 		
 		currentY += LINE_HEIGHT;
 		
-		// Draw new kills
+		// Draw new kills (skaliert)
 		context.drawText(
 			client.textRenderer,
 			newKillsText,
-			xPosition + PADDING,
+			PADDING,
 			currentY,
 			textColor,
 			true
 		);
 		
-		// Draw session time if available
+		// Draw session time if available (skaliert)
 		if (!timeText.isEmpty()) {
 			currentY += LINE_HEIGHT;
 			context.drawText(
 				client.textRenderer,
 				timeText,
-				xPosition + PADDING,
+				PADDING,
 				currentY,
 				textColor,
-				true
+			true
 			);
 		}
+		
+		// Matrix-Transformationen wiederherstellen
+		matrices.popMatrix();
 	}
 	
 	private static boolean isOnFloor() {
