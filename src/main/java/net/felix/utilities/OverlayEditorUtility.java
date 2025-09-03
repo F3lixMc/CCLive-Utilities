@@ -2,10 +2,7 @@ package net.felix.utilities;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,7 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class OverlayEditorUtility {
     
     private static boolean isInitialized = false;
-    private static KeyBinding overlayEditorKeyBinding;
     private static final AtomicBoolean f6KeyPressed = new AtomicBoolean(false);
     private static boolean isOverlayEditorOpen = false;
     
@@ -26,9 +22,6 @@ public class OverlayEditorUtility {
         }
         
         try {
-            // Register keybinding
-            registerKeyBinding();
-            
             // Register client tick events
             ClientTickEvents.END_CLIENT_TICK.register(OverlayEditorUtility::onClientTick);
             
@@ -38,29 +31,12 @@ public class OverlayEditorUtility {
         }
     }
     
-    private static void registerKeyBinding() {
-        overlayEditorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-            "key.cclive-utilities.overlay-editor",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_F6, // F6 key as default
-            "category.cclive-utilities.overlay"
-        ));
-    }
-    
     private static void onClientTick(MinecraftClient client) {
         if (client.player == null) {
             return;
         }
         
-        // Check if overlay editor key is pressed using standard keybind (works in most screens)
-        if (overlayEditorKeyBinding != null && overlayEditorKeyBinding.wasPressed()) {
-            if (CCLiveUtilitiesConfig.HANDLER.instance().overlayEditorEnabled && 
-                CCLiveUtilitiesConfig.HANDLER.instance().showOverlayEditor) {
-                toggleOverlayEditor();
-            }
-        }
-        
-        // Additional F6 key detection for inventory screens where keybind might not work
+        // Use direct F6 key detection for consistent behavior in all screens
         if (client.getWindow() != null) {
             boolean f6CurrentlyPressed = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_F6) == GLFW.GLFW_PRESS;
             

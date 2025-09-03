@@ -85,6 +85,10 @@
             "name": "Witherskelett [Essenz] Tier 9",
             "wave": 6386
         },
+        {
+            "name": "Witherskelett [Essenz] Tier 12",
+            "wave": 9579
+        },
 
 
 
@@ -265,6 +269,10 @@
             "wave": 4046
         },
         {
+            "name": "Hühner [Essenz] Tier 11",
+            "wave": 7756
+        },
+        {
             "name": "Hühner [Essenz] Tier 12",
             "wave": 9883
         },
@@ -284,6 +292,11 @@
             "name": "Endermite [Essenz] Tier 10",
             "wave": 7125
         },
+        {
+            "name": "Endermite [Essenz] Tier 11",
+            "wave": 9529
+        },
+
 
 
 
@@ -299,6 +312,10 @@
         {
             "name": "Skelett [Essenz] Tier 10",
             "wave": 7201
+        },
+        {
+            "name": "Skelett [Essenz] Tier 12",
+            "wave": 9784
         },
 
 
@@ -355,6 +372,10 @@
         {
             "name": "Fuchs [Essenz] Tier 8",
             "wave": 6721
+        },
+        {
+            "name": "Fuchs [Essenz] Tier 10",
+            "wave": 9105
         },
 
 
@@ -433,7 +454,7 @@
 
 
         {
-            "name": "Hexe [Essenz] Tier 4",
+            "name": "Hexen [Essenz] Tier 4",
             "wave": 3827
         },
 
@@ -503,6 +524,10 @@
         {
             "name": "Enderman [Essenz] Tier 3",
             "wave": 3743
+        },
+        {
+            "name": "Enderman [Essenz] Tier 9",
+            "wave": 8795
         },
 
 
@@ -574,6 +599,11 @@
         {
             "name": "Husk [Essenz] Tier 11",
             "wave": 7332
+        },
+
+        {
+            "name": "Wither [Essenz] Tier 4",
+            "wave": 100000
         }
         
         

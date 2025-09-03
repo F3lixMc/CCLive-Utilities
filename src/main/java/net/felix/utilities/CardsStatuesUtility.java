@@ -122,39 +122,7 @@ public class CardsStatuesUtility {
 		}
 	}
 	
-	/**
-	 * Rendert das dauerhafte Testbild in der Mitte des Bildschirms
-	 */
-	private static void renderTestImage(DrawContext context, MinecraftClient client) {
-		try {
-			// Berechne die Mitte des Bildschirms
-			int screenWidth = client.getWindow().getScaledWidth();
-			int screenHeight = client.getWindow().getScaledHeight();
-			
-			// Position in der Mitte des Bildschirms
-			int centerX = (screenWidth - BACKGROUND_WIDTH) / 2;
-			int centerY = (screenHeight - BACKGROUND_HEIGHT) / 2;
-			
-			// Verwende die drawTexture Methode mit der passenden GUI_TEXTURED Pipeline
-			// Diese erwartet keine UV2-Attribute und ist für 2D-Overlays geeignet
-			context.drawTexture(
-				RenderPipelines.GUI_TEXTURED,
-				CARD_BACKGROUND_TEXTURE,
-				centerX, centerY, // Position in der Mitte
-				0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
-				BACKGROUND_WIDTH, BACKGROUND_HEIGHT, // Größe
-				BACKGROUND_WIDTH, BACKGROUND_HEIGHT // Textur-Größe
-			);
-		} catch (Exception e) {
-			// Fallback: Zeichne einen roten Rahmen in der Mitte
-			int screenWidth = client.getWindow().getScaledWidth();
-			int screenHeight = client.getWindow().getScaledHeight();
-			int centerX = (screenWidth - BACKGROUND_WIDTH) / 2;
-			int centerY = (screenHeight - BACKGROUND_HEIGHT) / 2;
-			
-			context.fill(centerX, centerY, centerX + BACKGROUND_WIDTH, centerY + BACKGROUND_HEIGHT, 0x80FF0000);
-		}
-	}
+
 	
 	public CardsStatuesUtility() {
 		INSTANCE = this;
@@ -477,8 +445,6 @@ public class CardsStatuesUtility {
 		// Statuen-Position (unten rechts, über den Karten)
 		int statueX = screenWidth - config.statueX;
 		int statueY = screenHeight - config.statueY;
-		
-		CardsStatuesUtility instance = CardsStatuesUtility.getInstance();
 		
 		// Render nur wenn Overlays sichtbar sind und keine Equipment-Overlays aktiv sind
 		if (showOverlays && !EquipmentDisplayUtility.isEquipmentOverlayActive()) {

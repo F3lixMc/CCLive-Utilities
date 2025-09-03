@@ -120,7 +120,7 @@ public class InformationenUtility {
 					
 					// Look for essence in database
 					EssenceInfo essenceInfo = essencesDatabase.get(essenceNameToSearch);
-					if (essenceInfo != null) {
+					if (essenceInfo != null && CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay) {
 						// Add essence information as a new line with mixed colors
 						Text essenceInfoText = Text.literal(" -> Welle: ")
 							.styled(style -> style.withColor(0xC0C0C0)) // Light gray

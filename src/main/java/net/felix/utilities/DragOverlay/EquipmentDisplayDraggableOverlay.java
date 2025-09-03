@@ -1,11 +1,11 @@
-package net.felix.utilities;
+package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DraggableOverlay;
+import net.felix.utilities.EquipmentDisplayUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 
 /**
  * Draggable Overlay für die Equipment Display
@@ -13,9 +13,6 @@ import net.minecraft.util.Identifier;
 public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 80; // Much smaller width for armor display
-    private static final int DEFAULT_HEIGHT = 20; // Much smaller height for armor display
-    private static final Identifier LEFT_OVERLAY_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/left_overlay.png");
-    private static final Identifier RIGHT_OVERLAY_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/right_overlay.png");
     
     @Override
     public String getOverlayName() {

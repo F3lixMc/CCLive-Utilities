@@ -1,13 +1,21 @@
 package net.felix.utilities;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.AspectOverlayDraggableOverlay;
+import net.felix.utilities.DragOverlay.BlueprintViewerDraggableOverlay;
+import net.felix.utilities.DragOverlay.BossHPDraggableOverlay;
+import net.felix.utilities.DragOverlay.CardsDraggableOverlay;
+import net.felix.utilities.DragOverlay.EquipmentDisplayDraggableOverlay;
+import net.felix.utilities.DragOverlay.HideUncraftableButtonDraggableOverlay;
+import net.felix.utilities.DragOverlay.KillsUtilityDraggableOverlay;
+import net.felix.utilities.DragOverlay.MaterialTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.StatuesDraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -43,11 +51,14 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void initializeOverlays() {
-        // Check if we're in an inventory screen
-        boolean isInInventory = isInInventoryScreen();
+        // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
+        boolean isInBlueprintInventory = isInInventoryScreen();
         
-        if (isInInventory) {
-            // In inventory screens, show overlays that are relevant for inventories
+        // BossHP overlay is available in all dimensions
+        overlays.add(new BossHPDraggableOverlay());
+        
+        if (isInBlueprintInventory) {
+            // In blueprint inventory screens, show overlays that are relevant for blueprint inventories
             overlays.add(new AspectOverlayDraggableOverlay());
             overlays.add(new HideUncraftableButtonDraggableOverlay());
         } else {
@@ -62,17 +73,22 @@ public class OverlayEditorScreen extends Screen {
                 overlays.add(new MaterialTrackerDraggableOverlay());
                 overlays.add(new KillsUtilityDraggableOverlay());
             } else {
-                // In normal dimensions, only show overlays that are relevant for normal gameplay
-                overlays.add(new EquipmentDisplayDraggableOverlay());
-                overlays.add(new AspectOverlayDraggableOverlay());
-                overlays.add(new HideUncraftableButtonDraggableOverlay());
+                // Check if we're in an equipment chest inventory (where Equipment Display works)
+                boolean isInEquipmentChest = isInEquipmentChestInventory();
+                
+                if (isInEquipmentChest) {
+                    // In equipment chest inventories, show equipment display overlay
+                    overlays.add(new EquipmentDisplayDraggableOverlay());
+                }
+                // Note: Aspect Overlay and Hide Uncraftable Button are only available in blueprint inventories
+                // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬥, 㬦, 㬧, 㬨)
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
             }
         }
     }
     
     /**
-     * Check if the player is currently in an inventory screen where overlays should be editable
+     * Check if the player is currently in a blueprint inventory screen where Hide Uncraftable button and Aspect Overlay work
      */
     private boolean isInInventoryScreen() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -80,25 +96,57 @@ public class OverlayEditorScreen extends Screen {
             return false;
         }
         
-        // Check if the current screen is an inventory-related screen
-        String screenClass = client.currentScreen.getClass().getSimpleName();
+        // Check if the current screen is a HandledScreen (inventory-like screen)
+        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+            return false;
+        }
         
-        // Check for blueprint inventory (where Hide Uncraftable button and Aspect Overlay are shown)
-        boolean isBlueprintInventory = screenClass.contains("Blueprint") || 
-                                      screenClass.contains("Schmied") ||
-                                      screenClass.contains("Crafting");
+        // Get the screen title to check if it's a blueprint inventory
+        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
         
-        // Check for general inventory screens
-        boolean isGeneralInventory = screenClass.contains("Inventory") || 
-                                    screenClass.contains("Chest") || 
-                                    screenClass.contains("Container") ||
-                                    screenClass.contains("HandledScreen") ||
-                                    screenClass.contains("CreativeInventory");
+        String title = handledScreen.getTitle().getString();
         
-        return isBlueprintInventory || isGeneralInventory;
+        // Remove Minecraft formatting codes and Unicode characters for comparison
+        String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+                               .replaceAll("[\\u3400-\\u4DBF]", "");
+        
+        // Check if the clean title contains any of the allowed blueprint inventory names
+        // (same logic as in HandledScreenMixin.isBlueprintInventory())
+        return cleanTitle.contains("Baupläne [Waffen]") ||
+               cleanTitle.contains("Baupläne [Rüstung]") ||
+               cleanTitle.contains("Baupläne [Werkzeuge]") ||
+               cleanTitle.contains("Bauplan [Shop]") ||
+               cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
+               cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
+               cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
+               cleanTitle.contains("Favorisierte [Shop-Baupläne]");
     }
     
-
+    /**
+     * Check if the player is currently in an equipment chest inventory where Equipment Display works
+     */
+    private boolean isInEquipmentChestInventory() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is a HandledScreen (inventory-like screen)
+        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+            return false;
+        }
+        
+        // Get the screen title to check if it contains the equipment chest Unicode characters
+        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        
+        String title = handledScreen.getTitle().getString();
+        
+        // Check if the title contains any of the equipment chest Unicode characters
+        // (same logic as in EquipmentDisplayUtility)
+        return title.contains("㬥") || title.contains("㬦") || title.contains("㬧") || title.contains("㬨");
+    }
     
     /**
      * Check if the player is currently in a floor dimension

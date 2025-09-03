@@ -1,6 +1,8 @@
-package net.felix.utilities;
+package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.CardsStatuesUtility;
+import net.felix.utilities.DraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -8,17 +10,17 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 /**
- * Draggable Overlay für die Cards
+ * Draggable Overlay für die Statues
  */
-public class CardsDraggableOverlay implements DraggableOverlay {
+public class StatuesDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 162;
     private static final int DEFAULT_HEIGHT = 62;
-    private static final Identifier CARDS_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/karten_background.png");
+    private static final Identifier STATUES_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/statuen_background.png");
     
     @Override
     public String getOverlayName() {
-        return "Cards";
+        return "Statues";
     }
     
     @Override
@@ -27,7 +29,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         if (client.getWindow() == null) return 0;
         
         int screenWidth = client.getWindow().getScaledWidth();
-        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().cardX;
+        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().statueX;
         return screenWidth - xOffset - 11; // -11 für Textur-Offset
     }
     
@@ -37,7 +39,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         if (client.getWindow() == null) return 0;
         
         int screenHeight = client.getWindow().getScaledHeight();
-        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().cardY;
+        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().statueY;
         return screenHeight - yOffset - 11; // -11 für Textur-Offset
     }
     
@@ -62,8 +64,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         int xOffset = screenWidth - x - 11; // +11 für Textur-Offset
         int yOffset = screenHeight - y - 11; // +11 für Textur-Offset
         
-        CCLiveUtilitiesConfig.HANDLER.instance().cardX = xOffset;
-        CCLiveUtilitiesConfig.HANDLER.instance().cardY = yOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().statueX = xOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().statueY = yOffset;
     }
     
     @Override
@@ -74,13 +76,13 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         int height = getHeight();
         
         // Render background based on overlay type
-        net.felix.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayType;
+        net.felix.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
         
         if (overlayType == net.felix.OverlayType.CUSTOM) {
             try {
                 context.drawTexture(
                     RenderPipelines.GUI_TEXTURED,
-                    CARDS_BACKGROUND_TEXTURE,
+                    STATUES_BACKGROUND_TEXTURE,
                     x, y,
                     0.0f, 0.0f,
                     width, height,
@@ -105,8 +107,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
             true
         );
         
-        // Render real card data if available, otherwise sample data
-        renderCardData(context, x, y);
+        // Render real statue data if available, otherwise sample data
+        renderStatueData(context, x, y);
     }
     
     @Override
@@ -117,60 +119,60 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     @Override
     public boolean isEnabled() {
         return CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled && 
-               CCLiveUtilitiesConfig.HANDLER.instance().cardEnabled &&
-               CCLiveUtilitiesConfig.HANDLER.instance().showCard;
+               CCLiveUtilitiesConfig.HANDLER.instance().statueEnabled &&
+               CCLiveUtilitiesConfig.HANDLER.instance().showStatue;
     }
     
     @Override
     public Text getTooltip() {
-        return Text.literal("Cards - Shows card information and levels");
+        return Text.literal("Statues - Shows statue information and levels");
     }
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().cardX = 143;
-        CCLiveUtilitiesConfig.HANDLER.instance().cardY = 125;
+        CCLiveUtilitiesConfig.HANDLER.instance().statueX = 143;
+        CCLiveUtilitiesConfig.HANDLER.instance().statueY = 60;
     }
     
     /**
-     * Render real card data if available, otherwise sample data
+     * Render real statue data if available, otherwise sample data
      * Uses simple positioning like normal overlays
      */
-    private void renderCardData(DrawContext context, int x, int y) {
+    private void renderStatueData(DrawContext context, int x, int y) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return;
         
         try {
-            // Try to get real card data from CardsStatuesUtility
-            CardsStatuesUtility.CardData currentCard = getCurrentCardData();
+            // Try to get real statue data from CardsStatuesUtility
+            CardsStatuesUtility.StatueData currentStatue = getCurrentStatueData();
             
-            if (currentCard != null && currentCard.getName() != null) {
+            if (currentStatue != null && currentStatue.getName() != null) {
                 // Render real data
-                String cardName = currentCard.getName();
-                if (cardName.length() > 25) {
-                    cardName = cardName.substring(0, 22) + "...";
+                String statueName = currentStatue.getName();
+                if (statueName.length() > 25) {
+                    statueName = statueName.substring(0, 22) + "...";
                 }
                 
                 context.drawText(
                     client.textRenderer,
-                    cardName,
+                    statueName,
                     x + 8, y + 20,
                     0xFFFFFFFF,
                     true
                 );
                 
-                if (currentCard.getLevel() != null) {
+                if (currentStatue.getLevel() != null) {
                     context.drawText(
                         client.textRenderer,
-                        "Stufe: " + currentCard.getLevel(),
+                        "Stufe: " + currentStatue.getLevel(),
                         x + 8, y + 32,
                         0xFFFFFFFF,
                         true
                     );
                 }
                 
-                if (currentCard.getEffect() != null) {
-                    String effect = currentCard.getEffect();
+                if (currentStatue.getEffect() != null) {
+                    String effect = currentStatue.getEffect();
                     if (effect.length() > 25) {
                         effect = effect.substring(0, 22) + "...";
                     }
@@ -192,7 +194,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         // Render sample data if real data is not available
         context.drawText(
             client.textRenderer,
-            "Kraft Karte",
+            "Krieger Statue",
             x + 8, y + 20,
             0xFFFFFFFF,
             true
@@ -200,7 +202,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         
         context.drawText(
             client.textRenderer,
-            "Stufe: 5",
+            "Stufe: 3",
             x + 8, y + 32,
             0xFFFFFFFF,
             true
@@ -208,7 +210,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         
         context.drawText(
             client.textRenderer,
-            "+10% Schaden",
+            "+15% Verteidigung",
             x + 8, y + 44,
             0xFF00FF00,
             true
@@ -216,14 +218,14 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     }
     
     /**
-     * Get current card data from CardsStatuesUtility using reflection
+     * Get current statue data from CardsStatuesUtility using reflection
      */
-    private CardsStatuesUtility.CardData getCurrentCardData() {
+    private CardsStatuesUtility.StatueData getCurrentStatueData() {
         try {
-            // Use reflection to access the private currentCard field
-            java.lang.reflect.Field field = CardsStatuesUtility.class.getDeclaredField("currentCard");
+            // Use reflection to access the private currentStatue field
+            java.lang.reflect.Field field = CardsStatuesUtility.class.getDeclaredField("currentStatue");
             field.setAccessible(true);
-            return (CardsStatuesUtility.CardData) field.get(null);
+            return (CardsStatuesUtility.StatueData) field.get(null);
         } catch (Exception e) {
             return null;
         }
