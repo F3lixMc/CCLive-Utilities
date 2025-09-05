@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.DragOverlay;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;

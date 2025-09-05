@@ -319,7 +319,7 @@ public class CCLiveUtilitiesConfig {
     public boolean showCard = true;
     
     @SerialEntry
-    public int cardX = 143; // X-Position der Karten Anzeige (optimiert)
+    public int cardX = 151; // X-Position der Karten Anzeige (optimiert)
     
     @SerialEntry
     public int cardY = 125; // Y-Position der Karten Anzeige (optimiert)
@@ -335,7 +335,7 @@ public class CCLiveUtilitiesConfig {
     public boolean showStatue = true;
     
     @SerialEntry
-    public int statueX = 143; // X-Position der Statuen Anzeige (optimiert)
+    public int statueX = 151; // X-Position der Statuen Anzeige (optimiert)
     
     @SerialEntry
     public int statueY = 60; // Y-Position der Statuen Anzeige (optimiert)
@@ -576,7 +576,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Ausrüstungsanzeige:\n• Bild-Overlay = left_overlay.png + right_overlay.png\n• Schwarzes Overlay = Schwarze halbtransparente Overlays\n• Kein Hintergrund = Nur Text ohne Hintergrund")))
+                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Ausrüstungsanzeige:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().equipmentDisplayOverlayType, newVal -> HANDLER.instance().equipmentDisplayOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
@@ -727,7 +727,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für den Material Tracker:\n• Bild-Overlay = materials_background.png\n• Schwarzes Overlay = Schwarze halbtransparente Overlays\n• Kein Hintergrund = Nur Text ohne Hintergrund")))
+                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für den Material Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().materialTrackerOverlayType, newVal -> HANDLER.instance().materialTrackerOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
@@ -787,7 +787,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Karten:\n• Bild-Overlay = card_background.png\n• Schwarzes Overlay = Schwarze halbtransparente Overlays\n• Kein Hintergrund = Nur Text ohne Hintergrund")))
+                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Karten:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().cardOverlayType, newVal -> HANDLER.instance().cardOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
@@ -814,7 +814,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Statuen:\n• Bild-Overlay = statue_background.png\n• Schwarzes Overlay = Schwarze halbtransparente Overlays\n• Kein Hintergrund = Nur Text ohne Hintergrund")))
+                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Statuen:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().statueOverlayType, newVal -> HANDLER.instance().statueOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
@@ -847,7 +847,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für den Blueprint Tracker:\n• Bild-Overlay = blueprint_background.png\n• Schwarzes Overlay = Schwarze halbtransparente Overlays\n• Kein Hintergrund = Nur Text ohne Hintergrund")))
+                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für den Blueprint Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().blueprintViewerOverlayType, newVal -> HANDLER.instance().blueprintViewerOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
@@ -862,6 +862,21 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Größe der Blueprint-Anzeige und des Textes anpassen")))
                                         .binding(1.0f, () -> HANDLER.instance().blueprintViewerScale, newVal -> HANDLER.instance().blueprintViewerScale = newVal)
                                         .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Overlay Editor"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Overlay Editor aktivieren"))
+                                        .description(OptionDescription.of(Text.literal("Overlay Editor aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().overlayEditorEnabled, newVal -> HANDLER.instance().overlayEditorEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Overlay Editor anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Overlay Editor Overlay anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().showOverlayEditor, newVal -> HANDLER.instance().showOverlayEditor = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())

@@ -682,3 +682,4 @@ public class InformationenUtility {
 		}
 	}
 }
+

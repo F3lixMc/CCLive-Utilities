@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"ExampleMixin",
+		"BossBarMixin",
 		"DrawContextMixin",
 		"HandledScreenMixin",
 		"MouseScrollMixin",
@@ -11,7 +12,6 @@
 		"SearchBarInputMixin",
 		"ActionBarMixin",
 		"LivingEntityMixin",
-		"BossBarMixin",
 		"TitleMixin"
 	],
 	"injectors": {

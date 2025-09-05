@@ -2,7 +2,6 @@ package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.CardsStatuesUtility;
-import net.felix.utilities.DraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -130,7 +129,7 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().statueX = 143;
+        CCLiveUtilitiesConfig.HANDLER.instance().statueX = 151;
         CCLiveUtilitiesConfig.HANDLER.instance().statueY = 60;
     }
     
@@ -231,3 +230,4 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         }
     }
 }
+

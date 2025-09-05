@@ -14,7 +14,9 @@
     "key.cclive-utilities.toggle-blueprint-viewer": "Toggle Blueprint Tracker",
     "key.cclive-utilities.next-blueprint-rarity": "Next Blueprint Rarity",
     "key.cclive-utilities.previous-blueprint-rarity": "Previous Blueprint Rarity",
+    "key.cclive-utilities.overlay-editor": "Open Overlay Editor",
   
     "key.categories.cclive-utilities.blueprints": "CCLive Utilities - Blueprints",
+    "categories.cclive-utilities.overlay": "CCLive Utilities - Overlay Editor",
       "key.categories.cclive-utilities": "CCLive Utilities"
   }

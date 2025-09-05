@@ -14,6 +14,7 @@ import net.minecraft.text.Text;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
+import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
 
@@ -199,22 +200,29 @@ public class MaterialTrackerUtility {
 		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY;
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
 		
-		// Berechne Position basierend auf Offsets vom rechten Rand
-		int xPosition = screenWidth - OVERLAY_WIDTH - xOffset; // X-Offset vom rechten Rand
-		int yPosition = yOffset; // Y-Offset vom oberen Rand
-		
 		// Get materials from ActionBarData
 		List<Object> texts = ActionBarData.getFilteredTexts();
 		
-		// Calculate dynamic width based on text content and scale
+		// Calculate dynamic width based on text content
 		int dynamicWidth = calculateRequiredWidth(context, texts);
-		int scaledOverlayWidth = (int) (Math.max(OVERLAY_WIDTH, dynamicWidth) * scale);
-		int actualOverlayWidth = Math.max(OVERLAY_WIDTH, scaledOverlayWidth);
+		int overlayWidth = Math.max(OVERLAY_WIDTH, dynamicWidth);
 		
-		// Adjust X position so overlay expands to the left (stays at right edge)
-		int adjustedXPosition = xPosition - (actualOverlayWidth - OVERLAY_WIDTH);
+		// Calculate position (unscaled)
+		int xPosition = screenWidth - overlayWidth - xOffset;
+		int yPosition = yOffset;
 		
-		// Draw background based on overlay type
+		// Use Matrix transformations for scaling (like Blueprint Viewer)
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Scale based on config
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Translate to position and scale from there
+		matrices.translate(xPosition, yPosition);
+		matrices.scale(scale, scale);
+		
+		// Draw background based on overlay type (scaled)
 		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerOverlayType;
 		
 		switch (overlayType) {
@@ -224,29 +232,29 @@ public class MaterialTrackerUtility {
 					context.drawTexture(
 						RenderPipelines.GUI_TEXTURED,
 						MATERIALS_BACKGROUND_TEXTURE,
-						adjustedXPosition, yPosition, // Position
+						0, 0, // Position (relative to matrix)
 						0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
-						actualOverlayWidth, (int)((OVERLAY_HEIGHT - 23) * scale), // Größe
-						actualOverlayWidth, (int)((OVERLAY_HEIGHT - 23) * scale) // Textur-Größe
+						overlayWidth, OVERLAY_HEIGHT - 23, // Größe (unscaled, will be scaled by matrix)
+						overlayWidth, OVERLAY_HEIGHT - 23 // Textur-Größe
 					);
 				} catch (Exception e) {
 					// Fallback: Verwende den ursprünglichen schwarzen Hintergrund wenn Textur-Loading fehlschlägt
-					context.fill(adjustedXPosition, yPosition, adjustedXPosition + actualOverlayWidth, yPosition + (int)((OVERLAY_HEIGHT - 23) * scale), 0x80000000);
+					context.fill(0, 0, overlayWidth, OVERLAY_HEIGHT - 23, 0x80000000);
 				}
 				break;
 			case BLACK:
 				// Draw colored background
-				context.fill(adjustedXPosition, yPosition, adjustedXPosition + actualOverlayWidth, yPosition + (int)((OVERLAY_HEIGHT - 23) * scale), 0x80000000);
+				context.fill(0, 0, overlayWidth, OVERLAY_HEIGHT - 23, 0x80000000);
 				break;
 			case NONE:
 				// No background
 				break;
 		}
 		
-		int currentY = yPosition + (int)(TEXT_PADDING * scale);
+		// Render materials (scaled)
+		int currentY = TEXT_PADDING;
 		
 		for (Object textObj : texts) {
-			
 			Text textComponent;
 			if (textObj instanceof net.minecraft.text.Text) {
 				// Verwende das originale Text-Objekt mit Farbcodes
@@ -256,18 +264,21 @@ public class MaterialTrackerUtility {
 				textComponent = Text.literal(textObj.toString());
 			}
 			
-			// Draw text with scaling
+			// Draw text (scaled by matrix)
 			context.drawText(
 				MinecraftClient.getInstance().textRenderer, 
 				textComponent, 
-				adjustedXPosition + (int)(8 * scale), // Verwende die angepasste X-Position + 6 Pixel nach rechts
-				currentY - (int)(8 * scale), // 2 Pixel nach unten (-10 + 2 = -8)
+				8, // X position (relative to matrix)
+				currentY - 8, // Y position (relative to matrix)
 				0xFFFFFFFF, // Vollständig weiß mit Alpha
 				true // Mit Schatten
 			);
 			
-			currentY += (int)(LINE_HEIGHT * scale);
+			currentY += LINE_HEIGHT;
 		}
+		
+		// Restore matrix transformations
+		matrices.popMatrix();
 	}
 	
 	private static int calculateRequiredWidth(DrawContext context, List<Object> texts) {
@@ -306,25 +317,32 @@ public class MaterialTrackerUtility {
 		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY;
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
 		
-		// Berechne Position basierend auf Offsets vom rechten Rand
-		int xPosition = screenWidth - OVERLAY_WIDTH - xOffset; // X-Offset vom rechten Rand
-		int yPosition = yOffset; // Y-Offset vom oberen Rand
-		
 		// Create test lines
 		List<String> testLines = new ArrayList<>();
 		for (int i = 0; i < TEST_LINES_COUNT; i++) {
 			testLines.add(testText);
 		}
 		
-		// Calculate dynamic width based on test text content and scale
+		// Calculate dynamic width based on test text content
 		int dynamicWidth = calculateRequiredWidthForStrings(context, testLines);
-		int scaledOverlayWidth = (int) (Math.max(OVERLAY_WIDTH, dynamicWidth) * scale);
-		int actualOverlayWidth = Math.max(OVERLAY_WIDTH, scaledOverlayWidth);
+		int overlayWidth = Math.max(OVERLAY_WIDTH, dynamicWidth);
 		
-		// Adjust X position so overlay expands to the left (stays at right edge)
-		int adjustedXPosition = xPosition - (actualOverlayWidth - OVERLAY_WIDTH);
+		// Calculate position (unscaled)
+		int xPosition = screenWidth - overlayWidth - xOffset;
+		int yPosition = yOffset;
 		
-		// Draw background based on overlay type
+		// Use Matrix transformations for scaling (like Blueprint Viewer)
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Scale based on config
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Translate to position and scale from there
+		matrices.translate(xPosition, yPosition);
+		matrices.scale(scale, scale);
+		
+		// Draw background based on overlay type (scaled)
 		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerOverlayType;
 		
 		switch (overlayType) {
@@ -334,40 +352,44 @@ public class MaterialTrackerUtility {
 					context.drawTexture(
 						RenderPipelines.GUI_TEXTURED,
 						MATERIALS_BACKGROUND_TEXTURE,
-						adjustedXPosition, yPosition, // Position
+						0, 0, // Position (relative to matrix)
 						0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
-						actualOverlayWidth, (int)((OVERLAY_HEIGHT - 23) * scale), // Größe
-						actualOverlayWidth, (int)((OVERLAY_HEIGHT - 23) * scale) // Textur-Größe
+						overlayWidth, OVERLAY_HEIGHT - 23, // Größe (unscaled, will be scaled by matrix)
+						overlayWidth, OVERLAY_HEIGHT - 23 // Textur-Größe
 					);
 				} catch (Exception e) {
 					// Fallback: Verwende den ursprünglichen schwarzen Hintergrund wenn Textur-Loading fehlschlägt
-					context.fill(adjustedXPosition, yPosition, adjustedXPosition + actualOverlayWidth, yPosition + (int)((OVERLAY_HEIGHT - 23) * scale), 0x80000000);
+					context.fill(0, 0, overlayWidth, OVERLAY_HEIGHT - 23, 0x80000000);
 				}
 				break;
 			case BLACK:
 				// Draw colored background
-				context.fill(adjustedXPosition, yPosition, adjustedXPosition + actualOverlayWidth, yPosition + (int)((OVERLAY_HEIGHT - 23) * scale), 0x80000000);
+				context.fill(0, 0, overlayWidth, OVERLAY_HEIGHT - 23, 0x80000000);
 				break;
 			case NONE:
 				// No background
 				break;
 		}
 		
-		int currentY = yPosition + (int)(TEXT_PADDING * scale);
+		// Render test lines (scaled)
+		int currentY = TEXT_PADDING;
 		
 		for (String testLine : testLines) {
-			// Draw test text with scaling
+			// Draw test text (scaled by matrix)
 			context.drawText(
 				MinecraftClient.getInstance().textRenderer, 
 				Text.literal(testLine), 
-				adjustedXPosition + (int)(8 * scale), // Verwende die angepasste X-Position + 6 Pixel nach rechts
-				currentY - (int)(8 * scale), // 2 Pixel nach unten (-10 + 2 = -8)
+				8, // X position (relative to matrix)
+				currentY - 8, // Y position (relative to matrix)
 				0xFFFFFFFF, // Vollständig weiß mit Alpha
 				true // Mit Schatten
 			);
 			
-			currentY += (int)(LINE_HEIGHT * scale);
+			currentY += LINE_HEIGHT;
 		}
+		
+		// Restore matrix transformations
+		matrices.popMatrix();
 	}
 	
 	private static int calculateRequiredWidthForStrings(DrawContext context, List<String> strings) {

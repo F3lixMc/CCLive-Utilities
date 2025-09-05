@@ -88,8 +88,14 @@ public class SchmiedTrackerUtility {
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
+			// Remove Minecraft formatting codes and Unicode characters for comparison
+			String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+								   .replaceAll("[\\u3400-\\u4DBF]", "");
+			
 			// Check for blueprint inventories
-			if (title.contains("Baupläne [Waffen]") || title.contains("Baupläne [Rüstung]") || title.contains("Baupläne [Werkzeuge]")) {
+			if (cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Baupläne [Werkzeuge]") ||
+				cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || 
+				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools")) {
 				// NEUE LOGIK: Beim Betreten eines Blueprint-Inventars immer alle Items anzeigen
 				if (!wasInBlueprintInventory) {
 					// Wir betreten gerade ein Blueprint-Inventar - stelle sicher dass alle Items sichtbar sind
@@ -103,12 +109,12 @@ public class SchmiedTrackerUtility {
 				if (hideUncraftableActive) {
 					updateBlueprintItems(handledScreen, client);
 				}
-			} else if (title.contains("Zerlegen") || title.contains("Umschmieden") || 
-			title.contains("Ausrüstung [Auswählen]") || title.contains("Aufwerten") || 
-			title.contains("Rüstungs Sammlung") || title.contains("Waffen Sammlung") || 
-			title.contains("Werkzeug Sammlung") || title.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
-			title.contains("Geschützte Items") ||
-			title.contains("㬥") || title.contains("㬦") || title.contains("㬧") || title.contains("㬨")) {
+			} else if (cleanTitle.contains("Zerlegen") || cleanTitle.contains("Umschmieden") || 
+			cleanTitle.contains("Ausrüstung [Auswählen]") || cleanTitle.contains("Aufwerten") || 
+			cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Waffen Sammlung") || 
+			cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
+			cleanTitle.contains("Geschützte Items") ||
+			cleanTitle.contains("㬥") || cleanTitle.contains("㬦") || cleanTitle.contains("㬧") || cleanTitle.contains("㬨")) {
 				isInDisassembleChest = true;
 				isInBlueprintInventory = false;
 				updateSlotColors(handledScreen, client);

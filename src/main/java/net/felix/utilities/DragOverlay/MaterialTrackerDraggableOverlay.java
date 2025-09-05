@@ -2,10 +2,10 @@ package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.ActionBarData;
-import net.felix.utilities.DraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
+import org.joml.Matrix3x2fStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import java.util.List;
@@ -75,7 +75,23 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         int width = getWidth();
         int height = getHeight();
         
-        // Render background
+        // Use Matrix transformations for scaling (like Blueprint Viewer)
+        Matrix3x2fStack matrices = context.getMatrices();
+        matrices.pushMatrix();
+        
+        // Scale based on config
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
+        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+        
+        // Translate to position and scale from there
+        matrices.translate(x, y);
+        matrices.scale(scale, scale);
+        
+        // Calculate unscaled dimensions for rendering
+        int unscaledWidth = (int) (width / scale);
+        int unscaledHeight = (int) (height / scale);
+        
+        // Render background (scaled)
         net.felix.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerOverlayType;
         
         switch (overlayType) {
@@ -84,37 +100,40 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
                     context.drawTexture(
                         RenderPipelines.GUI_TEXTURED,
                         MATERIALS_BACKGROUND_TEXTURE,
-                        x, y,
+                        0, 0, // Position (relative to matrix)
                         0.0f, 0.0f,
-                        width, height,
-                        width, height
+                        unscaledWidth, unscaledHeight, // Size (unscaled, will be scaled by matrix)
+                        unscaledWidth, unscaledHeight
                     );
                 } catch (Exception e) {
-                    context.fill(x, y, x + width, y + height, 0x80000000);
+                    context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
                 }
                 break;
             case BLACK:
-                context.fill(x, y, x + width, y + height, 0x80000000);
+                context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
                 break;
             case NONE:
                 // No background
                 break;
         }
         
-        // Render border for edit mode
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        // Render border for edit mode (scaled)
+        context.drawBorder(0, 0, unscaledWidth, unscaledHeight, 0xFFFF0000);
         
-        // Render overlay name
+        // Render overlay name (scaled)
         context.drawText(
             MinecraftClient.getInstance().textRenderer,
             getOverlayName(),
-            x + 5, y + 5,
+            5, 5, // Position (relative to matrix)
             0xFFFFFFFF,
             true
         );
         
-        // Render real material data if available, otherwise sample data
-        renderMaterialData(context, x, y);
+        // Render real material data if available, otherwise sample data (scaled)
+        renderMaterialData(context, 0, 0, unscaledWidth, unscaledHeight);
+        
+        // Restore matrix transformations
+        matrices.popMatrix();
     }
     
     @Override
@@ -141,9 +160,9 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     
     /**
      * Render real material data if available, otherwise sample data
-     * Uses simple positioning like normal overlays
+     * Uses matrix-relative positioning for scaling
      */
-    private void renderMaterialData(DrawContext context, int x, int y) {
+    private void renderMaterialData(DrawContext context, int x, int y, int width, int height) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return;
         
@@ -153,7 +172,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
             
             if (materials != null && !materials.isEmpty()) {
                 // Render real data (limit to 3 items for edit mode)
-                int materialY = y + 20;
+                int materialY = 20; // Relative to matrix
                 int count = 0;
                 
                 for (Object materialObj : materials) {
@@ -166,15 +185,22 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
                         materialText = materialObj.toString();
                     }
                     
-                    // Truncate if too long
-                    if (materialText.length() > 25) {
-                        materialText = materialText.substring(0, 22) + "...";
+                    // Truncate if too long for available width
+                    int availableWidth = width - 16; // 8px margin on each side
+                    int textWidth = client.textRenderer.getWidth(materialText);
+                    if (textWidth > availableWidth) {
+                        int maxChars = (int) ((double) availableWidth / textWidth * materialText.length());
+                        if (maxChars > 3) {
+                            materialText = materialText.substring(0, maxChars - 3) + "...";
+                        } else {
+                            materialText = "...";
+                        }
                     }
                     
                     context.drawText(
                         client.textRenderer,
                         materialText,
-                        x + 8, materialY,
+                        8, materialY, // Position relative to matrix
                         0xFFFFFFFF,
                         true
                     );
@@ -187,7 +213,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
                     context.drawText(
                         client.textRenderer,
                         "... and " + (materials.size() - 3) + " more",
-                        x + 8, materialY,
+                        8, materialY, // Position relative to matrix
                         0xFF888888,
                         true
                     );
@@ -199,11 +225,11 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
             // Fall through to sample data
         }
         
-        // Render sample data if real data is not available
+        // Render sample data if real data is not available (scaled)
         context.drawText(
             client.textRenderer,
             "Prächtiges Eselhaar [1067]",
-            x + 8, y + 20,
+            8, 20, // Position relative to matrix
             0xFFFFFFFF,
             true
         );
@@ -211,7 +237,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         context.drawText(
             client.textRenderer,
             "Goldener Drache [234]",
-            x + 8, y + 32,
+            8, 32, // Position relative to matrix
             0xFFFFFFFF,
             true
         );
@@ -219,7 +245,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         context.drawText(
             client.textRenderer,
             "Mystisches Holz [89]",
-            x + 8, y + 44,
+            8, 44, // Position relative to matrix
             0xFFFFFFFF,
             true
         );
@@ -237,19 +263,23 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
             List<Object> texts = ActionBarData.getFilteredTexts();
             
             if (texts == null || texts.isEmpty()) {
-                return DEFAULT_WIDTH;
+                float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
+                if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+                return (int) (DEFAULT_WIDTH * scale);
             }
             
             // Calculate width based on text content (exact same logic as MaterialTrackerUtility)
             int dynamicWidth = calculateRequiredWidth(client, texts);
             float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
-            int scaledOverlayWidth = (int) (Math.max(DEFAULT_WIDTH, dynamicWidth) * scale);
-            int actualOverlayWidth = Math.max(DEFAULT_WIDTH, scaledOverlayWidth);
+            if (scale <= 0) scale = 1.0f; // Sicherheitscheck
             
-            return actualOverlayWidth;
+            int baseWidth = Math.max(DEFAULT_WIDTH, dynamicWidth);
+            return (int) (baseWidth * scale);
         } catch (Exception e) {
             // Fallback to default width if calculation fails
-            return DEFAULT_WIDTH;
+            float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
+            if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+            return (int) (DEFAULT_WIDTH * scale);
         }
     }
     
@@ -291,6 +321,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
             if (texts == null || texts.isEmpty()) {
                 // Use default height if no materials
                 float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
+                if (scale <= 0) scale = 1.0f; // Sicherheitscheck
                 return (int) ((DEFAULT_HEIGHT - 23) * scale);
             }
             
@@ -304,11 +335,15 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
             
             // Apply scale factor (same logic as MaterialTrackerUtility)
             float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
+            if (scale <= 0) scale = 1.0f; // Sicherheitscheck
             return (int) (totalHeight * scale);
         } catch (Exception e) {
             // Fallback to default height if calculation fails
             float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
+            if (scale <= 0) scale = 1.0f; // Sicherheitscheck
             return (int) ((DEFAULT_HEIGHT - 23) * scale);
         }
     }
 }
+
+

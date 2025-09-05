@@ -1,15 +1,6 @@
-package net.felix.utilities;
+package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.AspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.BlueprintViewerDraggableOverlay;
-import net.felix.utilities.DragOverlay.BossHPDraggableOverlay;
-import net.felix.utilities.DragOverlay.CardsDraggableOverlay;
-import net.felix.utilities.DragOverlay.EquipmentDisplayDraggableOverlay;
-import net.felix.utilities.DragOverlay.HideUncraftableButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.KillsUtilityDraggableOverlay;
-import net.felix.utilities.DragOverlay.MaterialTrackerDraggableOverlay;
-import net.felix.utilities.DragOverlay.StatuesDraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -54,8 +45,10 @@ public class OverlayEditorScreen extends Screen {
         // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
         boolean isInBlueprintInventory = isInInventoryScreen();
         
-        // BossHP overlay is available in all dimensions
-        overlays.add(new BossHPDraggableOverlay());
+        // BossHP overlay is only available in dimensions that match the player name
+        if (isInPlayerNameDimension()) {
+            overlays.add(new BossHPDraggableOverlay());
+        }
         
         if (isInBlueprintInventory) {
             // In blueprint inventory screens, show overlays that are relevant for blueprint inventories
@@ -237,7 +230,6 @@ public class OverlayEditorScreen extends Screen {
         int y = height - 80;
         String[] instructions = {
             "Left Click + Drag: Move overlay",
-            "Right Click + Drag: Resize overlay (if supported)",
             "ESC: Close editor"
         };
         
@@ -288,6 +280,8 @@ public class OverlayEditorScreen extends Screen {
                 newY = Math.max(0, Math.min(newY, height - draggingOverlay.getHeight()));
                 
                 draggingOverlay.setPosition(newX, newY);
+                // Auto-save position during dragging to ensure it's always saved
+                draggingOverlay.savePosition();
                 return true;
             }
             
@@ -299,6 +293,8 @@ public class OverlayEditorScreen extends Screen {
                 int newHeight = Math.max(20, resizeStartHeight + deltaHeight);
                 
                 resizingOverlay.setSize(newWidth, newHeight);
+                // Auto-save position during resizing to ensure it's always saved
+                resizingOverlay.savePosition();
                 return true;
             }
         }
@@ -369,4 +365,25 @@ public class OverlayEditorScreen extends Screen {
     public boolean shouldPause() {
         return false;
     }
+    
+    /**
+     * Check if the player is currently in a dimension that matches their player name
+     */
+    private boolean isInPlayerNameDimension() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null || client.world == null) {
+            return false;
+        }
+        
+        String playerName = client.player.getName().getString().toLowerCase();
+        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        
+        // Check if dimension matches player name (player is in their own dimension)
+        return dimensionPath.equals(playerName);
+    }
 }
+
+
+
+
+
