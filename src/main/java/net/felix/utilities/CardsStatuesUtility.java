@@ -4,6 +4,8 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.option.KeyBinding;
@@ -14,7 +16,10 @@ import net.minecraft.util.Identifier;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
+import net.minecraft.client.gl.RenderPipelines;
+import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.OverlayType;
 
 
 import java.util.ArrayList;
@@ -39,7 +44,85 @@ public class CardsStatuesUtility {
 	
 	// Rendering-Konstanten
 	private static final int BACKGROUND_WIDTH = 162;
-	private static final int BACKGROUND_HEIGHT = 60;
+	private static final int BACKGROUND_HEIGHT = 62;
+	
+	// Textur-Identifier für den Karten-Hintergrund
+	private static final Identifier CARD_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/karten_background.png");
+	
+	// Textur-Identifier für den Statuen-Hintergrund
+	private static final Identifier STATUE_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/statuen_background.png");
+	
+	/**
+	 * Rendert den Karten-Hintergrund mit der karten_background.png Textur
+	 */
+	private static void renderCardBackground(DrawContext context, int x, int y) {
+		try {
+			// Verwende Matrix-Transformationen für Skalierung
+			Matrix3x2fStack matrices = context.getMatrices();
+			matrices.pushMatrix();
+			
+			// Skaliere das Overlay basierend auf der Config
+			float scale = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale;
+			if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+			
+			// Übersetze zur Position und skaliere von dort aus
+			matrices.translate(x, y);
+			matrices.scale(scale, scale);
+			
+			// Verwende die drawTexture Methode mit der passenden GUI_TEXTURED Pipeline
+			// Diese erwartet keine UV2-Attribute und ist für 2D-Overlays geeignet
+			context.drawTexture(
+				RenderPipelines.GUI_TEXTURED,
+				CARD_BACKGROUND_TEXTURE,
+				-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
+				0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
+				BACKGROUND_WIDTH, BACKGROUND_HEIGHT, // Größe
+				BACKGROUND_WIDTH, BACKGROUND_HEIGHT // Textur-Größe
+			);
+			
+			matrices.popMatrix();
+		} catch (Exception e) {
+			// Fallback: Verwende den ursprünglichen schwarzen Hintergrund
+			context.fill(x - 11, y - 11, x + BACKGROUND_WIDTH - 11, y + BACKGROUND_HEIGHT - 11, 0x80000000);
+		}
+	}
+	
+	/**
+	 * Rendert den Statuen-Hintergrund mit der statuen_background.png Textur
+	 */
+	private static void renderStatueBackground(DrawContext context, int x, int y) {
+		try {
+			// Verwende Matrix-Transformationen für Skalierung
+			Matrix3x2fStack matrices = context.getMatrices();
+			matrices.pushMatrix();
+			
+			// Skaliere das Overlay basierend auf der Config
+			float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
+			if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+			
+			// Übersetze zur Position und skaliere von dort aus
+			matrices.translate(x, y);
+			matrices.scale(scale, scale);
+			
+			// Verwende die drawTexture Methode mit der passenden GUI_TEXTURED Pipeline
+			// Diese erwartet keine UV2-Attribute und ist für 2D-Overlays geeignet
+			context.drawTexture(
+				RenderPipelines.GUI_TEXTURED,
+				STATUE_BACKGROUND_TEXTURE,
+				-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
+				0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
+				BACKGROUND_WIDTH, BACKGROUND_HEIGHT, // Größe
+				BACKGROUND_WIDTH, BACKGROUND_HEIGHT // Textur-Größe
+			);
+			
+			matrices.popMatrix();
+		} catch (Exception e) {
+			// Fallback: Verwende den ursprünglichen schwarzen Hintergrund
+			context.fill(x - 11, y - 11, x + BACKGROUND_WIDTH - 11, y + BACKGROUND_HEIGHT - 11, 0x80000000);
+		}
+	}
+	
+
 	
 	public CardsStatuesUtility() {
 		INSTANCE = this;
@@ -64,6 +147,9 @@ public class CardsStatuesUtility {
 			// Register hotkey
 			registerHotkey();
 			
+			// Register commands
+			registerCommands();
+			
 			// Client-seitige Events registrieren
 			ClientTickEvents.END_CLIENT_TICK.register(CardsStatuesUtility::onClientTick);
 			
@@ -87,6 +173,20 @@ public class CardsStatuesUtility {
 			InputUtil.UNKNOWN_KEY.getCode(), // Unbound key
 			"category.cclive-utilities.cards"
 		));
+	}
+	
+	private static void registerCommands() {
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+			dispatcher.register(ClientCommandManager.literal("cards-statues")
+				.then(ClientCommandManager.literal("show")
+					.executes(context -> {
+						showOverlays = true;
+						context.getSource().sendFeedback(Text.literal("§aKarten und Statuen Overlay eingeblendet!"));
+						return 1;
+					})
+				)
+			);
+		});
 	}
 	
 	private static void onClientTick(MinecraftClient client) {
@@ -317,17 +417,18 @@ public class CardsStatuesUtility {
 			return;
 		}
 		
+		// Prüfe ob wir in einer Welt sind (ohne weitere Bedingungen)
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client.world == null || client.player == null) {
+			return;
+		}
+		
 		// Prüfe ob mindestens eine Anzeige aktiviert ist
 		if (!config.showCard && !config.showStatue) {
 			return;
 		}
 		
 		// Prüfe ob wir in einer "floor_" Dimension sind
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.world == null || client.player == null) {
-			return;
-		}
-		
 		String dimension = client.world.getRegistryKey().getValue().toString();
 		if (!dimension.contains("floor_")) {
 			return;
@@ -344,8 +445,6 @@ public class CardsStatuesUtility {
 		// Statuen-Position (unten rechts, über den Karten)
 		int statueX = screenWidth - config.statueX;
 		int statueY = screenHeight - config.statueY;
-		
-		CardsStatuesUtility instance = CardsStatuesUtility.getInstance();
 		
 		// Render nur wenn Overlays sichtbar sind und keine Equipment-Overlays aktiv sind
 		if (showOverlays && !EquipmentDisplayUtility.isEquipmentOverlayActive()) {
@@ -364,10 +463,25 @@ public class CardsStatuesUtility {
 
 	
 	private static void renderCardInfo(DrawContext context, CardData card, int x, int y) {
-		// Zeichne Karten-Hintergrund (Fallback) nur wenn aktiviert
-		if (CCLiveUtilitiesConfig.HANDLER.instance().cardShowBackground) {
-			context.fill(x - 11, y - 11, x + BACKGROUND_WIDTH - 11, y + BACKGROUND_HEIGHT - 11, 0x80000000);
+		// Zeichne Karten-Hintergrund basierend auf dem Overlay-Typ
+		OverlayType cardOverlayType = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayType;
+		if (cardOverlayType == OverlayType.CUSTOM || cardOverlayType == OverlayType.BLACK) {
+			renderCardBackground(context, x, y);
 		}
+		// Bei OverlayType.NONE wird kein Hintergrund gezeichnet
+		
+		// Verwende Matrix-Transformationen für Text-Skalierung
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Skaliere den Text basierend auf der Config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale;
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Übersetze zur Position und skaliere von dort aus
+		// Jetzt skaliert der Text von der gleichen Position aus wie der Hintergrund
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
 		
 		// Zeige alle Hover-Linien an, außer "Statistik" und leere Zeilen
 		int lineCount = 0;
@@ -377,7 +491,7 @@ public class CardsStatuesUtility {
 			// Überspringe "Statistik", leere Zeilen und Zeilen mit unsichtbaren chinesischen Zeichen
 			if (line.contains("Statistik") || 
 				line.trim().isEmpty() || 
-				line.matches(".*[㔻㔵㔶㔷㔸㔹㔺㔻㔼㔽㔾㔿㕀㕁㕂㕃㕄㕅㕆㕇㕈㕉㕊㕋㕌㕍㕎㕏㕐㕑㕒㕓㕔㕕㕖㕗㕘㕙㕚㕛㕜㕝㕞㕟㕠㕡㕢㕣㕤㕥㕦㕧㕨㕩㕪㕫㕬㕭㕮㕯㕰㕱㕲㕳㕴㕵㕶㕷㕸㕹㕺㕻㕼㕽㕾㕿].*")) {
+				line.matches(".*[㔻㔵㔶㔷㔸㔹㔺㔻㔼㔽㔾㔿㕀㕁㕂㕃㕄㕅㕆㕇㕈㕉㕊㕋㕌㕍㕎㕏㕐㕑㕒㕓㕔㕕㕖㕗㕘㕙㕚㕛㕜㕝㕞㕟㕠㕡㕢㕣㕤㕥㕦㕧㕨㕩㕪㕫㕬㕭㕮㕯㕰㕱╲╳╴╵╶╷╸╹╺╻╼╽╾╿].*")) {
 				continue;
 			}
 			
@@ -387,7 +501,9 @@ public class CardsStatuesUtility {
 			}
 			
 			// Berechne die Y-Position basierend auf der Anzahl der Zeilen
-			int textY = y - 4 + (lineCount * 12); // Starte bei y-4 statt y-2 (2 Pixel höher)
+			// Verwende relative Positionen (0-basiert) da wir bereits übersetzt haben
+			// Der Text soll die gleichen Abstände zu den Rändern haben wie bei der originalen Größe
+			int textY = -1 + (lineCount * 12);
 			
 			// Erstelle Text-Objekt mit Farbcodes
 			Text textComponent = Text.literal(line);
@@ -396,20 +512,38 @@ public class CardsStatuesUtility {
 			context.drawText(
 				MinecraftClient.getInstance().textRenderer, 
 				textComponent, 
-				x - 3, // 3 Pixel nach links verschoben
+				1, // Verwende 1 da wir bereits übersetzt haben (1 Pixel nach rechts verschoben)
 				textY, 
 				0xFFFFFFFF, // Weiß als Fallback, aber Text-Objekt behält eigene Farben
 				true
 			);
 			lineCount++;
 		}
+		
+		// Matrix-Transformationen wiederherstellen
+		matrices.popMatrix();
 	}
 	
 	private static void renderStatueInfo(DrawContext context, StatueData statue, int x, int y) {
-		// Zeichne Statuen-Hintergrund (Fallback) nur wenn aktiviert
-		if (CCLiveUtilitiesConfig.HANDLER.instance().statueShowBackground) {
-			context.fill(x - 11, y - 11, x + BACKGROUND_WIDTH - 11, y + BACKGROUND_HEIGHT - 11, 0x80000000);
+		// Zeichne Statuen-Hintergrund basierend auf dem Overlay-Typ
+		OverlayType statueOverlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
+		if (statueOverlayType == OverlayType.CUSTOM || statueOverlayType == OverlayType.BLACK) {
+			renderStatueBackground(context, x, y);
 		}
+		// Bei OverlayType.NONE wird kein Hintergrund gezeichnet
+		
+		// Verwende Matrix-Transformationen für Text-Skalierung
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Skaliere den Text basierend auf der Config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Übersetze zur Position und skaliere von dort aus
+		// Jetzt skaliert der Text von der gleichen Position aus wie der Hintergrund
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
 		
 		// Zeige alle Hover-Linien an, außer "Statistik" und leere Zeilen
 		int lineCount = 0;
@@ -429,7 +563,9 @@ public class CardsStatuesUtility {
 			}
 			
 			// Berechne die Y-Position basierend auf der Anzahl der Zeilen
-			int textY = y - 4 + (lineCount * 12); // Starte bei y-4 statt y-2 (2 Pixel höher)
+			// Verwende relative Positionen (0-basiert) da wir bereits übersetzt haben
+			// Der Text soll die gleichen Abstände zu den Rändern haben wie bei der originalen Größe
+			int textY = -1 + (lineCount * 12);
 			
 			// Erstelle Text-Objekt mit Farbcodes
 			Text textComponent = Text.literal(line);
@@ -438,13 +574,16 @@ public class CardsStatuesUtility {
 			context.drawText(
 				MinecraftClient.getInstance().textRenderer, 
 				textComponent, 
-				x - 3, // 3 Pixel nach links verschoben
+				1, // Verwende 1 da wir bereits übersetzt haben (1 Pixel nach rechts verschoben)
 				textY, 
 				0xFFFFFFFF, // Weiß als Fallback, aber Text-Objekt behält eigene Farben
 				true
 			);
 			lineCount++;
 		}
+		
+		// Matrix-Transformationen wiederherstellen
+		matrices.popMatrix();
 	}
 	
 

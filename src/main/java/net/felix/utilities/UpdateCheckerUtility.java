@@ -10,6 +10,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.felix.CCLiveUtilitiesConfig;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,7 +21,6 @@ import java.util.concurrent.CompletableFuture;
 
 public class UpdateCheckerUtility {
     private static final String MODRINTH_API_URL = "https://api.modrinth.com/v2/project/nBXDNiuw/version";
-    private static final String CURRENT_VERSION = "1.4.3"; // Diese Version aus der fabric.mod.json lesen
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final Gson gson = new Gson();
     
@@ -35,6 +35,17 @@ public class UpdateCheckerUtility {
                 checkForUpdates();
             }
         });
+    }
+    
+    private static String getCurrentVersion() {
+        try {
+            return FabricLoader.getInstance().getModContainer("cclive-utilities")
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse("1.4.2"); // Fallback falls das Laden fehlschlägt
+        } catch (Exception e) {
+            System.out.println("Fehler beim Laden der Mod-Version: " + e.getMessage());
+            return "1.4.2"; // Fallback
+        }
     }
     
     private static void checkForUpdates() {
@@ -70,6 +81,7 @@ public class UpdateCheckerUtility {
     private static void parseUpdateResponse(String jsonResponse) {
         try {
             JsonArray versions = gson.fromJson(jsonResponse, JsonArray.class);
+            String currentVersion = getCurrentVersion();
             
             if (versions != null && versions.size() > 0) {
                 // Finde die neueste stabile Version
@@ -80,7 +92,7 @@ public class UpdateCheckerUtility {
                     
                     // Nur stabile Versionen berücksichtigen
                     if ("release".equals(versionType)) {
-                        if (isNewerVersion(versionNumber, CURRENT_VERSION)) {
+                        if (isNewerVersion(versionNumber, currentVersion)) {
                             latestVersion = versionNumber;
                             updateAvailable = true;
                             break;
@@ -102,8 +114,25 @@ public class UpdateCheckerUtility {
     }
     
     private static boolean isNewerVersion(String newVersion, String currentVersion) {
-        // Einfacher Versionsvergleich (kann erweitert werden)
-        return !newVersion.equals(currentVersion);
+        // Korrekte Versionsvergleich-Logik
+        String[] newParts = newVersion.split("\\.");
+        String[] currentParts = currentVersion.split("\\.");
+        
+        int maxLength = Math.max(newParts.length, currentParts.length);
+        
+        for (int i = 0; i < maxLength; i++) {
+            int newPart = i < newParts.length ? Integer.parseInt(newParts[i]) : 0;
+            int currentPart = i < currentParts.length ? Integer.parseInt(currentParts[i]) : 0;
+            
+            if (newPart > currentPart) {
+                return true;
+            } else if (newPart < currentPart) {
+                return false;
+            }
+        }
+        
+        // Versionen sind identisch
+        return false;
     }
     
     private static void showUpdateMessage() {

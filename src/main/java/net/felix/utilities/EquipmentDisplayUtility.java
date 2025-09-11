@@ -12,7 +12,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.util.Identifier;
+import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.OverlayType;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -32,6 +35,10 @@ public class EquipmentDisplayUtility {
 	private static final int[] EQUIPMENT_SLOTS = {1, 2, 6, 10, 11, 15, 19, 20, 24, 29, 33, 38, 42, 48, 50};
 	private static final Pattern STAT_PATTERN = Pattern.compile("([+-]?\\d+(?:\\.\\d+)?)");
 	private static final Pattern ARMOR_PATTERN = Pattern.compile("Rüstung\\s*([+-]?\\d+(?:\\.\\d+)?)");
+	
+	// Overlay texture identifiers
+	private static final Identifier LEFT_OVERLAY_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/left_overlay.png");
+	private static final Identifier RIGHT_OVERLAY_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/right_overlay.png");
 	
 	// Scroll-Variablen
 	private static int leftScrollOffset = 0;
@@ -136,12 +143,30 @@ public class EquipmentDisplayUtility {
 	
 	private static void handleScrolling(MinecraftClient client) {
 		// Maus-Position abrufen
-		int mouseX = (int) client.mouse.getX() * client.getWindow().getScaledWidth() / client.getWindow().getWidth();
-		int mouseY = (int) client.mouse.getY() * client.getWindow().getScaledHeight() / client.getWindow().getHeight();
+		// Add null checks and division by zero protection
+		if (client == null || client.getWindow() == null) {
+			return;
+		}
+		
+		int windowWidth = client.getWindow().getWidth();
+		int windowHeight = client.getWindow().getHeight();
+		
+		// Prevent division by zero
+		if (windowWidth <= 0 || windowHeight <= 0) {
+			return;
+		}
+		
+		int mouseX = (int) client.mouse.getX() * client.getWindow().getScaledWidth() / windowWidth;
+		int mouseY = (int) client.mouse.getY() * client.getWindow().getScaledHeight() / windowHeight;
 		
 		// Overlay-Positionen berechnen
 		int screenWidth = client.getWindow().getScaledWidth();
 		int screenHeight = client.getWindow().getScaledHeight();
+		
+		// Additional safety check for scaled dimensions
+		if (screenWidth <= 0 || screenHeight <= 0) {
+			return;
+		}
 		int inventoryWidth = 176;
 		int inventoryHeight = 166;
 		int inventoryX = (screenWidth - inventoryWidth) / 2;
@@ -349,13 +374,41 @@ public class EquipmentDisplayUtility {
 			overlayY = screenHeight - overlayHeight - screenMargin;
 		}
 
-		// Zeichne linkes schwarzes Overlay mit dynamischer Breite nur wenn aktiviert
-		if (CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayShowBackground) {
+		// Zeichne Overlays basierend auf dem Overlay-Typ
+		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
+		if (overlayType == OverlayType.CUSTOM) {
+			// Zeichne Bild-Overlays
+			try {
+				// Zeichne linkes Overlay mit der left_overlay.png Textur
+				context.drawTexture(
+					RenderPipelines.GUI_TEXTURED,
+					LEFT_OVERLAY_TEXTURE,
+					leftOverlayX, overlayY, // Position
+					0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
+					leftOverlayWidth, overlayHeight, // Größe
+					leftOverlayWidth, overlayHeight // Textur-Größe
+				);
+				
+				// Zeichne rechtes Overlay mit der right_overlay.png Textur
+				context.drawTexture(
+					RenderPipelines.GUI_TEXTURED,
+					RIGHT_OVERLAY_TEXTURE,
+					rightOverlayX, overlayY, // Position
+					0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
+					rightOverlayWidth, overlayHeight, // Größe
+					rightOverlayWidth, overlayHeight // Textur-Größe
+				);
+			} catch (Exception e) {
+				// Fallback: Verwende den ursprünglichen schwarzen Hintergrund wenn Textur-Loading fehlschlägt
+				context.fill(leftOverlayX, overlayY, leftOverlayX + leftOverlayWidth, overlayY + overlayHeight, 0x80000000);
+				context.fill(rightOverlayX, overlayY, rightOverlayX + rightOverlayWidth, overlayY + overlayHeight, 0x80000000);
+			}
+		} else if (overlayType == OverlayType.BLACK) {
+			// Zeichne schwarze halbtransparente Overlays
 			context.fill(leftOverlayX, overlayY, leftOverlayX + leftOverlayWidth, overlayY + overlayHeight, 0x80000000);
-			
-			// Zeichne rechtes schwarzes Overlay mit dynamischer Breite
 			context.fill(rightOverlayX, overlayY, rightOverlayX + rightOverlayWidth, overlayY + overlayHeight, 0x80000000);
 		}
+		// Bei OverlayType.NONE wird nichts gezeichnet
 
 		// Render nur wenn Overlays sichtbar sind
 		if (showOverlays) {
@@ -377,8 +430,8 @@ public class EquipmentDisplayUtility {
 				int armorOverlayX = armorX - padding;
 				int armorOverlayY = armorY - padding;
 				
-				// Halbtransparentes schwarzes Overlay nur wenn aktiviert
-				if (CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayShowBackground) {
+				// Halbtransparentes schwarzes Overlay nur wenn ein Hintergrund gewünscht ist
+				if (CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType != OverlayType.NONE) {
 					context.fill(armorOverlayX, armorOverlayY, armorOverlayX + armorOverlayWidth, armorOverlayY + armorOverlayHeight, 0x80000000);
 				}
 				
@@ -427,7 +480,7 @@ public class EquipmentDisplayUtility {
 		net.minecraft.client.font.TextRenderer textRenderer = client.textRenderer;
 		int maxTextWidth = 0;
 		
-		// Finde den längsten Text (nach Kürzung)
+		// Finde den längsten Text (verwende vollen Text für Breitenberechnung)
 		for (Map.Entry<String, Double> entry : stats.entrySet()) {
 			double value = entry.getValue();
 			String formattedValue = formatNumber(value);
@@ -436,21 +489,21 @@ public class EquipmentDisplayUtility {
 			}
 			String text = isPercentage ? String.format("%s%% %s", formattedValue, entry.getKey()) : String.format("%s %s", formattedValue, entry.getKey());
 			
-			// Kürze Text auf maximal 40 Zeichen (wie in drawStatEntrySimple)
-			text = truncateText(text, 40);
+			// Verwende den vollen Text für die Breitenberechnung, aber kürze ihn für die Anzeige
+			String displayText = truncateText(text, 32);
 			
-			int textWidth = textRenderer.getWidth(text);
+			int textWidth = textRenderer.getWidth(displayText);
 			maxTextWidth = Math.max(maxTextWidth, textWidth);
 		}
 		
 		// Überschrift-Breite hinzufügen (kann auch gekürzt werden)
 		String header = isPercentage ? "Prozentwerte" : "Flatwerte";
-		header = truncateText(header, 40);
+		header = truncateText(header, 32);
 		int headerWidth = textRenderer.getWidth(header);
 		maxTextWidth = Math.max(maxTextWidth, headerWidth);
 		
-		// Abstände hinzufügen (3 Pixel links + 3 Pixel rechts = 6 Pixel)
-		int requiredWidth = maxTextWidth + 3;
+		// Abstände hinzufügen (11 Pixel links + 12 Pixel rechts = 23 Pixel)
+		int requiredWidth = maxTextWidth + 23;
 		
 		// Mindestens die Basis-Breite verwenden
 		return Math.max(requiredWidth, baseWidth);
@@ -460,8 +513,8 @@ public class EquipmentDisplayUtility {
 	 * Zeichnet Statistiken in einem Overlay mit fester Höhe und dynamischer Breite
 	 */
 	private static void drawStatsInOverlay(DrawContext context, net.minecraft.client.font.TextRenderer textRenderer, Map<String, Double> stats, int overlayX, int overlayY, int overlayWidth, int overlayHeight, boolean isPercentage, int scrollOffset) {
-		int textX = overlayX + 3; // 3 Pixel Abstand vom Rand (2 Pixel näher)
-		int yOffset = overlayY + 5; // 5 Pixel Abstand vom oberen Rand (5 Pixel höher)
+		int textX = overlayX + 11; // 11 Pixel Abstand vom Rand (3 + 8 Pixel nach rechts)
+		int yOffset = overlayY + 8; // 8 Pixel Abstand vom oberen Rand (5 + 3 Pixel nach unten)
 		int maxY = overlayY + overlayHeight - 10; // Maximale Y-Position
 		
 		// Wenn das Overlay zu schmal ist, zeichne einen Hinweis
@@ -470,18 +523,22 @@ public class EquipmentDisplayUtility {
 			return;
 		}
 		
-		// Überschrift
-		String header = isPercentage ? "Prozentwerte" : "Flatwerte";
-		int headerColor = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayHeaderColor.getRGB();
-		context.drawText(textRenderer, header, textX, yOffset, headerColor, true);
+		// Überschrift nur anzeigen wenn keine Bild-Overlays verwendet werden
+		if (CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType != OverlayType.CUSTOM) {
+			String header = isPercentage ? "Prozentwerte" : "Flatwerte";
+			int headerColor = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayHeaderColor.getRGB();
+			context.drawText(textRenderer, header, textX, yOffset, headerColor, true);
+		}
+		// Immer den gleichen Abstand für konsistente Positionierung
 		yOffset += 15;
 		
 
 		int totalEntries = stats.size();
 		
 		if (totalEntries > 0) {
-			// Konvertiere Map zu Liste für einfacheres Scrollen
+			// Konvertiere Map zu Liste und sortiere nach Wert (größte Werte zuerst)
 			List<Map.Entry<String, Double>> entriesList = new ArrayList<>(stats.entrySet());
+			entriesList.sort((a, b) -> Double.compare(Math.abs(b.getValue()), Math.abs(a.getValue())));
 			
 			// Berechne Start-Index basierend auf Scroll-Offset
 			int startIndex = scrollOffset / 12;
@@ -539,9 +596,9 @@ public class EquipmentDisplayUtility {
 		}
 		String text = isPercentage ? String.format("%s%% %s", formattedValue, entry.getKey()) : String.format("%s %s", formattedValue, entry.getKey());
 
-		// Kürze Text auf maximal 40 Zeichen
-		if (text.length() >= 40) {
-			text = text.substring(0, 37) + "...";
+		// Kürze Text auf maximal 32 Zeichen
+		if (text.length() >= 32) {
+			text = text.substring(0, 29) + "...";
 		}
 
 		// Zeichne den Text mit konfigurierter Farbe

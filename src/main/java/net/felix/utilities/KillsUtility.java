@@ -10,6 +10,7 @@ import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.client.render.RenderTickCounter;
 import net.felix.CCLiveUtilitiesConfig;
+import org.joml.Matrix3x2fStack;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,9 +37,6 @@ public class KillsUtility {
 	// Time tracking for KPM calculation
 	private static long sessionStartTime = 0;
 	private static double currentKPM = 0.0;
-	private static long lastKillTime = 0;
-	private static final Queue<Long> killTimes = new LinkedList<>();
-	private static final int KPM_WINDOW = 60000; // 1 Minute in Millisekunden
 	
 	// Chinese character mapping for numbers
 	private static final Map<Character, Integer> CHINESE_NUMBERS = new HashMap<>();
@@ -145,7 +143,7 @@ public class KillsUtility {
 			readKillsFromBossbar(client);
 		}
 
-		// Update KPM calculation
+		// Always update KPM calculation (even when not tracking kills)
 		updateKPM();
 	}
 	
@@ -244,18 +242,15 @@ public class KillsUtility {
 	}
 	
 	private static void updateKPM() {
-		if (sessionStartTime == 0 || newKills == 0) {
+		if (sessionStartTime != 0 && newKills != 0) {
+			long currentTime = System.currentTimeMillis();
+			long sessionDuration = currentTime - sessionStartTime;
+			if (sessionDuration > 0) {
+				double minutesElapsed = (double)sessionDuration / 60000.0;
+				currentKPM = (double)newKills / minutesElapsed;
+			}
+		} else {
 			currentKPM = 0.0;
-			return;
-		}
-		
-		long currentTime = System.currentTimeMillis();
-		long sessionDuration = currentTime - sessionStartTime;
-		
-		if (sessionDuration > 0) {
-			// Calculate KPM based on new kills and session time
-			double minutesElapsed = sessionDuration / 60000.0; // Convert ms to minutes
-			currentKPM = newKills / minutesElapsed;
 		}
 	}
 	
@@ -292,7 +287,6 @@ public class KillsUtility {
 		}
 		
 		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
 		
 		// Position aus der Konfiguration
 		int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityX;
@@ -335,29 +329,41 @@ public class KillsUtility {
 		int xPosition = screenWidth - overlayWidth - xOffset;
 		int yPosition = yOffset;
 		
-		// Draw semi-transparent background only if enabled
+		// Verwende Matrix-Transformationen für Skalierung
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Skaliere basierend auf der Config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale;
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Übersetze zur Position und skaliere von dort aus
+		matrices.translate(xPosition, yPosition);
+		matrices.scale(scale, scale);
+		
+		// Draw semi-transparent background only if enabled (skaliert)
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowBackground) {
-			context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+			context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
 		}
 		
-		// Draw title
+		// Draw title (skaliert)
 		int titleColor = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityHeaderColor.getRGB();
 		context.drawText(
 			client.textRenderer,
 			title,
-			xPosition + PADDING,
-			yPosition + PADDING,
+			PADDING,
+			PADDING,
 			titleColor,
 			true
 		);
 		
-		// Draw KPM
-		int currentY = yPosition + PADDING + 15;
+		// Draw KPM (skaliert)
+		int currentY = PADDING + 15;
 		int textColor = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityTextColor.getRGB();
 		context.drawText(
 			client.textRenderer,
 			kpmText,
-			xPosition + PADDING,
+			PADDING,
 			currentY,
 			textColor,
 			true
@@ -365,28 +371,31 @@ public class KillsUtility {
 		
 		currentY += LINE_HEIGHT;
 		
-		// Draw new kills
+		// Draw new kills (skaliert)
 		context.drawText(
 			client.textRenderer,
 			newKillsText,
-			xPosition + PADDING,
+			PADDING,
 			currentY,
 			textColor,
 			true
 		);
 		
-		// Draw session time if available
+		// Draw session time if available (skaliert)
 		if (!timeText.isEmpty()) {
 			currentY += LINE_HEIGHT;
 			context.drawText(
 				client.textRenderer,
 				timeText,
-				xPosition + PADDING,
+				PADDING,
 				currentY,
 				textColor,
-				true
+			true
 			);
 		}
+		
+		// Matrix-Transformationen wiederherstellen
+		matrices.popMatrix();
 	}
 	
 	private static boolean isOnFloor() {
@@ -451,32 +460,25 @@ public class KillsUtility {
 			int kills = decodeChineseNumber(bossBarName);
 			
 			if (kills >= 0) {
-				// Ignore the first bossbar update when entering a floor
 				if (firstBossBarUpdate) {
 					initialKills = kills;
 					currentKills = kills;
 					newKills = 0;
-					firstBossBarUpdate = false; // Mark first update as done
+					firstBossBarUpdate = false;
+				} else if (kills > currentKills) {
+					currentKills = kills;
+					newKills = currentKills - initialKills;
+				} else if (kills < currentKills) {
+					initialKills = kills;
+					currentKills = kills;
+					newKills = 0;
 				} else {
-					// Check if kills increased (new kills were made)
-					if (kills > currentKills) {
-						// Kills increased, update tracking
-						currentKills = kills;
-						newKills = currentKills - initialKills;
-					} else if (kills < currentKills) {
-						// Kills decreased (maybe reset or new floor), reset initial kills
-						initialKills = kills;
-						currentKills = kills;
-						newKills = 0;
-					} else {
-						// Kills unchanged, just update current kills
-						currentKills = kills;
-						newKills = currentKills - initialKills;
-					}
+					currentKills = kills;
+					newKills = currentKills - initialKills;
 				}
 			}
 		} catch (Exception e) {
 			// Silent error handling
 		}
 	}
-} 
+}

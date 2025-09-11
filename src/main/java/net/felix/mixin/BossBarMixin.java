@@ -21,26 +21,54 @@ public class BossBarMixin {
             // Get the bossbars from the BossBarHud
             BossBarHud bossBarHud = (BossBarHud) (Object) this;
             
-            // Try different field names for bossbars
+            // Try different field names for bossbars - updated for 1.21.7
             Map<UUID, ClientBossBar> bossBars = null;
-            String[] possibleFieldNames = {"field_2060", "bossBars", "bossbars", "bossBars", "bars", "bossBarMap"};
+            String[] possibleFieldNames = {
+                "field_2060", "field_2061", "field_2062", // Common obfuscated field names
+                "bossBars", "bossbars", "bossBars", "bars", "bossBarMap",
+                "clientBossBars", "bossBarEntries", "entries", "bossBarList"
+            };
             
-            for (String fieldName : possibleFieldNames) {
-                try {
-                    java.lang.reflect.Field bossBarsField = bossBarHud.getClass().getDeclaredField(fieldName);
-                    bossBarsField.setAccessible(true);
-                    Object fieldValue = bossBarsField.get(bossBarHud);
-                    
-                    if (fieldValue instanceof Map) {
-                        @SuppressWarnings("unchecked")
-                        Map<UUID, ClientBossBar> tempBars = (Map<UUID, ClientBossBar>) fieldValue;
-                        if (tempBars != null && !tempBars.isEmpty()) {
-                            bossBars = tempBars;
-                            break;
+            // First try to find the field by type
+            java.lang.reflect.Field[] fields = bossBarHud.getClass().getDeclaredFields();
+            for (java.lang.reflect.Field field : fields) {
+                if (Map.class.isAssignableFrom(field.getType())) {
+                    try {
+                        field.setAccessible(true);
+                        Object fieldValue = field.get(bossBarHud);
+                        if (fieldValue instanceof Map) {
+                            @SuppressWarnings("unchecked")
+                            Map<UUID, ClientBossBar> tempBars = (Map<UUID, ClientBossBar>) fieldValue;
+                            if (tempBars != null && !tempBars.isEmpty()) {
+                                bossBars = tempBars;
+                                break;
+                            }
                         }
+                    } catch (Exception e) {
+                        // Continue trying other fields
                     }
-                } catch (Exception e) {
-                    // Silent error handling
+                }
+            }
+            
+            // If we didn't find it by type, try the known field names
+            if (bossBars == null) {
+                for (String fieldName : possibleFieldNames) {
+                    try {
+                        java.lang.reflect.Field bossBarsField = bossBarHud.getClass().getDeclaredField(fieldName);
+                        bossBarsField.setAccessible(true);
+                        Object fieldValue = bossBarsField.get(bossBarHud);
+                        
+                        if (fieldValue instanceof Map) {
+                            @SuppressWarnings("unchecked")
+                            Map<UUID, ClientBossBar> tempBars = (Map<UUID, ClientBossBar>) fieldValue;
+                            if (tempBars != null && !tempBars.isEmpty()) {
+                                bossBars = tempBars;
+                                break;
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Silent error handling
+                    }
                 }
             }
             

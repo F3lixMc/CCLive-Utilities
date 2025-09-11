@@ -45,24 +45,5 @@ public class ActionBarMixin {
         }
     }
     
-    @Inject(at = @At("HEAD"), method = "tick()V")
-    private void onTick(CallbackInfo ci) {
-        // Check current overlay message every tick
-        if (overlayMessage != null && overlayRemaining > 0) {
-            String content = overlayMessage.getString();
-            
-            // Process material tracking on tick as well with original text
-            ActionBarData.processActionBarMessage(overlayMessage);
-            
-            // Check for blueprint messages in action bar (combo chest rewards)
-            BPViewerUtility instance = BPViewerUtility.getInstance();
-            if (instance != null) {
-                instance.checkForBlueprint(content);
-            }
-            
-            if (content.contains("Seelen")) {
-                // Boss defeat detected via tick
-            }
-        }
-    }
+
 } 

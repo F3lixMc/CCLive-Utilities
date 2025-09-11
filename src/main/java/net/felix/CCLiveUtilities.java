@@ -13,6 +13,7 @@ import net.felix.utilities.BPViewerUtility;
 import net.felix.utilities.UpdateCheckerUtility;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.commands.CCLiveCommands;
+import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +33,9 @@ public class CCLiveUtilities implements ModInitializer {
 
 		// Initialize configuration
 		CCLiveUtilitiesConfig.HANDLER.load();
+		
+		// Migriere Overlay-Typ von String zu Enum
+		CCLiveUtilitiesConfig.migrateOverlayType();
 
 		// Initialisiere alle Utility-Klassen
 		EquipmentDisplayUtility.initialize();
@@ -44,6 +48,7 @@ public class CCLiveUtilities implements ModInitializer {
 		AnimationBlockerUtility.initialize();
 		BPViewerUtility.initialize();
 		UpdateCheckerUtility.initialize();
+		OverlayEditorUtility.initialize();
 		
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();

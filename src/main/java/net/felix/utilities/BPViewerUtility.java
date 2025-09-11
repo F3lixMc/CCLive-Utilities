@@ -16,13 +16,16 @@ import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.OverlayType;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
+import org.joml.Matrix3x2fStack;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import com.mojang.brigadier.CommandDispatcher;
@@ -61,7 +64,8 @@ public class BPViewerUtility {
     private static final int HUD_HEIGHT = 100; // Base height, will be adjusted dynamically
     private static final int RIGHT_MARGIN_PERCENT = 1;
     private static final int TOP_MARGIN_PERCENT = 2; // Original small top margin
-    // Background texture removed - using fill instead
+    // Background texture for blueprint display
+    private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/blueprint_background.png");
     
     // Patterns for blueprint detection
     private static final Pattern BLUEPRINT_PATTERN = Pattern.compile("§f\\[§6Legend§f\\] Du erhältst (.+?) §f- §3\\[Bauplan\\]");
@@ -315,7 +319,8 @@ public class BPViewerUtility {
             }
         });
 
-               // Commands werden jetzt in CCLiveCommands registriert
+               // Register commands
+               registerCommands();
 
                isInitialized = true;
     }
@@ -348,6 +353,34 @@ public class BPViewerUtility {
         KeyBindingHelper.registerKeyBinding(previousRarityKeyBinding);
     }
            
+           private static void registerCommands() {
+               ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+                   dispatcher.register(ClientCommandManager.literal("bp")
+                       .then(ClientCommandManager.literal("reset")
+                           .executes(context -> {
+                               BPViewerUtility instance = getInstance();
+                               instance.resetFoundBlueprints();
+                               context.getSource().sendFeedback(Text.literal("§aAlle gefundenen Baupläne wurden zurückgesetzt!"));
+                               return 1;
+                           })
+                       )
+                       .then(ClientCommandManager.literal("set")
+                           .then(ClientCommandManager.literal("floor")
+                               .then(ClientCommandManager.argument("floorNumber", StringArgumentType.string())
+                                   .executes(context -> {
+                                       String floorNumber = StringArgumentType.getString(context, "floorNumber");
+                                       BPViewerUtility instance = getInstance();
+                                       instance.setManualFloor(floorNumber);
+                                       instance.setVisibility(true, floorNumber);
+                                       context.getSource().sendFeedback(Text.literal("§aBauplan-Anzeige für Ebene " + floorNumber + " aktiviert!"));
+                                       return 1;
+                                   })
+                               )
+                           )
+                       )
+                   );
+               });
+           }
     
     private void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
         try {
@@ -399,17 +432,47 @@ public class BPViewerUtility {
                 // Recalculate position with dynamic width using config
                 int dynamicX = screenWidth - dynamicWidth - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
                 
-                // Redraw background with dynamic size if enabled in config
-                if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerShowBackground) {
-                    context.fill(dynamicX, y, dynamicX + dynamicWidth, y + dynamicHeight, 0x80000000);
-                }
+                // Verwende Matrix-Transformationen für das gesamte Overlay
+                Matrix3x2fStack matrices = context.getMatrices();
+                matrices.pushMatrix();
+                
+                // Skaliere basierend auf der Config
+                float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+                if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+                
+                // Übersetze zur Position und skaliere von dort aus
+                matrices.translate(dynamicX, y);
+                matrices.scale(scale, scale);
+                
+                        // Render complete background (skaliert) basierend auf Overlay-Typ
+        OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerOverlayType;
+        if (overlayType == OverlayType.CUSTOM) {
+            // Bild-Overlay mit blueprint_background.png
+            context.drawTexture(
+                RenderPipelines.GUI_TEXTURED,
+                BLUEPRINT_BACKGROUND_TEXTURE,
+                0, 0, // Position (0-basiert, da wir bereits übersetzt haben)
+                0.0f, 0.0f, // UV-Koordinaten
+                dynamicWidth, dynamicHeight, // Größe
+                dynamicWidth, dynamicHeight // Textur-Größe
+            );
+        } else if (overlayType == OverlayType.BLACK) {
+            // Schwarzes halbtransparentes Overlay
+            context.fill(0, 0, dynamicWidth, dynamicHeight, 0x80000000); // Schwarzer Hintergrund mit 50% Transparenz
+        }
+        // Bei OverlayType.NONE wird kein Hintergrund gezeichnet
+                
+                // Matrix-Transformationen wiederherstellen
+                matrices.popMatrix();
                 
                 // Only print debug once per frame
                 if (!debugPrinted) {
                     
                     debugPrinted = true;
                 }
-                renderBlueprintList(context, dynamicX + 10, y + 2, rarityData.items, rarityData.color);
+                
+                // Render title and blueprint list together in the scaled area
+                renderTitleAndBlueprintList(context, dynamicX + 10, y + 2, rarityData.items, rarityData.color, dynamicWidth);
             } else {
                 // Show error message if no data found
                 context.drawText(client.textRenderer, "No data for floor: " + activeFloor, x + 10, y + 30, 0xFFFF0000, false);
@@ -445,8 +508,8 @@ public class BPViewerUtility {
         for (String blueprint : blueprints) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
             int textWidth = client.textRenderer.getWidth(displayText);
-            // Add padding for the text (left margin + right margin) - more space from longest text
-            textWidth += 30;
+            // Add padding for the text (left margin + right margin) - increased for longer German text
+            textWidth += 45;
             if (textWidth > maxWidth) {
                 maxWidth = textWidth;
             }
@@ -455,18 +518,20 @@ public class BPViewerUtility {
         return Math.max(maxWidth, HUD_WIDTH);
     }
     
-    private void renderBlueprintList(DrawContext context, int x, int y, List<String> blueprints, String rarityColor) {
+    /**
+     * Rendert den Titel (Rarity) ohne Skalierung
+     */
+    private void renderTitle(DrawContext context, int x, int y, String rarityColor, int overlayWidth) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return;
         
-                       // Debug: Show that we're in renderBlueprintList (only once per frame)
-               if (!debugPrinted) {
-            
-               }
-        
-        // Render rarity title with bright color for visibility
+        // Render rarity title with bright color for visibility (unskaliert)
         String rarityDisplay = currentRarity.toUpperCase();
-        int titleX = x + 50 - client.textRenderer.getWidth(rarityDisplay) / 2;
+        
+        // Zentriere die Überschrift in der Mitte des Overlays
+        // x ist bereits dynamicX + 10, also müssen wir das berücksichtigen
+        int titleX = (x - 10) + (overlayWidth - client.textRenderer.getWidth(rarityDisplay)) / 2;
+        
         // Get the appropriate color for the rarity - using bright colors
         int titleColor;
         switch (currentRarity.toLowerCase()) {
@@ -477,13 +542,88 @@ public class BPViewerUtility {
             case "legendary": titleColor = 0xFFFFFF00; break;   // Bright yellow
             default: titleColor = 0xFFFFFFFF; break;            // Bright white as default
         }
-        context.drawText(client.textRenderer, rarityDisplay, titleX, y + 3, titleColor, true);
+        context.drawText(client.textRenderer, rarityDisplay, titleX, y + 5, titleColor, true);
+    }
+    
+    /**
+     * Rendert den Titel und die Bauplan-Liste zusammen im skalierten Bereich
+     */
+    private void renderTitleAndBlueprintList(DrawContext context, int x, int y, List<String> blueprints, String rarityColor, int overlayWidth) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return;
         
-        // Debug: Show rarity title
+        // Verwende Matrix-Transformationen für Skalierung
+        Matrix3x2fStack matrices = context.getMatrices();
+        matrices.pushMatrix();
         
+        // Skaliere basierend auf der Config
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
         
-        // Render blueprint list - start immediately below title
-        int blueprintY = y + 20; // Start below the title
+        // Übersetze zur Position und skaliere von dort aus
+        matrices.translate(x, y);
+        matrices.scale(scale, scale);
+        
+        // Render title (skaliert) - über dem Hintergrund
+        String rarityDisplay = currentRarity.toUpperCase();
+        
+        // Überschrift perfekt mittig positionieren
+        int textWidth = client.textRenderer.getWidth(rarityDisplay);
+        int titleX = -9 + (overlayWidth - textWidth) / 2;
+        
+        // Get the appropriate color for the rarity - using bright colors
+        int titleColor;
+        switch (currentRarity.toLowerCase()) {
+            case "common": titleColor = 0xFFFFFFFF; break;      // Bright white
+            case "uncommon": titleColor = 0xFF00FF00; break;    // Bright green
+            case "rare": titleColor = 0xFF0000FF; break;        // Bright blue
+            case "epic": titleColor = 0xFFFF00FF; break;        // Bright magenta
+            case "legendary": titleColor = 0xFFFFFF00; break;   // Bright yellow
+            default: titleColor = 0xFFFFFFFF; break;            // Bright white as default
+        }
+        context.drawText(client.textRenderer, rarityDisplay, titleX, 5, titleColor, true);
+        
+        // Render blueprint list - start below the title (moved 3 pixels up)
+        int blueprintY = 17; // Start below the title
+        
+        for (String blueprint : blueprints) {
+            String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
+            boolean isFound = foundBlueprints.containsKey(displayText) || isBlueprintFound(getActiveFloor(), displayText);
+            
+            // Draw the text with appropriate color based on found status (skaliert)
+            int textColor = isFound ? 0xFFFFFFFF : 0xFF888888; // White if found, gray if not found
+            context.drawText(client.textRenderer, displayText, 5, blueprintY, textColor, true);
+            
+            blueprintY += 12; // Increased spacing for better readability (skaliert)
+        }
+        
+        // Matrix-Transformationen wiederherstellen
+        matrices.popMatrix();
+    }
+    
+    private void renderBlueprintList(DrawContext context, int x, int y, List<String> blueprints, String rarityColor) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return;
+        
+        // Verwende Matrix-Transformationen für Skalierung
+        Matrix3x2fStack matrices = context.getMatrices();
+        matrices.pushMatrix();
+        
+        // Skaliere basierend auf der Config
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+        
+        // Übersetze zur Position und skaliere von dort aus
+        matrices.translate(x, y);
+        matrices.scale(scale, scale);
+        
+        // Debug: Show that we're in renderBlueprintList (only once per frame)
+        if (!debugPrinted) {
+        
+        }
+        
+        // Render blueprint list - start from the beginning since title is rendered separately (moved 3 pixels up)
+        int blueprintY = -3; // Start from the beginning of the scalable area
         
         
         
@@ -506,17 +646,18 @@ public class BPViewerUtility {
             
 
             
-                               // Draw the text with appropriate color based on found status
-                   int textColor = isFound ? 0xFFFFFFFF : 0xFF888888; // White if found, gray if not found
-                   context.drawText(client.textRenderer, displayText, x, blueprintY, textColor, true);
-                   if (!debugPrinted) {
+            // Draw the text with appropriate color based on found status (skaliert)
+            int textColor = isFound ? 0xFFFFFFFF : 0xFF888888; // White if found, gray if not found
+            context.drawText(client.textRenderer, displayText, 5, blueprintY, textColor, true);
+            if (!debugPrinted) {
         
-                   }
+            }
             
-            blueprintY += 12; // Increased spacing for better readability
+            			blueprintY += 12; // Increased spacing for better readability (skaliert)
         }
         
- 
+        // Matrix-Transformationen wiederherstellen
+        matrices.popMatrix();
     }
     
                	private static void checkTabKey() {

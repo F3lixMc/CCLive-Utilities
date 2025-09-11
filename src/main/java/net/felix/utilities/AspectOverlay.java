@@ -5,6 +5,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
+import org.joml.Matrix3x2fStack;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -287,17 +288,22 @@ public class AspectOverlay {
             return;
         }
         
-        // Get configurable position from config
+        // Get configurable position and scale from config
         int configX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX;
         int configY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY;
         boolean showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayShowBackground;
+        float overlayScale = 1.0f; // Default scale - add aspectOverlayScale to config later
+
+        
+        // Ensure scale is valid
+        if (overlayScale <= 0) overlayScale = 1.0f;
         
         // Position using absolute coordinates from screen edges
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
         
-        // Calculate overlay dimensions dynamically based on content
-        int overlayWidth = 210; // Reduced from 250 to 210 pixels
+        // Calculate base overlay dimensions dynamically based on content
+        int baseOverlayWidth = 210; // Base width in pixels
         
         // Calculate required height based on description lines
         String[] descriptionLines = wrapText(currentAspectDescription, 30); // Reduced from 35 to 30 due to smaller width
@@ -305,10 +311,14 @@ public class AspectOverlay {
         
         // Base height: 10 (top margin) + 20 (aspect name) + 15 (bottom margin) + description height
         int baseHeight = 45;
-        int overlayHeight = baseHeight + descriptionHeight;
+        int baseOverlayHeight = baseHeight + descriptionHeight;
         
         // Ensure minimum height
-        overlayHeight = Math.max(overlayHeight, 110);
+        baseOverlayHeight = Math.max(baseOverlayHeight, 110);
+        
+        // Use base dimensions for positioning (scale will be applied via matrix)
+        int overlayWidth = baseOverlayWidth;
+        int overlayHeight = baseOverlayHeight;
         
         // Position overlay from right and top edges
         int overlayX = screenWidth - configX - overlayWidth; // X position: configX pixels from right edge of overlay to right edge of screen
@@ -334,27 +344,44 @@ public class AspectOverlay {
             overlayY = screenHeight - overlayHeight; // Ensure bottom edge doesn't go off screen
         }
         
-        // Draw background only if enabled in config
+        // Calculate scaled dimensions and offsets for centered scaling
+        int scaledWidth = (int) (overlayWidth * overlayScale);
+        int scaledHeight = (int) (overlayHeight * overlayScale);
+        int offsetX = (scaledWidth - overlayWidth) / 2;
+        int offsetY = (scaledHeight - overlayHeight) / 2;
+        
+        // Draw background only if enabled in config (scaled)
         if (showBackground) {
-            context.fill(overlayX, overlayY, overlayX + overlayWidth, overlayY + overlayHeight, 0xCC000000);
+            context.fill(overlayX - offsetX, overlayY - offsetY, overlayX - offsetX + scaledWidth, overlayY - offsetY + scaledHeight, 0xCC000000);
         }
         
-        // Draw simple border
-        context.fill(overlayX, overlayY, overlayX + 1, overlayY + overlayHeight, 0xFFFFFFFF); // Left border
-        context.fill(overlayX + overlayWidth - 1, overlayY, overlayX + overlayWidth, overlayY + overlayHeight, 0xFFFFFFFF); // Right border
-        context.fill(overlayX, overlayY, overlayX + overlayWidth, overlayY + 1, 0xFFFFFFFF); // Top border
-        context.fill(overlayX, overlayY + overlayHeight - 1, overlayX + overlayWidth, overlayY + overlayHeight, 0xFFFFFFFF); // Bottom border
+        // Draw simple border (scaled)
+        context.fill(overlayX - offsetX, overlayY - offsetY, overlayX - offsetX + 1, overlayY - offsetY + scaledHeight, 0xFFFFFFFF); // Left border
+        context.fill(overlayX - offsetX + scaledWidth - 1, overlayY - offsetY, overlayX - offsetX + scaledWidth, overlayY - offsetY + scaledHeight, 0xFFFFFFFF); // Right border
+        context.fill(overlayX - offsetX, overlayY - offsetY, overlayX - offsetX + scaledWidth, overlayY - offsetY + 1, 0xFFFFFFFF); // Top border
+        context.fill(overlayX - offsetX, overlayY - offsetY + scaledHeight - 1, overlayX - offsetX + scaledWidth, overlayY - offsetY + scaledHeight, 0xFFFFFFFF); // Bottom border
+        
+        // Apply scaling for text rendering
+        Matrix3x2fStack matrices = context.getMatrices();
+        matrices.pushMatrix();
+        
+        // Translate to scaled overlay position and apply scaling
+        matrices.translate(overlayX - offsetX, overlayY - offsetY);
+        matrices.scale(overlayScale, overlayScale);
         
         // Draw aspect name on its own line with custom color #FCA800
-        context.drawText(client.textRenderer, currentAspectName, overlayX + 10, overlayY + 10, 0xFFFCA800, false);
+        context.drawText(client.textRenderer, currentAspectName, 10, 10, 0xFFFCA800, false);
         
         // Draw aspect description (wrapped to fit) with colored text - numbers and special characters in light green
         for (int i = 0; i < descriptionLines.length; i++) {
-            drawColoredText(context, client.textRenderer, descriptionLines[i], overlayX + 10, overlayY + 35 + (i * 12));
+            drawColoredText(context, client.textRenderer, descriptionLines[i], 10, 35 + (i * 12));
         }
         
         // Draw instruction text with simple gray text
-        context.drawText(client.textRenderer, "Halte SHIFT gedrückt", overlayX + 10, overlayY + overlayHeight - 15, 0xCCCCCC, false);
+        context.drawText(client.textRenderer, "Halte SHIFT gedrückt", 10, overlayHeight - 15, 0xCCCCCC, false);
+        
+        // Restore matrices
+        matrices.popMatrix();
     }
     
     private static String[] wrapText(String text, int maxLength) {

@@ -3,10 +3,12 @@ package net.felix.utilities;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.util.InputUtil;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
@@ -112,6 +114,9 @@ public class BossHPUtility {
 			// Instance erstellen
 			new BossHPUtility();
 			
+			// Register commands
+			registerCommands();
+			
 			// Client-seitige Events registrieren
 			ClientTickEvents.END_CLIENT_TICK.register(BossHPUtility::onClientTick);
 			
@@ -125,6 +130,10 @@ public class BossHPUtility {
 		} catch (Exception e) {
 			// Error initializing BossHPUtility
 		}
+	}
+	
+	private static void registerCommands() {
+		// Keine Commands mehr nötig, da Test-Overlay entfernt wurde
 	}
 	
 	private static void onClientTick(MinecraftClient client) {
@@ -392,6 +401,11 @@ public class BossHPUtility {
 	}
 	
 	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null) {
+			return;
+		}
+		
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().bossHPEnabled ||
@@ -399,8 +413,16 @@ public class BossHPUtility {
 			return;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null) {
+		// Prüfe ob Spieler in seiner eigenen Dimension ist
+		if (client.player == null || client.world == null) {
+			return;
+		}
+		
+		String playerName = client.player.getName().getString().toLowerCase();
+		String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+		
+		// Zeige Boss HP Overlay nur in Dimensionen, die den Spielernamen enthalten
+		if (!dimensionPath.equals(playerName)) {
 			return;
 		}
 		
@@ -412,6 +434,7 @@ public class BossHPUtility {
 		}
 	}
 	
+
 	private static void renderBossHealthBars(DrawContext context, MinecraftClient client, BossHPUtility instance) {
 		// Verwende Konfigurationspositionen
 		int configX = CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
@@ -441,6 +464,10 @@ public class BossHPUtility {
 		if (isDisappeared) {
 			displayText = bossName + " verbleibend";
 			displayHP = hpText;
+		} else if (hpText.isEmpty()) {
+			// Fallback: zeige nur den Boss-Namen
+			displayText = bossName;
+			displayHP = "";
 		} else {
 			String[] parts = hpText.split("\\|{5}");
 			if (parts.length >= 2) {
@@ -449,29 +476,18 @@ public class BossHPUtility {
 			}
 		}
 		
-		if (displayText == null || displayHP == null) {
+		if (displayText == null) {
 			return;
 		}
 		
 		// Berechne die Breiten für das Layout
 		int nameWidth = client.textRenderer.getWidth(displayText);
-		int hpWidth = client.textRenderer.getWidth(displayHP);
-		int totalWidth = nameWidth + 10 + hpWidth; // 10 Pixel Abstand zwischen Name und HP
+		int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
+		int totalWidth = nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth); // 10 Pixel Abstand zwischen Name und HP nur wenn HP vorhanden
 		
-		// Verwende Konfigurationspositionen oder berechne Standardposition
-		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
-		
-		int posX, posY;
-		if (x == 200 && y == 119) {
-			// Standardposition: unten rechts, immer am rechten Rand ausgerichtet
-			posX = screenWidth - totalWidth - PADDING * 2 - 1;
-			posY = screenHeight - client.textRenderer.fontHeight - PADDING * 2 - 119;
-		} else {
-			// Benutzerdefinierte Position: auch immer am rechten Rand ausgerichtet
-			posX = screenWidth - totalWidth - PADDING * 2 - 1;
-			posY = y;
-		}
+		// Verwende absolute Konfigurationspositionen - Overlay wächst nach links
+		int posX = x - totalWidth - PADDING * 2; // Position von rechts nach links
+		int posY = y;
 		
 		// Zeichne den Hintergrund nur wenn aktiviert
 		if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowBackground) {
@@ -483,8 +499,10 @@ public class BossHPUtility {
 		// Zeichne den Boss-Namen (weiß)
 		context.drawText(client.textRenderer, displayText, posX + PADDING, posY + PADDING, TEXT_COLOR, true);
 		
-		// Zeichne die HP (rot)
-		context.drawText(client.textRenderer, displayHP, posX + PADDING + nameWidth + 10, posY + PADDING, HP_COLOR, true);
+		// Zeichne die HP (rot) nur wenn vorhanden
+		if (!displayHP.isEmpty()) {
+			context.drawText(client.textRenderer, displayHP, posX + PADDING + nameWidth + 10, posY + PADDING, HP_COLOR, true);
+		}
 		
 
 	}
@@ -596,6 +614,24 @@ public class BossHPUtility {
 		BossHPUtility instance = getInstance();
 		return instance != null && instance.currentBossName != null && instance.currentBossText != null && !instance.bossDefeated;
 	}
+	
+	/**
+	 * Gibt den aktuellen Boss-Namen zurück
+	 */
+	public static String getCurrentBossName() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.currentBossName : null;
+	}
+	
+	/**
+	 * Gibt den aktuellen Boss-Text zurück
+	 */
+	public static String getCurrentBossText() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.currentBossText : null;
+	}
+	
+
 	
 
 } 

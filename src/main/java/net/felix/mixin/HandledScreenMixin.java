@@ -33,8 +33,8 @@ public abstract class HandledScreenMixin {
             renderHideUncraftableButton(context);
         }
         
-        // Only show aspect overlay in specific blueprint inventories
-        if (isBlueprintInventory()) {
+        // Only show aspect overlay in specific blueprint inventories and if enabled in config
+        if (isBlueprintInventory() && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
             // Update aspect overlay with current hovered item
             updateAspectOverlay(mouseX, mouseY);
             

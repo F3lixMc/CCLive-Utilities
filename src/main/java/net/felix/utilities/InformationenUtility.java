@@ -50,6 +50,8 @@ public class InformationenUtility {
 		AspectOverlay.initialize();
 		AspectOverlayRenderer.initialize();
 		
+
+		
 		// Register tooltip callback for material information
 		ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
 			// Only process if Informationen Utility is enabled in config
@@ -118,7 +120,7 @@ public class InformationenUtility {
 					
 					// Look for essence in database
 					EssenceInfo essenceInfo = essencesDatabase.get(essenceNameToSearch);
-					if (essenceInfo != null) {
+					if (essenceInfo != null && CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay) {
 						// Add essence information as a new line with mixed colors
 						Text essenceInfoText = Text.literal(" -> Welle: ")
 							.styled(style -> style.withColor(0xC0C0C0)) // Light gray
@@ -229,6 +231,11 @@ public class InformationenUtility {
 	 * Updates the aspect overlay based on current tooltip content
 	 */
 	private static void updateAspectOverlayFromTooltip(MinecraftClient client) {
+		// Check if aspect overlay is enabled in config
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
+			return; // Don't update overlay if aspect overlay is disabled
+		}
+		
 		// Check if shift is pressed
 		boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
 													   InputUtil.GLFW_KEY_LEFT_SHIFT) || 
@@ -252,6 +259,11 @@ public class InformationenUtility {
 	 * Adds aspect name to tooltip (only in specific blueprint inventories)
 	 */
 	private static void addAspectNameToTooltip(List<Text> lines, MinecraftClient client) {
+		// Check if aspect overlay is enabled in config
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
+			return; // Don't show aspect information if aspect overlay is disabled
+		}
+		
 		// Check if we're in a blueprint inventory that should show aspect information
 		if (client.currentScreen == null) {
 			return;
@@ -340,6 +352,11 @@ public class InformationenUtility {
 	 * Checks for aspect information in blueprint items and updates the overlay
 	 */
 	private static void checkForAspectInformationAndUpdateOverlay(List<Text> lines, MinecraftClient client) {
+		// Check if aspect overlay is enabled in config
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
+			return; // Don't update overlay if aspect overlay is disabled
+		}
+		
 		// Debug output
 		// Find blueprint line and update overlay
 		for (int i = 0; i < lines.size(); i++) {
@@ -375,6 +392,11 @@ public class InformationenUtility {
 	 * Checks for aspect information in blueprint items and adds it to the tooltip
 	 */
 	private static void checkForAspectInformation(List<Text> lines, MinecraftClient client) {
+		// Check if aspect overlay is enabled in config
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
+			return; // Don't show aspect information if aspect overlay is disabled
+		}
+		
 		// Find blueprint line and add aspect information
 		for (int i = 0; i < lines.size(); i++) {
 			Text line = lines.get(i);
@@ -660,3 +682,4 @@ public class InformationenUtility {
 		}
 	}
 }
+

@@ -671,19 +671,19 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        "Papageienfeder"
+                        "Papageinfeder"
                     ]
                 },
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        "Papageienknochen"
+                        "Papageinknochen"
                     ]
                 },
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        "Papageienflügel"
+                        "Papageiflügel"
                     ]
                 },
                 "epic": {
@@ -881,7 +881,7 @@
                 "common": {
                     "color": "WHITE",
                     "materials": [
-                        "Kuhhut"
+                        "Kuhhaut"
                     ]
                 },
                 "uncommon": {
@@ -969,7 +969,7 @@
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        "Prachtvoller Eselschwanz"
+                        "Prachvoller Eselschwanz"
                     ]
                 },
                 "legendary": {
@@ -1062,7 +1062,7 @@
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        "Prachtvoller Ocelotpelz"
+                        "Prachvoller Ocelotpelz"
                     ]
                 },
                 "rare": {
@@ -1727,7 +1727,7 @@
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        "Frischer Kartoffel"
+                        "Frische Kartoffel"
                     ]
                 },
                 "rare": {
@@ -1867,7 +1867,7 @@
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        "Glimmender Glibber"
+                        "Glimmernder Glibber"
                     ]
                 },
                 "rare": {
@@ -2083,7 +2083,7 @@
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        "Magische Runenrolle"
+                        "Magische Rune"
                     ]
                 },
                 "epic": {
@@ -2182,7 +2182,7 @@
                 "uncommon": {
                     "color": "GREEN",
                     "materials": [
-                        "Glibbrige Haute"
+                        "Glibbrige Haut"
                     ]
                 },
                 "rare": {
@@ -2223,7 +2223,7 @@
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        "Giftpfeilspitzen"  
+                        "Giftpfeilspitze"  
                     ]
                 },
                 "epic": {
@@ -2999,7 +2999,7 @@
                 "epic": {
                     "color": "PURPLE",
                     "materials": [
-                        "Endemriteseele"    
+                        "Endermiteseele"    
                     ]
                 },
                 "legendary": {
@@ -3133,7 +3133,7 @@
                 "rare": {
                     "color": "BLUE",
                     "materials": [
-                        "Shulkerschale"
+                        "Shulkerauge"
                     ]
                 },
                 "epic": {
