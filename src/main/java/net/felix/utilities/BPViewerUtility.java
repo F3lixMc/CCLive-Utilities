@@ -315,8 +315,7 @@ public class BPViewerUtility {
             }
         });
 
-               // Register commands
-               registerCommands();
+               // Commands werden jetzt in CCLiveCommands registriert
 
                isInitialized = true;
     }
@@ -349,20 +348,6 @@ public class BPViewerUtility {
         KeyBindingHelper.registerKeyBinding(previousRarityKeyBinding);
     }
            
-           private static void registerCommands() {
-               ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-                   dispatcher.register(ClientCommandManager.literal("bp")
-                       .then(ClientCommandManager.literal("reset")
-                           .executes(context -> {
-                               BPViewerUtility instance = getInstance();
-                               instance.resetFoundBlueprints();
-                               context.getSource().sendFeedback(Text.literal("§aAlle gefundenen Baupläne wurden zurückgesetzt!"));
-                               return 1;
-                           })
-                       )
-                   );
-               });
-           }
     
     private void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
         try {

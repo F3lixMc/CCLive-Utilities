@@ -22,6 +22,9 @@
 		"main": [
 			"net.felix.CCLiveUtilities"
 		],
+		"client": [
+			"net.felix.HudRenderingEntrypoint"
+		],
 		"modmenu": [
 			"net.felix.ModMenuIntegration"
 		],

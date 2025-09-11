@@ -29,6 +29,12 @@ public class CCLiveUtilitiesConfig {
     // Debug Settings
     @SerialEntry
     public boolean updateCheckerEnabled = true;
+    
+    @SerialEntry
+    public boolean blueprintDebugging = false;
+    
+    @SerialEntry
+    public boolean leaderboardDebugging = false;
 
     // Equipment Display Settings
     @SerialEntry
@@ -856,6 +862,18 @@ public class CCLiveUtilitiesConfig {
                                 .name(Text.literal("Update Checker aktivieren"))
                                 .description(OptionDescription.of(Text.literal("Automatische Update-Prüfung beim Server-Beitritt aktivieren oder deaktivieren")))
                                 .binding(true, () -> HANDLER.instance().updateCheckerEnabled, newVal -> HANDLER.instance().updateCheckerEnabled = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Blueprint Debugging"))
+                                .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten und -Commands für das Blueprint-System")))
+                                .binding(false, () -> HANDLER.instance().blueprintDebugging, newVal -> HANDLER.instance().blueprintDebugging = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Leaderboard Debugging"))
+                                .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten und -Commands für das Leaderboard-System")))
+                                .binding(false, () -> HANDLER.instance().leaderboardDebugging, newVal -> HANDLER.instance().leaderboardDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .build())

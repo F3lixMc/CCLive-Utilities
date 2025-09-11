@@ -11,7 +11,8 @@ import net.felix.utilities.InformationenUtility;
 import net.felix.utilities.AnimationBlockerUtility;
 import net.felix.utilities.BPViewerUtility;
 import net.felix.utilities.UpdateCheckerUtility;
-
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.commands.CCLiveCommands;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +44,12 @@ public class CCLiveUtilities implements ModInitializer {
 		AnimationBlockerUtility.initialize();
 		BPViewerUtility.initialize();
 		UpdateCheckerUtility.initialize();
+		
+		// Initialisiere Leaderboard-System
+		LeaderboardManager.getInstance().initialize();
+		
+		// Registriere alle CCLive-Commands (Blueprint + Leaderboard)
+		CCLiveCommands.register();
 
 	}
 

@@ -1,0 +1,61 @@
+{
+	"rare_mob_cooldowns": {
+		"floor_1": {
+			"name": "Floor 1",
+			"initial_lifespan_seconds": 30,
+			"current_average_seconds": 300,
+			"measurements_count": 0,
+			"min_lifespan_seconds": 300,
+			"max_lifespan_seconds": 300,
+			"last_updated": "2024-12-19T00:00:00Z",
+			"description": "Seltene Mobs auf Floor 1 - wird automatisch verfeinert"
+		},
+		"floor_2": {
+			"name": "Floor 2",
+			"initial_lifespan_seconds": 45,
+			"current_average_seconds": 450,
+			"measurements_count": 0,
+			"min_lifespan_seconds": 450,
+			"max_lifespan_seconds": 450,
+			"last_updated": "2024-12-19T00:00:00Z",
+			"description": "Seltene Mobs auf Floor 2 - wird automatisch verfeinert"
+		},
+		"floor_3": {
+			"name": "Floor 3",
+			"initial_lifespan_seconds": 27.5,
+			"current_average_seconds": 600,
+			"measurements_count": 0,
+			"min_lifespan_seconds": 600,
+			"max_lifespan_seconds": 600,
+			"last_updated": "2024-12-19T00:00:00Z",
+			"description": "Seltene Mobs auf Floor 3 - wird automatisch verfeinert"
+		},
+		"floor_4": {
+			"name": "Floor 4",
+			"initial_lifespan_seconds": 750,
+			"current_average_seconds": 750,
+			"measurements_count": 0,
+			"min_lifespan_seconds": 750,
+			"max_lifespan_seconds": 750,
+			"last_updated": "2024-12-19T00:00:00Z",
+			"description": "Seltene Mobs auf Floor 4 - wird automatisch verfeinert"
+		},
+		"floor_5": {
+			"name": "Floor 5",
+			"initial_lifespan_seconds": 900,
+			"current_average_seconds": 900,
+			"measurements_count": 0,
+			"min_lifespan_seconds": 900,
+			"max_lifespan_seconds": 900,
+			"last_updated": "2024-12-19T00:00:00Z",
+			"description": "Seltene Mobs auf Floor 5 - wird automatisch verfeinert"
+		}
+	},
+	"metadata": {
+		"version": "2.0",
+		"description": "Intelligente Lebensdauer-Daten für seltene Mobs - wird automatisch verfeinert",
+		"units": "seconds",
+		"learning_enabled": true,
+		"last_updated": "2024-12-19T00:00:00Z"
+	}
+}
