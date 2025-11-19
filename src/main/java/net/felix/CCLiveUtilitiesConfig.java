@@ -163,7 +163,7 @@ public class CCLiveUtilitiesConfig {
     public boolean informationenUtilityEnabled = true; // Informationen Utility aktivieren
     
     @SerialEntry
-    public boolean showEbenenInSpecialInventory = true; // Ebenen in speziellem Inventar "㬪" anzeigen
+    public boolean showEbenenInSpecialInventory = true; // Ebenen in speziellem Inventar "㬉" anzeigen
     
     @SerialEntry
     public boolean showEbenenInNormalInventories = true; // Ebenen in normalen Inventaren anzeigen
@@ -203,6 +203,47 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public int hideUncraftableButtonY = 54; // Y-Position des Hide Uncraftable Buttons (Offset)
+    
+    // Kit Filter Button Positions
+    @SerialEntry
+    public int kitFilterButton1X = -100; // X-Position des Kit Filter Button 1 (Offset)
+    
+    @SerialEntry
+    public int kitFilterButton1Y = 50; // Y-Position des Kit Filter Button 1 (Offset)
+    
+    @SerialEntry
+    public int kitFilterButton2X = -100; // X-Position des Kit Filter Button 2 (Offset)
+    
+    @SerialEntry
+    public int kitFilterButton2Y = 75; // Y-Position des Kit Filter Button 2 (Offset)
+    
+    @SerialEntry
+    public int kitFilterButton3X = -100; // X-Position des Kit Filter Button 3 (Offset)
+    
+    @SerialEntry
+    public int kitFilterButton3Y = 100; // Y-Position des Kit Filter Button 3 (Offset)
+    
+    // Kit Filter Button Selections (persistent)
+    @SerialEntry
+    public String kitFilterButton1KitType = ""; // Kit-Typ für Button 1 (z.B. "MÜNZ_KIT")
+    
+    @SerialEntry
+    public int kitFilterButton1Level = 1; // Level für Button 1 (1-7)
+    
+    @SerialEntry
+    public String kitFilterButton2KitType = ""; // Kit-Typ für Button 2
+    
+    @SerialEntry
+    public int kitFilterButton2Level = 1; // Level für Button 2 (1-7)
+    
+    @SerialEntry
+    public String kitFilterButton3KitType = ""; // Kit-Typ für Button 3
+    
+    @SerialEntry
+    public int kitFilterButton3Level = 1; // Level für Button 3 (1-7)
+    
+    @SerialEntry
+    public boolean kitFilterButtonsEnabled = true; // Kit Filter Buttons ein-/ausblenden
     
     // Schmied Tracker - Individual Settings
     @SerialEntry
@@ -585,6 +626,15 @@ public class CCLiveUtilitiesConfig {
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("KitFilter"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Kit Filter Buttons Ein/Aus"))
+                                        .description(OptionDescription.of(Text.literal("Kit Filter Buttons in Baupläne Inventaren ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().kitFilterButtonsEnabled, newVal -> HANDLER.instance().kitFilterButtonsEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()

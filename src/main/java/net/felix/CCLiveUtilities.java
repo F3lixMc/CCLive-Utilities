@@ -12,6 +12,7 @@ import net.felix.utilities.AnimationBlockerUtility;
 import net.felix.utilities.BPViewerUtility;
 import net.felix.utilities.UpdateCheckerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.KitFilterUtility;
 
 
 import java.nio.file.Path;
@@ -48,6 +49,7 @@ public class CCLiveUtilities implements ModInitializer {
 		BPViewerUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();
+		KitFilterUtility.initialize();
 
 	}
 

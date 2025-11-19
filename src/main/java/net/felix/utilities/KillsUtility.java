@@ -41,16 +41,16 @@ public class KillsUtility {
 	// Chinese character mapping for numbers
 	private static final Map<Character, Integer> CHINESE_NUMBERS = new HashMap<>();
 	static {
-		CHINESE_NUMBERS.put('㚰', 0);
-		CHINESE_NUMBERS.put('㚱', 1);
-		CHINESE_NUMBERS.put('㚲', 2);
-		CHINESE_NUMBERS.put('㚳', 3);
-		CHINESE_NUMBERS.put('㚴', 4);
-		CHINESE_NUMBERS.put('㚵', 5);
-		CHINESE_NUMBERS.put('㚶', 6);
-		CHINESE_NUMBERS.put('㚷', 7);
-		CHINESE_NUMBERS.put('㚸', 8);
-		CHINESE_NUMBERS.put('㚹', 9);
+		CHINESE_NUMBERS.put('㚎', 0);
+		CHINESE_NUMBERS.put('㚏', 1);
+		CHINESE_NUMBERS.put('㚐', 2);
+		CHINESE_NUMBERS.put('㚑', 3);
+		CHINESE_NUMBERS.put('㚒', 4);
+		CHINESE_NUMBERS.put('㚓', 5);
+		CHINESE_NUMBERS.put('㚔', 6);
+		CHINESE_NUMBERS.put('㚕', 7);
+		CHINESE_NUMBERS.put('㚖', 8);
+		CHINESE_NUMBERS.put('㚗', 9);
 	}
 	
 	// Rendering constants

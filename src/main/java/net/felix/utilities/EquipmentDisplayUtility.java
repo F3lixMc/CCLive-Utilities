@@ -120,7 +120,7 @@ public class EquipmentDisplayUtility {
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
-			if (title.contains("㬥") || title.contains("㬦") || title.contains("㬧") || title.contains("㬨")) {
+			if (title.contains("㬃") || title.contains("㬄") || title.contains("㬅") || title.contains("㬆")) {
 				isInEquipmentChest = true;
 				updateEquipmentStats(handledScreen, client);
 				handleScrolling(client);

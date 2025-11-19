@@ -114,7 +114,7 @@ public class SchmiedTrackerUtility {
 			cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Waffen Sammlung") || 
 			cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
 			cleanTitle.contains("Geschützte Items") ||
-			cleanTitle.contains("㬥") || cleanTitle.contains("㬦") || cleanTitle.contains("㬧") || cleanTitle.contains("㬨")) {
+			cleanTitle.contains("㬃") || cleanTitle.contains("㬄") || cleanTitle.contains("㬅") || cleanTitle.contains("㬆")) {
 				isInDisassembleChest = true;
 				isInBlueprintInventory = false;
 				updateSlotColors(handledScreen, client);

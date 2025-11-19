@@ -41,6 +41,9 @@ public abstract class HandledScreenMixin {
             // Render our aspect overlay AFTER everything else (including tooltips)
             renderAspectOverlay(context);
         }
+        
+        // Render Kit Filter buttons in relevant inventories
+        renderKitFilterButtons(context, mouseX, mouseY);
     }
     
     /**
@@ -179,6 +182,22 @@ public abstract class HandledScreenMixin {
         }
     }
 
+    /**
+     * Renders the Kit Filter buttons
+     */
+    private void renderKitFilterButtons(DrawContext context, int mouseX, int mouseY) {
+        try {
+            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            
+            // Call the KitFilterUtility to render the buttons
+            net.felix.utilities.KitFilterUtility.renderKitFilterButtons(context, screen, mouseX, mouseY);
+            
+        } catch (Exception e) {
+            System.err.println("Error rendering Kit Filter buttons: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     /**
      * Checks if the current screen is a smithing-related inventory that should show colored frames
      */

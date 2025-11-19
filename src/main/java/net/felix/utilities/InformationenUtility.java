@@ -60,13 +60,13 @@ public class InformationenUtility {
 				return;
 			}
 			
-			// Check if we're in the special inventory (the one with 㬨)
+			// Check if we're in the special inventory (the one with 㬉)
 			MinecraftClient client = MinecraftClient.getInstance();
 			boolean isSpecialInventory = false;
 			String screenTitle = "";
 			if (client.currentScreen != null) {
 				screenTitle = client.currentScreen.getTitle().getString();
-				if (screenTitle.contains("㬪")) {
+				if (screenTitle.contains("㬉")) {
 					isSpecialInventory = true;
 				}
 			}
@@ -79,7 +79,7 @@ public class InformationenUtility {
 				return; // Normal inventories disabled
 			}
 			
-			// In special inventory (㬪), only modify the first line (item name)
+			// In special inventory (㬉), only modify the first line (item name)
 			// In other inventories, check all lines for material names
 			int startIndex = 0;
 			int endIndex = isSpecialInventory ? 1 : lines.size(); // Special inventory: only first line, others: all lines
@@ -138,7 +138,7 @@ public class InformationenUtility {
 				
 				// Skip Essenz items that should not show level information (but allow essence improvement inventory)
 				if (screenTitle.contains("Essenz [Auswahl]") || screenTitle.contains("Essenz-Tasche") ||
-					screenTitle.contains("Essenzernter") || screenTitle.contains("㩘") || screenTitle.contains("Legend+ Menü")) {
+					screenTitle.contains("Essenzernter") || screenTitle.contains("㨶") || screenTitle.contains("Legend+ Menü")) {
 					continue;
 				}
 				

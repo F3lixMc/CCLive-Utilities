@@ -191,17 +191,17 @@ public class BPViewerUtility {
             
             // Check if we're hovering over a name_tag item (blueprint items)
             if (stack != null && stack.getItem().toString().contains("name_tag")) {
-                // Check if we're in the special inventory (the one with 㬨)
+                // Check if we're in the special inventory (the one with 㬉)
                 MinecraftClient mcClient = MinecraftClient.getInstance();
                 boolean isSpecialInventory = false;
                 if (mcClient != null && mcClient.currentScreen != null) {
                     String screenTitle = mcClient.currentScreen.getTitle().getString();
-                    if (screenTitle.contains("㬪")) {
+                    if (screenTitle.contains("㬉")) {
                         isSpecialInventory = true;
                     }
                 }
                 
-                // Only process blueprints in the special inventory (㬨)
+                // Only process blueprints in the special inventory (㬉)
                 if (!isSpecialInventory) {
                     return;
                 }
@@ -1000,6 +1000,26 @@ public class BPViewerUtility {
     public boolean isBlueprintFound(String floor, String blueprintName) {
         Set<String> floorBlueprints = floorProgress.get(floor);
         return floorBlueprints != null && floorBlueprints.contains(blueprintName);
+    }
+    
+    /**
+     * Prüft, ob ein Blueprint gefunden wurde (prüft sowohl foundBlueprints als auch floorProgress)
+     * Diese Methode wird für externe Utilities verwendet, die den Status eines Blueprints prüfen möchten
+     */
+    public boolean isBlueprintFoundAnywhere(String blueprintName) {
+        if (blueprintName == null || blueprintName.isEmpty()) {
+            return false;
+        }
+        // Prüfe foundBlueprints (globale Liste aller gefundenen Blueprints)
+        if (foundBlueprints.containsKey(blueprintName)) {
+            return true;
+        }
+        // Prüfe auch in der aktiven Ebene
+        String activeFloor = getActiveFloor();
+        if (activeFloor != null) {
+            return isBlueprintFound(activeFloor, blueprintName);
+        }
+        return false;
     }
     
     public void resetFoundBlueprints() {

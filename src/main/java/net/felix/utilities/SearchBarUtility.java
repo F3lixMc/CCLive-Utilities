@@ -73,7 +73,7 @@ public class SearchBarUtility {
 			// Entferne Farbcodes für den Vergleich
 			String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
 			
-			if (cleanTitle.contains("㭦") || cleanTitle.contains("Bauplan") || cleanTitle.contains("Baupläne") ||
+			if (cleanTitle.contains("㭅") || cleanTitle.contains("㭁") || cleanTitle.contains("Bauplan") || cleanTitle.contains("Baupläne") ||
 				cleanTitle.contains("Umschmieden") || cleanTitle.contains("Zerlegen") || 
 				cleanTitle.contains("Ausrüstung") || cleanTitle.contains("Essenz") || 
 				cleanTitle.contains("Essenz-Tasche") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") ||
@@ -155,9 +155,12 @@ public class SearchBarUtility {
 		String title = screen.getTitle().getString();
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
 		
-		if (cleanTitle.contains("㭦")) {
+		if (cleanTitle.contains("㭅")) {
 			// Spezielle Slots für Kartenmenü
 			return new int[]{ 0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 27, 28, 29, 30, 32, 33, 34};
+		} else if (cleanTitle.contains("㭁")) {
+			// Spezielle Slots für Statuenmenü
+			return new int[]{ 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
 		} else if (cleanTitle.contains("Umschmieden") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER")) {
 			// Slots für Umschmieden und Zerlegen (umfassender Bereich)
 			return new int[]{ 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};

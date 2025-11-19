@@ -89,13 +89,36 @@ public class OverlayEditorUtility {
     
     public static void closeOverlayEditor() {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.currentScreen instanceof OverlayEditorScreen) {
-            client.currentScreen.close();
+        if (client != null) {
+            if (client.currentScreen instanceof OverlayEditorScreen) {
+                client.currentScreen.close();
+            }
             isOverlayEditorOpen = false;
         }
     }
     
     public static void setOverlayEditorOpen(boolean open) {
         isOverlayEditorOpen = open;
+    }
+    
+    /**
+     * Handle key press directly (for use in mixins when screens are open)
+     * @param keyCode The key code (e.g., GLFW.GLFW_KEY_F6)
+     * @return true if the key was handled
+     */
+    public static boolean handleKeyPress(int keyCode) {
+        try {
+            // Check if F6 is pressed (default key for overlay editor)
+            if (keyCode == GLFW.GLFW_KEY_F6) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().overlayEditorEnabled && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().showOverlayEditor) {
+                    toggleOverlayEditor();
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // Silent error handling
+        }
+        return false;
     }
 }
