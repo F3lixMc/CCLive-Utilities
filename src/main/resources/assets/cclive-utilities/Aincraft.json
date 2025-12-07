@@ -1961,7 +1961,7 @@
             }
         },
         "floor_57": {
-            "mob": "Ertunkener",
+            "mob": ["Ertunkener", "Ertrunkener"],
             "materials": {
                 "common": {
                     "color": "WHITE",
@@ -2906,7 +2906,7 @@
             }
         },
         "floor_84": {
-            "mob": "Geladener Ceeper",
+            "mob": ["Geladener Ceeper", "Geladener Creeper"],
             "materials": {
                 "common": {
                     "color": "WHITE",

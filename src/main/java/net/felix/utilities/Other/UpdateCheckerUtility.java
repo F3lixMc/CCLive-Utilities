@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Other;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;

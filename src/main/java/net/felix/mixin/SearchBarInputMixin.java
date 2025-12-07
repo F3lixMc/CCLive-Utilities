@@ -1,8 +1,8 @@
 package net.felix.mixin;
 
-import net.felix.utilities.SearchBarUtility;
-import net.felix.utilities.SchmiedTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.Overall.SearchBarUtility;
+import net.felix.utilities.Town.SchmiedTrackerUtility;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,7 +30,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Kit Filter Button clicks
-        if (net.felix.utilities.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
+        if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
     }
@@ -39,6 +39,12 @@ public abstract class SearchBarInputMixin {
     private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
         // Handle F6 key for overlay editor (works in inventories)
         if (OverlayEditorUtility.handleKeyPress(keyCode)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        
+        // Handle F7 key for toggling smithing frames (works in inventories)
+        if (SchmiedTrackerUtility.handleKeyPress(keyCode)) {
             cir.setReturnValue(true);
             return;
         }

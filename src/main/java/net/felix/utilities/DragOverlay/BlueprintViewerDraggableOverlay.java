@@ -1,7 +1,7 @@
 package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.BPViewerUtility;
+import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -31,8 +31,20 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
         int dynamicWidth = getWidth();
         
-        // Adjust X position so overlay expands to the left (stays at right edge)
-        return screenWidth - dynamicWidth - xOffset;
+        // Determine if overlay is on left or right side of screen
+        int baseX = screenWidth - DEFAULT_WIDTH - xOffset;
+        boolean isOnLeftSide = baseX < screenWidth / 2;
+        
+        // Adjust X position based on side
+        // If on left side: expand to the right (keep left edge fixed)
+        // If on right side: expand to the left (keep right edge fixed)
+        if (isOnLeftSide) {
+            // Keep left edge fixed, expand to the right
+            return baseX;
+        } else {
+            // Keep right edge fixed, expand to the left
+            return screenWidth - dynamicWidth - xOffset;
+        }
     }
     
     @Override
@@ -77,7 +89,18 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         int screenHeight = client.getWindow().getScaledHeight();
         int dynamicWidth = getWidth();
         
-        int xOffset = screenWidth - dynamicWidth - x;
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = x < screenWidth / 2;
+        
+        // Calculate xOffset based on side
+        int xOffset;
+        if (isOnLeftSide) {
+            // On left side: xOffset is distance from left edge
+            xOffset = screenWidth - DEFAULT_WIDTH - x;
+        } else {
+            // On right side: xOffset is distance from right edge
+            xOffset = screenWidth - dynamicWidth - x;
+        }
         
         // Calculate Y percent with better precision to avoid rounding errors
         int yPercent = Math.round((float) y * 100.0f / screenHeight);

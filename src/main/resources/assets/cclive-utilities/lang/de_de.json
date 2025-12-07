@@ -7,9 +7,11 @@
     "key.cclive-utilities.wellen-toggle": "Monster Tracker umschalten",
     "key.cclive-utilities.wellen-debug": "Monster Tracker Debug Info",
     "key.cclive-utilities.overlay-editor": "Overlay Editor öffnen",
+    "key.cclive-utilities.toggle-schmied-frames": "Schmiedezustände Rahmen umschalten",
   
     "key.categories.cclive-utilities.blueprints": "CCLive Utilities - Baupläne",
     "key.categories.cclive-utilities.wellen": "CCLive Utilities - Monster Tracker",
     "key.categories.cclive-utilities.overlay": "CCLive Utilities - Overlay Editor",
+    "category.cclive-utilities.schmied": "CCLive Utilities - Schmied Tracker",
       "key.categories.cclive-utilities": "CCLive Utilities"
   } 

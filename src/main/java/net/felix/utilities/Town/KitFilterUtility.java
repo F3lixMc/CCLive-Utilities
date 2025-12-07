@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Town;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -1192,13 +1192,19 @@ public class KitFilterUtility {
 					if (customName != null) {
 						// Füge den Hinweis zum bestehenden Namen hinzu
 						String originalName = customName.getString();
-						Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-						blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
+						if (!originalName.contains("[Ausgeblendet]")) {
+							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+						}
 					} else {
 						// Erstelle einen neuen Custom Name mit Hinweis
 						String originalName = itemStack.getName().getString();
-						Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-						blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
+						if (!originalName.contains("[Ausgeblendet]")) {
+							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+						}
 					}
 					
 					slot.setStack(blackConcrete);

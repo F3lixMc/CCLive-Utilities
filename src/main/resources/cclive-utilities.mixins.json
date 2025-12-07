@@ -12,7 +12,10 @@
 		"SearchBarInputMixin",
 		"ActionBarMixin",
 		"LivingEntityMixin",
-		"TitleMixin"
+		"TitleMixin",
+		"ChatHudHoverMixin",
+		"ChatScreenMixin",
+		"ClientPlayNetworkHandlerTestMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

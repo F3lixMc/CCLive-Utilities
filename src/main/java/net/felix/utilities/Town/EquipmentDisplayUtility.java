@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Town;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -16,6 +16,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
+import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.SearchBarUtility;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -323,7 +325,12 @@ public class EquipmentDisplayUtility {
 		}
 
 		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.player == null) {
+		if (client == null || client.player == null) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.options.hudHidden) {
 			return;
 		}
 
@@ -346,25 +353,26 @@ public class EquipmentDisplayUtility {
 		int rightOverlayWidth = calculateRequiredWidth(absoluteStats, baseOverlayWidth, false);
 
 		// Positionen der Overlays - verhindere Überlappung mit Bildschirmrändern
-		int leftOverlayX = inventoryX - leftOverlayWidth - overlaySpacing;
-		int rightOverlayX = inventoryX + inventoryWidth + overlaySpacing;
-		int overlayY = inventoryY - 28;
-		
-		// Begrenze die Overlays so, dass sie nicht aus dem Bildschirm ragen
-		// und gleiche Abstände zum Bildschirmrand haben
 		int screenMargin = 5; // Abstand zum Bildschirmrand
 		
-		if (leftOverlayX < screenMargin) {
-			// Linkes Overlay würde links aus dem Bildschirm ragen
-			// Behalte den 5-Pixel-Abstand zum Inventar bei
+		// Linkes Overlay: Verbreitert sich nur nach rechts (linke Kante bleibt fix oder wird begrenzt)
+		// Berechne zunächst die gewünschte Position
+		int desiredLeftOverlayX = inventoryX - leftOverlayWidth - overlaySpacing;
+		// Wenn die linke Kante zu weit links wäre, begrenze sie
+		int leftOverlayX = Math.max(screenMargin, desiredLeftOverlayX);
+		// Wenn die linke Kante begrenzt wurde, passe die Breite an
+		if (leftOverlayX == screenMargin) {
 			leftOverlayWidth = Math.min(leftOverlayWidth, inventoryX - overlaySpacing - screenMargin);
-			leftOverlayX = inventoryX - leftOverlayWidth - overlaySpacing;
 		}
 		
+		// Rechtes Overlay: Verbreitert sich nur nach links (rechte Kante bleibt fix)
+		int rightOverlayX = inventoryX + inventoryWidth + overlaySpacing;
+		// Begrenze die Breite, damit es nicht rechts aus dem Bildschirm ragt
 		if (rightOverlayX + rightOverlayWidth > screenWidth - screenMargin) {
-			// Rechtes Overlay würde rechts aus dem Bildschirm ragen
-			rightOverlayWidth = Math.min(rightOverlayWidth, screenWidth - rightOverlayX - screenMargin);
+			rightOverlayWidth = screenWidth - screenMargin - rightOverlayX;
 		}
+		
+		int overlayY = inventoryY - 28;
 		
 		// Begrenze die Y-Position so, dass das Overlay nicht oben oder unten aus dem Bildschirm ragt
 		if (overlayY < screenMargin) {

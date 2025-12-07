@@ -42,6 +42,9 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void initializeOverlays() {
+        // Check if we're in a chat screen
+        boolean isInChatScreen = isInChatScreen();
+        
         // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
         boolean isInBlueprintInventory = isInInventoryScreen();
         
@@ -50,7 +53,10 @@ public class OverlayEditorScreen extends Screen {
             overlays.add(new BossHPDraggableOverlay());
         }
         
-        if (isInBlueprintInventory) {
+        if (isInChatScreen) {
+            // In chat screen, show chat-specific overlays
+            overlays.add(new ChatAspectOverlayDraggableOverlay());
+        } else if (isInBlueprintInventory) {
             // In blueprint inventory screens, show overlays that are relevant for blueprint inventories
             overlays.add(new AspectOverlayDraggableOverlay());
             overlays.add(new HideUncraftableButtonDraggableOverlay());
@@ -85,6 +91,19 @@ public class OverlayEditorScreen extends Screen {
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
             }
         }
+    }
+    
+    /**
+     * Check if the player is currently in a chat screen
+     */
+    private boolean isInChatScreen() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is a ChatScreen
+        return client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen;
     }
     
     /**
@@ -266,6 +285,7 @@ public class OverlayEditorScreen extends Screen {
         int y = height - 80;
         String[] instructions = {
             "Left Click + Drag: Move overlay",
+            "Left Click + Arrow Keys: Move overlay 1 pixel",
             "ESC: Close editor"
         };
         
@@ -368,6 +388,42 @@ public class OverlayEditorScreen extends Screen {
         if (keyCode == GLFW.GLFW_KEY_F6) {
             close();
             return true;
+        }
+        
+        // Arrow key movement when holding an overlay with left mouse button
+        if (draggingOverlay != null) {
+            // Check if left mouse button is still pressed
+            long windowHandle = MinecraftClient.getInstance().getWindow().getHandle();
+            boolean leftMousePressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+            
+            if (leftMousePressed) {
+                int currentX = draggingOverlay.getX();
+                int currentY = draggingOverlay.getY();
+                int newX = currentX;
+                int newY = currentY;
+                
+                // Move overlay by 1 pixel in the direction of the arrow key
+                if (keyCode == GLFW.GLFW_KEY_LEFT) {
+                    newX = currentX - 1;
+                } else if (keyCode == GLFW.GLFW_KEY_RIGHT) {
+                    newX = currentX + 1;
+                } else if (keyCode == GLFW.GLFW_KEY_UP) {
+                    newY = currentY - 1;
+                } else if (keyCode == GLFW.GLFW_KEY_DOWN) {
+                    newY = currentY + 1;
+                }
+                
+                // Keep overlay within screen bounds
+                newX = Math.max(0, Math.min(newX, width - draggingOverlay.getWidth()));
+                newY = Math.max(0, Math.min(newY, height - draggingOverlay.getHeight()));
+                
+                // Update position if it changed
+                if (newX != currentX || newY != currentY) {
+                    draggingOverlay.setPosition(newX, newY);
+                    draggingOverlay.savePosition();
+                    return true;
+                }
+            }
         }
         
         return super.keyPressed(keyCode, scanCode, modifiers);

@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.EquipmentDisplayUtility;
+import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.minecraft.client.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

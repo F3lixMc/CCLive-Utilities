@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Aincraft;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -17,7 +17,9 @@ import net.minecraft.client.gl.RenderPipelines;
 import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
-
+import net.felix.utilities.Overall.ActionBarData;
+import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Town.EquipmentDisplayUtility;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -171,7 +173,12 @@ public class MaterialTrackerUtility {
 		}
 
 		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.player == null) {
+		if (client == null || client.player == null) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.options.hudHidden) {
 			return;
 		}
 
@@ -207,8 +214,22 @@ public class MaterialTrackerUtility {
 		int dynamicWidth = calculateRequiredWidth(context, texts);
 		int overlayWidth = Math.max(OVERLAY_WIDTH, dynamicWidth);
 		
+		// Determine if overlay is on left or right side of screen
+		// Calculate base position to determine side
+		int baseX = screenWidth - OVERLAY_WIDTH - xOffset;
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
 		// Calculate position (unscaled)
-		int xPosition = screenWidth - overlayWidth - xOffset;
+		// If on left side: expand to the right (keep left edge fixed)
+		// If on right side: expand to the left (keep right edge fixed)
+		int xPosition;
+		if (isOnLeftSide) {
+			// Keep left edge fixed, expand to the right
+			xPosition = baseX;
+		} else {
+			// Keep right edge fixed, expand to the left
+			xPosition = screenWidth - overlayWidth - xOffset;
+		}
 		int yPosition = yOffset;
 		
 		// Use Matrix transformations for scaling (like Blueprint Viewer)

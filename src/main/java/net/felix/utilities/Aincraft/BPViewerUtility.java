@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Aincraft;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -19,6 +19,9 @@ import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
+import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
@@ -68,6 +71,7 @@ public class BPViewerUtility {
     private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/blueprint_background.png");
     
     // Patterns for blueprint detection
+    // Patterns with format codes (for raw message strings)
     private static final Pattern BLUEPRINT_PATTERN = Pattern.compile("§f\\[§6Legend§f\\] Du erhältst (.+?) §f- §3\\[Bauplan\\]");
     private static final Pattern BLUEPRINT_PATTERN_ALT = Pattern.compile("§a\\+ 1x (.+?) §f- §3\\[Bauplan\\]");
     private static final Pattern BLUEPRINT_PATTERN_ALT2 = Pattern.compile("§f\\[§6Legend§f\\] Du erhältst (.+?) - §3\\[Bauplan\\]");
@@ -78,6 +82,12 @@ public class BPViewerUtility {
     private static final Pattern BLUEPRINT_PATTERN_FLEXIBLE = Pattern.compile(".*?\\+ 1x (.+?) .*?\\[Bauplan\\]");
     // Pattern specifically for combo chest rewards
     private static final Pattern BLUEPRINT_PATTERN_COMBO_CHEST = Pattern.compile(".*?\\+ 1x (.+?) .*?\\[Bauplan\\].*?\\(\\d+\\)");
+    
+    // Patterns without format codes (for message.getString() output)
+    private static final Pattern BLUEPRINT_PATTERN_NO_CODES = Pattern.compile("\\[Legend\\] Du erhältst (.+?) - \\[Bauplan\\]");
+    private static final Pattern BLUEPRINT_PATTERN_NO_CODES_ALT = Pattern.compile("\\[Legend\\] Du erhälst (.+?) - \\[Bauplan\\]"); // "erhälst" variant
+    private static final Pattern BLUEPRINT_PATTERN_NO_CODES_FLEXIBLE = Pattern.compile(".*?Du erhältst (.+?) - \\[Bauplan\\]");
+    private static final Pattern BLUEPRINT_PATTERN_NO_CODES_FLEXIBLE2 = Pattern.compile(".*?Du erhälst (.+?) - \\[Bauplan\\]"); // "erhälst" variant
     
     // File handling
     private static final String SAVE_FILE_NAME = "found_blueprints.json";
@@ -165,21 +175,15 @@ public class BPViewerUtility {
                });
         
         // Register chat message listener for game messages
-        ClientReceiveMessageEvents.ALLOW_GAME.register((message, isOverlay) -> {
-            String messageText = message.getString();
-            instance.checkForBlueprint(messageText);
-            return true;
-        });
-        
-        // Also register for all message types to catch combo chest rewards
-        ClientReceiveMessageEvents.ALLOW_GAME.register((message, isOverlay) -> {
-            String messageText = message.getString();
-            // Debug: Log all messages that contain [Bauplan] or combo-related keywords
-            if (messageText.contains("[Bauplan]") || messageText.contains("Kombo") || messageText.contains("Belohnungen")) {
-                System.out.println("[BPViewer] Received message: " + messageText);
+        // Use GAME instead of ALLOW_GAME to catch all game messages
+        ClientReceiveMessageEvents.GAME.register((message, isOverlay) -> {
+            if (message == null) {
+                return;
             }
-            instance.checkForBlueprint(messageText);
-            return true;
+            String messageText = message.getString();
+            if (messageText != null && (messageText.contains("[Bauplan]") || messageText.contains("Kombo") || messageText.contains("Belohnungen"))) {
+            }
+            instance.checkForBlueprint(message, messageText);
         });
         
         // Register tooltip render event to show checkmarks for found blueprints
@@ -239,33 +243,82 @@ public class BPViewerUtility {
                 // Original format: "Item Name - [Bauplan]"
                 // Modified format (after SchmiedTrackerUtility): "Item Name [Ebene X] - [Bauplan]"
                 if (lineText.contains(" - [Bauplan]")) {
-                    String blueprintName = lineText.replace(" - [Bauplan]", "");
+                    // Try to extract blueprint name and color from the line text
+                    InformationenUtility.BlueprintNameAndColor nameAndColor = 
+                        InformationenUtility.extractBlueprintNameAndColorFromItemName(line);
                     
-                    // Remove Unicode formatting characters (㔺㔸 etc.)
-                    blueprintName = blueprintName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
+                    String blueprintName;
+                    String rarity = null;
                     
-                    // Remove percentage and parentheses
-                    blueprintName = blueprintName.replaceAll("\\([^)]*\\)", "").trim();
+                    if (nameAndColor != null) {
+                        blueprintName = nameAndColor.name;
+                        rarity = nameAndColor.rarity;
+                    } else {
+                        // Fallback: extract from string
+                        blueprintName = lineText.replace(" - [Bauplan]", "");
+                        
+                        // Remove Unicode formatting characters (㔺㔸 etc.)
+                        blueprintName = blueprintName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
+                        
+                        // Remove percentage and parentheses
+                        blueprintName = blueprintName.replaceAll("\\([^)]*\\)", "").trim();
+                        
+                        // Remove level information added by SchmiedTrackerUtility (e.g., "[Ebene 1]")
+                        blueprintName = blueprintName.replaceAll("\\[Ebene \\d+\\]", "").trim();
+                    }
                     
-                    // Remove level information added by SchmiedTrackerUtility (e.g., "[Ebene 1]")
-                    blueprintName = blueprintName.replaceAll("\\[Ebene \\d+\\]", "").trim();
+                    // Create key that includes rarity if it's epic or legendary
+                    String blueprintKey = blueprintName;
+                    if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
+                        blueprintKey = blueprintName + ":" + rarity;
+                    }
                     
                     // Check if this blueprint name matches any blueprint we've found
-                    if (instance.foundBlueprints.containsKey(blueprintName)) {
-                        // Replace the current line with the blueprint name + checkmark, preserving original formatting
-                        int lineIndex = lines.indexOf(line);
-                        if (lineIndex != -1) {
-                            // Create a mutable copy of the original text to preserve formatting
-                            net.minecraft.text.MutableText newText = line.copy();
-                            
+                    int lineIndex = lines.indexOf(line);
+                    if (lineIndex != -1) {
+                        // Check both with and without rarity key
+                        // BUT: For Drachenzahn, only check with rarity key to avoid false positives
+                        String activeFloor = instance.getActiveFloor();
+                        boolean isFound;
+                        if (blueprintName.equals("Drachenzahn")) {
+                            // For Drachenzahn, only check with rarity key (epic or legendary)
+                            isFound = instance.foundBlueprints.containsKey(blueprintKey) ||
+                                    (activeFloor != null && instance.isBlueprintFound(activeFloor, blueprintKey));
+                            if (isFound) {
+                            }
+                        } else if (blueprintName.equals("Band der dunklen Herrschaft")) {
+                            // For Band der dunklen Herrschaft, only check with legendary rarity key
+                            String legendaryKey = blueprintName + ":legendary";
+                            isFound = instance.foundBlueprints.containsKey(legendaryKey) ||
+                                    (activeFloor != null && instance.isBlueprintFound(activeFloor, legendaryKey));
+                            if (isFound) {
+                            }
+                        } else {
+                            // For other blueprints, check both with and without rarity key
+                            isFound = instance.foundBlueprints.containsKey(blueprintKey) || 
+                                    instance.foundBlueprints.containsKey(blueprintName) ||
+                                    (activeFloor != null && instance.isBlueprintFound(activeFloor, blueprintKey)) ||
+                                    (activeFloor != null && instance.isBlueprintFound(activeFloor, blueprintName));
+                        }
+                        
+                        if (isFound) {
+                            // Replace the current line with the blueprint name + checkmark, preserving original formatting
                             // Simple approach: just add the green checkmark to the original text
                             net.minecraft.text.MutableText coloredText = line.copy();
                             coloredText.append(net.minecraft.text.Text.literal(" ✓").formatted(net.minecraft.util.Formatting.GREEN));
                             
                             lines.set(lineIndex, coloredText);
+                        } else {
+                            // Blueprint not found - add red cross
+                            net.minecraft.text.MutableText coloredText = line.copy();
+                            coloredText.append(net.minecraft.text.Text.literal(" ✗").formatted(net.minecraft.util.Formatting.RED));
+                            
+                            lines.set(lineIndex, coloredText);
                         }
-                        // Continue checking other lines (don't break)
-                    } else {
+                    }
+                    
+                    // Continue with auto-marking logic for unfound blueprints
+                    if (!instance.foundBlueprints.containsKey(blueprintKey) && !instance.foundBlueprints.containsKey(blueprintName)) {
                         // Only auto-mark blueprints if we're not in the shop
                         if (!isInShop) {
                             // Check if we're in the blueprint shop and auto-mark found blueprints
@@ -285,23 +338,49 @@ public class BPViewerUtility {
                                     // Since we're in the shop (not on a floor), search all floors
                                     boolean foundInAnyFloor = false;
                                     
-                                    for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : instance.config.floors.entrySet()) {
-                                        BlueprintConfig.FloorData floor = floorEntry.getValue();
-                                        if (floor != null && floor.blueprints != null) {
-                                            for (Map.Entry<String, BlueprintConfig.RarityData> rarityEntry : floor.blueprints.entrySet()) {
-                                                if (rarityEntry.getValue().items.contains(blueprintName)) {
-                                                    instance.markBlueprintAsFound(blueprintName, rarityEntry.getKey());
+                                    // If we have color info (epic or legendary), only search for that specific rarity
+                                    if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
+                                        for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : instance.config.floors.entrySet()) {
+                                            BlueprintConfig.FloorData floor = floorEntry.getValue();
+                                            if (floor != null && floor.blueprints != null) {
+                                                BlueprintConfig.RarityData rarityData = floor.blueprints.get(rarity);
+                                                if (rarityData != null && rarityData.items.contains(blueprintName)) {
+                                                    instance.markBlueprintAsFound(blueprintName, rarity, floorEntry.getKey());
                                                     foundInAnyFloor = true;
                                                     break;
                                                 }
                                             }
-                                            if (foundInAnyFloor) break;
+                                        }
+                                    } else {
+                                        // No color info or not epic/legendary - search all rarities (backwards compatibility)
+                                        // BUT: Skip Drachenzahn and Band der dunklen Herrschaft to avoid marking wrong rarity
+                                        if (blueprintName.equals("Drachenzahn")) {
+                                        } else if (blueprintName.equals("Band der dunklen Herrschaft")) {
+                                        } else {
+                                            for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : instance.config.floors.entrySet()) {
+                                                BlueprintConfig.FloorData floor = floorEntry.getValue();
+                                                if (floor != null && floor.blueprints != null) {
+                                                    for (Map.Entry<String, BlueprintConfig.RarityData> rarityEntry : floor.blueprints.entrySet()) {
+                                                        if (rarityEntry.getValue().items.contains(blueprintName)) {
+                                                            instance.markBlueprintAsFound(blueprintName, rarityEntry.getKey(), floorEntry.getKey());
+                                                            foundInAnyFloor = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (foundInAnyFloor) break;
+                                                }
+                                            }
                                         }
                                     }
                                     
                                     // If not found in any floor, mark as "unknown" rarity
-                                    if (!foundInAnyFloor && !instance.foundBlueprints.containsKey(blueprintName)) {
-                                        instance.markBlueprintAsFound(blueprintName, "unknown");
+                                    // BUT: Skip Drachenzahn and Band der dunklen Herrschaft to avoid marking wrong rarity
+                                    if (!foundInAnyFloor && !instance.foundBlueprints.containsKey(blueprintKey) && !instance.foundBlueprints.containsKey(blueprintName)) {
+                                        if (blueprintName.equals("Drachenzahn") && rarity == null) {
+                                        } else if (blueprintName.equals("Band der dunklen Herrschaft") && (rarity == null || !rarity.equals("legendary"))) {
+                                        } else {
+                                            instance.markBlueprintAsFound(blueprintName, rarity != null ? rarity : "unknown", null);
+                                        }
                                     }
                                     
                                     // Also trigger slot scanning for immediate detection
@@ -387,6 +466,11 @@ public class BPViewerUtility {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client == null) return;
             
+            // Hide overlay if F1 menu (debug screen) is open
+            if (client.options.hudHidden) {
+                return;
+            }
+            
             // Check if blueprint viewer is enabled in config
             if (!CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled || 
                 !CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer) {
@@ -429,8 +513,21 @@ public class BPViewerUtility {
                 int dynamicWidth = calculateRequiredWidth(rarityData.items) - 15;
                 int dynamicHeight = calculateRequiredHeight(rarityData.items);
                 
+                // Determine if overlay is on left or right side of screen
+                int baseX = screenWidth - HUD_WIDTH - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
+                boolean isOnLeftSide = baseX < screenWidth / 2;
+                
                 // Recalculate position with dynamic width using config
-                int dynamicX = screenWidth - dynamicWidth - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
+                // If on left side: expand to the right (keep left edge fixed)
+                // If on right side: expand to the left (keep right edge fixed)
+                int dynamicX;
+                if (isOnLeftSide) {
+                    // Keep left edge fixed, expand to the right
+                    dynamicX = baseX;
+                } else {
+                    // Keep right edge fixed, expand to the left
+                    dynamicX = screenWidth - dynamicWidth - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
+                }
                 
                 // Verwende Matrix-Transformationen für das gesamte Overlay
                 Matrix3x2fStack matrices = context.getMatrices();
@@ -588,7 +685,28 @@ public class BPViewerUtility {
         
         for (String blueprint : blueprints) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            boolean isFound = foundBlueprints.containsKey(displayText) || isBlueprintFound(getActiveFloor(), displayText);
+            // Check both with and without rarity suffix (for epic/legendary duplicates)
+            // BUT: For Drachenzahn, only check the CURRENT rarity being displayed to avoid false positives
+            boolean isFound;
+            if (displayText.equals("Drachenzahn")) {
+                // For Drachenzahn, only check the specific rarity that's currently being displayed
+                String currentRarityLower = currentRarity.toLowerCase();
+                if (currentRarityLower.equals("epic") || currentRarityLower.equals("legendary")) {
+                    isFound = foundBlueprints.containsKey(displayText + ":" + currentRarityLower) ||
+                            isBlueprintFound(getActiveFloor(), displayText + ":" + currentRarityLower);
+                } else {
+                    // If not epic or legendary, don't mark as found (shouldn't happen for Drachenzahn)
+                    isFound = false;
+                }
+            } else {
+                // For other blueprints, check both with and without rarity suffix
+                isFound = foundBlueprints.containsKey(displayText) || 
+                        foundBlueprints.containsKey(displayText + ":epic") ||
+                        foundBlueprints.containsKey(displayText + ":legendary") ||
+                        isBlueprintFound(getActiveFloor(), displayText) ||
+                        isBlueprintFound(getActiveFloor(), displayText + ":epic") ||
+                        isBlueprintFound(getActiveFloor(), displayText + ":legendary");
+            }
             
             // Draw the text with appropriate color based on found status (skaliert)
             int textColor = isFound ? 0xFFFFFFFF : 0xFF888888; // White if found, gray if not found
@@ -622,14 +740,35 @@ public class BPViewerUtility {
         
         }
         
-        // Render blueprint list - start from the beginning since title is rendered separately (moved 3 pixels up)
+        // Render blueprint list - start from the beginning since title is rendered separately (moved 3 pixels up)src/main/resources/assets/cclive-utilities/textures/font.png
         int blueprintY = -3; // Start from the beginning of the scalable area
         
         
         
         for (String blueprint : blueprints) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            boolean isFound = foundBlueprints.containsKey(displayText) || isBlueprintFound(getActiveFloor(), displayText);
+            // Check both with and without rarity suffix (for epic/legendary duplicates)
+            // BUT: For Drachenzahn, only check the CURRENT rarity being displayed to avoid false positives
+            boolean isFound;
+            if (displayText.equals("Drachenzahn")) {
+                // For Drachenzahn, only check the specific rarity that's currently being displayed
+                String currentRarityLower = currentRarity.toLowerCase();
+                if (currentRarityLower.equals("epic") || currentRarityLower.equals("legendary")) {
+                    isFound = foundBlueprints.containsKey(displayText + ":" + currentRarityLower) ||
+                            isBlueprintFound(getActiveFloor(), displayText + ":" + currentRarityLower);
+                } else {
+                    // If not epic or legendary, don't mark as found (shouldn't happen for Drachenzahn)
+                    isFound = false;
+                }
+            } else {
+                // For other blueprints, check both with and without rarity suffix
+                isFound = foundBlueprints.containsKey(displayText) || 
+                        foundBlueprints.containsKey(displayText + ":epic") ||
+                        foundBlueprints.containsKey(displayText + ":legendary") ||
+                        isBlueprintFound(getActiveFloor(), displayText) ||
+                        isBlueprintFound(getActiveFloor(), displayText + ":epic") ||
+                        isBlueprintFound(getActiveFloor(), displayText + ":legendary");
+            }
             
             // Use normal colors for blueprints
             int color;
@@ -669,75 +808,234 @@ public class BPViewerUtility {
 		}
 	}
            
-           public void checkForBlueprint(String messageText) {
-               // Debug logging to see what messages are being processed
-               if (messageText.contains("[Bauplan]") || messageText.contains("Kombo") || messageText.contains("Belohnungen")) {
-                   System.out.println("[BPViewer] Processing message: " + messageText);
+           public void checkForBlueprint(Text message, String messageText) {
+               // Always log when method is called
+               
+               if (messageText == null || messageText.isEmpty()) {
+                   return;
                }
                
-               Matcher matcher = BLUEPRINT_PATTERN.matcher(messageText);
-               if (!matcher.matches()) {
-                   matcher = BLUEPRINT_PATTERN_ALT.matcher(messageText);
+               // Always log when method is called with [Bauplan]
+               if (messageText.contains("[Bauplan]") || messageText.contains("Kombo") || messageText.contains("Belohnungen")) {
                }
-               if (!matcher.matches()) {
-                   matcher = BLUEPRINT_PATTERN_ALT2.matcher(messageText);
+               
+               // First, try to extract blueprint name and color from the Text object
+               // Use color extraction for "Drachenzahn" (to differentiate epic/legendary) and "Band der dunklen Herrschaft" (to verify legendary)
+               InformationenUtility.BlueprintNameAndColor nameAndColor = null;
+               if (message != null && messageText.contains("[Bauplan]")) {
+                   // Try color extraction first
+                   nameAndColor = InformationenUtility.extractBlueprintNameAndColorFromChatMessage(message);
+                   if (nameAndColor != null) {
+                       // Only use color extraction for "Drachenzahn" and "Band der dunklen Herrschaft"
+                       if (!nameAndColor.name.equals("Drachenzahn") && !nameAndColor.name.equals("Band der dunklen Herrschaft")) {
+                           nameAndColor = null; // Reset to use pattern matching
+                       } else if (nameAndColor.name.equals("Band der dunklen Herrschaft")) {
+                           // For Band der dunklen Herrschaft, only accept if legendary color was detected
+                           if (nameAndColor.rarity == null || !nameAndColor.rarity.equals("legendary")) {
+                               nameAndColor = null; // Reset to use pattern matching
+                           } else {
+                           }
+                       }
+                   }
                }
-               if (!matcher.matches()) {
-                   matcher = BLUEPRINT_PATTERN_ALT3.matcher(messageText);
-               }
-               if (!matcher.matches()) {
-                   matcher = BLUEPRINT_PATTERN_COMBO.matcher(messageText);
-               }
-               if (!matcher.matches()) {
-                   matcher = BLUEPRINT_PATTERN_FLEXIBLE.matcher(messageText);
-               }
-               if (!matcher.matches()) {
-                   matcher = BLUEPRINT_PATTERN_COMBO_CHEST.matcher(messageText);
+               
+               // Pattern matching for blueprint name extraction
+               String blueprintName = null;
+               if (nameAndColor == null) {
+                   // Try patterns with format codes first
+                   Matcher matcher = BLUEPRINT_PATTERN.matcher(messageText);
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_ALT.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_ALT2.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_ALT3.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_COMBO.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_FLEXIBLE.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_COMBO_CHEST.matcher(messageText);
+                   }
+                   
+                   // If no match with format codes, try patterns without format codes
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_NO_CODES.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_NO_CODES_ALT.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_NO_CODES_FLEXIBLE.matcher(messageText);
+                   }
+                   if (!matcher.matches()) {
+                       matcher = BLUEPRINT_PATTERN_NO_CODES_FLEXIBLE2.matcher(messageText);
+                   }
+
+                   if (matcher.matches()) {
+                       blueprintName = matcher.group(1).trim();
+                   } else {
+                   }
+               } else {
+                   blueprintName = nameAndColor.name;
                }
 
-               if (matcher.matches()) {
-                   String blueprintName = matcher.group(1).trim();
-                   System.out.println("[BPViewer] Found blueprint: " + blueprintName);
+               if (blueprintName != null && !blueprintName.isEmpty()) {
 
-                   if (foundBlueprints.containsKey(blueprintName)) {
-                       System.out.println("[BPViewer] Blueprint already found: " + blueprintName);
-                       return; // Already found
+                   // Check if config is loaded
+                   if (config == null || config.floors == null) {
+                       return;
                    }
 
                    String activeFloor = getActiveFloor();
-                   System.out.println("[BPViewer] Active floor: " + activeFloor);
                    
-                   BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
-                   if (floorData != null && floorData.blueprints != null) {
-                       boolean foundInFloor = false;
-                       for (Map.Entry<String, BlueprintConfig.RarityData> entry : floorData.blueprints.entrySet()) {
-                           if (entry.getValue().items.contains(blueprintName)) {
-                               System.out.println("[BPViewer] Marking blueprint as found: " + blueprintName + " (rarity: " + entry.getKey() + ")");
-                               markBlueprintAsFound(blueprintName, entry.getKey());
-                               foundInFloor = true;
-                               break;
+                   // If we have color information, use it to find the correct blueprint
+                   if (nameAndColor != null && nameAndColor.rarity != null) {
+                       // Search all floors for this blueprint with the specific rarity
+                       boolean found = false;
+                       for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
+                           BlueprintConfig.FloorData floor = floorEntry.getValue();
+                           if (floor != null && floor.blueprints != null) {
+                               BlueprintConfig.RarityData rarityData = floor.blueprints.get(nameAndColor.rarity);
+                               if (rarityData != null && rarityData.items.contains(blueprintName)) {
+                                   String blueprintKey = blueprintName + ":" + nameAndColor.rarity;
+                                   if (!foundBlueprints.containsKey(blueprintKey)) {
+                                       markBlueprintAsFound(blueprintName, nameAndColor.rarity, floorEntry.getKey());
+                                       found = true;
+                                       break;
+                                   } else {
+                                   }
+                               }
                            }
                        }
-                       if (!foundInFloor) {
-                           System.out.println("[BPViewer] Blueprint not found in current floor: " + blueprintName);
-                           // Try to find it in other floors
-                           for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
-                               if (floorEntry.getValue().blueprints != null) {
-                                   for (Map.Entry<String, BlueprintConfig.RarityData> rarityEntry : floorEntry.getValue().blueprints.entrySet()) {
-                                       if (rarityEntry.getValue().items.contains(blueprintName)) {
-                                           System.out.println("[BPViewer] Found blueprint in floor " + floorEntry.getKey() + ": " + blueprintName + " (rarity: " + rarityEntry.getKey() + ")");
-                                           markBlueprintAsFound(blueprintName, rarityEntry.getKey());
+                       if (found) {
+                           return;
+                       } else {
+                       }
+                   } else {
+                   }
+                   
+                   // Fallback: search without color (for backwards compatibility)
+                   // BUT: For Drachenzahn, we MUST have color info - skip if we don't have it
+                   boolean isDrachenzahn = blueprintName.equals("Drachenzahn");
+                   boolean isBandDerDunklenHerrschaft = blueprintName.equals("Band der dunklen Herrschaft");
+                   
+                   // Special handling for Drachenzahn: require color info to differentiate epic/legendary
+                   if (isDrachenzahn && (nameAndColor == null || nameAndColor.rarity == null)) {
+                       return; // Don't process Drachenzahn without color info
+                   }
+                   
+                   // Special handling for Band der dunklen Herrschaft: require legendary color
+                   if (isBandDerDunklenHerrschaft && (nameAndColor == null || nameAndColor.rarity == null || !nameAndColor.rarity.equals("legendary"))) {
+                       return; // Don't process Band der dunklen Herrschaft without legendary color info
+                   }
+                   
+                   String blueprintKey = blueprintName;
+                   if (nameAndColor != null && nameAndColor.rarity != null) {
+                       blueprintKey = blueprintName + ":" + nameAndColor.rarity;
+                   }
+                   
+                   if (foundBlueprints.containsKey(blueprintKey)) {
+                       // Check if it's also in floorProgress - if not, we should still mark it
+                       String activeFloorForCheck = getActiveFloor();
+                       boolean inFloorProgress = activeFloorForCheck != null && isBlueprintFound(activeFloorForCheck, blueprintKey);
+                       if (inFloorProgress) {
+                           return; // Already fully marked
+                       } else {
+                       }
+                   } else {
+                   }
+
+                   // If we're in Overworld (activeFloor is null), search all floors
+                   // Otherwise, try current floor first, then search all floors if not found
+                   boolean foundInFloor = false;
+                   
+                   if (activeFloor != null) {
+                       // We're in a floor dimension - try current floor first
+                       BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
+                       if (floorData != null && floorData.blueprints != null) {
+                           // Special handling for "Drachenzahn" - ALWAYS require color info to distinguish between epic and legendary
+                           if (isDrachenzahn) {
+                               // For Drachenzahn, we MUST have color info to distinguish between epic and legendary
+                               if (nameAndColor != null && nameAndColor.rarity != null) {
+                                   // For Drachenzahn with color info, only search for the specific rarity
+                                   BlueprintConfig.RarityData rarityData = floorData.blueprints.get(nameAndColor.rarity);
+                                   if (rarityData != null && rarityData.items.contains(blueprintName)) {
+                                       markBlueprintAsFound(blueprintName, nameAndColor.rarity, activeFloor);
+                                       foundInFloor = true;
+                                   }
+                               } else {
+                                   // Drachenzahn without color info - don't mark anything (we can't distinguish which one)
+                               }
+                           } else {
+                               // Normal handling for other blueprints (not Drachenzahn)
+                               for (Map.Entry<String, BlueprintConfig.RarityData> entry : floorData.blueprints.entrySet()) {
+                                   if (entry.getValue().items.contains(blueprintName)) {
+                                       // Only mark if rarity matches (if we have color info), or if it's not a duplicate blueprint
+                                       if (nameAndColor == null || nameAndColor.rarity == null || entry.getKey().equals(nameAndColor.rarity)) {
+                                           markBlueprintAsFound(blueprintName, entry.getKey(), activeFloor);
+                                           foundInFloor = true;
                                            break;
                                        }
                                    }
                                }
                            }
                        }
-                   } else {
-                       System.out.println("[BPViewer] No floor data found for current floor: " + activeFloor);
+                   }
+                   
+                   // If not found in current floor (or we're in Overworld), search all floors
+                   if (!foundInFloor) {
+                       if (activeFloor == null) {
+                       } else {
+                       }
+                       
+                       // Special handling for "Drachenzahn" - ALWAYS require color info
+                       if (isDrachenzahn) {
+                           if (nameAndColor != null && nameAndColor.rarity != null) {
+                               // Search all floors for the specific rarity
+                               for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
+                                   if (floorEntry.getValue().blueprints != null) {
+                                       BlueprintConfig.RarityData otherRarityData = floorEntry.getValue().blueprints.get(nameAndColor.rarity);
+                                       if (otherRarityData != null && otherRarityData.items.contains(blueprintName)) {
+                                           markBlueprintAsFound(blueprintName, nameAndColor.rarity, floorEntry.getKey());
+                                           foundInFloor = true;
+                                           break;
+                                       }
+                                   }
+                               }
+                           } else {
+                               // Drachenzahn without color info - don't mark anything (we can't distinguish which one)
+                           }
+                       } else {
+                           // Normal handling for other blueprints - search all floors
+                           for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
+                               if (floorEntry.getValue().blueprints != null) {
+                                   for (Map.Entry<String, BlueprintConfig.RarityData> rarityEntry : floorEntry.getValue().blueprints.entrySet()) {
+                                       if (rarityEntry.getValue().items.contains(blueprintName)) {
+                                           // Only mark if rarity matches (if we have color info)
+                                           if (nameAndColor == null || nameAndColor.rarity == null || rarityEntry.getKey().equals(nameAndColor.rarity)) {
+                                               markBlueprintAsFound(blueprintName, rarityEntry.getKey(), floorEntry.getKey());
+                                               foundInFloor = true;
+                                               break;
+                                           } else {
+                                           }
+                                       }
+                                   }
+                                   if (foundInFloor) break;
+                               }
+                           }
+                       }
+                       
+                       if (!foundInFloor) {
+                       } else {
+                       }
                    }
                } else if (messageText.contains("[Bauplan]")) {
-                   System.out.println("[BPViewer] Message contains [Bauplan] but no pattern matched: " + messageText);
                }
            }
            
@@ -794,37 +1092,89 @@ public class BPViewerUtility {
                            
                            // Check if the item name contains [Bauplan]
                            if (itemName.contains("[Bauplan]")) {
-                               // Extract the blueprint name (remove [Bauplan] and any formatting)
-                               String blueprintName = itemName.replaceAll("\\[Bauplan\\]", "").trim();
-                               // Remove Unicode formatting characters
-                               blueprintName = blueprintName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
-                               // Remove any remaining formatting codes
-                               blueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "");
-                               // Remove trailing spaces, dashes, and other common suffixes
-                               blueprintName = blueprintName.replaceAll("\\s*-\\s*$", "").trim();
+                               // Extract blueprint name and color from item name
+                               Text itemNameText = itemStack.getName();
+                               InformationenUtility.BlueprintNameAndColor nameAndColor = 
+                                   InformationenUtility.extractBlueprintNameAndColorFromItemName(itemNameText);
                                
-
+                               String blueprintName;
+                               String rarity = null;
+                               
+                               if (nameAndColor != null) {
+                                   blueprintName = nameAndColor.name;
+                                   rarity = nameAndColor.rarity;
+                               } else {
+                                   // Fallback: extract the blueprint name (remove [Bauplan] and any formatting)
+                                   blueprintName = itemName.replaceAll("\\[Bauplan\\]", "").trim();
+                                   // Remove Unicode formatting characters
+                                   blueprintName = blueprintName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
+                                   // Remove any remaining formatting codes
+                                   blueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "");
+                                   // Remove trailing spaces, dashes, and other common suffixes
+                                   blueprintName = blueprintName.replaceAll("\\s*-\\s*$", "").trim();
+                               }
                                
                                // Search all floors for this blueprint
                                boolean foundInAnyFloor = false;
-                               for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
-                                   BlueprintConfig.FloorData floor = floorEntry.getValue();
-                                   if (floor != null && floor.blueprints != null) {
-                                       for (Map.Entry<String, BlueprintConfig.RarityData> rarityEntry : floor.blueprints.entrySet()) {
-                                           if (rarityEntry.getValue().items.contains(blueprintName)) {
-                                               if (!foundBlueprints.containsKey(blueprintName)) {
-                                                   markBlueprintAsFound(blueprintName, rarityEntry.getKey());
+                               
+                               // Create blueprint key with rarity if it's epic or legendary (to distinguish duplicates)
+                               String blueprintKey = blueprintName;
+                               if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
+                                   blueprintKey = blueprintName + ":" + rarity;
+                               }
+                               
+                               // If we have color info, only search for the specific rarity
+                               if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
+                                   // Search only for this specific rarity
+                                   for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
+                                       BlueprintConfig.FloorData floor = floorEntry.getValue();
+                                       if (floor != null && floor.blueprints != null) {
+                                           BlueprintConfig.RarityData rarityData = floor.blueprints.get(rarity);
+                                           if (rarityData != null) {
+                                               if (rarityData.items.contains(blueprintName)) {
+                                                   if (!foundBlueprints.containsKey(blueprintKey)) {
+                                                       markBlueprintAsFound(blueprintName, rarity, floorEntry.getKey());
+                                                   } else {
+                                                   }
+                                                   foundInAnyFloor = true;
+                                                   break;
+                                               } else {
                                                }
-                                               foundInAnyFloor = true;
-                                               break;
+                                           } else {
                                            }
                                        }
-                                       if (foundInAnyFloor) break;
+                                   }
+                               } else {
+                                   // No color info or not epic/legendary - search all rarities (backwards compatibility)
+                                   // BUT: Skip Drachenzahn and Band der dunklen Herrschaft to avoid marking wrong rarity
+                                   if (blueprintName.equals("Drachenzahn")) {
+                                   } else if (blueprintName.equals("Band der dunklen Herrschaft")) {
+                                   } else {
+                                       for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
+                                           BlueprintConfig.FloorData floor = floorEntry.getValue();
+                                           if (floor != null && floor.blueprints != null) {
+                                               for (Map.Entry<String, BlueprintConfig.RarityData> rarityEntry : floor.blueprints.entrySet()) {
+                                                   if (rarityEntry.getValue().items.contains(blueprintName)) {
+                                                       if (!foundBlueprints.containsKey(blueprintKey)) {
+                                                           markBlueprintAsFound(blueprintName, rarityEntry.getKey(), floorEntry.getKey());
+                                                       }
+                                                       foundInAnyFloor = true;
+                                                       break;
+                                                   }
+                                               }
+                                               if (foundInAnyFloor) break;
+                                           }
+                                       }
                                    }
                                }
                                
-                               if (!foundInAnyFloor && !foundBlueprints.containsKey(blueprintName)) {
-                                   markBlueprintAsFound(blueprintName, "unknown");
+                               if (!foundInAnyFloor && !foundBlueprints.containsKey(blueprintKey)) {
+                                   // Don't mark Drachenzahn or Band der dunklen Herrschaft as "unknown" if no color was detected
+                                   if (blueprintName.equals("Drachenzahn") && rarity == null) {
+                                   } else if (blueprintName.equals("Band der dunklen Herrschaft") && (rarity == null || !rarity.equals("legendary"))) {
+                                   } else {
+                                       markBlueprintAsFound(blueprintName, rarity != null ? rarity : "unknown", null);
+                                   }
                                }
                                                           }
                        }
@@ -837,14 +1187,36 @@ public class BPViewerUtility {
            }
     
     private void markBlueprintAsFound(String blueprintName, String rarity) {
-        System.out.println("[BPViewer] markBlueprintAsFound called with: " + blueprintName + ", rarity: " + rarity);
-        if (!foundBlueprints.containsKey(blueprintName)) {
-            foundBlueprints.put(blueprintName, rarity);
-            markBlueprintFound(getActiveFloor(), blueprintName);
+        markBlueprintAsFound(blueprintName, rarity, null);
+    }
+    
+    private void markBlueprintAsFound(String blueprintName, String rarity, String floor) {
+        // Create a key that includes rarity if it's epic or legendary (to distinguish duplicates)
+        String blueprintKey = blueprintName;
+        if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
+            blueprintKey = blueprintName + ":" + rarity;
+        }
+        
+        // Get stack trace to see where this is called from
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String caller = stackTrace.length > 3 ? stackTrace[3].getMethodName() + ":" + stackTrace[3].getLineNumber() : "unknown";
+        
+        // Special check for Drachenzahn
+        if (blueprintName.equals("Drachenzahn")) {
+            if (rarity != null && rarity.equals("epic")) {
+            } else if (rarity != null && rarity.equals("legendary")) {
+            } else {
+            }
+        }
+        
+        if (!foundBlueprints.containsKey(blueprintKey)) {
+            foundBlueprints.put(blueprintKey, rarity);
+            String floorToUse = floor != null ? floor : getActiveFloor();
+            if (floorToUse != null) {
+                markBlueprintFound(floorToUse, blueprintKey);
+            }
             saveFoundBlueprints();
-            System.out.println("[BPViewer] Successfully marked blueprint as found: " + blueprintName);
         } else {
-            System.out.println("[BPViewer] Blueprint already in foundBlueprints: " + blueprintName);
         }
     }
     
@@ -927,7 +1299,16 @@ public class BPViewerUtility {
                 Map<String, String> loaded = gson.fromJson(reader, type);
                 if (loaded != null) {
                     foundBlueprints.clear();
+                    // Check for old "Drachenzahn" entries without rarity and remove them
+                    if (loaded.containsKey("Drachenzahn") && !loaded.containsKey("Drachenzahn:epic") && !loaded.containsKey("Drachenzahn:legendary")) {
+                        loaded.remove("Drachenzahn");
+                    }
                     foundBlueprints.putAll(loaded);
+                    // Debug: Log all Drachenzahn entries
+                    for (String key : foundBlueprints.keySet()) {
+                        if (key.startsWith("Drachenzahn")) {
+                        }
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -1011,13 +1392,36 @@ public class BPViewerUtility {
             return false;
         }
         // Prüfe foundBlueprints (globale Liste aller gefundenen Blueprints)
-        if (foundBlueprints.containsKey(blueprintName)) {
-            return true;
+        // BUT: For Drachenzahn, we need to check both rarities separately
+        // For other blueprints, check both with and without rarity suffix (for epic/legendary duplicates)
+        if (blueprintName.equals("Drachenzahn")) {
+            // For Drachenzahn, check both rarities separately - return true if EITHER is found
+            // This is for external utilities that want to know if ANY version was found
+            if (foundBlueprints.containsKey(blueprintName + ":epic") ||
+                foundBlueprints.containsKey(blueprintName + ":legendary")) {
+                return true;
+            }
+        } else {
+            // For other blueprints, check both with and without rarity suffix
+            if (foundBlueprints.containsKey(blueprintName) ||
+                foundBlueprints.containsKey(blueprintName + ":epic") ||
+                foundBlueprints.containsKey(blueprintName + ":legendary")) {
+                return true;
+            }
         }
         // Prüfe auch in der aktiven Ebene
         String activeFloor = getActiveFloor();
         if (activeFloor != null) {
-            return isBlueprintFound(activeFloor, blueprintName);
+            if (blueprintName.equals("Drachenzahn")) {
+                // For Drachenzahn, check both rarities separately
+                return isBlueprintFound(activeFloor, blueprintName + ":epic") ||
+                       isBlueprintFound(activeFloor, blueprintName + ":legendary");
+            } else {
+                // For other blueprints, check both with and without rarity suffix
+                return isBlueprintFound(activeFloor, blueprintName) ||
+                       isBlueprintFound(activeFloor, blueprintName + ":epic") ||
+                       isBlueprintFound(activeFloor, blueprintName + ":legendary");
+            }
         }
         return false;
     }

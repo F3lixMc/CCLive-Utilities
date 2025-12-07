@@ -1,7 +1,7 @@
 package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.ActionBarData;
+import net.felix.utilities.Overall.ActionBarData;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -33,8 +33,20 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX;
         int dynamicWidth = getWidth();
         
-        // Adjust X position so overlay expands to the left (stays at right edge)
-        return screenWidth - dynamicWidth - xOffset;
+        // Determine if overlay is on left or right side of screen
+        int baseX = screenWidth - DEFAULT_WIDTH - xOffset;
+        boolean isOnLeftSide = baseX < screenWidth / 2;
+        
+        // Adjust X position based on side
+        // If on left side: expand to the right (keep left edge fixed)
+        // If on right side: expand to the left (keep right edge fixed)
+        if (isOnLeftSide) {
+            // Keep left edge fixed, expand to the right
+            return baseX;
+        } else {
+            // Keep right edge fixed, expand to the left
+            return screenWidth - dynamicWidth - xOffset;
+        }
     }
     
     @Override
@@ -61,7 +73,19 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         int dynamicWidth = getWidth();
-        int xOffset = screenWidth - dynamicWidth - x;
+        
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = x < screenWidth / 2;
+        
+        // Calculate xOffset based on side
+        int xOffset;
+        if (isOnLeftSide) {
+            // On left side: xOffset is distance from left edge
+            xOffset = screenWidth - DEFAULT_WIDTH - x;
+        } else {
+            // On right side: xOffset is distance from right edge
+            xOffset = screenWidth - dynamicWidth - x;
+        }
         int yOffset = y;
         
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX = xOffset;

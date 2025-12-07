@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;

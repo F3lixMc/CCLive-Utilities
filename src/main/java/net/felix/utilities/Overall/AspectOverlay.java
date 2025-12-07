@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Overall;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -18,6 +18,13 @@ public class AspectOverlay {
     private static String currentAspectDescription = "";
     private static String currentItemName = "";
     
+    // Tooltip bounds for collision detection
+    private static int tooltipX = -1;
+    private static int tooltipY = -1;
+    private static int tooltipWidth = 0;
+    private static int tooltipHeight = 0;
+    private static boolean tooltipActive = false;
+    
     // Aspects database
     private static Map<String, AspectInfo> aspectsDatabase = new HashMap<>();
     private static final String ASPECTS_CONFIG_FILE = "assets/cclive-utilities/Aspekte.json";
@@ -28,6 +35,17 @@ public class AspectOverlay {
     
     public static void updateAspectInfo(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
+            shouldShow = false;
+            isCurrentlyHovering = false;
+            currentAspectName = "";
+            currentAspectDescription = "";
+            currentItemName = "";
+            return;
+        }
+        
+        // Check if the item name contains Epic colors - if so, don't show overlay
+        net.minecraft.text.Text itemNameText = itemStack.getName();
+        if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
             shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
@@ -94,17 +112,10 @@ public class AspectOverlay {
     }
     
     /**
-     * Called when hovering stops (no item being hovered)
+     * Updates aspect info from blueprint name (for chat messages)
      */
-    public static void onHoverStopped() {
-        isCurrentlyHovering = false;
-    }
-    
-    /**
-     * Updates the overlay with aspect information from a blueprint item name
-     */
-    public static void updateFromBlueprintName(String blueprintName) {
-        if (blueprintName == null || !blueprintName.contains("[Bauplan]")) {
+    public static void updateAspectInfoFromName(String cleanItemName, net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
+        if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
             shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
@@ -113,40 +124,62 @@ public class AspectOverlay {
             return;
         }
         
-        // Extract the item name (everything before "[Bauplan]")
-        String cleanItemName = blueprintName.substring(0, blueprintName.indexOf("[Bauplan]")).trim();
-        
-        // Remove leading dash/minus if present
-        if (cleanItemName.startsWith("-")) {
-            cleanItemName = cleanItemName.substring(1).trim();
-        }
-        
-        // Remove trailing dash/minus if present
-        if (cleanItemName.endsWith("-")) {
-            cleanItemName = cleanItemName.substring(0, cleanItemName.length() - 1).trim();
-        }
-        
-        // Remove Minecraft formatting codes and Unicode characters
-        cleanItemName = cleanItemName.replaceAll("§[0-9a-fk-or]", "");
-        cleanItemName = cleanItemName.replaceAll("[\\u3400-\\u4DBF]", "");
-        cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-        
-        // Look for this item in the aspects database
-        AspectInfo aspectInfo = aspectsDatabase.get(cleanItemName);
-        if (aspectInfo != null) {
-            currentAspectName = aspectInfo.aspectName;
-            currentAspectDescription = aspectInfo.aspectDescription;
-            currentItemName = cleanItemName;
-            isCurrentlyHovering = true; // Set to true when hovering over a valid blueprint item
-            // Don't set shouldShow to true here - it will be controlled by Shift key in render method
-        } else {
-            shouldShow = false;
-            isCurrentlyHovering = false;
-            currentAspectName = "";
-            currentAspectDescription = "";
-            currentItemName = "";
-        }
+        currentAspectName = aspectInfo.aspectName;
+        currentAspectDescription = aspectInfo.aspectDescription;
+        currentItemName = cleanItemName;
+        isCurrentlyHovering = true;
     }
+    
+    /**
+     * Called when hovering stops (no item being hovered)
+     */
+    public static void onHoverStopped() {
+        isCurrentlyHovering = false;
+    }
+    
+    /**
+     * Returns whether we're currently hovering over a valid blueprint item
+     */
+    public static boolean isCurrentlyHovering() {
+        return isCurrentlyHovering;
+    }
+    
+    /**
+     * Gets the current aspect name
+     */
+    public static String getCurrentAspectName() {
+        return currentAspectName;
+    }
+    
+    /**
+     * Sets the tooltip bounds for collision detection
+     */
+    public static void setTooltipBounds(int x, int y, int width, int height) {
+        tooltipX = x;
+        tooltipY = y;
+        tooltipWidth = width;
+        tooltipHeight = height;
+        tooltipActive = true;
+    }
+    
+    /**
+     * Clears the tooltip bounds
+     */
+    public static void clearTooltipBounds() {
+        tooltipActive = false;
+        tooltipX = -1;
+        tooltipY = -1;
+        tooltipWidth = 0;
+        tooltipHeight = 0;
+    }
+    
+    /**
+     * Checks if two rectangles overlap
+     */
+    private static boolean rectanglesOverlap(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
+        return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+    }
+    
     
     private static String getItemName(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
@@ -170,6 +203,11 @@ public class AspectOverlay {
         
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.textRenderer == null) {
+            return;
+        }
+        
+        // Hide overlay if F1 menu (debug screen) is open
+        if (client.options.hudHidden) {
             return;
         }
         
@@ -230,31 +268,160 @@ public class AspectOverlay {
             context.drawText(client.textRenderer, instructionText, overlayX + 10, overlayY + overlayHeight - 20, 0xFFFFFFFF, false);
             
         } catch (Exception e) {
-            System.err.println("Error rendering text: " + e.getMessage());
-            e.printStackTrace();
-            
-            // Fallback: Try simple string rendering with very high contrast colors
-            try {
-                context.drawText(client.textRenderer, "Aspekt Information", overlayX + 10, overlayY + 8, 0xFFFFFFFF, false);
-                context.drawText(client.textRenderer, "Item: " + currentItemName, overlayX + 10, overlayY + 40, 0xFFFFFFFF, false);
-                context.drawText(client.textRenderer, "Aspekt: " + currentAspectName, overlayX + 10, overlayY + 60, 0x00FF00FF, false);
-            } catch (Exception e2) {
-                System.err.println("Fallback text rendering also failed: " + e2.getMessage());
-            }
+            // Ignore rendering errors
+        }
+    }
+    
+    /**
+     * Renders the overlay in the foreground for chat messages (top-left, only when Shift is pressed)
+     * This method should be called from ChatHudHoverMixin when hovering over chat messages with Shift pressed
+     * @param context The DrawContext for rendering
+     */
+    public static void renderForegroundForChat(DrawContext context) {
+        // Check if chat aspect overlay is enabled in config
+        boolean aspectOverlayEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled;
+        boolean showAspectOverlay = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
+        boolean chatAspectOverlayEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled;
+        
+        if (!aspectOverlayEnabled || !showAspectOverlay || !chatAspectOverlayEnabled) {
+            return;
         }
         
-        // Alternative method: Try rendering with different approach
-        try {
-            // Render text with different color format
-            context.drawText(client.textRenderer, "TEST TEXT VISIBLE", overlayX + 10, overlayY + 100, 0xFF0000, false);
-        } catch (Exception e) {
-            System.err.println("Alternative text rendering failed: " + e.getMessage());
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.textRenderer == null) {
+            return;
         }
+        
+        // Check if Shift is pressed - overlay only shows when Shift is held
+        boolean isShiftPressed = InputUtil.isKeyPressed(
+            client.getWindow().getHandle(), 
+            InputUtil.GLFW_KEY_LEFT_SHIFT) || 
+            InputUtil.isKeyPressed(
+                client.getWindow().getHandle(), 
+                InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        
+        if (!isShiftPressed) {
+            // Shift not pressed, don't render overlay
+            return;
+        }
+        
+        // Check if we have aspect information and are currently hovering
+        if (currentAspectName.isEmpty() || currentItemName.isEmpty() || !isCurrentlyHovering) {
+            return;
+        }
+        
+        // Check if we're in a world (important for multiplayer servers)
+        if (client.world == null) {
+            return;
+        }
+        
+        // Hide overlay if F1 menu (debug screen) is open
+        if (client.options.hudHidden) {
+            return;
+        }
+        
+        // Get configurable position and scale from config
+        boolean showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayShowBackground;
+        float overlayScale = 1.0f; // Default scale
+        
+        // Ensure scale is valid
+        if (overlayScale <= 0) overlayScale = 1.0f;
+        
+        // Position using absolute coordinates from screen edges
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+        
+        // Calculate base overlay dimensions dynamically based on content
+        int baseOverlayWidth = 210; // Base width in pixels
+        
+        // Calculate required height based on description lines
+        String[] descriptionLines = wrapText(currentAspectDescription, 30);
+        int descriptionHeight = descriptionLines.length * 12; // 12 pixels per line
+        
+        // Base height: 10 (top margin) + 20 (aspect name) + 15 (bottom margin) + description height
+        int baseHeight = 45;
+        int baseOverlayHeight = baseHeight + descriptionHeight;
+        
+        // Ensure minimum height
+        baseOverlayHeight = Math.max(baseOverlayHeight, 110);
+        
+        // Use base dimensions for positioning (scale will be applied via matrix)
+        int overlayWidth = baseOverlayWidth;
+        int overlayHeight = baseOverlayHeight;
+        
+        // Position overlay using fixed position from config (same as drag overlay)
+        // Use config X and Y values directly
+        int overlayX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayX;
+        int overlayY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayY;
+        
+        // Ensure overlay doesn't go off-screen horizontally
+        if (overlayX < 0) {
+            overlayX = 0;
+        }
+        if (overlayX + overlayWidth > screenWidth) {
+            overlayX = screenWidth - overlayWidth;
+        }
+        // Ensure overlay doesn't go off-screen vertically
+        if (overlayY + overlayHeight > screenHeight) {
+            overlayY = screenHeight - overlayHeight;
+        }
+        if (overlayY < 0) {
+            overlayY = 0;
+        }
+        
+        // Calculate scaled dimensions and offsets for centered scaling
+        int scaledWidth = (int) (overlayWidth * overlayScale);
+        int scaledHeight = (int) (overlayHeight * overlayScale);
+        int offsetX = (scaledWidth - overlayWidth) / 2;
+        int offsetY = (scaledHeight - overlayHeight) / 2;
+        
+        // Draw background only if enabled in config (scaled)
+        if (showBackground) {
+            int bgX1 = overlayX - offsetX;
+            int bgY1 = overlayY - offsetY;
+            int bgX2 = overlayX - offsetX + scaledWidth;
+            int bgY2 = overlayY - offsetY + scaledHeight;
+            context.fill(bgX1, bgY1, bgX2, bgY2, 0xCC000000);
+        }
+        
+        // Draw simple border (scaled)
+        int borderX1 = overlayX - offsetX;
+        int borderY1 = overlayY - offsetY;
+        int borderX2 = overlayX - offsetX + scaledWidth;
+        int borderY2 = overlayY - offsetY + scaledHeight;
+        
+        context.fill(borderX1, borderY1, borderX1 + 1, borderY2, 0xFFFFFFFF); // Left border
+        context.fill(borderX2 - 1, borderY1, borderX2, borderY2, 0xFFFFFFFF); // Right border
+        context.fill(borderX1, borderY1, borderX2, borderY1 + 1, 0xFFFFFFFF); // Top border
+        context.fill(borderX1, borderY2 - 1, borderX2, borderY2, 0xFFFFFFFF); // Bottom border
+        
+        // Apply scaling for text rendering
+        Matrix3x2fStack matrices = context.getMatrices();
+        matrices.pushMatrix();
+        
+        // Translate to scaled overlay position and apply scaling
+        int textX = overlayX - offsetX;
+        int textY = overlayY - offsetY;
+        
+        matrices.translate(textX, textY);
+        matrices.scale(overlayScale, overlayScale);
+        
+        // Draw aspect name on its own line with custom color #FCA800
+        context.drawText(client.textRenderer, currentAspectName, 10, 10, 0xFFFCA800, false);
+        
+        // Draw aspect description (wrapped to fit) with colored text - numbers and special characters in light green
+        for (int i = 0; i < descriptionLines.length; i++) {
+            drawColoredText(context, client.textRenderer, descriptionLines[i], 10, 35 + (i * 12));
+        }
+        
+        // Restore matrices
+        matrices.popMatrix();
     }
     
     /**
      * Renders the overlay in the foreground - this method should be called from a Mixin
      * to ensure it renders over all GUI elements
+     * This version requires Shift to be pressed (for inventory items)
      */
     public static void renderForeground(DrawContext context) {
         // Check if aspect overlay is enabled in config
@@ -273,11 +440,21 @@ public class AspectOverlay {
             return;
         }
         
-        // Check if shift is pressed
-        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_LEFT_SHIFT) || 
-                                InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        // Check if we're in a world (important for multiplayer servers)
+        if (client.world == null) {
+            return;
+        }
+        
+        // Hide overlay if F1 menu (debug screen) is open
+        if (client.options.hudHidden) {
+            return;
+        }
+        
+        // Check if shift is pressed (redundant check, but kept for safety)
+        long windowHandle = client.getWindow().getHandle();
+        boolean leftShift = InputUtil.isKeyPressed(windowHandle, InputUtil.GLFW_KEY_LEFT_SHIFT);
+        boolean rightShift = InputUtil.isKeyPressed(windowHandle, InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        boolean isShiftPressed = leftShift || rightShift;
         
         if (!isShiftPressed) {
             return;
@@ -320,28 +497,53 @@ public class AspectOverlay {
         int overlayWidth = baseOverlayWidth;
         int overlayHeight = baseOverlayHeight;
         
-        // Position overlay from right and top edges
-        int overlayX = screenWidth - configX - overlayWidth; // X position: configX pixels from right edge of overlay to right edge of screen
-        int overlayY = configY; // Y position from top edge
+        // Position overlay using config values (same logic as AspectOverlayDraggableOverlay)
+        // configX is the offset from the right edge, so calculate X position from right
+        int overlayX = screenWidth - overlayWidth - configX;
+        int overlayY = configY; // Y is absolute position from top
         
-        // Special handling for right edge positioning
-        if (configX == 0) {
-            // When X = 0, position overlay exactly at right edge of screen
-            overlayX = screenWidth - overlayWidth;
-        } else if (configX > 0) {
-            // When X > 0, ensure overlay is positioned correctly from right edge
-            overlayX = screenWidth - configX - overlayWidth;
+        // Check for collision with tooltip and mirror position if needed
+        boolean shouldMirror = false;
+        if (tooltipActive && tooltipWidth > 0 && tooltipHeight > 0) {
+            // Calculate actual overlay bounds (with scaling)
+            int scaledWidth = (int) (overlayWidth * overlayScale);
+            int scaledHeight = (int) (overlayHeight * overlayScale);
+            int offsetX = (scaledWidth - overlayWidth) / 2;
+            int offsetY = (scaledHeight - overlayHeight) / 2;
+            
+            int overlayActualX = overlayX - offsetX;
+            int overlayActualY = overlayY - offsetY;
+            int overlayActualWidth = scaledWidth;
+            int overlayActualHeight = scaledHeight;
+            
+            // Check if tooltip overlaps with overlay
+            if (rectanglesOverlap(overlayActualX, overlayActualY, overlayActualWidth, overlayActualHeight,
+                                 tooltipX, tooltipY, tooltipWidth, tooltipHeight)) {
+                shouldMirror = true;
+            }
         }
         
-        // Ensure overlay doesn't go off-screen (only check right and bottom edges)
+        // Mirror position to left side if tooltip overlaps
+        if (shouldMirror) {
+            // Position on left side instead (configX from left edge)
+            overlayX = configX;
+        } else {
+            // Keep original position on right side
+            overlayX = screenWidth - overlayWidth - configX;
+        }
+        
+        // Ensure overlay doesn't go off-screen
+        if (overlayX < 0) {
+            overlayX = 0;
+        }
         if (overlayX + overlayWidth > screenWidth) {
-            overlayX = screenWidth - overlayWidth; // Ensure right edge doesn't go off screen
+            overlayX = screenWidth - overlayWidth;
         }
         if (overlayY < 0) {
-            overlayY = 0; // Allow overlay to go to very top
+            overlayY = 0;
         }
         if (overlayY + overlayHeight > screenHeight) {
-            overlayY = screenHeight - overlayHeight; // Ensure bottom edge doesn't go off screen
+            overlayY = screenHeight - overlayHeight;
         }
         
         // Calculate scaled dimensions and offsets for centered scaling
@@ -461,14 +663,13 @@ public class AspectOverlay {
                                 loadedCount++;
                             }
                         } catch (Exception e) {
-                            System.err.println("Failed to parse aspect data for item: " + itemName + " - " + e.getMessage());
+                            // Ignore parse errors
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to load aspects database for overlay: " + e.getMessage());
-            e.printStackTrace();
+            // Ignore load errors
         }
     }
     

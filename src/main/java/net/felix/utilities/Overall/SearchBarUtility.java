@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;

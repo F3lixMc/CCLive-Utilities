@@ -959,7 +959,69 @@
       }
     ],
     "2": [
-      "Keine Angaben Im Wiki"
+      "Flammentretter",
+      {
+        "item_type":"Schuhe",
+        "rarity":"Epic",
+        "floor": "e24",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Attribute]"
+      },
+      "Dämmerstahl Helmhaube",
+      {
+        "item_type":"Schultern",
+        "rarity":"Epic",
+        "floor": "e25",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Attribute]"
+      },
+      "Dämmerstahl Schulterplatten",
+      {
+        "item_type":"Schultern",
+        "rarity":"Epic",
+        "floor": "e25",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Attribute]"
+      },
+      "Dämmerstahl Beinkleider",
+      {
+        "item_type":"Hose",
+        "rarity":"Epic",
+        "floor": "e26",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Attribute]"
+      },
+      "Dämmerstahl Brustpanzerung",
+      {
+        "item_type":"Brust",
+        "rarity":"Epic",
+        "floor": "e26",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung]"
+      },
+      "Dämmerstahl Gurtband",
+      {
+        "item_type":"Gürtel",
+        "rarity":"Epic",
+        "floor": "e26",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung]"
+      },
+      "Dämmerstahl Panzerhandschuhe",
+      {
+        "item_type":"Handschuhe",
+        "rarity":"Epic",
+        "floor": "e28",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung]"
+      },
+      "Raimonds Siegelring",
+      {
+        "item_type":"Gürtel",
+        "rarity":"Epic",
+        "floor": "e28",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung]"
+      },
+      "Raimonds Anhänger",
+      {
+        "item_type":"Halskette",
+        "rarity":"Epic",
+        "floor": "e28",
+        "modifier":"[Fähigkeiten], [Fähigkeiten], [Attribute]"
+      }
     ],
     "3": [
       "Eichenherz Panzerhandschuhe",

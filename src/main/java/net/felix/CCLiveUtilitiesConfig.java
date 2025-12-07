@@ -143,6 +143,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public float killsUtilityScale = 1.0f; // Skalierung der Kills-Anzeige (0.5f bis 2.0f)
+    
+    @SerialEntry
+    public boolean killsUtilityShowRequiredKills = true; // "Benötigte Kills" Zeile anzeigen
+    
+    @SerialEntry
+    public boolean killsUtilityShowNextLevel = true; // "Nächste Ebene" Zeile anzeigen
 
 
     // Schmied Tracker Settings
@@ -170,6 +176,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean showWaveDisplay = true; // Wellen-Anzeige bei Essenzen aktivieren
+    
+    @SerialEntry
+    public boolean showBlueprintFloorNumber = true; // Ebenen-Nummer bei Bauplänen anzeigen
     
 
     
@@ -449,6 +458,15 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean aspectOverlayShowBackground = true; // Schwarzer Hintergrund für Aspect Overlay
+    
+    @SerialEntry
+    public int chatAspectOverlayX = 15; // X-Position des Chat Aspect Overlays (Pixel vom linken Rand)
+    
+    @SerialEntry
+    public int chatAspectOverlayY = 15; // Y-Position des Chat Aspect Overlays (Pixel vom oberen Rand)
+    
+    @SerialEntry
+    public boolean chatAspectOverlayEnabled = true; // Chat Aspect Overlay aktivieren
 
     // Overlay Editor Settings
     @SerialEntry
@@ -480,6 +498,12 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().showEbenenInNormalInventories, newVal -> HANDLER.instance().showEbenenInNormalInventories = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Bauplan Ebene"))
+                                        .description(OptionDescription.of(Text.literal("Ebenen-Nummer bei Bauplänen anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().showBlueprintFloorNumber, newVal -> HANDLER.instance().showBlueprintFloorNumber = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Wellen Anzeige"))
@@ -498,7 +522,12 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().aspectOverlayEnabled, newVal -> HANDLER.instance().aspectOverlayEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
-
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Aspect Overlay im Chat"))
+                                        .description(OptionDescription.of(Text.literal("Aspect Overlay in Chat-Nachrichten ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().chatAspectOverlayEnabled, newVal -> HANDLER.instance().chatAspectOverlayEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Suchleiste"))
@@ -826,6 +855,18 @@ public class CCLiveUtilitiesConfig {
                                         .binding(1.0f, () -> HANDLER.instance().killsUtilityScale, newVal -> HANDLER.instance().killsUtilityScale = newVal)
                                         .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
                                         .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Benötigte Kills anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Zeile 'Benötigte Kills' im Kill Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().killsUtilityShowRequiredKills, newVal -> HANDLER.instance().killsUtilityShowRequiredKills = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Nächste Ebene anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Zeile 'Nächste Ebene' im Kill Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().killsUtilityShowNextLevel, newVal -> HANDLER.instance().killsUtilityShowNextLevel = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Karten"))
@@ -912,21 +953,6 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Größe der Blueprint-Anzeige und des Textes anpassen")))
                                         .binding(1.0f, () -> HANDLER.instance().blueprintViewerScale, newVal -> HANDLER.instance().blueprintViewerScale = newVal)
                                         .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
-                                        .build())
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Overlay Editor"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Overlay Editor aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Overlay Editor aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().overlayEditorEnabled, newVal -> HANDLER.instance().overlayEditorEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Overlay Editor anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Overlay Editor Overlay anzeigen oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().showOverlayEditor, newVal -> HANDLER.instance().showOverlayEditor = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())

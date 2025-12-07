@@ -1,10 +1,8 @@
-package net.felix.utilities;
+package net.felix.utilities.Factory;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
@@ -12,6 +10,8 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Town.EquipmentDisplayUtility;
 
 
 import java.util.HashSet;
@@ -52,6 +52,10 @@ public class BossHPUtility {
 	private long bossDisappearTimeWithoutReward = 0;
 	private static final long BOSS_DISAPPEAR_TIMEOUT = 5000; // 5 Sekunden
 	private boolean bossLost = false; // Separate variable for boss lost (vs defeated)
+	
+	// Boss-Blockierung nach "Kampfzone"-Nachricht
+	private long bossBlockedUntil = 0;
+	private static final long BOSS_BLOCK_DURATION = 10000; // 10 Sekunden Blockierung
 	
 	public BossHPUtility() {
 		INSTANCE = this;
@@ -282,6 +286,10 @@ public class BossHPUtility {
 	}
 	
 	public void processTextDisplay(String text) {
+		// Prüfe, ob Boss-Erkennung blockiert ist
+		if (System.currentTimeMillis() < bossBlockedUntil) {
+			return; // Boss-Erkennung ist blockiert
+		}
 		
 		boolean containsBossName = validBossNames.stream()
 			.anyMatch(text::contains);
@@ -316,6 +324,7 @@ public class BossHPUtility {
 		bossLost = false;
 		currentBossName = null;
 		currentBossText = null;
+		// Blockierung wird automatisch nach BOSS_BLOCK_DURATION ablaufen
 	}
 	
 	public void clearCurrentBoss() {
@@ -403,6 +412,11 @@ public class BossHPUtility {
 	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client == null) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.options.hudHidden) {
 			return;
 		}
 		
@@ -538,6 +552,12 @@ public class BossHPUtility {
 			}
 			// Prüfe auf "Du warst zu lange außerhalb der Kampfzone" (Chat-Nachricht)
 			if (content.toLowerCase().contains("zu lange außerhalb") && content.toLowerCase().contains("kampfzone")) {
+				// Blockiere Boss-Erkennung für 10 Sekunden
+				instance.bossBlockedUntil = System.currentTimeMillis() + BOSS_BLOCK_DURATION;
+				
+				// Rufe handleBossLost() mehrmals auf, um sicherzustellen, dass der Boss auf "verloren" gesetzt wird
+				instance.handleBossLost();
+				instance.handleBossLost();
 				instance.handleBossLost();
 			}
 			// Prüfe auf "Die welle wurde nicht geschafft! für die nächsten X minuten: farmen deaktiviert und -X% aktiver Ertrag" (Chat-Nachricht)

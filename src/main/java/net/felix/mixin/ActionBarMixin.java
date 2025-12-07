@@ -7,9 +7,10 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.utilities.BossHPUtility;
-import net.felix.utilities.ActionBarData;
-import net.felix.utilities.BPViewerUtility;
+
+import net.felix.utilities.Overall.ActionBarData;
+import net.felix.utilities.Aincraft.BPViewerUtility;
+import net.felix.utilities.Factory.BossHPUtility;
 
 
 @Mixin(InGameHud.class)
@@ -32,7 +33,7 @@ public class ActionBarMixin {
             // Check for blueprint messages in action bar (combo chest rewards)
             BPViewerUtility instance = BPViewerUtility.getInstance();
             if (instance != null) {
-                instance.checkForBlueprint(content);
+                instance.checkForBlueprint(message, content);
             }
             
             // Check for boss defeat

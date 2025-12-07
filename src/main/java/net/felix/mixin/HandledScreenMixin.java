@@ -23,6 +23,9 @@ public abstract class HandledScreenMixin {
      */
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        // Capture tooltip position for collision detection
+        captureTooltipPosition(mouseX, mouseY);
+        
         // Render colored frames around smithing states ONLY in smithing-related screens
         if (isSmithingInventory()) {
             renderSmithingFrames(context);
@@ -33,17 +36,21 @@ public abstract class HandledScreenMixin {
             renderHideUncraftableButton(context);
         }
         
+        // Render Kit Filter buttons in relevant inventories
+        renderKitFilterButtons(context, mouseX, mouseY);
+        
         // Only show aspect overlay in specific blueprint inventories and if enabled in config
+        // Render AFTER all buttons to ensure it appears on top
         if (isBlueprintInventory() && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
             // Update aspect overlay with current hovered item
             updateAspectOverlay(mouseX, mouseY);
             
-            // Render our aspect overlay AFTER everything else (including tooltips)
+            // Render our aspect overlay AFTER everything else (including buttons and tooltips)
             renderAspectOverlay(context);
         }
         
-        // Render Kit Filter buttons in relevant inventories
-        renderKitFilterButtons(context, mouseX, mouseY);
+        // Clear tooltip bounds after rendering
+        net.felix.utilities.Overall.AspectOverlay.clearTooltipBounds();
     }
     
     /**
@@ -68,11 +75,10 @@ public abstract class HandledScreenMixin {
             
             // Call the SchmiedTrackerUtility to render colored frames
             // This will handle all the logic for determining which slots need frames and what colors to use
-            net.felix.utilities.SchmiedTrackerUtility.renderColoredFrames(context, screen, x, y);
+            net.felix.utilities.Town.SchmiedTrackerUtility.renderColoredFrames(context, screen, x, y);
             
         } catch (Exception e) {
-            System.err.println("Error rendering smithing frames: " + e.getMessage());
-            e.printStackTrace();
+            // Ignore rendering errors
         }
     }
     
@@ -84,11 +90,10 @@ public abstract class HandledScreenMixin {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
             
             // Call the SchmiedTrackerUtility to render the Hide Uncraftable button
-            net.felix.utilities.SchmiedTrackerUtility.renderHideUncraftableButton(context, screen);
+            net.felix.utilities.Town.SchmiedTrackerUtility.renderHideUncraftableButton(context, screen);
             
         } catch (Exception e) {
-            System.err.println("Error rendering Hide Uncraftable button: " + e.getMessage());
-            e.printStackTrace();
+            // Ignore rendering errors
         }
     }
     
@@ -98,12 +103,95 @@ public abstract class HandledScreenMixin {
     private boolean handleHideUncraftableButtonClick(double mouseX, double mouseY, int button) {
         try {
             // Call the SchmiedTrackerUtility to handle the button click
-            return net.felix.utilities.SchmiedTrackerUtility.handleButtonClick(mouseX, mouseY, button);
+            return net.felix.utilities.Town.SchmiedTrackerUtility.handleButtonClick(mouseX, mouseY, button);
             
         } catch (Exception e) {
-            System.err.println("Error handling Hide Uncraftable button click: " + e.getMessage());
-            e.printStackTrace();
             return false;
+        }
+    }
+    
+    /**
+     * Captures tooltip position for collision detection with aspect overlay
+     */
+    private void captureTooltipPosition(int mouseX, int mouseY) {
+        try {
+            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            
+            // Find the hovered slot
+            Slot hoveredSlot = null;
+            for (Slot slot : screen.getScreenHandler().slots) {
+                if (slot.x + x <= mouseX && mouseX < slot.x + x + 16 &&
+                    slot.y + y <= mouseY && mouseY < slot.y + y + 16) {
+                    hoveredSlot = slot;
+                    break;
+                }
+            }
+            
+            if (hoveredSlot != null && hoveredSlot.hasStack()) {
+                ItemStack stack = hoveredSlot.getStack();
+                if (stack != null && !stack.isEmpty()) {
+                    net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+                    if (client != null && client.textRenderer != null) {
+                        // Get tooltip lines using reflection to access protected method
+                        try {
+                            java.lang.reflect.Method getTooltipMethod = HandledScreen.class.getDeclaredMethod("getTooltipFromItem", net.minecraft.client.MinecraftClient.class, ItemStack.class);
+                            getTooltipMethod.setAccessible(true);
+                            @SuppressWarnings("unchecked")
+                            java.util.List<net.minecraft.text.Text> tooltip = (java.util.List<net.minecraft.text.Text>) getTooltipMethod.invoke(screen, client, stack);
+                            
+                            if (tooltip != null && !tooltip.isEmpty()) {
+                                // Calculate tooltip dimensions
+                                int tooltipWidth = 0;
+                                for (net.minecraft.text.Text line : tooltip) {
+                                    int lineWidth = client.textRenderer.getWidth(line);
+                                    tooltipWidth = Math.max(tooltipWidth, lineWidth);
+                                }
+                                
+                                // Add padding (Minecraft uses 3 pixels on each side)
+                                tooltipWidth += 6;
+                                int tooltipHeight = tooltip.size() * (client.textRenderer.fontHeight + 2) + 4;
+                                
+                                // Calculate tooltip position (Minecraft positions it near the mouse)
+                                // Tooltip is typically positioned to the right and above the mouse cursor
+                                int tooltipX = mouseX + 12;
+                                int tooltipY = mouseY - 12;
+                                
+                                // Adjust if tooltip would go off screen (Minecraft does this automatically)
+                                int screenWidth = client.getWindow().getScaledWidth();
+                                int screenHeight = client.getWindow().getScaledHeight();
+                                
+                                if (tooltipX + tooltipWidth > screenWidth) {
+                                    tooltipX = mouseX - tooltipWidth - 12;
+                                }
+                                if (tooltipY + tooltipHeight > screenHeight) {
+                                    tooltipY = screenHeight - tooltipHeight - 3;
+                                }
+                                if (tooltipY < 3) {
+                                    tooltipY = 3;
+                                }
+                                
+                                // Store tooltip information in AspectOverlay
+                                net.felix.utilities.Overall.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                            }
+                        } catch (Exception e) {
+                            // If reflection fails, try alternative approach
+                            // Calculate approximate tooltip size based on item name
+                            net.minecraft.text.Text itemName = stack.getName();
+                            if (itemName != null) {
+                                int tooltipWidth = client.textRenderer.getWidth(itemName) + 6;
+                                int tooltipHeight = client.textRenderer.fontHeight + 4;
+                                
+                                int tooltipX = mouseX + 12;
+                                int tooltipY = mouseY - 12;
+                                
+                                net.felix.utilities.Overall.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignore errors
         }
     }
     
@@ -127,18 +215,24 @@ public abstract class HandledScreenMixin {
             if (hoveredSlot != null && hoveredSlot.hasStack()) {
                 ItemStack itemStack = hoveredSlot.getStack();
                 if (itemStack != null && !itemStack.isEmpty()) {
+                    // Check if the item name contains Epic colors - if so, don't show overlay
+                    net.minecraft.text.Text itemNameText = itemStack.getName();
+                    if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
+                        net.felix.utilities.Overall.AspectOverlay.onHoverStopped();
+                        return;
+                    }
+                    
                     // Update the aspect overlay with this item
-                    net.felix.utilities.AspectOverlay.updateAspectInfo(itemStack);
+                    net.felix.utilities.Overall.AspectOverlay.updateAspectInfo(itemStack);
                     return;
                 }
             }
             
             // If no valid item is hovered, hide the overlay
-            net.felix.utilities.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.AspectOverlay.onHoverStopped();
             
         } catch (Exception e) {
-            System.err.println("Error updating aspect overlay: " + e.getMessage());
-            e.printStackTrace();
+            // Ignore errors
         }
     }
     
@@ -147,10 +241,9 @@ public abstract class HandledScreenMixin {
      */
     private void renderAspectOverlay(DrawContext context) {
         try {
-            net.felix.utilities.AspectOverlay.renderForeground(context);
+            net.felix.utilities.Overall.AspectOverlay.renderForeground(context);
         } catch (Exception e) {
-            System.err.println("Error rendering aspect overlay: " + e.getMessage());
-            e.printStackTrace();
+            // Ignore rendering errors
         }
     }
     
@@ -176,8 +269,6 @@ public abstract class HandledScreenMixin {
                    cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
                    
         } catch (Exception e) {
-            System.err.println("Error checking blueprint inventory: " + e.getMessage());
-            e.printStackTrace();
             return false; // Default to false if there's an error
         }
     }
@@ -190,11 +281,10 @@ public abstract class HandledScreenMixin {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
             
             // Call the KitFilterUtility to render the buttons
-            net.felix.utilities.KitFilterUtility.renderKitFilterButtons(context, screen, mouseX, mouseY);
+            net.felix.utilities.Town.KitFilterUtility.renderKitFilterButtons(context, screen, mouseX, mouseY);
             
         } catch (Exception e) {
-            System.err.println("Error rendering Kit Filter buttons: " + e.getMessage());
-            e.printStackTrace();
+            // Ignore rendering errors
         }
     }
     
@@ -218,8 +308,6 @@ public abstract class HandledScreenMixin {
                    title.contains("Geschützte Items");
                    
         } catch (Exception e) {
-            System.err.println("Error checking smithing inventory: " + e.getMessage());
-            e.printStackTrace();
             return false; // Default to false if there's an error
         }
     }

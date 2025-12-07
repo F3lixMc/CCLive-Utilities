@@ -2,12 +2,12 @@ package net.felix.mixin;
 
 import net.minecraft.client.gui.hud.BossBarHud;
 import net.minecraft.client.gui.hud.ClientBossBar;
+import net.felix.utilities.Aincraft.KillsUtility;
 import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.utilities.KillsUtility;
 
 import java.util.Map;
 import java.util.UUID;

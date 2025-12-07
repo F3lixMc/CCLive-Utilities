@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Overall;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;

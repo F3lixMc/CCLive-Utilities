@@ -1,9 +1,12 @@
-package net.felix.utilities;
+package net.felix.utilities.Town;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.item.ItemStack;
@@ -14,6 +17,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Formatting;
 import net.felix.CCLiveUtilitiesConfig;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -38,6 +42,10 @@ public class SchmiedTrackerUtility {
 	private static int buttonHeight = 20;
 	private static Map<Integer, ItemStack> originalItems = new HashMap<>(); // slotIndex -> original ItemStack
 	
+	// Frame Toggle State
+	private static boolean framesVisible = true; // Standardmäßig sichtbar
+	private static KeyBinding toggleFramesKeyBinding;
+	
 	// Schmied-Typen und ihre Konfigurationsschlüssel
 	private static final Map<String, String> SMITHING_CONFIG_KEYS = new HashMap<>();
 	static {
@@ -59,10 +67,25 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 		
+		// Hotkey registrieren
+		registerHotkey();
+		
 		// Client-seitige Events registrieren
 		ClientTickEvents.END_CLIENT_TICK.register(SchmiedTrackerUtility::onClientTick);
 		
 		isInitialized = true;
+	}
+	
+	/**
+	 * Registriert den Hotkey zum Togglen der Rahmen
+	 */
+	private static void registerHotkey() {
+		toggleFramesKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+			"key.cclive-utilities.toggle-schmied-frames",
+			InputUtil.Type.KEYSYM,
+			GLFW.GLFW_KEY_F7, // Standard: F7
+			"category.cclive-utilities.schmied"
+		));
 	}
 	
 	/**
@@ -71,6 +94,12 @@ public class SchmiedTrackerUtility {
 
 
 	private static void onClientTick(MinecraftClient client) {
+		// Prüfe ob der Hotkey zum Togglen der Rahmen gedrückt wurde
+		// Dies sollte IMMER geprüft werden, unabhängig von der Config, damit der Toggle funktioniert
+		if (toggleFramesKeyBinding != null && toggleFramesKeyBinding.wasPressed()) {
+			framesVisible = !framesVisible;
+		}
+		
 		// Prüfe Konfiguration
 				if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerEnabled ||
@@ -790,19 +819,25 @@ public class SchmiedTrackerUtility {
 						blackConcrete.set(DataComponentTypes.CUSTOM_NAME, itemStack.get(DataComponentTypes.CUSTOM_NAME));
 						blackConcrete.set(DataComponentTypes.LORE, itemStack.get(DataComponentTypes.LORE));
 						
-						// Füge einen Hinweis zum Custom Name hinzu, dass das Item ausgeblendet wurde
-						var customName = blackConcrete.get(DataComponentTypes.CUSTOM_NAME);
-						if (customName != null) {
-							// Füge den Hinweis zum bestehenden Namen hinzu
-							String originalName = customName.getString();
-							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
-						} else {
-							// Erstelle einen neuen Custom Name mit Hinweis
-							String originalName = itemStack.getName().getString();
+					// Füge einen Hinweis zum Custom Name hinzu, dass das Item ausgeblendet wurde
+					var customName = blackConcrete.get(DataComponentTypes.CUSTOM_NAME);
+					if (customName != null) {
+						// Füge den Hinweis zum bestehenden Namen hinzu
+						String originalName = customName.getString();
+						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
+						if (!originalName.contains("[Ausgeblendet]")) {
 							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
 							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
 						}
+					} else {
+						// Erstelle einen neuen Custom Name mit Hinweis
+						String originalName = itemStack.getName().getString();
+						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
+						if (!originalName.contains("[Ausgeblendet]")) {
+							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+						}
+					}
 						
 						slot.setStack(blackConcrete);
 					}
@@ -868,6 +903,11 @@ public class SchmiedTrackerUtility {
 	 */
 	public static void renderColoredFrames(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
 		if (!isInDisassembleChest) {
+			return;
+		}
+		
+		// Prüfe ob Rahmen sichtbar sein sollen (kann per Hotkey getoggelt werden)
+		if (!framesVisible) {
 			return;
 		}
 
@@ -966,6 +1006,26 @@ public class SchmiedTrackerUtility {
 	 */
 	public static boolean isInBlueprintInventory() {
 		return isInBlueprintInventory;
+	}
+	
+	/**
+	 * Handle key press directly (for use in mixins when screens are open)
+	 * @param keyCode The key code (e.g., GLFW.GLFW_KEY_F7)
+	 * @return true if the key was handled
+	 */
+	public static boolean handleKeyPress(int keyCode) {
+		try {
+			// Check if F7 is pressed (default key for toggling frames)
+			// Note: This checks the default key, not the configured key binding
+			// For full support of custom key bindings, we'd need to check the KeyBinding's bound key
+			if (keyCode == GLFW.GLFW_KEY_F7) {
+				framesVisible = !framesVisible;
+				return true;
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+		return false;
 	}
 	
 	/**

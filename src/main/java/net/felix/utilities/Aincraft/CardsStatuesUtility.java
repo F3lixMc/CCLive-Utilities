@@ -1,4 +1,4 @@
-package net.felix.utilities;
+package net.felix.utilities.Aincraft;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -20,6 +20,8 @@ import net.minecraft.client.gl.RenderPipelines;
 import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
+import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Town.EquipmentDisplayUtility;
 
 
 import java.util.ArrayList;
@@ -419,7 +421,12 @@ public class CardsStatuesUtility {
 		
 		// Prüfe ob wir in einer Welt sind (ohne weitere Bedingungen)
 		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.world == null || client.player == null) {
+		if (client == null || client.world == null || client.player == null) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.options.hudHidden) {
 			return;
 		}
 		
