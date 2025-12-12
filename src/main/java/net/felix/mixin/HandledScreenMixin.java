@@ -302,16 +302,15 @@ public abstract class HandledScreenMixin {
                                      .replaceAll("[\\u3400-\\u4DBF]", "");
             
             // Check if the clean title contains any smithing-related keywords
-            return cleanTitle.contains("Zerlegen") || cleanTitle.contains("Disassemble") ||
-                   cleanTitle.contains("Umschmieden") || cleanTitle.contains("Reforging") ||
+            return cleanTitle.contains("Zerlegen")  ||
+                   cleanTitle.contains("Umschmieden")  ||
                    (cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen")) || 
-                   (cleanTitle.contains("Equipment") && cleanTitle.contains("Select")) ||
-                   cleanTitle.contains("Aufwerten") || cleanTitle.contains("Upgrading") ||
-                   cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Armor Collection") ||
-                   cleanTitle.contains("Waffen Sammlung") || cleanTitle.contains("Weapon Collection") ||
-                   cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("Tool Collection") ||
+                   cleanTitle.contains("Aufwerten")  ||
+                   cleanTitle.contains("Rüstungs Sammlung")  ||
+                   cleanTitle.contains("Waffen Sammlung")  ||
+                   cleanTitle.contains("Werkzeug Sammlung")  ||
                    cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
-                   cleanTitle.contains("Geschützte Items") || cleanTitle.contains("Protected Items") ||
+                   cleanTitle.contains("Geschützte Items")  ||
                    cleanTitle.contains("㬄") || cleanTitle.contains("㬅") || cleanTitle.contains("㬆") || cleanTitle.contains("㬇"); //Equipment Display
                    
         } catch (Exception e) {
