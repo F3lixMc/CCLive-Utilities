@@ -122,6 +122,7 @@ public class SchmiedTrackerUtility {
 								   .replaceAll("[\\u3400-\\u4DBF]", "");
 			
 			// Check for blueprint inventories
+			// Inventare für Hide Uncraftable Button
 			if (cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Baupläne [Werkzeuge]") ||
 				cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || 
 				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools")) {
@@ -138,12 +139,13 @@ public class SchmiedTrackerUtility {
 				if (hideUncraftableActive) {
 					updateBlueprintItems(handledScreen, client);
 				}
+			// Inventare für Schmiedezustände	
 			} else if (cleanTitle.contains("Zerlegen") || cleanTitle.contains("Umschmieden") || 
-			cleanTitle.contains("Ausrüstung [Auswählen]") || cleanTitle.contains("Aufwerten") || 
+			(cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen")) || cleanTitle.contains("Aufwerten") || 
 			cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Waffen Sammlung") || 
 			cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
 			cleanTitle.contains("Geschützte Items") ||
-			cleanTitle.contains("㬃") || cleanTitle.contains("㬄") || cleanTitle.contains("㬅") || cleanTitle.contains("㬆")) {
+			cleanTitle.contains("㬄") || cleanTitle.contains("㬅") || cleanTitle.contains("㬆") || cleanTitle.contains("㬇")) {//Equipment Display
 				isInDisassembleChest = true;
 				isInBlueprintInventory = false;
 				updateSlotColors(handledScreen, client);

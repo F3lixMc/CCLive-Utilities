@@ -25,6 +25,9 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 public class EquipmentDisplayUtility {
 	
@@ -35,8 +38,9 @@ public class EquipmentDisplayUtility {
 	private static Map<String, Double> absoluteStats = new HashMap<>();
 	private static double totalArmor = 0.0;
 	private static final int[] EQUIPMENT_SLOTS = {1, 2, 6, 10, 11, 15, 19, 20, 24, 29, 33, 38, 42, 48, 50};
-	private static final Pattern STAT_PATTERN = Pattern.compile("([+-]?\\d+(?:\\.\\d+)?)");
-	private static final Pattern ARMOR_PATTERN = Pattern.compile("Rüstung\\s*([+-]?\\d+(?:\\.\\d+)?)");
+	// Pattern für Zahlen mit Tausendertrennungen: Kommas als Tausendertrennungen, Punkt als Dezimaltrenner
+	private static final Pattern STAT_PATTERN = Pattern.compile("([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
+	private static final Pattern ARMOR_PATTERN = Pattern.compile("Rüstung\\s*([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
 	
 	// Overlay texture identifiers
 	private static final Identifier LEFT_OVERLAY_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/left_overlay.png");
@@ -122,7 +126,7 @@ public class EquipmentDisplayUtility {
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
-			if (title.contains("㬃") || title.contains("㬄") || title.contains("㬅") || title.contains("㬆")) {
+			if (title.contains("㬄") || title.contains("㬅") || title.contains("㬆") || title.contains("㬇")) { //Equipment Display
 				isInEquipmentChest = true;
 				updateEquipmentStats(handledScreen, client);
 				handleScrolling(client);
@@ -216,7 +220,8 @@ public class EquipmentDisplayUtility {
 						Matcher armorMatcher = ARMOR_PATTERN.matcher(line);
 						if (armorMatcher.find()) {
 							try {
-								double armorValue = Double.parseDouble(armorMatcher.group(1));
+								String numberStr = removeThousandSeparators(armorMatcher.group(1));
+								double armorValue = Double.parseDouble(numberStr);
 								totalArmor += armorValue;
 							} catch (NumberFormatException e) {
 								// Ignoriere ungültige Zahlen
@@ -255,7 +260,8 @@ public class EquipmentDisplayUtility {
 		while (matcher.find()) {
 			String number = matcher.group(1);
 			try {
-				double value = Double.parseDouble(number);
+				String numberStr = removeThousandSeparators(number);
+				double value = Double.parseDouble(numberStr);
 				
 				// Versuche den Namen der Statistik zu extrahieren
 				String statName = extractStatName(line, matcher.start());
@@ -270,9 +276,16 @@ public class EquipmentDisplayUtility {
 		return stats;
 	}
 
+	/**
+	 * Entfernt Tausendertrennungen (Kommas) aus einer Zahl, bevor sie geparst wird
+	 */
+	private static String removeThousandSeparators(String number) {
+		return number.replace(",", "");
+	}
+
 	private static String extractStatName(String line, int numberStart) {
-		// Entferne die Zahl und +/- Zeichen aus der Zeile
-		String lineWithoutNumber = line.replaceAll("[+-]?\\d+(?:\\.\\d+)?%?", "").trim();
+		// Entferne die Zahl und +/- Zeichen aus der Zeile (berücksichtigt auch Tausendertrennungen)
+		String lineWithoutNumber = line.replaceAll("[+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?%?", "").trim();
 		
 		// Entferne häufige Wörter, die nicht der Statistik-Name sind
 		lineWithoutNumber = lineWithoutNumber
@@ -463,12 +476,19 @@ public class EquipmentDisplayUtility {
 	}
 
 	private static String formatNumber(double value) {
+		// Erstelle DecimalFormat mit Komma als Tausendertrenner und Punkt als Dezimaltrenner
+		DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+		symbols.setGroupingSeparator(',');
+		symbols.setDecimalSeparator('.');
+		
 		if (value == (int) value) {
 			// Glatte Zahl ohne Nachkommastellen
-			return String.valueOf((int) value);
+			DecimalFormat df = new DecimalFormat("#,###", symbols);
+			return df.format((int) value);
 		} else {
-			// Zahl mit Nachkommastellen
-			return String.format("%.1f", value);
+			// Zahl mit Nachkommastellen (maximal 1 Nachkommastelle)
+			DecimalFormat df = new DecimalFormat("#,###.0", symbols);
+			return df.format(value);
 		}
 	}
 	

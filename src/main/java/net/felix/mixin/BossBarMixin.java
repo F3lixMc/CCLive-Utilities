@@ -80,7 +80,7 @@ public class BossBarMixin {
                     // Usually it's the top bossbar that shows kills
                     // Use the same Chinese characters as in KillsUtility
                     if (name.contains("Kills") || name.contains("Kill") || 
-                        name.matches(".*[㚎㚏㚐㚑㚒㚓㚔㚕㚖㚗].*")) {
+                        name.matches(".*[㚏㚐㚑㚒㚓㚔㚕㚖㚗㚘].*")) {
                         
                         // Process the kill information
                         KillsUtility.processBossBarKills(name);

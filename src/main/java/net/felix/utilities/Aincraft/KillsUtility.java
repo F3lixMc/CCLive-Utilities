@@ -46,16 +46,16 @@ public class KillsUtility {
 	// Chinese character mapping for numbers
 	private static final Map<Character, Integer> CHINESE_NUMBERS = new HashMap<>();
 	static {
-		CHINESE_NUMBERS.put('㚎', 0);
-		CHINESE_NUMBERS.put('㚏', 1);
-		CHINESE_NUMBERS.put('㚐', 2);
-		CHINESE_NUMBERS.put('㚑', 3);
-		CHINESE_NUMBERS.put('㚒', 4);
-		CHINESE_NUMBERS.put('㚓', 5);
-		CHINESE_NUMBERS.put('㚔', 6);
-		CHINESE_NUMBERS.put('㚕', 7);
-		CHINESE_NUMBERS.put('㚖', 8);
-		CHINESE_NUMBERS.put('㚗', 9);
+		CHINESE_NUMBERS.put('㚏', 0);
+		CHINESE_NUMBERS.put('㚐', 1);
+		CHINESE_NUMBERS.put('㚑', 2);
+		CHINESE_NUMBERS.put('㚒', 3);
+		CHINESE_NUMBERS.put('㚓', 4);
+		CHINESE_NUMBERS.put('㚔', 5);
+		CHINESE_NUMBERS.put('㚕', 6);
+		CHINESE_NUMBERS.put('㚖', 7);
+		CHINESE_NUMBERS.put('㚗', 8);
+		CHINESE_NUMBERS.put('㚘', 9);
 	}
 	
 	// Rendering constants
@@ -361,56 +361,57 @@ public class KillsUtility {
 					continue; // Not "[Nächste Ebene]"
 				}
 				
-				// Found "[Nächste Ebene]"! Now search for "Kills" entry directly below (sequentially)
-				// The Kills entry is directly at index i+1, not in the same column
-				
-				// First try: sequential entry directly below (i+1) - this is the most common case
-				if (i + 1 < entries.size()) {
-					String belowText = getEntryText.apply(i + 1);
-					if (belowText != null) {
-						String cleanBelowText = removeFormatting.apply(belowText);
-						if (cleanBelowText != null && !cleanBelowText.trim().isEmpty()) {
-							java.util.regex.Matcher matcher = killsPattern.matcher(cleanBelowText);
-							if (matcher.find()) {
-								// Found "Kills" entry directly below!
-								try {
-									String numberStr = matcher.group(1).replaceAll("[,.\\s]", "");
-									killsUntilNextLevel = Integer.parseInt(numberStr);
-									return; // Successfully found and parsed
-								} catch (NumberFormatException e) {
-									// Silent error handling
-								}
-							}
-						}
-					}
-				}
-				
-				// Fallback: search through next few sequential entries (i+2, i+3, ...) in case there are empty entries
-				for (int checkIndex = i + 2; checkIndex < Math.min(i + 6, entries.size()); checkIndex++) {
-					String belowSeqText = getEntryText.apply(checkIndex);
-					if (belowSeqText == null) {
+				// Found "[Nächste Ebene]"! Search through indices below for Kills or "freigeschaltet"
+				// Limit search to next 10 entries to avoid going too far
+				for (int checkIndex = i + 1; checkIndex < Math.min(i + 11, entries.size()); checkIndex++) {
+					String checkText = getEntryText.apply(checkIndex);
+					if (checkText == null) {
 						continue;
 					}
 					
-					String cleanBelowSeqText = removeFormatting.apply(belowSeqText);
-					if (cleanBelowSeqText == null || cleanBelowSeqText.trim().isEmpty()) {
-						continue; // Skip empty entries
+					String cleanCheckText = removeFormatting.apply(checkText);
+					if (cleanCheckText == null || cleanCheckText.trim().isEmpty()) {
+						continue;
 					}
 					
-					java.util.regex.Matcher matcher = killsPattern.matcher(cleanBelowSeqText);
+					// Check if the next level is already unlocked ("freigeschaltet")
+					String lowerCheckText = cleanCheckText.toLowerCase();
+					if (lowerCheckText.contains("freigeschaltet") || 
+					    lowerCheckText.contains("nächste ebene freigeschaltet")) {
+						// Next level is already unlocked, no kills needed
+						killsUntilNextLevel = -1;
+						return; // Stop searching
+					}
+					
+					// Try to find Kills in this line
+					java.util.regex.Matcher matcher = killsPattern.matcher(cleanCheckText);
 					if (matcher.find()) {
-						// Found "Kills" entry!
+						// Found potential Kills! Check if the entry above contains "[Nächster Meilenstein]"
+						if (checkIndex > 0) {
+							String aboveText = getEntryText.apply(checkIndex - 1);
+							if (aboveText != null) {
+								String cleanAboveText = removeFormatting.apply(aboveText);
+								
+								if (cleanAboveText != null && cleanAboveText.contains("[Nächster Meilenstein]")) {
+									// These are milestone kills, not next level kills - continue searching
+									continue;
+								}
+							}
+						}
+						
+						// These are the correct Kills for next level!
 						try {
 							String numberStr = matcher.group(1).replaceAll("[,.\\s]", "");
-							killsUntilNextLevel = Integer.parseInt(numberStr);
+							int parsedKills = Integer.parseInt(numberStr);
+							killsUntilNextLevel = parsedKills;
 							return; // Successfully found and parsed
 						} catch (NumberFormatException e) {
-							// Silent error handling
+							// Continue searching
 						}
 					}
 				}
 				
-				// If we found "[Nächste Ebene]" but couldn't parse the kills below, set to -1
+				// If we found "[Nächste Ebene]" but couldn't find valid kills below, set to -1
 				killsUntilNextLevel = -1;
 				return;
 			}

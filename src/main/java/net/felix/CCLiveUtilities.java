@@ -10,6 +10,7 @@ import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
+import net.felix.utilities.Overall.KillAnimationUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
@@ -45,6 +46,7 @@ public class CCLiveUtilities implements ModInitializer {
 		KillsUtility.initialize();
 		InformationenUtility.initialize();
 		AnimationBlockerUtility.initialize();
+		KillAnimationUtility.initialize();
 		BPViewerUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();

@@ -6,6 +6,10 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 /**
  * Draggable Overlay für die Equipment Display
  */
@@ -190,12 +194,19 @@ public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
      * Format number like in EquipmentDisplayUtility
      */
     private String formatNumber(double value) {
+        // Erstelle DecimalFormat mit Komma als Tausendertrenner und Punkt als Dezimaltrenner
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+        symbols.setGroupingSeparator(',');
+        symbols.setDecimalSeparator('.');
+        
         if (value == (int) value) {
             // Glatte Zahl ohne Nachkommastellen
-            return String.valueOf((int) value);
+            DecimalFormat df = new DecimalFormat("#,###", symbols);
+            return df.format((int) value);
         } else {
-            // Zahl mit Nachkommastellen
-            return String.format("%.1f", value);
+            // Zahl mit Nachkommastellen (maximal 1 Nachkommastelle)
+            DecimalFormat df = new DecimalFormat("#,###.0", symbols);
+            return df.format(value);
         }
     }
 }

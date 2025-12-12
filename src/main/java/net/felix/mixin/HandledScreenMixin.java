@@ -260,12 +260,13 @@ public abstract class HandledScreenMixin {
                                    .replaceAll("[\\u3400-\\u4DBF]", "");
             
             // Check if the clean title contains any of the allowed blueprint inventory names
-            return cleanTitle.contains("Baupläne [Waffen]") ||
-                   cleanTitle.contains("Baupläne [Rüstung]") ||
-                   cleanTitle.contains("Baupläne [Werkzeuge]") ||
-                   cleanTitle.contains("Bauplan [Shop]") ||
-                   cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
-                   cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
+            return cleanTitle.contains("Baupläne [Waffen]")  || cleanTitle.contains("Blueprints [Weapons]") ||
+                   cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Blueprints [Armor]") ||
+                   cleanTitle.contains("Baupläne [Werkzeuge]") || cleanTitle.contains("Blueprints [Tools]") ||
+                   cleanTitle.contains("Bauplan [Shop]")         || cleanTitle.contains("Blueprint Store")  ||
+                   cleanTitle.contains("Favorisierte [Rüstungsbaupläne]")   || cleanTitle.contains("Favorited [Armor Blueprints]") ||
+                   cleanTitle.contains("Favorisierte [Waffenbaupläne]")     || cleanTitle.contains("Favorited [Weapon Blueprints]") ||
+                   cleanTitle.contains("Favorisierte [Werkzeugbaupläne]")   || cleanTitle.contains("Favorited [Tools Blueprints]") ||
                    cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
                    
         } catch (Exception e) {
@@ -296,16 +297,22 @@ public abstract class HandledScreenMixin {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
             String title = screen.getTitle().getString();
             
-            // Check if the title contains any smithing-related keywords
-            return title.contains("Zerlegen") || 
-                   title.contains("Umschmieden") || 
-                   title.contains("Ausrüstung [Auswählen]") || 
-                   title.contains("Aufwerten") || 
-                   title.contains("Rüstungs Sammlung") || 
-                   title.contains("Waffen Sammlung") || 
-                   title.contains("Werkzeug Sammlung") || 
-                   title.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
-                   title.contains("Geschützte Items");
+            // Remove Minecraft formatting codes and Unicode characters for comparison (same as in SchmiedTrackerUtility)
+            String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+                                     .replaceAll("[\\u3400-\\u4DBF]", "");
+            
+            // Check if the clean title contains any smithing-related keywords
+            return cleanTitle.contains("Zerlegen") || cleanTitle.contains("Disassemble") ||
+                   cleanTitle.contains("Umschmieden") || cleanTitle.contains("Reforging") ||
+                   (cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen")) || 
+                   (cleanTitle.contains("Equipment") && cleanTitle.contains("Select")) ||
+                   cleanTitle.contains("Aufwerten") || cleanTitle.contains("Upgrading") ||
+                   cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Armor Collection") ||
+                   cleanTitle.contains("Waffen Sammlung") || cleanTitle.contains("Weapon Collection") ||
+                   cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("Tool Collection") ||
+                   cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
+                   cleanTitle.contains("Geschützte Items") || cleanTitle.contains("Protected Items") ||
+                   cleanTitle.contains("㬄") || cleanTitle.contains("㬅") || cleanTitle.contains("㬆") || cleanTitle.contains("㬇"); //Equipment Display
                    
         } catch (Exception e) {
             return false; // Default to false if there's an error

@@ -200,7 +200,7 @@ public class BPViewerUtility {
                 boolean isSpecialInventory = false;
                 if (mcClient != null && mcClient.currentScreen != null) {
                     String screenTitle = mcClient.currentScreen.getTitle().getString();
-                    if (screenTitle.contains("㬉")) {
+                    if (screenTitle.contains("㬊")) { //Moblexicon
                         isSpecialInventory = true;
                     }
                 }
