@@ -42,6 +42,9 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void initializeOverlays() {
+        // Check if we're in a chat screen
+        boolean isInChatScreen = isInChatScreen();
+        
         // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
         boolean isInBlueprintInventory = isInInventoryScreen();
         
@@ -50,10 +53,20 @@ public class OverlayEditorScreen extends Screen {
             overlays.add(new BossHPDraggableOverlay());
         }
         
-        if (isInBlueprintInventory) {
+        if (isInChatScreen) {
+            // In chat screen, show chat-specific overlays
+            overlays.add(new ChatAspectOverlayDraggableOverlay());
+        } else if (isInBlueprintInventory) {
             // In blueprint inventory screens, show overlays that are relevant for blueprint inventories
             overlays.add(new AspectOverlayDraggableOverlay());
             overlays.add(new HideUncraftableButtonDraggableOverlay());
+            
+            // Check if we're in a Kit Filter relevant inventory
+            if (isInKitFilterInventory()) {
+                overlays.add(new KitFilterButton1DraggableOverlay());
+                overlays.add(new KitFilterButton2DraggableOverlay());
+                overlays.add(new KitFilterButton3DraggableOverlay());
+            }
         } else {
             // Check if player is in a floor dimension
             boolean isInFloorDimension = isInFloorDimension();
@@ -74,10 +87,23 @@ public class OverlayEditorScreen extends Screen {
                     overlays.add(new EquipmentDisplayDraggableOverlay());
                 }
                 // Note: Aspect Overlay and Hide Uncraftable Button are only available in blueprint inventories
-                // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬥, 㬦, 㬧, 㬨)
+                // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬃, 㬄, 㬅, 㬆)
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
             }
         }
+    }
+    
+    /**
+     * Check if the player is currently in a chat screen
+     */
+    private boolean isInChatScreen() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is a ChatScreen
+        return client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen;
     }
     
     /**
@@ -117,6 +143,35 @@ public class OverlayEditorScreen extends Screen {
     }
     
     /**
+     * Check if the player is currently in a Kit Filter relevant inventory
+     */
+    private boolean isInKitFilterInventory() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is a HandledScreen (inventory-like screen)
+        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+            return false;
+        }
+        
+        // Get the screen title to check if it's a Kit Filter relevant inventory
+        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        
+        String title = handledScreen.getTitle().getString();
+        
+        // Remove Minecraft formatting codes and Unicode characters for comparison
+        String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+                               .replaceAll("[\\u3400-\\u4DBF]", "");
+        
+        // Check if the clean title contains Kit Filter relevant inventory names
+        return cleanTitle.contains("Baupläne [Rüstung]") ||
+               cleanTitle.contains("Bauplan [Shop]");
+    }
+    
+    /**
      * Check if the player is currently in an equipment chest inventory where Equipment Display works
      */
     private boolean isInEquipmentChestInventory() {
@@ -138,7 +193,7 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if the title contains any of the equipment chest Unicode characters
         // (same logic as in EquipmentDisplayUtility)
-        return title.contains("㬥") || title.contains("㬦") || title.contains("㬧") || title.contains("㬨");
+        return title.contains("㬃") || title.contains("㬄") || title.contains("㬅") || title.contains("㬆");
     }
     
     /**
@@ -230,6 +285,7 @@ public class OverlayEditorScreen extends Screen {
         int y = height - 80;
         String[] instructions = {
             "Left Click + Drag: Move overlay",
+            "Left Click + Arrow Keys: Move overlay 1 pixel",
             "ESC: Close editor"
         };
         
@@ -326,6 +382,48 @@ public class OverlayEditorScreen extends Screen {
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             close();
             return true;
+        }
+        
+        // Also close with F6 (toggle behavior)
+        if (keyCode == GLFW.GLFW_KEY_F6) {
+            close();
+            return true;
+        }
+        
+        // Arrow key movement when holding an overlay with left mouse button
+        if (draggingOverlay != null) {
+            // Check if left mouse button is still pressed
+            long windowHandle = MinecraftClient.getInstance().getWindow().getHandle();
+            boolean leftMousePressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+            
+            if (leftMousePressed) {
+                int currentX = draggingOverlay.getX();
+                int currentY = draggingOverlay.getY();
+                int newX = currentX;
+                int newY = currentY;
+                
+                // Move overlay by 1 pixel in the direction of the arrow key
+                if (keyCode == GLFW.GLFW_KEY_LEFT) {
+                    newX = currentX - 1;
+                } else if (keyCode == GLFW.GLFW_KEY_RIGHT) {
+                    newX = currentX + 1;
+                } else if (keyCode == GLFW.GLFW_KEY_UP) {
+                    newY = currentY - 1;
+                } else if (keyCode == GLFW.GLFW_KEY_DOWN) {
+                    newY = currentY + 1;
+                }
+                
+                // Keep overlay within screen bounds
+                newX = Math.max(0, Math.min(newX, width - draggingOverlay.getWidth()));
+                newY = Math.max(0, Math.min(newY, height - draggingOverlay.getHeight()));
+                
+                // Update position if it changed
+                if (newX != currentX || newY != currentY) {
+                    draggingOverlay.setPosition(newX, newY);
+                    draggingOverlay.savePosition();
+                    return true;
+                }
+            }
         }
         
         return super.keyPressed(keyCode, scanCode, modifiers);

@@ -1,0 +1,280 @@
+{
+    "licenses": [
+        {
+            "name": "[Kupfermine]",
+            "aliases": "Kupfermine [Lizenz]",
+            "location": "Kohle Collection III"
+        },
+        {
+            "name": "[Eisenmine]",
+            "aliases": "Eisenmine [Lizenz]",
+            "location": "Kohle Collection II"
+        },
+        {
+            "name": "[Goldmine]",
+            "aliases": "Goldmine [Lizenz]",
+            "location": "Dunkeleichenholz Collection V"
+        },
+        {
+            "name": "[Diamantmine]",
+            "aliases": "Diamantmine [Lizenz]",
+            "location": "Mangroven Holz Collection VI"
+        },
+        {
+            "name": "[Schwefelfelder",
+            "aliases": "Schwefelfelder [Lizenz]",
+            "location": "Diamant Collection VI"
+        },
+        {
+            "name": "[Quartzmine]",
+            "aliases": "Quartzmine [Lizenz]",
+            "location": "Schwefel Collection VI"
+        },
+        {
+            "name": "[Obsidianmine]",
+            "aliases": "Obsidianmine [Lizenz]",
+            "location": "Quartz Collection VI"
+        },
+        {
+            "name": "[Antike Mine]",
+            "aliases": "Antike Mine [Lizenz]",
+            "location": "Wirrholz Collection VII"
+        },
+        {
+            "name": "[Echomine]",
+            "aliases": "Echomine [Lizenz]",
+            "location": "Netherite Collection VII"
+        },
+        {
+            "name": "[Goldmine]",
+            "aliases": "Goldmine [Lizenz]",
+            "location": "Wirrholz Collection VII"
+        },
+        {
+            "name": "[Fichtenwald]",
+            "aliases": "Fichtenwald [Lizenz]",
+            "location": "Dschungelholz Collection IV"
+        },
+        {
+            "name": "[Strand]",
+            "aliases": "Strand [Lizenz]",
+            "location": "Kupfer Collection III"
+        },
+        {
+            "name": "[Bambuswald]",
+            "aliases": "Bambuswald [Lizenz]",
+            "location": "Fichtenholz Collection IV"
+        },
+        {
+            "name": "[Dunkeleichenwald]",
+            "aliases": "Dunkeleichenwald [Lizenz]",
+            "location": "Pilz Collection V"
+        },
+        {
+            "name": "[Pilzwald]",
+            "aliases": "Pilzwald [Lizenz]",
+            "location": "Eisen Collection V"
+        },
+        {
+            "name": "[Mangrovensumpf]",
+            "aliases": "Mangrovensumpf [Lizenz]",
+            "location": "Gold Collection VI"
+        },
+        {
+            "name": "[Karmesinwald]",
+            "aliases": "Karmesinwald [Lizenz]",
+            "location": "Obsidian Collection VII"
+        },
+        {
+            "name": "[Wirrwald]",
+            "aliases": "Wirrwald [Lizenz]",
+            "location": "Karmesinholz Collection VII"
+        }
+    ],
+    "mining_gadgets": [
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "I",
+            "location": "Kupfer Collection II"
+        },
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "II",
+            "location": "Eisen Collection III"
+        },
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "III",
+            "location": "Gold Collection V"
+        },
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "IV",
+            "location": "Diamant Collection VII"
+        },
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "V",
+            "location": "Schwefel Collection VII"
+        },
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "VI",
+            "location": "Quartz Collection VII"
+        },
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "VII",
+            "location": "Obsidian Collection VIII"
+        },
+        {
+            "name": "Erzbrecher",
+            "aliases": "Erzbrecher [Modul]",
+            "level": "VIII",
+            "location": "Netherite Collection IX"
+        }
+    ],
+    "logging_gadgets":[
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "I",
+            "location": "Dschungelholz Collection V"
+        },
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "II",
+            "location": "Fichtenholz Collection V"
+        },
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "III",
+            "location": "Bambus Collection VI"
+        },
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "IV",
+            "location": "Pilzholz Collection VI"
+        },
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "V",
+            "location": "Dunkeleichenholz Collection VI"
+        },
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "VI",
+            "location": "Mangrovenholz Collection VII"
+        },
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "VII",
+            "location": "Karmesinholz Collection VIII"
+        },
+        {
+            "name": "Holzhacker",
+            "aliases": "Holzhacker [Modul]",
+            "level": "VIII",
+            "location": "Wirrholz Collection VIII"
+        }
+    ],
+    "gadget_bags": [
+        {
+            "name": "[Modultasche]",
+            "aliases": "Modultasche",
+            "level": "1",
+            "location": "Kupfer Collection IV"
+        },
+        {
+            "name": "[Modultasche]",
+            "aliases": "Modultasche",
+            "level": "2",
+            "location": "Pilzholz Collection IV"
+        },
+        {
+            "name": "[Modultasche]",
+            "aliases": "Modultasche",
+            "level": "3",
+            "location": "Diamant Collection V"
+        },
+        {
+            "name": "[Modultasche]",
+            "aliases": "Modultasche",
+            "level": "4",
+            "location": "Obsidian Collection VI"
+        },
+        {
+            "name": "[Modultasche]",
+            "aliases": "Modultasche",
+            "level": "5",
+            "location": "Echokristall Collection VII"
+        }
+    ],
+    "magnet_gadgets": [
+        {
+            "name": "[Magnet]",
+            "aliases": "Magnet [Modul]",
+            "level": "I",
+            "location": "Eisen Collection VII"
+        },
+        {
+            "name": "[Magnet]",
+            "aliases": "Magnet [Modul]",
+            "level": "II",
+            "location": "Gold Collection VII"
+        },
+        {
+            "name": "[Magnet]",
+            "aliases": "Magnet [Modul]",
+            "level": "III",
+            "location": "Diamant Collection VIII"
+        }
+    ],
+    "smelting_gadgets": [
+        {
+            "name": "[Autoschmelzer]",
+            "aliases": "Autoschmelzer [Modul]",
+            "level": "I",
+            "location": "Eisen Collection VI"
+        },
+        {
+            "name": "[Autoschmelzer]",
+            "aliases": "Autoschmelzer [Modul]",
+            "level": "II",
+            "location": "Gold Collection VIII"
+        },
+        {
+            "name": "[Autoschmelzer]",
+            "aliases": "Autoschmelzer [Modul]",
+            "level": "III",
+            "location": "Diamant Collection VIII"
+        }
+    ],
+    "distribution_gadgets": [
+        {
+            "name": "[Verteilungskern]",
+            "aliases": "Verteilungskern [Modul]",
+            "level": "I",
+            "location": "Obsidian Collection V"
+        },
+        {
+            "name": "[Verteilungskern]",
+            "aliases": "Verteilungskern [Modul]",
+            "level": "II",
+            "location": "Netherite Collection VI"
+        }
+    ]
+}

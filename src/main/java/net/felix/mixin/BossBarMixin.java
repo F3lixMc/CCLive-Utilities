@@ -2,12 +2,12 @@ package net.felix.mixin;
 
 import net.minecraft.client.gui.hud.BossBarHud;
 import net.minecraft.client.gui.hud.ClientBossBar;
+import net.felix.utilities.Aincraft.KillsUtility;
 import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.utilities.KillsUtility;
 
 import java.util.Map;
 import java.util.UUID;
@@ -78,8 +78,9 @@ public class BossBarMixin {
                     
                     // Look for bossbar that contains kill information
                     // Usually it's the top bossbar that shows kills
+                    // Use the same Chinese characters as in KillsUtility
                     if (name.contains("Kills") || name.contains("Kill") || 
-                        name.matches(".*[㚯㚰㚱㚲㚳㚴㚵㚶㚷㚸].*")) {
+                        name.matches(".*[㚎㚏㚐㚑㚒㚓㚔㚕㚖㚗].*")) {
                         
                         // Process the kill information
                         KillsUtility.processBossBarKills(name);

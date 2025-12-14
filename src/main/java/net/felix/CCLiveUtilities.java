@@ -1,19 +1,20 @@
 package net.felix;
 
 import net.fabricmc.api.ModInitializer;
-import net.felix.utilities.EquipmentDisplayUtility;
-import net.felix.utilities.SchmiedTrackerUtility;
-import net.felix.utilities.MaterialTrackerUtility;
-import net.felix.utilities.BossHPUtility;
-import net.felix.utilities.CardsStatuesUtility;
-import net.felix.utilities.KillsUtility;
-import net.felix.utilities.InformationenUtility;
-import net.felix.utilities.AnimationBlockerUtility;
-import net.felix.utilities.BPViewerUtility;
-import net.felix.utilities.UpdateCheckerUtility;
+import net.felix.utilities.Aincraft.CardsStatuesUtility;
+import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Aincraft.BPViewerUtility;
+import net.felix.utilities.Aincraft.KillsUtility;
+import net.felix.utilities.Aincraft.MaterialTrackerUtility;
+import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.Factory.BossHPUtility;
+import net.felix.utilities.Other.UpdateCheckerUtility;
+import net.felix.utilities.Overall.AnimationBlockerUtility;
+import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.felix.utilities.Town.KitFilterUtility;
+import net.felix.utilities.Town.SchmiedTrackerUtility;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.commands.CCLiveCommands;
-import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,12 +50,26 @@ public class CCLiveUtilities implements ModInitializer {
 		BPViewerUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();
+		KitFilterUtility.initialize();
 		
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
 		
 		// Registriere alle CCLive-Commands (Blueprint + Leaderboard)
 		CCLiveCommands.register();
+		
+		// Initialisiere Player Icon System
+		// Temporarily disabled - needs more work
+		// Note: These are initialized but actual loading happens when client is ready
+		/*
+		try {
+			net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.initialize();
+			net.felix.utilities.Other.PlayericonUtility.PlayerIconNetworking.initialize();
+		} catch (Exception e) {
+			System.err.println("[CCLive-Utilities] Error initializing Player Icon System: " + e.getMessage());
+			e.printStackTrace();
+		}
+		*/
 
 	}
 

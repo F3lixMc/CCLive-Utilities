@@ -213,8 +213,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     private BossData getCurrentBossData() {
         try {
             // Get real boss data using public methods
-            String bossName = net.felix.utilities.BossHPUtility.getCurrentBossName();
-            String bossText = net.felix.utilities.BossHPUtility.getCurrentBossText();
+            String bossName = net.felix.utilities.Factory.BossHPUtility.getCurrentBossName();
+            String bossText = net.felix.utilities.Factory.BossHPUtility.getCurrentBossText();
             
             // Only return real boss data, no test content
             if (bossName != null && bossText != null && !bossName.isEmpty() && !bossText.isEmpty()) {

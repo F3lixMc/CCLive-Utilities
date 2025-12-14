@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.AnimationBlockerUtility;
+import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;

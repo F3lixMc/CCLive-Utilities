@@ -21,7 +21,7 @@ public class DrawContextMixin {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
                 String title = handledScreen.getTitle().getString();
-                if (title.contains("㬨") || title.contains("㬥") || title.contains("㬦") || title.contains("㬧")) {
+                if (title.contains("㬃") || title.contains("㬄") || title.contains("㬄") || title.contains("㬅") || title.contains("㬆")) {
                     ci.cancel(); // Rendering abbrechen → Overlay wird nicht gezeichnet
                 }
             }
