@@ -5,7 +5,7 @@ package net.felix.leaderboards.config;
  */
 public class LeaderboardConfig {
     // Server-Konfiguration
-    private String serverUrl = "http://node.verovision.eu:2062"; // Deine Server-URL
+    private String serverUrl = "http://localhost:2062"; // Lokaler Server
     private boolean enabled = true;
     
     // Update-Intervalle (in Millisekunden)
