@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.collectors.CoinCollector;
-import net.felix.utilities.BPViewerUtility;
+import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.DebugUtility;
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.text.Text;

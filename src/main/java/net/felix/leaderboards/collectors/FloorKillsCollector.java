@@ -3,8 +3,8 @@ package net.felix.leaderboards.collectors;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.KillsUtility;
-import net.felix.utilities.BPViewerUtility;
+import net.felix.utilities.Aincraft.KillsUtility;
+import net.felix.utilities.Aincraft.BPViewerUtility;
 
 import java.util.HashMap;
 import java.util.Map;
