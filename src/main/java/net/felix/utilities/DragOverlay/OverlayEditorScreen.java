@@ -86,6 +86,11 @@ public class OverlayEditorScreen extends Screen {
                     // In equipment chest inventories, show equipment display overlay
                     overlays.add(new EquipmentDisplayDraggableOverlay());
                 }
+                
+                // Mining/Lumberjack overlay - always available in overlay editor (regardless of dimension)
+                // The actual overlay will only show in-game when not in player name dimension or floor dimension
+                overlays.add(new MiningLumberjackDraggableOverlay());
+                
                 // Note: Aspect Overlay and Hide Uncraftable Button are only available in blueprint inventories
                 // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬃, 㬄, 㬅, 㬆)
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
@@ -301,6 +306,10 @@ public class OverlayEditorScreen extends Screen {
             // Check for resize area first
             for (DraggableOverlay overlay : overlays) {
                 if (overlay.isEnabled() && overlay.isResizeArea((int) mouseX, (int) mouseY)) {
+                    // Check if dragging is allowed for this overlay
+                    if (!canDragOverlay(overlay)) {
+                        continue;
+                    }
                     resizingOverlay = overlay;
                     resizeStartX = (int) mouseX;
                     resizeStartY = (int) mouseY;
@@ -313,6 +322,10 @@ public class OverlayEditorScreen extends Screen {
             // Check for drag area
             for (DraggableOverlay overlay : overlays) {
                 if (overlay.isEnabled() && overlay.isHovered((int) mouseX, (int) mouseY)) {
+                    // Check if dragging is allowed for this overlay
+                    if (!canDragOverlay(overlay)) {
+                        continue;
+                    }
                     draggingOverlay = overlay;
                     dragOffsetX = (int) mouseX - overlay.getX();
                     dragOffsetY = (int) mouseY - overlay.getY();
@@ -328,6 +341,12 @@ public class OverlayEditorScreen extends Screen {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
+                // Check if dragging is still allowed (might have changed dimension or opened inventory)
+                if (!canDragOverlay(draggingOverlay)) {
+                    draggingOverlay = null;
+                    return false;
+                }
+                
                 int newX = (int) mouseX - dragOffsetX;
                 int newY = (int) mouseY - dragOffsetY;
                 
@@ -342,6 +361,12 @@ public class OverlayEditorScreen extends Screen {
             }
             
             if (resizingOverlay != null) {
+                // Check if resizing is still allowed (might have changed dimension or opened inventory)
+                if (!canDragOverlay(resizingOverlay)) {
+                    resizingOverlay = null;
+                    return false;
+                }
+                
                 int deltaWidth = (int) mouseX - resizeStartX;
                 int deltaHeight = (int) mouseY - resizeStartY;
                 
@@ -392,6 +417,12 @@ public class OverlayEditorScreen extends Screen {
         
         // Arrow key movement when holding an overlay with left mouse button
         if (draggingOverlay != null) {
+            // Check if dragging is still allowed (might have changed dimension or opened inventory)
+            if (!canDragOverlay(draggingOverlay)) {
+                draggingOverlay = null;
+                return false;
+            }
+            
             // Check if left mouse button is still pressed
             long windowHandle = MinecraftClient.getInstance().getWindow().getHandle();
             boolean leftMousePressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
@@ -479,9 +510,44 @@ public class OverlayEditorScreen extends Screen {
         // Check if dimension matches player name (player is in their own dimension)
         return dimensionPath.equals(playerName);
     }
+    
+    /**
+     * Check if the player is currently in the Overworld dimension
+     */
+    private boolean isInOverworld() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null || client.world == null) {
+            return false;
+        }
+        
+        // Check if the dimension is the Overworld
+        return client.world.getRegistryKey() == net.minecraft.world.World.OVERWORLD;
+    }
+    
+    /**
+     * Check if an inventory screen is currently open
+     */
+    private boolean isInventoryOpen() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is an inventory-like screen (HandledScreen)
+        return client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
+    }
+    
+    /**
+     * Check if dragging is allowed for the given overlay
+     */
+    private boolean canDragOverlay(DraggableOverlay overlay) {
+        // Mining/Lumberjack overlay can only be dragged in Overworld and not in inventories
+        if (overlay instanceof MiningLumberjackDraggableOverlay) {
+            return isInOverworld() && !isInventoryOpen();
+        }
+        // All other overlays can be dragged normally
+        return true;
+    }
 }
-
-
-
 
 

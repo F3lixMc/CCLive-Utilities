@@ -19,7 +19,7 @@
               "Ergiebiger Langbogen",
               "Pelzgewand des Eiswanderers",
               "Rissiger Zwergentöter",
-              "Rubinbrustkleid"
+              "Rubinhelmschale"
             ]
           },
           "rare": {
@@ -73,7 +73,7 @@
               "Zeitloser Lederband",
               "Kappe des Forschers",
               "Fortgeschrittener Bogen",
-              "Rumreicher Kopfschutz",
+              "Ruhmreicher Kopfschutz",
               "Champions Wappengurt"
             ]
           },
@@ -256,7 +256,7 @@
             "color": "PURPLE",
             "items": [
               "Gesang der Pfeile",
-              "Gnorags Qüaler",
+              "Gnorags Quäler",
               "Rubinroter Kriegsharnisch",
               "Roter Ledergürtel"
   
@@ -292,7 +292,7 @@
             "items": [
               "Langbogen des Jägers",
               "Dämonenhauer",
-              "Wächterschwerter",
+              "Wächterschwerte",
               "Arkane Großaxt",
               "Kette des Windes"
             ]
@@ -392,7 +392,7 @@
             "items": [
               "Knochengriffbeil",
               "Rostiger Dolch",
-              "Alte Holfälleraxt",
+              "Alte Holzfälleraxt",
               "Bequeme Lederhandschuhe",
               "Kupfer Halskette"
             ]
@@ -487,7 +487,7 @@
             "color": "GOLD",
             "items": [
               "Mondschatten",
-              "Die Klinge des Geisteskriegers",
+              "Die Klinge des Geisterkriegers",
               "Nebelverhangene Lederhandschuhe",
               "Nebelverhangene Lederschutzweste"
   
@@ -687,7 +687,7 @@
             "items": [
               "Wallwacht Handkappe",
               "Zweckmäßige Ledergamaschen",
-              "Knochengefertigte Armbrust",
+              "Knochengerfertigte Armbrust", 
               "Elfenbein Schulterpads",
               "Berserkerbogen"
             ]
@@ -721,7 +721,7 @@
             "color": "WHITE",
             "items": [
               "Verstärkte Plattenstiefel",
-              "Silberscheife",
+              "Silberschleife",
               "Einweghandschuhe des Anglers",
               "Alter Enthaupter"
             ]

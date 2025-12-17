@@ -186,6 +186,46 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showBlueprintFloorNumber = true; // Ebenen-Nummer bei Bauplänen anzeigen
     
+    // Farmwelt Settings
+    @SerialEntry
+    public boolean showModuleInformation = true; // Informationen für Module anzeigen
+    
+    @SerialEntry
+    public boolean showLicenseInformation = true; // Informationen für Lizenzen anzeigen
+    
+    @SerialEntry
+    public boolean miningLumberjackOverlayEnabled = true; // Holzfäller / Bergbau Overlay ein/aus
+
+    // Mining & Lumberjack Overlay Settings
+    @SerialEntry
+    public boolean miningOverlayEnabled = true; // Bergbau Overlay aktivieren
+    
+    @SerialEntry
+    public boolean showMiningOverlay = true; // Bergbau Overlay anzeigen
+    
+    @SerialEntry
+    public int miningOverlayX = 5; // X-Position des Bergbau Overlays (am linken Bildschirmrand)
+    
+    @SerialEntry
+    public int miningOverlayY = 200; // Y-Position des Bergbau Overlays (mittig am linken Rand)
+    
+    @SerialEntry
+    public boolean miningOverlayShowBackground = true; // Schwarzer Hintergrund für Bergbau Overlay
+    
+    @SerialEntry
+    public boolean lumberjackOverlayEnabled = true; // Holzfäller Overlay aktivieren
+    
+    @SerialEntry
+    public boolean showLumberjackOverlay = true; // Holzfäller Overlay anzeigen
+    
+    @SerialEntry
+    public int lumberjackOverlayX = 10; // X-Position des Holzfäller Overlays
+    
+    @SerialEntry
+    public int lumberjackOverlayY = 100; // Y-Position des Holzfäller Overlays
+    
+    @SerialEntry
+    public boolean lumberjackOverlayShowBackground = true; // Schwarzer Hintergrund für Holzfäller Overlay
 
     
 
@@ -405,6 +445,10 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean animationBlockerEnabled = false;
     
+    // Kill Animation Utility Settings
+    @SerialEntry
+    public boolean killAnimationUtilityEnabled = false;
+    
 
     
     // Individual Animation Blocker Settings
@@ -598,6 +642,15 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("Luftschiff blockieren"))
                                         .description(OptionDescription.of(Text.literal("Luftschiff Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().airshipBlockingEnabled, newVal -> HANDLER.instance().airshipBlockingEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Monster Todesanimationen"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Monster Todesanimationen Ein/Aus"))
+                                        .description(OptionDescription.of(Text.literal("Monster Todesanimationen aktivieren oder deaktivieren")))
+                                        .binding(false, () -> HANDLER.instance().killAnimationUtilityEnabled, newVal -> HANDLER.instance().killAnimationUtilityEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
@@ -959,6 +1012,31 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Größe der Blueprint-Anzeige und des Textes anpassen")))
                                         .binding(1.0f, () -> HANDLER.instance().blueprintViewerScale, newVal -> HANDLER.instance().blueprintViewerScale = newVal)
                                         .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
+                                        .build())
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.literal("Farmwelt"))
+                        .tooltip(Text.literal("Einstellungen für Farmwelt-bezogene Utilities"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Informations Anzeige"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Informationen für Module"))
+                                        .description(OptionDescription.of(Text.literal("Informationen für Module in Inventaren anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().showModuleInformation, newVal -> HANDLER.instance().showModuleInformation = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Informationen für Lizenzen"))
+                                        .description(OptionDescription.of(Text.literal("Informationen für Lizenzen in Inventaren anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().showLicenseInformation, newVal -> HANDLER.instance().showLicenseInformation = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Holzfäller / Bergbau Overlay ein/aus"))
+                                        .description(OptionDescription.of(Text.literal("Aktiviert oder deaktiviert sowohl das Holzfäller- als auch das Bergbau-Overlay")))
+                                        .binding(true, () -> HANDLER.instance().miningLumberjackOverlayEnabled, newVal -> HANDLER.instance().miningLumberjackOverlayEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())

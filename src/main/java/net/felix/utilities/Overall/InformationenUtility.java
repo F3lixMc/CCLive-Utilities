@@ -1,7 +1,11 @@
 package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
@@ -45,6 +49,95 @@ public class InformationenUtility {
 	// Blueprint floor tracking - Maps: "blueprint name" -> floor number (e.g., "Drachenzahn" -> 1)
 	private static Map<String, Integer> blueprintFloorMap = new HashMap<>();
 	private static final String BLUEPRINTS_CONFIG_FILE = "assets/cclive-utilities/blueprints.json";
+	
+	// Mining & Lumberjack XP Tracking
+	private static class XPData {
+		long currentXP = 0;
+		long requiredXP = 0;
+		int level = 0;
+		long initialXP = -1; // XP when tracking started (like initialKills in KillsUtility)
+		long newXP = 0; // New XP gained since tracking started (current - initial)
+		long sessionStartTime = 0; // When tracking started
+		double xpPerMinute = 0.0; // Average XP per minute (calculated continuously)
+		long lastGainedXP = 0; // Last XP gained in a single update (for display)
+		boolean isTracking = false; // Whether we're currently tracking XP
+		long lastXPChangeTime = 0; // When XP last changed (for overlay visibility timer)
+		boolean shouldShowOverlay = false; // Whether overlay should be visible
+		boolean isInitializedInCurrentDimension = false; // Whether values have been initialized in current dimension
+	}
+	
+	private static XPData miningXP = new XPData();
+	private static XPData lumberjackXP = new XPData();
+	private static long lastTabListCheck = 0;
+	private static final long OVERLAY_DISPLAY_DURATION = 10000; // 10 seconds in milliseconds
+	private static String currentDimension = null; // Track current dimension to detect dimension changes
+	private static boolean showOverlays = true; // Whether overlays should be shown (hidden when Tab or F1 is active)
+	
+	/**
+	 * Gets the header text for mining overlay (includes level if available)
+	 */
+	public static String getMiningOverlayHeader() {
+		return miningXP.level > 0 ? String.format("Bergbau [lvl. %d]", miningXP.level) : "Bergbau";
+	}
+	
+	/**
+	 * Gets the header text for lumberjack overlay (includes level if available)
+	 */
+	public static String getLumberjackOverlayHeader() {
+		return lumberjackXP.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXP.level) : "Holzfäller";
+	}
+	
+	/**
+	 * Gets the current overlay width for mining overlay (for use in overlay editor)
+	 */
+	public static int getMiningOverlayWidth(MinecraftClient client) {
+		if (client == null || client.textRenderer == null) {
+			return 200;
+		}
+		
+		int padding = 5;
+		String header = getMiningOverlayHeader();
+		String lastXP = "Letzte XP: " + (miningXP.lastGainedXP > 0 ? formatNumberWithSeparator(miningXP.lastGainedXP) : "0");
+		String xpPerMin = miningXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXP.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
+		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		
+		int maxWidth = Math.max(
+			Math.max(client.textRenderer.getWidth(header),
+				Math.max(client.textRenderer.getWidth(lastXP),
+					Math.max(client.textRenderer.getWidth(xpPerMin),
+						Math.max(client.textRenderer.getWidth(requiredXP),
+							client.textRenderer.getWidth(timeToNext))))),
+			100);
+		return maxWidth + padding * 2;
+	}
+	
+	/**
+	 * Gets the current overlay width for lumberjack overlay (for use in overlay editor)
+	 */
+	public static int getLumberjackOverlayWidth(MinecraftClient client) {
+		if (client == null || client.textRenderer == null) {
+			return 200;
+		}
+		
+		int padding = 5;
+		String header = getLumberjackOverlayHeader();
+		String lastXP = "Letzte XP: " + (lumberjackXP.lastGainedXP > 0 ? formatNumberWithSeparator(lumberjackXP.lastGainedXP) : "0");
+		String xpPerMin = lumberjackXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXP.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
+		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		
+		int maxWidth = Math.max(
+			Math.max(client.textRenderer.getWidth(header),
+				Math.max(client.textRenderer.getWidth(lastXP),
+					Math.max(client.textRenderer.getWidth(xpPerMin),
+						Math.max(client.textRenderer.getWidth(requiredXP),
+							client.textRenderer.getWidth(timeToNext))))),
+			100);
+		return maxWidth + padding * 2;
+	}
 
 	public static void initialize() {
 		if (isInitialized) {
@@ -73,6 +166,13 @@ public class InformationenUtility {
 		AspectOverlay.initialize();
 		AspectOverlayRenderer.initialize();
 		
+		// Register client tick event for continuous XP calculation (like KillsUtility)
+		ClientTickEvents.END_CLIENT_TICK.register(InformationenUtility::onClientTick);
+		
+		// Register HUD render callback for mining and lumberjack overlays
+		HudRenderCallback.EVENT.register((drawContext, tickDelta) -> 
+			onHudRender(drawContext, tickDelta));
+		
 		// Register tooltip callback for material information
 		ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
 			MinecraftClient client = MinecraftClient.getInstance();
@@ -90,17 +190,17 @@ public class InformationenUtility {
 				return;
 			}
 			
-			// Check if we're in the special inventory (the one with 㬉)
+			// Check if we're in the special inventory (Moblexicon)
 			boolean isSpecialInventory = false;
 			boolean isLicenseInventory = false;
 			String screenTitle = "";
 			if (client.currentScreen != null) {
 				screenTitle = client.currentScreen.getTitle().getString();
-				if (screenTitle.contains("㬉")) {
+				if (screenTitle.contains("㬊")) {
 					isSpecialInventory = true;
 				}
-				// Check for license inventory character
-				if (screenTitle.contains("ち")) {
+				// Check for license inventory character (friends_request_accept_deny)
+				if (screenTitle.contains("ぢ")) {
 					isLicenseInventory = true;
 				}
 			}
@@ -172,7 +272,9 @@ public class InformationenUtility {
 				
 				// Skip Essenz items that should not show level information (but allow essence improvement inventory)
 				if (screenTitle.contains("Essenz [Auswahl]") || screenTitle.contains("Essenz-Tasche") ||
-					screenTitle.contains("Essenzernter") || screenTitle.contains("㨶") || screenTitle.contains("Legend+ Menü")) {
+					screenTitle.contains("Essenzernter") ||screenTitle.contains("Legend+ Menü") ||
+					 screenTitle.contains("㨷")){ //Hunter ui_background
+					
 					continue;
 				}
 				
@@ -244,7 +346,7 @@ public class InformationenUtility {
 			}
 			
 			// Check for license information in inventories with ち
-			if (isLicenseInventory) {
+			if (isLicenseInventory && CCLiveUtilitiesConfig.HANDLER.instance().showLicenseInformation) {
 				// Check if the hovered item is in one of the license slots
 				if (isItemInLicenseSlot(stack, client)) {
 					checkForLicenseInformation(lines, client);
@@ -252,25 +354,27 @@ public class InformationenUtility {
 			}
 			
 			// Check for gadget information in "Module [Upgraden]" inventory
-			boolean isModuleUpgradeInventory = false;
-			boolean isEngineerInventory = false;
-			if (client.currentScreen != null) {
-				String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
-					.replaceAll("[\\u3400-\\u4DBF]", "");
-				if (cleanScreenTitle.contains("Module [Upgraden]")) {
-					isModuleUpgradeInventory = true;
+			if (CCLiveUtilitiesConfig.HANDLER.instance().showModuleInformation) {
+				boolean isModuleUpgradeInventory = false;
+				boolean isEngineerInventory = false;
+				if (client.currentScreen != null) {
+					String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
+						.replaceAll("[\\u3400-\\u4DBF]", "");
+					if (cleanScreenTitle.contains("Module [Upgraden]")) {
+						isModuleUpgradeInventory = true;
+					}
+					if (cleanScreenTitle.contains("[Ingenieur]")) {
+						isEngineerInventory = true;
+					}
 				}
-				if (cleanScreenTitle.contains("[Ingenieur]")) {
-					isEngineerInventory = true;
+				
+				if (isModuleUpgradeInventory) {
+					checkForGadgetInformation(lines, false);
 				}
-			}
-			
-			if (isModuleUpgradeInventory) {
-				checkForGadgetInformation(lines, false);
-			}
-			
-			if (isEngineerInventory) {
-				checkForGadgetInformation(lines, true);
+				
+				if (isEngineerInventory) {
+					checkForGadgetInformation(lines, true);
+				}
 			}
 		});
 		
@@ -3119,8 +3223,8 @@ public class InformationenUtility {
 				
 				if (location != null && !location.isEmpty()) {
 					// Add location information as a new line after the level line
-					// Format: "Nächstes Level: location" (without quotes)
-					Text locationText = Text.literal("Nächstes Level: " + location)
+					// Format: " → Nächstes Level: location" (without quotes)
+					Text locationText = Text.literal(" → Nächstes Level: " + location)
 						.styled(style -> style.withColor(0xC0C0C0)); // Light gray
 					
 					lines.add(stufeLineIndex + 1, locationText);
@@ -3677,6 +3781,570 @@ public class InformationenUtility {
 			this.name = name;
 			this.location = location;
 		}
+	}
+	
+	/**
+	 * Client tick callback for continuous XP calculation (like KillsUtility)
+	 */
+	private static void onClientTick(MinecraftClient client) {
+		if (client == null || client.world == null || client.player == null) {
+			return;
+		}
+		
+		// Check Tab key for overlay visibility
+		checkTabKey();
+		
+		// Always update XP per minute calculation (like updateKPM in KillsUtility)
+		updateXPM(miningXP);
+		updateXPM(lumberjackXP);
+		
+		// Update overlay visibility timers
+		updateOverlayVisibility(miningXP);
+		updateOverlayVisibility(lumberjackXP);
+	}
+	
+	/**
+	 * Checks if Tab key is pressed and hides overlays accordingly
+	 */
+	private static void checkTabKey() {
+		// Check if player list key is pressed (respects custom key bindings)
+		if (net.felix.utilities.Overall.KeyBindingUtility.isPlayerListKeyPressed()) {
+			showOverlays = false; // Hide overlays when player list key is pressed
+		} else {
+			showOverlays = true; // Show overlays when player list key is released
+		}
+	}
+	
+	/**
+	 * Updates overlay visibility based on timer
+	 * Overlay is visible for 10 seconds after last XP change
+	 */
+	private static void updateOverlayVisibility(XPData xpData) {
+		long currentTime = System.currentTimeMillis();
+		
+		if (xpData.lastXPChangeTime > 0) {
+			long timeSinceLastChange = currentTime - xpData.lastXPChangeTime;
+			// Show overlay if less than 10 seconds have passed since last XP change
+			xpData.shouldShowOverlay = timeSinceLastChange < OVERLAY_DISPLAY_DURATION;
+		} else {
+			xpData.shouldShowOverlay = false;
+		}
+	}
+	
+	/**
+	 * Updates XP per minute calculation continuously (like updateKPM in KillsUtility)
+	 */
+	private static void updateXPM(XPData xpData) {
+		if (xpData.sessionStartTime != 0 && xpData.newXP > 0) {
+			long currentTime = System.currentTimeMillis();
+			long sessionDuration = currentTime - xpData.sessionStartTime;
+			if (sessionDuration > 0) {
+				double minutesElapsed = (double)sessionDuration / 60000.0;
+				xpData.xpPerMinute = (double)xpData.newXP / minutesElapsed;
+			}
+		} else {
+			xpData.xpPerMinute = 0.0;
+		}
+	}
+	
+	/**
+	 * HUD Render callback for mining and lumberjack overlays
+	 */
+	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null || client.world == null || client.player == null) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.options.hudHidden) {
+			return;
+		}
+		
+		// Hide overlays if Tab key is pressed or F1 is toggled
+		if (!showOverlays) {
+			return;
+		}
+		
+		// Update XP data from tab list (works even when tab list is closed)
+		updateXPFromTabList(client);
+		
+		// Update overlay visibility timers (after XP data update)
+		updateOverlayVisibility(miningXP);
+		updateOverlayVisibility(lumberjackXP);
+		
+		// Check if player is in their own dimension (dimension name matches player name)
+		// or in a dimension that contains "floor"
+		// If so, don't show overlays
+		boolean shouldHideOverlays = false;
+		if (client.player != null && client.world != null) {
+			String playerName = client.player.getName().getString().toLowerCase();
+			String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+			boolean isInPlayerNameDimension = dimensionPath.equals(playerName);
+			boolean isInFloorDimension = dimensionPath.toLowerCase().contains("floor");
+			shouldHideOverlays = isInPlayerNameDimension || isInFloorDimension;
+		}
+		
+		// Render mining overlay (only when XP changed recently and not in player's own dimension or floor dimension)
+		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+			CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().showMiningOverlay &&
+			miningXP.shouldShowOverlay &&
+			!shouldHideOverlays) {
+			renderMiningOverlay(context, client);
+		}
+		
+		// Render lumberjack overlay (only when XP changed recently and not in player's own dimension or floor dimension)
+		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+			CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().lumberjackOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().showLumberjackOverlay &&
+			lumberjackXP.shouldShowOverlay &&
+			!shouldHideOverlays) {
+			renderLumberjackOverlay(context, client);
+		}
+	}
+	
+	/**
+	 * Updates XP data from tab list for both mining and lumberjack
+	 * Works even when the tab list is closed - the player list is always available
+	 */
+	private static void updateXPFromTabList(MinecraftClient client) {
+		// Check for dimension change and reset initialization flags
+		if (client.world != null) {
+			String newDimension = client.world.getRegistryKey().getValue().getPath();
+			if (currentDimension == null || !currentDimension.equals(newDimension)) {
+				// Dimension changed - reset initialization flags
+				miningXP.isInitializedInCurrentDimension = false;
+				lumberjackXP.isInitializedInCurrentDimension = false;
+				currentDimension = newDimension;
+			}
+		}
+		// Only check every 0.5 seconds to avoid performance issues
+		long currentTime = System.currentTimeMillis();
+		long timeSinceLastCheck = currentTime - lastTabListCheck;
+		
+		if (timeSinceLastCheck < 500) {
+			return;
+		}
+		lastTabListCheck = currentTime;
+		
+		if (client == null || client.getNetworkHandler() == null) {
+			return;
+		}
+		
+		// Get player list - this works even when tab list is closed
+		// The player list is always available in the network handler
+		var playerList = client.getNetworkHandler().getPlayerList();
+		if (playerList == null) {
+			return;
+		}
+		
+		// Convert to list to iterate with index
+		java.util.List<net.minecraft.client.network.PlayerListEntry> entries = 
+			new java.util.ArrayList<>(playerList);
+		
+		// Helper method to remove Minecraft formatting codes (§ codes)
+		java.util.function.Function<String, String> removeFormatting = (text) -> {
+			if (text == null) return "";
+			// Remove all § codes (formatting codes)
+			return text.replaceAll("§[0-9a-fk-or]", "").trim();
+		};
+		
+		// Helper method to get text from an entry
+		java.util.function.Function<Integer, String> getEntryText = (entryIndex) -> {
+			if (entryIndex < 0 || entryIndex >= entries.size()) {
+				return null;
+			}
+			var entry = entries.get(entryIndex);
+			if (entry == null) {
+				return null;
+			}
+			
+			net.minecraft.text.Text displayName = entry.getDisplayName();
+			if (displayName != null) {
+				return displayName.getString();
+			} else if (entry.getProfile() != null) {
+				return entry.getProfile().getName();
+			}
+			return null;
+		};
+		
+		// Search for "[Bergbau]" and "[Holzfäller]"
+		for (int i = 0; i < entries.size(); i++) {
+			String entryText = getEntryText.apply(i);
+			if (entryText == null) {
+				continue;
+			}
+			
+			String cleanEntryText = removeFormatting.apply(entryText);
+			
+			// Check for "[Bergbau]" - case insensitive and check for variations
+			String lowerCleanText = cleanEntryText.toLowerCase();
+			if (lowerCleanText.contains("[bergbau]") || cleanEntryText.contains("[Bergbau]")) {
+				// Search for XP line after [Bergbau] - it might not be at index + 1
+				// Look for a line matching the XP format: "NUMBER / NUMBER [NUMBER]"
+				for (int j = i + 1; j < Math.min(i + 5, entries.size()); j++) {
+					String xpText = getEntryText.apply(j);
+					if (xpText != null) {
+						String cleanXPText = removeFormatting.apply(xpText);
+						// Check if this line matches the XP format (contains "/" and "[")
+						if (cleanXPText.contains("/") && cleanXPText.contains("[")) {
+							parseXPLine(cleanXPText, miningXP);
+							break;
+						}
+					}
+				}
+			}
+			
+			// Check for "[Holzfäller]" - case insensitive and check for variations
+			// Also check for variations like "Holzfaeller" (without umlaut)
+			boolean isHolzfaeller = lowerCleanText.contains("[holzfäller]") || 
+			                        cleanEntryText.contains("[Holzfäller]") ||
+			                        lowerCleanText.contains("[holzfaeller]") ||
+			                        cleanEntryText.contains("[Holzfaeller]");
+			if (isHolzfaeller) {
+				// Search for XP line after [Holzfäller] - it might not be at index + 1
+				// Look for a line matching the XP format: "NUMBER / NUMBER [NUMBER]"
+				for (int j = i + 1; j < Math.min(i + 5, entries.size()); j++) {
+					String xpText = getEntryText.apply(j);
+					if (xpText != null) {
+						String cleanXPText = removeFormatting.apply(xpText);
+						// Check if this line matches the XP format (contains "/" and "[")
+						if (cleanXPText.contains("/") && cleanXPText.contains("[")) {
+							parseXPLine(cleanXPText, lumberjackXP);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Parses XP line in format: "AKTUELLE XP / BENÖTIGTE XP [Level]"
+	 */
+	private static void parseXPLine(String xpLine, XPData xpData) {
+		if (xpLine == null || xpLine.isEmpty()) {
+			return;
+		}
+		
+		try {
+			// Format: "AKTUELLE XP / BENÖTIGTE XP [Level]"
+			// Example: "1234 / 5000 [5]"
+			
+			// Extract level from [Level]
+			java.util.regex.Pattern levelPattern = java.util.regex.Pattern.compile("\\[(\\d+)\\]");
+			java.util.regex.Matcher levelMatcher = levelPattern.matcher(xpLine);
+			if (levelMatcher.find()) {
+				xpData.level = Integer.parseInt(levelMatcher.group(1));
+			}
+			
+			// Extract current XP and required XP
+			// Remove level part first
+			String xpPart = xpLine.replaceAll("\\[\\d+\\]", "").trim();
+			
+			// Split by "/"
+			String[] parts = xpPart.split("/");
+			if (parts.length == 2) {
+				// Remove all non-digit characters except dots and commas (for thousands separators)
+				String currentXPStr = parts[0].trim().replaceAll("[^0-9.,]", "").replace(",", "").replace(".", "");
+				String requiredXPStr = parts[1].trim().replaceAll("[^0-9.,]", "").replace(",", "").replace(".", "");
+				
+				long newCurrentXP = Long.parseLong(currentXPStr);
+				long newRequiredXP = Long.parseLong(requiredXPStr);
+				
+				// Always update current XP and required XP first (before checking for changes)
+				// This ensures we have the latest values for comparison
+				long oldCurrentXP = xpData.currentXP;
+				xpData.currentXP = newCurrentXP;
+				xpData.requiredXP = newRequiredXP;
+				
+				// Check if this is the first time we're seeing values in this dimension
+				boolean isFirstTimeInDimension = !xpData.isInitializedInCurrentDimension;
+				
+				// Mark as initialized if we have valid XP data
+				if (newCurrentXP > 0) {
+					xpData.isInitializedInCurrentDimension = true;
+				}
+				
+				// Check if we should start tracking (like KillsUtility)
+				// Start tracking when we first get valid XP data
+				if (!xpData.isTracking && newCurrentXP > 0) {
+					xpData.isTracking = true;
+					xpData.initialXP = newCurrentXP;
+					xpData.newXP = 0;
+					xpData.sessionStartTime = System.currentTimeMillis();
+				}
+				
+				// Check if XP changed (but ignore if this is the first time in this dimension)
+				boolean xpChanged = (newCurrentXP != oldCurrentXP);
+				
+				// Only show overlay if XP changed AND it's not the first time we're seeing values in this dimension
+				if (xpChanged && !isFirstTimeInDimension) {
+					long xpGained = newCurrentXP - oldCurrentXP;
+					
+					// XP increased - track the gain and show overlay
+					if (xpGained > 0) {
+						xpData.lastGainedXP = xpGained;
+						// Reset overlay timer - show overlay for 10 seconds
+						xpData.lastXPChangeTime = System.currentTimeMillis();
+						xpData.shouldShowOverlay = true;
+						
+						// Hide the other overlay when this one gets XP
+						if (xpData == miningXP) {
+							lumberjackXP.shouldShowOverlay = false;
+							lumberjackXP.lastXPChangeTime = 0;
+						} else if (xpData == lumberjackXP) {
+							miningXP.shouldShowOverlay = false;
+							miningXP.lastXPChangeTime = 0;
+						}
+					} else if (xpGained < 0) {
+						// XP decreased (level up or reset) - reset tracking like KillsUtility
+						xpData.initialXP = newCurrentXP;
+						xpData.newXP = 0;
+						xpData.sessionStartTime = System.currentTimeMillis();
+						// Also reset overlay timer on level up
+						xpData.lastXPChangeTime = System.currentTimeMillis();
+						xpData.shouldShowOverlay = true;
+					}
+				}
+				
+				// Calculate newXP (like newKills in KillsUtility)
+				if (xpData.initialXP >= 0) {
+					xpData.newXP = newCurrentXP - xpData.initialXP;
+					if (xpData.newXP < 0) {
+						// Level up happened, reset
+						xpData.initialXP = newCurrentXP;
+						xpData.newXP = 0;
+						xpData.sessionStartTime = System.currentTimeMillis();
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Silently ignore parsing errors
+		}
+	}
+	
+	/**
+	 * Calculates time until next level in minutes
+	 * Always uses average XP per minute (xpPerMinute) for consistent calculation
+	 */
+	private static double calculateTimeToNextLevel(XPData xpData) {
+		// Always use average XP per minute for time calculation
+		// This gives a consistent estimate based on your overall mining speed
+		if (xpData.xpPerMinute <= 0) {
+			return -1; // Unknown - no data yet
+		}
+		
+		long xpNeeded = xpData.requiredXP - xpData.currentXP;
+		if (xpNeeded <= 0) {
+			return 0; // Already at max or level up
+		}
+		
+		return xpNeeded / xpData.xpPerMinute;
+	}
+	
+	/**
+	 * Formats a number with thousand separators (points)
+	 */
+	private static String formatNumberWithSeparator(long number) {
+		if (number == 0) {
+			return "0";
+		}
+		// Use German locale format (points as thousand separators)
+		java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(java.util.Locale.GERMAN);
+		return formatter.format(number);
+	}
+	
+	/**
+	 * Formats a double number with thousand separators (points) and one decimal place
+	 */
+	private static String formatDoubleWithSeparator(double number) {
+		if (number == 0) {
+			return "0,0";
+		}
+		// Use German locale format (points as thousand separators, comma as decimal separator)
+		java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(java.util.Locale.GERMAN);
+		formatter.setMinimumFractionDigits(1);
+		formatter.setMaximumFractionDigits(1);
+		return formatter.format(number);
+	}
+	
+	/**
+	 * Formats time in minutes to readable string
+	 */
+	private static String formatTime(double minutes) {
+		if (minutes < 0) {
+			return "Unbekannt";
+		}
+		
+		if (minutes < 1) {
+			return "< 1 Min";
+		}
+		
+		if (minutes < 60) {
+			return String.format("%.1f Min", minutes);
+		}
+		
+		int hours = (int) (minutes / 60);
+		int mins = (int) (minutes % 60);
+		return String.format("%d Std %d Min", hours, mins);
+	}
+	
+	/**
+	 * Renders mining overlay
+	 */
+	private static void renderMiningOverlay(DrawContext context, MinecraftClient client) {
+		if (client.getWindow() == null) {
+			return;
+		}
+		
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		int screenWidth = client.getWindow().getScaledWidth();
+		
+		// Base position from config
+		int baseX = config.miningOverlayX;
+		int y = config.miningOverlayY;
+		
+		// Calculate overlay dimensions
+		int padding = 5;
+		int lineHeight = 12;
+		int lines = 5; // Header, Last XP, XP/Min, Required XP, Time to next level
+		int overlayHeight = padding * 2 + lineHeight * lines;
+		int minOverlayWidth = 100;
+		
+		// Calculate text width
+		String header = miningXP.level > 0 ? String.format("Bergbau [lvl. %d]", miningXP.level) : "Bergbau";
+		String lastXP = "Letzte XP: " + (miningXP.lastGainedXP > 0 ? formatNumberWithSeparator(miningXP.lastGainedXP) : "0");
+		String xpPerMin = miningXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXP.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
+		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		
+		int maxWidth = Math.max(
+			Math.max(client.textRenderer.getWidth(header),
+				Math.max(client.textRenderer.getWidth(lastXP),
+					Math.max(client.textRenderer.getWidth(xpPerMin),
+						Math.max(client.textRenderer.getWidth(requiredXP),
+							client.textRenderer.getWidth(timeToNext))))),
+			minOverlayWidth);
+		int overlayWidth = maxWidth + padding * 2;
+		
+		// Determine if overlay is on left or right side of screen
+		// baseX is the left edge position at minimum width
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
+		// Calculate X position based on side
+		int x;
+		if (isOnLeftSide) {
+			// On left side: keep left edge fixed, expand to the right
+			x = baseX;
+		} else {
+			// On right side: keep right edge fixed, expand to the left
+			// Right edge at minimum width is: baseX + minOverlayWidth
+			// Keep this right edge fixed, so left edge moves left when width increases
+			int rightEdge = baseX + minOverlayWidth;
+			x = rightEdge - overlayWidth;
+		}
+		
+		// Ensure overlay stays within screen bounds
+		x = Math.max(0, Math.min(x, screenWidth - overlayWidth));
+		
+		// Draw background
+		if (config.miningOverlayShowBackground) {
+			context.fill(x, y, x + overlayWidth, y + overlayHeight, 0x80000000);
+		}
+		
+		// Draw text
+		int textY = y + padding;
+		context.drawText(client.textRenderer, header, x + padding, textY, 0xFFFFFF00, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, lastXP, x + padding, textY, 0xFFFFFFFF, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, xpPerMin, x + padding, textY, 0xFFFFFFFF, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, timeToNext, x + padding, textY, 0xFFFFFFFF, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, requiredXP, x + padding, textY, 0xFFFFFFFF, true);
+	}
+	
+	/**
+	 * Renders lumberjack overlay
+	 */
+	private static void renderLumberjackOverlay(DrawContext context, MinecraftClient client) {
+		if (client.getWindow() == null) {
+			return;
+		}
+		
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		int screenWidth = client.getWindow().getScaledWidth();
+		
+		// Base position from config (same as mining overlay)
+		int baseX = config.miningOverlayX;
+		int y = config.miningOverlayY;
+		
+		// Calculate overlay dimensions
+		int padding = 5;
+		int lineHeight = 12;
+		int lines = 5; // Header, Last XP, XP/Min, Required XP, Time to next level
+		int overlayHeight = padding * 2 + lineHeight * lines;
+		int minOverlayWidth = 100;
+		
+		// Calculate text width
+		String header = lumberjackXP.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXP.level) : "Holzfäller";
+		String lastXP = "Letzte XP: " + (lumberjackXP.lastGainedXP > 0 ? formatNumberWithSeparator(lumberjackXP.lastGainedXP) : "0");
+		String xpPerMin = lumberjackXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXP.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
+		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		
+		int maxWidth = Math.max(
+			Math.max(client.textRenderer.getWidth(header),
+				Math.max(client.textRenderer.getWidth(lastXP),
+					Math.max(client.textRenderer.getWidth(xpPerMin),
+						Math.max(client.textRenderer.getWidth(requiredXP),
+							client.textRenderer.getWidth(timeToNext))))),
+			minOverlayWidth);
+		int overlayWidth = maxWidth + padding * 2;
+		
+		// Determine if overlay is on left or right side of screen
+		// baseX is the left edge position at minimum width
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
+		// Calculate X position based on side
+		int x;
+		if (isOnLeftSide) {
+			// On left side: keep left edge fixed, expand to the right
+			x = baseX;
+		} else {
+			// On right side: keep right edge fixed, expand to the left
+			// Right edge at minimum width is: baseX + minOverlayWidth
+			// Keep this right edge fixed, so left edge moves left when width increases
+			int rightEdge = baseX + minOverlayWidth;
+			x = rightEdge - overlayWidth;
+		}
+		
+		// Ensure overlay stays within screen bounds
+		x = Math.max(0, Math.min(x, screenWidth - overlayWidth));
+		
+		// Draw background
+		if (config.lumberjackOverlayShowBackground) {
+			context.fill(x, y, x + overlayWidth, y + overlayHeight, 0x80000000);
+		}
+		
+		// Draw text
+		int textY = y + padding;
+		context.drawText(client.textRenderer, header, x + padding, textY, 0xFFFFFF00, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, lastXP, x + padding, textY, 0xFFFFFFFF, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, xpPerMin, x + padding, textY, 0xFFFFFFFF, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, timeToNext, x + padding, textY, 0xFFFFFFFF, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, requiredXP, x + padding, textY, 0xFFFFFFFF, true);
 	}
 }
 

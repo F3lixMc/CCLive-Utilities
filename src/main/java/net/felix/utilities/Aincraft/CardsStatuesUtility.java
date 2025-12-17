@@ -498,7 +498,7 @@ public class CardsStatuesUtility {
 			// Überspringe "Statistik", leere Zeilen und Zeilen mit unsichtbaren chinesischen Zeichen
 			if (line.contains("Statistik") || 
 				line.trim().isEmpty() || 
-				line.matches(".*[㓽㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔣].*")) {
+				line.matches(".*[㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔤].*")) {
 				continue;
 			}
 			
@@ -558,14 +558,14 @@ public class CardsStatuesUtility {
 			String line = statue.getHoverLines().get(i);
 			
 			// Überspringe "Statistik", leere Zeilen und Zeilen mit unsichtbaren chinesischen Zeichen
-			if (line.contains("Statistik") || 
+			if (line.contains("Statistik" ) || 
 				line.trim().isEmpty() || 
-				line.matches(".*[㓽㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔣].*")) {
+				line.matches(".*[㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔤].*")) {
 				continue;
 			}
 			
 			// Überspringe auch die Zeile vor "Statistik" (leere Zeile)
-			if (i < statue.getHoverLines().size() - 1 && statue.getHoverLines().get(i + 1).contains("Statistik")) {
+			if (i < statue.getHoverLines().size() - 1 && statue.getHoverLines().get(i + 1).contains("Statistik" )) {
 				continue;
 			}
 			

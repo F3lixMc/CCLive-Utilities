@@ -37,7 +37,7 @@ public class ActionBarMixin {
             }
             
             // Check for boss defeat
-            if (content.contains("Seelen")) {
+            if (content.contains("Seelen" )) {
                 BossHPUtility instance2 = BossHPUtility.getInstance();
                 if (instance2 != null) {
                     instance2.handleBossDefeated();
