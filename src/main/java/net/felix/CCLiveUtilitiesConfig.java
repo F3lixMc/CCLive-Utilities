@@ -40,27 +40,33 @@ public class CCLiveUtilitiesConfig {
             HANDLER.save();
         }
         
-        // Migration für Blueprint Viewer Overlay-Typ
-        if (config.blueprintViewerShowBackground) {
-            config.blueprintViewerOverlayType = OverlayType.CUSTOM; // true = CUSTOM (Bild-Overlay)
-        } else {
-            config.blueprintViewerOverlayType = OverlayType.NONE; // false = NONE (Kein Hintergrund)
+        // Migration für Blueprint Viewer Overlay-Typ (nur wenn noch auf Standardwert)
+        if (config.blueprintViewerOverlayType == OverlayType.CUSTOM) {
+            if (config.blueprintViewerShowBackground) {
+                config.blueprintViewerOverlayType = OverlayType.CUSTOM; // true = CUSTOM (Bild-Overlay)
+            } else {
+                config.blueprintViewerOverlayType = OverlayType.NONE; // false = NONE (Kein Hintergrund)
+            }
         }
         // blueprintViewerShowBackground wird für Abwärtskompatibilität beibehalten
         
-        // Migration für Karten Overlay-Typ
-        if (config.cardShowBackground) {
-            config.cardOverlayType = OverlayType.CUSTOM; // true = CUSTOM (Bild-Overlay)
-        } else {
-            config.cardOverlayType = OverlayType.NONE; // false = NONE (Kein Hintergrund)
+        // Migration für Karten Overlay-Typ (nur wenn noch auf Standardwert)
+        if (config.cardOverlayType == OverlayType.CUSTOM) {
+            if (config.cardShowBackground) {
+                config.cardOverlayType = OverlayType.CUSTOM; // true = CUSTOM (Bild-Overlay)
+            } else {
+                config.cardOverlayType = OverlayType.NONE; // false = NONE (Kein Hintergrund)
+            }
         }
         // cardShowBackground wird für Abwärtskompatibilität beibehalten
         
-        // Migration für Statuen Overlay-Typ
-        if (config.statueShowBackground) {
-            config.statueOverlayType = OverlayType.CUSTOM; // true = CUSTOM (Bild-Overlay)
-        } else {
-            config.statueOverlayType = OverlayType.NONE; // false = NONE (Kein Hintergrund)
+        // Migration für Statuen Overlay-Typ (nur wenn noch auf Standardwert)
+        if (config.statueOverlayType == OverlayType.CUSTOM) {
+            if (config.statueShowBackground) {
+                config.statueOverlayType = OverlayType.CUSTOM; // true = CUSTOM (Bild-Overlay)
+            } else {
+                config.statueOverlayType = OverlayType.NONE; // false = NONE (Kein Hintergrund)
+            }
         }
         // statueShowBackground wird für Abwärtskompatibilität beibehalten
     }
@@ -1024,7 +1030,10 @@ public class CCLiveUtilitiesConfig {
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
                                         .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für den Blueprint Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
-                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().blueprintViewerOverlayType, newVal -> HANDLER.instance().blueprintViewerOverlayType = newVal)
+                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().blueprintViewerOverlayType, newVal -> {
+                                            HANDLER.instance().blueprintViewerOverlayType = newVal;
+                                            HANDLER.save();
+                                        })
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .valueFormatter(v -> switch (v) {

@@ -221,10 +221,10 @@ public class InformationenUtility {
 				return; // Normal inventories disabled
 			}
 			
-			// In special inventory (㬉), only modify the first line (item name)
+			// In special inventory (㬉), check all lines for [Karte]/[Statue] but only first line for material names
 			// In other inventories, check all lines for material names
 			int startIndex = 0;
-			int endIndex = isSpecialInventory ? 1 : lines.size(); // Special inventory: only first line, others: all lines
+			int endIndex = lines.size(); // Always check all lines to find [Karte] or [Statue]
 			
 			for (int i = startIndex; i < endIndex; i++) {
 				Text line = lines.get(i);
@@ -306,26 +306,51 @@ public class InformationenUtility {
 					
 					if (lineText.contains("[Karte]")) {
 						int index = cleanLineText.indexOf("[Karte]");
-						name = cleanLineText.substring(0, index).trim();
-						effect = cardsEffects.get(name);
-						isCard = true;
+						if (index > 0) {
+							name = cleanLineText.substring(0, index).trim();
+							// Remove any leading dashes or special characters
+							name = name.replaceAll("^[-\\s]+", "").trim();
+							effect = cardsEffects.get(name);
+							isCard = true;
+							
+							// Try to find the card with case-insensitive search if not found
+							if (effect == null) {
+								for (Map.Entry<String, String> entry : cardsEffects.entrySet()) {
+									if (entry.getKey().equalsIgnoreCase(name)) {
+										effect = entry.getValue();
+										break;
+									}
+								}
+							}
+						}
 					} else if (lineText.contains("[Statue]")) {
 						int index = cleanLineText.indexOf("[Statue]");
-						name = cleanLineText.substring(0, index).trim();
-						effect = statuesEffects.get(name);
-						isCard = false;
+						if (index > 0) {
+							name = cleanLineText.substring(0, index).trim();
+							// Remove any leading dashes or special characters
+							name = name.replaceAll("^[-\\s]+", "").trim();
+							effect = statuesEffects.get(name);
+							isCard = false;
+							
+							// Try to find the statue with case-insensitive search if not found
+							if (effect == null) {
+								for (Map.Entry<String, String> entry : statuesEffects.entrySet()) {
+									if (entry.getKey().equalsIgnoreCase(name)) {
+										effect = entry.getValue();
+										break;
+									}
+								}
+							}
+						}
 					}
 					
 					// If effect found, append it to the line
 					if (effect != null && !effect.isEmpty()) {
-						// Get the original line text (with formatting)
-						String originalLineText = line.getString();
-						
 						// Determine color: Green (0x55FF55) for cards, Aqua (0x55FFFF) for statues
 						int effectColor = isCard ? 0x55FF55 : 0x55FFFF; // Green for cards, Aqua for statues
 						
-						// Create new text: original line + " - " + effect
-						MutableText newLine = Text.literal(originalLineText)
+						// Create new text: original line (with preserved formatting) + " - " + effect
+						MutableText newLine = line.copy() // Preserve original formatting and style
 							.append(Text.literal(" - ").styled(style -> style.withColor(0xC0C0C0))) // Light gray separator
 							.append(Text.literal(effect).styled(style -> style.withColor(effectColor))); // Green for cards, Aqua for statues
 						
@@ -337,6 +362,11 @@ public class InformationenUtility {
 				
 				// Skip if the line contains [Karte] or [Statue] in non-special inventories
 				if (lineText.contains("[Karte]") || lineText.contains("[Statue]")) {
+					continue;
+				}
+				
+				// In special inventory, only process material names on the first line
+				if (isSpecialInventory && i > 0) {
 					continue;
 				}
 				
@@ -2188,7 +2218,6 @@ public class InformationenUtility {
 						field.setAccessible(true);
 						Object value = field.get(hoverEvent);
 						if (value != null) {
-							System.out.println("[InformationenUtility] DEBUG: getShowTextValue - found non-null value in field " + field.getName() + ": " + value.getClass().getName());
 							// Check if it's a ShowText-like object
 							String className = value.getClass().getName();
 							
@@ -2207,7 +2236,6 @@ public class InformationenUtility {
 												Class<?>[] paramTypes = constructor.getParameterTypes();
 												if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
 													isShowText = true;
-													System.out.println("[InformationenUtility] DEBUG: getShowTextValue - detected ShowText in field via constructor check (obfuscated class)");
 													break;
 												}
 											}
