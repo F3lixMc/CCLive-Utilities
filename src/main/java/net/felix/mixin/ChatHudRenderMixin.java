@@ -12,6 +12,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
 
 /**
  * Mixin for ChatHud rendering functionality.
@@ -24,6 +28,12 @@ public abstract class ChatHudRenderMixin {
     
     @Shadow(remap = true)
     private List<ChatHudLine> messages;
+    
+    // Pattern to match player names in chat messages (before >>)
+    private static final Pattern PLAYER_NAME_PATTERN = Pattern.compile(
+        "([A-Za-z0-9_]{2,20})\\s*>>",  // Player name followed by >>
+        Pattern.CASE_INSENSITIVE
+    );
     
     @Inject(
         method = "render",

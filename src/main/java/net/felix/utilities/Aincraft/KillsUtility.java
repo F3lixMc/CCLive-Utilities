@@ -16,7 +16,6 @@ import net.felix.utilities.Town.EquipmentDisplayUtility;
 
 import org.joml.Matrix3x2fStack;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class KillsUtility {
