@@ -220,6 +220,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean lumberjackOverlayShowBackground = true; // Schwarzer Hintergrund für Holzfäller Overlay
+    
+    @SerialEntry
+    public float miningLumberjackOverlayScale = 1.0f; // Skalierung der Mining/Holzfäller Overlays
 
     
 
@@ -252,6 +255,15 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public int hideUncraftableButtonY = 54; // Y-Position des Hide Uncraftable Buttons (Offset)
+    
+    @SerialEntry
+    public boolean hideWrongClassEnabled = true; // Hide Wrong Class Button aktiviert
+    
+    @SerialEntry
+    public int hideWrongClassButtonX = -80; // X-Position des Hide Wrong Class Buttons (Offset)
+    
+    @SerialEntry
+    public int hideWrongClassButtonY = 80; // Y-Position des Hide Wrong Class Buttons (Offset)
     
     // Kit Filter Button Positions
     @SerialEntry
@@ -396,6 +408,25 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean bossHPShowBackground = true; // Schwarzer Hintergrund für Boss HP
+    
+    @SerialEntry
+    public float bossHPScale = 1.0f; // Scale für Boss HP Overlay
+    
+    @SerialEntry
+    public boolean bossHPShowDPM = true; // DPM (Damage Per Minute) Anzeige im Boss HP Overlay
+    
+    // MKLevel Settings
+    @SerialEntry
+    public boolean mkLevelEnabled = true; // MKLevel Overlay aktiviert
+    
+    @SerialEntry
+    public float mkLevelScale = 1.0f; // Skalierung des MKLevel Overlays
+    
+    @SerialEntry
+    public int mkLevelX = -1; // X-Position des MKLevel Overlays (-1 = automatisch links vom Inventar, >= 0 = absolute X-Position)
+    
+    @SerialEntry
+    public int mkLevelY = -1; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
     
     // Cards/Statues Settings
     @SerialEntry
@@ -672,6 +703,12 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().bossHPShowBackground, newVal -> HANDLER.instance().bossHPShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("DPM anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("DPM (Damage Per Minute) Anzeige im Boss HP Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowDPM, newVal -> HANDLER.instance().bossHPShowDPM = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
@@ -869,12 +906,6 @@ public class CCLiveUtilitiesConfig {
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
                                         .build())
-                                .option(Option.<Float>createBuilder()
-                                        .name(Text.literal("Overlay-Größe"))
-                                        .description(OptionDescription.of(Text.literal("Größe der Material Tracker-Anzeige und des Textes anpassen")))
-                                        .binding(1.0f, () -> HANDLER.instance().materialTrackerScale, newVal -> HANDLER.instance().materialTrackerScale = newVal)
-                                        .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
-                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Kill Tracker"))
@@ -901,12 +932,6 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Kill Tracker anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().killsUtilityShowBackground, newVal -> HANDLER.instance().killsUtilityShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Float>createBuilder()
-                                        .name(Text.literal("Overlay-Größe"))
-                                        .description(OptionDescription.of(Text.literal("Größe der Kills-Anzeige und des Textes anpassen")))
-                                        .binding(1.0f, () -> HANDLER.instance().killsUtilityScale, newVal -> HANDLER.instance().killsUtilityScale = newVal)
-                                        .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Text.literal("Benötigte Kills anzeigen"))
@@ -941,12 +966,6 @@ public class CCLiveUtilitiesConfig {
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
                                         .build())
-                                .option(Option.<Float>createBuilder()
-                                        .name(Text.literal("Karten Overlay-Größe"))
-                                        .description(OptionDescription.of(Text.literal("Größe der Karten-Overlays und des Textes anpassen")))
-                                        .binding(1.0f, () -> HANDLER.instance().cardOverlayScale, newVal -> HANDLER.instance().cardOverlayScale = newVal)
-                                        .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
-                                        .build())
                                 .build())
                                 .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Statuen"))        
@@ -967,12 +986,6 @@ public class CCLiveUtilitiesConfig {
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
-                                        .build())
-                                .option(Option.<Float>createBuilder()
-                                        .name(Text.literal("Statuen Overlay-Größe"))
-                                        .description(OptionDescription.of(Text.literal("Größe der Statuen-Overlays und des Textes anpassen")))
-                                        .binding(1.0f, () -> HANDLER.instance().statueOverlayScale, newVal -> HANDLER.instance().statueOverlayScale = newVal)
-                                        .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
@@ -1000,12 +1013,6 @@ public class CCLiveUtilitiesConfig {
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
-                                        .build())
-                                .option(Option.<Float>createBuilder()
-                                        .name(Text.literal("Overlay-Größe"))
-                                        .description(OptionDescription.of(Text.literal("Größe der Blueprint-Anzeige und des Textes anpassen")))
-                                        .binding(1.0f, () -> HANDLER.instance().blueprintViewerScale, newVal -> HANDLER.instance().blueprintViewerScale = newVal)
-                                        .controller(opt -> FloatSliderControllerBuilder.create(opt).range(0.5f, 2.0f).step(0.1f))
                                         .build())
                                 .build())
                         .build())

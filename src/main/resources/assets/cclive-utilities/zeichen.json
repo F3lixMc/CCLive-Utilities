@@ -1,0 +1,72 @@
+{
+  "aincraft_bottom_font": {
+    "description": "Aincraft Bottom Font - Zahlen 0-9",
+    "characters": "㚏㚐㚑㚒㚓㚔㚕㚖㚗㚘",
+    "numbers": {
+      "0": "㚏",
+      "1": "㚐",
+      "2": "㚑",
+      "3": "㚒",
+      "4": "㚓",
+      "5": "㚔",
+      "6": "㚕",
+      "7": "㚖",
+      "8": "㚗",
+      "9": "㚘"
+    }
+  },
+  "equipment_display": {
+    "description": "Equipment Display",
+    "characters": ["㬄", "㬅", "㬆", "㬇"]
+  },
+  "moblexicon": {
+    "description": "Moblexicon",
+    "character": "㬊"
+  },
+  "pixel_spacer": {
+    "description": "Pixel Spacer",
+    "characters": "㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔤"
+  },
+  "cards_statues": {
+    "description": "Cards and Statues",
+    "characters": ["㭆", "㭂"]
+  },
+  "friends_request_accept_deny": {
+    "description": "friends_request_accept_deny -> Farmworld licenses", 
+    "character": "ぢ"
+  },
+  "hunter_ui_background": {
+    "description": "Hunter ui_background",
+    "character": "㨷"
+  },
+    "essence_harvester_ui": {
+    "description": "Essence Harvester UI",
+    "character": "㮌"
+  },
+
+  "epic_drops": {
+    "description": "Epic drops",
+    "characters": "㩬㩭㩮㩯㩰㩱㩲㩳㩴㩵㩶㩷㩸㩹㩺㩻㩼㩽㩾㩿㪀㪁㪂㪃㪄㪅㪆㪇㪈㪉㪊㪋㪌㪍㪎㪏㪐㪑㪒㪓"
+  },
+  "legendary_drops": {
+    "description": "Legendary drops",
+    "characters": "㩄㩅㩆㩇㩈㩉㩊㩋㩌㩍㩎㩏㩐㩑㩒㩓㩔㩕㩖㩗㩘㩙㩚㩛㩜㩝㩞㩟㩠㩡㩢㩣㩤㩥㩦㩧㩨㩩㩪㩫"
+  },
+  "logging_level_up": {
+    "description": "Logging level up",
+    "characters": "㪣㪤㪥㪦㪧㪨㪩㪪㪫㪬㪭㪮㪯㪰㪱㪲㪳㪴㪵㪶㪷㪸㪹㪺㪻㪼㪽㪾㪿㫀㫁㫂㫃㫄㫅㫆㫇㫈㫉㫊"
+  },
+  "mining_level_up": {
+    "description": "Mining level up",
+    "characters": "㫚㫛㫜㫝㫞㫟㫠㫡㫢㫣㫤㫥㫦㫧㫨㫩㫪㫫㫬㫭㫮㫯㫰㫱㫲㫳㫴㫵㫶㫷㫸㫹㫺㫻㫼㫽㫾㫿㬀㬁"
+  },
+  "moblexicon_animation": {
+    "description": "Moblexicon animation",
+    "characters": "㬋㬌㬍㬎㬏㬐㬑㬒㬓㬔㬕㬖㬗㬘㬙㬚㬛㬜㬝㬞㬟㬠㬡㬢㬣㬤㬥㬦㬧㬨㬩㬪㬫㬬㬭㬮"
+  },
+  "airship": {
+    "description": "Airship",
+    "characters": "㭉㭊㭋㭌㭍㭎㭏㭐㭑㭒㭓㭔㭕㭖㭗㭘㭙㭚㭛㭜㭝㭞㭟㭠㭡㭢㭣㭤㭥㭦㭧㭨㭩㭪㭫㭬㭭㭮㭯㭰㭱㭲㭳㭴㭵㭶㭷㭸㭹㭺㭻㭼㭽㭾㭿㮀"
+  }
+}
+

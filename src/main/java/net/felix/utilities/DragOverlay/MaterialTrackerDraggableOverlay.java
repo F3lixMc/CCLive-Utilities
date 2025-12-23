@@ -31,21 +31,26 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX;
-        int dynamicWidth = getWidth();
         
+        // Use unscaled width for positioning (same as MaterialTrackerUtility line 215)
+        int unscaledWidth = calculateUnscaledWidth();
+        
+        // Use the exact same logic as MaterialTrackerUtility.renderMaterialDisplay()
         // Determine if overlay is on left or right side of screen
+        // Calculate base position to determine side
         int baseX = screenWidth - DEFAULT_WIDTH - xOffset;
         boolean isOnLeftSide = baseX < screenWidth / 2;
         
-        // Adjust X position based on side
+        // Calculate position (unscaled) - exact same as MaterialTrackerUtility lines 225-232
         // If on left side: expand to the right (keep left edge fixed)
         // If on right side: expand to the left (keep right edge fixed)
         if (isOnLeftSide) {
             // Keep left edge fixed, expand to the right
             return baseX;
         } else {
-            // Keep right edge fixed, expand to the left
-            return screenWidth - dynamicWidth - xOffset;
+            // Keep right edge fixed, expand to the left (exact same as MaterialTrackerUtility line 231)
+            // Use unscaled width for positioning, just like MaterialTrackerUtility does
+            return screenWidth - unscaledWidth - xOffset;
         }
     }
     
@@ -62,8 +67,11 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getHeight() {
-        // Calculate dynamic height based on current material data (same logic as MaterialTrackerUtility)
-        return calculateDynamicHeight();
+        // Use fixed height like MaterialTrackerUtility (OVERLAY_HEIGHT - 23)
+        // The original overlay always uses OVERLAY_HEIGHT - 23, not dynamic height
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
+        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+        return (int) ((DEFAULT_HEIGHT - 23) * scale);
     }
     
     @Override
@@ -72,24 +80,47 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         if (client.getWindow() == null) return;
         
         int screenWidth = client.getWindow().getScaledWidth();
-        int dynamicWidth = getWidth();
         
-        // Determine if overlay is on left or right side of screen
+        // Use unscaled width for positioning (same as MaterialTrackerUtility line 215)
+        int unscaledWidth = calculateUnscaledWidth();
+        
+        // Use the exact same logic as MaterialTrackerUtility for determining side
+        // Determine if overlay is on left or right side based on current position
         boolean isOnLeftSide = x < screenWidth / 2;
         
-        // Calculate xOffset based on side
+        // Calculate xOffset based on side (same logic as MaterialTrackerUtility uses)
         int xOffset;
         if (isOnLeftSide) {
-            // On left side: xOffset is distance from left edge
+            // On left side: xOffset is distance from right edge with default width
             xOffset = screenWidth - DEFAULT_WIDTH - x;
         } else {
-            // On right side: xOffset is distance from right edge
-            xOffset = screenWidth - dynamicWidth - x;
+            // On right side: xOffset is distance from right edge (same as MaterialTrackerUtility line 231)
+            // Use unscaled width for positioning, just like MaterialTrackerUtility does
+            // This keeps the right edge fixed: screenWidth - overlayWidth - xOffset = x
+            // So: xOffset = screenWidth - overlayWidth - x
+            xOffset = screenWidth - unscaledWidth - x;
         }
         int yOffset = y;
         
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX = xOffset;
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY = yOffset;
+    }
+    
+    @Override
+    public void setSize(int width, int height) {
+        // Get current unscaled width
+        int unscaledWidth = calculateUnscaledWidth();
+        int unscaledHeight = DEFAULT_HEIGHT - 23; // Fixed height like in MaterialTrackerUtility
+        
+        // Calculate scale based on width and height
+        float scaleX = (float) width / unscaledWidth;
+        float scaleY = (float) height / unscaledHeight;
+        float scale = (scaleX + scaleY) / 2.0f;
+        
+        // Clamp scale to reasonable values (0.1 to 5.0)
+        scale = Math.max(0.1f, Math.min(5.0f, scale));
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale = scale;
     }
     
     @Override
@@ -180,6 +211,12 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     public void resetToDefault() {
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX = 1;
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY = 35;
+        CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale = 1.0f;
+    }
+    
+    @Override
+    public void resetSizeToDefault() {
+        CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale = 1.0f;
     }
     
     /**
@@ -276,7 +313,35 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     }
     
     /**
+     * Calculate unscaled width for positioning (same logic as MaterialTrackerUtility line 215)
+     */
+    private int calculateUnscaledWidth() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return DEFAULT_WIDTH;
+        
+        try {
+            // Get materials from ActionBarData
+            List<Object> texts = ActionBarData.getFilteredTexts();
+            
+            if (texts == null || texts.isEmpty()) {
+                return DEFAULT_WIDTH;
+            }
+            
+            // Calculate width based on text content (exact same logic as MaterialTrackerUtility)
+            int dynamicWidth = calculateRequiredWidth(client, texts);
+            int overlayWidth = Math.max(DEFAULT_WIDTH, dynamicWidth);
+            
+            // Return unscaled width (same as MaterialTrackerUtility line 215)
+            return overlayWidth;
+        } catch (Exception e) {
+            // Fallback to default width if calculation fails
+            return DEFAULT_WIDTH;
+        }
+    }
+    
+    /**
      * Calculate dynamic width based on current material data (same logic as MaterialTrackerUtility)
+     * This returns the SCALED width for rendering
      */
     private int calculateDynamicWidth() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -334,40 +399,6 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         return maxWidth;
     }
     
-    /**
-     * Calculate dynamic height based on current material data (same logic as MaterialTrackerUtility)
-     */
-    private int calculateDynamicHeight() {
-        try {
-            // Get materials from ActionBarData
-            List<Object> texts = ActionBarData.getFilteredTexts();
-            
-            if (texts == null || texts.isEmpty()) {
-                // Use default height if no materials
-                float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
-                if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-                return (int) ((DEFAULT_HEIGHT - 23) * scale);
-            }
-            
-            // Calculate height based on number of materials
-            // Base height for title and padding
-            int baseHeight = 20; // Title height
-            int materialHeight = texts.size() * 13; // 13px per material (LINE_HEIGHT from MaterialTrackerUtility)
-            int bottomPadding = 10; // Bottom padding
-            
-            int totalHeight = baseHeight + materialHeight + bottomPadding;
-            
-            // Apply scale factor (same logic as MaterialTrackerUtility)
-            float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
-            if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-            return (int) (totalHeight * scale);
-        } catch (Exception e) {
-            // Fallback to default height if calculation fails
-            float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
-            if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-            return (int) ((DEFAULT_HEIGHT - 23) * scale);
-        }
-    }
 }
 
 

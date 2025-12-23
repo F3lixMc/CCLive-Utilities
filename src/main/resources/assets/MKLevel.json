@@ -1,0 +1,997 @@
+[
+  {
+    "Level": 2,
+    "Essence": "Pferd T1",
+    "Amount": 3000
+  },
+  {
+    "Level": 3,
+    "Essence": "Lohe T1",
+    "Amount": 4000
+  },
+  {
+    "Level": 4,
+    "Essence": "Witherskelett T1",
+    "Amount": 5000
+  },
+  {
+    "Level": 5,
+    "Essence": "Zombie T1",
+    "Amount": 6000
+  },
+  {
+    "Level": 6,
+    "Essence": "Wolf T1",
+    "Amount": 7000
+  },
+  {
+    "Level": 7,
+    "Essence": "Lohe T1",
+    "Amount": 8000
+  },
+  {
+    "Level": 8,
+    "Essence": "Witherskelett T1",
+    "Amount": 9000
+  },
+  {
+    "Level": 9,
+    "Essence": "Zombie T1",
+    "Amount": 10000
+  },
+  {
+    "Level": 10,
+    "Essence": "Pferd T1",
+    "Amount": 11000
+  },
+  {
+    "Level": 11,
+    "Essence": "Stray T1",
+    "Amount": 12000
+  },
+  {
+    "Level": 12,
+    "Essence": "Ziege T1",
+    "Amount": 13000
+  },
+  {
+    "Level": 13,
+    "Essence": "Witherskelett T1",
+    "Amount": 14000
+  },
+  {
+    "Level": 14,
+    "Essence": "Wolf T1",
+    "Amount": 15000
+  },
+  {
+    "Level": 15,
+    "Essence": "Lohe T2",
+    "Amount": 16000
+  },
+  {
+    "Level": 16,
+    "Essence": "Biene T1",
+    "Amount": 17000
+  },
+  {
+    "Level": 17,
+    "Essence": "Wolf T2",
+    "Amount": 18000
+  },
+  {
+    "Level": 18,
+    "Essence": "Ziege T1",
+    "Amount": 19000
+  },
+  {
+    "Level": 19,
+    "Essence": "Piglin T1",
+    "Amount": 20000
+  },
+  {
+    "Level": 20,
+    "Essence": "Biene T1",
+    "Amount": 21000
+  },
+  {
+    "Level": 21,
+    "Essence": "Ziege T2",
+    "Amount": 22000
+  },
+  {
+    "Level": 22,
+    "Essence": "Piglin T2",
+    "Amount": 23000
+  },
+  {
+    "Level": 23,
+    "Essence": "Huhn T2",
+    "Amount": 24000
+  },
+  {
+    "Level": 24,
+    "Essence": "Ziege T2",
+    "Amount": 25000
+  },
+  {
+    "Level": 25,
+    "Essence": "Endermite T2",
+    "Amount": 26000
+  },
+  {
+    "Level": 26,
+    "Essence": "Wolf T2",
+    "Amount": 27000
+  },
+  {
+    "Level": 27,
+    "Essence": "Piglin T2",
+    "Amount": 28000
+  },
+  {
+    "Level": 28,
+    "Essence": "Huhn T2",
+    "Amount": 29000
+  },
+  {
+    "Level": 29,
+    "Essence": "Piglin T2",
+    "Amount": 30000
+  },
+  {
+    "Level": 30,
+    "Essence": "Endermite T2",
+    "Amount": 31000
+  },
+  {
+    "Level": 31,
+    "Essence": "Hühner T3",
+    "Amount": 32000
+  },
+  {
+    "Level": 32,
+    "Essence": "Witherskelett T3",
+    "Amount": 33000
+  },
+  {
+    "Level": 33,
+    "Essence": "Lohe T3",
+    "Amount": 34000
+  },
+  {
+    "Level": 34,
+    "Essence": "Piglin T3",
+    "Amount": 35000
+  },
+  {
+    "Level": 35,
+    "Essence": "Skelett T3",
+    "Amount": 36000
+  },
+  {
+    "Level": 36,
+    "Essence": "Piglin T3",
+    "Amount": 37000
+  },
+  {
+    "Level": 37,
+    "Essence": "Schneemann T2",
+    "Amount": 38000
+  },
+  {
+    "Level": 38,
+    "Essence": "Piglin T3",
+    "Amount": 39000
+  },
+  {
+    "Level": 39,
+    "Essence": "Piglin T3",
+    "Amount": 40000
+  },
+  {
+    "Level": 40,
+    "Essence": "Schneemann T2",
+    "Amount": 41000
+  },
+  {
+    "Level": 41,
+    "Essence": "Biene T3",
+    "Amount": 42000
+  },
+  {
+    "Level": 42,
+    "Essence": "Wächter T3",
+    "Amount": 43000
+  },
+  {
+    "Level": 43,
+    "Essence": "Fuchs T2",
+    "Amount": 44000
+  },
+  {
+    "Level": 44,
+    "Essence": "Wolf T4",
+    "Amount": 45000
+  },
+  {
+    "Level": 45,
+    "Essence": "Witherskelett T4",
+    "Amount": 46000
+  },
+  {
+    "Level": 46,
+    "Essence": "Wächter T3",
+    "Amount": 47000
+  },
+  {
+    "Level": 47,
+    "Essence": "Lohe T4",
+    "Amount": 48000
+  },
+  {
+    "Level": 48,
+    "Essence": "Pferd T4",
+    "Amount": 49000
+  },
+  {
+    "Level": 49,
+    "Essence": "Creeper T3",
+    "Amount": 50000
+  },
+  {
+    "Level": 50,
+    "Essence": "Lohe T5",
+    "Amount": 51000
+  },
+  {
+    "Level": 51,
+    "Essence": "Zombiepiglin T3",
+    "Amount": 52000
+  },
+  {
+    "Level": 52,
+    "Essence": "Creeper T4",
+    "Amount": 53000
+  },
+  {
+    "Level": 53,
+    "Essence": "Hoglin T4",
+    "Amount": 54000
+  },
+  {
+    "Level": 54,
+    "Essence": "Witherskelett T5",
+    "Amount": 55000
+  },
+  {
+    "Level": 55,
+    "Essence": "Biene T4",
+    "Amount": 56000
+  },
+  {
+    "Level": 56,
+    "Essence": "Frosch T3",
+    "Amount": 57000
+  },
+  {
+    "Level": 57,
+    "Essence": "Hühner T5",
+    "Amount": 58000
+  },
+  {
+    "Level": 58,
+    "Essence": "Vindicator T3",
+    "Amount": 59000
+  },
+  {
+    "Level": 59,
+    "Essence": "Wächter T4",
+    "Amount": 60000
+  },
+  {
+    "Level": 60,
+    "Essence": "Vindicator T3",
+    "Amount": 61000
+  },
+  {
+    "Level": 61,
+    "Essence": "Hexe T4",
+    "Amount": 62000
+  },
+  {
+    "Level": 62,
+    "Essence": "Schildkröte T5",
+    "Amount": 63000
+  },
+  {
+    "Level": 63,
+    "Essence": "Spinne T5",
+    "Amount": 64000
+  },
+  {
+    "Level": 64,
+    "Essence": "Axolotl T5",
+    "Amount": 65000
+  },
+  {
+    "Level": 65,
+    "Essence": "Enderman T3",
+    "Amount": 66000
+  },
+  {
+    "Level": 66,
+    "Essence": "Lohe T6",
+    "Amount": 67000
+  },
+  {
+    "Level": 67,
+    "Essence": "Hoglin T5",
+    "Amount": 68000
+  },
+  {
+    "Level": 68,
+    "Essence": "Schneemann T5",
+    "Amount": 69000
+  },
+  {
+    "Level": 69,
+    "Essence": "Stray T6",
+    "Amount": 70000
+  },
+  {
+    "Level": 70,
+    "Essence": "Endermite T6",
+    "Amount": 71000
+  },
+  {
+    "Level": 71,
+    "Essence": "Piglin T6",
+    "Amount": 72000
+  },
+  {
+    "Level": 72,
+    "Essence": "Hühner T6",
+    "Amount": 73000
+  },
+  {
+    "Level": 73,
+    "Essence": "Zombie T7",
+    "Amount": 74000
+  },
+  {
+    "Level": 74,
+    "Essence": "Piglin T6",
+    "Amount": 75000
+  },
+  {
+    "Level": 75,
+    "Essence": "Wolf T7",
+    "Amount": 76000
+  },
+  {
+    "Level": 76,
+    "Essence": "Skelett T7",
+    "Amount": 77000
+  },
+  {
+    "Level": 77,
+    "Essence": "Endermite T6",
+    "Amount": 78000
+  },
+  {
+    "Level": 78,
+    "Essence": "Ziege T7",
+    "Amount": 79000
+  },
+  {
+    "Level": 79,
+    "Essence": "Lohe T7",
+    "Amount": 80000
+  },
+  {
+    "Level": 80,
+    "Essence": "Stray T7",
+    "Amount": 81000
+  },
+  {
+    "Level": 81,
+    "Essence": "Piglin T7",
+    "Amount": 82000
+  },
+  {
+    "Level": 82,
+    "Essence": "Piglin T7",
+    "Amount": 83000
+  },
+  {
+    "Level": 83,
+    "Essence": "Zoglin T4",
+    "Amount": 84000
+  },
+  {
+    "Level": 84,
+    "Essence": "Pferde T8",
+    "Amount": 85000
+  },
+  {
+    "Level": 85,
+    "Essence": "Axolotl T7",
+    "Amount": 86000
+  },
+  {
+    "Level": 86,
+    "Essence": "Schneemann T6",
+    "Amount": 87000
+  },
+  {
+    "Level": 87,
+    "Essence": "Lohe T8",
+    "Amount": 88000
+  },
+  {
+    "Level": 88,
+    "Essence": "Ziege T7",
+    "Amount": 89000
+  },
+  {
+    "Level": 89,
+    "Essence": "Spinne T7",
+    "Amount": 90000
+  },
+  {
+    "Level": 90,
+    "Essence": "Axolotl T7",
+    "Amount": 91000
+  },
+  {
+    "Level": 91,
+    "Essence": "Piglin T8",
+    "Amount": 92000
+  },
+  {
+    "Level": 92,
+    "Essence": "Witherskelett T8",
+    "Amount": 93000
+  },
+  {
+    "Level": 93,
+    "Essence": "Spinne T8",
+    "Amount": 94000
+  },
+  {
+    "Level": 94,
+    "Essence": "Wächter T7",
+    "Amount": 95000
+  },
+  {
+    "Level": 95,
+    "Essence": "Panda T5",
+    "Amount": 96000
+  },
+  {
+    "Level": 96,
+    "Essence": "Piglin T8",
+    "Amount": 97000
+  },
+  {
+    "Level": 97,
+    "Essence": "Hoglin T7",
+    "Amount": 98000
+  },
+  {
+    "Level": 98,
+    "Essence": "Witherskelett T9",
+    "Amount": 99000
+  },
+  {
+    "Level": 99,
+    "Essence": "Wächter T8",
+    "Amount": 100000
+  },
+  {
+    "Level": 100,
+    "Essence": "Piglin T8",
+    "Amount": 101000
+  },
+  {
+    "Level": 101,
+    "Essence": "Panda T6",
+    "Amount": 102000
+  },
+  {
+    "Level": 102,
+    "Essence": "Schildkröte T8",
+    "Amount": 103000
+  },
+  {
+    "Level": 103,
+    "Essence": "Piglin T9",
+    "Amount": 104000
+  },
+  {
+    "Level": 104,
+    "Essence": "Zombie T9",
+    "Amount": 105000
+  },
+  {
+    "Level": 105,
+    "Essence": "Zombie T9",
+    "Amount": 106000
+  },
+  {
+    "Level": 106,
+    "Essence": "Piglin T9",
+    "Amount": 107000
+  },
+  {
+    "Level": 107,
+    "Essence": "Skelett T9",
+    "Amount": 108000
+  },
+  {
+    "Level": 108,
+    "Essence": "Biene T9",
+    "Amount": 109000
+  },
+  {
+    "Level": 109,
+    "Essence": "Polarbär T6",
+    "Amount": 110000
+  },
+  {
+    "Level": 110,
+    "Essence": "Ziege T9",
+    "Amount": 111000
+  },
+  {
+    "Level": 111,
+    "Essence": "Piglin T9",
+    "Amount": 112000
+  },
+  {
+    "Level": 112,
+    "Essence": "Piglin T9",
+    "Amount": 113000
+  },
+  {
+    "Level": 113,
+    "Essence": "Pferde T10",
+    "Amount": 114000
+  },
+  {
+    "Level": 114,
+    "Essence": "Fuchs T8",
+    "Amount": 115000
+  },
+  {
+    "Level": 115,
+    "Essence": "Zoglin T7",
+    "Amount": 116000
+  },
+  {
+    "Level": 116,
+    "Essence": "Evoker T6",
+    "Amount": 117000
+  },
+  {
+    "Level": 117,
+    "Essence": "Creeper T9",
+    "Amount": 118000
+  },
+  {
+    "Level": 118,
+    "Essence": "Endermite T10",
+    "Amount": 119000
+  },
+  {
+    "Level": 119,
+    "Essence": "Axolotl T10",
+    "Amount": 120000
+  },
+  {
+    "Level": 120,
+    "Essence": "Husk T11",
+    "Amount": 121000
+  },
+  {
+    "Level": 121,
+    "Essence": "Zombiepiglin T9",
+    "Amount": 122000
+  },
+  {
+    "Level": 122,
+    "Essence": "Skelett T10",
+    "Amount": 123000
+  },
+  {
+    "Level": 123,
+    "Essence": "Frosch T9",
+    "Amount": 124000
+  },
+  {
+    "Level": 124,
+    "Essence": "Evoker T7",
+    "Amount": 125000
+  },
+  {
+    "Level": 125,
+    "Essence": "Wächter T10",
+    "Amount": 126000
+  },
+  {
+    "Level": 126,
+    "Essence": "Schildkröte T10",
+    "Amount": 127000
+  },
+  {
+    "Level": 127,
+    "Essence": "Biene T11",
+    "Amount": 128000
+  },
+  {
+    "Level": 128,
+    "Essence": "Lohe T11",
+    "Amount": 129000
+  },
+  {
+    "Level": 129,
+    "Essence": "Piglin T11",
+    "Amount": 130000
+  },
+  {
+    "Level": 130,
+    "Essence": "Ertrunkener T8",
+    "Amount": 131000
+  },
+  {
+    "Level": 131,
+    "Essence": "Spinne T11",
+    "Amount": 132000
+  },
+  {
+    "Level": 132,
+    "Essence": "Biene T11",
+    "Amount": 133000
+  },
+  {
+    "Level": 133,
+    "Essence": "Pferd T12",
+    "Amount": 134000
+  },
+  {
+    "Level": 134,
+    "Essence": "Ozelot T12",
+    "Amount": 135000
+  },
+  {
+    "Level": 135,
+    "Essence": "Stray T12",
+    "Amount": 136000
+  },
+  {
+    "Level": 136,
+    "Essence": "Hühner T12",
+    "Amount": 137000
+  },
+  {
+    "Level": 137,
+    "Essence": "Axolotl T11",
+    "Amount": 138000
+  },
+  {
+    "Level": 138,
+    "Essence": "Schildkröte T11",
+    "Amount": 139000
+  },
+  {
+    "Level": 139,
+    "Essence": "Wolf T12",
+    "Amount": 140000
+  },
+  {
+    "Level": 140,
+    "Essence": "Wächter T11",
+    "Amount": 141000
+  },
+  {
+    "Level": 141,
+    "Essence": "Piglin T11",
+    "Amount": 142000
+  },
+  {
+    "Level": 142,
+    "Essence": "Evoker T8",
+    "Amount": 143000
+  },
+  {
+    "Level": 143,
+    "Essence": "Stray T12",
+    "Amount": 144000
+  },
+  {
+    "Level": 144,
+    "Essence": "Stray T12",
+    "Amount": 145000
+  },
+  {
+    "Level": 145,
+    "Essence": "Schneemann T10",
+    "Amount": 146000
+  },
+  {
+    "Level": 146,
+    "Essence": "Schneemann T10",
+    "Amount": 147000
+  },
+  {
+    "Level": 147,
+    "Essence": "Pferd T12",
+    "Amount": 148000
+  },
+  {
+    "Level": 148,
+    "Essence": "Ozelot T12",
+    "Amount": 149000
+  },
+  {
+    "Level": 149,
+    "Essence": "Ozelot T12",
+    "Amount": 150000
+  },
+  {
+    "Level": 150,
+    "Essence": "Piglin T11",
+    "Amount": 151000
+  },
+  {
+    "Level": 151,
+    "Essence": "Creeper T11",
+    "Amount": 152000
+  },
+  {
+    "Level": 152,
+    "Essence": "Vindicator T10",
+    "Amount": 153000
+  },
+  {
+    "Level": 153,
+    "Essence": "Fuchs T10",
+    "Amount": 154000
+  },
+  {
+    "Level": 154,
+    "Essence": "Endermite T11",
+    "Amount": 155000
+  },
+  {
+    "Level": 155,
+    "Essence": "Zombiepferd T8",
+    "Amount": 156000
+  },
+  {
+    "Level": 156,
+    "Essence": "Stray T12",
+    "Amount": 157000
+  },
+  {
+    "Level": 157,
+    "Essence": "Piglin T11",
+    "Amount": 158000
+  },
+  {
+    "Level": 158,
+    "Essence": "Piglin T11",
+    "Amount": 159000
+  },
+  {
+    "Level": 159,
+    "Essence": "Evoker T8",
+    "Amount": 160000
+  },
+  {
+    "Level": 160,
+    "Essence": "Ozelot T12",
+    "Amount": 161000
+  },
+  {
+    "Level": 161,
+    "Essence": "Vindicator T10",
+    "Amount": 162000
+  },
+  {
+    "Level": 162,
+    "Essence": "Piglin T11",
+    "Amount": 163000
+  },
+  {
+    "Level": 163,
+    "Essence": "Enderman T9",
+    "Amount": 164000
+  },
+  {
+    "Level": 164,
+    "Essence": "Skelett T12",
+    "Amount": 165000
+  },
+  {
+    "Level": 165,
+    "Essence": "Huhn T11",
+    "Amount": 166000
+  },
+  {
+    "Level": 166,
+    "Essence": "Piglin T11",
+    "Amount": 167000
+  },
+  {
+    "Level": 167,
+    "Essence": "Witherskelett T12",
+    "Amount": 168000
+  },
+  {
+    "Level": 168,
+    "Essence": "Wither T4",
+    "Amount": 169000
+  },
+  {
+    "Level": 169,
+    "Essence": "Wither T4",
+    "Amount": 170000
+  },
+  {
+    "Level": 170,
+    "Essence": "Wither T4",
+    "Amount": 171000
+  },
+  {
+    "Level": 171,
+    "Essence": "Wither T4",
+    "Amount": 172000
+  },
+  {
+    "Level": 172,
+    "Essence": "Wither T4",
+    "Amount": 173000
+  },
+  {
+    "Level": 173,
+    "Essence": "Wither T4",
+    "Amount": 174000
+  },
+  {
+    "Level": 174,
+    "Essence": "Wither T4",
+    "Amount": 175000
+  },
+  {
+    "Level": 175,
+    "Essence": "Wither T4",
+    "Amount": 176000
+  },
+  {
+    "Level": 176,
+    "Essence": "Wither T4",
+    "Amount": 177000
+  },
+  {
+    "Level": 177,
+    "Essence": "Wither T4",
+    "Amount": 178000
+  },
+  {
+    "Level": 178,
+    "Essence": "Wither T4",
+    "Amount": 179000
+  },
+  {
+    "Level": 179,
+    "Essence": "Wither T4",
+    "Amount": 180000
+  },
+  {
+    "Level": 180,
+    "Essence": "Wither T4",
+    "Amount": 181000
+  },
+  {
+    "Level": 181,
+    "Essence": "Wither T4",
+    "Amount": 182000
+  },
+  {
+    "Level": 182,
+    "Essence": "Wither T4",
+    "Amount": 183000
+  },
+  {
+    "Level": 183,
+    "Essence": "Wither T4",
+    "Amount": 184000
+  },
+  {
+    "Level": 184,
+    "Essence": "Wither T4",
+    "Amount": 185000
+  },
+  {
+    "Level": 185,
+    "Essence": "Wither T4",
+    "Amount": 186000
+  },
+  {
+    "Level": 186,
+    "Essence": "Wither T4",
+    "Amount": 187000
+  },
+  {
+    "Level": 187,
+    "Essence": "Wither T4",
+    "Amount": 188000
+  },
+  {
+    "Level": 188,
+    "Essence": "Wither T4",
+    "Amount": 189000
+  },
+  {
+    "Level": 189,
+    "Essence": "Wither T4",
+    "Amount": 190000
+  },
+  {
+    "Level": 190,
+    "Essence": "Wither T4",
+    "Amount": 191000
+  },
+  {
+    "Level": 191,
+    "Essence": "Wither T4",
+    "Amount": 192000
+  },
+  {
+    "Level": 192,
+    "Essence": "Wither T4",
+    "Amount": 193000
+  },
+  {
+    "Level": 193,
+    "Essence": "Wither T4",
+    "Amount": 194000
+  },
+  {
+    "Level": 194,
+    "Essence": "Wither T4",
+    "Amount": 195000
+  },
+  {
+    "Level": 195,
+    "Essence": "Wither T4",
+    "Amount": 196000
+  },
+  {
+    "Level": 196,
+    "Essence": "Wither T4",
+    "Amount": 197000
+  },
+  {
+    "Level": 197,
+    "Essence": "Wither T4",
+    "Amount": 198000
+  },
+  {
+    "Level": 198,
+    "Essence": "Wither T4",
+    "Amount": 199000
+  },
+  {
+    "Level": 199,
+    "Essence": "Wither T4",
+    "Amount": 200000
+  },
+  {
+    "Level": 200,
+    "Essence": "Wither T4",
+    "Amount": 201000
+  }
+]

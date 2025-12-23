@@ -4,6 +4,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
+import org.joml.Matrix3x2fStack;
 
 /**
  * Draggable Overlay für die Boss HP Anzeige
@@ -14,7 +15,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String getOverlayName() {
-        return "";
+        return "BossHP";
     }
     
     @Override
@@ -30,8 +31,10 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         return CCLiveUtilitiesConfig.HANDLER.instance().bossHPY;
     }
     
-        @Override
-    public int getWidth() {
+    /**
+     * Calculate unscaled width (without applying scale factor)
+     */
+    private int calculateUnscaledWidth() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return 200; // Fallback width
 
@@ -49,24 +52,63 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     int nameWidth = client.textRenderer.getWidth(displayText);
                     int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
                     // Use exact same calculation as standard overlay
-                    int totalWidth = nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth);
+                    int firstLineWidth = nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth);
+                    
+                    // Include DPM line width (only if DPM is enabled)
+                    int totalWidth = firstLineWidth;
+                    if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+                        String dpmText = "DPM: XXXX";
+                        int dpmWidth = client.textRenderer.getWidth(dpmText);
+                        totalWidth = Math.max(firstLineWidth, dpmWidth);
+                    }
+                    
                     return totalWidth + PADDING * 2;
                 }
             }
         }
 
-        // No boss data available
+        // No boss data available - calculate width for preview text "Boss-Name: XXXX" and optionally "DPM: XXXX"
+        String previewText = "Boss-Name: XXXX";
+        int previewWidth = client.textRenderer.getWidth(previewText);
+        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+            String dpmText = "DPM: XXXX";
+            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth(dpmText));
+        }
+        return previewWidth + PADDING * 2;
+    }
+    
+    /**
+     * Calculate unscaled height (without applying scale factor)
+     */
+    private int calculateUnscaledHeight() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return 20; // Fallback height
         
-        // If no boss data and no test overlay, return minimum width (like standard overlay when nothing is shown)
-        return 50; // Minimum width when nothing is displayed
+        final int LINE_SPACING = 2; // Abstand zwischen Zeilen
+        
+        // Height includes: first line (Boss-Name + HP) + optionally DPM line
+        int height = client.textRenderer.fontHeight + PADDING * 2; // First line
+        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+            height += client.textRenderer.fontHeight + LINE_SPACING; // DPM line
+        }
+        
+        return height;
+    }
+    
+    @Override
+    public int getWidth() {
+        // Return scaled width
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale;
+        if (scale <= 0) scale = 1.0f; // Safety check
+        return Math.round(calculateUnscaledWidth() * scale);
     }
     
     @Override
     public int getHeight() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return 20; // Fallback height
-        
-        return client.textRenderer.fontHeight + PADDING * 2;
+        // Return scaled height
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale;
+        if (scale <= 0) scale = 1.0f; // Safety check
+        return Math.round(calculateUnscaledHeight() * scale);
     }
     
     @Override
@@ -84,17 +126,54 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         int width = getWidth();
         int height = getHeight();
         
-        // Render background at the left edge position
+        // Get scale
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale;
+        if (scale <= 0) scale = 1.0f;
+        
+        // Get unscaled dimensions
+        int unscaledWidth = calculateUnscaledWidth();
+        int unscaledHeight = calculateUnscaledHeight();
+        
+        // Render background at the left edge position (scaled)
         context.fill(x, y, x + width, y + height, 0x80000000);
         
-        // Render border for edit mode
+        // Render border for edit mode (scaled)
         context.drawBorder(x, y, width, height, 0xFFFF0000);
         
-        // Don't render overlay name - show only the actual content
-        
-        // Render sample boss data - use the right edge position like standard overlay
-        int rightEdgeX = x + width;
-        renderBossData(context, rightEdgeX, y);
+        // Render preview text "Boss-Name: XXXX" and optionally "DPM: XXXX" with scale
+        // Always show "XXXX" in preview, never real HP values
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null) {
+            final int LINE_SPACING = 2;
+            String previewText = "Boss-Name: XXXX";
+            
+            // Use Matrix transformations for scaling
+            Matrix3x2fStack matrices = context.getMatrices();
+            matrices.pushMatrix();
+            
+            // Translate to position and scale from there
+            matrices.translate(x, y);
+            matrices.scale(scale, scale);
+            
+            // Render preview text (first line) - centered horizontally
+            int textWidth = client.textRenderer.getWidth(previewText);
+            int textX = (unscaledWidth - textWidth) / 2;
+            int textY = PADDING;
+            
+            context.drawText(client.textRenderer, previewText, textX, textY, 0xFFFFFFFF, false);
+            
+            // Render DPM text (second line) - only if DPM is enabled
+            if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+                String dpmText = "DPM: XXXX";
+                int dpmTextWidth = client.textRenderer.getWidth(dpmText);
+                int dpmTextX = (unscaledWidth - dpmTextWidth) / 2;
+                int dpmTextY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
+                
+                context.drawText(client.textRenderer, dpmText, dpmTextX, dpmTextY, 0xFFFFFF00, false); // Gelb für DPM
+            }
+            
+            matrices.popMatrix();
+        }
     }
     
     @Override
@@ -117,6 +196,28 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     public void resetToDefault() {
         CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = 562;
         CCLiveUtilitiesConfig.HANDLER.instance().bossHPY = 201;
+    }
+    
+    @Override
+    public void setSize(int width, int height) {
+        // Get current unscaled dimensions
+        int unscaledWidth = calculateUnscaledWidth();
+        int unscaledHeight = calculateUnscaledHeight();
+        
+        // Calculate scale based on width and height
+        float scaleX = (float) width / unscaledWidth;
+        float scaleY = (float) height / unscaledHeight;
+        float scale = (scaleX + scaleY) / 2.0f;
+        
+        // Clamp scale to reasonable values (0.1 to 5.0)
+        scale = Math.max(0.1f, Math.min(5.0f, scale));
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale = scale;
+    }
+    
+    @Override
+    public void resetSizeToDefault() {
+        CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale = 1.0f;
     }
     
     /**

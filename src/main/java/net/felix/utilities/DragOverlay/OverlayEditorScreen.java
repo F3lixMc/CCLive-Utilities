@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.text.Text;
+import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -26,13 +27,18 @@ public class OverlayEditorScreen extends Screen {
     private int resizeStartY = 0;
     private int resizeStartWidth = 0;
     private int resizeStartHeight = 0;
+    private int resizeStartOverlayX = 0; // Speichere die ursprüngliche X-Position beim Resize-Start
     
     private ButtonWidget doneButton;
     private ButtonWidget resetButton;
+    private ButtonWidget overlayButton;
     private TextWidget titleWidget;
     
     // Store the previous screen so we can restore it
     private Screen previousScreen;
+    
+    // Overlay settings overlay
+    private boolean overlaySettingsOpen = false;
     
     public OverlayEditorScreen() {
         super(Text.literal("Overlay Editor"));
@@ -48,8 +54,8 @@ public class OverlayEditorScreen extends Screen {
         // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
         boolean isInBlueprintInventory = isInInventoryScreen();
         
-        // BossHP overlay is only available in dimensions that match the player name
-        if (isInPlayerNameDimension()) {
+        // BossHP overlay is only available in dimensions that match the player name and not in inventories
+        if (isInPlayerNameDimension() && !isInventoryOpen()) {
             overlays.add(new BossHPDraggableOverlay());
         }
         
@@ -60,6 +66,7 @@ public class OverlayEditorScreen extends Screen {
             // In blueprint inventory screens, show overlays that are relevant for blueprint inventories
             overlays.add(new AspectOverlayDraggableOverlay());
             overlays.add(new HideUncraftableButtonDraggableOverlay());
+            overlays.add(new HideWrongClassButtonDraggableOverlay());
             
             // Check if we're in a Kit Filter relevant inventory
             if (isInKitFilterInventory()) {
@@ -87,13 +94,21 @@ public class OverlayEditorScreen extends Screen {
                     overlays.add(new EquipmentDisplayDraggableOverlay());
                 }
                 
-                // Mining/Lumberjack overlay - always available in overlay editor (regardless of dimension)
+                // Mining/Lumberjack overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
-                overlays.add(new MiningLumberjackDraggableOverlay());
+                if (!isInPlayerNameDimension() && !isInventoryOpen()) {
+                    overlays.add(new MiningLumberjackDraggableOverlay());
+                }
+                
+                // MKLevel overlay - only available in "Machtkristalle Verbessern" inventory
+                if (isInMKLevelInventory()) {
+                    overlays.add(new MKLevelDraggableOverlay());
+                }
                 
                 // Note: Aspect Overlay and Hide Uncraftable Button are only available in blueprint inventories
                 // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬃, 㬄, 㬅, 㬆)
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
+                // Note: MKLevel Overlay is only available in "Machtkristalle Verbessern" inventory
             }
         }
     }
@@ -217,6 +232,30 @@ public class OverlayEditorScreen extends Screen {
         return dimensionId.contains("floor") || dimensionId.contains("dungeon");
     }
     
+    /**
+     * Check if the player is currently in the "Machtkristalle Verbessern" inventory
+     */
+    private boolean isInMKLevelInventory() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is a HandledScreen (inventory-like screen)
+        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+            return false;
+        }
+        
+        // Get the screen title to check if it's the MKLevel inventory
+        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        
+        String title = handledScreen.getTitle().getString();
+        
+        // Check if the title contains "Machtkristalle Verbessern"
+        return title.contains("Machtkristalle Verbessern");
+    }
+    
     @Override
     protected void init() {
         super.init();
@@ -233,14 +272,21 @@ public class OverlayEditorScreen extends Screen {
         doneButton = ButtonWidget.builder(
             Text.literal("Done"),
             button -> close()
-        ).dimensions(width / 2 - 100, height - 30, 80, 20).build();
+        ).dimensions(width / 2 - 130, height - 30, 80, 20).build();
         addDrawableChild(doneButton);
+        
+        // Overlay Button
+        overlayButton = ButtonWidget.builder(
+            Text.literal("Overlay"),
+            button -> overlaySettingsOpen = !overlaySettingsOpen
+        ).dimensions(width / 2 - 40, height - 30, 80, 20).build();
+        addDrawableChild(overlayButton);
         
         // Reset Button
         resetButton = ButtonWidget.builder(
             Text.literal("Reset All"),
             button -> resetAllOverlays()
-        ).dimensions(width / 2 + 20, height - 30, 80, 20).build();
+        ).dimensions(width / 2 + 50, height - 30, 80, 20).build();
         addDrawableChild(resetButton);
     }
     
@@ -262,9 +308,10 @@ public class OverlayEditorScreen extends Screen {
             if (overlay.isEnabled()) {
                 overlay.renderInEditMode(context, mouseX, mouseY, delta);
                 
-                // Render resize handle if hovered
-                if (overlay.isResizeArea(mouseX, mouseY)) {
+                // Render resize handle and reset handle if hovering over the overlay
+                if (overlay.isHovered(mouseX, mouseY)) {
                     renderResizeHandle(context, overlay);
+                    renderResetHandle(context, overlay);
                 }
             }
         }
@@ -272,24 +319,81 @@ public class OverlayEditorScreen extends Screen {
         // Render instructions
         renderInstructions(context);
         
+        // Render overlay settings overlay if open
+        if (overlaySettingsOpen) {
+            renderOverlaySettings(context, mouseX, mouseY);
+        }
+        
         // Render buttons
         super.render(context, mouseX, mouseY, delta);
     }
     
     private void renderResizeHandle(DrawContext context, DraggableOverlay overlay) {
-        int handleSize = 8;
+        int handleSize = 10;
         int x = overlay.getX() + overlay.getWidth() - handleSize;
         int y = overlay.getY() + overlay.getHeight() - handleSize;
         
-        // Draw resize handle (small square)
+        // Draw resize handle background (small square with white border)
         context.fill(x, y, x + handleSize, y + handleSize, 0xFFFFFFFF);
         context.fill(x + 1, y + 1, x + handleSize - 1, y + handleSize - 1, 0xFF000000);
+        
+        // Draw diagonal arrow from top-left to bottom-right
+        int arrowLength = handleSize - 4;
+        
+        // Draw diagonal line from top-left to bottom-right
+        for (int i = 0; i < arrowLength; i++) {
+            int px = x + 2 + i;
+            int py = y + 2 + i;
+            if (px < x + handleSize - 1 && py < y + handleSize - 1) {
+                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+            }
+        }
+        
+        // Draw arrowhead at bottom-right (pointing down-right)
+        // Bottom-right corner arrowhead
+        context.fill(x + handleSize - 3, y + handleSize - 2, x + handleSize - 1, y + handleSize - 1, 0xFFFFFFFF);
+        context.fill(x + handleSize - 2, y + handleSize - 3, x + handleSize - 1, y + handleSize - 2, 0xFFFFFFFF);
+        
+        // Draw arrowhead at top-left (pointing up-left)
+        // Top-left corner arrowhead
+        context.fill(x + 1, y + 1, x + 3, y + 2, 0xFFFFFFFF);
+        context.fill(x + 1, y + 2, x + 2, y + 3, 0xFFFFFFFF);
+    }
+    
+    private void renderResetHandle(DrawContext context, DraggableOverlay overlay) {
+        int handleSize = 10;
+        int x = overlay.getX() + overlay.getWidth() - handleSize;
+        int y = overlay.getY();
+        
+        // Draw reset handle background (small square with white border)
+        context.fill(x, y, x + handleSize, y + handleSize, 0xFFFFFFFF);
+        context.fill(x + 1, y + 1, x + handleSize - 1, y + handleSize - 1, 0xFF000000);
+        
+        // Draw "<-" text (scaled down to fit better, centered)
+        float scale = 0.7f;
+        String arrowText = "<-";
+        int textWidth = textRenderer.getWidth(arrowText);
+        int textHeight = textRenderer.fontHeight;
+        
+        // Calculate centered position (accounting for scale)
+        float scaledTextWidth = textWidth * scale;
+        float scaledTextHeight = textHeight * scale;
+        float textX = x + (handleSize - scaledTextWidth) / 2.0f;
+        float textY = y + (handleSize - scaledTextHeight) / 2.0f;
+        
+        Matrix3x2fStack matrices = context.getMatrices();
+        matrices.pushMatrix();
+        matrices.translate(textX, textY);
+        matrices.scale(scale, scale);
+        context.drawText(textRenderer, arrowText, 0, 0, 0xFFFFFFFF, false);
+        matrices.popMatrix();
     }
     
     private void renderInstructions(DrawContext context) {
-        int y = height - 80;
+        int y = height - 92;
         String[] instructions = {
             "Left Click + Drag: Move overlay",
+            "Left Click + Drag (corner): Resize overlay",
             "Left Click + Arrow Keys: Move overlay 1 pixel",
             "ESC: Close editor"
         };
@@ -302,8 +406,23 @@ public class OverlayEditorScreen extends Screen {
     
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Handle overlay settings click first
+        if (handleOverlaySettingsClick(mouseX, mouseY, button)) {
+            return true;
+        }
+        
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            // Check for resize area first
+            // Check for reset area first (highest priority)
+            for (DraggableOverlay overlay : overlays) {
+                if (overlay.isEnabled() && overlay.isResetArea((int) mouseX, (int) mouseY)) {
+                    overlay.resetSizeToDefault();
+                    overlay.savePosition();
+                    CCLiveUtilitiesConfig.HANDLER.save();
+                    return true;
+                }
+            }
+            
+            // Check for resize area
             for (DraggableOverlay overlay : overlays) {
                 if (overlay.isEnabled() && overlay.isResizeArea((int) mouseX, (int) mouseY)) {
                     // Check if dragging is allowed for this overlay
@@ -315,6 +434,7 @@ public class OverlayEditorScreen extends Screen {
                     resizeStartY = (int) mouseY;
                     resizeStartWidth = overlay.getWidth();
                     resizeStartHeight = overlay.getHeight();
+                    resizeStartOverlayX = overlay.getX(); // Speichere die ursprüngliche X-Position
                     return true;
                 }
             }
@@ -373,7 +493,59 @@ public class OverlayEditorScreen extends Screen {
                 int newWidth = Math.max(50, resizeStartWidth + deltaWidth);
                 int newHeight = Math.max(20, resizeStartHeight + deltaHeight);
                 
+                // Setze die neue Größe
                 resizingOverlay.setSize(newWidth, newHeight);
+                
+                // Berechne die neue Position basierend auf der Bildschirmseite
+                MinecraftClient client = MinecraftClient.getInstance();
+                if (client != null && client.getWindow() != null) {
+                    int screenWidth = client.getWindow().getScaledWidth();
+                    int screenHeight = client.getWindow().getScaledHeight();
+                    int currentY = resizingOverlay.getY();
+                    
+                    // Prüfe, ob es das MKLevel-Overlay ist (sollte immer von oben links vergrößern)
+                    boolean isMKLevelOverlay = resizingOverlay instanceof MKLevelDraggableOverlay;
+                    
+                    int newX;
+                    int newY = currentY;
+                    
+                    if (isMKLevelOverlay) {
+                        // Für MKLevel: Obere linke Ecke immer fixiert
+                        newX = resizeStartOverlayX;
+                        // Stelle sicher, dass das Overlay nicht aus dem Bildschirm ragt
+                        if (newX + newWidth > screenWidth) {
+                            newX = screenWidth - newWidth;
+                        }
+                    } else {
+                        // Bestimme ob das Overlay auf der linken oder rechten Seite ist
+                        // Verwende die ursprüngliche Position, nicht die aktuelle (die könnte durch getX() falsch berechnet sein)
+                        boolean isOnRightSide = resizeStartOverlayX >= screenWidth / 2;
+                        
+                        if (isOnRightSide) {
+                            // Auf der rechten Seite: Rechte Kante fix halten
+                            // Berechne die Position der rechten Kante vor dem Resize
+                            int rightEdgeBefore = resizeStartOverlayX + resizeStartWidth;
+                            // Neue X-Position: Rechte Kante minus neue Breite
+                            newX = rightEdgeBefore - newWidth;
+                            // Stelle sicher, dass das Overlay nicht aus dem Bildschirm ragt
+                            newX = Math.max(0, Math.min(newX, screenWidth - newWidth));
+                        } else {
+                            // Auf der linken Seite: Linke Kante fix halten (X bleibt gleich)
+                            newX = resizeStartOverlayX;
+                            // Stelle sicher, dass das Overlay nicht aus dem Bildschirm ragt
+                            if (newX + newWidth > screenWidth) {
+                                newX = screenWidth - newWidth;
+                            }
+                        }
+                    }
+                    
+                    // Stelle sicher, dass Y innerhalb der Bildschirmgrenzen bleibt
+                    newY = Math.max(0, Math.min(newY, screenHeight - newHeight));
+                    
+                    // Setze die neue Position
+                    resizingOverlay.setPosition(newX, newY);
+                }
+                
                 // Auto-save position during resizing to ensure it's always saved
                 resizingOverlay.savePosition();
                 return true;
@@ -545,8 +717,230 @@ public class OverlayEditorScreen extends Screen {
         if (overlay instanceof MiningLumberjackDraggableOverlay) {
             return isInOverworld() && !isInventoryOpen();
         }
+        // BossHP overlay can only be dragged in player name dimension and not in inventories
+        if (overlay instanceof BossHPDraggableOverlay) {
+            return isInPlayerNameDimension() && !isInventoryOpen();
+        }
         // All other overlays can be dragged normally
         return true;
+    }
+    
+    /**
+     * Rendert das Overlay-Settings-Overlay mit Checkboxen für alle verfügbaren Overlays
+     */
+    private void renderOverlaySettings(DrawContext context, int mouseX, int mouseY) {
+        // Erstelle gefilterte Liste der Overlays (Kit-Filter-Buttons werden gruppiert)
+        List<OverlayEntry> displayOverlays = getDisplayOverlays();
+        
+        int boxWidth = 250;
+        int boxHeight = Math.min(400, displayOverlays.size() * 25 + 40);
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        
+        // Hintergrund
+        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
+        
+        // Rahmen
+        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        
+        // Titel
+        context.drawText(textRenderer, "Overlay Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
+        
+        // Checkboxen für alle Overlays
+        int y = boxY + 35;
+        int checkboxSize = 10;
+        int checkboxSpacing = 25;
+        
+        for (OverlayEntry entry : displayOverlays) {
+            boolean isEnabled = entry.isEnabled;
+            
+            // Checkbox-Hintergrund
+            int checkboxX = boxX + 10;
+            int checkboxY = y;
+            context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
+            context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+            
+            // Checkmark wenn aktiviert
+            if (isEnabled) {
+                // Zeichne Häkchen (✓)
+                int checkX = checkboxX + 2;
+                int checkY = checkboxY + 2;
+                int checkSize = checkboxSize - 4;
+                // Zeichne Häkchen als zwei Linien
+                // Linke Linie (von oben-links nach mitte)
+                for (int i = 0; i < checkSize / 2; i++) {
+                    int px = checkX + i;
+                    int py = checkY + checkSize / 2 + i;
+                    if (px < checkboxX + checkboxSize - 2 && py < checkboxY + checkboxSize - 2) {
+                        context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                    }
+                }
+                // Rechte Linie (von mitte nach unten-rechts)
+                for (int i = 0; i < checkSize / 2; i++) {
+                    int px = checkX + checkSize / 2 + i;
+                    int py = checkY + checkSize - 2 - i;
+                    if (px < checkboxX + checkboxSize - 2 && py >= checkboxY + 2) {
+                        context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                    }
+                }
+            }
+            
+            // Overlay-Name
+            String overlayName = entry.displayName;
+            context.drawText(textRenderer, overlayName, checkboxX + checkboxSize + 5, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
+            
+            y += checkboxSpacing;
+        }
+    }
+    
+    /**
+     * Hilfsklasse für Overlay-Einträge im Settings-Overlay
+     */
+    private static class OverlayEntry {
+        String displayName;
+        boolean isEnabled;
+        DraggableOverlay overlay; // Kann null sein für gruppierte Einträge
+        boolean isKitFilterGroup; // true wenn es die gruppierten Kit-Filter-Buttons sind
+        
+        OverlayEntry(String displayName, boolean isEnabled, DraggableOverlay overlay, boolean isKitFilterGroup) {
+            this.displayName = displayName;
+            this.isEnabled = isEnabled;
+            this.overlay = overlay;
+            this.isKitFilterGroup = isKitFilterGroup;
+        }
+    }
+    
+    /**
+     * Erstellt eine gefilterte Liste der Overlays für die Anzeige
+     * Kit-Filter-Buttons werden als ein Eintrag "Kit Filter" gruppiert
+     */
+    private List<OverlayEntry> getDisplayOverlays() {
+        List<OverlayEntry> displayList = new ArrayList<>();
+        boolean hasKitFilterButtons = false;
+        boolean kitFilterEnabled = false;
+        
+        for (DraggableOverlay overlay : overlays) {
+            // Prüfe ob es ein Kit-Filter-Button ist
+            if (overlay instanceof KitFilterButton1DraggableOverlay ||
+                overlay instanceof KitFilterButton2DraggableOverlay ||
+                overlay instanceof KitFilterButton3DraggableOverlay) {
+                hasKitFilterButtons = true;
+                // Kit-Filter ist enabled wenn mindestens einer der Buttons enabled ist
+                if (overlay.isEnabled()) {
+                    kitFilterEnabled = true;
+                }
+            } else {
+                // Normales Overlay - direkt hinzufügen
+                displayList.add(new OverlayEntry(overlay.getOverlayName(), overlay.isEnabled(), overlay, false));
+            }
+        }
+        
+        // Füge gruppierten Kit-Filter-Eintrag hinzu, wenn Kit-Filter-Buttons vorhanden sind
+        if (hasKitFilterButtons) {
+            displayList.add(new OverlayEntry("Kit Filter", kitFilterEnabled, null, true));
+        }
+        
+        return displayList;
+    }
+    
+    /**
+     * Behandelt Klicks im Overlay-Settings-Overlay
+     */
+    private boolean handleOverlaySettingsClick(double mouseX, double mouseY, int button) {
+        if (!overlaySettingsOpen || button != 0) {
+            return false;
+        }
+        
+        // Erstelle gefilterte Liste der Overlays (Kit-Filter-Buttons werden gruppiert)
+        List<OverlayEntry> displayOverlays = getDisplayOverlays();
+        
+        int boxWidth = 250;
+        int boxHeight = Math.min(400, displayOverlays.size() * 25 + 40);
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        
+        // Prüfe ob Klick innerhalb des Overlays ist
+        if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
+            // Klick außerhalb - schließe Overlay
+            overlaySettingsOpen = false;
+            return false;
+        }
+        
+        // Prüfe ob Klick auf eine Checkbox oder den Namen ist
+        int y = boxY + 35;
+        int checkboxSize = 10;
+        int checkboxSpacing = 25;
+        int checkboxX = boxX + 10;
+        int textX = checkboxX + checkboxSize + 5;
+        int textWidth = boxWidth - textX - 10; // Restliche Breite für Text
+        
+        for (OverlayEntry entry : displayOverlays) {
+            int checkboxY = y;
+            int textY = checkboxY;
+            int textHeight = textRenderer.fontHeight;
+            
+            // Prüfe ob Klick auf Checkbox
+            boolean clickedOnCheckbox = (mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
+                                         mouseY >= checkboxY && mouseY <= checkboxY + checkboxSize);
+            
+            // Prüfe ob Klick auf Text (Overlay-Name)
+            boolean clickedOnText = (mouseX >= textX && mouseX <= textX + textWidth &&
+                                     mouseY >= textY && mouseY <= textY + textHeight);
+            
+            if (clickedOnCheckbox || clickedOnText) {
+                // Toggle Overlay
+                if (entry.isKitFilterGroup) {
+                    // Toggle alle Kit-Filter-Buttons gemeinsam
+                    CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
+                } else if (entry.overlay != null) {
+                    // Toggle einzelnes Overlay
+                    toggleOverlayEnabled(entry.overlay);
+                }
+                CCLiveUtilitiesConfig.HANDLER.save();
+                return true;
+            }
+            
+            y += checkboxSpacing;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Schaltet ein Overlay ein/aus
+     */
+    private void toggleOverlayEnabled(DraggableOverlay overlay) {
+        if (overlay instanceof BossHPDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showBossHP = !CCLiveUtilitiesConfig.HANDLER.instance().showBossHP;
+        } else if (overlay instanceof CardsDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showCard = !CCLiveUtilitiesConfig.HANDLER.instance().showCard;
+        } else if (overlay instanceof StatuesDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showStatue = !CCLiveUtilitiesConfig.HANDLER.instance().showStatue;
+        } else if (overlay instanceof BlueprintViewerDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled;
+        } else if (overlay instanceof MaterialTrackerDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled;
+        } else if (overlay instanceof KillsUtilityDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled;
+        } else if (overlay instanceof EquipmentDisplayDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay = !CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay;
+        } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled;
+        } else if (overlay instanceof AspectOverlayDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
+        } else if (overlay instanceof ChatAspectOverlayDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled;
+        } else if (overlay instanceof HideUncraftableButtonDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled;
+        } else if (overlay instanceof HideWrongClassButtonDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled;
+        } else if (overlay instanceof KitFilterButton1DraggableOverlay || 
+                   overlay instanceof KitFilterButton2DraggableOverlay || 
+                   overlay instanceof KitFilterButton3DraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
+        } else if (overlay instanceof MKLevelDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled;
+        }
     }
 }
 

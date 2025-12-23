@@ -4,6 +4,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
+import net.felix.utilities.Overall.ZeichenUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,6 +17,8 @@ public abstract class HandledScreenMixin {
     
     @Shadow protected int x;
     @Shadow protected int y;
+    @Shadow protected int backgroundWidth;
+    @Shadow protected int backgroundHeight;
     
     /**
      * Injects at the very end of the render method to ensure our overlays are drawn last
@@ -34,6 +37,7 @@ public abstract class HandledScreenMixin {
         // Render the Hide Uncraftable button ONLY in blueprint inventories
         if (isBlueprintInventory()) {
             renderHideUncraftableButton(context);
+            renderHideWrongClassButton(context);
         }
         
         // Render Kit Filter buttons in relevant inventories
@@ -51,6 +55,26 @@ public abstract class HandledScreenMixin {
         
         // Clear tooltip bounds after rendering
         net.felix.utilities.Overall.AspectOverlay.clearTooltipBounds();
+        
+        // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
+        renderMKLevelOverlay(context);
+    }
+    
+    /**
+     * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory
+     */
+    private void renderMKLevelOverlay(DrawContext context) {
+        try {
+            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            String title = screen.getTitle().getString();
+            
+            if (title.contains("Machtkristalle Verbessern")) {
+                // Get actual inventory dimensions from the screen using shadow fields
+                net.felix.utilities.Overall.InformationenUtility.renderMKLevelOverlay(context, net.minecraft.client.MinecraftClient.getInstance(), x, y, backgroundWidth, backgroundHeight);
+            }
+        } catch (Exception e) {
+            // Ignore rendering errors
+        }
     }
     
     /**
@@ -63,8 +87,17 @@ public abstract class HandledScreenMixin {
             if (handleHideUncraftableButtonClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true); // Indicate that we handled the click
             }
+            if (handleHideWrongClassButtonClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true); // Indicate that we handled the click
+            }
+        }
+        
+        // Handle clicks on MKLevel search bar
+        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
         }
     }
+    
     
     /**
      * Renders colored frames around smithing states
@@ -104,6 +137,34 @@ public abstract class HandledScreenMixin {
         try {
             // Call the SchmiedTrackerUtility to handle the button click
             return net.felix.utilities.Town.SchmiedTrackerUtility.handleButtonClick(mouseX, mouseY, button);
+            
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Renders the Hide Wrong Class button
+     */
+    private void renderHideWrongClassButton(DrawContext context) {
+        try {
+            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            
+            // Call the SchmiedTrackerUtility to render the Hide Wrong Class button
+            net.felix.utilities.Town.SchmiedTrackerUtility.renderHideWrongClassButton(context, screen);
+            
+        } catch (Exception e) {
+            // Ignore rendering errors
+        }
+    }
+    
+    /**
+     * Handles clicks on the Hide Wrong Class button
+     */
+    private boolean handleHideWrongClassButtonClick(double mouseX, double mouseY, int button) {
+        try {
+            // Call the SchmiedTrackerUtility to handle the button click
+            return net.felix.utilities.Town.SchmiedTrackerUtility.handleWrongClassButtonClick(mouseX, mouseY, button);
             
         } catch (Exception e) {
             return false;
@@ -311,7 +372,7 @@ public abstract class HandledScreenMixin {
                    cleanTitle.contains("Werkzeug Sammlung")  ||
                    cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
                    cleanTitle.contains("Geschützte Items")  ||
-                   cleanTitle.contains("㬄") || cleanTitle.contains("㬅") || cleanTitle.contains("㬆") || cleanTitle.contains("㬇"); //Equipment Display
+                   ZeichenUtility.containsEquipmentDisplay(cleanTitle); //Equipment Display
                    
         } catch (Exception e) {
             return false; // Default to false if there's an error

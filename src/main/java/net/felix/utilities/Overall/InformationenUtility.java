@@ -14,6 +14,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.ItemStack;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.fabricmc.loader.api.FabricLoader;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -49,6 +50,22 @@ public class InformationenUtility {
 	// Blueprint floor tracking - Maps: "blueprint name" -> floor number (e.g., "Drachenzahn" -> 1)
 	private static Map<String, Integer> blueprintFloorMap = new HashMap<>();
 	private static final String BLUEPRINTS_CONFIG_FILE = "assets/cclive-utilities/blueprints.json";
+	
+	// MKLevel tracking - List of level data from MKLevel.json
+	private static List<MKLevelInfo> mkLevelDatabase = new ArrayList<>();
+	private static final String MKLEVEL_CONFIG_FILE = "assets/MKLevel.json";
+	
+	// MKLevel overlay scroll variables
+	private static int mkLevelScrollOffset = 0;
+	private static boolean mkLevelOverlayHovered = false;
+	private static boolean isInMKLevelInventory = false;
+	
+	// MKLevel overlay search variables
+	private static String mkLevelSearchText = "";
+	private static boolean mkLevelSearchFocused = false;
+	private static int mkLevelSearchCursorPosition = 0;
+	private static long mkLevelSearchCursorBlinkTime = 0;
+	private static boolean mkLevelSearchCursorVisible = true;
 	
 	// Mining & Lumberjack XP Tracking
 	private static class XPData {
@@ -114,6 +131,42 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Gets the actual text strings for mining overlay (for use in overlay editor)
+	 */
+	public static String[] getMiningOverlayTexts(MinecraftClient client) {
+		if (client == null || client.textRenderer == null) {
+			return new String[]{"Bergbau", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
+		}
+		
+		String header = getMiningOverlayHeader();
+		String lastXP = "Letzte XP: " + (miningXP.lastGainedXP > 0 ? formatNumberWithSeparator(miningXP.lastGainedXP) : "0");
+		String xpPerMin = miningXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXP.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
+		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		
+		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
+	}
+	
+	/**
+	 * Gets the actual text strings for lumberjack overlay (for use in overlay editor)
+	 */
+	public static String[] getLumberjackOverlayTexts(MinecraftClient client) {
+		if (client == null || client.textRenderer == null) {
+			return new String[]{"Holzfäller", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
+		}
+		
+		String header = getLumberjackOverlayHeader();
+		String lastXP = "Letzte XP: " + (lumberjackXP.lastGainedXP > 0 ? formatNumberWithSeparator(lumberjackXP.lastGainedXP) : "0");
+		String xpPerMin = lumberjackXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXP.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
+		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		
+		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
+	}
+	
+	/**
 	 * Gets the current overlay width for lumberjack overlay (for use in overlay editor)
 	 */
 	public static int getLumberjackOverlayWidth(MinecraftClient client) {
@@ -162,6 +215,9 @@ public class InformationenUtility {
 		// Load blueprints database for floor numbers
 		loadBlueprintsDatabase();
 		
+		// Load MKLevel database
+		loadMKLevelDatabase();
+		
 		// Initialize aspect overlay and renderer
 		AspectOverlay.initialize();
 		AspectOverlayRenderer.initialize();
@@ -172,6 +228,7 @@ public class InformationenUtility {
 		// Register HUD render callback for mining and lumberjack overlays
 		HudRenderCallback.EVENT.register((drawContext, tickDelta) -> 
 			onHudRender(drawContext, tickDelta));
+		
 		
 		// Register tooltip callback for material information
 		ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
@@ -193,16 +250,26 @@ public class InformationenUtility {
 			// Check if we're in the special inventory (Moblexicon)
 			boolean isSpecialInventory = false;
 			boolean isLicenseInventory = false;
+			boolean isEssenceHarvesterUi = false;
 			String screenTitle = "";
 			if (client.currentScreen != null) {
 				screenTitle = client.currentScreen.getTitle().getString();
-				if (screenTitle.contains("㬊")) {
+				if (ZeichenUtility.containsMoblexicon(screenTitle)) {
 					isSpecialInventory = true;
 				}
 				// Check for license inventory character (friends_request_accept_deny)
-				if (screenTitle.contains("ぢ")) {
+				if (ZeichenUtility.containsFriendsRequestAcceptDeny(screenTitle)) {
 					isLicenseInventory = true;
 				}
+				// Check for essence harvester UI - don't add floor numbers here
+				if (ZeichenUtility.containsEssenceHarvesterUi(screenTitle)) {
+					isEssenceHarvesterUi = true;
+				}
+			}
+			
+			// If we're in essence harvester UI, don't add floor numbers
+			if (isEssenceHarvesterUi) {
+				return;
 			}
 			
 			// Check if the respective setting is enabled for this inventory type
@@ -273,7 +340,7 @@ public class InformationenUtility {
 				// Skip Essenz items that should not show level information (but allow essence improvement inventory)
 				if (screenTitle.contains("Essenz [Auswahl]") || screenTitle.contains("Essenz-Tasche") ||
 					screenTitle.contains("Essenzernter") ||screenTitle.contains("Legend+ Menü") ||
-					 screenTitle.contains("㨷")){ //Hunter ui_background
+					 ZeichenUtility.containsHunterUiBackground(screenTitle)){ //Hunter ui_background
 					
 					continue;
 				}
@@ -578,6 +645,44 @@ public class InformationenUtility {
 		cleanName = cleanName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 		
 		return aspectsDatabase.get(cleanName);
+	}
+	
+	/**
+	 * Gets the floor number for a blueprint item name
+	 * @param blueprintName The cleaned blueprint name (without "[Bauplan]")
+	 * @param itemNameText Optional Text object for color detection (for "Drachenzahn")
+	 * @return The floor number, or null if not found
+	 */
+	public static Integer getFloorNumberForBlueprint(String blueprintName, Text itemNameText) {
+		if (blueprintName == null || blueprintName.isEmpty()) {
+			return null;
+		}
+		
+		// Remove any remaining formatting
+		String cleanName = blueprintName.replaceAll("§[0-9a-fk-or]", "");
+		cleanName = cleanName.replaceAll("[\\u3400-\\u4DBF]", "");
+		cleanName = cleanName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+		
+		// Special handling for "Drachenzahn" which appears in multiple floors
+		if (cleanName.equals("Drachenzahn")) {
+			if (itemNameText != null) {
+				return getDrachenzahnFloorFromColor(itemNameText);
+			}
+			// If no Text provided, return null (can't determine floor without color)
+			return null;
+		}
+		
+		// For other blueprints, get floor number from map
+		return blueprintFloorMap.get(cleanName);
+	}
+	
+	/**
+	 * Gets the floor number for a blueprint item name (simplified version without color detection)
+	 * @param blueprintName The cleaned blueprint name (without "[Bauplan]")
+	 * @return The floor number, or null if not found
+	 */
+	public static Integer getFloorNumberForBlueprint(String blueprintName) {
+		return getFloorNumberForBlueprint(blueprintName, null);
 	}
 	
 	/**
@@ -3362,6 +3467,37 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Loads the MKLevel database from MKLevel.json
+	 */
+	private static void loadMKLevelDatabase() {
+		try {
+			// Load from mod resources
+			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
+				.orElseThrow(() -> new RuntimeException("Mod container not found"))
+				.findPath(MKLEVEL_CONFIG_FILE)
+				.orElseThrow(() -> new RuntimeException("MKLevel config file not found"));
+			
+			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
+				try (var reader = new java.io.InputStreamReader(inputStream)) {
+					com.google.gson.JsonArray levelsArray = JsonParser.parseReader(reader).getAsJsonArray();
+					
+					for (var element : levelsArray) {
+						JsonObject levelData = element.getAsJsonObject();
+						int level = levelData.get("Level").getAsInt();
+						String essence = levelData.get("Essence").getAsString();
+						int amount = levelData.get("Amount").getAsInt();
+						
+						mkLevelDatabase.add(new MKLevelInfo(level, essence, amount));
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Failed to load MKLevel database: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
+	/**
 	 * Loads the blueprints database from blueprints.json to map blueprint names to floor numbers
 	 */
 	private static void loadBlueprintsDatabase() {
@@ -3428,6 +3564,12 @@ public class InformationenUtility {
 		
 		// Check if we're in a blueprint inventory
 		String screenTitle = client.currentScreen.getTitle().getString();
+		
+		// Check if we're in essence harvester UI - don't add floor numbers here
+		if (ZeichenUtility.containsEssenceHarvesterUi(screenTitle)) {
+			return;
+		}
+		
 		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
 											.replaceAll("[\\u3400-\\u4DBF]", "");
 		
@@ -3784,6 +3926,21 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Data class to store MKLevel information
+	 */
+	private static class MKLevelInfo {
+		public final int level;
+		public final String essence;
+		public final int amount;
+		
+		public MKLevelInfo(int level, String essence, int amount) {
+			this.level = level;
+			this.essence = essence;
+			this.amount = amount;
+		}
+	}
+	
+	/**
 	 * Client tick callback for continuous XP calculation (like KillsUtility)
 	 */
 	private static void onClientTick(MinecraftClient client) {
@@ -3801,6 +3958,210 @@ public class InformationenUtility {
 		// Update overlay visibility timers
 		updateOverlayVisibility(miningXP);
 		updateOverlayVisibility(lumberjackXP);
+		
+		// Check if we're in MKLevel inventory
+		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+			String title = handledScreen.getTitle().getString();
+			boolean wasInMKLevelInventory = isInMKLevelInventory;
+			isInMKLevelInventory = title.contains("Machtkristalle Verbessern");
+			
+			// Reset search when leaving inventory
+			if (wasInMKLevelInventory && !isInMKLevelInventory) {
+				mkLevelSearchText = "";
+				mkLevelSearchFocused = false;
+				mkLevelSearchCursorPosition = 0;
+				mkLevelScrollOffset = 0;
+			}
+			
+			if (isInMKLevelInventory) {
+				// Update cursor blink
+				if (mkLevelSearchFocused) {
+					long currentTime = System.currentTimeMillis();
+					if (currentTime - mkLevelSearchCursorBlinkTime > 500) {
+						mkLevelSearchCursorVisible = !mkLevelSearchCursorVisible;
+						mkLevelSearchCursorBlinkTime = currentTime;
+					}
+				} else {
+					mkLevelSearchCursorVisible = false;
+				}
+				// Get actual inventory dimensions using reflection
+				try {
+					java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
+					java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
+					java.lang.reflect.Field bgWidthField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundWidth");
+					java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
+					
+					xField.setAccessible(true);
+					yField.setAccessible(true);
+					bgWidthField.setAccessible(true);
+					bgHeightField.setAccessible(true);
+					
+					int inventoryX = xField.getInt(handledScreen);
+					int inventoryY = yField.getInt(handledScreen);
+					int inventoryWidth = bgWidthField.getInt(handledScreen);
+					int inventoryHeight = bgHeightField.getInt(handledScreen);
+					
+					handleMKLevelScrolling(client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
+				} catch (Exception e) {
+					// Fallback to default values
+					int inventoryWidth = 176;
+					int inventoryHeight = 166;
+					int inventoryX = (client.getWindow().getScaledWidth() - inventoryWidth) / 2;
+					int inventoryY = (client.getWindow().getScaledHeight() - inventoryHeight) / 2;
+					handleMKLevelScrolling(client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
+				}
+			}
+		} else {
+			isInMKLevelInventory = false;
+		}
+	}
+	
+	/**
+	 * Handles scrolling for MKLevel overlay
+	 */
+	private static void handleMKLevelScrolling(MinecraftClient client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
+		if (client == null || client.getWindow() == null) {
+			return;
+		}
+		
+		int windowWidth = client.getWindow().getWidth();
+		int windowHeight = client.getWindow().getHeight();
+		
+		if (windowWidth <= 0 || windowHeight <= 0) {
+			return;
+		}
+		
+		int mouseX = (int) client.mouse.getX() * client.getWindow().getScaledWidth() / windowWidth;
+		int mouseY = (int) client.mouse.getY() * client.getWindow().getScaledHeight() / windowHeight;
+		
+		// Calculate overlay position using config (same as renderMKLevelOverlay)
+		int screenWidth = client.getWindow().getScaledWidth();
+		
+		if (screenWidth <= 0) {
+			return;
+		}
+		
+		// Get position from config (same as renderMKLevelOverlay)
+		int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
+		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		// Unscaled dimensions
+		int unscaledWidth = 200;
+		int unscaledHeight = inventoryHeight;
+		
+		// Scaled dimensions
+		int overlayWidth = Math.round(unscaledWidth * scale);
+		int overlayHeight = Math.round(unscaledHeight * scale);
+		
+		// Calculate overlay X position
+		// Wenn xPos -1 ist, positioniere links vom Inventar
+		int overlayX;
+		if (xPos == -1) {
+			overlayX = inventoryX - overlayWidth - 10; // 10px Abstand links vom Inventar
+		} else {
+			// Verwende die absolute X-Position (obere linke Ecke)
+			overlayX = xPos;
+		}
+		
+		// Y-Position: Wenn yOffset -1 ist (Standard), verwende die Inventar-Y-Position
+		// Ansonsten verwende die absolute Y-Position aus der Config
+		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
+		
+		// Check if mouse is over the overlay (excluding search bar area for scrolling)
+		// Coordinates need to account for scaling
+		int searchBarHeight = Math.round(16 * scale);
+		int padding = Math.round(5 * scale);
+		int contentOffset = Math.round(3 * scale); // Shift content 3px up (same as in render)
+		int searchBarY = overlayY + padding - contentOffset; // Shift search bar 3px up
+		int contentY = searchBarY + searchBarHeight + Math.round(2 * scale);
+		
+		// Mouse is over overlay if it's in the content area (not search bar) or search bar itself
+		boolean overSearchBar = mouseX >= overlayX + padding && mouseX <= overlayX + overlayWidth - padding &&
+								mouseY >= searchBarY && mouseY <= searchBarY + searchBarHeight;
+		boolean overContent = mouseX >= overlayX && mouseX <= overlayX + overlayWidth &&
+							  mouseY >= contentY && mouseY <= overlayY + overlayHeight - padding;
+		
+		mkLevelOverlayHovered = overSearchBar || overContent;
+	}
+	
+	/**
+	 * Handles mouse scroll for MKLevel overlay
+	 */
+	public static void onMKLevelMouseScroll(double vertical) {
+		if (!isInMKLevelInventory) {
+			return;
+		}
+		
+		if (mkLevelOverlayHovered) {
+			int scrollAmount = (int) (vertical * 12);
+			mkLevelScrollOffset -= scrollAmount;
+			mkLevelScrollOffset = Math.max(0, mkLevelScrollOffset);
+			
+			// Limit scroll offset based on number of entries
+			// Each entry has 2 lines (Level + Essence), so we need to account for that
+			// Calculate max scroll based on total entries and visible entries
+			MinecraftClient client = MinecraftClient.getInstance();
+			if (client != null && client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+				try {
+					java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
+					bgHeightField.setAccessible(true);
+					int inventoryHeight = bgHeightField.getInt(handledScreen);
+					
+					int padding = 5;
+					int lineHeight = 12;
+					int searchBarHeight = 16;
+					int contentOffset = 3; // Same as in render
+					// Account for contentOffset in available height calculation
+					int availableHeight = inventoryHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
+					
+					// Get filtered entries
+					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+					
+					// Calculate max scroll: allow scrolling until Level 200 is visible
+					int linesPerEntry = 2;
+					int entryHeight = lineHeight * linesPerEntry;
+					int totalEntries = filteredEntries.size();
+					
+					// Calculate total height needed for all entries
+					int totalHeight = totalEntries * entryHeight;
+					
+					// Maximum scroll should allow us to show the last entry (Level 200) at the bottom
+					// This means: maxScroll = totalHeight - availableHeight
+					// Add one more entry height to ensure Level 200 is fully visible
+					// This accounts for any rounding errors and ensures we can scroll until Level 200 is visible
+					int maxScroll = Math.max(0, totalHeight - availableHeight + entryHeight);
+					mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
+				} catch (Exception e) {
+					// Fallback: use default calculation
+					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+					int lineHeight = 12;
+					int linesPerEntry = 2;
+					int entryHeight = lineHeight * linesPerEntry;
+					int totalEntries = filteredEntries.size();
+					int totalHeight = totalEntries * entryHeight;
+					// Estimate available height (default inventory height minus search bar and padding)
+					int estimatedAvailableHeight = 166 - 16 - 10 - 3; // Default inventory height minus search bar, padding, contentOffset
+					// Add one more entry height to ensure Level 200 is fully visible
+					int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + entryHeight);
+					mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
+				}
+			} else {
+				// Fallback: use default calculation
+				List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+				int lineHeight = 12;
+				int linesPerEntry = 2;
+				int entryHeight = lineHeight * linesPerEntry;
+				int totalEntries = filteredEntries.size();
+				int totalHeight = totalEntries * entryHeight;
+				// Estimate available height (default inventory height minus search bar and padding)
+				int estimatedAvailableHeight = 166 - 16 - 10 - 3; // Default inventory height minus search bar, padding, contentOffset
+				// Add one more entry height to ensure Level 200 is fully visible
+				int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + entryHeight);
+				mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
+			}
+		}
 	}
 	
 	/**
@@ -4252,22 +4613,34 @@ public class InformationenUtility {
 		// Ensure overlay stays within screen bounds
 		x = Math.max(0, Math.min(x, screenWidth - overlayWidth));
 		
-		// Draw background
+		// Get scale
+		float scale = config.miningLumberjackOverlayScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		// Apply matrix transformations for scaling
+		var matrices = context.getMatrices();
+		matrices.pushMatrix();
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
+		
+		// Draw background (scaled, relative to matrix)
 		if (config.miningOverlayShowBackground) {
-			context.fill(x, y, x + overlayWidth, y + overlayHeight, 0x80000000);
+			context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
 		}
 		
-		// Draw text
-		int textY = y + padding;
-		context.drawText(client.textRenderer, header, x + padding, textY, 0xFFFFFF00, true);
+		// Draw text (scaled, relative to matrix)
+		int textY = padding;
+		context.drawText(client.textRenderer, header, padding, textY, 0xFFFFFF00, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, lastXP, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, lastXP, padding, textY, 0xFFFFFFFF, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, xpPerMin, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, xpPerMin, padding, textY, 0xFFFFFFFF, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, timeToNext, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, timeToNext, padding, textY, 0xFFFFFFFF, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, requiredXP, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, requiredXP, padding, textY, 0xFFFFFFFF, true);
+		
+		matrices.popMatrix();
 	}
 	
 	/**
@@ -4329,22 +4702,808 @@ public class InformationenUtility {
 		// Ensure overlay stays within screen bounds
 		x = Math.max(0, Math.min(x, screenWidth - overlayWidth));
 		
-		// Draw background
+		// Get scale
+		float scale = config.miningLumberjackOverlayScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		// Apply matrix transformations for scaling
+		var matrices = context.getMatrices();
+		matrices.pushMatrix();
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
+		
+		// Draw background (scaled, relative to matrix)
 		if (config.lumberjackOverlayShowBackground) {
-			context.fill(x, y, x + overlayWidth, y + overlayHeight, 0x80000000);
+			context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
 		}
 		
-		// Draw text
-		int textY = y + padding;
-		context.drawText(client.textRenderer, header, x + padding, textY, 0xFFFFFF00, true);
+		// Draw text (scaled, relative to matrix)
+		int textY = padding;
+		context.drawText(client.textRenderer, header, padding, textY, 0xFFFFFF00, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, lastXP, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, lastXP, padding, textY, 0xFFFFFFFF, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, xpPerMin, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, xpPerMin, padding, textY, 0xFFFFFFFF, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, timeToNext, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, timeToNext, padding, textY, 0xFFFFFFFF, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, requiredXP, x + padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, requiredXP, padding, textY, 0xFFFFFFFF, true);
+		
+		matrices.popMatrix();
+	}
+	
+	/**
+	 * Renders MKLevel overlay
+	 */
+	public static void renderMKLevelOverlay(DrawContext context, MinecraftClient client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
+		if (client == null || client.getWindow() == null || !isInMKLevelInventory) {
+			return;
+		}
+		
+		// Check if MKLevel overlay is enabled
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled) {
+			return;
+		}
+		
+		int screenWidth = client.getWindow().getScaledWidth();
+		
+		if (screenWidth <= 0) {
+			return;
+		}
+		
+		// Get position from config
+		int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
+		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		// Unscaled dimensions
+		int unscaledWidth = 200;
+		int unscaledHeight = inventoryHeight; // Same height as inventory
+		
+		// Scaled dimensions
+		int overlayWidth = Math.round(unscaledWidth * scale);
+		
+		// Calculate overlay X position
+		// Wenn xPos -1 ist, positioniere links vom Inventar
+		int overlayX;
+		if (xPos == -1) {
+			overlayX = inventoryX - overlayWidth - 10; // 10px Abstand links vom Inventar
+		} else {
+			// Verwende die absolute X-Position (obere linke Ecke)
+			overlayX = xPos;
+		}
+		
+		// Y-Position: Wenn yOffset -1 ist (Standard), verwende die Inventar-Y-Position
+		// Ansonsten verwende die absolute Y-Position aus der Config
+		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
+		
+		// Apply matrix transformation for scaling
+		org.joml.Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		matrices.translate(overlayX, overlayY);
+		matrices.scale(scale, scale);
+		
+		// Unscaled coordinates (will be scaled by matrix)
+		int padding = 5;
+		int lineHeight = 12;
+		int searchBarHeight = 16; // Height of search bar
+		int contentOffset = 3; // Shift content 3px up
+		int textX = padding;
+		int searchBarY = padding - contentOffset; // Shift search bar 3px up
+		int contentY = searchBarY + searchBarHeight + 2; // Content starts below search bar
+		int maxY = unscaledHeight - padding;
+		
+		// Draw background (scaled)
+		context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
+		
+		// Draw border (scaled)
+		context.drawBorder(0, 0, unscaledWidth, unscaledHeight, 0xFFFFFFFF);
+		
+		// Draw search bar background (relative to matrix)
+		int searchBarX = padding;
+		int searchBarWidth = unscaledWidth - padding * 2;
+		context.fill(searchBarX, searchBarY, searchBarX + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
+		context.drawBorder(searchBarX, searchBarY, searchBarWidth, searchBarHeight, mkLevelSearchFocused ? 0xFFFFFF00 : 0xFF808080);
+		
+		// Draw search text (vertically centered, relative to matrix)
+		String displayText = mkLevelSearchText.isEmpty() ? "Suchen..." : mkLevelSearchText;
+		int textColor = mkLevelSearchText.isEmpty() ? 0xFF808080 : 0xFFFFFFFF;
+		// Calculate text height and center it vertically
+		int textHeight = client.textRenderer.fontHeight; // Usually 9 pixels
+		int searchTextY = searchBarY + (searchBarHeight - textHeight) / 2;
+		context.drawText(client.textRenderer, displayText, searchBarX + 2, searchTextY, textColor, false);
+		
+		// Draw cursor if focused (vertically centered, relative to matrix)
+		if (mkLevelSearchFocused && mkLevelSearchCursorVisible) {
+			int cursorX = searchBarX + 2;
+			if (!mkLevelSearchText.isEmpty() && mkLevelSearchCursorPosition > 0) {
+				String textBeforeCursor = mkLevelSearchText.substring(0, Math.min(mkLevelSearchCursorPosition, mkLevelSearchText.length()));
+				cursorX += client.textRenderer.getWidth(textBeforeCursor);
+			}
+			// Center cursor vertically
+			int cursorY = searchBarY + (searchBarHeight - textHeight) / 2;
+			context.fill(cursorX, cursorY, cursorX + 1, cursorY + textHeight, 0xFFFFFFFF);
+		}
+		
+		// Filter entries based on search text
+		List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+		
+		// Get scroll offset
+		// Each entry has 2 lines, so we need to calculate the start index based on that
+		int linesPerEntry = 2;
+		int startIndex = mkLevelScrollOffset / (lineHeight * linesPerEntry);
+		
+		// Calculate how many entries can fit in the available space (minus search bar and contentOffset)
+		// Use unscaled height for calculation
+		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
+		int entryHeight = lineHeight * linesPerEntry;
+		// Use floor division to get the exact number of entries that fully fit
+		int maxVisibleEntries = availableHeight / entryHeight;
+		
+		// Reset scroll if filtered list is smaller or adjust to show last entries
+		if (startIndex >= filteredEntries.size()) {
+			startIndex = Math.max(0, filteredEntries.size() - maxVisibleEntries);
+			mkLevelScrollOffset = startIndex * entryHeight;
+		}
+		
+		// Ensure we can scroll to the last entry (Level 200)
+		// Calculate the maximum scroll offset based on total height
+		// This ensures we can scroll until Level 200 is visible at the bottom
+		int totalHeight = filteredEntries.size() * entryHeight;
+		// Add one more entry height to ensure Level 200 is fully visible
+		// This accounts for any rounding errors and ensures we can scroll until Level 200 is visible
+		int maxScrollOffset = Math.max(0, totalHeight - availableHeight + entryHeight);
+		
+		// Limit the scroll offset to ensure we can see Level 200
+		if (mkLevelScrollOffset > maxScrollOffset) {
+			mkLevelScrollOffset = maxScrollOffset;
+		}
+		
+		// Recalculate startIndex based on the corrected scroll offset
+		startIndex = mkLevelScrollOffset / entryHeight;
+		
+		// Ensure we can always reach the last entry (Level 200)
+		// The maximum startIndex should allow the last entry (index size-1) to be visible
+		// This means: startIndex + maxVisibleEntries - 1 >= size - 1
+		// So: startIndex >= size - maxVisibleEntries
+		// But we want to allow scrolling until the last entry is at the bottom, so we allow one more entry
+		if (filteredEntries.size() > maxVisibleEntries) {
+			// Calculate maxStartIndex to ensure the last entry is visible
+			// We allow scrolling until the last entry can be the last visible entry
+			// Add one more entry to ensure we can fully scroll to show Level 200 at the bottom
+			int maxStartIndex = filteredEntries.size() - maxVisibleEntries + 1;
+			// Ensure we can scroll enough to show the last entry
+			int maxScrollForLastEntry = maxStartIndex * entryHeight;
+			// Use the larger of the two calculations to ensure Level 200 is always reachable
+			if (maxScrollOffset < maxScrollForLastEntry) {
+				maxScrollOffset = maxScrollForLastEntry;
+			}
+			// Update scroll offset if needed
+			if (mkLevelScrollOffset > maxScrollOffset) {
+				mkLevelScrollOffset = maxScrollOffset;
+				startIndex = mkLevelScrollOffset / entryHeight;
+			}
+		}
+		
+		// Show scroll indicator if needed (in entries, not lines)
+		int textY = contentY;
+		if (startIndex > 0) {
+			String moreText = String.format("↑ %d weitere (Scrollen)", startIndex);
+			context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+			textY += lineHeight;
+		}
+		
+		// Draw visible entries from filtered list
+		int currentIndex = startIndex;
+		int visibleEntryCount = 0;
+		
+		while (currentIndex < filteredEntries.size() && textY < maxY) {
+			// Check if we have space for another entry before drawing
+			if (textY + lineHeight * 2 > maxY) {
+				break;
+			}
+			
+			MKLevelInfo levelInfo = filteredEntries.get(currentIndex);
+			
+			// Draw level header (yellow)
+			String levelText = "-Level " + levelInfo.level;
+			context.drawText(client.textRenderer, levelText, textX, textY, 0xFFFFFF00, true);
+			textY += lineHeight;
+			
+			// Draw essence and amount (white)
+			String essenceText = " " + levelInfo.essence + ", " + formatNumberWithSeparator(levelInfo.amount);
+			context.drawText(client.textRenderer, essenceText, textX, textY, 0xFFFFFFFF, true);
+			textY += lineHeight;
+			
+			currentIndex++;
+			visibleEntryCount++;
+		}
+		
+		// Show scroll indicator if needed (in entries, not lines)
+		if (currentIndex < filteredEntries.size()) {
+			String moreText = String.format("↓ %d weitere (Scrollen)", filteredEntries.size() - currentIndex);
+			context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+		}
+		
+		// Pop matrix transformation
+		matrices.popMatrix();
+	}
+	
+	/**
+	 * Filters MKLevel entries based on search text
+	 * Searches in Level, Essence, and Amount
+	 */
+	private static List<MKLevelInfo> filterMKLevelEntries(String searchText) {
+		if (searchText == null || searchText.trim().isEmpty()) {
+			return mkLevelDatabase;
+		}
+		
+		String searchLower = searchText.toLowerCase().trim();
+		List<MKLevelInfo> filtered = new ArrayList<>();
+		
+		// Check if search text contains "level" followed by a number (e.g., "Level 10", "level10", "level 10", "Level: 10")
+		Integer levelFromSearch = null;
+		boolean isLevelOnlySearch = false;
+		// Pattern matches: "level" (case-insensitive), optional ":", optional whitespace, then digits
+		java.util.regex.Pattern levelPattern = java.util.regex.Pattern.compile("level\\s*:?\\s*(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+		java.util.regex.Matcher levelMatcher = levelPattern.matcher(searchText);
+		if (levelMatcher.find()) {
+			try {
+				levelFromSearch = Integer.parseInt(levelMatcher.group(1));
+			} catch (NumberFormatException e) {
+				// Ignore
+			}
+		} else {
+			// Check if search text is just "level" (without number)
+			if (searchLower.equals("level") || searchLower.equals("level:")) {
+				isLevelOnlySearch = true;
+			}
+		}
+		
+		for (MKLevelInfo entry : mkLevelDatabase) {
+			boolean matches = false;
+			
+			// If only "Level" was searched (without number), show all entries
+			if (isLevelOnlySearch) {
+				matches = true;
+			}
+			// Search for "Level X" pattern (prioritize exact level match)
+			else if (levelFromSearch != null && entry.level == levelFromSearch) {
+				matches = true;
+			}
+			// Search in displayed text "-Level X" - check if search text matches any part of the displayed text
+			else {
+				String displayedLevelText = "-Level " + entry.level;
+				if (displayedLevelText.toLowerCase().contains(searchLower)) {
+					matches = true;
+				}
+			}
+			
+			// Search in Level (as number) - only if not already matched
+			if (!matches && String.valueOf(entry.level).contains(searchLower)) {
+				matches = true;
+			}
+			
+			// Search in Essence
+			if (!matches && entry.essence.toLowerCase().contains(searchLower)) {
+				matches = true;
+			}
+			
+			// Search in Amount
+			if (!matches) {
+				String amountStr = formatNumberWithSeparator(entry.amount);
+				if (amountStr.contains(searchLower) || String.valueOf(entry.amount).contains(searchLower)) {
+					matches = true;
+				}
+			}
+			
+			if (matches) {
+				filtered.add(entry);
+			}
+		}
+		
+		return filtered;
+	}
+	
+	/**
+	 * Handles mouse click for MKLevel search bar
+	 */
+	public static boolean handleMKLevelSearchClick(double mouseX, double mouseY, int button) {
+		if (!isInMKLevelInventory) {
+			return false;
+		}
+		
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null || client.getWindow() == null) {
+			return false;
+		}
+		
+		int screenWidth = client.getWindow().getScaledWidth();
+		int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		// Unscaled dimensions
+		int unscaledWidth = 200;
+		int overlayWidth = Math.round(unscaledWidth * scale);
+		
+		// Calculate overlay X position
+		// Wenn xPos -1 ist, positioniere links vom Inventar
+		int overlayX = 0; // Initialize with default value
+		if (xPos == -1) {
+			// Get inventory X position
+			int inventoryX = 0;
+			if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+				try {
+					java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
+					xField.setAccessible(true);
+					inventoryX = xField.getInt(handledScreen);
+				} catch (Exception e) {
+					// Fallback: rechts positionieren
+					overlayX = screenWidth - overlayWidth - 10;
+				}
+			} else {
+				// Fallback: rechts positionieren
+				overlayX = screenWidth - overlayWidth - 10;
+			}
+			
+			// Positioniere links vom Inventar
+			if (inventoryX > 0) {
+				overlayX = inventoryX - overlayWidth - 10; // 10px Abstand links vom Inventar
+			} else if (overlayX == 0) {
+				// Fallback: rechts positionieren wenn inventoryX nicht verfügbar
+				overlayX = screenWidth - overlayWidth - 10;
+			}
+		} else {
+			// Verwende die absolute X-Position (obere linke Ecke)
+			overlayX = xPos;
+		}
+		
+		// Scaled dimensions for click detection
+		int padding = Math.round(5 * scale);
+		int searchBarHeight = Math.round(16 * scale);
+		int contentOffset = Math.round(3 * scale); // Shift content 3px up (same as in render)
+		
+		// Calculate search bar position (we need inventory Y position)
+		int searchBarX = overlayX + padding;
+		int searchBarY = 0; // Will be calculated based on inventory
+		
+		// Get inventory Y position
+		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+			try {
+				java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
+				yField.setAccessible(true);
+				int inventoryY = yField.getInt(handledScreen);
+				int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
+				int overlayY = (yOffset == -1) ? inventoryY : yOffset;
+				searchBarY = overlayY + padding - contentOffset; // Shift search bar 3px up
+			} catch (Exception e) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+		
+		int searchBarWidth = overlayWidth - padding * 2;
+		
+		// Check if click is on search bar
+		if (mouseX >= searchBarX && mouseX <= searchBarX + searchBarWidth &&
+			mouseY >= searchBarY && mouseY <= searchBarY + searchBarHeight) {
+			
+			if (button == 0) { // Left click
+				mkLevelSearchFocused = true;
+				// Set cursor position based on click
+				String textBeforeClick = mkLevelSearchText;
+				int clickX = (int) (mouseX - searchBarX - 2);
+				mkLevelSearchCursorPosition = findCursorPosition(client, textBeforeClick, clickX);
+				return true;
+			} else if (button == 1) { // Right click - clear search
+				mkLevelSearchText = "";
+				mkLevelSearchCursorPosition = 0;
+				mkLevelScrollOffset = 0;
+				return true;
+			}
+		} else {
+			// Click outside search bar - unfocus
+			mkLevelSearchFocused = false;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Finds cursor position based on click X position
+	 */
+	private static int findCursorPosition(MinecraftClient client, String text, int clickX) {
+		if (text.isEmpty()) {
+			return 0;
+		}
+		
+		for (int i = 0; i <= text.length(); i++) {
+			String substring = text.substring(0, i);
+			int width = client.textRenderer.getWidth(substring);
+			if (width >= clickX) {
+				// Check if we're closer to this position or the previous one
+				if (i > 0) {
+					int prevWidth = client.textRenderer.getWidth(text.substring(0, i - 1));
+					if (clickX - prevWidth < width - clickX) {
+						return i - 1;
+					}
+				}
+				return i;
+			}
+		}
+		
+		return text.length();
+	}
+	
+	/**
+	 * Handles character input for MKLevel search bar
+	 */
+	public static boolean handleMKLevelCharTyped(char chr, int modifiers) {
+		if (!isInMKLevelInventory || !mkLevelSearchFocused) {
+			return false;
+		}
+		
+		// Handle backspace
+		if (chr == '\b') {
+			if (!mkLevelSearchText.isEmpty() && mkLevelSearchCursorPosition > 0) {
+				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition - 1) +
+									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
+				mkLevelSearchCursorPosition--;
+				mkLevelScrollOffset = 0; // Reset scroll when search changes
+			}
+			return true;
+		}
+		
+		// Handle delete
+		if (chr == 127) {
+			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
+				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
+									mkLevelSearchText.substring(mkLevelSearchCursorPosition + 1);
+				mkLevelScrollOffset = 0; // Reset scroll when search changes
+			}
+			return true;
+		}
+		
+		// Handle printable characters
+		if (chr >= 32 && chr != 127) {
+			mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
+								chr +
+								mkLevelSearchText.substring(mkLevelSearchCursorPosition);
+			mkLevelSearchCursorPosition++;
+			mkLevelScrollOffset = 0; // Reset scroll when search changes
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Handles key press for MKLevel search bar
+	 * Based on SearchBarUtility.handleKeyPress
+	 */
+	public static boolean handleMKLevelKeyPressed(int keyCode, int scanCode, int modifiers) {
+		if (!isInMKLevelInventory || !mkLevelSearchFocused) {
+			return false;
+		}
+		
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null) {
+			return false;
+		}
+		
+		// Cursor sichtbar machen bei Tastendruck
+		mkLevelSearchCursorVisible = true;
+		mkLevelSearchCursorBlinkTime = System.currentTimeMillis();
+		
+		// ESC-Taste
+		if (keyCode == 256) {
+			mkLevelSearchFocused = false;
+			return true;
+		}
+		
+		// Backspace-Taste
+		if (keyCode == 259) {
+			// Strg+Backspace: Lösche alles
+			if (modifiers == 2) { // 2 = Strg
+				mkLevelSearchText = "";
+				mkLevelSearchCursorPosition = 0;
+				mkLevelScrollOffset = 0; // Reset scroll when search changes
+			} else if (!mkLevelSearchText.isEmpty() && mkLevelSearchCursorPosition > 0) {
+				// Normaler Backspace: Lösche ein Zeichen
+				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition - 1) +
+									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
+				mkLevelSearchCursorPosition--;
+				mkLevelScrollOffset = 0; // Reset scroll when search changes
+			}
+			return true;
+		}
+		
+		// Delete-Taste
+		if (keyCode == 261) {
+			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
+				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
+									mkLevelSearchText.substring(mkLevelSearchCursorPosition + 1);
+				mkLevelScrollOffset = 0; // Reset scroll when search changes
+			}
+			return true;
+		}
+		
+		// Pfeiltasten
+		if (keyCode == 263) { // Left arrow
+			if (mkLevelSearchCursorPosition > 0) {
+				mkLevelSearchCursorPosition--;
+			}
+			return true;
+		}
+		
+		if (keyCode == 262) { // Right arrow
+			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
+				mkLevelSearchCursorPosition++;
+			}
+			return true;
+		}
+		
+		// Handle home/end
+		if (keyCode == 268) { // Home
+			mkLevelSearchCursorPosition = 0;
+			return true;
+		}
+		
+		if (keyCode == 269) { // End
+			mkLevelSearchCursorPosition = mkLevelSearchText.length();
+			return true;
+		}
+		
+		// Strg-Funktionen
+		if (modifiers == 2) { // 2 = Strg
+			switch (keyCode) {
+				case 67: // Strg+C - Kopieren
+					if (!mkLevelSearchText.isEmpty()) {
+						client.keyboard.setClipboard(mkLevelSearchText);
+					}
+					return true;
+				case 86: // Strg+V - Einfügen
+					String clipboardText = client.keyboard.getClipboard();
+					if (clipboardText != null && !clipboardText.isEmpty()) {
+						mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
+											clipboardText +
+											mkLevelSearchText.substring(mkLevelSearchCursorPosition);
+						mkLevelSearchCursorPosition += clipboardText.length();
+						mkLevelScrollOffset = 0; // Reset scroll when search changes
+					}
+					return true;
+				case 65: // Strg+A - Alles markieren (nicht nötig, aber für Konsistenz)
+					return true;
+			}
+		}
+		
+		// Zeicheneingabe (basierend auf SearchBarUtility)
+		// Leertaste
+		if (keyCode == 32) {
+			insertMKLevelCharacter(' ');
+			return true;
+		}
+		
+		// Einfache Sonderzeichen
+		if (keyCode == 188) {
+			insertMKLevelCharacter(',');
+			return true;
+		}
+		
+		if (keyCode == 190) {
+			insertMKLevelCharacter('.');
+			return true;
+		}
+		
+		// Alternative KeyCodes für QWERTZ-Layout
+		if (keyCode == 44) {
+			insertMKLevelCharacter(',');
+			return true;
+		}
+		
+		if (keyCode == 46) {
+			insertMKLevelCharacter('.');
+			return true;
+		}
+		
+		if (keyCode == 189) {
+			insertMKLevelCharacter('-');
+			return true;
+		}
+		
+		if (keyCode == 187) {
+			insertMKLevelCharacter('+');
+			return true;
+		}
+		
+		if (keyCode == 186) {
+			insertMKLevelCharacter(';');
+			return true;
+		}
+		
+		if (keyCode == 222) {
+			insertMKLevelCharacter('"');
+			return true;
+		}
+		
+		if (keyCode == 192) {
+			insertMKLevelCharacter('`');
+			return true;
+		}
+		
+		// AltGr-Kombinationen
+		boolean handled = false;
+		if (modifiers == 6) {
+			switch (keyCode) {
+				case 56:
+					insertMKLevelCharacter('[');
+					handled = true;
+					break;
+				case 57:
+					insertMKLevelCharacter(']');
+					handled = true;
+					break;
+				case 55:
+					insertMKLevelCharacter('{');
+					handled = true;
+					break;
+				case 48:
+					insertMKLevelCharacter('}');
+					handled = true;
+					break;
+				case 81:
+					insertMKLevelCharacter('@');
+					handled = true;
+					break;
+			}
+		}
+		
+		// Shift-Kombinationen
+		if (modifiers == 1) {
+			switch (keyCode) {
+				case 55:
+					insertMKLevelCharacter('/');
+					handled = true;
+					break;
+				case 56:
+					insertMKLevelCharacter('(');
+					handled = true;
+					break;
+				case 57:
+					insertMKLevelCharacter(')');
+					handled = true;
+					break;
+				case 48:
+					insertMKLevelCharacter('=');
+					handled = true;
+					break;
+				case 220:
+					insertMKLevelCharacter('|');
+					handled = true;
+					break;
+			}
+		}
+		
+		if (keyCode == 53 && modifiers == 1) {
+			insertMKLevelCharacter('%');
+			return true;
+		}
+		
+		// Separate Sonderzeichen-Tasten
+		if (keyCode == 92) {
+			insertMKLevelCharacter('#');
+			return true;
+		}
+		
+		if (keyCode == 93) {
+			insertMKLevelCharacter('+');
+			return true;
+		}
+		
+		if (keyCode == 47) {
+			insertMKLevelCharacter('-');
+			return true;
+		}
+		
+		if (keyCode == 162 && modifiers == 0) {
+			insertMKLevelCharacter('<');
+			return true;
+		}
+		
+		if (keyCode == 162 && modifiers == 1) {
+			insertMKLevelCharacter('>');
+			return true;
+		}
+		
+		// Separate ß-Taste
+		if (keyCode == 45) {
+			insertMKLevelCharacter('ß');
+			return true;
+		}
+		
+		// Separate Umlaut-Tasten
+		if (keyCode == 39) {
+			insertMKLevelCharacter('ä');
+			return true;
+		}
+		
+		if (keyCode == 59) {
+			insertMKLevelCharacter('ö');
+			return true;
+		}
+		
+		if (keyCode == 91) {
+			insertMKLevelCharacter('ü');
+			return true;
+		}
+		
+		// Numpad-Tasten
+		if (keyCode == 334) {
+			insertMKLevelCharacter('+');
+			return true;
+		}
+		
+		if (keyCode == 333) {
+			insertMKLevelCharacter('-');
+			return true;
+		}
+		
+		// Numpad-Zahlen 0-9
+		if (keyCode == 320) {
+			insertMKLevelCharacter('0');
+			return true;
+		}
+		
+		if (keyCode >= 321 && keyCode <= 329) {
+			char number = (char) ('0' + (keyCode - 321 + 1));
+			insertMKLevelCharacter(number);
+			return true;
+		}
+		
+		if (handled) {
+			return true;
+		}
+		
+		// Zahlen 0-9
+		if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
+			char number = (char) keyCode;
+			insertMKLevelCharacter(number);
+			return true;
+		}
+		
+		// Buchstaben A-Z (QWERTZ Layout)
+		if (keyCode >= 65 && keyCode <= 90) {
+			char letter;
+			
+			// QWERTZ Layout: Y und Z tauschen
+			if (keyCode == 89) {
+				letter = modifiers == 1 ? 'Z' : 'z';
+			} else if (keyCode == 90) {
+				letter = modifiers == 1 ? 'Y' : 'y';
+			} else {
+				// Normale Buchstaben: Großbuchstaben bei Shift, Kleinbuchstaben ohne Shift
+				letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
+			}
+			
+			insertMKLevelCharacter(letter);
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Inserts a character at the cursor position
+	 */
+	private static void insertMKLevelCharacter(char character) {
+		mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
+							character +
+							mkLevelSearchText.substring(mkLevelSearchCursorPosition);
+		mkLevelSearchCursorPosition++;
+		mkLevelScrollOffset = 0; // Reset scroll when search changes
 	}
 }
 

@@ -29,21 +29,25 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
-        int dynamicWidth = getWidth();
+        
+        // Use the exact same logic as BPViewerUtility.onHudRender()
+        // Calculate unscaled width for positioning (same as BPViewerUtility line 514)
+        int unscaledWidth = calculateUnscaledWidth();
         
         // Determine if overlay is on left or right side of screen
         int baseX = screenWidth - DEFAULT_WIDTH - xOffset;
         boolean isOnLeftSide = baseX < screenWidth / 2;
         
-        // Adjust X position based on side
+        // Recalculate position with dynamic width using config (same as BPViewerUtility lines 524-531)
         // If on left side: expand to the right (keep left edge fixed)
         // If on right side: expand to the left (keep right edge fixed)
         if (isOnLeftSide) {
             // Keep left edge fixed, expand to the right
             return baseX;
         } else {
-            // Keep right edge fixed, expand to the left
-            return screenWidth - dynamicWidth - xOffset;
+            // Keep right edge fixed, expand to the left (exact same as BPViewerUtility line 530)
+            // Use unscaled width for positioning, just like BPViewerUtility does
+            return screenWidth - unscaledWidth - xOffset;
         }
     }
     
@@ -87,19 +91,25 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
-        int dynamicWidth = getWidth();
         
-        // Determine if overlay is on left or right side of screen
+        // Use unscaled width for positioning (same as BPViewerUtility line 514)
+        int unscaledWidth = calculateUnscaledWidth();
+        
+        // Use the exact same logic as BPViewerUtility for determining side
+        // Determine if overlay is on left or right side based on current position
         boolean isOnLeftSide = x < screenWidth / 2;
         
-        // Calculate xOffset based on side
+        // Calculate xOffset based on side (same logic as BPViewerUtility uses)
         int xOffset;
         if (isOnLeftSide) {
-            // On left side: xOffset is distance from left edge
+            // On left side: xOffset is distance from right edge with default width
             xOffset = screenWidth - DEFAULT_WIDTH - x;
         } else {
-            // On right side: xOffset is distance from right edge
-            xOffset = screenWidth - dynamicWidth - x;
+            // On right side: xOffset is distance from right edge (same as BPViewerUtility line 530)
+            // Use unscaled width for positioning, just like BPViewerUtility does
+            // This keeps the right edge fixed: screenWidth - unscaledWidth - xOffset = x
+            // So: xOffset = screenWidth - unscaledWidth - x
+            xOffset = screenWidth - unscaledWidth - x;
         }
         
         // Calculate Y percent with better precision to avoid rounding errors
@@ -110,6 +120,67 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX = xOffset;
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = yPercent;
+    }
+    
+    @Override
+    public void setSize(int width, int height) {
+        // Get current unscaled dimensions
+        int unscaledWidth = calculateUnscaledWidth();
+        int unscaledHeight = calculateUnscaledHeightUnscaled();
+        
+        // Calculate scale based on width and height
+        float scaleX = (float) width / unscaledWidth;
+        float scaleY = (float) height / unscaledHeight;
+        float scale = (scaleX + scaleY) / 2.0f;
+        
+        // Clamp scale to reasonable values (0.1 to 5.0)
+        scale = Math.max(0.1f, Math.min(5.0f, scale));
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale = scale;
+    }
+    
+    /**
+     * Calculate unscaled height (without applying scale factor)
+     */
+    private int calculateUnscaledHeightUnscaled() {
+        try {
+            // Get current blueprint data using reflection
+            BPViewerUtility instance = BPViewerUtility.getInstance();
+            String activeFloor = instance.getActiveFloor();
+            
+            if (activeFloor == null) {
+                return DEFAULT_HEIGHT;
+            }
+            
+            // Use reflection to access the private config field
+            java.lang.reflect.Field configField = BPViewerUtility.class.getDeclaredField("config");
+            configField.setAccessible(true);
+            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) configField.get(instance);
+            
+            BPViewerUtility.BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
+            
+            if (floorData == null || floorData.blueprints == null) {
+                return DEFAULT_HEIGHT;
+            }
+            
+            // Get current rarity data
+            String currentRarity = getCurrentRarity();
+            BPViewerUtility.BlueprintConfig.RarityData rarityData = floorData.blueprints.get(currentRarity);
+            
+            if (rarityData == null || rarityData.items == null) {
+                return DEFAULT_HEIGHT;
+            }
+            
+            // Calculate height based on blueprint count (same logic as BPViewerUtility)
+            int baseHeight = 20;
+            int blueprintHeight = rarityData.items.size() * 12;
+            int bottomPadding = 5;
+            
+            return baseHeight + blueprintHeight + bottomPadding;
+        } catch (Exception e) {
+            // Fallback to default height if reflection fails
+            return DEFAULT_HEIGHT;
+        }
     }
     
     @Override
@@ -175,10 +246,72 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     public void resetToDefault() {
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX = 1;
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = 2; // 2% vom oberen Rand
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale = 1.0f;
+    }
+    
+    @Override
+    public void resetSizeToDefault() {
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale = 1.0f;
+    }
+    
+    /**
+     * Calculate unscaled width for positioning (same logic as BPViewerUtility line 514)
+     */
+    private int calculateUnscaledWidth() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return DEFAULT_WIDTH;
+        
+        try {
+            // Get current blueprint data using reflection
+            BPViewerUtility instance = BPViewerUtility.getInstance();
+            String activeFloor = instance.getActiveFloor();
+            
+            if (activeFloor == null) {
+                return DEFAULT_WIDTH;
+            }
+            
+            // Use reflection to access the private config field
+            java.lang.reflect.Field configField = BPViewerUtility.class.getDeclaredField("config");
+            configField.setAccessible(true);
+            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) configField.get(instance);
+            
+            BPViewerUtility.BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
+            
+            if (floorData == null || floorData.blueprints == null) {
+                return DEFAULT_WIDTH;
+            }
+            
+            // Get current rarity data
+            String currentRarity = getCurrentRarity();
+            BPViewerUtility.BlueprintConfig.RarityData rarityData = floorData.blueprints.get(currentRarity);
+            
+            if (rarityData == null || rarityData.items == null) {
+                return DEFAULT_WIDTH;
+            }
+            
+            // Calculate width based on text content (same logic as BPViewerUtility.calculateRequiredWidth)
+            int maxWidth = DEFAULT_WIDTH;
+            for (String blueprint : rarityData.items) {
+                String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
+                int textWidth = client.textRenderer.getWidth(displayText);
+                // Add padding for the text (left margin + right margin) - increased for longer German text
+                textWidth += 45;
+                if (textWidth > maxWidth) {
+                    maxWidth = textWidth;
+                }
+            }
+            
+            // Apply the same -15px adjustment as in BPViewerUtility line 514
+            return maxWidth - 15;
+        } catch (Exception e) {
+            // Fallback to default width if reflection fails
+            return DEFAULT_WIDTH;
+        }
     }
     
     /**
      * Calculate dynamic width based on current blueprint data (same logic as BPViewerUtility)
+     * This returns the SCALED width for rendering
      */
     private int calculateDynamicWidth() {
         MinecraftClient client = MinecraftClient.getInstance();

@@ -196,7 +196,7 @@
       }
     ],
     "4": [
-      "Kristalline Schulterpanter",
+      "Kristalline Schulterpanzer",
       {
         "item_type":"Schultern",
         "rarity":"Legendary",
@@ -252,7 +252,7 @@
         "floor": "e48",
         "modifier":"[Andere], [Andere], [Schaden], [Verteidigung]"
       },
-      "Kristallines Schutzband",
+      "Kristallenes Schutzband",
       {
         "item_type":"Gürtel",
         "rarity":"Legendary",
