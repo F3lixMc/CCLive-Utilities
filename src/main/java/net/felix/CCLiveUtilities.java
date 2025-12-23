@@ -16,6 +16,9 @@ import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.commands.CCLiveCommands;
+import net.felix.chat.ChatManager;
+import net.felix.profile.ProfileStatsManager;
+import net.felix.profile.PlayerHoverStatsUtility;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -57,21 +60,45 @@ public class CCLiveUtilities implements ModInitializer {
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
 		
+		// Initialisiere Chat-System
+		try {
+			ChatManager.getInstance().initialize();
+			System.out.println("✅ ChatManager initialisiert");
+		} catch (Exception e) {
+			System.err.println("[CCLive-Utilities] Error initializing ChatManager: " + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		// Initialisiere Profile-Stats-System
+		try {
+			ProfileStatsManager.getInstance().initialize();
+			System.out.println("✅ ProfileStatsManager initialisiert");
+		} catch (Exception e) {
+			System.err.println("[CCLive-Utilities] Error initializing ProfileStatsManager: " + e.getMessage());
+			e.printStackTrace();
+		}
+		
+		// Initialisiere Player Hover Stats Utility
+		try {
+			PlayerHoverStatsUtility.initialize();
+			System.out.println("✅ PlayerHoverStatsUtility initialisiert");
+		} catch (Exception e) {
+			System.err.println("[CCLive-Utilities] Error initializing PlayerHoverStatsUtility: " + e.getMessage());
+			e.printStackTrace();
+		}
+		
 		// Registriere alle CCLive-Commands (Blueprint + Leaderboard)
 		CCLiveCommands.register();
 		
 		// Initialisiere Player Icon System
-		// Temporarily disabled - needs more work
-		// Note: These are initialized but actual loading happens when client is ready
-		/*
 		try {
 			net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.initialize();
 			net.felix.utilities.Other.PlayericonUtility.PlayerIconNetworking.initialize();
+			System.out.println("✅ Player Icon System initialisiert");
 		} catch (Exception e) {
 			System.err.println("[CCLive-Utilities] Error initializing Player Icon System: " + e.getMessage());
 			e.printStackTrace();
 		}
-		*/
 
 	}
 

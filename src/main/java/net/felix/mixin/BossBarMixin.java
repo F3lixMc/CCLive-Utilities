@@ -3,6 +3,8 @@ package net.felix.mixin;
 import net.minecraft.client.gui.hud.BossBarHud;
 import net.minecraft.client.gui.hud.ClientBossBar;
 import net.felix.utilities.Aincraft.KillsUtility;
+import net.felix.utilities.Aincraft.WaveUtility;
+import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -73,10 +75,15 @@ public class BossBarMixin {
             }
             
             if (bossBars != null) {
+                int index = 0;
                 for (ClientBossBar bossBar : bossBars.values()) {
+                    index++;
                     String name = bossBar.getName().getString();
                     
-                    // Look for bossbar that contains kill information
+                    // Fabrik-Wellen (2. Bossbar) verarbeiten
+                    WaveUtility.processBossBarWave(name, index);
+                    
+                    // Look for bossbar that contains kill information (Floors)
                     // Usually it's the top bossbar that shows kills
                     // Use the same Chinese characters as in KillsUtility
                     if (name.contains("Kills") || name.contains("Kill") || 
@@ -84,7 +91,17 @@ public class BossBarMixin {
                         
                         // Process the kill information
                         KillsUtility.processBossBarKills(name);
-                        break; // Found the kills bossbar, no need to check others
+                        // Don't break here - continue checking for collection bossbars
+                    }
+                    
+                    // Look for bossbar that contains collection information (Farmworld)
+                    // Collection bossbars also contain Chinese numbers
+                    // Check if it's not a kills bossbar but contains Chinese numbers
+                    if (!name.contains("Kills") && !name.contains("Kill") && 
+                        name.matches(".*[㚏㚐㚑㚒㚓㚔㚕㚖㚗㚘].*")) {
+                        
+                        // Process the collection information
+                        FarmworldCollectionsCollector.processBossBarCollection(name);
                     }
                 }
             }

@@ -38,3 +38,10 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# Server & Database (NICHT ins öffentliche Repo!)
+server.js
+*.sql
+NOTIZEN_TODOS.md
+SEASON_MANAGEMENT.md
+public/

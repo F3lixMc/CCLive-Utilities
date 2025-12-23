@@ -243,19 +243,33 @@ public class KillsUtility {
 	private static int decodeChineseNumber(String text) {
 		try {
 			StringBuilder numberStr = new StringBuilder();
+			StringBuilder debugChars = new StringBuilder();
+			
+			System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Roher Text: '" + text + "'");
+			System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Text-Länge: " + text.length());
 			
 			for (char c : text.toCharArray()) {
 				Integer digit = CHINESE_NUMBERS.get(c);
 				if (digit != null) {
 					numberStr.append(digit);
+					debugChars.append("'").append(c).append("'(").append((int)c).append(")->").append(digit).append(" ");
+				} else {
+					debugChars.append("'").append(c).append("'(").append((int)c).append(")->? ");
 				}
 			}
 			
+			System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Zeichen-Mapping: " + debugChars.toString());
+			
 			if (numberStr.length() > 0) {
-				return Integer.parseInt(numberStr.toString());
+				int result = Integer.parseInt(numberStr.toString());
+				System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Ergebnis: " + result + " (aus String: '" + numberStr.toString() + "')");
+				return result;
+			} else {
+				System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - KEINE ZAHL GEFUNDEN!");
 			}
 		} catch (Exception e) {
-			// Silent error handling
+			System.err.println("❌ [KillsUtility] DEBUG decodeChineseNumber - FEHLER: " + e.getMessage());
+			e.printStackTrace();
 		}
 		
 		return -1; // Invalid or no number found
@@ -867,10 +881,16 @@ public class KillsUtility {
 	public static void processBossBarKills(String bossBarName) {
 		try {
 			if (!isTrackingKills) {
+				System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Tracking nicht aktiv, ignoriere: '" + bossBarName + "'");
 				return;
 			}
 			
+			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Bossbar-Name empfangen: '" + bossBarName + "'");
+			
 			int kills = decodeChineseNumber(bossBarName);
+			
+			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Dekodierte Kills: " + kills);
+			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Vorher: initialKills=" + initialKills + ", currentKills=" + currentKills + ", newKills=" + newKills + ", firstBossBarUpdate=" + firstBossBarUpdate);
 			
 			if (kills >= 0) {
 				if (firstBossBarUpdate) {
@@ -878,20 +898,29 @@ public class KillsUtility {
 					currentKills = kills;
 					newKills = 0;
 					firstBossBarUpdate = false;
+					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - ERSTER UPDATE: initialKills=" + initialKills + ", currentKills=" + currentKills);
 				} else if (kills > currentKills) {
 					currentKills = kills;
 					newKills = currentKills - initialKills;
+					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Kills erhöht: currentKills=" + currentKills + ", newKills=" + newKills);
 				} else if (kills < currentKills) {
 					initialKills = kills;
 					currentKills = kills;
 					newKills = 0;
+					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Kills zurückgesetzt (Floor-Wechsel?): initialKills=" + initialKills + ", currentKills=" + currentKills);
 				} else {
 					currentKills = kills;
 					newKills = currentKills - initialKills;
+					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Kills unverändert: currentKills=" + currentKills + ", newKills=" + newKills);
 				}
+			} else {
+				System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Ungültige Kills (kills < 0), ignoriere");
 			}
+			
+			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Nachher: initialKills=" + initialKills + ", currentKills=" + currentKills + ", newKills=" + newKills);
 		} catch (Exception e) {
-			// Silent error handling
+			System.err.println("❌ [KillsUtility] DEBUG processBossBarKills - FEHLER: " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 }

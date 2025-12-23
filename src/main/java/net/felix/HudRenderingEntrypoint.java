@@ -1,15 +1,50 @@
 package net.felix;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.resource.ResourceManager;
+import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
 
 public class HudRenderingEntrypoint implements ClientModInitializer {
-    private static final Identifier TEST_TEXTURE = Identifier.of("cclive-utilities", "textures/test/testbild.png");
+    private static final Identifier FONT_IDENTIFIER = Identifier.of("cclive-utilities", "default");
 
     @Override
     public void onInitializeClient() {
+        // Verifiziere, dass die Font-Definition geladen wird
+        // Die Font wird automatisch aus assets/cclive-utilities/font/default.json geladen
+        System.out.println("✅ [CCLive-Utilities] Client initialisiert - Font sollte automatisch geladen werden");
+        
+        // Registriere Resource-Reload-Listener, um zu prüfen, ob die Font geladen wird
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(
+            new SimpleSynchronousResourceReloadListener() {
+                @Override
+                public Identifier getFabricId() {
+                    return Identifier.of("cclive-utilities", "font_verification");
+                }
+                
+                @Override
+                public void reload(ResourceManager manager) {
+                    // Prüfe, ob die Font-Definition existiert
+                    var fontResource = manager.getResource(FONT_IDENTIFIER.withPath("font/default.json"));
+                    if (fontResource.isPresent()) {
+                        System.out.println("✅ [CCLive-Utilities] Font-Definition gefunden: " + FONT_IDENTIFIER);
+                    } else {
+                        System.err.println("❌ [CCLive-Utilities] Font-Definition NICHT gefunden: " + FONT_IDENTIFIER);
+                    }
+                    
+                    // Prüfe, ob die Icon-Textur existiert
+                    var iconResource = manager.getResource(Identifier.of("cclive-utilities", "textures/8_chat_icon.png"));
+                    if (iconResource.isPresent()) {
+                        System.out.println("✅ [CCLive-Utilities] Icon-Textur gefunden: textures/8_chat_icon.png");
+                    } else {
+                        System.err.println("❌ [CCLive-Utilities] Icon-Textur NICHT gefunden: textures/8_chat_icon.png");
+                    }
+                }
+            }
+        );
+        
         // HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
         //     MinecraftClient client = MinecraftClient.getInstance();
         //     if (client.player == null) return;

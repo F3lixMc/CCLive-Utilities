@@ -8,6 +8,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * Mixin for DrawContext to disable the dark inventory overlay for Equipment Display screens.
+ */
 @Mixin(DrawContext.class)
 public class DrawContextMixin {
 
@@ -27,4 +30,5 @@ public class DrawContextMixin {
             }
         }
     }
-} 
+}
+

@@ -58,6 +58,11 @@ public class PlayerNametagRenderer {
                             continue;
                         }
                         
+                        // Prüfe ob Nametag-Icons in der Config aktiviert sind
+                        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showPlayerNametagIcon) {
+                            continue;
+                        }
+                        
                         // Only show icon for players who have the mod installed
                         boolean shouldShowIcon = PlayerIconUtility.hasMod(player.getUuid());
                         
@@ -87,6 +92,11 @@ public class PlayerNametagRenderer {
         try {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client == null || client.textRenderer == null) {
+                return;
+            }
+            
+            // Hide icon if F1 is pressed (HUD hidden)
+            if (client.options.hudHidden) {
                 return;
             }
             
@@ -152,12 +162,12 @@ public class PlayerNametagRenderer {
                 // This will be scaled by the baseScale above
                 float iconSize = 10.0f; // Slightly larger for better visibility at distance
                 
-                // Position icon to the left of the nametag, vertically centered
-                // Like LabyMod: icon should be left of the name, centered in the nametag bar
+                // Position icon to the right of the nametag, vertically centered
+                // Format: <rang> <spielername> <icon>
                 // The nametag bar is centered at y=0 in the coordinate space
                 // With negative Y scale, positive Y values move down
-                float spacing = 0.0f; // Space between icon and nametag (like LabyMod)
-                float iconOffsetX = -nameWidth / 2.0f - iconSize - spacing;
+                float spacing = 6.0f; // Space between nametag and icon
+                float iconOffsetX = nameWidth / 2.0f + spacing; // Right side of nametag
                 // Center icon vertically in the nametag bar
                 // With negative Y scale, we need a positive offset to move down
                 // Fine-tune the offset to center the icon properly in the nametag bar
@@ -204,7 +214,6 @@ public class PlayerNametagRenderer {
                             iconToUse = iconIdAlt;
                         } else {
                             // If neither exists, use a fallback or return
-                            System.err.println("[CCLive-Utilities] Icon texture not found: " + iconId + " or " + iconIdAlt);
                             return;
                         }
                     }

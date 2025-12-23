@@ -1,0 +1,14 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "cclive-utilities:64_chat_icon.png",
+      "ascent": 8,
+      "height": 8,
+      "chars": ["ѳ"]
+    }
+  ]
+}
+
+
+

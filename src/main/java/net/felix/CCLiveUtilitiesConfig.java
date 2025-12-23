@@ -72,6 +72,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showDebugInfo = false;
     
+    @SerialEntry
+    public boolean showPlayerNametagIcon = true; // Mod-Icon über Spielernamen anzeigen
+    
     // Debug Settings
     @SerialEntry
     public boolean updateCheckerEnabled = true;
@@ -81,6 +84,14 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean leaderboardDebugging = false;
+    
+    // Player Stats Debug Settings
+    @SerialEntry
+    public boolean playerStatsDebugging = false;
+    
+    // Player Hover Stats Settings
+    @SerialEntry
+    public String hoverStatsChosenStat = "playtime"; // "playtime", "max_coins", "messages_sent", "blueprints_found", "max_damage"
 
     // Equipment Display Settings
     @SerialEntry
@@ -654,6 +665,15 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Spieler Icon"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Mod-Icon über Spielernamen"))
+                                        .description(OptionDescription.of(Text.literal("Zeigt das Mod-Icon über dem Namen von Spielern an, die die Mod installiert haben")))
+                                        .binding(true, () -> HANDLER.instance().showPlayerNametagIcon, newVal -> HANDLER.instance().showPlayerNametagIcon = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
                         .name(Text.literal("Fabrik"))
@@ -1060,6 +1080,29 @@ public class CCLiveUtilitiesConfig {
                                 .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten und -Commands für das Leaderboard-System")))
                                 .binding(false, () -> HANDLER.instance().leaderboardDebugging, newVal -> HANDLER.instance().leaderboardDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Player Stats Debugging"))
+                                .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten für das Senden von Player-Stats")))
+                                .binding(false, () -> HANDLER.instance().playerStatsDebugging, newVal -> HANDLER.instance().playerStatsDebugging = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.<String>createBuilder()
+                                .name(Text.literal("Hover Stats: Chosen Stat"))
+                                .description(OptionDescription.of(Text.literal("Welche Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?\n• playtime: Spielzeit\n• max_coins: Max Coins\n• messages_sent: Gesendete Nachrichten\n• blueprints_found: Gefundene Baupläne\n• max_damage: Max Schaden")))
+                                .binding("playtime", () -> HANDLER.instance().hoverStatsChosenStat, newVal -> {
+                                    // Validiere den Wert
+                                    String[] validValues = {"playtime", "max_coins", "messages_sent", "blueprints_found", "max_damage"};
+                                    boolean isValid = false;
+                                    for (String valid : validValues) {
+                                        if (valid.equals(newVal)) {
+                                            isValid = true;
+                                            break;
+                                        }
+                                    }
+                                    HANDLER.instance().hoverStatsChosenStat = isValid ? newVal : "playtime";
+                                })
+                                .controller(StringControllerBuilder::create)
                                 .build())
                         .build())
                 .save(() -> {

@@ -1,6 +1,7 @@
 package net.felix.leaderboards.http;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import net.felix.leaderboards.config.LeaderboardConfig;
@@ -49,6 +50,39 @@ public class HttpClient {
         if (response.statusCode() == 200) {
             try {
                 return gson.fromJson(response.body(), JsonObject.class);
+            } catch (JsonSyntaxException e) {
+                System.err.println("❌ JSON Parse Error: " + e.getMessage());
+                return null;
+            }
+        } else {
+            System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
+            return null;
+        }
+    }
+    
+    /**
+     * Sendet eine GET-Anfrage und gibt ein JSON-Array zurück
+     */
+    public JsonArray getArray(String endpoint) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(config.getServerUrl() + endpoint))
+            .timeout(Duration.ofMillis(config.getReadTimeout()))
+            .GET()
+            .build();
+            
+        if (config.isDebugMode()) {
+            System.out.println("🌐 HTTP GET: " + config.getServerUrl() + endpoint);
+        }
+        
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        
+        if (config.isDebugMode()) {
+            System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
+        }
+        
+        if (response.statusCode() == 200) {
+            try {
+                return gson.fromJson(response.body(), JsonArray.class);
             } catch (JsonSyntaxException e) {
                 System.err.println("❌ JSON Parse Error: " + e.getMessage());
                 return null;

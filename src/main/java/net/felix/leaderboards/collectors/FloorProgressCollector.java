@@ -103,23 +103,17 @@ public class FloorProgressCollector implements DataCollector {
     
     /**
      * Aktualisiert Floor-Statistiken
+     * DEAKTIVIERT: Floor-Scores werden jetzt von FloorKillsCollector verwaltet (Kills statt Zeit)
      */
     private void updateFloorStats(String floor, long timeSpent) {
-        // Aktualisiere beste Zeit (nur wenn besser oder erste Zeit)
-        Long currentBest = bestFloorTimes.get(floor);
-        if (currentBest == null || timeSpent < currentBest) {
-            bestFloorTimes.put(floor, timeSpent);
-            
-            // Sende beste Zeit in Sekunden an Server
-            long timeInSeconds = timeSpent / 1000;
-            LeaderboardManager.getInstance().updateScore(floor, timeInSeconds);
-            
-            System.out.println("🏆 Neue Bestzeit für " + floor + ": " + timeInSeconds + "s");
-        }
+        // DEAKTIVIERT: Floor-Scores werden jetzt von FloorKillsCollector verwaltet
+        // Zeit-Tracking ist deaktiviert, da Floors Kills statt Zeit tracken sollen
         
-        // Aktualisiere Completion-Count
+        // Aktualisiere Completion-Count (nur lokal, wird nicht an Server gesendet)
         int completions = floorCompletions.getOrDefault(floor, 0) + 1;
         floorCompletions.put(floor, completions);
+        
+        // KEINE Score-Updates mehr - FloorKillsCollector übernimmt das
     }
     
     /**
@@ -168,10 +162,12 @@ public class FloorProgressCollector implements DataCollector {
     
     /**
      * Setzt eine Floor-Zeit manuell (für Testing)
+     * DEAKTIVIERT: Floor-Scores werden jetzt von FloorKillsCollector verwaltet (Kills statt Zeit)
      */
     public void setBestTime(String floor, long timeInSeconds) {
-        bestFloorTimes.put(floor, timeInSeconds * 1000); // Konvertiere zu Millisekunden
-        LeaderboardManager.getInstance().updateScore(floor, timeInSeconds);
+        // DEAKTIVIERT: Floor-Scores werden jetzt von FloorKillsCollector verwaltet
+        bestFloorTimes.put(floor, timeInSeconds * 1000); // Nur lokal speichern
+        // KEIN updateScore mehr - FloorKillsCollector übernimmt das
     }
     
     /**

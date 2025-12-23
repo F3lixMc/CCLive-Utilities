@@ -3,13 +3,15 @@ package net.felix.commands;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.DebugUtility;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.chat.ChatManager;
+import net.felix.utilities.Other.ItemDisplayDebugUtility;
 import net.minecraft.text.Text;
 
 import java.util.concurrent.CompletableFuture;
@@ -52,16 +54,40 @@ public class CCLiveCommands {
                     .executes(CCLiveCommands::showLeaderboardStatus))
                 .then(literal("refresh")
                     .executes(CCLiveCommands::refreshRegistration))
-)
+            )
+            
+            // Player-Stats Commands
+            .then(literal("ps")
+                .then(literal("reset")
+                    .executes(CCLiveCommands::resetPlayerStats))
+            )
+            
+            // Chat Commands
+            .then(literal("chat")
+                .then(literal("toggle")
+                    .then(argument("type", StringArgumentType.string())
+                        .suggests(chatTypeSuggestions())
+                        .executes(context -> toggleChat(context, StringArgumentType.getString(context, "type"))))))
             
             // Debug Commands
             .then(literal("debug")
                 .then(literal("coin_collector")
-                    .executes(CCLiveCommands::debugCoinCollector)))
+                    .executes(CCLiveCommands::debugCoinCollector))
+                .then(literal("itemdisplay")
+                    .executes(CCLiveCommands::debugItemDisplay))
+                .then(literal("nearby")
+                    .executes(CCLiveCommands::debugNearbyDisplays)))
             
             // Allgemeine Commands
             .then(literal("help")
                 .executes(CCLiveCommands::showHelp))
+        );
+        
+        // /chat Command (separat)
+        dispatcher.register(literal("chat")
+            .then(argument("mode", StringArgumentType.string())
+                .suggests(chatModeSuggestions())
+                .executes(context -> setChatMode(context, StringArgumentType.getString(context, "mode"))))
         );
     }
     
@@ -192,6 +218,41 @@ public class CCLiveCommands {
     }
     
     /**
+     * Resettet die Player-Stats des aktuellen Spielers (nur aktuelle Season)
+     */
+    private static int resetPlayerStats(CommandContext<FabricClientCommandSource> context) {
+        context.getSource().sendFeedback(Text.literal("§6Lösche Player-Stats..."));
+        
+        LeaderboardManager manager = LeaderboardManager.getInstance();
+        if (!manager.isEnabled() || !manager.isRegistered()) {
+            context.getSource().sendError(Text.literal("§cStats-/Leaderboard-System nicht verfügbar!"));
+            return 0;
+        }
+        
+        // Asynchroner Server-API-Aufruf
+        CompletableFuture.runAsync(() -> {
+            try {
+                JsonObject response = manager.getHttpClient().deleteWithToken("/profile/reset", manager.getPlayerToken());
+                if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
+                    context.getSource().sendFeedback(Text.literal("§aPlayer-Stats wurden gelöscht!"));
+                    if (response.has("deleted")) {
+                        int deleted = response.get("deleted").getAsInt();
+                        context.getSource().sendFeedback(Text.literal("§7" + deleted + " Einträge entfernt"));
+                    }
+                } else {
+                    String message = response != null && response.has("message") ?
+                        response.get("message").getAsString() : "Unbekannter Fehler";
+                    context.getSource().sendError(Text.literal("§cFehler: " + message));
+                }
+            } catch (Exception e) {
+                context.getSource().sendError(Text.literal("§cVerbindungsfehler: " + e.getMessage()));
+            }
+        });
+        
+        return 1;
+    }
+    
+    /**
      * Zeigt den Status des Leaderboard-Systems
      */
     private static int showLeaderboardStatus(CommandContext<FabricClientCommandSource> context) {
@@ -204,10 +265,16 @@ public class CCLiveCommands {
         
         LeaderboardManager manager = LeaderboardManager.getInstance();
         
+        // Zeige Diagnose in der Konsole
+        manager.printDiagnostics();
+        
+        // Zeige Status im Chat
         context.getSource().sendFeedback(Text.literal("§6=== Leaderboard System Status ==="));
         context.getSource().sendFeedback(Text.literal("§7Aktiviert: " + (manager.isEnabled() ? "§aJa" : "§cNein")));
         context.getSource().sendFeedback(Text.literal("§7Registriert: " + (manager.isRegistered() ? "§aJa" : "§cNein")));
         context.getSource().sendFeedback(Text.literal("§7Spieler: " + (manager.getPlayerName() != null ? "§a" + manager.getPlayerName() : "§cUnbekannt")));
+        context.getSource().sendFeedback(Text.literal("§7Token: " + (manager.getPlayerToken() != null ? "§aVorhanden" : "§cFehlt")));
+        context.getSource().sendFeedback(Text.literal("§7Siehe Konsole für vollständige Diagnose"));
         
         return 1;
     }
@@ -291,6 +358,49 @@ public class CCLiveCommands {
         }
     }
     
+    // =================== CHAT COMMANDS ===================
+    
+    /**
+     * Setzt den Chat-Modus (default oder cclive)
+     */
+    private static int setChatMode(CommandContext<FabricClientCommandSource> context, String mode) {
+        ChatManager chatManager = ChatManager.getInstance();
+        
+        if (mode.equalsIgnoreCase("cclive")) {
+            chatManager.setChatMode(ChatManager.ChatMode.CCLIVE);
+            context.getSource().sendFeedback(Text.literal("§aChat-Modus auf CCLive gesetzt!"));
+        } else if (mode.equalsIgnoreCase("default")) {
+            chatManager.setChatMode(ChatManager.ChatMode.DEFAULT);
+            context.getSource().sendFeedback(Text.literal("§aChat-Modus auf Default gesetzt!"));
+        } else {
+            context.getSource().sendError(Text.literal("§cUngültiger Modus! Verwende 'cclive' oder 'default'."));
+            return 0;
+        }
+        
+        return 1;
+    }
+    
+    /**
+     * Togglet die Sichtbarkeit eines Chat-Kanals
+     */
+    private static int toggleChat(CommandContext<FabricClientCommandSource> context, String chatType) {
+        ChatManager chatManager = ChatManager.getInstance();
+        
+        if (!chatType.equalsIgnoreCase("default") && !chatType.equalsIgnoreCase("cclive")) {
+            context.getSource().sendError(Text.literal("§cUngültiger Chat-Typ! Verwende 'default' oder 'cclive'."));
+            return 0;
+        }
+        
+        chatManager.toggleChat(chatType);
+        boolean isVisible = chatManager.isChatVisible(chatType);
+        
+        context.getSource().sendFeedback(Text.literal(
+            "§a" + chatType + " Chat ist jetzt " + (isVisible ? "§a§lAN" : "§c§lAUS")
+        ));
+        
+        return 1;
+    }
+    
     // =================== HELP COMMAND ===================
     
     /**
@@ -306,6 +416,11 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Text.literal("§e§lLeaderboard Commands:"));
         context.getSource().sendFeedback(Text.literal("§7/cclive lb reset all §f- Alle Scores löschen"));
         context.getSource().sendFeedback(Text.literal("§7/cclive lb reset <board> §f- Spezifischen Score löschen"));
+        context.getSource().sendFeedback(Text.literal(""));
+        context.getSource().sendFeedback(Text.literal("§e§lChat Commands:"));
+        context.getSource().sendFeedback(Text.literal("§7/chat <cclive/default> §f- Chat-Modus wechseln"));
+        context.getSource().sendFeedback(Text.literal("§7/cclive chat toggle <default/cclive> §f- Chat-Sichtbarkeit togglen"));
+        context.getSource().sendFeedback(Text.literal("§7@cclive <nachricht> §f- Direkt in CCLive Chat schreiben"));
         context.getSource().sendFeedback(Text.literal(""));
         
         // Debug Commands nur anzeigen wenn Debug aktiviert ist
@@ -330,10 +445,62 @@ public class CCLiveCommands {
         return 1;
     }
     
+    // =================== DEBUG: ITEM DISPLAY ===================
+    private static int debugItemDisplay(CommandContext<FabricClientCommandSource> context) {
+        try {
+            int result = ItemDisplayDebugUtility.dump(context.getSource());
+            if (result == 0) {
+                context.getSource().sendError(Text.literal("§cKein passendes Entity gefunden."));
+            }
+            return result;
+        } catch (Exception e) {
+            context.getSource().sendError(Text.literal("§cFehler beim Auslesen des ItemDisplays: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    // =================== DEBUG: NEARBY DISPLAYS ===================
+    private static int debugNearbyDisplays(CommandContext<FabricClientCommandSource> context) {
+        try {
+            // fester Radius 8 Blöcke für den Anfang
+            return ItemDisplayDebugUtility.scanNearby(context.getSource(), 8.0);
+        } catch (Exception e) {
+            context.getSource().sendError(Text.literal("§cFehler beim Nearby-Scan: " + e.getMessage()));
+            return 0;
+        }
+    }
+    
+    // =================== TAB COMPLETION ===================
+    
     /**
-     * Formatiert eine Zahl mit Tausendertrennzeichen (deutsche Formatierung)
+     * Suggestion Provider für Chat-Modi (default/cclive)
      */
-    private static String formatNumber(long number) {
-        return String.format("%,d", number).replace(",", ".");
+    private static SuggestionProvider<FabricClientCommandSource> chatModeSuggestions() {
+        return (context, builder) -> {
+            String input = builder.getRemaining().toLowerCase();
+            if ("default".startsWith(input)) {
+                builder.suggest("default");
+            }
+            if ("cclive".startsWith(input)) {
+                builder.suggest("cclive");
+            }
+            return builder.buildFuture();
+        };
+    }
+    
+    /**
+     * Suggestion Provider für Chat-Typen (default/cclive)
+     */
+    private static SuggestionProvider<FabricClientCommandSource> chatTypeSuggestions() {
+        return (context, builder) -> {
+            String input = builder.getRemaining().toLowerCase();
+            if ("default".startsWith(input)) {
+                builder.suggest("default");
+            }
+            if ("cclive".startsWith(input)) {
+                builder.suggest("cclive");
+            }
+            return builder.buildFuture();
+        };
     }
 }

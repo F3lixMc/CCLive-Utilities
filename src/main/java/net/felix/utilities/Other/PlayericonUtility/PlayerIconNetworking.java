@@ -1,14 +1,19 @@
 package net.felix.utilities.Other.PlayericonUtility;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.felix.CCLiveUtilities;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -110,39 +115,80 @@ public class PlayerIconNetworking {
             PlayerIconUtility.clearPlayers();
         });
         
-        // Periodically check player list and mark all players as mod users
-        // This is a simple approach that works without server mod:
-        // We assume all players in the player list have the mod installed
-        // This is similar to how LabyMod works - it shows icons for all players
-        // In a real implementation with proper networking, you'd only add players
-        // who confirmed via networking that they have the mod
+        // Periodically fetch list of players with mod from API server
+        // This uses the token system - only players who registered have the mod
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.getNetworkHandler() == null) {
                 return;
             }
             
-            // Every 2 seconds (40 ticks), update the player list
-            // This ensures we catch new players joining
-            if (client.player.age > 0 && client.player.age % 40 == 0) {
-                try {
-                    // Add ourselves
-                    UUID ourUuid = client.player.getUuid();
-                    PlayerIconUtility.addPlayerWithMod(ourUuid);
-                    
-                    // Add all other players in the player list
-                    // This is the simple approach: assume all players have the mod
-                    var playerList = client.getNetworkHandler().getPlayerList();
-                    for (var entry : playerList) {
-                        if (entry != null && entry.getProfile() != null) {
-                            UUID playerUuid = entry.getProfile().getId();
-                            PlayerIconUtility.addPlayerWithMod(playerUuid);
-                        }
-                    }
-                } catch (Exception e) {
-                    // Silently fail
-                }
+            // Every 5 seconds (100 ticks), fetch player list from API
+            if (client.player.age > 0 && client.player.age % 100 == 0) {
+                updatePlayersWithModFromAPI(client);
             }
         });
+    }
+    
+    /**
+     * Fetches the list of players with mod from the API server and updates the icon list.
+     * Uses the token system - only registered players (with tokens) have the mod.
+     */
+    private static void updatePlayersWithModFromAPI(MinecraftClient client) {
+        try {
+            // Get HttpClient from LeaderboardManager
+            net.felix.leaderboards.LeaderboardManager manager = net.felix.leaderboards.LeaderboardManager.getInstance();
+            if (manager == null) {
+                return;
+            }
+            
+            net.felix.leaderboards.http.HttpClient httpClient = manager.getHttpClient();
+            if (httpClient == null) {
+                return;
+            }
+            
+            // Fetch list of registered players from API
+            JsonArray playersArray = httpClient.getArray("/players");
+            if (playersArray == null) {
+                return;
+            }
+            
+            // Extract player names from API response
+            Set<String> playersWithMod = new HashSet<>();
+            for (int i = 0; i < playersArray.size(); i++) {
+                JsonObject playerObj = playersArray.get(i).getAsJsonObject();
+                if (playerObj.has("player")) {
+                    String playerName = playerObj.get("player").getAsString();
+                    playersWithMod.add(playerName.toLowerCase()); // Case-insensitive comparison
+                }
+            }
+            
+            // Match player names with UUIDs from the game's player list
+            if (client.getNetworkHandler() != null) {
+                var playerList = client.getNetworkHandler().getPlayerList();
+                for (var entry : playerList) {
+                    if (entry != null && entry.getProfile() != null) {
+                        UUID playerUuid = entry.getProfile().getId();
+                        String playerName = entry.getProfile().getName();
+                        
+                        // Check if this player is in the API list
+                        if (playersWithMod.contains(playerName.toLowerCase())) {
+                            PlayerIconUtility.addPlayerWithMod(playerUuid);
+                        } else {
+                            // Remove if not in list (player might have disconnected or uninstalled mod)
+                            PlayerIconUtility.removePlayer(playerUuid);
+                        }
+                    }
+                }
+            }
+            
+            // Always add ourselves (we have the mod)
+            if (client.player != null) {
+                UUID ourUuid = client.player.getUuid();
+                PlayerIconUtility.addPlayerWithMod(ourUuid);
+            }
+        } catch (Exception e) {
+            // Silently fail - API might be unavailable
+        }
     }
 }
 

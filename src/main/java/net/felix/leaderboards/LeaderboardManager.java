@@ -14,6 +14,7 @@ import net.felix.leaderboards.collectors.RareMobCollector;
 import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.leaderboards.collectors.MenuHoverCollector;
 import net.felix.leaderboards.collectors.FloorKillsCollector;
+import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.DebugUtility;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.leaderboards.config.LeaderboardConfig;
@@ -90,6 +91,9 @@ public class LeaderboardManager {
         // Statistik-Sammler (Fallback für andere Stats)
         collectors.put("stats", new StatsCollector());
         
+        // Farmworld-Collection-Sammler (Zone-basierte Collections)
+        collectors.put("farmworld_collections", new FarmworldCollectionsCollector());
+        
         System.out.println("✅ LeaderboardManager: " + collectors.size() + " Datensammler initialisiert");
     }
     
@@ -123,9 +127,16 @@ public class LeaderboardManager {
         
         // Registriere Server-Join Event für verzögerte Registrierung
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            System.out.println("🌐 Server beigetreten - starte Spieler-Registrierung...");
+            System.out.println("🌐 [LeaderboardManager] Server beigetreten - starte Spieler-Registrierung...");
             schedulePlayerRegistration();
         });
+        
+        // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null && client.player != null && client.getNetworkHandler() != null) {
+            System.out.println("🌐 [LeaderboardManager] Spieler bereits auf Server - starte sofortige Registrierung...");
+            schedulePlayerRegistration();
+        }
         
         System.out.println("🚀 LeaderboardManager vollständig initialisiert!");
     }
@@ -179,31 +190,47 @@ public class LeaderboardManager {
     private void registerPlayer() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) {
-            System.out.println("⚠️ Spieler nicht verfügbar - Registrierung später versuchen");
+            System.out.println("⚠️ [LeaderboardManager] Spieler nicht verfügbar - Registrierung später versuchen");
             return;
         }
         
         playerName = client.player.getName().getString();
+        System.out.println("🔍 [LeaderboardManager] Starte Registrierung für Spieler: " + playerName);
+        System.out.println("🔍 [LeaderboardManager] HTTP-Client Status: " + (httpClient != null ? "vorhanden" : "null"));
+        System.out.println("🔍 [LeaderboardManager] Config Status: enabled=" + config.isEnabled());
         
         CompletableFuture.supplyAsync(() -> {
             try {
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("player", playerName);
                 
+                System.out.println("🔍 [LeaderboardManager] Sende Registrierungs-Request: " + requestData.toString());
                 JsonObject response = httpClient.post("/register", requestData);
+                System.out.println("🔍 [LeaderboardManager] Registrierungs-Response erhalten: " + (response != null ? response.toString() : "null"));
+                
                 if (response != null && response.has("token")) {
                     playerToken = response.get("token").getAsString();
                     isRegistered = true;
-                    System.out.println("✅ Spieler '" + playerName + "' erfolgreich registriert!");
+                    isEnabled = true; // Stelle sicher, dass isEnabled true ist
+                    System.out.println("✅ [LeaderboardManager] Spieler '" + playerName + "' erfolgreich registriert!");
+                    System.out.println("✅ [LeaderboardManager] Token erhalten: " + (playerToken != null ? playerToken.substring(0, Math.min(10, playerToken.length())) + "..." : "null"));
+                    System.out.println("✅ [LeaderboardManager] Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered);
                     return true;
+                } else {
+                    System.err.println("❌ [LeaderboardManager] Registrierungs-Response ungültig - kein Token gefunden");
+                    if (response != null) {
+                        System.err.println("❌ [LeaderboardManager] Response-Inhalt: " + response.toString());
+                    }
                 }
             } catch (Exception e) {
-                System.err.println("❌ Registrierung fehlgeschlagen: " + e.getMessage());
+                System.err.println("❌ [LeaderboardManager] Registrierung fehlgeschlagen: " + e.getMessage());
+                e.printStackTrace();
             }
             return false;
         }).thenAccept(success -> {
             if (!success) {
-                System.out.println("⚠️ Registrierung fehlgeschlagen - Leaderboards deaktiviert");
+                System.err.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen - Leaderboards deaktiviert");
+                System.err.println("⚠️ [LeaderboardManager] Aktueller Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
                 isEnabled = false;
             }
         });
@@ -216,28 +243,37 @@ public class LeaderboardManager {
      * @param score Der neue Score-Wert
      */
     public void updateScore(String boardName, long score) {
-        System.out.println("🔥 DEBUG: updateScore aufgerufen - boardName=" + boardName + ", score=" + score);
-        System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+        if (config.isDebugMode()) {
+            System.out.println("🔥 DEBUG: updateScore aufgerufen - boardName=" + boardName + ", score=" + score);
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+        }
         
         if (!isEnabled || !isRegistered || playerToken == null) {
-            System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Bedingungen nicht erfüllt");
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Bedingungen nicht erfüllt");
+            }
             return;
         }
         
         // Prüfe ob sich der Wert geändert hat
         Object lastValue = lastSentValues.get(boardName);
-        System.out.println("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
+        if (config.isDebugMode()) {
+            System.out.println("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
+        }
         if (lastValue != null && lastValue.equals(score)) {
-            System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Wert hat sich nicht geändert");
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Wert hat sich nicht geändert");
+            }
             return; // Keine Änderung
         }
         
         LeaderboardCooldownManager cooldownManager = LeaderboardCooldownManager.getInstance();
         
         // Prüfe Cooldown
-        System.out.println("🔥 DEBUG: Cooldown-Check für " + boardName);
         if (!cooldownManager.canUpdateScore(boardName)) {
-            System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Cooldown aktiv");
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Cooldown aktiv");
+            }
             // Füge zur Warteschlange hinzu
             cooldownManager.queueScoreUpdate(boardName, score);
             
@@ -248,18 +284,24 @@ public class LeaderboardManager {
             }
             return;
         }
-        System.out.println("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
+        if (config.isDebugMode()) {
+            System.out.println("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
+        }
         
         // Sende Update asynchron
         CompletableFuture.runAsync(() -> {
             try {
-                System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
+                if (config.isDebugMode()) {
+                    System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
+                }
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("board", boardName);
                 requestData.addProperty("score", score);
                 
                 JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
-                System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                if (config.isDebugMode()) {
+                    System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                }
                 if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
                     lastSentValues.put(boardName, score);
                     cooldownManager.markScoreUpdated(boardName);
@@ -311,36 +353,50 @@ public class LeaderboardManager {
      * @param score Der neue Score-Wert
      */
     public void updateScoreManual(String boardName, long score) {
-        System.out.println("🔥 DEBUG: updateScoreManual aufgerufen - boardName=" + boardName + ", score=" + score);
-        System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+        if (config.isDebugMode()) {
+            System.out.println("🔥 DEBUG: updateScoreManual aufgerufen - boardName=" + boardName + ", score=" + score);
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+        }
         
         if (!isEnabled || !isRegistered || playerToken == null) {
-            System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Bedingungen nicht erfüllt");
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Bedingungen nicht erfüllt");
+            }
             return;
         }
         
         // Prüfe ob sich der Wert geändert hat
         Object lastValue = lastSentValues.get(boardName);
-        System.out.println("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
+        if (config.isDebugMode()) {
+            System.out.println("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
+        }
         if (lastValue != null && lastValue.equals(score)) {
-            System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Wert hat sich nicht geändert");
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Wert hat sich nicht geändert");
+            }
             return; // Keine Änderung
         }
         
         // KEIN Cooldown-Check für manuelle Updates!
-        System.out.println("🔥 DEBUG: Manueller Update - überspringe Cooldown-Check");
-        System.out.println("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
+        if (config.isDebugMode()) {
+            System.out.println("🔥 DEBUG: Manueller Update - überspringe Cooldown-Check");
+            System.out.println("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
+        }
         
         // Sende Update asynchron
         CompletableFuture.runAsync(() -> {
             try {
-                System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
+                if (config.isDebugMode()) {
+                    System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
+                }
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("board", boardName);
                 requestData.addProperty("score", score);
                 
                 JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
-                System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                if (config.isDebugMode()) {
+                    System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                }
                 if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
                     lastSentValues.put(boardName, score);
                     // Für manuelle Updates KEINEN Cooldown setzen - das würde automatische Updates blockieren!
@@ -381,6 +437,65 @@ public class LeaderboardManager {
                         coinCollector.onServerUpdateFailure();
                     }
                 }
+            }
+        });
+    }
+    
+    /**
+     * Sendet einen additiven Score-Update an den Server (OHNE Cooldown UND OHNE Wert-Prüfung)
+     * Für additive Werte wie Playtime, die regelmäßig denselben Wert senden müssen
+     * @param boardName Name des Leaderboards
+     * @param score Der zu addierende Score-Wert
+     */
+    public void updateScoreAdditive(String boardName, long score) {
+        if (config.isDebugMode()) {
+            System.out.println("🔥 DEBUG: updateScoreAdditive aufgerufen - boardName=" + boardName + ", score=" + score);
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+        }
+        
+        if (!isEnabled || !isRegistered || playerToken == null) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Bedingungen nicht erfüllt");
+            }
+            return;
+        }
+        
+        if (score <= 0) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - score <= 0");
+            }
+            return; // Keine negativen oder null Werte senden
+        }
+        
+        // KEIN Cooldown-Check und KEINE Wert-Prüfung für additive Updates!
+        // Der Server summiert automatisch, daher können wir denselben Wert mehrfach senden
+        
+        // Sende Update asynchron
+        CompletableFuture.runAsync(() -> {
+            try {
+                if (config.isDebugMode()) {
+                    System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = +" + score + " (additiv)");
+                }
+                JsonObject requestData = new JsonObject();
+                requestData.addProperty("board", boardName);
+                requestData.addProperty("score", score);
+                
+                JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
+                if (config.isDebugMode()) {
+                    System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                }
+                if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
+                    // Für additive Updates NICHT lastSentValues aktualisieren, damit wiederholte Werte durchgehen
+                    
+                    if (config.isDebugMode()) {
+                        System.out.println("📊 Additiver Score Update: " + boardName + " +" + score);
+                    }
+                } else {
+                    System.err.println("❌ Additiver Score Update fehlgeschlagen für " + boardName);
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Fehler beim additiven Score Update für " + boardName + ": " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }
@@ -484,9 +599,30 @@ public class LeaderboardManager {
      * Manueller Refresh der Registrierung (falls beim Start fehlgeschlagen)
      */
     public void refreshRegistration() {
+        System.out.println("🔄 [LeaderboardManager] Manueller Refresh der Registrierung...");
         isRegistered = false;
         playerToken = null;
+        isEnabled = true; // Stelle sicher, dass isEnabled wieder true ist
         registerPlayer();
+    }
+    
+    /**
+     * Diagnose-Funktion: Gibt den aktuellen Status des Leaderboard-Systems aus
+     */
+    public void printDiagnostics() {
+        System.out.println("═══════════════════════════════════════════════════════");
+        System.out.println("🔍 [LeaderboardManager] DIAGNOSE");
+        System.out.println("═══════════════════════════════════════════════════════");
+        System.out.println("Status:");
+        System.out.println("  isEnabled: " + isEnabled);
+        System.out.println("  isRegistered: " + isRegistered);
+        System.out.println("  config.isEnabled(): " + config.isEnabled());
+        System.out.println("  playerName: " + (playerName != null ? playerName : "null"));
+        System.out.println("  playerToken: " + (playerToken != null ? playerToken.substring(0, Math.min(20, playerToken.length())) + "..." : "null"));
+        System.out.println("  httpClient: " + (httpClient != null ? "vorhanden" : "null"));
+        System.out.println("  Datensammler: " + collectors.size());
+        System.out.println("  Letzte gesendete Werte: " + lastSentValues.size());
+        System.out.println("═══════════════════════════════════════════════════════");
     }
     
     /**

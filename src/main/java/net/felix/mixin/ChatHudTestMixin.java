@@ -54,21 +54,6 @@ public abstract class ChatHudTestMixin {
         }
         
         try {
-            // Debug: Check if message has hover event
-            boolean hasHover = false;
-            if (originalMessage.getStyle() != null && originalMessage.getStyle().getHoverEvent() != null) {
-                hasHover = true;
-            }
-            for (Text sibling : originalMessage.getSiblings()) {
-                if (sibling.getStyle() != null && sibling.getStyle().getHoverEvent() != null) {
-                    hasHover = true;
-                    break;
-                }
-            }
-            
-            if (hasHover) {
-                System.out.println("[ChatHudTestMixin] Found message with hover event: " + originalMessage.getString());
-            }
             
             // TestUtility is disabled - return original message
             // Text modified = TestUtility.modifyChatMessageWithHoverEvent(originalMessage);

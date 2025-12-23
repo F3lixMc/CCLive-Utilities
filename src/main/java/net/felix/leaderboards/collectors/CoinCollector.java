@@ -58,6 +58,7 @@ public class CoinCollector implements DataCollector {
         // Prüfe ob es Zeit für den nächsten Command ist
         long currentTime = System.currentTimeMillis();
         if (currentTime >= nextCommandTime && nextCommandTime > 0) {
+            System.out.println("💰 [CoinCollector] Automatischer /cc coins Command wird ausgeführt (waitingForResponse wird auf true gesetzt)");
             executeCoinsCommand(client);
             scheduleNextCommand();
         }
@@ -174,6 +175,7 @@ public class CoinCollector implements DataCollector {
                 // AUTOMATISCH (waitingForResponse): Minecraft-Server Feedback unterdrücken
                 boolean shouldSuppress = waitingForResponse;
                 boolean wasManual = !waitingForResponse;  // Merke ob es manuell war
+                System.out.println("💰 [CoinCollector] Chat-Nachricht verarbeitet - waitingForResponse=" + waitingForResponse + ", wasManual=" + wasManual);
                 waitingForResponse = false;
                 
                 // Server-Update NACH dem Return - damit Server-Feedback zuerst kommt!

@@ -3826,6 +3826,17 @@ public class InformationenUtility {
 			long timeSinceLastChange = currentTime - xpData.lastXPChangeTime;
 			// Show overlay if less than 10 seconds have passed since last XP change
 			xpData.shouldShowOverlay = timeSinceLastChange < OVERLAY_DISPLAY_DURATION;
+			
+			// Reset XP calculation 10 seconds after overlay is hidden (20 seconds total)
+			// This prevents the calculation from continuing in the background
+			if (timeSinceLastChange >= OVERLAY_DISPLAY_DURATION + 10000) {
+				// Reset XP per minute calculation to prevent stale data
+				xpData.sessionStartTime = 0;
+				xpData.newXP = 0;
+				xpData.xpPerMinute = 0.0;
+				xpData.isTracking = false;
+				// Keep initialXP and lastXPChangeTime for potential future use
+			}
 		} else {
 			xpData.shouldShowOverlay = false;
 		}

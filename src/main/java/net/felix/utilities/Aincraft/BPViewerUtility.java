@@ -129,6 +129,21 @@ public class BPViewerUtility {
         return INSTANCE;
     }
     
+    /**
+     * Gibt die Floor-Progress Map zurück (für ProfileStatsManager)
+     */
+    public Map<String, Set<String>> getFloorProgress() {
+        return new HashMap<>(floorProgress); // Defensive copy
+    }
+    
+    /**
+     * Gibt die Anzahl aller gefundenen Blueprints zurück (für ProfileStatsManager)
+     * Dies ist die autoritative Quelle, da foundBlueprints die Hauptliste aller gefundenen Blueprints ist.
+     */
+    public int getFoundBlueprintsCount() {
+        return foundBlueprints.size();
+    }
+    
     public static void initialize() {
         if (isInitialized) {
             return;

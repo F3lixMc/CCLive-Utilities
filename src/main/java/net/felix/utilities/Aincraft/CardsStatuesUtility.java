@@ -137,6 +137,20 @@ public class CardsStatuesUtility {
 		return INSTANCE;
 	}
 	
+	/**
+	 * Gibt die aktuelle Karte zurück (für ProfileStatsManager)
+	 */
+	public static CardData getCurrentCard() {
+		return currentCard;
+	}
+	
+	/**
+	 * Gibt die aktuelle Statue zurück (für ProfileStatsManager)
+	 */
+	public static StatueData getCurrentStatue() {
+		return currentStatue;
+	}
+	
 	public static void initialize() {
 		if (isInitialized) {
 			return;

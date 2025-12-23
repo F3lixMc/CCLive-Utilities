@@ -134,7 +134,20 @@ public class PlayerIconUtility {
                 );
             } catch (NoClassDefFoundError | NoSuchFieldError e) {
                 // RenderPipelines might not be available in some versions
-                // Silently fail
+                // Try alternative method without RenderPipelines
+                try {
+                    // Fallback: Use drawTexturedQuad if available
+                    java.lang.reflect.Method drawTexturedQuadMethod = context.getClass().getMethod(
+                        "drawTexturedQuad",
+                        Identifier.class, int.class, int.class, int.class, int.class, 
+                        float.class, float.class, float.class, float.class
+                    );
+                    drawTexturedQuadMethod.invoke(context, iconToUse, x, y, x + size, y + size, 0.0f, 1.0f, 0.0f, 1.0f);
+                } catch (Exception e2) {
+                    // Both methods failed, silently fail
+                }
+            } catch (Exception e) {
+                // Other exceptions, silently fail
             }
         } catch (Exception e) {
             // Silently fail if texture is not available or any other error occurs

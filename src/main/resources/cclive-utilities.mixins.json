@@ -5,7 +5,6 @@
 	"mixins": [
 		"ExampleMixin",
 		"BossBarMixin",
-		"DrawContextMixin",
 		"HandledScreenMixin",
 		"MouseScrollMixin",
 		"SearchBarMixin",
@@ -14,8 +13,11 @@
 		"LivingEntityMixin",
 		"TitleMixin",
 		"ChatHudHoverMixin",
+		"ChatHudRenderMixin",
 		"ChatScreenMixin",
-		"ClientPlayNetworkHandlerTestMixin"
+		"ClientPlayNetworkHandlerTestMixin",
+		"PlayerHoverStatsMixin",
+		"DrawContextMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
