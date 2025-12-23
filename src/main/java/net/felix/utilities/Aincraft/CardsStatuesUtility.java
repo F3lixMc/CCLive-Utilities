@@ -21,6 +21,7 @@ import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 
 
@@ -526,7 +527,7 @@ public class CardsStatuesUtility {
 			// Überspringe "Statistik", leere Zeilen und Zeilen mit unsichtbaren chinesischen Zeichen
 			if (line.contains("Statistik") || 
 				line.trim().isEmpty() || 
-				line.matches(".*[㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔤].*")) {
+				ZeichenUtility.containsPixelSpacer(line)) {
 				continue;
 			}
 			
@@ -588,7 +589,7 @@ public class CardsStatuesUtility {
 			// Überspringe "Statistik", leere Zeilen und Zeilen mit unsichtbaren chinesischen Zeichen
 			if (line.contains("Statistik" ) || 
 				line.trim().isEmpty() || 
-				line.matches(".*[㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔤].*")) {
+				ZeichenUtility.containsPixelSpacer(line)) {
 				continue;
 			}
 			

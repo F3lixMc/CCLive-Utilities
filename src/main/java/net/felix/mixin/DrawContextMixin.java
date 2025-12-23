@@ -3,6 +3,7 @@ package net.felix.mixin;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.felix.utilities.Overall.ZeichenUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,7 +25,7 @@ public class DrawContextMixin {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
                 String title = handledScreen.getTitle().getString();
-                if (title.contains("㬄") || title.contains("㬅") || title.contains("㬆") || title.contains("㬇")) { //Equipment Display
+                if (ZeichenUtility.containsEquipmentDisplay(title)) { //Equipment Display
                     ci.cancel(); // Rendering abbrechen → Overlay wird nicht gezeichnet
                 }
             }

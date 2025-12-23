@@ -1,6 +1,5 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.ChatHud;
@@ -13,12 +12,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Mixin to add the CCLive-Utilities icon next to player names in chat messages.
+ * Mixin for ChatHud rendering functionality.
  */
 @Mixin(ChatHud.class)
 public abstract class ChatHudRenderMixin {
@@ -28,15 +24,6 @@ public abstract class ChatHudRenderMixin {
     
     @Shadow(remap = true)
     private List<ChatHudLine> messages;
-    
-    // Pattern to match player names in chat (e.g., "<PlayerName> message" or "PlayerName: message")
-    // Also matches common chat formats like "[Server] PlayerName: message" or "PlayerName > message"
-    private static final Pattern PLAYER_NAME_PATTERN = Pattern.compile(
-        "<([^>]+)>|" +  // <PlayerName> format
-        "\\[([^\\]]+)\\]|" +  // [PlayerName] format
-        "^([^:<>\\[\\]]+?):|" +  // PlayerName: format (non-greedy)
-        "^([^:<>\\[\\]]+?)\\s+>"  // PlayerName > format
-    );
     
     @Inject(
         method = "render",

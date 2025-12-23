@@ -21,6 +21,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
@@ -215,7 +216,7 @@ public class BPViewerUtility {
                 boolean isSpecialInventory = false;
                 if (mcClient != null && mcClient.currentScreen != null) {
                     String screenTitle = mcClient.currentScreen.getTitle().getString();
-                    if (screenTitle.contains("㬊")) { //Moblexicon
+                    if (ZeichenUtility.containsMoblexicon(screenTitle)) { //Moblexicon
                         isSpecialInventory = true;
                     }
                 }

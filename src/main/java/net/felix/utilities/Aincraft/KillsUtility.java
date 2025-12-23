@@ -11,6 +11,7 @@ import org.lwjgl.glfw.GLFW;
 import net.minecraft.client.render.RenderTickCounter;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 
 import org.joml.Matrix3x2fStack;
@@ -43,19 +44,14 @@ public class KillsUtility {
 	private static int killsUntilNextLevel = -1; // -1 means unknown/not found
 	private static long lastTabListCheck = 0; // Cache for tab list checks (every 1 second)
 	
-	// Chinese character mapping for numbers
-	private static final Map<Character, Integer> CHINESE_NUMBERS = new HashMap<>();
-	static {
-		CHINESE_NUMBERS.put('㚏', 0);
-		CHINESE_NUMBERS.put('㚐', 1);
-		CHINESE_NUMBERS.put('㚑', 2);
-		CHINESE_NUMBERS.put('㚒', 3);
-		CHINESE_NUMBERS.put('㚓', 4);
-		CHINESE_NUMBERS.put('㚔', 5);
-		CHINESE_NUMBERS.put('㚕', 6);
-		CHINESE_NUMBERS.put('㚖', 7);
-		CHINESE_NUMBERS.put('㚗', 8);
-		CHINESE_NUMBERS.put('㚘', 9);
+	// Chinese character mapping for numbers - loaded from ZeichenUtility
+	private static Map<Character, Integer> CHINESE_NUMBERS = null;
+	
+	private static Map<Character, Integer> getChineseNumbers() {
+		if (CHINESE_NUMBERS == null) {
+			CHINESE_NUMBERS = ZeichenUtility.getAincraftBottomFontNumbers();
+		}
+		return CHINESE_NUMBERS;
 	}
 	
 	// Rendering constants
@@ -243,33 +239,20 @@ public class KillsUtility {
 	private static int decodeChineseNumber(String text) {
 		try {
 			StringBuilder numberStr = new StringBuilder();
-			StringBuilder debugChars = new StringBuilder();
-			
-			System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Roher Text: '" + text + "'");
-			System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Text-Länge: " + text.length());
+			Map<Character, Integer> numbers = getChineseNumbers();
 			
 			for (char c : text.toCharArray()) {
-				Integer digit = CHINESE_NUMBERS.get(c);
+				Integer digit = numbers.get(c);
 				if (digit != null) {
 					numberStr.append(digit);
-					debugChars.append("'").append(c).append("'(").append((int)c).append(")->").append(digit).append(" ");
-				} else {
-					debugChars.append("'").append(c).append("'(").append((int)c).append(")->? ");
 				}
 			}
 			
-			System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Zeichen-Mapping: " + debugChars.toString());
-			
 			if (numberStr.length() > 0) {
-				int result = Integer.parseInt(numberStr.toString());
-				System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - Ergebnis: " + result + " (aus String: '" + numberStr.toString() + "')");
-				return result;
-			} else {
-				System.out.println("🔍 [KillsUtility] DEBUG decodeChineseNumber - KEINE ZAHL GEFUNDEN!");
+				return Integer.parseInt(numberStr.toString());
 			}
 		} catch (Exception e) {
-			System.err.println("❌ [KillsUtility] DEBUG decodeChineseNumber - FEHLER: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 		
 		return -1; // Invalid or no number found

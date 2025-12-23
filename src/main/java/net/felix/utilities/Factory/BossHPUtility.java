@@ -12,6 +12,7 @@ import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
+import org.joml.Matrix3x2fStack;
 
 
 import java.util.HashSet;
@@ -32,6 +33,11 @@ public class BossHPUtility {
 	private String lastKnownHP = null;
 	private String lastKnownBossName = null;
 	private boolean bossDefeated = false;
+	
+	// DPM-Tracking-Variablen
+	private Integer initialBossHP = null; // Initiale HP beim ersten Erkennen des Bosses
+	private long bossFightStartTime = 0; // Zeitpunkt, wann der Kampf begonnen hat
+	private String lastTrackedBossName = null; // Letzter Boss-Name für Erkennung von Boss-Wechsel
 	
 	// Validierte Boss-Namen
 	private final Set<String> validBossNames = new HashSet<>();
@@ -306,6 +312,25 @@ public class BossHPUtility {
 						bossDefeated = false;
 					}
 					
+					// Prüfe ob ein neuer Boss erscheint (anderer Name als vorher oder noch kein Boss getrackt)
+					boolean isNewBoss = !bossName.equals(lastTrackedBossName) || lastTrackedBossName == null;
+					
+					if (isNewBoss) {
+						// Neuer Boss - speichere initiale HP und starte Timer
+						String[] parts = text.split("\\|{5}");
+						if (parts.length >= 2) {
+							try {
+								initialBossHP = Integer.parseInt(parts[1].trim());
+								bossFightStartTime = System.currentTimeMillis();
+								lastTrackedBossName = bossName;
+							} catch (NumberFormatException e) {
+								// HP konnte nicht geparst werden, ignoriere
+								initialBossHP = null;
+								bossFightStartTime = 0;
+							}
+						}
+					}
+					
 					currentBossName = bossName;
 					currentBossText = text;
 				}
@@ -324,6 +349,10 @@ public class BossHPUtility {
 		bossLost = false;
 		currentBossName = null;
 		currentBossText = null;
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
 		// Blockierung wird automatisch nach BOSS_BLOCK_DURATION ablaufen
 	}
 	
@@ -361,6 +390,11 @@ public class BossHPUtility {
 			// Lösche aktuellen Boss
 			currentBossName = null;
 			currentBossText = null;
+			
+			// Reset DPM-Tracking wenn Boss verschwindet
+			initialBossHP = null;
+			bossFightStartTime = 0;
+			lastTrackedBossName = null;
 		}
 	}
 	
@@ -468,12 +502,21 @@ public class BossHPUtility {
 		// Konstanten für das Layout
 		final int TEXT_COLOR = 0xFFFFFFFF; // Weiß
 		final int HP_COLOR = 0xFFFF5555;   // Rot
+		final int DPM_COLOR = 0xFFFFFF00;  // Gelb für DPM
 		final int BACKGROUND_COLOR = 0x80000000; // Halbtransparentes Schwarz
 		final int PADDING = 4;
+		final int LINE_SPACING = 2; // Abstand zwischen Zeilen
+		
+		// Get scale from config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale;
+		if (scale <= 0) scale = 1.0f; // Safety check
+		
+		BossHPUtility instance = BossHPUtility.getInstance();
 		
 		// Parse HP-Werte
 		String displayText = null;
 		String displayHP = null;
+		Integer currentHP = null;
 		
 		if (isDisappeared) {
 			displayText = bossName + " verbleibend";
@@ -487,6 +530,12 @@ public class BossHPUtility {
 			if (parts.length >= 2) {
 				displayText = parts[0].trim();
 				displayHP = parts[1].trim();
+				try {
+					currentHP = Integer.parseInt(displayHP);
+				} catch (NumberFormatException e) {
+					// HP konnte nicht geparst werden
+					currentHP = null;
+				}
 			}
 		}
 		
@@ -494,31 +543,83 @@ public class BossHPUtility {
 			return;
 		}
 		
-		// Berechne die Breiten für das Layout
+		// Berechne DPM (nur wenn Boss aktiv ist und nicht verschwunden und DPM-Anzeige aktiviert ist)
+		String dpmText = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM && 
+			instance.initialBossHP != null && currentHP != null && instance.bossFightStartTime > 0) {
+			long currentTime = System.currentTimeMillis();
+			long fightDuration = currentTime - instance.bossFightStartTime;
+			
+			if (fightDuration > 0) {
+				// Berechne abgezogene HP
+				int damageDealt = instance.initialBossHP - currentHP;
+				
+				// Berechne DPM (Damage Per Minute)
+				// fightDuration ist in Millisekunden, also teilen durch 60000 für Minuten
+				double minutes = fightDuration / 60000.0;
+				if (minutes > 0) {
+					double dpm = damageDealt / minutes;
+					// Formatiere DPM mit Tausendertrennzeichen
+					dpmText = String.format("DPM: %,.0f", dpm);
+				}
+			}
+		}
+		
+		// Berechne die Breiten für das Layout (unscaled)
 		int nameWidth = client.textRenderer.getWidth(displayText);
 		int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
-		int totalWidth = nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth); // 10 Pixel Abstand zwischen Name und HP nur wenn HP vorhanden
+		int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
+		int totalWidth = Math.max(
+			nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth), // Erste Zeile
+			dpmWidth // Zweite Zeile (DPM)
+		);
+		int totalHeight = client.textRenderer.fontHeight + PADDING * 2;
+		if (dpmText != null) {
+			totalHeight += client.textRenderer.fontHeight + LINE_SPACING; // Zusätzliche Zeile für DPM
+		}
 		
-		// Verwende absolute Konfigurationspositionen - Overlay wächst nach links
-		int posX = x - totalWidth - PADDING * 2; // Position von rechts nach links
+		// Die Gesamtbreite inklusive Padding (unscaled)
+		int unscaledTotalWidth = totalWidth + PADDING * 2;
+		
+		// Berechne skalierte Breite
+		float scaledTotalWidth = unscaledTotalWidth * scale;
+		
+		// Berechne Position: x ist die rechte Kante, also linke Kante = x - skalierte Breite
+		// Da die Matrix-Transformation die Position nicht skaliert (nur den Inhalt), müssen wir die Position
+		// so berechnen, dass nach der Skalierung die rechte Kante bei x ist
+		int posX = Math.round(x - scaledTotalWidth);
 		int posY = y;
 		
-		// Zeichne den Hintergrund nur wenn aktiviert
+		// Verwende Matrix-Transformationen für Skalierung
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Translate to position and scale from there
+		matrices.translate(posX, posY);
+		matrices.scale(scale, scale);
+		
+		// Zeichne den Hintergrund nur wenn aktiviert (innerhalb der Matrix-Transformation)
 		if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowBackground) {
-			context.fill(posX, posY, 
-					 posX + totalWidth + PADDING * 2, posY + client.textRenderer.fontHeight + PADDING * 2, 
+			context.fill(0, 0, 
+					 unscaledTotalWidth, totalHeight, 
 					 BACKGROUND_COLOR);
 		}
 		
-		// Zeichne den Boss-Namen (weiß)
-		context.drawText(client.textRenderer, displayText, posX + PADDING, posY + PADDING, TEXT_COLOR, true);
+		// Zeichne den Boss-Namen (weiß) - relativ zur Matrix
+		context.drawText(client.textRenderer, displayText, PADDING, PADDING, TEXT_COLOR, true);
 		
-		// Zeichne die HP (rot) nur wenn vorhanden
+		// Zeichne die HP (rot) nur wenn vorhanden - relativ zur Matrix
 		if (!displayHP.isEmpty()) {
-			context.drawText(client.textRenderer, displayHP, posX + PADDING + nameWidth + 10, posY + PADDING, HP_COLOR, true);
+			context.drawText(client.textRenderer, displayHP, PADDING + nameWidth + 10, PADDING, HP_COLOR, true);
 		}
 		
-
+		// Zeichne DPM (gelb) in zweiter Zeile, wenn verfügbar - relativ zur Matrix
+		if (dpmText != null) {
+			int dpmY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
+			context.drawText(client.textRenderer, dpmText, PADDING, dpmY, DPM_COLOR, true);
+		}
+		
+		matrices.popMatrix();
 	}
 	
 
@@ -592,6 +693,11 @@ public class BossHPUtility {
 		// Lösche aktuellen Boss
 		currentBossName = null;
 		currentBossText = null;
+		
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
 	}
 	
 	/**
@@ -616,6 +722,11 @@ public class BossHPUtility {
 		// Lösche aktuellen Boss
 		currentBossName = null;
 		currentBossText = null;
+		
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
 	}
 	
 	/**

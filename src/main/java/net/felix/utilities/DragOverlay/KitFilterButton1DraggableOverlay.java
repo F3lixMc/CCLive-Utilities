@@ -94,15 +94,6 @@ public class KitFilterButton1DraggableOverlay implements DraggableOverlay {
             0xFF404040,
             false
         );
-        
-        // Render overlay name
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
-            getOverlayName(),
-            x + 5, y - 15,
-            0xFFFFFFFF,
-            true
-        );
     }
     
     @Override
@@ -112,7 +103,8 @@ public class KitFilterButton1DraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().enableMod;
+        return CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+               CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
     }
     
     @Override

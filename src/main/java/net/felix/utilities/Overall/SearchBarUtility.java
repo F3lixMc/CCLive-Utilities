@@ -9,6 +9,7 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.component.DataComponentTypes;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.ZeichenUtility;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -36,10 +37,12 @@ public class SearchBarUtility {
 	private static int helpButtonSize = 16;
 	private static boolean helpScreenOpen = false;
 	
-	// @-Button Variablen (für MacBook-Nutzer)
-	private static int atButtonX = 0;
-	private static int atButtonY = 0;
-	private static int atButtonSize = 16;
+	// Symbol-Button Variablen (für @, <, >)
+	private static int symbolButtonX = 0;
+	private static int symbolButtonY = 0;
+	private static int symbolButtonSize = 16;
+	private static boolean isSymbolMenuOpen = false;
+	private static boolean isSymbolButtonHovered = false;
 	
 	private static Set<Integer> matchingSlots = new HashSet<>();
 	private static final int SLOT_SIZE = 16;
@@ -73,14 +76,14 @@ public class SearchBarUtility {
 			// Entferne Farbcodes für den Vergleich
 			String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
 			
-			if (cleanTitle.contains("㭆") || cleanTitle.contains("㭂") || //Cards and Statues
+			if (ZeichenUtility.containsCardsStatues(cleanTitle) || //Cards and Statues
 			    cleanTitle.contains("Bauplan") || cleanTitle.contains("Baupläne") ||
 				cleanTitle.contains("Umschmieden") || cleanTitle.contains("Zerlegen") || 
 				cleanTitle.contains("Ausrüstung") || cleanTitle.contains("Essenz") || 
 				cleanTitle.contains("Essenz-Tasche") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") ||
 				cleanTitle.contains("Runen [Baupläne]") || cleanTitle.contains("Werkzeug Sammlung") ||
 				cleanTitle.contains("Waffen Sammlung") || cleanTitle.contains("Rüstungs Sammlung") ||
-				cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
+				cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
 				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") || cleanTitle.contains("[Nebenhand]")) {
 				isSearchBarVisible = true;
 				
@@ -156,10 +159,11 @@ public class SearchBarUtility {
 		String title = screen.getTitle().getString();
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
 		
-		if (cleanTitle.contains("㭆")) {
+		String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
+		if (cleanTitle.contains(cardsStatuesChars[0])) {
 			// Spezielle Slots für Kartenmenü
 			return new int[]{ 0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 27, 28, 29, 30, 32, 33, 34};
-		} else if (cleanTitle.contains("㭂")) {
+		} else if (cleanTitle.contains(cardsStatuesChars[1])) {
 			// Spezielle Slots für Statuenmenü
 			return new int[]{ 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
 		} else if (cleanTitle.contains("Umschmieden") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER")) {
@@ -229,15 +233,31 @@ public class SearchBarUtility {
 		helpButtonX = searchBarX - helpButtonSize - 5;
 		helpButtonY = searchBarY + 2;
 		
-		// @-Button Position (rechts neben der Suchleiste)
-		atButtonX = searchBarX + searchBarWidth + 5;
-		atButtonY = searchBarY + 2;
+		// Symbol-Button Position (rechts neben der Suchleiste)
+		symbolButtonX = searchBarX + searchBarWidth + 5;
+		symbolButtonY = searchBarY + 2;
+
+		// Prüfe Hover über Symbol-Button
+		if (client.getWindow() != null) {
+			int windowWidth = client.getWindow().getWidth();
+			int windowHeight = client.getWindow().getHeight();
+			if (windowWidth > 0 && windowHeight > 0) {
+				double mouseX = client.mouse.getX() * client.getWindow().getScaledWidth() / windowWidth;
+				double mouseY = client.mouse.getY() * client.getWindow().getScaledHeight() / windowHeight;
+				checkSymbolButtonHover(mouseX, mouseY);
+			}
+		}
 
 		// Hilfe-Button zeichnen
 		drawHelpButton(context, client);
 		
-		// @-Button zeichnen
-		drawAtButton(context, client);
+		// Symbol-Button zeichnen
+		drawSymbolButton(context, client);
+		
+		// Symbol-Menü zeichnen wenn geöffnet
+		if (isSymbolMenuOpen) {
+			drawSymbolMenu(context, client);
+		}
 		
 		// Hintergrund nur wenn aktiviert
 		if (CCLiveUtilitiesConfig.HANDLER.instance().searchBarShowBackground) {
@@ -471,10 +491,169 @@ public class SearchBarUtility {
 							matches = searchInItemTooltips(itemStack, searchExact, searchLower);
 						}
 					} else {
-						// Normale Suche: Nur Item-Name
+						// Normale Suche: Item-Name, Aspekte und Ebenen
 						String itemName = itemStack.getName().getString();
 						String itemNameLower = itemName.toLowerCase();
-						matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
+						
+						// Prüfe zuerst ob es eine Ebenen-Suche mit Vergleichsoperator ist (>e5, <e5, =e5)
+						boolean isEbeneComparison = false;
+						String ebeneOperator = null;
+						String ebeneNumber = null;
+						
+						// Prüfe auf Vergleichsoperatoren vor "e" (>e5, <e5, =e5, >=e5, <=e5)
+						java.util.regex.Pattern ebeneComparisonPattern = java.util.regex.Pattern.compile("^(>=|<=|[><=])\\s*e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+						java.util.regex.Matcher ebeneComparisonMatcher = ebeneComparisonPattern.matcher(searchExact);
+						if (ebeneComparisonMatcher.matches()) {
+							isEbeneComparison = true;
+							ebeneOperator = ebeneComparisonMatcher.group(1);
+							ebeneNumber = ebeneComparisonMatcher.group(2);
+						}
+						
+						// Prüfe ob es eine reine Ebenen-Suche ist (ohne Operator)
+						boolean isEbeneSearch = false;
+						if (!isEbeneComparison) {
+							// Entferne eckige Klammern vom Suchbegriff für die Prüfung
+							String searchWithoutBrackets = searchExact.replaceAll("^\\[|\\]$", "");
+							// Prüfe ob der Suchbegriff mit "e" beginnt (case-insensitive) und nur eine Zahl enthält
+							java.util.regex.Pattern ebeneSearchPattern = java.util.regex.Pattern.compile("^e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+							java.util.regex.Matcher ebeneSearchMatcher = ebeneSearchPattern.matcher(searchWithoutBrackets);
+							if (ebeneSearchMatcher.matches()) {
+								isEbeneSearch = true;
+								ebeneNumber = ebeneSearchMatcher.group(1);
+							}
+						}
+						
+						// Wenn es eine Ebenen-Suche mit Vergleichsoperator ist
+						if (isEbeneComparison && ebeneNumber != null && itemName.contains("[Bauplan]")) {
+							// Extrahiere den Bauplan-Namen
+							String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
+							
+							// Entferne führende/trailing Bindestriche
+							if (blueprintName.startsWith("-")) {
+								blueprintName = blueprintName.substring(1).trim();
+							}
+							if (blueprintName.endsWith("-")) {
+								blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+							}
+							
+							// Entferne Formatierungscodes und Unicode-Zeichen
+							String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+																	.replaceAll("[\\u3400-\\u4DBF]", "")
+																	.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+							
+							// Hole die Ebene aus dem Item-Namen oder der Datenbank
+							Integer itemFloorNumber = null;
+							
+							// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+							java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+							java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+							if (ebeneMatcher.find()) {
+								itemFloorNumber = Integer.parseInt(ebeneMatcher.group(1));
+							} else {
+								// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+								itemFloorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+							}
+							
+							// Führe Vergleich durch
+							if (itemFloorNumber != null) {
+								int targetEbene = Integer.parseInt(ebeneNumber);
+								switch (ebeneOperator) {
+									case ">":
+									case ">=":
+										// ">e5" bedeutet Ebene 5 oder größer (>=)
+										matches = itemFloorNumber >= targetEbene;
+										break;
+									case "<":
+									case "<=":
+										// "<e4" bedeutet Ebene 4 oder kleiner (<=)
+										matches = itemFloorNumber <= targetEbene;
+										break;
+									case "=":
+										matches = itemFloorNumber.equals(targetEbene);
+										break;
+								}
+							}
+						}
+						// Wenn es eine reine Ebenen-Suche ist (ohne Operator), suche nur nach der Ebene
+						else if (isEbeneSearch && ebeneNumber != null && itemName.contains("[Bauplan]")) {
+							// Extrahiere den Bauplan-Namen
+							String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
+							
+							// Entferne führende/trailing Bindestriche
+							if (blueprintName.startsWith("-")) {
+								blueprintName = blueprintName.substring(1).trim();
+							}
+							if (blueprintName.endsWith("-")) {
+								blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+							}
+							
+							// Entferne Formatierungscodes und Unicode-Zeichen
+							String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+																	.replaceAll("[\\u3400-\\u4DBF]", "")
+																	.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+							
+							// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+							java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+							java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+							if (ebeneMatcher.find()) {
+								String itemEbene = ebeneMatcher.group(1);
+								if (itemEbene.equals(ebeneNumber)) {
+									matches = true;
+								}
+							}
+							
+							// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+							if (!matches) {
+								Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+								if (floorNumber != null && floorNumber.toString().equals(ebeneNumber)) {
+									matches = true;
+								}
+							}
+						} else {
+							// Normale Suche: Item-Name und Ebenen (Aspekte nur mit @)
+							matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
+							
+							// Wenn es ein Bauplan ist, suche auch nach Ebene (Aspekt nur mit @)
+							if (!matches && itemName.contains("[Bauplan]")) {
+								// Extrahiere den Bauplan-Namen
+								String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
+								
+								// Entferne führende/trailing Bindestriche
+								if (blueprintName.startsWith("-")) {
+									blueprintName = blueprintName.substring(1).trim();
+								}
+								if (blueprintName.endsWith("-")) {
+									blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+								}
+								
+								// Entferne Formatierungscodes und Unicode-Zeichen
+								String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+																		.replaceAll("[\\u3400-\\u4DBF]", "")
+																		.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+								
+								// Suche nach Ebene im Item-Namen oder in der Datenbank (Aspekt-Suche nur mit @)
+								// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+								java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+								java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+								if (ebeneMatcher.find()) {
+									String ebene = ebeneMatcher.group(1);
+									if (ebene.contains(searchExact) || ebene.toLowerCase().contains(searchLower)) {
+										matches = true;
+									}
+								}
+								
+								// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+								if (!matches) {
+									Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+									if (floorNumber != null) {
+										String floorStr = floorNumber.toString();
+										if (floorStr.contains(searchExact) || floorStr.toLowerCase().contains(searchLower)) {
+											matches = true;
+										}
+									}
+								}
+							}
+						}
 					}
 					
 					if (matches) {
@@ -690,8 +869,74 @@ public class SearchBarUtility {
 	
 	private static boolean searchInItemTooltips(ItemStack itemStack, String searchExact, String searchLower) {
 		try {
-			// Suche im Item-Namen
 			String itemName = itemStack.getName().getString();
+			
+			// Prüfe zuerst ob es eine reine Ebenen-Suche ist (Format: "e5", "[e5]", "e 5", etc.)
+			// Dies muss VOR der normalen Item-Namen-Suche passieren
+			boolean isEbeneSearch = false;
+			String ebeneNumber = null;
+			
+			// Entferne eckige Klammern vom Suchbegriff für die Prüfung
+			String searchWithoutBrackets = searchExact.replaceAll("^\\[|\\]$", "");
+			// Prüfe ob der Suchbegriff mit "e" beginnt (case-insensitive) und nur eine Zahl enthält
+			java.util.regex.Pattern ebeneSearchPattern = java.util.regex.Pattern.compile("^e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+			java.util.regex.Matcher ebeneSearchMatcher = ebeneSearchPattern.matcher(searchWithoutBrackets);
+			if (ebeneSearchMatcher.matches()) {
+				isEbeneSearch = true;
+				ebeneNumber = ebeneSearchMatcher.group(1);
+			}
+			
+			// Wenn es eine reine Ebenen-Suche ist, suche NUR nach der Ebene (ohne Item-Namen)
+			if (isEbeneSearch && ebeneNumber != null) {
+				// Prüfe zuerst, ob es ein Bauplan ist
+				if (itemName.contains("[Bauplan]")) {
+					// Extrahiere den Bauplan-Namen
+					String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
+					
+					// Entferne führende/trailing Bindestriche
+					if (blueprintName.startsWith("-")) {
+						blueprintName = blueprintName.substring(1).trim();
+					}
+					if (blueprintName.endsWith("-")) {
+						blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+					}
+					
+					// Entferne Formatierungscodes und Unicode-Zeichen
+					String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+															.replaceAll("[\\u3400-\\u4DBF]", "")
+															.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+					
+					// Suche nach "[eX]" oder " [eX]" Format im Item-Namen (falls bereits hinzugefügt)
+					java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+					java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+					if (ebeneMatcher.find()) {
+						String itemEbene = ebeneMatcher.group(1);
+						if (itemEbene.equals(ebeneNumber)) {
+							return true;
+						}
+					}
+					
+					// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+					Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+					if (floorNumber != null && floorNumber.toString().equals(ebeneNumber)) {
+						return true;
+					}
+				} else {
+					// Für Nicht-Baupläne: Suche nach "[eX]" Format im Item-Namen
+					java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+					java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+					if (ebeneMatcher.find()) {
+						String itemEbene = ebeneMatcher.group(1);
+						if (itemEbene.equals(ebeneNumber)) {
+							return true;
+						}
+					}
+				}
+				// Wenn keine Übereinstimmung gefunden, return false (nur Ebenen-Suche, kein Item-Name)
+				return false;
+			}
+			
+			// Normale Suche: Suche im Item-Namen
 			String itemNameLower = itemName.toLowerCase();
 			if (itemName.contains(searchExact) || itemNameLower.contains(searchLower)) {
 				return true;
@@ -717,6 +962,63 @@ public class SearchBarUtility {
 				String customNameLower = customName.toLowerCase();
 				if (customName.contains(searchExact) || customNameLower.contains(searchLower)) {
 					return true;
+				}
+			}
+			
+			// Suche nach Aspekten und Ebenen für Baupläne
+			if (itemName.contains("[Bauplan]")) {
+				// Normale Suche: Extrahiere den Bauplan-Namen (alles vor "[Bauplan]")
+				String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
+				
+				// Entferne führende/trailing Bindestriche
+				if (blueprintName.startsWith("-")) {
+					blueprintName = blueprintName.substring(1).trim();
+				}
+				if (blueprintName.endsWith("-")) {
+					blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+				}
+				
+				// Entferne Formatierungscodes und Unicode-Zeichen
+				String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+														.replaceAll("[\\u3400-\\u4DBF]", "")
+														.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+				
+				// Suche nach Aspekt
+				String aspectName = net.felix.utilities.Overall.InformationenUtility.getAspectInfoForBlueprint(cleanBlueprintName);
+				if (aspectName != null && !aspectName.isEmpty()) {
+					String aspectLower = aspectName.toLowerCase();
+					if (aspectName.contains(searchExact) || aspectLower.contains(searchLower)) {
+						return true;
+					}
+				}
+				
+				// Suche nach Ebene: Zuerst im Item-Namen (falls bereits hinzugefügt), dann in der Datenbank
+				// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+				java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+				java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+				if (ebeneMatcher.find()) {
+					String ebene = ebeneMatcher.group(1);
+					// Suche nach "eX" oder "[eX]" Format
+					String ebeneText1 = "e" + ebene;
+					String ebeneText2 = "[e" + ebene + "]";
+					if (ebeneText1.equalsIgnoreCase(searchWithoutBrackets) || 
+						ebeneText2.equalsIgnoreCase(searchExact) ||
+						ebene.contains(searchExact) || ebene.toLowerCase().contains(searchLower)) {
+						return true;
+					}
+				}
+				
+				// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+				Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+				if (floorNumber != null) {
+					String floorStr = String.valueOf(floorNumber);
+					String ebeneText1 = "e" + floorStr;
+					String ebeneText2 = "[e" + floorStr + "]";
+					if (ebeneText1.equalsIgnoreCase(searchWithoutBrackets) || 
+						ebeneText2.equalsIgnoreCase(searchExact) ||
+						floorStr.contains(searchExact) || floorStr.toLowerCase().contains(searchLower)) {
+						return true;
+					}
 				}
 			}
 			
@@ -787,9 +1089,46 @@ public class SearchBarUtility {
 		matchingSlots.clear();
 		cursorVisible = false;
 		helpScreenOpen = false;
+		isSymbolMenuOpen = false;
+		isSymbolButtonHovered = false;
 		
 		// Inventar-Tracking zurücksetzen
 		previousInventory.clear();
+	}
+	
+	/**
+	 * Prüft ob die Maus über dem Symbol-Button ist und öffnet/schließt das Menü entsprechend
+	 * Diese Methode wird von handleMouseMove aufgerufen
+	 */
+	public static void checkSymbolButtonHover(double mouseX, double mouseY) {
+		// Prüfe ob Maus über Symbol-Button ist
+		boolean wasHovered = isSymbolButtonHovered;
+		isSymbolButtonHovered = (mouseX >= symbolButtonX && mouseX <= symbolButtonX + symbolButtonSize &&
+								 mouseY >= symbolButtonY && mouseY <= symbolButtonY + symbolButtonSize);
+		
+		// Berechne Menü-Position (rechts neben Button)
+		int menuX = symbolButtonX + symbolButtonSize; // Rechts neben dem Button
+		int menuY = symbolButtonY; // Gleiche Y-Position wie Button
+		int menuButtonWidth = 20;
+		int menuButtonHeight = symbolButtonSize; // Gleiche Höhe wie Button
+		int menuWidth = menuButtonWidth * 3 + 2; // 3 Buttons + 2px Abstand
+		int menuHeight = menuButtonHeight;
+		
+		// Prüfe ob Maus über dem Menü ist (inkl. Button-Bereich)
+		boolean mouseOverMenu = (mouseX >= menuX && mouseX <= menuX + menuWidth &&
+								 mouseY >= menuY && mouseY <= menuY + menuHeight);
+		
+		// Prüfe ob Maus über Button oder Menü ist
+		boolean mouseOverButtonOrMenu = isSymbolButtonHovered || mouseOverMenu;
+		
+		// Öffne Menü beim ersten Hover, schließe es wenn Maus weg ist
+		if (mouseOverButtonOrMenu && !wasHovered && !isSymbolMenuOpen) {
+			// Öffne Menü beim Hover
+			isSymbolMenuOpen = true;
+		} else if (!mouseOverButtonOrMenu && isSymbolMenuOpen) {
+			// Maus ist weder über Button noch über Menü - schließe Menü
+			isSymbolMenuOpen = false;
+		}
 	}
 	
 
@@ -847,6 +1186,7 @@ public class SearchBarUtility {
 	
 	public static boolean handleMouseClick(double mouseX, double mouseY, int button) {
 		if (!isSearchBarVisible) {
+			isSymbolMenuOpen = false;
 			return false;
 		}
 		
@@ -860,21 +1200,56 @@ public class SearchBarUtility {
 			}
 		}
 		
-		// @-Button Klick prüfen
-		if (mouseX >= atButtonX && mouseX <= atButtonX + atButtonSize &&
-			mouseY >= atButtonY && mouseY <= atButtonY + atButtonSize) {
+		// Symbol-Menü Klicks prüfen (wenn geöffnet)
+		if (isSymbolMenuOpen) {
+			int menuX = symbolButtonX + symbolButtonSize; // Rechts neben dem Button
+			int menuY = symbolButtonY; // Gleiche Y-Position wie Button
+			int menuButtonWidth = 20;
+			int menuButtonHeight = symbolButtonSize; // Gleiche Höhe wie Button
+			
+			// @-Button im Menü (links)
+			if (mouseX >= menuX && mouseX <= menuX + menuButtonWidth &&
+				mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
+				if (button == 0) {
+					insertCharacter('@');
+					isSymbolMenuOpen = false;
+					return true;
+				}
+			}
+			
+			// <-Button im Menü (mitte)
+			if (mouseX >= menuX + menuButtonWidth + 1 && mouseX <= menuX + menuButtonWidth * 2 + 1 &&
+				mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
+				if (button == 0) {
+					insertCharacter('<');
+					isSymbolMenuOpen = false;
+					return true;
+				}
+			}
+			
+			// >-Button im Menü (rechts)
+			if (mouseX >= menuX + (menuButtonWidth + 1) * 2 && mouseX <= menuX + menuButtonWidth * 3 + 2 &&
+				mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
+				if (button == 0) {
+					insertCharacter('>');
+					isSymbolMenuOpen = false;
+					return true;
+				}
+			}
+			
+			// Wenn außerhalb des Menüs geklickt wird, schließe es
+			if (button == 0) {
+				isSymbolMenuOpen = false;
+			}
+		}
+		
+		// Symbol-Button Klick prüfen
+		if (mouseX >= symbolButtonX && mouseX <= symbolButtonX + symbolButtonSize &&
+			mouseY >= symbolButtonY && mouseY <= symbolButtonY + symbolButtonSize) {
 			
 			if (button == 0) {
-				// @-Symbol in die Suchleiste einfügen
-				searchText = searchText.substring(0, cursorPosition) + "@" + searchText.substring(cursorPosition);
-				cursorPosition++;
-				
-				// Selektion löschen falls vorhanden
-				clearSelection();
-				
-				// Suche durchführen
-				performSearch();
-				
+				// Toggle Menü
+				isSymbolMenuOpen = !isSymbolMenuOpen;
 				return true;
 			}
 		}
@@ -931,6 +1306,13 @@ public class SearchBarUtility {
 				
 				// Selektion löschen bei Klick
 				clearSelection();
+				return true;
+			} else if (button == 1) {
+				// Rechtsklick: Text löschen
+				searchText = "";
+				cursorPosition = 0;
+				clearSelection();
+				performSearch(); // Suche aktualisieren
 				return true;
 			}
 		} else {
@@ -1398,24 +1780,96 @@ public class SearchBarUtility {
 	}
 	
 	/**
-	 * Zeichnet den @-Button
+	 * Zeichnet den Symbol-Button (Stern)
 	 */
-	private static void drawAtButton(DrawContext context, MinecraftClient client) {
-		// Button-Hintergrund
-		context.fill(atButtonX, atButtonY, atButtonX + atButtonSize, atButtonY + atButtonSize, 0x80000000);
+	private static void drawSymbolButton(DrawContext context, MinecraftClient client) {
+		// Button-Hintergrund (gelb wenn gehovered oder Menü offen)
+		int bgColor = (isSymbolButtonHovered || isSymbolMenuOpen) ? 0x80FFFF00 : 0x80000000;
+		context.fill(symbolButtonX, symbolButtonY, symbolButtonX + symbolButtonSize, symbolButtonY + symbolButtonSize, bgColor);
 		
 		// Button-Rahmen
-		context.fill(atButtonX, atButtonY, atButtonX + atButtonSize, atButtonY + 1, 0xFFFFFFFF);
-		context.fill(atButtonX, atButtonY + atButtonSize - 1, atButtonX + atButtonSize, atButtonY + atButtonSize, 0xFFFFFFFF);
-		context.fill(atButtonX, atButtonY, atButtonX + 1, atButtonY + atButtonSize, 0xFFFFFFFF);
-		context.fill(atButtonX + atButtonSize - 1, atButtonY, atButtonX + atButtonSize, atButtonY + atButtonSize, 0xFFFFFFFF);
+		int borderColor = (isSymbolButtonHovered || isSymbolMenuOpen) ? 0xFFFFFF00 : 0xFFFFFFFF;
+		context.fill(symbolButtonX, symbolButtonY, symbolButtonX + symbolButtonSize, symbolButtonY + 1, borderColor);
+		context.fill(symbolButtonX, symbolButtonY + symbolButtonSize - 1, symbolButtonX + symbolButtonSize, symbolButtonY + symbolButtonSize, borderColor);
+		context.fill(symbolButtonX, symbolButtonY, symbolButtonX + 1, symbolButtonY + symbolButtonSize, borderColor);
+		context.fill(symbolButtonX + symbolButtonSize - 1, symbolButtonY, symbolButtonX + symbolButtonSize, symbolButtonY + symbolButtonSize, borderColor);
 		
-		// @-Zeichen
+		// Stern-Zeichen (★) - zentriert
+		String starSymbol = "★";
+		int starTextWidth = client.textRenderer.getWidth(starSymbol);
+		int starTextHeight = client.textRenderer.fontHeight;
+		int starX = symbolButtonX + (symbolButtonSize - starTextWidth) / 2;
+		int starY = symbolButtonY + (symbolButtonSize - starTextHeight) / 2;
+		context.drawText(
+			client.textRenderer,
+			starSymbol,
+			starX,
+			starY,
+			0xFFFFFF00,
+			true
+		);
+	}
+	
+	/**
+	 * Zeichnet das Symbol-Menü (erscheint beim Hovern über den Stern-Button)
+	 */
+	private static void drawSymbolMenu(DrawContext context, MinecraftClient client) {
+		int menuX = symbolButtonX + symbolButtonSize; // Rechts neben dem Button
+		int menuY = symbolButtonY; // Gleiche Y-Position wie Button
+		int menuButtonWidth = 20;
+		int menuButtonHeight = symbolButtonSize; // Gleiche Höhe wie Button
+		int menuWidth = menuButtonWidth * 3 + 2; // 3 Buttons + 2px Abstand
+		int menuHeight = menuButtonHeight;
+		
+		// Menü-Hintergrund
+		context.fill(menuX, menuY, menuX + menuWidth, menuY + menuHeight, 0xFF000000);
+		
+		// Menü-Rahmen
+		context.fill(menuX, menuY, menuX + menuWidth, menuY + 1, 0xFFFFFFFF);
+		context.fill(menuX, menuY + menuHeight - 1, menuX + menuWidth, menuY + menuHeight, 0xFFFFFFFF);
+		context.fill(menuX, menuY, menuX + 1, menuY + menuHeight, 0xFFFFFFFF);
+		context.fill(menuX + menuWidth - 1, menuY, menuX + menuWidth, menuY + menuHeight, 0xFFFFFFFF);
+		
+		// @-Button (links)
+		int atButtonX = menuX + 1;
+		context.fill(atButtonX, menuY + 1, atButtonX + menuButtonWidth, menuY + menuButtonHeight - 1, 0x80404040);
 		context.drawText(
 			client.textRenderer,
 			"@",
-			atButtonX + 5,
-			atButtonY + 3,
+			atButtonX + 7,
+			menuY + 4,
+			0xFFFFFFFF,
+			true
+		);
+		
+		// Trennlinie zwischen @ und <
+		int divider1X = menuX + menuButtonWidth;
+		context.fill(divider1X, menuY, divider1X + 1, menuY + menuHeight, 0xFFFFFFFF);
+		
+		// <-Button (mitte)
+		int lessButtonX = menuX + menuButtonWidth + 1;
+		context.fill(lessButtonX, menuY + 1, lessButtonX + menuButtonWidth, menuY + menuButtonHeight - 1, 0x80404040);
+		context.drawText(
+			client.textRenderer,
+			"<",
+			lessButtonX + 7,
+			menuY + 4,
+			0xFFFFFFFF,
+			true
+		);
+		
+		// Trennlinie zwischen < und >
+		int divider2X = menuX + menuButtonWidth * 2 + 1;
+		context.fill(divider2X, menuY, divider2X + 1, menuY + menuHeight, 0xFFFFFFFF);
+		
+		// >-Button (rechts)
+		int greaterButtonX = menuX + (menuButtonWidth + 1) * 2;
+		context.fill(greaterButtonX, menuY + 1, greaterButtonX + menuButtonWidth, menuY + menuButtonHeight - 1, 0x80404040);
+		context.drawText(
+			client.textRenderer,
+			">",
+			greaterButtonX + 7,
+			menuY + 4,
 			0xFFFFFFFF,
 			true
 		);

@@ -42,6 +42,9 @@ public class CCLiveUtilities implements ModInitializer {
 		// Migriere Overlay-Typ von String zu Enum
 		CCLiveUtilitiesConfig.migrateOverlayType();
 
+		// Initialisiere ZeichenUtility zuerst (wird von anderen Utilities benötigt)
+		net.felix.utilities.Overall.ZeichenUtility.initialize();
+
 		// Initialisiere alle Utility-Klassen
 		EquipmentDisplayUtility.initialize();
 		SchmiedTrackerUtility.initialize();

@@ -18,6 +18,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.OverlayType;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -126,7 +127,7 @@ public class EquipmentDisplayUtility {
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
-			if (title.contains("㬄") || title.contains("㬅") || title.contains("㬆") || title.contains("㬇")) { //Equipment Display
+			if (ZeichenUtility.containsEquipmentDisplay(title)) { //Equipment Display
 				isInEquipmentChest = true;
 				updateEquipmentStats(handledScreen, client);
 				handleScrolling(client);

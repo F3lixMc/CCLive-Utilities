@@ -17,6 +17,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Formatting;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.ZeichenUtility;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -41,6 +42,12 @@ public class SchmiedTrackerUtility {
 	private static int buttonWidth = 120;
 	private static int buttonHeight = 20;
 	private static Map<Integer, ItemStack> originalItems = new HashMap<>(); // slotIndex -> original ItemStack
+	
+	// Hide Wrong Class Button State
+	private static boolean hideWrongClassActive = false;
+	private static int wrongClassButtonX = 0;
+	private static int wrongClassButtonY = 0;
+	private static Map<Integer, ItemStack> originalItemsWrongClass = new HashMap<>(); // slotIndex -> original ItemStack for wrong class filter
 	
 	// Frame Toggle State
 	private static boolean framesVisible = true; // Standardmäßig sichtbar
@@ -124,20 +131,26 @@ public class SchmiedTrackerUtility {
 			// Check for blueprint inventories
 			// Inventare für Hide Uncraftable Button
 			if (cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Baupläne [Werkzeuge]") ||
-				cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || 
-				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools")) {
+				cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
+				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") || cleanTitle.contains("Bauplan [Shop]")) {
 				// NEUE LOGIK: Beim Betreten eines Blueprint-Inventars immer alle Items anzeigen
 				if (!wasInBlueprintInventory) {
 					// Wir betreten gerade ein Blueprint-Inventar - stelle sicher dass alle Items sichtbar sind
 					hideUncraftableActive = false;
+					hideWrongClassActive = false;
 					originalItems.clear();
+					originalItemsWrongClass.clear();
 				}
 				
 				isInBlueprintInventory = true;
 				isInDisassembleChest = false;
 				updateButtonPosition(handledScreen, client);
+				updateWrongClassButtonPosition(handledScreen, client);
 				if (hideUncraftableActive) {
 					updateBlueprintItems(handledScreen, client);
+				}
+				if (hideWrongClassActive) {
+					updateBlueprintItemsWrongClass(handledScreen, client);
 				}
 			// Inventare für Schmiedezustände	
 			} else if (cleanTitle.contains("Zerlegen") || cleanTitle.contains("Umschmieden") || 
@@ -145,7 +158,7 @@ public class SchmiedTrackerUtility {
 			cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Waffen Sammlung") || 
 			cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
 			cleanTitle.contains("Geschützte Items") ||
-			cleanTitle.contains("㬄") || cleanTitle.contains("㬅") || cleanTitle.contains("㬆") || cleanTitle.contains("㬇")) {//Equipment Display
+			ZeichenUtility.containsEquipmentDisplay(cleanTitle)) {//Equipment Display
 				isInDisassembleChest = true;
 				isInBlueprintInventory = false;
 				updateSlotColors(handledScreen, client);
@@ -155,8 +168,11 @@ public class SchmiedTrackerUtility {
 				if (wasInBlueprintInventory && !isInBlueprintInventory) {
 					// Wir haben ein Blueprint-Inventar verlassen - stelle alle Items wieder her
 					restoreOriginalItems(handledScreen);
+					restoreOriginalItemsWrongClass(handledScreen);
 					originalItems.clear();
+					originalItemsWrongClass.clear();
 					hideUncraftableActive = false; // Deaktiviere den Button-Status
+					hideWrongClassActive = false; // Deaktiviere den Button-Status
 				}
 				isInBlueprintInventory = false;
 				slotColors.clear();
@@ -167,8 +183,11 @@ public class SchmiedTrackerUtility {
 			if (wasInBlueprintInventory && !isInBlueprintInventory) {
 				// Wir haben ein Blueprint-Inventar verlassen - stelle alle Items wieder her
 				restoreOriginalItems(null);
+				restoreOriginalItemsWrongClass(null);
 				originalItems.clear();
+				originalItemsWrongClass.clear();
 				hideUncraftableActive = false; // Deaktiviere den Button-Status
+				hideWrongClassActive = false; // Deaktiviere den Button-Status
 			}
 			isInBlueprintInventory = false;
 			slotColors.clear();
@@ -787,6 +806,25 @@ public class SchmiedTrackerUtility {
 	}
 	
 	/**
+	 * Aktualisiert die Position des Hide Wrong Class Buttons basierend auf der Bildschirmgröße
+	 */
+	private static void updateWrongClassButtonPosition(HandledScreen<?> screen, MinecraftClient client) {
+		if (client.getWindow() == null) {
+			return;
+		}
+		
+		int screenWidth = client.getWindow().getScaledWidth();
+		
+		// Standard-Position in der oberen rechten Ecke des Bildschirms
+		int baseX = screenWidth - buttonWidth - 20;
+		int baseY = 20;
+		
+		// Füge die konfigurierten Offsets hinzu
+		wrongClassButtonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX;
+		wrongClassButtonY = baseY + CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY;
+	}
+	
+	/**
 	 * Aktualisiert die Items in den Blueprint-Slots basierend auf dem Hide Uncraftable Status
 	 */
 	private static void updateBlueprintItems(HandledScreen<?> screen, MinecraftClient client) {
@@ -879,6 +917,114 @@ public class SchmiedTrackerUtility {
 	}
 	
 	/**
+	 * Prüft ob ein Item "Nicht für deine Klasse geeignet!" in der LORE hat (Farbe ist egal)
+	 */
+	private static boolean isWrongClass(ItemStack itemStack) {
+		try {
+			var loreComponent = itemStack.get(DataComponentTypes.LORE);
+			if (loreComponent != null) {
+				List<Text> lore = loreComponent.lines();
+				for (Text loreText : lore) {
+					String loreString = loreText.getString();
+					// Prüfe ob der Text "Nicht für deine Klasse geeignet!" enthält (Farbe ist egal)
+					if (loreString.contains("Nicht für deine Klasse geeignet!")) {
+						return true; // Item ist für falsche Klasse
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Ignoriere Fehler
+		}
+		return false;
+	}
+	
+	/**
+	 * Aktualisiert die Items in den Blueprint-Slots basierend auf dem Hide Wrong Class Status
+	 */
+	private static void updateBlueprintItemsWrongClass(HandledScreen<?> screen, MinecraftClient client) {
+		if (!hideWrongClassActive) {
+			restoreOriginalItemsWrongClass(screen);
+			return;
+		}
+		
+		// Finde die korrekten Blueprint-Slots automatisch
+		List<Integer> blueprintSlots = findBlueprintSlots(screen);
+		int[] targetSlots = blueprintSlots.stream().mapToInt(Integer::intValue).toArray();
+		
+		for (int slotIndex : targetSlots) {
+			if (slotIndex < screen.getScreenHandler().slots.size()) {
+				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+				ItemStack itemStack = slot.getStack();
+				
+				if (!itemStack.isEmpty()) {
+					// Speichere das originale Item falls noch nicht gespeichert
+					if (!originalItemsWrongClass.containsKey(slotIndex)) {
+						originalItemsWrongClass.put(slotIndex, itemStack.copy());
+					}
+					
+					// Prüfe ob das Item für die falsche Klasse ist
+					boolean isWrongClassResult = isWrongClass(itemStack);
+					
+					if (isWrongClassResult) {
+						// Ersetze mit schwarzem Beton, aber behalte die ursprünglichen Tooltips
+						ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
+						
+						// Kopiere die ursprünglichen Komponenten für Tooltips
+						blackConcrete.set(DataComponentTypes.CUSTOM_NAME, itemStack.get(DataComponentTypes.CUSTOM_NAME));
+						blackConcrete.set(DataComponentTypes.LORE, itemStack.get(DataComponentTypes.LORE));
+						
+						// Füge einen Hinweis zum Custom Name hinzu, dass das Item ausgeblendet wurde
+						var customName = blackConcrete.get(DataComponentTypes.CUSTOM_NAME);
+						if (customName != null) {
+							String originalName = customName.getString();
+							if (!originalName.contains("[Ausgeblendet]")) {
+								Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
+								blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+							}
+						} else {
+							String originalName = itemStack.getName().getString();
+							if (!originalName.contains("[Ausgeblendet]")) {
+								Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
+								blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+							}
+						}
+						
+						slot.setStack(blackConcrete);
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Stellt die originalen Items wieder her (für Hide Wrong Class)
+	 */
+	private static void restoreOriginalItemsWrongClass(HandledScreen<?> screen) {
+		if (screen == null) {
+			originalItemsWrongClass.clear();
+			return;
+		}
+		
+		// Erstelle eine Kopie der Map, um ConcurrentModificationException zu vermeiden
+		Map<Integer, ItemStack> itemsToRestore = new HashMap<>(originalItemsWrongClass);
+		
+		for (Map.Entry<Integer, ItemStack> entry : itemsToRestore.entrySet()) {
+			int slotIndex = entry.getKey();
+			ItemStack originalItem = entry.getValue();
+			
+			if (slotIndex < screen.getScreenHandler().slots.size()) {
+				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+				// Prüfe ob der Slot noch den schwarzen Betonblock enthält
+				ItemStack currentItem = slot.getStack();
+				if (currentItem.getItem() == Items.BLACK_CONCRETE) {
+					slot.setStack(originalItem);
+				}
+			}
+		}
+		originalItemsWrongClass.clear();
+	}
+	
+	/**
 	 * Prüft ob ein Item uncraftbar ist (sollte ausgeblendet werden)
 	 * NEUE LOGIK: Items ohne Enchantment Glint Effekt werden ausgeblendet
 	 */
@@ -939,10 +1085,26 @@ public class SchmiedTrackerUtility {
 	}
 	
 	/**
+	 * Prüft ob wir im "Bauplan [Shop]" Menü sind
+	 */
+	private static boolean isInBlueprintShop(HandledScreen<?> screen) {
+		if (screen == null) return false;
+		String title = screen.getTitle().getString();
+		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+								   .replaceAll("[\\u3400-\\u4DBF]", "");
+		return cleanTitle.contains("Bauplan [Shop]");
+	}
+	
+	/**
 	 * Rendert den Hide Uncraftable Button (wird vom Mixin aufgerufen)
 	 */
 	public static void renderHideUncraftableButton(DrawContext context, HandledScreen<?> screen) {
 		if (!isInBlueprintInventory || !CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled) {
+			return;
+		}
+		
+		// Hide Uncraftable Button soll nicht im "Bauplan [Shop]" Menü angezeigt werden
+		if (isInBlueprintShop(screen)) {
 			return;
 		}
 		
@@ -975,18 +1137,83 @@ public class SchmiedTrackerUtility {
 			return false;
 		}
 		
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+			// Hide Uncraftable Button soll nicht im "Bauplan [Shop]" Menü funktionieren
+			if (isInBlueprintShop(handledScreen)) {
+				return false;
+			}
+		}
+		
 		if (button == 0 && mouseX >= buttonX && mouseX <= buttonX + buttonWidth &&
 			mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
 			
 			hideUncraftableActive = !hideUncraftableActive;
 			
 			// Aktualisiere die Items basierend auf dem neuen Status
-			MinecraftClient client = MinecraftClient.getInstance();
 			if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
 				if (hideUncraftableActive) {
 					updateBlueprintItems(handledScreen, client);
 				} else {
 					restoreOriginalItems(handledScreen);
+				}
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Rendert den Hide Wrong Class Button (wird vom Mixin aufgerufen)
+	 */
+	public static void renderHideWrongClassButton(DrawContext context, HandledScreen<?> screen) {
+		if (!isInBlueprintInventory || !CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled) {
+			return;
+		}
+		
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null) return;
+		
+		// Button-Hintergrund
+		int backgroundColor = hideWrongClassActive ? 0xFF4B6A69 : 0xFF4B6A69; // Einheitliche Farbe #4B6A69
+		context.fill(wrongClassButtonX, wrongClassButtonY, wrongClassButtonX + buttonWidth, wrongClassButtonY + buttonHeight, backgroundColor);
+		
+		// Button-Rahmen mit verschiedenen Farben (2 Pixel dick)
+		context.fill(wrongClassButtonX, wrongClassButtonY, wrongClassButtonX + buttonWidth, wrongClassButtonY + 2, 0xFF65857C); // Oben - #65857C
+		context.fill(wrongClassButtonX, wrongClassButtonY + buttonHeight - 2, wrongClassButtonX + buttonWidth, wrongClassButtonY + buttonHeight, 0xFF1D2F3B); // Unten - #1D2F3B
+		context.fill(wrongClassButtonX, wrongClassButtonY, wrongClassButtonX + 2, wrongClassButtonY + buttonHeight, 0xFF314E52); // Links - #314E52
+		context.fill(wrongClassButtonX + buttonWidth - 2, wrongClassButtonY, wrongClassButtonX + buttonWidth, wrongClassButtonY + buttonHeight, 0xFF314E52); // Rechts - #314E52
+		
+		// Button-Text
+		String buttonText = hideWrongClassActive ? "Show All" : "Hide wrong class";
+		int textColor = 0xFF404040; // Dunkelgrau
+		int textX = wrongClassButtonX + (buttonWidth - client.textRenderer.getWidth(buttonText)) / 2;
+		int textY = wrongClassButtonY + (buttonHeight - 8) / 2;
+		context.drawText(client.textRenderer, buttonText, textX, textY, textColor, false);
+	}
+	
+	/**
+	 * Behandelt Mausklicks auf den Hide Wrong Class Button
+	 */
+	public static boolean handleWrongClassButtonClick(double mouseX, double mouseY, int button) {
+		if (!isInBlueprintInventory || !CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled) {
+			return false;
+		}
+		
+		if (button == 0 && mouseX >= wrongClassButtonX && mouseX <= wrongClassButtonX + buttonWidth &&
+			mouseY >= wrongClassButtonY && mouseY <= wrongClassButtonY + buttonHeight) {
+			
+			hideWrongClassActive = !hideWrongClassActive;
+			
+			// Aktualisiere die Items basierend auf dem neuen Status
+			MinecraftClient client = MinecraftClient.getInstance();
+			if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+				if (hideWrongClassActive) {
+					updateBlueprintItemsWrongClass(handledScreen, client);
+				} else {
+					restoreOriginalItemsWrongClass(handledScreen);
 				}
 			}
 			

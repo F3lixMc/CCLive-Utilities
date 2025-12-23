@@ -66,64 +66,24 @@ public class AnimationBlockerUtility {
     }
     
     static {
+        // Lade Zeichen aus ZeichenUtility
         // Epic drops
-        addCharactersFromString("㩬㩭㩮㩯㩰㩱㩲㩳", EPIC_DROPS_CHARACTERS);
-        addCharactersFromString("㩴㩵㩶㩷㩸㩹㩺㩻", EPIC_DROPS_CHARACTERS);
-        addCharactersFromString("㩼㩽㩾㩿㪀㪁㪂㪃", EPIC_DROPS_CHARACTERS);
-        addCharactersFromString("㪄㪅㪆㪇㪈㪉㪊㪋", EPIC_DROPS_CHARACTERS);
-        addCharactersFromString("㪌㪍㪎㪏㪐㪑㪒㪓", EPIC_DROPS_CHARACTERS);
+        addCharactersFromString(ZeichenUtility.getEpicDrops(), EPIC_DROPS_CHARACTERS);
         
         // Legendary drops
-        addCharactersFromString("㩄㩅㩆㩇㩈㩉㩊㩋", LEGENDARY_DROPS_CHARACTERS);
-        addCharactersFromString("㩌㩍㩎㩏㩐㩑㩒㩓", LEGENDARY_DROPS_CHARACTERS);
-        addCharactersFromString("㩔㩕㩖㩗㩘㩙㩚㩛", LEGENDARY_DROPS_CHARACTERS);
-        addCharactersFromString("㩜㩝㩞㩟㩠㩡㩢㩣", LEGENDARY_DROPS_CHARACTERS);
-        addCharactersFromString("㩤㩥㩦㩧㩨㩩㩪㩫", LEGENDARY_DROPS_CHARACTERS);
+        addCharactersFromString(ZeichenUtility.getLegendaryDrops(), LEGENDARY_DROPS_CHARACTERS);
         
         // Logging level up
-        addCharactersFromString("㪣㪤㪥㪦", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㪧㪨㪩㪪", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㪫㪬㪭㪮", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㪯㪰㪱㪲", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㪳㪴㪵㪶", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㪷㪸㪹㪺", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㪻㪼㪽㪾", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㪿㫀㫁㫂", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫃㫄㫅㫆", LOGGING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫇㫈㫉㫊", LOGGING_LEVEL_UP_CHARACTERS);
+        addCharactersFromString(ZeichenUtility.getLoggingLevelUp(), LOGGING_LEVEL_UP_CHARACTERS);
         
         // Moblexicon
-        addCharactersFromString("㬋㬌㬍㬎㬏㬐", MOBLEXICON_CHARACTERS);
-        addCharactersFromString("㬑㬒㬓㬔㬕㬖", MOBLEXICON_CHARACTERS);
-        addCharactersFromString("㬗㬘㬙㬚㬛㬜", MOBLEXICON_CHARACTERS);
-        addCharactersFromString("㬝㬞㬟㬠㬡㬢", MOBLEXICON_CHARACTERS);
-        addCharactersFromString("㬣㬤㬥㬦㬧㬨", MOBLEXICON_CHARACTERS);
-        addCharactersFromString("㬩㬪㬫㬬㬭㬮", MOBLEXICON_CHARACTERS);
-        
+        addCharactersFromString(ZeichenUtility.getMoblexiconAnimation(), MOBLEXICON_CHARACTERS);
         
         // Mining level up
-        addCharactersFromString("㫚㫛㫜㫝", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫞㫟㫠㫡", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫢㫣㫤㫥", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫦㫧㫨㫩", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫪㫫㫬㫭", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫮㫯㫰㫱", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫲㫳㫴㫵", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫶㫷㫸㫹", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫺㫻㫼㫽", MINING_LEVEL_UP_CHARACTERS);
-        addCharactersFromString("㫾㫿㬀㬁", MINING_LEVEL_UP_CHARACTERS);
+        addCharactersFromString(ZeichenUtility.getMiningLevelUp(), MINING_LEVEL_UP_CHARACTERS);
         
         // Airship
-        addCharactersFromString("㭉㭊㭋㭌㭍㭎㭏", AIRSHIP_CHARACTERS);
-        addCharactersFromString("㭐㭑㭒㭓㭔㭕㭖", AIRSHIP_CHARACTERS);
-        addCharactersFromString("㭗㭘㭙㭚㭛㭜㭝", AIRSHIP_CHARACTERS);
-        addCharactersFromString("㭞㭟㭠㭡㭢㭣㭤", AIRSHIP_CHARACTERS);
-        addCharactersFromString("㭥㭦㭧㭨㭩㭪㭫", AIRSHIP_CHARACTERS);
-        addCharactersFromString("㭬㭭㭮㭯㭰㭱㭲", AIRSHIP_CHARACTERS);
-        addCharactersFromString("㭳㭴㭵㭶㭷㭸㭹", AIRSHIP_CHARACTERS);
-        addCharactersFromString("㭺㭻㭼㭽㭾㭿㮀", AIRSHIP_CHARACTERS);
-        
-
+        addCharactersFromString(ZeichenUtility.getAirship(), AIRSHIP_CHARACTERS);
         
         // Update the combined set based on config
         updateBlockedCharacters();

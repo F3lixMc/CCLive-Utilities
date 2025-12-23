@@ -70,6 +70,17 @@ public interface DraggableOverlay {
     }
     
     /**
+     * Prüft, ob die Maus über dem Reset-Bereich ist (rechte obere Ecke)
+     */
+    default boolean isResetArea(int mouseX, int mouseY) {
+        int resetSize = 10;
+        return mouseX >= getX() + getWidth() - resetSize && 
+               mouseX <= getX() + getWidth() &&
+               mouseY >= getY() && 
+               mouseY <= getY() + resetSize;
+    }
+    
+    /**
      * Speichert die aktuelle Position in der Konfiguration
      */
     void savePosition();
@@ -90,4 +101,11 @@ public interface DraggableOverlay {
      * Setzt das Overlay auf die Standard-Position zurück
      */
     void resetToDefault();
+    
+    /**
+     * Setzt die Größe des Overlays auf die Standard-Größe zurück (optional)
+     */
+    default void resetSizeToDefault() {
+        // Standard-Implementierung: nichts tun
+    }
 }

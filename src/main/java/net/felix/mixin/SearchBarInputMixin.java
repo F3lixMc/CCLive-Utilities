@@ -29,6 +29,11 @@ public abstract class SearchBarInputMixin {
             cir.setReturnValue(true);
         }
         
+        // Handle Hide Wrong Class Button clicks
+        if (SchmiedTrackerUtility.isInBlueprintInventory() && SchmiedTrackerUtility.handleWrongClassButtonClick(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+        }
+        
         // Handle Kit Filter Button clicks
         if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
@@ -50,6 +55,11 @@ public abstract class SearchBarInputMixin {
         }
         
         if (SearchBarUtility.isVisible() && SearchBarUtility.handleKeyPress(keyCode, scanCode, modifiers)) {
+            cir.setReturnValue(true);
+        }
+        
+        // Handle key press for MKLevel search bar
+        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelKeyPressed(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
         }
     }

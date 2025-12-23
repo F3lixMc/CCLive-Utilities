@@ -1,5 +1,7 @@
 package net.felix.utilities.Town;
 
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
@@ -63,6 +65,9 @@ public class KitFilterUtility {
 	
 	// Status-Tracking
 	private static boolean wasInRelevantInventory = false;
+	
+	// Flag für verzögertes Öffnen des KitViewScreen (nach Chat-Schließung)
+	private static boolean pendingKitViewScreen = false;
 	
 	// Originale Items speichern (für Wiederherstellung)
 	private static Map<Integer, ItemStack> originalItems = new HashMap<>(); // slotIndex -> original ItemStack
@@ -262,6 +267,9 @@ public class KitFilterUtility {
 			// Lade gespeicherte Kit-Auswahlen aus der Config
 			loadSavedKitSelections();
 			
+			// Register commands
+			registerCommands();
+			
 			// Client-seitige Events registrieren
 			ClientTickEvents.END_CLIENT_TICK.register(KitFilterUtility::onClientTick);
 			
@@ -269,6 +277,23 @@ public class KitFilterUtility {
 		} catch (Exception e) {
 			// Silent error handling
 		}
+	}
+	
+	/**
+	 * Registriert Commands für Kit-Filter
+	 */
+	private static void registerCommands() {
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+			dispatcher.register(ClientCommandManager.literal("cclive")
+				.then(ClientCommandManager.literal("kits")
+					.executes(context -> {
+						// Setze Flag, um das Screen im nächsten Tick zu öffnen (nach Chat-Schließung)
+						pendingKitViewScreen = true;
+						return 1;
+					})
+				)
+			);
+		});
 	}
 	
 	/**
@@ -487,6 +512,17 @@ public class KitFilterUtility {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
 			return;
+		}
+		
+		// Prüfe ob KitViewScreen geöffnet werden soll (nach Chat-Schließung)
+		if (pendingKitViewScreen) {
+			// Prüfe ob Chat geschlossen wurde (kein ChatScreen mehr)
+			if (client.currentScreen == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen)) {
+				// Chat ist geschlossen, öffne das Screen
+				pendingKitViewScreen = false;
+				client.setScreen(new KitViewScreen());
+				return; // Früh zurückkehren, damit andere Logik nicht ausgeführt wird
+			}
 		}
 		
 		if (client.player == null || client.currentScreen == null) {
