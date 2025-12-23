@@ -1,0 +1,12 @@
+{
+  "karten": {
+    "Kaninchen": "effekt 1",
+    "Huhn": "effekt 2"
+  },
+  "statuen": {
+    "Schwert": "effekt 3",
+    "Bogen": "effekt 4"
+  }
+}
+
+

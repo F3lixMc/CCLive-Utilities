@@ -242,6 +242,7 @@ public class KitSelectionScreen extends Screen {
 	
 	/**
 	 * Prüft, ob ein Blueprint gefunden wurde (verwendet BPViewerUtility)
+	 * Normalisiert den Namen (entfernt Farbcodes, ignoriert Groß-/Kleinschreibung) für den Vergleich
 	 */
 	private boolean isBlueprintFound(String blueprintName) {
 		if (blueprintName == null || blueprintName.isEmpty()) {
@@ -250,8 +251,21 @@ public class KitSelectionScreen extends Screen {
 		
 		try {
 			BPViewerUtility bpViewer = BPViewerUtility.getInstance();
-			// Verwende die neue öffentliche Methode, die sowohl foundBlueprints als auch floorProgress prüft
-			return bpViewer.isBlueprintFoundAnywhere(blueprintName);
+			
+			// Normalisiere den Namen: Entferne Farbcodes und trimme
+			String normalizedName = blueprintName.replaceAll("§[0-9a-fk-or]", "").trim();
+			
+			// Prüfe zuerst mit dem normalisierten Namen
+			if (bpViewer.isBlueprintFoundAnywhere(normalizedName)) {
+				return true;
+			}
+			
+			// Falls nicht gefunden, prüfe auch mit dem originalen Namen (für Rückwärtskompatibilität)
+			if (!normalizedName.equals(blueprintName)) {
+				return bpViewer.isBlueprintFoundAnywhere(blueprintName);
+			}
+			
+			return false;
 		} catch (Exception e) {
 			// Falls BPViewer nicht verfügbar ist, gebe false zurück
 			return false;

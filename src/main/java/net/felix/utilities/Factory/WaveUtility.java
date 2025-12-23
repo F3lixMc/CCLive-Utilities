@@ -1,4 +1,4 @@
-package net.felix.utilities.Aincraft;
+package net.felix.utilities.Factory;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.MinecraftClient;
@@ -191,5 +191,4 @@ public class WaveUtility {
         }
     }
 }
-
 

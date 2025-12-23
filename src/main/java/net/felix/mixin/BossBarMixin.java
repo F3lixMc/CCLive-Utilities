@@ -3,7 +3,7 @@ package net.felix.mixin;
 import net.minecraft.client.gui.hud.BossBarHud;
 import net.minecraft.client.gui.hud.ClientBossBar;
 import net.felix.utilities.Aincraft.KillsUtility;
-import net.felix.utilities.Aincraft.WaveUtility;
+import net.felix.utilities.Factory.WaveUtility;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;

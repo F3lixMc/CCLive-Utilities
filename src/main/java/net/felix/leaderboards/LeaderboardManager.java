@@ -48,6 +48,9 @@ public class LeaderboardManager {
     private String playerToken = null;
     private String playerName = null;
     
+    // Season-Tracking für automatischen Blueprint-Reset
+    private Integer lastKnownSeasonId = null;
+    
     // Status
     private boolean isEnabled = true;
     private boolean isRegistered = false;
@@ -129,6 +132,8 @@ public class LeaderboardManager {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             System.out.println("🌐 [LeaderboardManager] Server beigetreten - starte Spieler-Registrierung...");
             schedulePlayerRegistration();
+            // Prüfe Season-ID beim Server-Join
+            checkSeasonChange();
         });
         
         // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
@@ -136,9 +141,58 @@ public class LeaderboardManager {
         if (client != null && client.player != null && client.getNetworkHandler() != null) {
             System.out.println("🌐 [LeaderboardManager] Spieler bereits auf Server - starte sofortige Registrierung...");
             schedulePlayerRegistration();
+            // Prüfe Season-ID sofort
+            checkSeasonChange();
         }
         
         System.out.println("🚀 LeaderboardManager vollständig initialisiert!");
+    }
+    
+    /**
+     * Prüft, ob sich die Season-ID geändert hat und führt bei Bedarf einen Blueprint-Reset durch
+     */
+    private void checkSeasonChange() {
+        if (!isEnabled || !isRegistered) {
+            return;
+        }
+        
+        CompletableFuture.runAsync(() -> {
+            try {
+                JsonObject response = httpClient.get("/season/current");
+                if (response != null && response.has("season_id")) {
+                    int currentSeasonId = response.get("season_id").getAsInt();
+                    
+                    // Wenn wir noch keine Season-ID kennen, speichere sie einfach
+                    if (lastKnownSeasonId == null) {
+                        lastKnownSeasonId = currentSeasonId;
+                        System.out.println("📅 [LeaderboardManager] Aktuelle Season-ID: " + currentSeasonId);
+                        return;
+                    }
+                    
+                    // Prüfe ob sich die Season-ID geändert hat
+                    if (currentSeasonId != lastKnownSeasonId) {
+                        System.out.println("🔄 [LeaderboardManager] Season-Wechsel erkannt: " + lastKnownSeasonId + " → " + currentSeasonId);
+                        System.out.println("🔄 [LeaderboardManager] Führe automatischen Blueprint-Reset durch...");
+                        
+                        // Führe automatischen Blueprint-Reset durch
+                        try {
+                            net.felix.utilities.Aincraft.BPViewerUtility bpViewer = net.felix.utilities.Aincraft.BPViewerUtility.getInstance();
+                            if (bpViewer != null) {
+                                bpViewer.resetFoundBlueprints();
+                                System.out.println("✅ [LeaderboardManager] Blueprint-Reset erfolgreich durchgeführt!");
+                            }
+                        } catch (Exception e) {
+                            System.err.println("❌ [LeaderboardManager] Fehler beim Blueprint-Reset: " + e.getMessage());
+                        }
+                        
+                        // Aktualisiere die gespeicherte Season-ID
+                        lastKnownSeasonId = currentSeasonId;
+                    }
+                }
+            } catch (Exception e) {
+                // Ignoriere Fehler beim Season-Check (nicht kritisch)
+            }
+        });
     }
     
     /**
@@ -229,9 +283,18 @@ public class LeaderboardManager {
             return false;
         }).thenAccept(success -> {
             if (!success) {
-                System.err.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen - Leaderboards deaktiviert");
-                System.err.println("⚠️ [LeaderboardManager] Aktueller Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
-                isEnabled = false;
+                // Nur deaktivieren, wenn noch kein Token vorhanden ist
+                // Wenn bereits ein Token existiert, behalte den Status bei
+                if (playerToken == null) {
+                    System.err.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen - Leaderboards deaktiviert");
+                    System.err.println("⚠️ [LeaderboardManager] Aktueller Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+                    isEnabled = false;
+                } else {
+                    // Token bereits vorhanden - verwende es und aktiviere System
+                    System.out.println("⚠️ [LeaderboardManager] Registrierungs-Request fehlgeschlagen, aber Token bereits vorhanden - System bleibt aktiviert");
+                    isRegistered = true;
+                    isEnabled = true;
+                }
             }
         });
     }
@@ -600,10 +663,22 @@ public class LeaderboardManager {
      */
     public void refreshRegistration() {
         System.out.println("🔄 [LeaderboardManager] Manueller Refresh der Registrierung...");
+        // Speichere das alte Token als Fallback
+        String oldToken = playerToken;
         isRegistered = false;
         playerToken = null;
         isEnabled = true; // Stelle sicher, dass isEnabled wieder true ist
         registerPlayer();
+        
+        // Falls die Registrierung fehlschlägt, verwende das alte Token als Fallback
+        CompletableFuture.delayedExecutor(5, java.util.concurrent.TimeUnit.SECONDS).execute(() -> {
+            if (!isRegistered && oldToken != null) {
+                System.out.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen, verwende altes Token als Fallback");
+                playerToken = oldToken;
+                isRegistered = true;
+                isEnabled = true;
+            }
+        });
     }
     
     /**

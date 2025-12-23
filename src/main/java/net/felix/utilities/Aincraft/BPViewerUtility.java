@@ -1454,7 +1454,14 @@ public class BPViewerUtility {
         saveFoundBlueprints();
         saveProgress();
         
- 
+        // Reset blueprints_found in player_stats
+        try {
+            net.felix.profile.ProfileStatsManager profileStatsManager = net.felix.profile.ProfileStatsManager.getInstance();
+            profileStatsManager.resetBlueprintCount();
+        } catch (Exception e) {
+            // Ignoriere Fehler wenn ProfileStatsManager nicht verfügbar ist
+        }
+
     }
     
     private int getColorFromString(String colorString) {

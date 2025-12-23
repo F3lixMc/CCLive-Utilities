@@ -55,73 +55,87 @@ public class CardsStatuesUtility {
 	private static final Identifier STATUE_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/statuen_background.png");
 	
 	/**
-	 * Rendert den Karten-Hintergrund mit der karten_background.png Textur
+	 * Rendert den Karten-Hintergrund basierend auf dem Overlay-Typ
 	 */
 	private static void renderCardBackground(DrawContext context, int x, int y) {
-		try {
-			// Verwende Matrix-Transformationen für Skalierung
-			Matrix3x2fStack matrices = context.getMatrices();
-			matrices.pushMatrix();
-			
-			// Skaliere das Overlay basierend auf der Config
-			float scale = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale;
-			if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-			
-			// Übersetze zur Position und skaliere von dort aus
-			matrices.translate(x, y);
-			matrices.scale(scale, scale);
-			
-			// Verwende die drawTexture Methode mit der passenden GUI_TEXTURED Pipeline
-			// Diese erwartet keine UV2-Attribute und ist für 2D-Overlays geeignet
-			context.drawTexture(
-				RenderPipelines.GUI_TEXTURED,
-				CARD_BACKGROUND_TEXTURE,
-				-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
-				0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
-				BACKGROUND_WIDTH, BACKGROUND_HEIGHT, // Größe
-				BACKGROUND_WIDTH, BACKGROUND_HEIGHT // Textur-Größe
-			);
-			
-			matrices.popMatrix();
-		} catch (Exception e) {
-			// Fallback: Verwende den ursprünglichen schwarzen Hintergrund
-			context.fill(x - 11, y - 11, x + BACKGROUND_WIDTH - 11, y + BACKGROUND_HEIGHT - 11, 0x80000000);
+		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayType;
+		
+		// Verwende Matrix-Transformationen für Skalierung
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Skaliere das Overlay basierend auf der Config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale;
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Übersetze zur Position und skaliere von dort aus
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
+		
+		if (overlayType == OverlayType.CUSTOM) {
+			// Bild-Overlay mit karten_background.png
+			try {
+				context.drawTexture(
+					RenderPipelines.GUI_TEXTURED,
+					CARD_BACKGROUND_TEXTURE,
+					-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
+					0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
+					BACKGROUND_WIDTH, BACKGROUND_HEIGHT, // Größe
+					BACKGROUND_WIDTH, BACKGROUND_HEIGHT // Textur-Größe
+				);
+			} catch (Exception e) {
+				// Fallback: Verwende den schwarzen Hintergrund wenn Textur-Loading fehlschlägt
+				context.fill(-11, -11, BACKGROUND_WIDTH - 11, BACKGROUND_HEIGHT - 11, 0x80000000);
+			}
+		} else if (overlayType == OverlayType.BLACK) {
+			// Schwarzes halbtransparentes Overlay
+			context.fill(-11, -11, BACKGROUND_WIDTH - 11, BACKGROUND_HEIGHT - 11, 0x80000000);
 		}
+		// Bei OverlayType.NONE wird kein Hintergrund gezeichnet
+		
+		matrices.popMatrix();
 	}
 	
 	/**
-	 * Rendert den Statuen-Hintergrund mit der statuen_background.png Textur
+	 * Rendert den Statuen-Hintergrund basierend auf dem Overlay-Typ
 	 */
 	private static void renderStatueBackground(DrawContext context, int x, int y) {
-		try {
-			// Verwende Matrix-Transformationen für Skalierung
-			Matrix3x2fStack matrices = context.getMatrices();
-			matrices.pushMatrix();
-			
-			// Skaliere das Overlay basierend auf der Config
-			float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
-			if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-			
-			// Übersetze zur Position und skaliere von dort aus
-			matrices.translate(x, y);
-			matrices.scale(scale, scale);
-			
-			// Verwende die drawTexture Methode mit der passenden GUI_TEXTURED Pipeline
-			// Diese erwartet keine UV2-Attribute und ist für 2D-Overlays geeignet
-			context.drawTexture(
-				RenderPipelines.GUI_TEXTURED,
-				STATUE_BACKGROUND_TEXTURE,
-				-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
-				0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
-				BACKGROUND_WIDTH, BACKGROUND_HEIGHT, // Größe
-				BACKGROUND_WIDTH, BACKGROUND_HEIGHT // Textur-Größe
-			);
-			
-			matrices.popMatrix();
-		} catch (Exception e) {
-			// Fallback: Verwende den ursprünglichen schwarzen Hintergrund
-			context.fill(x - 11, y - 11, x + BACKGROUND_WIDTH - 11, y + BACKGROUND_HEIGHT - 11, 0x80000000);
+		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
+		
+		// Verwende Matrix-Transformationen für Skalierung
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Skaliere das Overlay basierend auf der Config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
+		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		
+		// Übersetze zur Position und skaliere von dort aus
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
+		
+		if (overlayType == OverlayType.CUSTOM) {
+			// Bild-Overlay mit statuen_background.png
+			try {
+				context.drawTexture(
+					RenderPipelines.GUI_TEXTURED,
+					STATUE_BACKGROUND_TEXTURE,
+					-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
+					0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
+					BACKGROUND_WIDTH, BACKGROUND_HEIGHT, // Größe
+					BACKGROUND_WIDTH, BACKGROUND_HEIGHT // Textur-Größe
+				);
+			} catch (Exception e) {
+				// Fallback: Verwende den schwarzen Hintergrund wenn Textur-Loading fehlschlägt
+				context.fill(-11, -11, BACKGROUND_WIDTH - 11, BACKGROUND_HEIGHT - 11, 0x80000000);
+			}
+		} else if (overlayType == OverlayType.BLACK) {
+			// Schwarzes halbtransparentes Overlay
+			context.fill(-11, -11, BACKGROUND_WIDTH - 11, BACKGROUND_HEIGHT - 11, 0x80000000);
 		}
+		// Bei OverlayType.NONE wird kein Hintergrund gezeichnet
+		
+		matrices.popMatrix();
 	}
 	
 

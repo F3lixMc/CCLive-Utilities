@@ -43,6 +43,11 @@ public class InformationenUtility {
 	private static Map<String, LicenseInfo> licensesDatabase = new HashMap<>();
 	private static final String LICENSES_CONFIG_FILE = "assets/cclive-utilities/Farmworld.json";
 	
+	// Cards and Statues effects tracking
+	private static Map<String, String> cardsEffects = new HashMap<>();
+	private static Map<String, String> statuesEffects = new HashMap<>();
+	private static final String CARDS_STATUES_CONFIG_FILE = "assets/cclive-utilities/CardsStatues.json";
+	
 	// Gadget tracking - Maps: "name/alias" -> Map<"level", "location">
 	private static Map<String, Map<String, String>> gadgetsDatabase = new HashMap<>();
 	
@@ -149,6 +154,9 @@ public class InformationenUtility {
 		
 		// Load essences database
 		loadEssencesDatabase();
+		
+		// Load cards and statues effects database
+		loadCardsStatuesDatabase();
 		
 		// Load aspects database
 		loadAspectsDatabase();
@@ -289,7 +297,45 @@ public class InformationenUtility {
 					continue;
 				}
 				
-				// Skip if the line contains [Karte] or [Statue], but allow [Bauplan] to pass through
+				// Process lines with [Karte] or [Statue] in Moblexicon to add effect information
+				if ((lineText.contains("[Karte]") || lineText.contains("[Statue]")) && isSpecialInventory) {
+					// Extract the name (text before [Karte] or [Statue])
+					String name = "";
+					String effect = null;
+					boolean isCard = false;
+					
+					if (lineText.contains("[Karte]")) {
+						int index = cleanLineText.indexOf("[Karte]");
+						name = cleanLineText.substring(0, index).trim();
+						effect = cardsEffects.get(name);
+						isCard = true;
+					} else if (lineText.contains("[Statue]")) {
+						int index = cleanLineText.indexOf("[Statue]");
+						name = cleanLineText.substring(0, index).trim();
+						effect = statuesEffects.get(name);
+						isCard = false;
+					}
+					
+					// If effect found, append it to the line
+					if (effect != null && !effect.isEmpty()) {
+						// Get the original line text (with formatting)
+						String originalLineText = line.getString();
+						
+						// Determine color: Green (0x55FF55) for cards, Aqua (0x55FFFF) for statues
+						int effectColor = isCard ? 0x55FF55 : 0x55FFFF; // Green for cards, Aqua for statues
+						
+						// Create new text: original line + " - " + effect
+						MutableText newLine = Text.literal(originalLineText)
+							.append(Text.literal(" - ").styled(style -> style.withColor(0xC0C0C0))) // Light gray separator
+							.append(Text.literal(effect).styled(style -> style.withColor(effectColor))); // Green for cards, Aqua for statues
+						
+						// Replace the line
+						lines.set(i, newLine);
+					}
+					continue; // Skip further processing for this line
+				}
+				
+				// Skip if the line contains [Karte] or [Statue] in non-special inventories
 				if (lineText.contains("[Karte]") || lineText.contains("[Statue]")) {
 					continue;
 				}
@@ -2866,6 +2912,52 @@ public class InformationenUtility {
 			}
 		} catch (Exception e) {
 			System.err.println("Failed to load essences database: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Loads cards and statues effects from JSON file
+	 */
+	private static void loadCardsStatuesDatabase() {
+		try {
+			// Load from mod resources
+			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
+				.orElseThrow(() -> new RuntimeException("Mod container not found"))
+				.findPath(CARDS_STATUES_CONFIG_FILE)
+				.orElseThrow(() -> new RuntimeException("Cards/Statues config file not found"));
+			
+			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
+				try (var reader = new java.io.InputStreamReader(inputStream)) {
+					JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+					
+					// Load cards effects
+					if (json.has("karten")) {
+						JsonObject kartenObject = json.getAsJsonObject("karten");
+						for (var entry : kartenObject.entrySet()) {
+							String cardName = entry.getKey();
+							String effect = entry.getValue().getAsString();
+							if (!cardName.isEmpty() && !effect.isEmpty()) {
+								cardsEffects.put(cardName, effect);
+							}
+						}
+					}
+					
+					// Load statues effects
+					if (json.has("statuen")) {
+						JsonObject statuenObject = json.getAsJsonObject("statuen");
+						for (var entry : statuenObject.entrySet()) {
+							String statueName = entry.getKey();
+							String effect = entry.getValue().getAsString();
+							if (!statueName.isEmpty() && !effect.isEmpty()) {
+								statuesEffects.put(statueName, effect);
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Failed to load cards/statues database: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}

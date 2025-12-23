@@ -637,6 +637,39 @@ public class ProfileStatsManager {
     }
     
     /**
+     * Setzt den Blueprint-Count zurück und sendet den Wert sofort an den Server
+     * Verwendet den speziellen Reset-Endpoint, der blueprints_found in der SQL-Datenbank zurücksetzt
+     */
+    public void resetBlueprintCount() {
+        currentBlueprintCount = 0;
+        
+        // Sende Reset-Request an den Server (setzt blueprints_found in SQL auf 0)
+        if (isEnabled && httpClient != null) {
+            LeaderboardManager manager = LeaderboardManager.getInstance();
+            if (manager.isEnabled() && manager.isRegistered()) {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        JsonObject payload = new JsonObject();
+                        // Leeres Payload ist OK, der Endpoint setzt blueprints_found automatisch auf 0
+                        
+                        JsonObject response = httpClient.postWithToken(
+                            "/profile/reset-blueprints",
+                            payload,
+                            manager.getPlayerToken()
+                        );
+                        
+                        if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
+                            // Erfolgreich zurückgesetzt
+                        }
+                    } catch (Exception e) {
+                        // Ignoriere Fehler
+                    }
+                });
+            }
+        }
+    }
+    
+    /**
      * Wird aufgerufen wenn ein neuer Max-Wert erreicht wurde
      */
     public void updateMaxCoins(long coins) {

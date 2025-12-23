@@ -10,6 +10,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.MutableText;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.leaderboards.config.LeaderboardConfig;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -17,12 +18,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 public class UpdateCheckerUtility {
     private static final String MODRINTH_API_URL = "https://api.modrinth.com/v2/project/nBXDNiuw/version";
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final Gson gson = new Gson();
+    private static final LeaderboardConfig config = new LeaderboardConfig();
     
     private static boolean updateCheckCompleted = false;
     private static boolean updateAvailable = false;
@@ -150,7 +153,58 @@ public class UpdateCheckerUtility {
             // Sende Nachrichten an den Spieler
             client.player.sendMessage(updateMessage, false);
             client.player.sendMessage(infoMessage, false);
+            
+            // Hole zusätzliche Update-Message vom Server (falls vorhanden)
+            fetchAndShowServerMessage();
         }
+    }
+    
+    /**
+     * Holt die Update-Message vom Server und zeigt sie an (falls vorhanden)
+     */
+    private static void fetchAndShowServerMessage() {
+        CompletableFuture.runAsync(() -> {
+            try {
+                String serverUrl = config.getServerUrl();
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(serverUrl + "/update-message"))
+                    .timeout(Duration.ofSeconds(5))
+                    .header("User-Agent", "CCLive-Utilities-UpdateChecker/1.0")
+                    .GET()
+                    .build();
+                
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                
+                if (response.statusCode() == 200) {
+                    JsonObject json = gson.fromJson(response.body(), JsonObject.class);
+                    if (json != null && json.has("message")) {
+                        String message = json.get("message").getAsString();
+                        if (message != null && !message.trim().isEmpty()) {
+                            // Zeige Server-Message im Chat (mehrzeilig unterstützt)
+                            MinecraftClient client = MinecraftClient.getInstance();
+                            if (client.player != null) {
+                                // Splitte nach Zeilenumbrüchen (\n) und sende jede Zeile als separate Nachricht
+                                String[] lines = message.split("\\n");
+                                for (int i = 0; i < lines.length; i++) {
+                                    if (i == 0) {
+                                        // Erste Zeile: Komplett gelb (Update-Info + Text)
+                                        Text serverMessage = Text.literal("§e[Update-Info] " + lines[i]);
+                                        client.player.sendMessage(serverMessage, false);
+                                    } else {
+                                        // Weitere Zeilen: Komplett aqua
+                                        Text serverMessage = Text.literal("§b" + lines[i]);
+                                        client.player.sendMessage(serverMessage, false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Silent fail - wenn Server nicht erreichbar ist, einfach ignorieren
+                // System.out.println("Fehler beim Abrufen der Server-Update-Message: " + e.getMessage());
+            }
+        });
     }
     
     public static boolean isUpdateAvailable() {

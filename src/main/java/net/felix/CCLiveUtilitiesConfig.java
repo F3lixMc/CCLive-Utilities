@@ -958,7 +958,10 @@ public class CCLiveUtilitiesConfig {
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
                                         .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Karten:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
-                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().cardOverlayType, newVal -> HANDLER.instance().cardOverlayType = newVal)
+                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().cardOverlayType, newVal -> {
+                                            HANDLER.instance().cardOverlayType = newVal;
+                                            HANDLER.save();
+                                        })
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .valueFormatter(v -> switch (v) {
@@ -985,7 +988,10 @@ public class CCLiveUtilitiesConfig {
                                 .option(Option.<OverlayType>createBuilder()
                                         .name(Text.literal("Overlay-Typ"))
                                         .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Statuen:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
-                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().statueOverlayType, newVal -> HANDLER.instance().statueOverlayType = newVal)
+                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().statueOverlayType, newVal -> {
+                                            HANDLER.instance().statueOverlayType = newVal;
+                                            HANDLER.save();
+                                        })
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .valueFormatter(v -> switch (v) {
