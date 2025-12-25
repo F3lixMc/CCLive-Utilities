@@ -1,9 +1,14 @@
 package net.felix.profile;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
+import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.leaderboards.LeaderboardManager;
@@ -12,8 +17,21 @@ import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.leaderboards.collectors.DataCollector;
 import net.felix.utilities.Aincraft.CardsStatuesUtility;
 import net.felix.utilities.Aincraft.BPViewerUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.item.ItemStack;
+import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.Text;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -29,6 +47,12 @@ public class ProfileStatsManager {
     // Tracking-Variablen
     private int tickCounter = 0;
     private static final int UPDATE_INTERVAL = 1200; // Alle 60 Sekunden (20 ticks/sec * 60)
+    
+    // Validierungs-Variablen für Karten/Statuen-Menüs
+    private boolean isInCardsMenu = false;
+    private boolean isInStatuesMenu = false;
+    private final Map<Integer, ItemStack> lastKnownCardsItems = new HashMap<>();
+    private final Map<Integer, ItemStack> lastKnownStatuesItems = new HashMap<>();
     
     // Gespeicherte Max-Werte (lokal)
     private int highestFloor = 0;
@@ -73,6 +97,10 @@ public class ProfileStatsManager {
     private final Map<String, Integer> cardsLevels = new HashMap<>();
     private final Map<String, Integer> statuesLevels = new HashMap<>();
     
+    // JSON-Datei für persistente Speicherung
+    private static final String SAVE_FILE_NAME = "cards_statues_levels.json";
+    private final File saveFile;
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
     // Status
     private boolean isEnabled = true;
@@ -81,6 +109,10 @@ public class ProfileStatsManager {
     private ProfileStatsManager() {
         LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
         this.httpClient = leaderboardManager.getHttpClient();
+        
+        // Erstelle File-Pfad für JSON-Datei
+        Path configDir = CCLiveUtilities.getConfigDir().resolve("cclive-utilities");
+        this.saveFile = configDir.resolve(SAVE_FILE_NAME).toFile();
     }
     
     public static ProfileStatsManager getInstance() {
@@ -97,6 +129,53 @@ public class ProfileStatsManager {
         if (isInitialized) {
             return;
         }
+        
+        // Lade gespeicherte Karten/Statuen-Level aus JSON-Datei
+        loadCardsStatuesLevels();
+        
+        // Registriere Screen-Event für Validierung von Karten/Statuen-Menüs
+        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (screen instanceof HandledScreen) {
+                String title = screen.getTitle().getString();
+                if (title == null) {
+                    return;
+                }
+                
+                // Entferne Formatierungscodes für Vergleich
+                String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
+                
+                // Prüfe ob es das Karten-Menü (㭆) oder Statuen-Menü (㭂) ist
+                String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
+                boolean isCardsMenu = cleanTitle.contains(cardsStatuesChars[0]); // 㭆
+                boolean isStatuesMenu = cleanTitle.contains(cardsStatuesChars[1]); // 㭂
+                
+                if (isCardsMenu) {
+                    // Warte kurz bis Inventar geladen ist, dann scanne
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(500); // 500ms warten
+                            if (client.currentScreen == screen && client.currentScreen instanceof HandledScreen) {
+                                scanCardsMenu((HandledScreen<?>) client.currentScreen, client);
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }).start();
+                } else if (isStatuesMenu) {
+                    // Warte kurz bis Inventar geladen ist, dann scanne
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(500); // 500ms warten
+                            if (client.currentScreen == screen && client.currentScreen instanceof HandledScreen) {
+                                scanStatuesMenu((HandledScreen<?>) client.currentScreen, client);
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }).start();
+                }
+            }
+        });
         
         // Registriere Tick-Event für periodische Updates
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
@@ -167,6 +246,9 @@ public class ProfileStatsManager {
             tickCounter = 0;
             collectAndSendStats();
         }
+        
+        // Prüfe ob Karten/Statuen-Menü geöffnet ist und ob sich Items geändert haben
+        checkCardsStatuesMenuForChanges(client);
     }
     
     /**
@@ -445,6 +527,7 @@ public class ProfileStatsManager {
         }
         
         // 2. Karten-Level (aus CardsStatuesUtility)
+        boolean cardUpdated = false;
         try {
             CardsStatuesUtility.CardData currentCard = CardsStatuesUtility.getCurrentCard();
             if (currentCard != null && currentCard.getName() != null && currentCard.getLevel() != null) {
@@ -452,7 +535,14 @@ public class ProfileStatsManager {
                     int level = Integer.parseInt(currentCard.getLevel());
                     String cardName = currentCard.getName();
                     // Nur updaten wenn höher
-                    cardsLevels.put(cardName, Math.max(cardsLevels.getOrDefault(cardName, 0), level));
+                    int oldLevel = cardsLevels.getOrDefault(cardName, 0);
+                    if (level > oldLevel) {
+                        cardsLevels.put(cardName, level);
+                        cardUpdated = true;
+                        if (isDebugEnabled()) {
+                            System.out.println("[ProfileStats] ✅ Karte aus Chat aktualisiert: " + cardName + " = Level " + level);
+                        }
+                    }
                 } catch (NumberFormatException e) {
                     // Ignoriere
                 }
@@ -462,6 +552,7 @@ public class ProfileStatsManager {
         }
         
         // 3. Statuen-Level (aus CardsStatuesUtility)
+        boolean statueUpdated = false;
         try {
             CardsStatuesUtility.StatueData currentStatue = CardsStatuesUtility.getCurrentStatue();
             if (currentStatue != null && currentStatue.getName() != null && currentStatue.getLevel() != null) {
@@ -469,13 +560,25 @@ public class ProfileStatsManager {
                     int level = Integer.parseInt(currentStatue.getLevel());
                     String statueName = currentStatue.getName();
                     // Nur updaten wenn höher
-                    statuesLevels.put(statueName, Math.max(statuesLevels.getOrDefault(statueName, 0), level));
+                    int oldLevel = statuesLevels.getOrDefault(statueName, 0);
+                    if (level > oldLevel) {
+                        statuesLevels.put(statueName, level);
+                        statueUpdated = true;
+                        if (isDebugEnabled()) {
+                            System.out.println("[ProfileStats] ✅ Statue aus Chat aktualisiert: " + statueName + " = Level " + level);
+                        }
+                    }
                 } catch (NumberFormatException e) {
                     // Ignoriere
                 }
             }
         } catch (Exception e) {
             // Ignoriere Fehler
+        }
+        
+        // Speichere sofort in JSON-Datei wenn Karte/Statue aus Chat aktualisiert wurde
+        if (cardUpdated || statueUpdated) {
+            saveCardsStatuesLevels();
         }
         
         // 4. Blueprint-Count (aus BPViewerUtility) - Gesamtzahl direkt setzen
@@ -601,6 +704,8 @@ public class ProfileStatsManager {
             if (success && !isFinal) {
                 // Reset additive Werte nach erfolgreichem Update
                 resetAdditiveCounters();
+                // Speichere Karten/Statuen-Level nach erfolgreichem Update
+                saveCardsStatuesLevels();
             }
         });
     }
@@ -616,6 +721,8 @@ public class ProfileStatsManager {
     
     /**
      * Setzt alle Counter zurück (beim Server-Join)
+     * WICHTIG: cardsLevels und statuesLevels werden NICHT geleert,
+     * da diese aus der JSON-Datei geladen werden sollen
      */
     private void resetCounters() {
         resetAdditiveCounters();
@@ -625,8 +732,8 @@ public class ProfileStatsManager {
         maxCoins = 0;
         maxDamage = 0;
         currentBlueprintCount = 0;
-        cardsLevels.clear();
-        statuesLevels.clear();
+        // NICHT löschen: cardsLevels und statuesLevels bleiben erhalten
+        // Diese werden beim Start aus der JSON-Datei geladen
     }
     
     /**
@@ -681,6 +788,9 @@ public class ProfileStatsManager {
     public void updateMaxDamage(long damage) {
         if (damage > maxDamage) {
             maxDamage = damage;
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚔️ Neuer Max-Damage: " + maxDamage);
+            }
         }
     }
     
@@ -690,6 +800,162 @@ public class ProfileStatsManager {
         }
     }
     
+    /**
+     * Lädt Karten/Statuen-Level aus der JSON-Datei
+     */
+    private void loadCardsStatuesLevels() {
+        if (!saveFile.exists()) {
+            return;
+        }
+        
+        try (FileReader reader = new FileReader(saveFile)) {
+            JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+            
+            // Lade Karten-Level
+            if (json.has("cards") && json.get("cards").isJsonObject()) {
+                JsonObject cardsJson = json.getAsJsonObject("cards");
+                cardsLevels.clear();
+                for (Map.Entry<String, com.google.gson.JsonElement> entry : cardsJson.entrySet()) {
+                    String cardName = entry.getKey();
+                    int level = entry.getValue().getAsInt();
+                    cardsLevels.put(cardName, level);
+                }
+            }
+            
+            // Lade Statuen-Level
+            if (json.has("statues") && json.get("statues").isJsonObject()) {
+                JsonObject statuesJson = json.getAsJsonObject("statues");
+                statuesLevels.clear();
+                for (Map.Entry<String, com.google.gson.JsonElement> entry : statuesJson.entrySet()) {
+                    String statueName = entry.getKey();
+                    int level = entry.getValue().getAsInt();
+                    statuesLevels.put(statueName, level);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("❌ [ProfileStats] Fehler beim Laden von Karten/Statuen-Level: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Speichert Karten/Statuen-Level in die JSON-Datei
+     */
+    private void saveCardsStatuesLevels() {
+        try {
+            // Erstelle Verzeichnis falls nicht vorhanden
+            saveFile.getParentFile().mkdirs();
+            
+            JsonObject json = new JsonObject();
+            
+            // Speichere Karten-Level
+            JsonObject cardsJson = new JsonObject();
+            for (Map.Entry<String, Integer> entry : cardsLevels.entrySet()) {
+                cardsJson.addProperty(entry.getKey(), entry.getValue());
+            }
+            json.add("cards", cardsJson);
+            
+            // Speichere Statuen-Level
+            JsonObject statuesJson = new JsonObject();
+            for (Map.Entry<String, Integer> entry : statuesLevels.entrySet()) {
+                statuesJson.addProperty(entry.getKey(), entry.getValue());
+            }
+            json.add("statues", statuesJson);
+            
+            // Schreibe in Datei
+            try (FileWriter writer = new FileWriter(saveFile)) {
+                gson.toJson(json, writer);
+            }
+        } catch (IOException e) {
+            System.err.println("❌ [ProfileStats] Fehler beim Speichern von Karten/Statuen-Level: " + e.getMessage());
+        }
+    }
+    
+    
+    /**
+     * Wird aufgerufen, wenn eine Karte aus dem Chat gelesen wurde
+     */
+    public void onCardFromChat(CardsStatuesUtility.CardData cardData) {
+        if (cardData == null) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ onCardFromChat: cardData ist null");
+            }
+            return;
+        }
+        if (cardData.getName() == null || cardData.getName().isEmpty()) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ onCardFromChat: Karten-Name ist null oder leer");
+            }
+            return;
+        }
+        if (cardData.getLevel() == null || cardData.getLevel().isEmpty()) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ onCardFromChat: Karten-Level ist null oder leer für: " + cardData.getName());
+            }
+            return;
+        }
+        try {
+            int level = Integer.parseInt(cardData.getLevel());
+            String cardName = cardData.getName();
+            // Nur updaten wenn höher
+            int oldLevel = cardsLevels.getOrDefault(cardName, 0);
+            if (level > oldLevel) {
+                cardsLevels.put(cardName, level);
+                saveCardsStatuesLevels();
+                if (isDebugEnabled()) {
+                    System.out.println("[ProfileStats] ✅ Karte aus Chat sofort gespeichert: " + cardName + " = Level " + level);
+                }
+            } else if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ Karten-Level nicht höher: " + cardName + " (alt: " + oldLevel + ", neu: " + level + ")");
+            }
+        } catch (NumberFormatException e) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ❌ Fehler beim Parsen von Karten-Level: " + cardData.getLevel() + " für " + cardData.getName());
+            }
+        }
+    }
+    
+    /**
+     * Wird aufgerufen, wenn eine Statue aus dem Chat gelesen wurde
+     */
+    public void onStatueFromChat(CardsStatuesUtility.StatueData statueData) {
+        if (statueData == null) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ onStatueFromChat: statueData ist null");
+            }
+            return;
+        }
+        if (statueData.getName() == null || statueData.getName().isEmpty()) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ onStatueFromChat: Statue-Name ist null oder leer");
+            }
+            return;
+        }
+        if (statueData.getLevel() == null || statueData.getLevel().isEmpty()) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ onStatueFromChat: Statue-Level ist null oder leer für: " + statueData.getName());
+            }
+            return;
+        }
+        try {
+            int level = Integer.parseInt(statueData.getLevel());
+            String statueName = statueData.getName();
+            // Nur updaten wenn höher
+            int oldLevel = statuesLevels.getOrDefault(statueName, 0);
+            if (level > oldLevel) {
+                statuesLevels.put(statueName, level);
+                saveCardsStatuesLevels();
+                if (isDebugEnabled()) {
+                    System.out.println("[ProfileStats] ✅ Statue aus Chat sofort gespeichert: " + statueName + " = Level " + level);
+                }
+            } else if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ⚠️ Statue-Level nicht höher: " + statueName + " (alt: " + oldLevel + ", neu: " + level + ")");
+            }
+        } catch (NumberFormatException e) {
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] ❌ Fehler beim Parsen von Statue-Level: " + statueData.getLevel() + " für " + statueData.getName());
+            }
+        }
+    }
     
     // Getter
     public boolean isEnabled() { return isEnabled; }
@@ -702,5 +968,397 @@ public class ProfileStatsManager {
             return false;
         }
     }
+    
+    /**
+     * Scannt das Karten-Menü und validiert/aktualisiert Karten-Level
+     */
+    private void scanCardsMenu(HandledScreen<?> screen, MinecraftClient client) {
+        if (screen.getScreenHandler() == null || client.player == null) {
+            return;
+        }
+        
+        // Scanne alle Slots (Karten können überall sein)
+        lastKnownCardsItems.clear();
+        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
+            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+            ItemStack itemStack = slot.getStack();
+            
+            // Speichere Item für Vergleich (auch wenn leer)
+            if (itemStack != null && !itemStack.isEmpty()) {
+                lastKnownCardsItems.put(slotIndex, itemStack.copy());
+            } else {
+                lastKnownCardsItems.remove(slotIndex);
+            }
+            
+            if (itemStack == null || itemStack.isEmpty()) {
+                continue;
+            }
+            
+            // Lese Tooltip des Items
+            List<Text> tooltip = getItemTooltip(itemStack, client.player);
+            if (tooltip == null || tooltip.isEmpty()) {
+                continue;
+            }
+            
+            // Prüfe ob es eine Karte ist (Tooltip enthält "[Karte]")
+            boolean isCard = false;
+            String cardName = null;
+            int cardLevel = 0;
+            
+            for (Text line : tooltip) {
+                String lineText = line.getString();
+                if (lineText == null) {
+                    continue;
+                }
+                
+                // Prüfe ob es eine Karte ist
+                if (lineText.contains("[Karte]")) {
+                    isCard = true;
+                    // Name ist die erste Zeile (ohne Formatierung)
+                    if (tooltip.size() > 0) {
+                        String nameLine = tooltip.get(0).getString();
+                        if (nameLine != null) {
+                            // Entferne Formatierungscodes und Unicode
+                            cardName = nameLine.replaceAll("§[0-9a-fk-or]", "")
+                                             .replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
+                                             .trim();
+                            // Entferne "[Karte]" aus dem Namen
+                            cardName = cardName.replaceAll("\\[Karte\\]", "").trim();
+                        }
+                    }
+                }
+                
+                // Zähle Sterne (⭐) für Level
+                if (isCard) {
+                    int starCount = countStars(lineText);
+                    if (starCount > 0) {
+                        cardLevel = starCount;
+                    }
+                    // Backup: Maximale Stufe erreicht
+                    if (lineText.contains("Maximale Stufe erreicht!")) {
+                        cardLevel = 5;
+                    }
+                }
+            }
+            
+            // Wenn Karte gefunden, aktualisiere Level (nur wenn höher)
+            if (isCard && cardName != null && !cardName.isEmpty() && cardLevel > 0) {
+                int currentLevel = cardsLevels.getOrDefault(cardName, 0);
+                if (cardLevel > currentLevel) {
+                    cardsLevels.put(cardName, cardLevel);
+                    if (isDebugEnabled()) {
+                        System.out.println("[ProfileStats] ✅ Karte validiert/aktualisiert: " + cardName + " = Level " + cardLevel);
+                    }
+                }
+            }
+        }
+        
+        // Speichere nach Validierung
+        saveCardsStatuesLevels();
+    }
+    
+    /**
+     * Scannt das Statuen-Menü und validiert/aktualisiert Statuen-Level
+     */
+    private void scanStatuesMenu(HandledScreen<?> screen, MinecraftClient client) {
+        if (screen.getScreenHandler() == null || client.player == null) {
+            return;
+        }
+        
+        // Scanne alle Slots (wie bei Karten)
+        lastKnownStatuesItems.clear();
+        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
+            
+            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+            ItemStack itemStack = slot.getStack();
+            
+            // Speichere Item für Vergleich (auch wenn leer)
+            if (itemStack != null && !itemStack.isEmpty()) {
+                lastKnownStatuesItems.put(slotIndex, itemStack.copy());
+            } else {
+                lastKnownStatuesItems.remove(slotIndex);
+            }
+            
+            if (itemStack == null || itemStack.isEmpty()) {
+                continue;
+            }
+            
+            // Lese Tooltip des Items
+            List<Text> tooltip = getItemTooltip(itemStack, client.player);
+            if (tooltip == null || tooltip.isEmpty()) {
+                continue;
+            }
+            
+            // Debug: Zeige alle Tooltip-Zeilen
+            if (isDebugEnabled()) {
+                System.out.println("[ProfileStats] 🔍 Tooltip-Zeilen für Statue:");
+                for (int i = 0; i < tooltip.size(); i++) {
+                    System.out.println("  [" + i + "] " + tooltip.get(i).getString());
+                }
+            }
+            
+            // Prüfe ob es eine Statue ist (Tooltip enthält "[Statue]")
+            boolean isStatue = false;
+            String statueName = null;
+            int statueLevel = 0;
+            
+            for (Text line : tooltip) {
+                String lineText = line.getString();
+                if (lineText == null) {
+                    continue;
+                }
+                
+                // Prüfe ob es eine Statue ist
+                if (lineText.contains("[Statue]")) {
+                    isStatue = true;
+                    if (isDebugEnabled()) {
+                        System.out.println("[ProfileStats] 🔍 [Statue] gefunden in Tooltip-Zeile: " + lineText);
+                    }
+                    // Name ist die erste Zeile (ohne Formatierung)
+                    if (tooltip.size() > 0) {
+                        String nameLine = tooltip.get(0).getString();
+                        if (nameLine != null) {
+                            // Entferne Formatierungscodes und Unicode
+                            statueName = nameLine.replaceAll("§[0-9a-fk-or]", "")
+                                                .replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
+                                                .trim();
+                            // Entferne "[Statue]" aus dem Namen
+                            statueName = statueName.replaceAll("\\[Statue\\]", "").trim();
+                            if (isDebugEnabled()) {
+                                System.out.println("[ProfileStats] 🔍 Statue-Name extrahiert: " + statueName);
+                            }
+                        }
+                    }
+                }
+                
+                // Suche nach "Stufe: XX" für Level (auch ohne Doppelpunkt, falls Formatierungscodes dazwischen sind)
+                if (isStatue) {
+                    // Entferne Formatierungscodes für bessere Suche
+                    String cleanLine = lineText.replaceAll("§[0-9a-fk-or]", "");
+                    if (cleanLine.contains("Stufe") && !cleanLine.contains("Nächste")) {
+                        if (isDebugEnabled()) {
+                            System.out.println("[ProfileStats] 🔍 'Stufe' gefunden in Zeile: " + lineText + " (clean: " + cleanLine + ")");
+                        }
+                        // Suche nach Zahl nach "Stufe" (mit oder ohne Doppelpunkt)
+                        String levelStr = cleanLine.replaceAll(".*[Ss]tufe\\s*:?\\s*", "").replaceAll("[^0-9].*", "").trim();
+                        if (levelStr.isEmpty()) {
+                            // Fallback: Entferne alles außer Zahlen
+                            levelStr = cleanLine.replaceAll("[^0-9]", "").trim();
+                        }
+                        if (!levelStr.isEmpty()) {
+                            try {
+                                statueLevel = Integer.parseInt(levelStr);
+                                if (isDebugEnabled()) {
+                                    System.out.println("[ProfileStats] 🔍 Statue-Level geparst: " + statueLevel);
+                                }
+                            } catch (NumberFormatException e) {
+                                if (isDebugEnabled()) {
+                                    System.out.println("[ProfileStats] ❌ Fehler beim Parsen von Statue-Level: " + levelStr);
+                                }
+                            }
+                        } else if (isDebugEnabled()) {
+                            System.out.println("[ProfileStats] ⚠️ Keine Zahl nach 'Stufe' gefunden in: " + cleanLine);
+                        }
+                    }
+                }
+                // Backup: Maximale Stufe erreicht
+                if (isStatue && lineText.contains("Maximale Stufe erreicht!")) {
+                    statueLevel = 40;
+                    if (isDebugEnabled()) {
+                        System.out.println("[ProfileStats] 🔍 Statue-Level (max): 40");
+                    }
+                }
+            }
+            
+            // Wenn Statue gefunden, aktualisiere Level (nur wenn höher)
+            if (isStatue && statueName != null && !statueName.isEmpty() && statueLevel > 0) {
+                int currentLevel = statuesLevels.getOrDefault(statueName, 0);
+                if (statueLevel > currentLevel) {
+                    statuesLevels.put(statueName, statueLevel);
+                    if (isDebugEnabled()) {
+                        System.out.println("[ProfileStats] ✅ Statue validiert/aktualisiert: " + statueName + " = Level " + statueLevel);
+                    }
+                } else if (isDebugEnabled()) {
+                    System.out.println("[ProfileStats] ⚠️ Statue-Level nicht höher: " + statueName + " (alt: " + currentLevel + ", neu: " + statueLevel + ")");
+                }
+            } else if (isDebugEnabled() && isStatue) {
+                System.out.println("[ProfileStats] ⚠️ Statue erkannt aber nicht gespeichert - Name: " + statueName + ", Level: " + statueLevel);
+            }
+        }
+        
+        // Speichere nach Validierung
+        saveCardsStatuesLevels();
+    }
+    
+    /**
+     * Liest Tooltip-Daten (Lore) aus einem ItemStack
+     */
+    private List<Text> getItemTooltip(ItemStack itemStack, net.minecraft.entity.player.PlayerEntity player) {
+        List<Text> tooltip = new ArrayList<>();
+        // Füge den Item-Namen hinzu
+        tooltip.add(itemStack.getName());
+        
+        // Lese die Lore über die Data Component API
+        var loreComponent = itemStack.get(DataComponentTypes.LORE);
+        if (loreComponent != null) {
+            tooltip.addAll(loreComponent.lines());
+        }
+        return tooltip;
+    }
+    
+    /**
+     * Zählt die Anzahl der Sterne (⭐) in einer Zeile
+     */
+    private int countStars(String line) {
+        if (line == null || line.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (char c : line.toCharArray()) {
+            if (c == '⭐') {
+                count++;
+            }
+        }
+        return Math.min(count, 5); // Maximal 5 Sterne
+    }
+    
+    /**
+     * Prüft ob Karten/Statuen-Menü geöffnet ist und ob sich Items geändert haben (Seitenwechsel)
+     */
+    private void checkCardsStatuesMenuForChanges(MinecraftClient client) {
+        if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
+            isInCardsMenu = false;
+            isInStatuesMenu = false;
+            lastKnownCardsItems.clear();
+            lastKnownStatuesItems.clear();
+            return;
+        }
+        
+        HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+        String title = screen.getTitle().getString();
+        if (title == null) {
+            return;
+        }
+        
+        // Entferne Formatierungscodes für Vergleich
+        String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
+        
+        // Prüfe ob es das Karten-Menü (㭆) oder Statuen-Menü (㭂) ist
+        String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
+        boolean isCardsMenu = cleanTitle.contains(cardsStatuesChars[0]); // 㭆
+        boolean isStatuesMenu = cleanTitle.contains(cardsStatuesChars[1]); // 㭂
+        
+        if (isCardsMenu) {
+            // Prüfe ob sich Items geändert haben (Seitenwechsel)
+            if (hasCardsMenuChanged(screen)) {
+                scanCardsMenu(screen, client);
+            }
+            isInCardsMenu = true;
+        } else {
+            isInCardsMenu = false;
+            lastKnownCardsItems.clear();
+        }
+        
+        if (isStatuesMenu) {
+            // Prüfe ob sich Items geändert haben (Seitenwechsel)
+            if (hasStatuesMenuChanged(screen)) {
+                scanStatuesMenu(screen, client);
+            }
+            isInStatuesMenu = true;
+        } else {
+            isInStatuesMenu = false;
+            lastKnownStatuesItems.clear();
+        }
+    }
+    
+    /**
+     * Prüft ob sich die Items im Karten-Menü geändert haben
+     */
+    private boolean hasCardsMenuChanged(HandledScreen<?> screen) {
+        if (screen.getScreenHandler() == null) {
+            return false;
+        }
+        
+        // Wenn lastKnownCardsItems leer ist, ist es der erste Scan → immer true
+        if (lastKnownCardsItems.isEmpty()) {
+            return true;
+        }
+        
+        // Prüfe alle Slots
+        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
+            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+            ItemStack currentItem = slot.getStack();
+            ItemStack lastKnownItem = lastKnownCardsItems.get(slotIndex);
+            
+            if (currentItem == null || currentItem.isEmpty()) {
+                if (lastKnownItem != null && !lastKnownItem.isEmpty()) {
+                    return true; // Item wurde entfernt
+                }
+            } else {
+                if (lastKnownItem == null || lastKnownItem.isEmpty()) {
+                    return true; // Neues Item wurde hinzugefügt
+                } else if (!areItemsEqual(currentItem, lastKnownItem)) {
+                    return true; // Item hat sich geändert
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Prüft ob sich die Items im Statuen-Menü geändert haben
+     */
+    private boolean hasStatuesMenuChanged(HandledScreen<?> screen) {
+        if (screen.getScreenHandler() == null) {
+            return false;
+        }
+        
+        // Wenn lastKnownStatuesItems leer ist, ist es der erste Scan → immer true
+        if (lastKnownStatuesItems.isEmpty()) {
+            return true;
+        }
+        
+        // Prüfe alle Slots (wie bei Karten)
+        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
+            
+            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+            ItemStack currentItem = slot.getStack();
+            ItemStack lastKnownItem = lastKnownStatuesItems.get(slotIndex);
+            
+            if (currentItem == null || currentItem.isEmpty()) {
+                if (lastKnownItem != null && !lastKnownItem.isEmpty()) {
+                    return true; // Item wurde entfernt
+                }
+            } else {
+                if (lastKnownItem == null || lastKnownItem.isEmpty()) {
+                    return true; // Neues Item wurde hinzugefügt
+                } else if (!areItemsEqual(currentItem, lastKnownItem)) {
+                    return true; // Item hat sich geändert
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Prüft ob zwei ItemStacks gleich sind (für Vergleich)
+     */
+    private boolean areItemsEqual(ItemStack item1, ItemStack item2) {
+        if (item1 == item2) {
+            return true;
+        }
+        if (item1 == null || item2 == null) {
+            return false;
+        }
+        // Vergleiche Item-Typ und Name
+        if (item1.getItem() != item2.getItem()) {
+            return false;
+        }
+        // Vergleiche Custom Name
+        String name1 = item1.getName().getString();
+        String name2 = item2.getName().getString();
+        return name1.equals(name2);
+    }
 }
-

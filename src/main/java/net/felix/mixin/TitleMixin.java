@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.AnimationBlockerUtility;
+import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,6 +16,12 @@ public class TitleMixin {
     
     @Inject(method = "setTitle", at = @At("HEAD"), cancellable = true)
     private void onSetTitle(Text title, CallbackInfo ci) {
+        // Cache Title für FarmworldCollectionsCollector
+        if (title != null) {
+            String titleString = title.getString();
+            FarmworldCollectionsCollector.processTitle(titleString);
+        }
+        
         if (AnimationBlockerUtility.isAnimationBlockingEnabled()) {
             if (title != null) {
                 String titleString = title.getString();
@@ -29,6 +36,12 @@ public class TitleMixin {
     
     @Inject(method = "setSubtitle", at = @At("HEAD"), cancellable = true)
     private void onSetSubtitle(Text subtitle, CallbackInfo ci) {
+        // Cache Subtitle für FarmworldCollectionsCollector
+        if (subtitle != null) {
+            String subtitleString = subtitle.getString();
+            FarmworldCollectionsCollector.processSubtitle(subtitleString);
+        }
+        
         if (AnimationBlockerUtility.isAnimationBlockingEnabled()) {
             if (subtitle != null) {
                 String subtitleString = subtitle.getString();

@@ -293,10 +293,18 @@ public class CardsStatuesUtility {
 		
 		if (hoverEvent != null && hoverEvent.getAction() == HoverEvent.Action.SHOW_TEXT) {
 			try {
-				String hoverString = hoverEvent.toString();
-				hoverContent = parseHoverEventData(hoverString);
+				// Versuche direkt das Text-Objekt aus dem HoverEvent zu extrahieren
+				Text hoverText = extractHoverTextFromEvent(hoverEvent);
+				if (hoverText != null) {
+					hoverContent = extractAllTextFromComponent(hoverText);
+				} else {
+					// Fallback: Verwende String-Parsing
+					String hoverString = hoverEvent.toString();
+					hoverContent = parseHoverEventData(hoverString);
+				}
 			} catch (Exception e) {
-				// Silent error handling
+				System.err.println("[CardsStatues] ❌ Fehler beim Extrahieren des Hover-Texts: " + e.getMessage());
+				e.printStackTrace();
 			}
 		}
 		
@@ -307,6 +315,94 @@ public class CardsStatuesUtility {
 				  content.contains("[Statue]")) {
 			handleStatueMessage(message, hoverContent);
 		}
+	}
+	
+	/**
+	 * Extrahiert Text aus einem HoverEvent
+	 */
+	private static Text extractHoverTextFromEvent(HoverEvent hoverEvent) {
+		if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
+			return null;
+		}
+		
+		// Versuche getValue() Methode
+		try {
+			java.lang.reflect.Method getValueMethod = HoverEvent.class.getDeclaredMethod("getValue", HoverEvent.Action.class);
+			getValueMethod.setAccessible(true);
+			Object value = getValueMethod.invoke(hoverEvent, HoverEvent.Action.SHOW_TEXT);
+			if (value instanceof Text) {
+				return (Text) value;
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		
+		// Versuche value() Methode (für Records)
+		try {
+			java.lang.reflect.Method valueMethod = HoverEvent.class.getDeclaredMethod("value");
+			valueMethod.setAccessible(true);
+			Object value = valueMethod.invoke(hoverEvent);
+			if (value instanceof Text) {
+				return (Text) value;
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		
+		// Versuche Record-Komponenten
+		try {
+			Class<?> hoverEventClass = hoverEvent.getClass();
+			if (hoverEventClass.isRecord()) {
+				java.lang.reflect.RecordComponent[] components = hoverEventClass.getRecordComponents();
+				for (java.lang.reflect.RecordComponent component : components) {
+					if (Text.class.isAssignableFrom(component.getType())) {
+						try {
+							Object value = component.getAccessor().invoke(hoverEvent);
+							if (value instanceof Text) {
+								return (Text) value;
+							}
+						} catch (Exception e) {
+							// Ignore
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Extrahiert rekursiv allen Text aus einem Text-Objekt (inklusive Siblings und verschachtelte Strukturen)
+	 */
+	private static String extractAllTextFromComponent(Text text) {
+		if (text == null) {
+			return "";
+		}
+		
+		StringBuilder result = new StringBuilder();
+		
+		// Füge den Haupttext hinzu (mit Formatierungscodes)
+		String mainText = text.getString();
+		if (mainText != null && !mainText.isEmpty()) {
+			result.append(mainText);
+		}
+		
+		// Rekursiv alle Siblings durchgehen
+		for (Text sibling : text.getSiblings()) {
+			String siblingText = extractAllTextFromComponent(sibling);
+			if (!siblingText.isEmpty()) {
+				// Füge Newline hinzu, wenn nötig
+				if (result.length() > 0) {
+					result.append("\n");
+				}
+				result.append(siblingText);
+			}
+		}
+		
+		return result.toString();
 	}
 	
 	private static String parseHoverEventData(String hoverString) {
@@ -355,12 +451,19 @@ public class CardsStatuesUtility {
 		
 		// Parse die geparsten Hover-Daten
 		List<String> hoverLines = new ArrayList<>();
+		java.util.Set<String> seenLines = new java.util.HashSet<>(); // Verhindere Duplikate
 		String[] lines = hoverContent.split("\n");
 		
 		for (String line : lines) {
 			String trimmed = line.trim();
 			if (!trimmed.isEmpty()) {
-				hoverLines.add(trimmed);
+				// Entferne Formatierungscodes für Vergleich (um Duplikate zu erkennen)
+				String cleanForComparison = trimmed.replaceAll("§[0-9a-fk-or]", "").trim();
+				// Füge nur hinzu, wenn wir diese Zeile noch nicht gesehen haben
+				if (!seenLines.contains(cleanForComparison)) {
+					seenLines.add(cleanForComparison);
+					hoverLines.add(trimmed);
+				}
 			}
 		}
 		
@@ -368,16 +471,28 @@ public class CardsStatuesUtility {
 		
 		// Extrahiere Daten aus den geparsten Linien
 		if (!hoverLines.isEmpty()) {
-			cardData.setName(hoverLines.get(0));
+			// Entferne Formatierungscodes aus dem Namen
+			String rawName = hoverLines.get(0);
+			String cleanName = rawName.replaceAll("§[0-9a-fk-or]", "").trim();
+			// Entferne "[Karte]" aus dem Namen
+			cleanName = cleanName.replaceAll("\\[Karte\\]", "").trim();
+			cardData.setName(cleanName);
 		}
 		
 		for (String line : hoverLines) {
-			if (line.contains("Stufe:") && !line.contains("Nächste")) {
-				String level = line.replaceAll("[^0-9]", "").trim();
-				if (!level.isEmpty()) {
-					cardData.setLevel(level);
-				}
-			} else if (line.contains("Nächste Stufe:")) {
+			// Karten-Level: Zähle Sterne (⭐)
+			int starCount = countStars(line);
+			if (starCount > 0) {
+				cardData.setLevel(String.valueOf(starCount));
+			}
+			
+			// Backup: Maximale Stufe erreicht
+			if (line.contains("Maximale Stufe erreicht!")) {
+				cardData.setLevel("5");
+			}
+			
+			// Nächste Stufe (für Anzeige, nicht für Level-Tracking)
+			if (line.contains("Nächste Stufe:")) {
 				String nextLevel = line.replaceAll("[^0-9]", "").trim();
 				if (!nextLevel.isEmpty()) {
 					cardData.setNextLevel(nextLevel);
@@ -388,6 +503,14 @@ public class CardsStatuesUtility {
 		}
 		
 		currentCard = cardData;
+		
+		// Informiere ProfileStatsManager sofort über die neue Karte
+		try {
+			net.felix.profile.ProfileStatsManager.getInstance().onCardFromChat(cardData);
+		} catch (Exception e) {
+			System.err.println("[CardsStatues] ❌ Fehler beim Aufruf von onCardFromChat: " + e.getMessage());
+			e.printStackTrace();
+		}
 	}
 	
 	private static void handleStatueMessage(Text message, String hoverContent) {
@@ -396,12 +519,19 @@ public class CardsStatuesUtility {
 		
 		// Parse die geparsten Hover-Daten
 		List<String> hoverLines = new ArrayList<>();
+		java.util.Set<String> seenLines = new java.util.HashSet<>(); // Verhindere Duplikate
 		String[] lines = hoverContent.split("\n");
 		
 		for (String line : lines) {
 			String trimmed = line.trim();
 			if (!trimmed.isEmpty()) {
-				hoverLines.add(trimmed);
+				// Entferne Formatierungscodes für Vergleich (um Duplikate zu erkennen)
+				String cleanForComparison = trimmed.replaceAll("§[0-9a-fk-or]", "").trim();
+				// Füge nur hinzu, wenn wir diese Zeile noch nicht gesehen haben
+				if (!seenLines.contains(cleanForComparison)) {
+					seenLines.add(cleanForComparison);
+					hoverLines.add(trimmed);
+				}
 			}
 		}
 		
@@ -409,16 +539,37 @@ public class CardsStatuesUtility {
 		
 		// Extrahiere Daten aus den geparsten Linien
 		if (!hoverLines.isEmpty()) {
-			statueData.setName(hoverLines.get(0));
+			// Entferne Formatierungscodes aus dem Namen
+			String rawName = hoverLines.get(0);
+			String cleanName = rawName.replaceAll("§[0-9a-fk-or]", "").trim();
+			// Entferne "[Statue]" aus dem Namen
+			cleanName = cleanName.replaceAll("\\[Statue\\]", "").trim();
+			statueData.setName(cleanName);
 		}
 		
 		for (String line : hoverLines) {
-			if (line.contains("Stufe:") && !line.contains("Nächste")) {
-				String level = line.replaceAll("[^0-9]", "").trim();
-				if (!level.isEmpty()) {
-					statueData.setLevel(level);
+			// Statuen-Level: Suche nach "Stufe" (mit oder ohne Doppelpunkt, z.B. "Stufe 12" oder "Stufe: 12")
+			if (line.contains("Stufe") && !line.contains("Nächste")) {
+				// Entferne Formatierungscodes für bessere Suche
+				String cleanLine = line.replaceAll("§[0-9a-fk-or]", "");
+				// Suche nach "Stufe" gefolgt von einer Zahl
+				java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("Stufe[\\s:]*?(\\d+)");
+				java.util.regex.Matcher matcher = pattern.matcher(cleanLine);
+				if (matcher.find()) {
+					String level = matcher.group(1);
+					if (!level.isEmpty()) {
+						statueData.setLevel(level);
+					}
 				}
-			} else if (line.contains("Nächste Stufe:")) {
+			}
+			
+			// Backup: Maximale Stufe erreicht (Level 40)
+			if (line.contains("Maximale Stufe erreicht!")) {
+				statueData.setLevel("40");
+			}
+			
+			// Nächste Stufe (für Anzeige, nicht für Level-Tracking)
+			if (line.contains("Nächste Stufe:")) {
 				String nextLevel = line.replaceAll("[^0-9]", "").trim();
 				if (!nextLevel.isEmpty()) {
 					statueData.setNextLevel(nextLevel);
@@ -429,6 +580,14 @@ public class CardsStatuesUtility {
 		}
 		
 		currentStatue = statueData;
+		
+		// Informiere ProfileStatsManager sofort über die neue Statue
+		try {
+			net.felix.profile.ProfileStatsManager.getInstance().onStatueFromChat(statueData);
+		} catch (Exception e) {
+			System.err.println("[CardsStatues] ❌ Fehler beim Aufruf von onStatueFromChat: " + e.getMessage());
+			e.printStackTrace();
+		}
 	}
 	
 
@@ -438,6 +597,26 @@ public class CardsStatuesUtility {
 			return style.getColor().getName();
 		}
 		return Formatting.WHITE.getName();
+	}
+	
+	/**
+	 * Zählt die Anzahl der Sterne (⭐) in einer Zeile
+	 * @param line Die zu prüfende Zeile
+	 * @return Anzahl der Sterne (0-5)
+	 */
+	private static int countStars(String line) {
+		if (line == null || line.isEmpty()) {
+			return 0;
+		}
+		// Zähle alle ⭐ Zeichen (U+2B50)
+		int count = 0;
+		for (char c : line.toCharArray()) {
+			if (c == '⭐') {
+				count++;
+			}
+		}
+		// Begrenze auf maximal 5 (sollte nicht passieren, aber sicherheitshalber)
+		return Math.min(count, 5);
 	}
 	
 	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
@@ -519,6 +698,11 @@ public class CardsStatuesUtility {
 		matrices.translate(x, y);
 		matrices.scale(scale, scale);
 		
+		// Zusätzliche Text-Skalierung (nur für Text, nicht für Hintergrund)
+		float textScale = CCLiveUtilitiesConfig.HANDLER.instance().cardTextScale;
+		if (textScale <= 0) textScale = 1.0f; // Sicherheitscheck
+		if (textScale > 1.5f) textScale = 1.5f; // Max 1.5
+		
 		// Zeige alle Hover-Linien an, außer "Statistik" und leere Zeilen
 		int lineCount = 0;
 		for (int i = 0; i < card.getHoverLines().size(); i++) {
@@ -531,15 +715,25 @@ public class CardsStatuesUtility {
 				continue;
 			}
 			
-			// Überspringe auch die Zeile vor "Statistik" (leere Zeile)
+			// Überspringe auch die Zeile vor "Statistik" (leere Zeile), aber NICHT "Nächste Stufe"
 			if (i < card.getHoverLines().size() - 1 && card.getHoverLines().get(i + 1).contains("Statistik")) {
-				continue;
+				// Überspringe nur, wenn es keine "Nächste Stufe" Zeile ist
+				String cleanLine = line.replaceAll("§[0-9a-fk-or]", "").trim();
+				if (!cleanLine.contains("Nächste Stufe")) {
+					continue;
+				}
 			}
 			
 			// Berechne die Y-Position basierend auf der Anzahl der Zeilen
 			// Verwende relative Positionen (0-basiert) da wir bereits übersetzt haben
 			// Der Text soll die gleichen Abstände zu den Rändern haben wie bei der originalen Größe
 			int textY = -1 + (lineCount * 12);
+			
+			// Wende zusätzliche Text-Skalierung an
+			matrices.pushMatrix();
+			matrices.translate(1, textY); // Verschiebe zur Text-Position
+			matrices.scale(textScale, textScale); // Skaliere nur den Text
+			matrices.translate(-1, -textY); // Verschiebe zurück
 			
 			// Erstelle Text-Objekt mit Farbcodes
 			Text textComponent = Text.literal(line);
@@ -553,6 +747,8 @@ public class CardsStatuesUtility {
 				0xFFFFFFFF, // Weiß als Fallback, aber Text-Objekt behält eigene Farben
 				true
 			);
+			
+			matrices.popMatrix(); // Entferne Text-Skalierung
 			lineCount++;
 		}
 		
@@ -581,6 +777,11 @@ public class CardsStatuesUtility {
 		matrices.translate(x, y);
 		matrices.scale(scale, scale);
 		
+		// Zusätzliche Text-Skalierung (nur für Text, nicht für Hintergrund)
+		float textScale = CCLiveUtilitiesConfig.HANDLER.instance().statueTextScale;
+		if (textScale <= 0) textScale = 1.0f; // Sicherheitscheck
+		if (textScale > 1.5f) textScale = 1.5f; // Max 1.5
+		
 		// Zeige alle Hover-Linien an, außer "Statistik" und leere Zeilen
 		int lineCount = 0;
 		for (int i = 0; i < statue.getHoverLines().size(); i++) {
@@ -593,15 +794,25 @@ public class CardsStatuesUtility {
 				continue;
 			}
 			
-			// Überspringe auch die Zeile vor "Statistik" (leere Zeile)
+			// Überspringe auch die Zeile vor "Statistik" (leere Zeile), aber NICHT "Nächste Stufe"
 			if (i < statue.getHoverLines().size() - 1 && statue.getHoverLines().get(i + 1).contains("Statistik" )) {
-				continue;
+				// Überspringe nur, wenn es keine "Nächste Stufe" Zeile ist
+				String cleanLine = line.replaceAll("§[0-9a-fk-or]", "").trim();
+				if (!cleanLine.contains("Nächste Stufe")) {
+					continue;
+				}
 			}
 			
 			// Berechne die Y-Position basierend auf der Anzahl der Zeilen
 			// Verwende relative Positionen (0-basiert) da wir bereits übersetzt haben
 			// Der Text soll die gleichen Abstände zu den Rändern haben wie bei der originalen Größe
 			int textY = -1 + (lineCount * 12);
+			
+			// Wende zusätzliche Text-Skalierung an
+			matrices.pushMatrix();
+			matrices.translate(1, textY); // Verschiebe zur Text-Position
+			matrices.scale(textScale, textScale); // Skaliere nur den Text
+			matrices.translate(-1, -textY); // Verschiebe zurück
 			
 			// Erstelle Text-Objekt mit Farbcodes
 			Text textComponent = Text.literal(line);
@@ -615,6 +826,8 @@ public class CardsStatuesUtility {
 				0xFFFFFFFF, // Weiß als Fallback, aber Text-Objekt behält eigene Farben
 				true
 			);
+			
+			matrices.popMatrix(); // Entferne Text-Skalierung
 			lineCount++;
 		}
 		

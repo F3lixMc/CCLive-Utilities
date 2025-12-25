@@ -208,7 +208,25 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 // Wir warten noch auf die Initialisierung der neuen Zone
                 pendingZoneTicks++;
                 
+                // FIX 1: Prüfe ob sich die Zone während der Wartezeit geändert hat
+                // (kann passieren bei Teleportation - Scoreboard aktualisiert sich verzögert)
+                String detectedZone = getCurrentZone(client);
+                if (detectedZone != null && !detectedZone.equals(pendingZone)) {
+                    // Zone hat sich geändert - reset pendingZone und starte neu
+                    pendingZone = null;
+                    pendingZoneTicks = 0;
+                    return;
+                }
+                
                 if (pendingZoneTicks >= ZONE_CHANGE_DELAY_TICKS) {
+                    // FIX 2: Prüfe ob "Nicht Freigeschalten!" im Title/Subtitle steht
+                    if (isZoneLocked()) {
+                        // Zone ist nicht freigeschalten - kein Update senden
+                        pendingZone = null;
+                        pendingZoneTicks = 0;
+                        return;
+                    }
+                    
                     // Verzögerung abgelaufen - jetzt Bossbar-Wert abrufen
                     int newZoneCollection = getCollectionFromBossbar(client);
                     lastTotalCollection = newZoneCollection;
@@ -1273,6 +1291,12 @@ public class FarmworldCollectionsCollector implements DataCollector {
     private static int currentBossbarCollection = 0;
     private static long lastBossbarUpdate = 0;
     
+    // Statische Variablen für Title/Subtitle (werden vom TitleMixin gesetzt)
+    private static String currentTitle = "";
+    private static String currentSubtitle = "";
+    private static long lastTitleUpdate = 0;
+    private static final long TITLE_CACHE_TIMEOUT = 3000; // 3 Sekunden Cache-Timeout
+    
     /**
      * Liest den Collection-Wert aus der Bossbar
      * Wird vom BossBarMixin aufgerufen, wenn eine Collection-Bossbar gefunden wird
@@ -1329,6 +1353,58 @@ public class FarmworldCollectionsCollector implements DataCollector {
      */
     private String getCollectionNameForZone(String zone) {
         return ZONE_TO_COLLECTION.get(zone);
+    }
+    
+    /**
+     * Wird vom TitleMixin aufgerufen, wenn ein Title gesetzt wird
+     */
+    public static void processTitle(String title) {
+        if (title != null) {
+            currentTitle = title;
+            lastTitleUpdate = System.currentTimeMillis();
+        }
+    }
+    
+    /**
+     * Wird vom TitleMixin aufgerufen, wenn ein Subtitle gesetzt wird
+     */
+    public static void processSubtitle(String subtitle) {
+        if (subtitle != null) {
+            currentSubtitle = subtitle;
+            lastTitleUpdate = System.currentTimeMillis();
+        }
+    }
+    
+    /**
+     * Prüft ob die aktuelle Zone nicht freigeschalten ist
+     * (wenn "Nicht Freigeschalten!" im Title oder Subtitle steht)
+     */
+    private boolean isZoneLocked() {
+        // Prüfe ob Title/Subtitle noch aktuell sind (max. 3 Sekunden alt)
+        long currentTime = System.currentTimeMillis();
+        long age = currentTime - lastTitleUpdate;
+        if (age > TITLE_CACHE_TIMEOUT) {
+            // Title ist zu alt, ignoriere Check
+            return false;
+        }
+        
+        // Entferne Formatierungscodes für bessere Erkennung
+        String cleanTitle = removeFormatCodes(currentTitle);
+        String cleanSubtitle = removeFormatCodes(currentSubtitle);
+        
+        // Prüfe ob "Nicht Freigeschalten!" im Title oder Subtitle steht
+        return cleanTitle.contains("Nicht Freigeschalten!") || 
+               cleanSubtitle.contains("Nicht Freigeschalten!");
+    }
+    
+    /**
+     * Entfernt Minecraft-Formatierungscodes aus einem String
+     */
+    private String removeFormatCodes(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replaceAll("§[0-9a-fk-or]", "");
     }
     
     @Override

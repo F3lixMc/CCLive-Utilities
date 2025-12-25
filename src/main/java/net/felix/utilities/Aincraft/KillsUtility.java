@@ -863,16 +863,10 @@ public class KillsUtility {
 	public static void processBossBarKills(String bossBarName) {
 		try {
 			if (!isTrackingKills) {
-				System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Tracking nicht aktiv, ignoriere: '" + bossBarName + "'");
 				return;
 			}
 			
-			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Bossbar-Name empfangen: '" + bossBarName + "'");
-			
 			int kills = decodeChineseNumber(bossBarName);
-			
-			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Dekodierte Kills: " + kills);
-			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Vorher: initialKills=" + initialKills + ", currentKills=" + currentKills + ", newKills=" + newKills + ", firstBossBarUpdate=" + firstBossBarUpdate);
 			
 			if (kills >= 0) {
 				if (firstBossBarUpdate) {
@@ -880,29 +874,20 @@ public class KillsUtility {
 					currentKills = kills;
 					newKills = 0;
 					firstBossBarUpdate = false;
-					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - ERSTER UPDATE: initialKills=" + initialKills + ", currentKills=" + currentKills);
 				} else if (kills > currentKills) {
 					currentKills = kills;
 					newKills = currentKills - initialKills;
-					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Kills erhöht: currentKills=" + currentKills + ", newKills=" + newKills);
 				} else if (kills < currentKills) {
 					initialKills = kills;
 					currentKills = kills;
 					newKills = 0;
-					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Kills zurückgesetzt (Floor-Wechsel?): initialKills=" + initialKills + ", currentKills=" + currentKills);
 				} else {
 					currentKills = kills;
 					newKills = currentKills - initialKills;
-					System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Kills unverändert: currentKills=" + currentKills + ", newKills=" + newKills);
 				}
-			} else {
-				System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Ungültige Kills (kills < 0), ignoriere");
 			}
-			
-			System.out.println("🔍 [KillsUtility] DEBUG processBossBarKills - Nachher: initialKills=" + initialKills + ", currentKills=" + currentKills + ", newKills=" + newKills);
 		} catch (Exception e) {
-			System.err.println("❌ [KillsUtility] DEBUG processBossBarKills - FEHLER: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 	}
 }

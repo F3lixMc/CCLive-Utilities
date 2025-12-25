@@ -699,6 +699,13 @@ public class BPViewerUtility {
         // Render blueprint list - start below the title (moved 3 pixels up)
         int blueprintY = 17; // Start below the title
         
+        // Prüfe ob Missing Mode aktiv ist
+        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
+        
+        // Zähle fehlende Baupläne (für "Alle gefunden" Anzeige im Missing Mode)
+        int missingCount = 0;
+        int totalCount = blueprints.size();
+        
         for (String blueprint : blueprints) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
             // Check both with and without rarity suffix (for epic/legendary duplicates)
@@ -724,11 +731,26 @@ public class BPViewerUtility {
                         isBlueprintFound(getActiveFloor(), displayText + ":legendary");
             }
             
+            // Im Missing Mode: Überspringe gefundene Baupläne
+            if (missingMode && isFound) {
+                continue; // Überspringe gefundene Baupläne
+            }
+            
+            // Zähle fehlende Baupläne
+            if (!isFound) {
+                missingCount++;
+            }
+            
             // Draw the text with appropriate color based on found status (skaliert)
             int textColor = isFound ? 0xFFFFFFFF : 0xFF888888; // White if found, gray if not found
             context.drawText(client.textRenderer, displayText, 5, blueprintY, textColor, true);
             
             blueprintY += 12; // Increased spacing for better readability (skaliert)
+        }
+        
+        // Im Missing Mode: Wenn alle Baupläne gefunden wurden, zeige "Alle gefunden"
+        if (missingMode && missingCount == 0 && totalCount > 0) {
+            context.drawText(client.textRenderer, "Alle gefunden", 5, blueprintY, 0xFF888888, true);
         }
         
         // Matrix-Transformationen wiederherstellen
@@ -759,7 +781,12 @@ public class BPViewerUtility {
         // Render blueprint list - start from the beginning since title is rendered separately (moved 3 pixels up)src/main/resources/assets/cclive-utilities/textures/font.png
         int blueprintY = -3; // Start from the beginning of the scalable area
         
+        // Prüfe ob Missing Mode aktiv ist
+        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
         
+        // Zähle fehlende Baupläne (für "Alle gefunden" Anzeige im Missing Mode)
+        int missingCount = 0;
+        int totalCount = blueprints.size();
         
         for (String blueprint : blueprints) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
@@ -786,6 +813,16 @@ public class BPViewerUtility {
                         isBlueprintFound(getActiveFloor(), displayText + ":legendary");
             }
             
+            // Im Missing Mode: Überspringe gefundene Baupläne
+            if (missingMode && isFound) {
+                continue; // Überspringe gefundene Baupläne
+            }
+            
+            // Zähle fehlende Baupläne
+            if (!isFound) {
+                missingCount++;
+            }
+            
             // Use normal colors for blueprints
             int color;
             if (isFound) {
@@ -809,6 +846,11 @@ public class BPViewerUtility {
             }
             
             			blueprintY += 12; // Increased spacing for better readability (skaliert)
+        }
+        
+        // Im Missing Mode: Wenn alle Baupläne gefunden wurden, zeige "Alle gefunden"
+        if (missingMode && missingCount == 0 && totalCount > 0) {
+            context.drawText(client.textRenderer, "Alle gefunden", 5, blueprintY, 0xFF888888, true);
         }
         
         // Matrix-Transformationen wiederherstellen

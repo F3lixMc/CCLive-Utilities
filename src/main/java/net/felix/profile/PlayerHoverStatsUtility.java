@@ -188,8 +188,6 @@ public class PlayerHoverStatsUtility {
             return null;
         }
         
-        boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
-        
         // Durchsuche die Siblings rekursiv
         List<Text> siblings = message.getSiblings();
         if (siblings != null && !siblings.isEmpty()) {
@@ -284,10 +282,6 @@ public class PlayerHoverStatsUtility {
         
         // Prüfe auch den Haupttext selbst als Fallback (für einfache String-Nachrichten)
         String mainText = message.getString();
-        if (debugging) {
-            System.out.println("[PlayerHoverStats] 🔍 Haupttext: " + (mainText != null ? mainText.substring(0, Math.min(100, mainText.length())) : "null"));
-            System.out.println("[PlayerHoverStats] 🔍 Anzahl Siblings: " + (siblings != null ? siblings.size() : 0));
-        }
         if (mainText != null && mainText.contains(">>")) {
             // Versuche Pattern-Matching als Fallback
             // Format: "firestarter03 >> Hallo Welt" oder ähnlich
@@ -1411,14 +1405,22 @@ public class PlayerHoverStatsUtility {
      * Holt Max Damage aus Stats
      */
     private static String getMaxDamageValue(JsonObject stats) {
-        if (stats == null || !stats.has("max_damage") || stats.get("max_damage").isJsonNull()) {
+        try {
+            if (stats == null || !stats.has("max_damage") || stats.get("max_damage").isJsonNull()) {
+                return null;
+            }
+            long damage = stats.get("max_damage").getAsLong();
+            if (damage <= 0) {
+                return null;
+            }
+            String formatted = formatNumber(damage);
+            System.out.println("[PlayerHoverStats] 🔍 Max Damage Formatierung: damage=" + damage + ", formatted=" + formatted);
+            return "§c🗡 §f" + formatted;
+        } catch (Exception e) {
+            // Bei Fehler: null zurückgeben, damit die Nachricht trotzdem angezeigt wird
+            System.err.println("[PlayerHoverStats] ❌ Fehler beim Formatieren von Max Damage: " + e.getMessage());
             return null;
         }
-        long damage = stats.get("max_damage").getAsLong();
-        if (damage <= 0) {
-            return null;
-        }
-        return "§c⚔ §f" + formatNumber(damage);
     }
     
     /**
@@ -1427,35 +1429,45 @@ public class PlayerHoverStatsUtility {
      * Verwendet Punkte als Tausendertrennzeichen
      */
     private static String formatNumber(long number) {
-        if (number < 1000) {
+        try {
+            if (number < 1000) {
+                return String.valueOf(number);
+            }
+            
+            // Trillion (T): 1.000.000.000.000+
+            if (number >= 1_000_000_000_000L) {
+                double value = number / 1_000_000_000_000.0;
+                return formatWithThousandsSeparator(value, "T");
+            }
+            
+            // Billion (B): 1.000.000.000 - 999.999.999.999
+            if (number >= 1_000_000_000L) {
+                double value = number / 1_000_000_000.0;
+                return formatWithThousandsSeparator(value, "B");
+            }
+            
+            // Million (M): 1.000.000 - 999.999.999
+            if (number >= 1_000_000L) {
+                double value = number / 1_000_000.0;
+                return formatWithThousandsSeparator(value, "M");
+            }
+            
+            // Thousand (K): 1.000 - 999.999
+            if (number >= 1_000L) {
+                // Verwende double für präzise Division
+                double value = (double) number / 1_000.0;
+                System.out.println("[PlayerHoverStats] 🔍 formatNumber: K-Bereich, number=" + number + ", value=" + value + " (berechnet: " + number + " / 1000.0)");
+                String result = formatWithThousandsSeparator(value, "K");
+                System.out.println("[PlayerHoverStats] 🔍 formatNumber: K-Bereich Ergebnis: " + result);
+                return result;
+            }
+            
+            return String.valueOf(number);
+        } catch (Exception e) {
+            // Bei Fehler: Einfache String-Darstellung zurückgeben
+            System.err.println("[PlayerHoverStats] ❌ Fehler beim Formatieren von Zahl " + number + ": " + e.getMessage());
             return String.valueOf(number);
         }
-        
-        // Trillion (T): 1.000.000.000.000+
-        if (number >= 1_000_000_000_000L) {
-            double value = number / 1_000_000_000_000.0;
-            return formatWithThousandsSeparator(value, "T");
-        }
-        
-        // Billion (B): 1.000.000.000 - 999.999.999.999
-        if (number >= 1_000_000_000L) {
-            double value = number / 1_000_000_000.0;
-            return formatWithThousandsSeparator(value, "B");
-        }
-        
-        // Million (M): 1.000.000 - 999.999.999
-        if (number >= 1_000_000L) {
-            double value = number / 1_000_000.0;
-            return formatWithThousandsSeparator(value, "M");
-        }
-        
-        // Thousand (K): 1.000 - 999.999
-        if (number >= 1_000L) {
-            double value = number / 1_000.0;
-            return formatWithThousandsSeparator(value, "K");
-        }
-        
-        return String.valueOf(number);
     }
     
     /**
@@ -1463,23 +1475,67 @@ public class PlayerHoverStatsUtility {
      * z.B. 1.000 K, 10.000 K, 100.000 K
      */
     private static String formatWithThousandsSeparator(double value, String suffix) {
-        // Runde auf ganze Zahl wenn >= 100, sonst mit Dezimalstellen
-        long wholeValue;
-        if (value >= 100) {
-            wholeValue = Math.round(value);
-        } else if (value >= 10) {
-            // Eine Dezimalstelle
-            wholeValue = Math.round(value * 10);
-            String formatted = String.format("%.1f", value);
-            return addThousandsSeparator(formatted) + " " + suffix;
-        } else {
-            // Drei Dezimalstellen für Werte unter 10
-            String formatted = String.format("%.3f", value).replaceAll("0+$", "").replaceAll("\\.$", "");
-            return addThousandsSeparator(formatted) + " " + suffix;
+        System.out.println("[PlayerHoverStats] 🔍 formatWithThousandsSeparator aufgerufen: value=" + value + ", suffix=" + suffix);
+        // Prüfe auf ungültige Werte
+        if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
+            System.out.println("[PlayerHoverStats] ⚠️ formatWithThousandsSeparator: Ungültiger Wert");
+            return "0" + suffix;
         }
         
-        // Für ganze Zahlen: Tausendertrennzeichen hinzufügen
-        return addThousandsSeparator(String.valueOf(wholeValue)) + " " + suffix;
+        // Für K-Werte: Immer 3 Dezimalstellen
+        // Beispiel: 1733 -> 1.733K, 26450 -> 26.450K, 26134 -> 26.134K
+        if (suffix.equals("K")) {
+            // Verwende direkt die formatierte Zahl mit 3 Dezimalstellen
+            // WICHTIG: Verwende Locale.US um sicherzustellen, dass ein Punkt (nicht Komma) verwendet wird
+            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung START: value=" + value + " (Typ: double)");
+            String formatted = String.format(java.util.Locale.US, "%.3f", value);
+            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung: String.format(Locale.US, \"%.3f\", " + value + ") = " + formatted);
+            int dotIndex = formatted.indexOf('.');
+            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung: dotIndex=" + dotIndex);
+            if (dotIndex < 0) {
+                // Fallback: Kein Punkt gefunden (sollte nicht passieren)
+                System.out.println("[PlayerHoverStats] ⚠️ K-Formatierung: Kein Punkt gefunden!");
+                String wholePartStr = addThousandsSeparator(String.valueOf((long) value));
+                return wholePartStr + ".000" + suffix;
+            }
+            // Teile in Ganzzahl und Dezimalteil
+            String wholePartStr = formatted.substring(0, dotIndex);
+            String decimalPart = formatted.substring(dotIndex); // Enthält bereits den Punkt und 3 Dezimalstellen
+            // Debug: Zeige Zwischenwerte
+            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung: value=" + value + ", formatted=" + formatted + ", wholePartStr=" + wholePartStr + ", decimalPart=" + decimalPart);
+            // Füge Tausendertrennzeichen zur Ganzzahl hinzu (falls >= 1000)
+            // WICHTIG: addThousandsSeparator arbeitet nur mit der Ganzzahl, nicht mit Dezimalstellen
+            String wholePartWithSeparator = addThousandsSeparator(wholePartStr);
+            String result = wholePartWithSeparator + decimalPart + suffix;
+            // Debug: Zeige Endergebnis
+            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung Ergebnis: wholePartWithSeparator=" + wholePartWithSeparator + ", result=" + result);
+            return result;
+        }
+        
+        // Für andere Suffixe (M, B, T): Runde auf ganze Zahl wenn >= 100, sonst mit Dezimalstellen
+        if (value >= 100) {
+            long wholeValue = Math.round(value);
+            return addThousandsSeparator(String.valueOf(wholeValue)) + suffix;
+        } else if (value >= 10) {
+            // Eine Dezimalstelle - abschneiden statt runden
+            long wholePart = (long) value;
+            long decimalPart = (long) ((value - wholePart) * 10);
+            String wholePartStr = addThousandsSeparator(String.valueOf(wholePart));
+            return wholePartStr + "." + decimalPart + suffix;
+        } else {
+            // Drei Dezimalstellen für Werte unter 10 - abschneiden statt runden
+            long wholePart = (long) value;
+            long decimalPart = (long) ((value - wholePart) * 1000);
+            String wholePartStr = addThousandsSeparator(String.valueOf(wholePart));
+            // Stelle sicher, dass Dezimalteil 3 Stellen hat (mit führenden Nullen)
+            String decimalStr = String.format("%03d", decimalPart);
+            // Entferne führende Nullen am Ende
+            decimalStr = decimalStr.replaceAll("0+$", "");
+            if (decimalStr.isEmpty()) {
+                return wholePartStr + suffix;
+            }
+            return wholePartStr + "." + decimalStr + suffix;
+        }
     }
     
     /**

@@ -86,6 +86,9 @@ public class CCLiveUtilitiesConfig {
     public boolean updateCheckerEnabled = true;
     
     @SerialEntry
+    public int zeichenConfigVersion = 0; // Version der geladenen zeichen.json vom Server
+    
+    @SerialEntry
     public boolean blueprintDebugging = false;
     
     @SerialEntry
@@ -469,7 +472,10 @@ public class CCLiveUtilitiesConfig {
     public int cardY = 125; // Y-Position der Karten Anzeige (optimiert)
     
     @SerialEntry
-    public float cardOverlayScale = 1.0f; // Skalierung der Karten-Overlays (0.5f bis 2.0f)
+    public float cardOverlayScale = 1.2f; // Skalierung der Karten-Overlays (0.5f bis 2.0f)
+    
+    @SerialEntry
+    public float cardTextScale = 1.0f; // Zusätzliche Text-Skalierung für Karten-Overlay (nur Text, nicht Hintergrund) - Bereich: 1.0 bis 1.5
     
     // Statue Settings
     @SerialEntry
@@ -485,7 +491,10 @@ public class CCLiveUtilitiesConfig {
     public int statueY = 60; // Y-Position der Statuen Anzeige (optimiert)
     
     @SerialEntry
-    public float statueOverlayScale = 1.0f; // Skalierung der Statuen-Overlays (0.5f bis 2.0f)
+    public float statueOverlayScale = 1.2f; // Skalierung der Statuen-Overlays (0.5f bis 2.0f)
+    
+    @SerialEntry
+    public float statueTextScale = 1.0f; // Zusätzliche Text-Skalierung für Statuen-Overlay (nur Text, nicht Hintergrund) - Bereich: 1.0 bis 1.5
 
 
 
@@ -540,6 +549,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public float blueprintViewerScale = 1.0f; // Skalierung der Blueprint-Anzeige (0.5f bis 2.0f)
+    
+    @SerialEntry
+    public boolean blueprintViewerMissingMode = false; // Missing Mode: Zeige nur fehlende Baupläne (gefundene werden ausgeblendet)
 
     // Aspect Overlay Settings
     @SerialEntry
@@ -1001,6 +1013,14 @@ public class CCLiveUtilitiesConfig {
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
                                         .build())
+                                .option(Option.<Float>createBuilder()
+                                        .name(Text.literal("Text-Größe"))
+                                        .description(OptionDescription.of(Text.literal("Text-Größe für Karten-Overlay (1.0 = normal, 1.5 = 50% größer)")))
+                                        .binding(1.0f, () -> HANDLER.instance().cardTextScale, newVal -> HANDLER.instance().cardTextScale = newVal)
+                                        .controller(opt -> FloatSliderControllerBuilder.create(opt)
+                                                .range(1.0f, 1.5f)
+                                                .step(0.1f))
+                                        .build())
                                 .build())
                                 .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Statuen"))        
@@ -1024,6 +1044,14 @@ public class CCLiveUtilitiesConfig {
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
+                                        .build())
+                                .option(Option.<Float>createBuilder()
+                                        .name(Text.literal("Text-Größe"))
+                                        .description(OptionDescription.of(Text.literal("Text-Größe für Statuen-Overlay (1.0 = normal, 1.5 = 50% größer)")))
+                                        .binding(1.0f, () -> HANDLER.instance().statueTextScale, newVal -> HANDLER.instance().statueTextScale = newVal)
+                                        .controller(opt -> FloatSliderControllerBuilder.create(opt)
+                                                .range(1.0f, 1.5f)
+                                                .step(0.1f))
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
@@ -1054,6 +1082,12 @@ public class CCLiveUtilitiesConfig {
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Missing Mode"))
+                                        .description(OptionDescription.of(Text.literal("Im Missing Mode werden nur fehlende Baupläne angezeigt. Gefundene Baupläne werden ausgeblendet.")))
+                                        .binding(false, () -> HANDLER.instance().blueprintViewerMissingMode, newVal -> HANDLER.instance().blueprintViewerMissingMode = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())

@@ -2,20 +2,32 @@ package net.felix.utilities.Overall;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.felix.CCLiveUtilities;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.leaderboards.config.LeaderboardConfig;
 
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Utility-Klasse zum Laden und Bereitstellen von chinesischen Zeichen aus zeichen.json
+ * Unterstützt dynamisches Laden vom Server
  */
 public class ZeichenUtility {
     
     private static final String ZEICHEN_CONFIG_FILE = "assets/cclive-utilities/zeichen.json";
+    private static final String LOCAL_ZEICHEN_FILE = "zeichen.json";
     private static boolean isInitialized = false;
+    private static boolean serverCheckRegistered = false;
     
     // Zeichen-Speicher
     private static String aincraftBottomFont = "";
@@ -36,132 +48,258 @@ public class ZeichenUtility {
     
     /**
      * Initialisiert die ZeichenUtility und lädt die Zeichen aus der JSON-Datei
+     * Versucht zuerst die lokale Datei, dann Mod-Ressourcen
      */
     public static void initialize() {
         if (isInitialized) {
             return;
         }
         
+        // Registriere Server-Join-Event für Version-Check (nur einmal)
+        if (!serverCheckRegistered) {
+            ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+                checkAndUpdateZeichenConfig();
+            });
+            serverCheckRegistered = true;
+        }
+        
+        // Versuche zuerst lokale Datei zu laden
+        Path localFile = getLocalZeichenPath();
+        if (localFile != null && Files.exists(localFile)) {
+            try {
+                loadFromFile(localFile);
+                isInitialized = true;
+                return;
+            } catch (Exception e) {
+                System.err.println("Failed to load local zeichen.json: " + e.getMessage());
+            }
+        }
+        
+        // Fallback: Lade aus Mod-Ressourcen
         try {
-            // Lade aus Mod-Ressourcen
             var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
                 .orElseThrow(() -> new RuntimeException("Mod container not found"))
                 .findPath(ZEICHEN_CONFIG_FILE)
                 .orElseThrow(() -> new RuntimeException("Zeichen config file not found"));
             
-            try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
-                try (var reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-                    JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-                    
-                    // Lade Aincraft Bottom Font
-                    if (json.has("aincraft_bottom_font")) {
-                        JsonObject aincraftObj = json.getAsJsonObject("aincraft_bottom_font");
-                        aincraftBottomFont = aincraftObj.get("characters").getAsString();
-                        
-                        // Lade Zahlen-Mapping
-                        if (aincraftObj.has("numbers")) {
-                            JsonObject numbers = aincraftObj.getAsJsonObject("numbers");
-                            for (String key : numbers.keySet()) {
-                                String charStr = numbers.get(key).getAsString();
-                                if (charStr.length() > 0) {
-                                    aincraftBottomFontNumbers.put(charStr.charAt(0), Integer.parseInt(key));
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Lade Equipment Display
-                    if (json.has("equipment_display")) {
-                        JsonObject equipmentObj = json.getAsJsonObject("equipment_display");
-                        var charactersArray = equipmentObj.getAsJsonArray("characters");
-                        for (int i = 0; i < charactersArray.size() && i < 4; i++) {
-                            equipmentDisplay[i] = charactersArray.get(i).getAsString();
-                        }
-                    }
-                    
-                    // Lade Moblexicon
-                    if (json.has("moblexicon")) {
-                        JsonObject moblexiconObj = json.getAsJsonObject("moblexicon");
-                        moblexicon = moblexiconObj.get("character").getAsString();
-                    }
-                    
-                    // Lade Pixel Spacer
-                    if (json.has("pixel_spacer")) {
-                        JsonObject pixelSpacerObj = json.getAsJsonObject("pixel_spacer");
-                        pixelSpacer = pixelSpacerObj.get("characters").getAsString();
-                    }
-                    
-                    // Lade Cards/Statues
-                    if (json.has("cards_statues")) {
-                        JsonObject cardsStatuesObj = json.getAsJsonObject("cards_statues");
-                        var charactersArray = cardsStatuesObj.getAsJsonArray("characters");
-                        for (int i = 0; i < charactersArray.size() && i < 2; i++) {
-                            cardsStatues[i] = charactersArray.get(i).getAsString();
-                        }
-                    }
-                    
-                    // Lade Friends Request Accept Deny
-                    if (json.has("friends_request_accept_deny")) {
-                        JsonObject friendsObj = json.getAsJsonObject("friends_request_accept_deny");
-                        friendsRequestAcceptDeny = friendsObj.get("character").getAsString();
-                    }
-                    
-                    // Lade Hunter UI Background
-                    if (json.has("hunter_ui_background")) {
-                        JsonObject hunterObj = json.getAsJsonObject("hunter_ui_background");
-                        hunterUiBackground = hunterObj.get("character").getAsString();
-                    }
-                    
-                    // Lade Epic Drops
-                    if (json.has("epic_drops")) {
-                        JsonObject epicDropsObj = json.getAsJsonObject("epic_drops");
-                        epicDrops = epicDropsObj.get("characters").getAsString();
-                    }
-                    
-                    // Lade Legendary Drops
-                    if (json.has("legendary_drops")) {
-                        JsonObject legendaryDropsObj = json.getAsJsonObject("legendary_drops");
-                        legendaryDrops = legendaryDropsObj.get("characters").getAsString();
-                    }
-                    
-                    // Lade Logging Level Up
-                    if (json.has("logging_level_up")) {
-                        JsonObject loggingObj = json.getAsJsonObject("logging_level_up");
-                        loggingLevelUp = loggingObj.get("characters").getAsString();
-                    }
-                    
-                    // Lade Moblexicon Animation
-                    if (json.has("moblexicon_animation")) {
-                        JsonObject moblexiconAnimObj = json.getAsJsonObject("moblexicon_animation");
-                        moblexiconAnimation = moblexiconAnimObj.get("characters").getAsString();
-                    }
-                    
-                    // Lade Mining Level Up
-                    if (json.has("mining_level_up")) {
-                        JsonObject miningObj = json.getAsJsonObject("mining_level_up");
-                        miningLevelUp = miningObj.get("characters").getAsString();
-                    }
-                    
-                    // Lade Airship
-                    if (json.has("airship")) {
-                        JsonObject airshipObj = json.getAsJsonObject("airship");
-                        airship = airshipObj.get("characters").getAsString();
-                    }
-                    
-                    // Lade Essence Harvester UI
-                    if (json.has("essence_harvester_ui")) {
-                        JsonObject essenceHarvesterObj = json.getAsJsonObject("essence_harvester_ui");
-                        essenceHarvesterUi = essenceHarvesterObj.get("character").getAsString();
-                    }
-                    
-                    isInitialized = true;
-                }
-            }
+            loadFromFile(resource);
+            isInitialized = true;
         } catch (Exception e) {
             System.err.println("Failed to load zeichen.json: " + e.getMessage());
             e.printStackTrace();
             // Fallback zu hardcodierten Werten
             initializeFallback();
+        }
+    }
+    
+    /**
+     * Prüft die Server-Version und lädt ggf. eine neue Datei
+     */
+    private static void checkAndUpdateZeichenConfig() {
+        CompletableFuture.runAsync(() -> {
+            try {
+                LeaderboardManager manager = LeaderboardManager.getInstance();
+                if (manager == null || !manager.isEnabled() || !manager.isRegistered()) {
+                    return; // Leaderboard-System nicht aktiv, kein Server-Check
+                }
+                
+                LeaderboardConfig config = new LeaderboardConfig();
+                String serverUrl = config.getServerUrl();
+                
+                // Prüfe Server-Version
+                java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+                java.net.http.HttpRequest versionRequest = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(serverUrl + "/zeichen/version"))
+                    .timeout(java.time.Duration.ofSeconds(5))
+                    .header("User-Agent", "CCLive-Utilities/1.0")
+                    .GET()
+                    .build();
+                
+                java.net.http.HttpResponse<String> versionResponse = httpClient.send(versionRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+                
+                if (versionResponse.statusCode() == 200) {
+                    JsonObject versionJson = JsonParser.parseString(versionResponse.body()).getAsJsonObject();
+                    int serverVersion = versionJson.has("version") ? versionJson.get("version").getAsInt() : 0;
+                    int localVersion = CCLiveUtilitiesConfig.HANDLER.instance().zeichenConfigVersion;
+                    
+                    if (serverVersion > localVersion) {
+                        // Neue Version verfügbar, lade Datei
+                        java.net.http.HttpRequest dataRequest = java.net.http.HttpRequest.newBuilder()
+                            .uri(java.net.URI.create(serverUrl + "/zeichen/data"))
+                            .timeout(java.time.Duration.ofSeconds(10))
+                            .header("User-Agent", "CCLive-Utilities/1.0")
+                            .GET()
+                            .build();
+                        
+                        java.net.http.HttpResponse<String> dataResponse = httpClient.send(dataRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+                        
+                        if (dataResponse.statusCode() == 200) {
+                            JsonObject dataJson = JsonParser.parseString(dataResponse.body()).getAsJsonObject();
+                            String jsonData = dataJson.has("data") ? dataJson.get("data").getAsString() : null;
+                            
+                            if (jsonData != null) {
+                                // Validiere JSON
+                                JsonParser.parseString(jsonData);
+                                
+                                // Speichere lokal
+                                Path localFile = getLocalZeichenPath();
+                                if (localFile != null) {
+                                    Files.createDirectories(localFile.getParent());
+                                    try (OutputStreamWriter writer = new OutputStreamWriter(
+                                            Files.newOutputStream(localFile), StandardCharsets.UTF_8)) {
+                                        writer.write(jsonData);
+                                    }
+                                    
+                                    // Aktualisiere Version in Config
+                                    CCLiveUtilitiesConfig.HANDLER.instance().zeichenConfigVersion = serverVersion;
+                                    CCLiveUtilitiesConfig.HANDLER.save();
+                                    
+                                    // Lade die neue Datei
+                                    isInitialized = false;
+                                    initialize();
+                                    
+                                    System.out.println("✅ Zeichen-Config aktualisiert (Version " + serverVersion + ")");
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Fehler beim Server-Check sind nicht kritisch
+                System.err.println("⚠️ Fehler beim Prüfen der Zeichen-Config-Version: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Gibt den Pfad zur lokalen zeichen.json zurück
+     */
+    private static Path getLocalZeichenPath() {
+        try {
+            Path configDir = CCLiveUtilities.getConfigDir();
+            Path modConfigDir = configDir.resolve("cclive-utilities");
+            return modConfigDir.resolve(LOCAL_ZEICHEN_FILE);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Lädt Zeichen aus einer Datei (lokal oder Mod-Ressource)
+     */
+    private static void loadFromFile(Path file) throws Exception {
+        try (var inputStream = Files.newInputStream(file)) {
+            try (var reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+                parseJsonObject(json);
+            }
+        }
+    }
+    
+    /**
+     * Parst ein JSON-Objekt und lädt alle Zeichen
+     */
+    private static void parseJsonObject(JsonObject json) {
+        // Lade Aincraft Bottom Font
+        if (json.has("aincraft_bottom_font")) {
+            JsonObject aincraftObj = json.getAsJsonObject("aincraft_bottom_font");
+            aincraftBottomFont = aincraftObj.get("characters").getAsString();
+            
+            // Lade Zahlen-Mapping
+            if (aincraftObj.has("numbers")) {
+                aincraftBottomFontNumbers.clear();
+                JsonObject numbers = aincraftObj.getAsJsonObject("numbers");
+                for (String key : numbers.keySet()) {
+                    String charStr = numbers.get(key).getAsString();
+                    if (charStr.length() > 0) {
+                        aincraftBottomFontNumbers.put(charStr.charAt(0), Integer.parseInt(key));
+                    }
+                }
+            }
+        }
+        
+        // Lade Equipment Display
+        if (json.has("equipment_display")) {
+            JsonObject equipmentObj = json.getAsJsonObject("equipment_display");
+            var charactersArray = equipmentObj.getAsJsonArray("characters");
+            for (int i = 0; i < charactersArray.size() && i < 4; i++) {
+                equipmentDisplay[i] = charactersArray.get(i).getAsString();
+            }
+        }
+        
+        // Lade Moblexicon
+        if (json.has("moblexicon")) {
+            JsonObject moblexiconObj = json.getAsJsonObject("moblexicon");
+            moblexicon = moblexiconObj.get("character").getAsString();
+        }
+        
+        // Lade Pixel Spacer
+        if (json.has("pixel_spacer")) {
+            JsonObject pixelSpacerObj = json.getAsJsonObject("pixel_spacer");
+            pixelSpacer = pixelSpacerObj.get("characters").getAsString();
+        }
+        
+        // Lade Cards/Statues
+        if (json.has("cards_statues")) {
+            JsonObject cardsStatuesObj = json.getAsJsonObject("cards_statues");
+            var charactersArray = cardsStatuesObj.getAsJsonArray("characters");
+            for (int i = 0; i < charactersArray.size() && i < 2; i++) {
+                cardsStatues[i] = charactersArray.get(i).getAsString();
+            }
+        }
+        
+        // Lade Friends Request Accept Deny
+        if (json.has("friends_request_accept_deny")) {
+            JsonObject friendsObj = json.getAsJsonObject("friends_request_accept_deny");
+            friendsRequestAcceptDeny = friendsObj.get("character").getAsString();
+        }
+        
+        // Lade Hunter UI Background
+        if (json.has("hunter_ui_background")) {
+            JsonObject hunterObj = json.getAsJsonObject("hunter_ui_background");
+            hunterUiBackground = hunterObj.get("character").getAsString();
+        }
+        
+        // Lade Epic Drops
+        if (json.has("epic_drops")) {
+            JsonObject epicDropsObj = json.getAsJsonObject("epic_drops");
+            epicDrops = epicDropsObj.get("characters").getAsString();
+        }
+        
+        // Lade Legendary Drops
+        if (json.has("legendary_drops")) {
+            JsonObject legendaryDropsObj = json.getAsJsonObject("legendary_drops");
+            legendaryDrops = legendaryDropsObj.get("characters").getAsString();
+        }
+        
+        // Lade Logging Level Up
+        if (json.has("logging_level_up")) {
+            JsonObject loggingObj = json.getAsJsonObject("logging_level_up");
+            loggingLevelUp = loggingObj.get("characters").getAsString();
+        }
+        
+        // Lade Moblexicon Animation
+        if (json.has("moblexicon_animation")) {
+            JsonObject moblexiconAnimObj = json.getAsJsonObject("moblexicon_animation");
+            moblexiconAnimation = moblexiconAnimObj.get("characters").getAsString();
+        }
+        
+        // Lade Mining Level Up
+        if (json.has("mining_level_up")) {
+            JsonObject miningObj = json.getAsJsonObject("mining_level_up");
+            miningLevelUp = miningObj.get("characters").getAsString();
+        }
+        
+        // Lade Airship
+        if (json.has("airship")) {
+            JsonObject airshipObj = json.getAsJsonObject("airship");
+            airship = airshipObj.get("characters").getAsString();
+        }
+        
+        // Lade Essence Harvester UI
+        if (json.has("essence_harvester_ui")) {
+            JsonObject essenceHarvesterObj = json.getAsJsonObject("essence_harvester_ui");
+            essenceHarvesterUi = essenceHarvesterObj.get("character").getAsString();
         }
     }
     
@@ -403,4 +541,3 @@ public class ZeichenUtility {
         }
     }
 }
-

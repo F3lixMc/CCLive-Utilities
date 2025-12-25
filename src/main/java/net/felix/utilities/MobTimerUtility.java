@@ -104,15 +104,10 @@ public class MobTimerUtility {
         // Extrahiere den kompletten Text aus der JSON-Struktur
         String messageText = extractFullText(message);
         
-        // Debug: Zeige alle empfangenen Nachrichten
-        System.out.println("Empfangene Nachricht: '" + messageText + "'");
-        
         if (messageText.contains(MOB_SPAWN_MESSAGE)) {
-            System.out.println("SPAWN erkannt!");
             // Mob ist erschienen - starte Timer
             handleMobSpawn();
         } else if (messageText.contains(MOB_DESPAWN_MESSAGE)) {
-            System.out.println("DESPAWN erkannt!");
             // Mob ist verschwunden - stoppe Timer und zeige Ergebnis
             handleMobDespawn();
         }
@@ -147,23 +142,13 @@ public class MobTimerUtility {
                 
                 // Initialisiere Hologramm-Daten für diesen Timer
                 hologramData.put(newTimer.mobId, new HologramData());
-                
-                System.out.println("⏱️ Mob-Timer #" + newTimer.mobId.toString().substring(0, 8) + " gestartet für " + currentFloor + "!");
-                System.out.println("⏱️ Erwartete Lebensdauer: " + formatDuration(Duration.ofSeconds(floorInfo.currentAverageSeconds)));
-                System.out.println("⏱️ Mob verschwindet in: " + formatDuration(Duration.ofSeconds(floorInfo.currentAverageSeconds)));
-                System.out.println("📊 Aktive Timer: " + activeMobTimers.size());
-            } else {
-                System.out.println("? Unbekannter Floor: " + currentFloor + " - Timer nicht gestartet");
             }
-        } else {
-            System.out.println("? Kein Floor erkannt - Timer nicht gestartet");
         }
     }
     
     private static void handleMobDespawn() {
         // Diese Methode wird nicht mehr benötigt, da wir Hologramm-Überwachung verwenden
         // Alle Timer werden über checkRareMobHologram() verwaltet
-        System.out.println("ℹ️ Chat-Despawn erkannt - Timer wird über Hologramm-Überwachung verwaltet");
     }
     
     private static String formatDuration(Duration duration) {
@@ -186,39 +171,8 @@ public class MobTimerUtility {
             // Vergleiche mit dem Cooldown der aktuellen Floor
             FloorData floorInfo = floorData.get(floor);
             if (floorInfo != null) {
-                int expectedCooldown = floorInfo.currentAverageSeconds;
-                int difference = Math.abs((int) totalSeconds - expectedCooldown);
-                
-                if (difference <= 5) {
-                    System.out.println("✓ Floor " + floor.replace("floor_", "") + " bestätigt! (Erwartet: " + expectedCooldown + "s, Gemessen: " + totalSeconds + "s, Differenz: " + difference + "s)");
-                } else if (difference <= 15) {
-                    System.out.println("? Floor " + floor.replace("floor_", "") + " ähnlich (Erwartet: " + expectedCooldown + "s, Gemessen: " + totalSeconds + "s, Differenz: " + difference + "s)");
-                } else {
-                    System.out.println("⚠ Floor " + floor.replace("floor_", "") + " Abweichung (Erwartet: " + expectedCooldown + "s, Gemessen: " + totalSeconds + "s, Differenz: " + difference + "s)");
-                }
-                
                 // Aktualisiere die Floor-Daten mit der neuen Messung
                 floorInfo.updateWithMeasurement((int) totalSeconds);
-                System.out.println("📊 Neue Durchschnittszeit für " + floor + ": " + floorInfo.currentAverageSeconds + "s (basierend auf " + floorInfo.measurementsCount + " Messungen)");
-            } else {
-                System.out.println("? Unbekannter Floor: " + floor + " - Gemessene Zeit: " + totalSeconds + "s");
-            }
-        } else {
-            System.out.println("? Kein Floor erkannt - Gemessene Zeit: " + totalSeconds + "s");
-        }
-        
-        // Zeige auch alle anderen möglichen Ebenen an
-        System.out.println("--- Alle möglichen Ebenen ---");
-        for (Map.Entry<String, FloorData> entry : floorData.entrySet()) {
-            String level = entry.getKey();
-            FloorData levelInfo = entry.getValue();
-            int expectedCooldown = levelInfo.currentAverageSeconds;
-            int difference = Math.abs((int) totalSeconds - expectedCooldown);
-            
-            if (difference <= 5) {
-                System.out.println("✓ " + level + " (Erwartet: " + expectedCooldown + "s, Gemessen: " + totalSeconds + "s, Differenz: " + difference + "s)");
-            } else if (difference <= 15) {
-                System.out.println("? " + level + " (Erwartet: " + expectedCooldown + "s, Gemessen: " + totalSeconds + "s, Differenz: " + difference + "s)");
             }
         }
     }
@@ -245,7 +199,7 @@ public class MobTimerUtility {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Fehler bei der Floor-Erkennung: " + e.getMessage());
+            // Silent error handling
         }
         return null;
     }
@@ -273,7 +227,6 @@ public class MobTimerUtility {
      */
     public static void stopAllTimers() {
         if (!activeMobTimers.isEmpty()) {
-            System.out.println("Alle " + activeMobTimers.size() + " aktiven Timer werden gestoppt (Welt verlassen)");
             // KEINE Messung bei Welt verlassen - nur Timer stoppen
             activeMobTimers.clear();
             hologramData.clear();
@@ -474,14 +427,7 @@ public class MobTimerUtility {
                 
                 if (remaining.isNegative()) {
                     // Timer ist abgelaufen
-                    System.out.println("⏱️ Mob-Timer #" + timerId.toString().substring(0, 8) + " abgelaufen! Mob sollte verschwunden sein.");
                     timer.deactivate();
-                } else {
-                    // Zeige Countdown alle 10 Sekunden (häufiger Updates)
-                    long seconds = remaining.getSeconds();
-                    if (seconds % 10 == 0 && seconds > 0) {
-                        System.out.println("⏱️ Timer #" + timerId.toString().substring(0, 8) + " - Mob verschwindet in: " + formatDuration(remaining));
-                    }
                 }
             }
         }
@@ -536,16 +482,13 @@ public class MobTimerUtility {
                     hologramData.isVisible = true;
                     hologramData.mobName = currentMobName;
                     hologramData.lastHP = currentHP;
-                    System.out.println("Hologramm für Timer #" + timerId + " sichtbar: " + currentMobName);
                 } else {
                     // Hologramm war bereits sichtbar - prüfe HP-Änderungen
                     if (currentHP < hologramData.lastHP) {
-                        System.out.println("HP-Änderung für Timer #" + timerId + ": " + hologramData.lastHP + " → " + currentHP);
                         hologramData.lastHP = currentHP;
                         
                         // Wenn HP auf 0 oder darunter fällt, Mob wurde getötet
                         if (currentHP <= 0) {
-                            System.out.println("Mob für Timer #" + timerId + " wurde getötet!");
                             timer.markAsKilled();
                             timer.deactivate();
                             // KEINE Messung bei Kill - nur Timer stoppen
@@ -555,7 +498,7 @@ public class MobTimerUtility {
                                 LeaderboardManager.getInstance().updateScore("alltime_rare_mob_kills", 
                                     LeaderboardManager.getInstance().isRegistered() ? 1 : 0);
                             } catch (Exception e) {
-                                System.err.println("❌ Fehler beim Senden des Rare Mob Kill an Leaderboard: " + e.getMessage());
+                                // Silent error handling
                             }
                         }
                     }
@@ -563,7 +506,6 @@ public class MobTimerUtility {
             } else {
                 // Hologramm nicht mehr sichtbar - Mob ist verschwunden
                 if (hologramData.isVisible) {
-                    System.out.println("Hologramm für Timer #" + timerId + " verschwunden - Mob despawnt!");
                     hologramData.isVisible = false;
                     timer.deactivate();
                     // ✅ MESSUNG bei Despawn - das ist die echte Lebensdauer!
