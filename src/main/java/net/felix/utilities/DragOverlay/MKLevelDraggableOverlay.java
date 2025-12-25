@@ -27,42 +27,8 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         int screenWidth = client.getWindow().getScaledWidth();
         int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
         
-        // Wenn xPos -1 ist, positioniere links vom Inventar
+        // Wenn xPos -1 ist, berechne automatisch rechts (für Kompatibilität)
         if (xPos == -1) {
-            // Versuche die Inventar-Position zu bekommen
-            int inventoryX = 0;
-            net.minecraft.client.gui.screen.Screen screenToCheck = client.currentScreen;
-            
-            // Wenn wir im F6-Editor sind, versuche auf previousScreen zuzugreifen
-            if (client.currentScreen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
-                try {
-                    java.lang.reflect.Field previousScreenField = net.felix.utilities.DragOverlay.OverlayEditorScreen.class.getDeclaredField("previousScreen");
-                    previousScreenField.setAccessible(true);
-                    net.minecraft.client.gui.screen.Screen previousScreen = (net.minecraft.client.gui.screen.Screen) previousScreenField.get(client.currentScreen);
-                    if (previousScreen != null && previousScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?>) {
-                        screenToCheck = previousScreen;
-                    }
-                } catch (Exception e) {
-                    // Fallback
-                }
-            }
-            
-            // Versuche die Inventar-X-Position zu bekommen
-            if (screenToCheck instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-                try {
-                    java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
-                    xField.setAccessible(true);
-                    inventoryX = xField.getInt(handledScreen);
-                    
-                    // Positioniere links vom Inventar
-                    int scaledWidth = getWidth();
-                    return inventoryX - scaledWidth - 10; // 10px Abstand links vom Inventar
-                } catch (Exception e) {
-                    // Fallback: rechts positionieren
-                }
-            }
-            
-            // Fallback: rechts positionieren (wenn kein Inventar verfügbar)
             int scaledWidth = getWidth();
             return screenWidth - scaledWidth - 10; // 10px Abstand vom rechten Rand
         }
@@ -100,36 +66,89 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         // Höhe entspricht der Inventar-Höhe (wird dynamisch angepasst)
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.currentScreen == null) {
+            // Use cached height if available (from last render)
+            int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
+            if (cachedHeight > 0) {
+                return cachedHeight;
+            }
             return DEFAULT_HEIGHT;
         }
         
-        net.minecraft.client.gui.screen.Screen screenToCheck = client.currentScreen;
+        // Wenn wir im F6-Editor sind, verwende die gecachte Höhe (aus dem letzten Render)
+        // Das vermeidet Reflection-Probleme auf dem Server
+        if (client.currentScreen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
+            int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
+            if (cachedHeight > 0) {
+                return cachedHeight;
+            }
+        }
         
-        // Wenn wir im F6-Editor sind, versuche auf previousScreen zuzugreifen
+        net.minecraft.client.gui.screen.Screen screenToCheck = client.currentScreen;
+        boolean isFromPreviousScreen = false;
+        
+        // Wenn wir im F6-Editor sind, versuche auf previousScreen zuzugreifen (Fallback)
         if (client.currentScreen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
             try {
                 java.lang.reflect.Field previousScreenField = net.felix.utilities.DragOverlay.OverlayEditorScreen.class.getDeclaredField("previousScreen");
                 previousScreenField.setAccessible(true);
                 net.minecraft.client.gui.screen.Screen previousScreen = (net.minecraft.client.gui.screen.Screen) previousScreenField.get(client.currentScreen);
+                
                 if (previousScreen != null && previousScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?>) {
-                    screenToCheck = previousScreen;
+                    // Prüfe ob es das MKLevel Inventar ist
+                    net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) previousScreen;
+                    net.minecraft.text.Text titleText = handledScreen.getTitle();
+                    String title = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
+                    
+                    if (title.contains("Machtkristalle Verbessern")) {
+                        screenToCheck = previousScreen;
+                        isFromPreviousScreen = true;
+                    } else {
+                        // Not MKLevel inventory, use cached height
+                        int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
+                        if (cachedHeight > 0) {
+                            return cachedHeight;
+                        }
+                        return DEFAULT_HEIGHT;
+                    }
+                } else {
+                    // Not a HandledScreen, use cached height
+                    int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
+                    if (cachedHeight > 0) {
+                        return cachedHeight;
+                    }
+                    return DEFAULT_HEIGHT;
                 }
             } catch (Exception e) {
-                // Fallback to current screen
+                // Use cached height as fallback
+                int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
+                if (cachedHeight > 0) {
+                    return cachedHeight;
+                }
+                return DEFAULT_HEIGHT;
             }
         }
         
-        // Versuche die tatsächliche Inventar-Höhe zu bekommen
+        // Versuche die tatsächliche Inventar-Höhe zu bekommen (für normale Screens, nicht F6-Editor)
         if (screenToCheck instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
             try {
                 java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
                 bgHeightField.setAccessible(true);
-                return bgHeightField.getInt(handledScreen);
+                int height = bgHeightField.getInt(handledScreen);
+                return height;
             } catch (Exception e) {
-                // Fallback to default
+                // Use cached height as fallback
+                int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
+                if (cachedHeight > 0) {
+                    return cachedHeight;
+                }
             }
         }
         
+        // Final fallback: use cached height or default
+        int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
+        if (cachedHeight > 0) {
+            return cachedHeight;
+        }
         return DEFAULT_HEIGHT;
     }
     
@@ -143,10 +162,14 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getHeight() {
-        // Return scaled height
+        // Return scaled height - ensure we use the same calculation as the real overlay
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
         if (scale <= 0) scale = 1.0f; // Safety check
-        return Math.round(calculateUnscaledHeight() * scale);
+        
+        int unscaledHeight = calculateUnscaledHeight();
+        int scaledHeight = Math.round(unscaledHeight * scale);
+        
+        return scaledHeight;
     }
     
     @Override
@@ -187,13 +210,17 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         int x = getX();
         int y = getY();
         int width = getWidth();
-        int height = getHeight();
         
         // Get scale
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
         if (scale <= 0) scale = 1.0f;
         
-        // Render background (scaled)
+        // Calculate height the same way as the real overlay (unscaledHeight * scale)
+        // This ensures the F6 overlay matches the real overlay height exactly
+        int unscaledHeight = calculateUnscaledHeight();
+        int height = Math.round(unscaledHeight * scale);
+        
+        // Render background (scaled) - use calculated height to match real overlay
         context.fill(x, y, x + width, y + height, 0x80000000);
         
         // Render border for edit mode (scaled)
@@ -248,7 +275,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        // Standard-Position: -1 = automatisch links vom Inventar, am Inventar ausgerichtet
+        // Standard-Position: -1 = automatisch rechts berechnen, am Inventar ausgerichtet
         CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX = -1;
         CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = -1; // -1 = am Inventar ausrichten
         savePosition();

@@ -54,8 +54,12 @@ public class OverlayEditorScreen extends Screen {
         // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
         boolean isInBlueprintInventory = isInInventoryScreen();
         
-        // BossHP overlay is only available in dimensions that match the player name and not in inventories
-        if (isInPlayerNameDimension() && !isInventoryOpen()) {
+        // Check if we're in any inventory screen
+        boolean isInAnyInventory = isInAnyInventoryScreen();
+        
+        // BossHP overlay is only available in dimensions that match the player name
+        // And only when NOT in any inventory
+        if (isInPlayerNameDimension() && !isInAnyInventory) {
             overlays.add(new BossHPDraggableOverlay());
         }
         
@@ -124,6 +128,19 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if the current screen is a ChatScreen
         return client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen;
+    }
+    
+    /**
+     * Check if the player is currently in any inventory screen (HandledScreen)
+     */
+    private boolean isInAnyInventoryScreen() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is a HandledScreen (inventory-like screen)
+        return client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
     }
     
     /**
@@ -581,10 +598,13 @@ public class OverlayEditorScreen extends Screen {
             return true;
         }
         
-        // Also close with F6 (toggle behavior)
-        if (keyCode == GLFW.GLFW_KEY_F6) {
-            close();
-            return true;
+        // Also close with the configured overlay editor key (toggle behavior)
+        // Use the same key binding as outside inventories
+        if (OverlayEditorUtility.getOverlayEditorKeyBinding() != null) {
+            if (OverlayEditorUtility.getOverlayEditorKeyBinding().matchesKey(keyCode, -1)) {
+                close();
+                return true;
+            }
         }
         
         // Arrow key movement when holding an overlay with left mouse button
@@ -716,10 +736,6 @@ public class OverlayEditorScreen extends Screen {
         // Mining/Lumberjack overlay can only be dragged in Overworld and not in inventories
         if (overlay instanceof MiningLumberjackDraggableOverlay) {
             return isInOverworld() && !isInventoryOpen();
-        }
-        // BossHP overlay can only be dragged in player name dimension and not in inventories
-        if (overlay instanceof BossHPDraggableOverlay) {
-            return isInPlayerNameDimension() && !isInventoryOpen();
         }
         // All other overlays can be dragged normally
         return true;

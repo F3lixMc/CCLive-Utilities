@@ -66,7 +66,7 @@
       }
     ],
     "2": [
-      "Diamangewebter Helmpanzer",
+      "Diamantgewebter Helmpanzer",
       {
         "item_type":"Helm",
         "rarity":"Epic",
@@ -80,21 +80,21 @@
         "floor": "e15",
         "modifier":"[Andere], [Andere], [Schaden]"
       },
-      "Diamangewebte Schulterhaube",
+      "Diamantgewebte Schulterhaube",
       {
         "item_type":"Schultern",
         "rarity":"Epic",
         "floor": "e15",
         "modifier":"[Andere], [Andere], [Attribute]"
       },
-      "Diamangewebte Brustplatte",
+      "Diamantgewebte Brustplatte",
       {
         "item_type":"Brust",
         "rarity":"Epic",
         "floor": "e16",
         "modifier":"[Andere], [Andere], [Schaden]"
       },
-      "Diamangewebte Handhaube",
+      "Diamantgewebte Handhaube",
       {
         "item_type":"Handschuhe",
         "rarity":"Epic",
@@ -108,7 +108,7 @@
         "floor": "e16",
         "modifier":"[Andere], [Andere], [Fähigkeiten]"
       },
-      "Diamangewebter Beinkleider",
+      "Diamantgewebte Beinkleider",
       {
         "item_type":"Hose",
         "rarity":"Epic",
@@ -122,7 +122,7 @@
         "floor": "e17",
         "modifier":"[Andere], [Andere], [Herstellung]"
       },
-      "Diamangewebte Gürtelschutz",
+      "Diamantgewebter Gürtelschutz",
       {
         "item_type":"Gürtel",
         "rarity":"Epic",
@@ -159,7 +159,7 @@
         "floor": "e30",
         "modifier":"[Andere], [Andere], [FähigkeitenSchaden], [Attribute]"
       },
-      "Zeitloser Schulterpanzer",
+      "Zeitlose Schulterpanzer",
       {
         "item_type":"Schultern",
         "rarity":"Legendary",
@@ -368,7 +368,7 @@
         "floor": "e75",
         "modifier":"[Andere], [Andere], [Herstellung]"
       },
-      "Saphirumhüllter Brustpanzer ",
+      "Saphirumhüllter Brustpanzer",
       {
         "item_type":"Brust",
         "rarity":"Epic",
@@ -382,7 +382,7 @@
         "floor": "e77",
         "modifier":"[Andere], [Andere], [Fähigkeiten]"
       },
-      "Amulett der Drachen",
+      "Amulett des Drachen",
       {
         "item_type":"Halskette",
         "rarity":"Epic",
@@ -419,14 +419,14 @@
         "floor": "e87",
         "modifier":"[Andere], [Andere], [Verteidigung], [Schaden]"
       },
-      "Himmlische Tretter",
+      "Himmlische Treter",
       {
         "item_type":"Schuhe",
         "rarity":"Legendary",
         "floor": "e89",
         "modifier":"[Andere], [Andere], [Schaden], [Herstellung]"
       },
-      "Himmlischer Plattenhose",
+      "Himmlische Plattenhose",
       {
         "item_type":"Hose",
         "rarity":"Legendary",
@@ -544,7 +544,7 @@
         "floor": "e29",
         "modifier":"[Schaden], [Schaden], [Attribute]"
       },
-      "Giftige Stachelpanzer",
+      "Giftiger Stachelpanzer",
       {
         "item_type":"Brust",
         "rarity":"Epic",
@@ -633,7 +633,7 @@
       "Blitzsturm Gamaschen",
       {
         "item_type":"Hose",
-        "rarity":"Epic",
+        "rarity":"Legendary",
         "floor": "e44",
         "modifier":"[Schaden], [Schaden], [Verteidigung], [Andere]"
       }
@@ -688,7 +688,7 @@
         "floor": "e58",
         "modifier":"[Schaden], [Schaden], [Verteidigung],"
       },
-      "Geistertränenband ",
+      "Geistertränenband",
       {
         "item_type":"Ringe",
         "rarity":"Epic",
@@ -764,7 +764,7 @@
       {
         "item_type":"Halskette",
         "rarity":"Legendary",
-        "floor": "e73",
+        "floor": "e72",
         "modifier":"[Schaden], [Schaden], [Andere], [Andere]"
       }
     ],
@@ -825,7 +825,7 @@
         "floor": "e85",
         "modifier":"[Schaden], [Schaden], [Andere]"
       },
-      "Anhänger der Todesblick",
+      "Anhänger des Todesblick",
       {
         "item_type":"Halskette",
         "rarity":"Epic",
@@ -859,7 +859,7 @@
       {
         "item_type":"Gürtel",
         "rarity":"Legendary",
-        "floor": "e99",
+        "floor": "e98",
         "modifier":"[Schaden], [Schaden], [Andere], [Attribute]"
       },
       "Phönixfeuer Handschützer",
@@ -943,7 +943,7 @@
         "floor": "e10",
         "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]"
       },
-      "Dunkelmmond Brustpanzer",
+      "Dunkelmond Brustpanzer",
       {
         "item_type":"Brust",
         "rarity":"Legendary",
@@ -1008,14 +1008,14 @@
         "floor": "e28",
         "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung]"
       },
-      "Raimonds Siegelring",
+      "Raimondos Siegelring",
       {
         "item_type":"Gürtel",
         "rarity":"Epic",
         "floor": "e28",
         "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung]"
       },
-      "Raimonds Anhänger",
+      "Raimondos Anhänger",
       {
         "item_type":"Halskette",
         "rarity":"Epic",
@@ -1131,7 +1131,7 @@
         "floor": "e55",
         "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung]"
       },
-      "Sternenfeuer Anhänger",
+      "Sternenfeuer-Anhänger",
       {
         "item_type":"Halskette",
         "rarity":"Epic",
@@ -1227,14 +1227,14 @@
         "floor": "e82",
         "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]"
       },
-      "Kometenband",
+      "Kristallring Kometenband",
       {
         "item_type":"Schultern",
         "rarity":"Legendary",
-        "floor": "e72",
+        "floor": "e82",
         "modifier":"[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]"
       },
-      "Nebelschreiter",
+      "Nebel Schreiter",
       {
         "item_type":"Schuhe",
         "rarity":"Legendary",
@@ -1417,7 +1417,7 @@
       }
     ],
     "2": [
-      "Tedellso polierte Stahlstiefel",
+      "Tadellos polierte Stahlstiefel",
       {
         "item_type":"Schuhe",
         "rarity":"Epic",
@@ -1438,7 +1438,7 @@
         "floor": "e21",
         "modifier":"[Herstellung], [Herstellung], [Fähigkeiten]"
       },
-      "Sonnengewobener Kriegsharnischer",
+      "Sonnengewobener Kriegsharnisch",
       {
         "item_type":"Brust",
         "rarity":"Epic",
@@ -1452,7 +1452,7 @@
         "floor": "e22",
         "modifier":"[Herstellung], [Herstellung], [Andere]"
       },
-      "Sonnengewobener Kriegshandschuhe",
+      "Sonnengewobene Kriegshandschuhe",
       {
         "item_type":"Handschuhe",
         "rarity":"Epic",
@@ -1463,7 +1463,7 @@
       {
         "item_type":"Halskette",
         "rarity":"Epic",
-        "floor": "e2",
+        "floor": "e22",
         "modifier":"[Herstellung], [Herstellung], [Fähigkeiten]"
       },
       "Sonnengewobener Kriegshelm",
@@ -1763,7 +1763,7 @@
         "floor": "e89",
         "modifier":"[Herstellung], [Herstellung], [Fähigkeiten]"
       },
-      "Himmelsstahl Fingerschützer ",
+      "Himmelsstahl Fingerschützer",
       {
         "item_type":"Handschuhe",
         "rarity":"Epic",
@@ -1851,7 +1851,7 @@
         "floor": "e8",
         "modifier":"[Verteidigung], [Verteidigung], [Schaden]"
       },
-      "Kosmisches Medailiion",
+      "Kosmisches Medaillon",
       {
         "item_type":"Halskette",
         "rarity":"Epic",
@@ -1923,14 +1923,14 @@
         "floor": "e24",
         "modifier":"[Verteidigung], [Verteidigung], [Schaden], [Attribute]"
       },
-      "Glutgewebte Tretter",
+      "Gultgewebte Treter",
       {
         "item_type":"Schuhe",
         "rarity":"Legendary",
         "floor": "e25",
         "modifier":"[Verteidigung], [Verteidigung], [Andere], [Attribute]"
       },
-      "Drachenherz Brustpanzer ",
+      "Drachenherz Brustpanzer",
       {
         "item_type":"Brust",
         "rarity":"Legendary",
@@ -1967,7 +1967,7 @@
         "floor": "e34",
         "modifier":"[Verteidigung], [Verteidigung], [Andere]"
       },
-      "Schrenkenssog Sabatons",
+      "Schreckenssog Sabatons",
       {
         "item_type":"Schuhe",
         "rarity":"Epic",
@@ -2025,7 +2025,7 @@
         "floor": "e49",
         "modifier":"[Verteidigung], [Verteidigung], [Schaden], [Andere]"
       },
-      "Karmesin Beinbleid",
+      "Karmesin Beinkleid",
       {
         "item_type":"Hose",
         "rarity":"Legendary",
@@ -2069,14 +2069,14 @@
       }
     ],
     "5": [
-      "Donnerpanzer Plattenhose",
+      "Dornenpanzer Plattenhose",
       {
         "item_type":"Hose",
         "rarity":"Epic",
         "floor": "e60",
         "modifier":"[Verteidigung], [Verteidigung], [Schaden]"
       },
-      "Donnerpanzer Schulterplatten",
+      "Dornenpanzer Schulterplatten",
       {
         "item_type":"Schultern",
         "rarity":"Epic",
@@ -2090,28 +2090,28 @@
         "floor": "e62",
         "modifier":"[Verteidigung], [Verteidigung], [Andere]"
       },
-      "Donnerpanzer Helmschutz",
+      "Dornenpanzer Helmschutz",
       {
         "item_type":"Helm",
         "rarity":"Epic",
         "floor": "e64",
         "modifier":"[Verteidigung], [Verteidigung], [Attribute]"
       },
-      "Donnerpanzer Plattenhandschuhe",
+      "Dornenpanzer Plattenhandschuhe",
       {
         "item_type":"Handschuhe",
         "rarity":"Epic",
         "floor": "e64",
         "modifier":"[Verteidigung], [Verteidigung], [Attribute]"
       },
-      "Donnerpanzer Brustplatte",
+      "Dornenpanzer Brustplatte",
       {
         "item_type":"Brust",
         "rarity":"Epic",
         "floor": "e65",
         "modifier":"[Verteidigung], [Verteidigung], [Attribute]"
       },
-      "Donnerpanzer Plattengürtel",
+      "Dornenpanzer Plattengürtel",
       {
         "item_type":"Gürtel",
         "rarity":"Epic",
@@ -2125,11 +2125,11 @@
         "floor": "e65",
         "modifier":"[Verteidigung], [Verteidigung], [Schaden]"
       },
-      "Donnerpanzer Plattenstampfer",
+      "Dornenpanzer Plattenstampfer",
       {
         "item_type":"Schuhe",
         "rarity":"Epic",
-        "floor": "e65",
+        "floor": "e66",
         "modifier":"[Verteidigung], [Verteidigung], [Schaden]"
       }
     ],
@@ -2162,7 +2162,7 @@
         "floor": "e78",
         "modifier":"[Verteidigung], [Verteidigung], [Andere]"
       },
-      "Titanstahl Brustpanzer",
+      "Titanstahl Brustplatte",
       {
         "item_type":"Brust",
         "rarity":"Epic",
@@ -2231,7 +2231,7 @@
       {
         "item_type":"Handschuhe",
         "rarity":"Legendary",
-        "floor": "e92",
+        "floor": "e93",
         "modifier":"[Verteidigung], [Verteidigung], [Andere], [Attribute]"
       },
       "Ragnaröks Helmdeckung",
@@ -2265,4 +2265,3 @@
     ]
   }
 }
-

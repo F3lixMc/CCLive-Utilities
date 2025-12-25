@@ -67,6 +67,17 @@ public class InformationenUtility {
 	private static long mkLevelSearchCursorBlinkTime = 0;
 	private static boolean mkLevelSearchCursorVisible = true;
 	
+	// MKLevel overlay height cache (updated when overlay is rendered, used by F6 editor)
+	private static int mkLevelLastKnownHeight = 166; // Default height
+	
+	/**
+	 * Gets the last known height of the MKLevel overlay (cached from last render)
+	 * Used by F6 editor to avoid reflection issues on server
+	 */
+	public static int getMKLevelLastKnownHeight() {
+		return mkLevelLastKnownHeight;
+	}
+	
 	// Mining & Lumberjack XP Tracking
 	private static class XPData {
 		long currentXP = 0;
@@ -3961,7 +3972,8 @@ public class InformationenUtility {
 		
 		// Check if we're in MKLevel inventory
 		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-			String title = handledScreen.getTitle().getString();
+			Text titleText = handledScreen.getTitle();
+			String title = getPlainTextFromText(titleText);
 			boolean wasInMKLevelInventory = isInMKLevelInventory;
 			isInMKLevelInventory = title.contains("Machtkristalle Verbessern");
 			
@@ -4056,10 +4068,10 @@ public class InformationenUtility {
 		int overlayHeight = Math.round(unscaledHeight * scale);
 		
 		// Calculate overlay X position
-		// Wenn xPos -1 ist, positioniere links vom Inventar
+		// Wenn xPos -1 ist, berechne automatisch rechts (für Kompatibilität)
 		int overlayX;
 		if (xPos == -1) {
-			overlayX = inventoryX - overlayWidth - 10; // 10px Abstand links vom Inventar
+			overlayX = screenWidth - overlayWidth - 10; // 10px Abstand vom rechten Rand
 		} else {
 			// Verwende die absolute X-Position (obere linke Ecke)
 			overlayX = xPos;
@@ -4761,14 +4773,17 @@ public class InformationenUtility {
 		int unscaledWidth = 200;
 		int unscaledHeight = inventoryHeight; // Same height as inventory
 		
+		// Cache the height for F6 editor (avoids reflection issues on server)
+		mkLevelLastKnownHeight = inventoryHeight;
+		
 		// Scaled dimensions
 		int overlayWidth = Math.round(unscaledWidth * scale);
 		
 		// Calculate overlay X position
-		// Wenn xPos -1 ist, positioniere links vom Inventar
+		// Wenn xPos -1 ist, berechne automatisch rechts (für Kompatibilität)
 		int overlayX;
 		if (xPos == -1) {
-			overlayX = inventoryX - overlayWidth - 10; // 10px Abstand links vom Inventar
+			overlayX = screenWidth - overlayWidth - 10; // 10px Abstand vom rechten Rand
 		} else {
 			// Verwende die absolute X-Position (obere linke Ecke)
 			overlayX = xPos;
@@ -5007,15 +5022,58 @@ public class InformationenUtility {
 	}
 	
 	/**
-	 * Handles mouse click for MKLevel search bar
+	 * Extracts plain text from Text component, removing all formatting codes
 	 */
-	public static boolean handleMKLevelSearchClick(double mouseX, double mouseY, int button) {
-		if (!isInMKLevelInventory) {
+	public static String getPlainTextFromText(Text text) {
+		if (text == null) {
+			return "";
+		}
+		
+		// Get the string representation (includes formatting codes)
+		String textString = text.getString();
+		
+		// Remove all Minecraft formatting codes (including all possible format codes)
+		// § followed by any character (0-9, a-f, k-o, r, x for hex colors, etc.)
+		textString = textString.replaceAll("§[0-9a-fk-orxA-FK-ORX]", "");
+		
+		// Remove hex color codes (format: §#RRGGBB or §x§r§r§g§g§b§b)
+		textString = textString.replaceAll("§#[0-9a-fA-F]{6}", "");
+		textString = textString.replaceAll("§x(§[0-9a-fA-F]){6}", "");
+		
+		// Also remove Unicode formatting characters that might interfere
+		textString = textString.replaceAll("[\\u3400-\\u4DBF]", "");
+		
+		// Trim whitespace
+		return textString.trim();
+	}
+	
+	/**
+	 * Handles mouse click for MKLevel search bar
+	 * @param inventoryX X position of the inventory (from mixin shadow field)
+	 * @param inventoryY Y position of the inventory (from mixin shadow field)
+	 * @param inventoryHeight Height of the inventory (from mixin shadow field)
+	 */
+	public static boolean handleMKLevelSearchClick(double mouseX, double mouseY, int button, int inventoryX, int inventoryY, int inventoryHeight) {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null || client.getWindow() == null) {
 			return false;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.getWindow() == null) {
+		// Check if we're in the MKLevel inventory - check directly instead of relying on isInMKLevelInventory
+		// This ensures it works even if onClientTick hasn't run yet
+		boolean inMKLevelInventory = false;
+		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+			Text titleText = handledScreen.getTitle();
+			String title = getPlainTextFromText(titleText);
+			inMKLevelInventory = title.contains("Machtkristalle Verbessern");
+		}
+		
+		if (!inMKLevelInventory) {
+			return false;
+		}
+		
+		// Check if MKLevel overlay is enabled
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled) {
 			return false;
 		}
 		
@@ -5024,78 +5082,53 @@ public class InformationenUtility {
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
 		if (scale <= 0) scale = 1.0f;
 		
-		// Unscaled dimensions
+		// Unscaled dimensions (width is fixed, height will be set from inventory)
 		int unscaledWidth = 200;
 		int overlayWidth = Math.round(unscaledWidth * scale);
 		
 		// Calculate overlay X position
-		// Wenn xPos -1 ist, positioniere links vom Inventar
-		int overlayX = 0; // Initialize with default value
+		// Wenn xPos -1 ist, berechne automatisch rechts (für Kompatibilität)
+		int overlayX;
 		if (xPos == -1) {
-			// Get inventory X position
-			int inventoryX = 0;
-			if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-				try {
-					java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
-					xField.setAccessible(true);
-					inventoryX = xField.getInt(handledScreen);
-				} catch (Exception e) {
-					// Fallback: rechts positionieren
-					overlayX = screenWidth - overlayWidth - 10;
-				}
-			} else {
-				// Fallback: rechts positionieren
-				overlayX = screenWidth - overlayWidth - 10;
-			}
-			
-			// Positioniere links vom Inventar
-			if (inventoryX > 0) {
-				overlayX = inventoryX - overlayWidth - 10; // 10px Abstand links vom Inventar
-			} else if (overlayX == 0) {
-				// Fallback: rechts positionieren wenn inventoryX nicht verfügbar
-				overlayX = screenWidth - overlayWidth - 10;
-			}
+			overlayX = screenWidth - overlayWidth - 10; // 10px Abstand vom rechten Rand
 		} else {
 			// Verwende die absolute X-Position (obere linke Ecke)
 			overlayX = xPos;
 		}
 		
-		// Scaled dimensions for click detection
-		int padding = Math.round(5 * scale);
-		int searchBarHeight = Math.round(16 * scale);
-		int contentOffset = Math.round(3 * scale); // Shift content 3px up (same as in render)
+		// Use inventory position and height passed from mixin (from @Shadow fields)
+		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
+		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
 		
-		// Calculate search bar position (we need inventory Y position)
-		int searchBarX = overlayX + padding;
-		int searchBarY = 0; // Will be calculated based on inventory
+		// Use the same unscaledHeight as in render (inventoryHeight)
+		int unscaledHeight = inventoryHeight;
 		
-		// Get inventory Y position
-		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-			try {
-				java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
-				yField.setAccessible(true);
-				int inventoryY = yField.getInt(handledScreen);
-				int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
-				int overlayY = (yOffset == -1) ? inventoryY : yOffset;
-				searchBarY = overlayY + padding - contentOffset; // Shift search bar 3px up
-			} catch (Exception e) {
-				return false;
-			}
-		} else {
-			return false;
-		}
+		// Calculate search bar position in screen coordinates (same as SearchBarUtility)
+		// In render: searchBarX = padding (5), searchBarY = padding - contentOffset (5 - 3 = 2)
+		// These are unscaled coordinates within the matrix, so we need to scale them
+		int unscaledPadding = 5;
+		int unscaledSearchBarHeight = 16;
+		int unscaledContentOffset = 3; // Shift content 3px up (same as in render)
+		int unscaledSearchBarWidth = unscaledWidth - unscaledPadding * 2;
 		
-		int searchBarWidth = overlayWidth - padding * 2;
+		// Calculate absolute screen coordinates of search bar
+		// The search bar is rendered at (padding, padding - contentOffset) within the matrix
+		// After transformation: (overlayX + padding * scale, overlayY + (padding - contentOffset) * scale)
+		int searchBarX = overlayX + Math.round(unscaledPadding * scale);
+		int searchBarY = overlayY + Math.round((unscaledPadding - unscaledContentOffset) * scale);
+		int searchBarWidth = Math.round(unscaledSearchBarWidth * scale);
+		int searchBarHeight = Math.round(unscaledSearchBarHeight * scale);
 		
-		// Check if click is on search bar
+		// Check if click is on search bar (in screen coordinates)
 		if (mouseX >= searchBarX && mouseX <= searchBarX + searchBarWidth &&
 			mouseY >= searchBarY && mouseY <= searchBarY + searchBarHeight) {
 			
 			if (button == 0) { // Left click
 				mkLevelSearchFocused = true;
-				// Set cursor position based on click
+				// Set cursor position based on click (in screen coordinates, then convert to text position)
 				String textBeforeClick = mkLevelSearchText;
-				int clickX = (int) (mouseX - searchBarX - 2);
+				// Calculate click position relative to search bar, then scale down for text measurement
+				int clickX = (int) ((mouseX - searchBarX - 2) / scale);
 				mkLevelSearchCursorPosition = findCursorPosition(client, textBeforeClick, clickX);
 				return true;
 			} else if (button == 1) { // Right click - clear search
@@ -5185,12 +5218,27 @@ public class InformationenUtility {
 	 * Based on SearchBarUtility.handleKeyPress
 	 */
 	public static boolean handleMKLevelKeyPressed(int keyCode, int scanCode, int modifiers) {
-		if (!isInMKLevelInventory || !mkLevelSearchFocused) {
+		// Check if search bar is focused - if it is, we're definitely in the MKLevel inventory
+		if (!mkLevelSearchFocused) {
 			return false;
 		}
 		
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client == null) {
+			return false;
+		}
+		
+		// Double-check that we're still in the MKLevel inventory
+		boolean inMKLevelInventory = false;
+		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+			Text titleText = handledScreen.getTitle();
+			String title = getPlainTextFromText(titleText);
+			inMKLevelInventory = title.contains("Machtkristalle Verbessern");
+		}
+		
+		if (!inMKLevelInventory) {
+			// Unfocus if we're no longer in the inventory
+			mkLevelSearchFocused = false;
 			return false;
 		}
 		

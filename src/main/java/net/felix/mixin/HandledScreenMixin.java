@@ -66,7 +66,8 @@ public abstract class HandledScreenMixin {
     private void renderMKLevelOverlay(DrawContext context) {
         try {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
-            String title = screen.getTitle().getString();
+            net.minecraft.text.Text titleText = screen.getTitle();
+            String title = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
             
             if (title.contains("Machtkristalle Verbessern")) {
                 // Get actual inventory dimensions from the screen using shadow fields
@@ -92,8 +93,8 @@ public abstract class HandledScreenMixin {
             }
         }
         
-        // Handle clicks on MKLevel search bar
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button)) {
+        // Handle clicks on MKLevel search bar - pass screen position directly from mixin (@Shadow fields)
+        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, x, y, backgroundHeight)) {
             cir.setReturnValue(true);
         }
     }
