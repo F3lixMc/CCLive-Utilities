@@ -103,17 +103,28 @@ public class OverlayEditorUtility {
     }
     
     /**
+     * Get the overlay editor key binding (for use in screens)
+     * @return The KeyBinding instance, or null if not initialized
+     */
+    public static KeyBinding getOverlayEditorKeyBinding() {
+        return overlayEditorKeyBinding;
+    }
+    
+    /**
      * Handle key press directly (for use in mixins when screens are open)
      * @param keyCode The key code (e.g., GLFW.GLFW_KEY_F6)
      * @return true if the key was handled
      */
     public static boolean handleKeyPress(int keyCode) {
         try {
-            // Check if F6 is pressed (default key for overlay editor)
-            // Overlay Editor is always enabled
-            if (keyCode == GLFW.GLFW_KEY_F6) {
+            // Check if the pressed key matches the configured key binding
+            // This ensures the same key works in inventories as outside
+            if (overlayEditorKeyBinding != null) {
+                // Use matchesKey to check if the pressed key matches the configured key binding
+                if (overlayEditorKeyBinding.matchesKey(keyCode, -1)) {
                     toggleOverlayEditor();
                     return true;
+                }
             }
         } catch (Exception e) {
             // Silent error handling

@@ -611,7 +611,7 @@ public class SearchBarUtility {
 							}
 						} else {
 							// Normale Suche: Item-Name und Ebenen (Aspekte nur mit @)
-							matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
+						matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
 							
 							// Wenn es ein Bauplan ist, suche auch nach Ebene (Aspekt nur mit @)
 							if (!matches && itemName.contains("[Bauplan]")) {
@@ -1210,7 +1210,7 @@ public class SearchBarUtility {
 			// @-Button im Menü (links)
 			if (mouseX >= menuX && mouseX <= menuX + menuButtonWidth &&
 				mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
-				if (button == 0) {
+			if (button == 0) {
 					insertCharacter('@');
 					isSymbolMenuOpen = false;
 					return true;

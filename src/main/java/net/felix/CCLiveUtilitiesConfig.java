@@ -446,7 +446,7 @@ public class CCLiveUtilitiesConfig {
     public float mkLevelScale = 1.0f; // Skalierung des MKLevel Overlays
     
     @SerialEntry
-    public int mkLevelX = -1; // X-Position des MKLevel Overlays (-1 = automatisch links vom Inventar, >= 0 = absolute X-Position)
+    public int mkLevelX = -1; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
     
     @SerialEntry
     public int mkLevelY = -1; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)

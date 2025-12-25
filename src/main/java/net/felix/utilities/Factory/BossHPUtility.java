@@ -63,6 +63,11 @@ public class BossHPUtility {
 	private long bossBlockedUntil = 0;
 	private static final long BOSS_BLOCK_DURATION = 10000; // 10 Sekunden Blockierung
 	
+	// Retry-Logik für "Welle nicht geschafft"
+	private int waveFailedRetryCount = 0;
+	private static final int WAVE_FAILED_MAX_RETRIES = 5;
+	private boolean waitingForWaveFailedRetry = false;
+	
 	public BossHPUtility() {
 		INSTANCE = this;
 		initializeBossNames();
@@ -151,7 +156,18 @@ public class BossHPUtility {
 		checkTabKey();
 		BossHPUtility instance = BossHPUtility.getInstance();
 		
-
+		// Prüfe auf Retry für "Welle nicht geschafft"
+		if (instance.waitingForWaveFailedRetry && instance.waveFailedRetryCount < WAVE_FAILED_MAX_RETRIES) {
+			// Versuche Boss zu erkennen (wird in processTextDisplay behandelt)
+			// Erhöhe Retry-Counter nach jedem Tick
+			instance.waveFailedRetryCount++;
+			
+			// Wenn Max-Retries erreicht, stoppe das Warten
+			if (instance.waveFailedRetryCount >= WAVE_FAILED_MAX_RETRIES) {
+				instance.waitingForWaveFailedRetry = false;
+				instance.waveFailedRetryCount = 0;
+			}
+		}
 		
 		if (client.player == null || client.world == null) {
 			return;
@@ -307,6 +323,22 @@ public class BossHPUtility {
 				String bossName = matcher.group(1).trim();
 				
 				if (validBossNames.contains(bossName)) {
+					// Wenn wir auf Retry für "Welle nicht geschafft" warten, speichere die HP
+					if (waitingForWaveFailedRetry && waveFailedRetryCount < WAVE_FAILED_MAX_RETRIES) {
+						String[] parts = text.split("\\|{5}");
+						if (parts.length >= 2) {
+							String hp = parts[1].trim();
+							lastKnownHP = hp;
+							lastKnownBossName = bossName;
+							bossDisappearTimeWithoutReward = System.currentTimeMillis();
+							bossLost = true;
+							waitingForWaveFailedRetry = false;
+							waveFailedRetryCount = 0;
+							// Boss wurde erkannt, zeige verbleibende HP
+							return;
+						}
+					}
+					
 					// Reset boss defeated flag when a new boss appears
 					if (bossDefeated) {
 						bossDefeated = false;
@@ -520,7 +552,14 @@ public class BossHPUtility {
 		
 		if (isDisappeared) {
 			displayText = bossName + " verbleibend";
-			displayHP = hpText;
+			// Formatiere HP mit Tausender-Trennung
+			try {
+				int hpValue = Integer.parseInt(hpText);
+				displayHP = String.format("%,d", hpValue);
+			} catch (NumberFormatException e) {
+				// HP konnte nicht geparst werden, verwende Original-Text
+				displayHP = hpText;
+			}
 		} else if (hpText.isEmpty()) {
 			// Fallback: zeige nur den Boss-Namen
 			displayText = bossName;
@@ -529,11 +568,14 @@ public class BossHPUtility {
 			String[] parts = hpText.split("\\|{5}");
 			if (parts.length >= 2) {
 				displayText = parts[0].trim();
-				displayHP = parts[1].trim();
+				String rawHP = parts[1].trim();
 				try {
-					currentHP = Integer.parseInt(displayHP);
+					currentHP = Integer.parseInt(rawHP);
+					// Formatiere HP mit Tausender-Trennung
+					displayHP = String.format("%,d", currentHP);
 				} catch (NumberFormatException e) {
-					// HP konnte nicht geparst werden
+					// HP konnte nicht geparst werden, verwende Original-Text
+					displayHP = rawHP;
 					currentHP = null;
 				}
 			}
@@ -618,7 +660,7 @@ public class BossHPUtility {
 			int dpmY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
 			context.drawText(client.textRenderer, dpmText, PADDING, dpmY, DPM_COLOR, true);
 		}
-		
+
 		matrices.popMatrix();
 	}
 	
@@ -667,6 +709,11 @@ public class BossHPUtility {
 				content.toLowerCase().contains("aktiver ertrag")) {
 				instance.handleWaveFailed();
 			}
+			// Prüfe auf "Die Welle wurde nicht geschafft! Versuche sie erneut." (Chat-Nachricht)
+			if (content.contains("Die Welle wurde nicht geschafft! Versuche sie erneut.") || 
+				content.contains("Die welle wurde nicht geschafft! Versuche sie erneut.")) {
+				instance.handleWaveFailedRetry();
+			}
 		}
 	}
 	
@@ -709,6 +756,37 @@ public class BossHPUtility {
 		waitingForBossResult = false;
 		
 		// Setze die verbleibenden HP für 5 Sekunden Anzeige
+		if (currentBossText != null) {
+			String[] parts = currentBossText.split("\\|{5}");
+			if (parts.length >= 2) {
+				String hp = parts[1].trim();
+				lastKnownHP = hp;
+				lastKnownBossName = currentBossName;
+				bossDisappearTimeWithoutReward = System.currentTimeMillis();
+			}
+		}
+		
+		// Lösche aktuellen Boss
+		currentBossName = null;
+		currentBossText = null;
+		
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
+	}
+	
+	/**
+	 * Handler für "Die Welle wurde nicht geschafft! Versuche sie erneut." (Chat-Nachricht)
+	 * Versucht 5 mal, die verbleibenden HP anzuzeigen, falls der Boss nochmal erkannt wird
+	 */
+	public void handleWaveFailedRetry() {
+		bossLost = true;
+		waitingForBossResult = false;
+		waitingForWaveFailedRetry = true;
+		waveFailedRetryCount = 0;
+		
+		// Setze die verbleibenden HP für Anzeige, falls vorhanden
 		if (currentBossText != null) {
 			String[] parts = currentBossText.split("\\|{5}");
 			if (parts.length >= 2) {

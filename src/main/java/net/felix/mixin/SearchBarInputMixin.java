@@ -38,6 +38,28 @@ public abstract class SearchBarInputMixin {
         if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
+        
+        // Handle MKLevel search bar clicks - need to get position from screen
+        // We can't use @Shadow here, so we'll use reflection as fallback
+        net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+        if (client != null && client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+            try {
+                java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
+                java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
+                java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
+                xField.setAccessible(true);
+                yField.setAccessible(true);
+                bgHeightField.setAccessible(true);
+                int inventoryX = xField.getInt(handledScreen);
+                int inventoryY = yField.getInt(handledScreen);
+                int inventoryHeight = bgHeightField.getInt(handledScreen);
+                if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
+                    cir.setReturnValue(true);
+                }
+            } catch (Exception e) {
+                // Reflection failed, skip
+            }
+        }
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
