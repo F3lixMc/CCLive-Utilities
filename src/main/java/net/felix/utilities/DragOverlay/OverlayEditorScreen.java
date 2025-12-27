@@ -115,6 +115,44 @@ public class OverlayEditorScreen extends Screen {
                 // Note: MKLevel Overlay is only available in "Machtkristalle Verbessern" inventory
             }
         }
+        
+        // Tab Info Overlays - immer verfügbar wenn aktiviert
+        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
+            // Haupt-Overlay
+            overlays.add(new TabInfoMainDraggableOverlay());
+            
+            // Separate Overlays (nur wenn aktiviert)
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay) {
+                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
+            }
+        }
     }
     
     /**
@@ -289,21 +327,32 @@ public class OverlayEditorScreen extends Screen {
         doneButton = ButtonWidget.builder(
             Text.literal("Done"),
             button -> close()
-        ).dimensions(width / 2 - 130, height - 30, 80, 20).build();
+        ).dimensions(width / 2 - 180, height - 30, 80, 20).build();
         addDrawableChild(doneButton);
         
         // Overlay Button
         overlayButton = ButtonWidget.builder(
             Text.literal("Overlay"),
             button -> overlaySettingsOpen = !overlaySettingsOpen
-        ).dimensions(width / 2 - 40, height - 30, 80, 20).build();
+        ).dimensions(width / 2 - 90, height - 30, 80, 20).build();
         addDrawableChild(overlayButton);
+        
+        // Tab Info Button
+        ButtonWidget tabInfoButton = ButtonWidget.builder(
+            Text.literal("Tab Info"),
+            button -> {
+                if (client != null) {
+                    client.setScreen(new net.felix.utilities.DragOverlay.TabInfoSettingsScreen(this));
+                }
+            }
+        ).dimensions(width / 2, height - 30, 80, 20).build();
+        addDrawableChild(tabInfoButton);
         
         // Reset Button
         resetButton = ButtonWidget.builder(
             Text.literal("Reset All"),
             button -> resetAllOverlays()
-        ).dimensions(width / 2 + 50, height - 30, 80, 20).build();
+        ).dimensions(width / 2 + 90, height - 30, 80, 20).build();
         addDrawableChild(resetButton);
     }
     

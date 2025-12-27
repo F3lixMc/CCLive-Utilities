@@ -585,6 +585,189 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showOverlayEditor = true; // Overlay Editor anzeigen
 
+    // Tab Info Utility Settings
+    @SerialEntry
+    public boolean tabInfoUtilityEnabled = true; // Tab Info Utility aktivieren
+    
+    @SerialEntry
+    public boolean showTabInfoForschung = true; // Forschung anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoAmboss = true; // Amboss Kapazität anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoSchmelzofen = true; // Schmelzofen Kapazität anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoJaeger = true; // Jäger Kapazität anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoSeelen = true; // Seelen Kapazität anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoEssenzen = true; // Essenzen Kapazität anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoMachtkristalle = true; // Machtkristalle anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot1 = true; // Recycler Slot 1 anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot2 = true; // Recycler Slot 2 anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot3 = true; // Recycler Slot 3 anzeigen
+    
+    // Tab Info Prozent-Einstellungen (für jede Information einzeln)
+    @SerialEntry
+    public boolean showTabInfoAmbossPercent = true; // Prozente für Amboss anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoSchmelzofenPercent = true; // Prozente für Schmelzofen anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoJaegerPercent = true; // Prozente für Jäger anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoSeelenPercent = true; // Prozente für Seelen anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoEssenzenPercent = true; // Prozente für Essenzen anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot1Percent = true; // Prozente für Recycler Slot 1 anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot2Percent = true; // Prozente für Recycler Slot 2 anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot3Percent = true; // Prozente für Recycler Slot 3 anzeigen
+    
+    // Tab Info Warn-Prozentwerte (für jede Information einzeln, -1 = deaktiviert)
+    @SerialEntry
+    public double tabInfoAmbossWarnPercent = -1.0; // Warn-Prozentwert für Amboss (-1 = deaktiviert)
+    
+    @SerialEntry
+    public double tabInfoSchmelzofenWarnPercent = -1.0; // Warn-Prozentwert für Schmelzofen
+    
+    @SerialEntry
+    public double tabInfoJaegerWarnPercent = -1.0; // Warn-Prozentwert für Jäger
+    
+    @SerialEntry
+    public double tabInfoSeelenWarnPercent = -1.0; // Warn-Prozentwert für Seelen
+    
+    @SerialEntry
+    public double tabInfoEssenzenWarnPercent = -1.0; // Warn-Prozentwert für Essenzen
+    
+    @SerialEntry
+    public double tabInfoRecyclerSlot1WarnPercent = -1.0; // Warn-Prozentwert für Recycler Slot 1
+    
+    @SerialEntry
+    public double tabInfoRecyclerSlot2WarnPercent = -1.0; // Warn-Prozentwert für Recycler Slot 2
+    
+    @SerialEntry
+    public double tabInfoRecyclerSlot3WarnPercent = -1.0; // Warn-Prozentwert für Recycler Slot 3
+    
+    // Tab Info Separate Overlays (für jede Information einzeln)
+    @SerialEntry
+    public boolean tabInfoForschungSeparateOverlay = false; // Forschung in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoAmbossSeparateOverlay = false; // Amboss in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoSchmelzofenSeparateOverlay = false; // Schmelzofen in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoJaegerSeparateOverlay = false; // Jäger in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoSeelenSeparateOverlay = false; // Seelen in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoEssenzenSeparateOverlay = false; // Essenzen in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoMachtkristalleSeparateOverlay = false; // Machtkristalle in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot1SeparateOverlay = false; // Recycler Slot 1 in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot2SeparateOverlay = false; // Recycler Slot 2 in separatem Overlay
+    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot3SeparateOverlay = false; // Recycler Slot 3 in separatem Overlay
+    
+    // Tab Info Separate Overlay Positionen (x, y für jede Information)
+    @SerialEntry
+    public int tabInfoForschungX = 10; // X-Position für Forschung Overlay
+    
+    @SerialEntry
+    public int tabInfoForschungY = 10; // Y-Position für Forschung Overlay
+    
+    @SerialEntry
+    public int tabInfoAmbossX = 10;
+    
+    @SerialEntry
+    public int tabInfoAmbossY = 50;
+    
+    @SerialEntry
+    public int tabInfoSchmelzofenX = 10;
+    
+    @SerialEntry
+    public int tabInfoSchmelzofenY = 90;
+    
+    @SerialEntry
+    public int tabInfoJaegerX = 10;
+    
+    @SerialEntry
+    public int tabInfoJaegerY = 130;
+    
+    @SerialEntry
+    public int tabInfoSeelenX = 10;
+    
+    @SerialEntry
+    public int tabInfoSeelenY = 170;
+    
+    @SerialEntry
+    public int tabInfoEssenzenX = 10;
+    
+    @SerialEntry
+    public int tabInfoEssenzenY = 210;
+    
+    @SerialEntry
+    public int tabInfoMachtkristalleX = 10;
+    
+    @SerialEntry
+    public int tabInfoMachtkristalleY = 250;
+    
+    @SerialEntry
+    public int tabInfoRecyclerSlot1X = 10;
+    
+    @SerialEntry
+    public int tabInfoRecyclerSlot1Y = 290;
+    
+    @SerialEntry
+    public int tabInfoRecyclerSlot2X = 10;
+    
+    @SerialEntry
+    public int tabInfoRecyclerSlot2Y = 330;
+    
+    @SerialEntry
+    public int tabInfoRecyclerSlot3X = 10;
+    
+    @SerialEntry
+    public int tabInfoRecyclerSlot3Y = 370;
+    
+    // Tab Info Haupt-Overlay Position
+    @SerialEntry
+    public int tabInfoMainOverlayX = 5; // X-Position für das große Overlay
+    
+    @SerialEntry
+    public int tabInfoMainOverlayY = 5; // Y-Position für das große Overlay
+
 
 
 
