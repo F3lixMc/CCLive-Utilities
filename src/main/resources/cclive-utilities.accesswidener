@@ -1,0 +1,10 @@
+accessWidener v1 named
+
+# Access Widener für Item Viewer
+# Erlaubt direkten Zugriff auf protected Felder von AbstractContainerScreen
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen hoveredSlot Lnet/minecraft/world/inventory/Slot;
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen x I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen y I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen backgroundWidth I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen backgroundHeight I
+

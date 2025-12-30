@@ -1,0 +1,68 @@
+{
+  "items": [
+    {
+      "id": "minecraft:diamond_boots",
+      "customModelData": 149,
+      "name": "Abgenutze Plattenstampfer",
+      "foundAt": [
+        {
+          "floor": "Ebene 28"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": 14.079
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "80.358bj"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "22.625ad"
+        },
+        "material1": {
+          "itemName": "Pferdehaar",
+          "amount": 26
+        },
+        "material2": {
+          "itemName": "Panzer-Schuppe",
+          "amount": 26
+        },
+        "Amboss": {
+          "itemName": "Kettenglied",
+          "amount": 8
+        },
+        "Ressource": {
+          "itemName": "Bambus",
+          "amount": 23
+        }
+      },
+      "blueprint_shop": {
+        "price": {
+          "coin": {
+            "itemName": "Coins",
+            "amount": 42.237
+          },
+          "paper_shreds": {
+            "itemName": "Pergamentfetzen",
+            "amount": 84
+          }
+        }
+      },
+      "info": {
+        "aspect": "",
+        "rarity": "common",
+        "description": "",
+        "type": "Platte",
+        "stats": "Rüstung 30",
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false
+      },
+      "tags": ["blueprint", "armor", "common", "boots"]
+    }
+  ]
+}

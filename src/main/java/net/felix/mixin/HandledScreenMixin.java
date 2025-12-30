@@ -24,8 +24,22 @@ public abstract class HandledScreenMixin {
      * Injects at the very end of the render method to ensure our overlays are drawn last
      * This preserves all normal rendering while ensuring our overlays appear above tooltips
      */
+    // Debug: Letzter erkannter Screen (um Logs zu reduzieren)
+    private static String lastDetectedScreen = "";
+    
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        // DEBUG: Logge Inventar-Erkennung (Kiste) nur wenn sich der Screen ändert
+        HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+        String currentScreen = screen.getClass().getSimpleName();
+        if (!currentScreen.equals(lastDetectedScreen)) {
+            System.out.println("[ItemViewer] Inventar erkannt: HandledScreen (Kiste) - " + currentScreen);
+            lastDetectedScreen = currentScreen;
+        }
+        
+        // Update mouse position for Item Viewer
+        net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+        
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
         
@@ -58,18 +72,42 @@ public abstract class HandledScreenMixin {
         
         // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
         renderMKLevelOverlay(context);
+        
+        // Render Item Viewer overlay (nach allen anderen Overlays, damit es über dem dunklen Hintergrund liegt)
+        renderItemViewer(context, mouseX, mouseY);
     }
     
     /**
-     * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory
+     * Rendert den Item Viewer Overlay
+     */
+    private void renderItemViewer(DrawContext context, int mouseX, int mouseY) {
+        try {
+            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+            
+            // Rendere Item-Viewer (wird nur gerendert wenn sichtbar)
+            net.felix.utilities.ItemViewer.ItemViewerUtility.renderItemViewerInScreen(context, client, screen, mouseX, mouseY);
+        } catch (Exception e) {
+            // Ignore rendering errors
+        }
+    }
+    
+    /**
+     * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory or Essence Harvester UI (Glyph "㮌")
      */
     private void renderMKLevelOverlay(DrawContext context) {
         try {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
             net.minecraft.text.Text titleText = screen.getTitle();
-            String title = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
             
-            if (title.contains("Machtkristalle Verbessern")) {
+            // Prüfe direkt auf dem Text-Objekt (bevor getPlainTextFromText Unicode-Zeichen entfernt)
+            String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
+            String titlePlain = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
+            
+            // Prüfe sowohl "Machtkristalle Verbessern" als auch das Glyph "㮌" (Essence Harvester UI)
+            // Verwende titleWithUnicode für die Glyph-Prüfung, da getPlainTextFromText Unicode entfernt
+            if (titlePlain.contains("Machtkristalle Verbessern") || 
+                ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode)) {
                 // Get actual inventory dimensions from the screen using shadow fields
                 net.felix.utilities.Overall.InformationenUtility.renderMKLevelOverlay(context, net.minecraft.client.MinecraftClient.getInstance(), x, y, backgroundWidth, backgroundHeight);
             }
@@ -83,6 +121,11 @@ public abstract class HandledScreenMixin {
      */
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        // Handle clicks on Item Viewer buttons
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+        }
+        
         // Handle clicks on the Hide Uncraftable button ONLY in blueprint inventories
         if (isBlueprintInventory()) {
             if (handleHideUncraftableButtonClick(mouseX, mouseY, button)) {
