@@ -47,6 +47,74 @@ public class OverlayEditorScreen extends Screen {
         initializeOverlays();
     }
     
+    /**
+     * Initialisiert die Overlays neu (z.B. wenn sich Config-Werte ändern)
+     */
+    public void refreshOverlays() {
+        // Entferne alle TabInfo-Overlays aus der Liste
+        overlays.removeIf(overlay -> overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay);
+        
+        // Füge TabInfo-Overlays wieder hinzu (basierend auf aktuellen Config-Werten)
+        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
+            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
+            TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
+            if (mainOverlay.isEnabled()) {
+                overlays.add(mainOverlay);
+            }
+            
+            // Separate Overlays (nur wenn aktiviert)
+            TabInfoSeparateDraggableOverlay forschungOverlay = new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung");
+            if (forschungOverlay.isEnabled()) {
+                overlays.add(forschungOverlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay ambossOverlay = new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss");
+            if (ambossOverlay.isEnabled()) {
+                overlays.add(ambossOverlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay schmelzofenOverlay = new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen");
+            if (schmelzofenOverlay.isEnabled()) {
+                overlays.add(schmelzofenOverlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay jaegerOverlay = new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger");
+            if (jaegerOverlay.isEnabled()) {
+                overlays.add(jaegerOverlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay seelenOverlay = new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen");
+            if (seelenOverlay.isEnabled()) {
+                overlays.add(seelenOverlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay essenzenOverlay = new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen");
+            if (essenzenOverlay.isEnabled()) {
+                overlays.add(essenzenOverlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay machtkristalleOverlay = new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle");
+            if (machtkristalleOverlay.isEnabled()) {
+                overlays.add(machtkristalleOverlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay recyclerSlot1Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1");
+            if (recyclerSlot1Overlay.isEnabled()) {
+                overlays.add(recyclerSlot1Overlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay recyclerSlot2Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2");
+            if (recyclerSlot2Overlay.isEnabled()) {
+                overlays.add(recyclerSlot2Overlay);
+            }
+            
+            TabInfoSeparateDraggableOverlay recyclerSlot3Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3");
+            if (recyclerSlot3Overlay.isEnabled()) {
+                overlays.add(recyclerSlot3Overlay);
+            }
+        }
+    }
+    
     private void initializeOverlays() {
         // Check if we're in a chat screen
         boolean isInChatScreen = isInChatScreen();
@@ -104,6 +172,11 @@ public class OverlayEditorScreen extends Screen {
                     overlays.add(new MiningLumberjackDraggableOverlay());
                 }
                 
+                // Collection overlay - only available in Overworld (Farmworld) when not in inventory
+                if (isInOverworld() && !isInventoryOpen()) {
+                    overlays.add(new CollectionDraggableOverlay());
+                }
+                
                 // MKLevel overlay - only available in "Machtkristalle Verbessern" inventory
                 if (isInMKLevelInventory()) {
                     overlays.add(new MKLevelDraggableOverlay());
@@ -118,39 +191,61 @@ public class OverlayEditorScreen extends Screen {
         
         // Tab Info Overlays - immer verfügbar wenn aktiviert
         if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
-            // Haupt-Overlay
-            overlays.add(new TabInfoMainDraggableOverlay());
+            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
+            TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
+            if (mainOverlay.isEnabled()) {
+                overlays.add(mainOverlay);
+            }
             
             // Separate Overlays (nur wenn aktiviert)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
+            TabInfoSeparateDraggableOverlay forschungOverlay = new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung");
+            if (forschungOverlay.isEnabled()) {
+                overlays.add(forschungOverlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
+            
+            TabInfoSeparateDraggableOverlay ambossOverlay = new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss");
+            if (ambossOverlay.isEnabled()) {
+                overlays.add(ambossOverlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
+            
+            TabInfoSeparateDraggableOverlay schmelzofenOverlay = new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen");
+            if (schmelzofenOverlay.isEnabled()) {
+                overlays.add(schmelzofenOverlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
+            
+            TabInfoSeparateDraggableOverlay jaegerOverlay = new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger");
+            if (jaegerOverlay.isEnabled()) {
+                overlays.add(jaegerOverlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
+            
+            TabInfoSeparateDraggableOverlay seelenOverlay = new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen");
+            if (seelenOverlay.isEnabled()) {
+                overlays.add(seelenOverlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
+            
+            TabInfoSeparateDraggableOverlay essenzenOverlay = new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen");
+            if (essenzenOverlay.isEnabled()) {
+                overlays.add(essenzenOverlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
+            
+            TabInfoSeparateDraggableOverlay machtkristalleOverlay = new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle");
+            if (machtkristalleOverlay.isEnabled()) {
+                overlays.add(machtkristalleOverlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
+            
+            TabInfoSeparateDraggableOverlay recyclerSlot1Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1");
+            if (recyclerSlot1Overlay.isEnabled()) {
+                overlays.add(recyclerSlot1Overlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
+            
+            TabInfoSeparateDraggableOverlay recyclerSlot2Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2");
+            if (recyclerSlot2Overlay.isEnabled()) {
+                overlays.add(recyclerSlot2Overlay);
             }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
+            
+            TabInfoSeparateDraggableOverlay recyclerSlot3Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3");
+            if (recyclerSlot3Overlay.isEnabled()) {
+                overlays.add(recyclerSlot3Overlay);
             }
         }
     }
@@ -369,7 +464,16 @@ public class OverlayEditorScreen extends Screen {
         // Render title
         titleWidget.render(context, mouseX, mouseY, delta);
         
-        // Render all overlays in edit mode
+        // Render all overlays in edit mode (nur wenn enabled)
+        // Entferne disabled TabInfo-Overlays aus der Liste bei jedem Render, um sicherzustellen, dass sie nicht angezeigt werden
+        // Dies stellt sicher, dass Overlays sofort verschwinden, wenn sie deaktiviert werden
+        overlays.removeIf(overlay -> {
+            if (overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay) {
+                return !overlay.isEnabled();
+            }
+            return false;
+        });
+        
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isEnabled()) {
                 overlay.renderInEditMode(context, mouseX, mouseY, delta);
@@ -569,14 +673,19 @@ public class OverlayEditorScreen extends Screen {
                     int screenHeight = client.getWindow().getScaledHeight();
                     int currentY = resizingOverlay.getY();
                     
-                    // Prüfe, ob es das MKLevel-Overlay ist (sollte immer von oben links vergrößern)
+                    // Prüfe, ob es das MKLevel-Overlay oder ein Button-Overlay ist (sollte immer von oben links vergrößern)
                     boolean isMKLevelOverlay = resizingOverlay instanceof MKLevelDraggableOverlay;
+                    boolean isButtonOverlay = resizingOverlay instanceof KitFilterButton1DraggableOverlay ||
+                                             resizingOverlay instanceof KitFilterButton2DraggableOverlay ||
+                                             resizingOverlay instanceof KitFilterButton3DraggableOverlay ||
+                                             resizingOverlay instanceof HideUncraftableButtonDraggableOverlay ||
+                                             resizingOverlay instanceof HideWrongClassButtonDraggableOverlay;
                     
                     int newX;
                     int newY = currentY;
                     
-                    if (isMKLevelOverlay) {
-                        // Für MKLevel: Obere linke Ecke immer fixiert
+                    if (isMKLevelOverlay || isButtonOverlay) {
+                        // Für MKLevel und Buttons: Obere linke Ecke immer fixiert
                         newX = resizeStartOverlayX;
                         // Stelle sicher, dass das Overlay nicht aus dem Bildschirm ragt
                         if (newX + newWidth > screenWidth) {
@@ -702,10 +811,58 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void resetAllOverlays() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            return;
+        }
+        
+        // Reset all overlays to default positions
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isEnabled()) {
                 overlay.resetToDefault();
             }
+        }
+        
+        // After resetting, ensure all overlays are within screen bounds
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+        
+        // Adjust all overlay positions to keep them within bounds
+        for (DraggableOverlay overlay : overlays) {
+            if (overlay.isEnabled()) {
+                adjustOverlayPosition(overlay, screenWidth, screenHeight);
+            }
+        }
+    }
+    
+    /**
+     * Adjusts a single overlay position to keep it within screen bounds
+     */
+    private void adjustOverlayPosition(DraggableOverlay overlay, int screenWidth, int screenHeight) {
+        int x = overlay.getX();
+        int y = overlay.getY();
+        int width = overlay.getWidth();
+        int height = overlay.getHeight();
+        
+        // Adjust X position if overlay is outside screen
+        int newX = x;
+        if (x < 0) {
+            newX = 0;
+        } else if (x + width > screenWidth) {
+            newX = Math.max(0, screenWidth - width);
+        }
+        
+        // Adjust Y position if overlay is outside screen
+        int newY = y;
+        if (y < 0) {
+            newY = 0;
+        } else if (y + height > screenHeight) {
+            newY = Math.max(0, screenHeight - height);
+        }
+        
+        // Update position if adjustment is needed
+        if (newX != x || newY != y) {
+            overlay.setPosition(newX, newY);
         }
     }
     
@@ -1005,6 +1162,8 @@ public class OverlayEditorScreen extends Screen {
             CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
         } else if (overlay instanceof MKLevelDraggableOverlay) {
             CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled;
+        } else if (overlay instanceof CollectionDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
         }
     }
 }

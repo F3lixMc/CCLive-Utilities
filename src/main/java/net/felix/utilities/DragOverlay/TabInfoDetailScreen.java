@@ -81,7 +81,11 @@ public class TabInfoDetailScreen extends Screen {
     
     private void renderSettingsBox(DrawContext context, int mouseX, int mouseY) {
         int boxWidth = 300;
-        int boxHeight = 180; // Höher für zusätzliche Optionen
+        // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
+        boolean hasIconOption = configKey.equals("amboss") || configKey.equals("schmelzofen") || 
+                               configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || 
+                               configKey.equals("recyclerSlot3");
+        int boxHeight = hasIconOption ? 250 : 210;
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -115,11 +119,11 @@ public class TabInfoDetailScreen extends Screen {
             
             // Checkmark wenn aktiviert
             if (showPercent) {
-                // Zeichne Häkchen (✓)
+                // Zeichne Häkchen (✓) - einfacher und klarer Algorithmus
                 int checkX = checkboxX + 2;
                 int checkY = checkboxY + 2;
                 int checkSize = checkboxSize - 4;
-                // Zeichne Häkchen als zwei Linien
+                // Linke Linie (von oben-links nach mitte)
                 for (int i = 0; i < checkSize / 2; i++) {
                     int px = checkX + i;
                     int py = checkY + checkSize / 2 + i;
@@ -127,6 +131,7 @@ public class TabInfoDetailScreen extends Screen {
                         context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
                     }
                 }
+                // Rechte Linie (von mitte nach unten-rechts)
                 for (int i = 0; i < checkSize / 2; i++) {
                     int px = checkX + checkSize / 2 + i;
                     int py = checkY + checkSize - 2 - i;
@@ -173,8 +178,69 @@ public class TabInfoDetailScreen extends Screen {
                 boxX + 10, boxY + 35, 0xFF808080, false);
         }
         
+        // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
+        if (hasIconOption) {
+            int iconButtonY = boxY + (supportsPercent ? 110 : 60);
+            int iconButtonX = boxX + 10;
+            int iconButtonWidth = 280;
+            int iconButtonHeight = 20;
+            
+            boolean showIcon = getShowIcon();
+            String iconButtonText = showIcon ? "Icon anzeigen: AN" : "Icon anzeigen: AUS";
+            int iconButtonColor = showIcon ? 0xFF00FF00 : 0xFFFF0000;
+            
+            // Button Hintergrund
+            context.fill(iconButtonX, iconButtonY, iconButtonX + iconButtonWidth, iconButtonY + iconButtonHeight, 0xFF404040);
+            context.drawBorder(iconButtonX, iconButtonY, iconButtonWidth, iconButtonHeight, iconButtonColor);
+            
+            // Button Text
+            int iconTextX = iconButtonX + (iconButtonWidth - textRenderer.getWidth(iconButtonText)) / 2;
+            int iconTextY = iconButtonY + (iconButtonHeight - textRenderer.fontHeight) / 2 + 1;
+            context.drawText(textRenderer, iconButtonText, iconTextX, iconTextY, 0xFFFFFFFF, false);
+        }
+        
+        // Hintergrund Checkbox (für alle Informationen)
+        int backgroundCheckboxY = boxY + (hasIconOption ? 140 : (supportsPercent ? 110 : 60));
+        int backgroundCheckboxX = boxX + 10;
+        int backgroundCheckboxSize = 10;
+        int backgroundCheckboxYPos = backgroundCheckboxY;
+        
+        boolean showBackground = getShowBackground();
+        
+        // Checkbox-Hintergrund
+        context.fill(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxX + backgroundCheckboxSize, backgroundCheckboxYPos + backgroundCheckboxSize, 0xFF808080);
+        context.drawBorder(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxSize, backgroundCheckboxSize, 0xFFFFFFFF);
+        
+        // Checkmark wenn aktiviert
+        if (showBackground) {
+            // Zeichne Häkchen (✓) - einfacher und klarer Algorithmus
+            int checkX = backgroundCheckboxX + 2;
+            int checkY = backgroundCheckboxYPos + 2;
+            int checkSize = backgroundCheckboxSize - 4;
+            // Linke Linie (von oben-links nach mitte)
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + i;
+                int py = checkY + checkSize / 2 + i;
+                if (px < backgroundCheckboxX + backgroundCheckboxSize - 2 && py < backgroundCheckboxYPos + backgroundCheckboxSize - 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+            // Rechte Linie (von mitte nach unten-rechts)
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + checkSize / 2 + i;
+                int py = checkY + checkSize - 2 - i;
+                if (px < backgroundCheckboxX + backgroundCheckboxSize - 2 && py >= backgroundCheckboxYPos + 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+        }
+        
+        // Text
+        context.drawText(textRenderer, "Hintergrund anzeigen", backgroundCheckboxX + backgroundCheckboxSize + 5, backgroundCheckboxYPos + 1, 
+            showBackground ? 0xFFFFFFFF : 0xFF808080, false);
+        
         // Separate Overlay Button (für alle Informationen)
-        int buttonY = boxY + (supportsPercent ? 110 : 60);
+        int buttonY = boxY + (hasIconOption ? 170 : (supportsPercent ? 140 : 90));
         int buttonX = boxX + 10;
         int buttonWidth = 280;
         int buttonHeight = 20;
@@ -261,7 +327,11 @@ public class TabInfoDetailScreen extends Screen {
         }
         
         int boxWidth = 300;
-        int boxHeight = 180;
+        // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
+        boolean hasIconOption = configKey.equals("amboss") || configKey.equals("schmelzofen") || 
+                               configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || 
+                               configKey.equals("recyclerSlot3");
+        int boxHeight = hasIconOption ? 250 : 210;
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -318,8 +388,54 @@ public class TabInfoDetailScreen extends Screen {
             }
         }
         
+        // Berechne hasIconOption für Click-Handler (gleiche Logik wie in renderSettingsBox)
+        boolean hasIconOptionClick = configKey.equals("amboss") || configKey.equals("schmelzofen") || 
+                                    configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || 
+                                    configKey.equals("recyclerSlot3");
+        
+        // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
+        if (hasIconOptionClick) {
+            int iconButtonY = boxY + (supportsPercent ? 110 : 60);
+            int iconButtonX = boxX + 10;
+            int iconButtonWidth = 280;
+            int iconButtonHeight = 20;
+            
+            boolean clickedOnIconButton = (mouseX >= iconButtonX && mouseX <= iconButtonX + iconButtonWidth &&
+                                          mouseY >= iconButtonY && mouseY <= iconButtonY + iconButtonHeight);
+            
+            if (clickedOnIconButton) {
+                // Toggle Icon/Text
+                boolean newValue = !getShowIcon();
+                setShowIcon(newValue);
+                CCLiveUtilitiesConfig.HANDLER.save();
+                return true;
+            }
+        }
+        
+        // Hintergrund Checkbox (für alle Informationen)
+        int backgroundCheckboxY = boxY + (hasIconOptionClick ? 140 : (supportsPercent ? 110 : 60));
+        int backgroundCheckboxX = boxX + 10;
+        int backgroundCheckboxSize = 10;
+        int textX = backgroundCheckboxX + backgroundCheckboxSize + 5;
+        int textWidth = boxWidth - textX - 10;
+        int textHeight = textRenderer.fontHeight;
+        
+        // Prüfe ob Klick auf Checkbox oder Text
+        boolean clickedOnBackgroundCheckbox = (mouseX >= backgroundCheckboxX && mouseX <= backgroundCheckboxX + backgroundCheckboxSize &&
+                                             mouseY >= backgroundCheckboxY && mouseY <= backgroundCheckboxY + backgroundCheckboxSize);
+        boolean clickedOnBackgroundText = (mouseX >= textX && mouseX <= textX + textWidth &&
+                                          mouseY >= backgroundCheckboxY && mouseY <= backgroundCheckboxY + textHeight);
+        
+        if (clickedOnBackgroundCheckbox || clickedOnBackgroundText) {
+            // Toggle Hintergrund
+            boolean newValue = !getShowBackground();
+            setShowBackground(newValue);
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
         // Separate Overlay Button
-        int buttonY = boxY + (supportsPercent ? 110 : 60);
+        int buttonY = boxY + (hasIconOptionClick ? 170 : (supportsPercent ? 140 : 90));
         int buttonX = boxX + 10;
         int buttonWidth = 280;
         int buttonHeight = 20;
@@ -397,6 +513,11 @@ public class TabInfoDetailScreen extends Screen {
             case "recyclerSlot3":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay = value;
                 break;
+        }
+        
+        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
+        if (parent instanceof OverlayEditorScreen) {
+            ((OverlayEditorScreen) parent).refreshOverlays();
         }
     }
     
@@ -510,8 +631,132 @@ public class TabInfoDetailScreen extends Screen {
         }
     }
     
+    private boolean getShowIcon() {
+        switch (configKey) {
+            case "amboss":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+            case "schmelzofen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+            case "recyclerSlot1":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+            case "recyclerSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+            case "recyclerSlot3":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+            default:
+                return false;
+        }
+    }
+    
+    private void setShowIcon(boolean value) {
+        switch (configKey) {
+            case "amboss":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon = value;
+                break;
+            case "schmelzofen":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon = value;
+                break;
+            case "recyclerSlot1":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon = value;
+                break;
+            case "recyclerSlot2":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon = value;
+                break;
+            case "recyclerSlot3":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon = value;
+                break;
+        }
+    }
+    
+    private boolean getShowBackground() {
+        switch (configKey) {
+            case "forschung":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground;
+            case "amboss":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground;
+            case "schmelzofen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground;
+            case "jaeger":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground;
+            case "seelen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground;
+            case "essenzen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground;
+            case "machtkristalle":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground;
+            case "recyclerSlot1":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowBackground;
+            case "recyclerSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowBackground;
+            case "recyclerSlot3":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowBackground;
+            default:
+                return true;
+        }
+    }
+    
+    private void setShowBackground(boolean value) {
+        switch (configKey) {
+            case "forschung":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground = value;
+                break;
+            case "amboss":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground = value;
+                break;
+            case "schmelzofen":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground = value;
+                break;
+            case "jaeger":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground = value;
+                break;
+            case "seelen":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground = value;
+                break;
+            case "essenzen":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground = value;
+                break;
+            case "machtkristalle":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground = value;
+                break;
+            case "recyclerSlot1":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowBackground = value;
+                break;
+            case "recyclerSlot2":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowBackground = value;
+                break;
+            case "recyclerSlot3":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowBackground = value;
+                break;
+        }
+    }
+    
     @Override
     public void close() {
+        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
+        // Gehe durch die Parent-Hierarchie, um das OverlayEditorScreen zu finden
+        Screen currentParent = parent;
+        while (currentParent != null) {
+            if (currentParent instanceof OverlayEditorScreen) {
+                ((OverlayEditorScreen) currentParent).refreshOverlays();
+                break;
+            } else if (currentParent instanceof TabInfoSettingsScreen) {
+                // TabInfoSettingsScreen hat auch ein parent, das das OverlayEditorScreen sein könnte
+                // Wir müssen das parent des TabInfoSettingsScreen prüfen
+                try {
+                    java.lang.reflect.Field parentField = TabInfoSettingsScreen.class.getDeclaredField("parent");
+                    parentField.setAccessible(true);
+                    Screen settingsParent = (Screen) parentField.get(currentParent);
+                    if (settingsParent instanceof OverlayEditorScreen) {
+                        ((OverlayEditorScreen) settingsParent).refreshOverlays();
+                    }
+                } catch (Exception e) {
+                    // Fallback: Versuche einfach das parent zu verwenden
+                }
+                break;
+            }
+            break;
+        }
+        
         if (client != null) {
             client.setScreen(parent);
         }

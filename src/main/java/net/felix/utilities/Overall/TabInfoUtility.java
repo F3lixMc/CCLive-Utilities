@@ -4,8 +4,11 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
+import net.felix.CCLiveUtilities;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +26,11 @@ public class TabInfoUtility {
 	private static boolean isInitialized = false;
 	private static long lastTabListCheck = 0; // Cache für Tab-Liste Checks (jede 1 Sekunde)
 	private static boolean showOverlays = true; // Overlay-Sichtbarkeit
+	
+	// Icon Identifier für Amboss, Schmelzofen und Recycler
+	private static final Identifier AMBOSS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
+	private static final Identifier SCHMELZOFEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
+	private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
 	
 	// Datenstrukturen für die verschiedenen Informationen
 	public static class CapacityData {
@@ -583,13 +591,19 @@ public class TabInfoUtility {
 			boolean showPercent;
 			boolean showWarning; // Zeigt an, ob Warnung angezeigt werden soll
 			String configKey; // Für Warn-Prozentwert-Prüfung
+			boolean showIcon; // Zeigt an, ob Icon statt Text angezeigt werden soll
 			
 			LineWithPercent(String text, String percentText, boolean showPercent, boolean showWarning, String configKey) {
+				this(text, percentText, showPercent, showWarning, configKey, false);
+			}
+			
+			LineWithPercent(String text, String percentText, boolean showPercent, boolean showWarning, String configKey, boolean showIcon) {
 				this.text = text;
 				this.percentText = percentText;
 				this.showPercent = showPercent;
 				this.showWarning = showWarning;
 				this.configKey = configKey;
+				this.showIcon = showIcon;
 			}
 		}
 		
@@ -618,9 +632,11 @@ public class TabInfoUtility {
 				double currentPercent = ((double)ambossKapazitaet.current / (double)ambossKapazitaet.max) * 100.0;
 				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent;
 				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-				lines.add(new LineWithPercent("Amboss: " + ambossKapazitaet.getDisplayString(), percent, showPercent, showWarning, "amboss"));
+				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+				String displayText = showIcon ? ambossKapazitaet.getDisplayString() : "Amboss: " + ambossKapazitaet.getDisplayString();
+				lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "amboss", showIcon));
 			} else if (ambossKapazitaet.current != -1 || ambossKapazitaet.max != -1) {
-				lines.add(new LineWithPercent("Amboss: " + ambossKapazitaet.getDisplayString() + " (Debug)", null, false, false, null));
+				lines.add(new LineWithPercent("Amboss: " + ambossKapazitaet.getDisplayString() + " (Debug)", null, false, false, null, false));
 			}
 		}
 		
@@ -636,9 +652,11 @@ public class TabInfoUtility {
 				double currentPercent = ((double)schmelzofenKapazitaet.current / (double)schmelzofenKapazitaet.max) * 100.0;
 				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent;
 				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-				lines.add(new LineWithPercent("Schmelzofen: " + schmelzofenKapazitaet.getDisplayString(), percent, showPercent, showWarning, "schmelzofen"));
+				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+				String displayText = showIcon ? schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + schmelzofenKapazitaet.getDisplayString();
+				lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "schmelzofen", showIcon));
 			} else if (schmelzofenKapazitaet.current != -1 || schmelzofenKapazitaet.max != -1) {
-				lines.add(new LineWithPercent("Schmelzofen: " + schmelzofenKapazitaet.getDisplayString() + " (Debug)", null, false, false, null));
+				lines.add(new LineWithPercent("Schmelzofen: " + schmelzofenKapazitaet.getDisplayString() + " (Debug)", null, false, false, null, false));
 			}
 		}
 		
@@ -717,10 +735,12 @@ public class TabInfoUtility {
 				if (showPercent) {
 					percent = calculatePercent(recyclerSlot1.current, recyclerSlot1.max);
 				}
-				double currentPercent = ((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1WarnPercent;
-				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-				lines.add(new LineWithPercent("Recycler Slot 1: " + recyclerSlot1.getDisplayString(), percent, showPercent, showWarning, "recyclerSlot1"));
+			double currentPercent = ((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1WarnPercent;
+			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+			String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
+			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot1", showIcon));
 			} else if (recyclerSlot1.current != -1 || recyclerSlot1.max != -1) {
 				lines.add(new LineWithPercent("Recycler Slot 1: " + recyclerSlot1.getDisplayString() + " (Debug)", null, false, false, null));
 			}
@@ -733,10 +753,12 @@ public class TabInfoUtility {
 				if (showPercent) {
 					percent = calculatePercent(recyclerSlot2.current, recyclerSlot2.max);
 				}
-				double currentPercent = ((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2WarnPercent;
-				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-				lines.add(new LineWithPercent("Recycler Slot 2: " + recyclerSlot2.getDisplayString(), percent, showPercent, showWarning, "recyclerSlot2"));
+			double currentPercent = ((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2WarnPercent;
+			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+			String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
+			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot2", showIcon));
 			} else if (recyclerSlot2.current != -1 || recyclerSlot2.max != -1) {
 				lines.add(new LineWithPercent("Recycler Slot 2: " + recyclerSlot2.getDisplayString() + " (Debug)", null, false, false, null));
 			}
@@ -749,10 +771,12 @@ public class TabInfoUtility {
 				if (showPercent) {
 					percent = calculatePercent(recyclerSlot3.current, recyclerSlot3.max);
 				}
-				double currentPercent = ((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3WarnPercent;
-				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-				lines.add(new LineWithPercent("Recycler Slot 3: " + recyclerSlot3.getDisplayString(), percent, showPercent, showWarning, "recyclerSlot3"));
+			double currentPercent = ((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3WarnPercent;
+			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+			String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
+			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot3", showIcon));
 			} else if (recyclerSlot3.current != -1 || recyclerSlot3.max != -1) {
 				lines.add(new LineWithPercent("Recycler Slot 3: " + recyclerSlot3.getDisplayString() + " (Debug)", null, false, false, null));
 			}
@@ -767,7 +791,16 @@ public class TabInfoUtility {
 		// Berechne die maximale Breite des Textes (inklusive Prozente und Warnung direkt danach)
 		int maxWidth = 0;
 		for (LineWithPercent line : lines) {
-			int width = client.textRenderer.getWidth(line.text);
+			int width = 0;
+			// Wenn Icon aktiviert ist, füge Icon-Breite hinzu
+			if (line.showIcon && (line.configKey != null && ("amboss".equals(line.configKey) || "schmelzofen".equals(line.configKey) || 
+			                                                   "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
+			                                                   "recyclerSlot3".equals(line.configKey)))) {
+				int iconSize = client.textRenderer.fontHeight;
+				width += iconSize + 2; // Icon + Abstand
+				width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+			}
+			width += client.textRenderer.getWidth(line.text);
 			if (line.showPercent && line.percentText != null) {
 				width += client.textRenderer.getWidth(" " + line.percentText); // Abstand + Prozente
 			}
@@ -791,8 +824,10 @@ public class TabInfoUtility {
 		int xPosition = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
 		int yPosition = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY;
 		
-		// Zeichne semi-transparenten Hintergrund
-		context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+		// Zeichne semi-transparenten Hintergrund (wenn aktiviert)
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+			context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+		}
 		
 		// Zeichne alle Zeilen
 		int currentY = yPosition + PADDING;
@@ -815,18 +850,108 @@ public class TabInfoUtility {
 			Text textComponent = Text.literal(line.text);
 			
 			try {
-				// Zeichne Haupttext
-				context.drawText(
-					client.textRenderer,
-					textComponent,
-					xPosition + PADDING,
-					currentY,
-					textColor,
-					true // Mit Schatten für bessere Lesbarkeit
-				);
+				int currentX = xPosition + PADDING;
+				
+				// Zeichne Icon statt Text, wenn aktiviert (für Amboss, Schmelzofen und Recycler)
+				if (line.showIcon && (line.configKey != null)) {
+					int iconSize = client.textRenderer.fontHeight; // Icon-Größe = Text-Höhe
+					// Zentriere Icon vertikal: Text-Baseline ist unten, also verschiebe Icon nach oben
+					int iconY = currentY - iconSize + client.textRenderer.fontHeight;
+					Identifier iconToUse = null;
+					String fallbackText = null;
+					
+					if ("amboss".equals(line.configKey)) {
+						iconToUse = AMBOSS_ICON;
+						fallbackText = "Amboss: ";
+					} else if ("schmelzofen".equals(line.configKey)) {
+						iconToUse = SCHMELZOFEN_ICON;
+						fallbackText = "Schmelzofen: ";
+					} else if ("recyclerSlot1".equals(line.configKey)) {
+						iconToUse = RECYCLER_ICON;
+						fallbackText = "Recycler Slot 1: ";
+					} else if ("recyclerSlot2".equals(line.configKey)) {
+						iconToUse = RECYCLER_ICON;
+						fallbackText = "Recycler Slot 2: ";
+					} else if ("recyclerSlot3".equals(line.configKey)) {
+						iconToUse = RECYCLER_ICON;
+						fallbackText = "Recycler Slot 3: ";
+					}
+					
+					if (iconToUse != null) {
+						boolean iconDrawn = false;
+						try {
+							context.drawTexture(
+								RenderPipelines.GUI_TEXTURED,
+								iconToUse,
+								currentX, iconY,
+								0.0f, 0.0f,
+								iconSize, iconSize,
+								iconSize, iconSize
+							);
+							currentX += iconSize + 2; // Abstand nach Icon
+							iconDrawn = true;
+						} catch (Exception e) {
+							// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
+							if (fallbackText != null) {
+								context.drawText(
+									client.textRenderer,
+									Text.literal(fallbackText),
+									currentX,
+									currentY,
+									textColor,
+									true
+								);
+								currentX += client.textRenderer.getWidth(fallbackText);
+							}
+						}
+						// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert)
+						if (iconDrawn) {
+							context.drawText(
+								client.textRenderer,
+								Text.literal(": "),
+								currentX,
+								currentY,
+								textColor,
+								true
+							);
+							currentX += client.textRenderer.getWidth(": ");
+						}
+						// Zeichne die Werte nach dem Doppelpunkt
+						context.drawText(
+							client.textRenderer,
+							Text.literal(line.text),
+							currentX,
+							currentY,
+							textColor,
+							true
+						);
+						currentX += client.textRenderer.getWidth(line.text);
+					} else {
+						// Fallback: Zeichne normalen Text
+						context.drawText(
+							client.textRenderer,
+							textComponent,
+							currentX,
+							currentY,
+							textColor,
+							true
+						);
+						currentX += client.textRenderer.getWidth(line.text);
+					}
+				} else {
+					// Zeichne Haupttext (inkl. "Amboss:" wenn kein Icon)
+					context.drawText(
+						client.textRenderer,
+						textComponent,
+						currentX,
+						currentY,
+						textColor,
+						true // Mit Schatten für bessere Lesbarkeit
+					);
+					currentX += client.textRenderer.getWidth(line.text);
+				}
 				
 				// Zeichne Prozente in gelb direkt nach dem Text, wenn vorhanden
-				int currentX = xPosition + PADDING + client.textRenderer.getWidth(line.text);
 				if (line.showPercent && line.percentText != null) {
 					Text percentComponent = Text.literal(" " + line.percentText);
 					context.drawText(
@@ -914,18 +1039,16 @@ public class TabInfoUtility {
 	 * Rendert separate Overlays für einzelne Informationen
 	 */
 	private static void renderSeparateOverlays(DrawContext context, MinecraftClient client) {
-		final int PADDING = 5;
 		final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
-		int textColor = 0xFFFFFFFF;
-		int percentColor = 0xFFFFFF00;
 		
 		// Forschung
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung && 
 		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
 			renderSingleInfoOverlay(context, client, "Forschung: " + forschung.getDisplayString(), 
-				null, false, false, null,
+				null, false, false, null, false,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungY);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground);
 		}
 		
 		// Amboss
@@ -940,10 +1063,13 @@ public class TabInfoUtility {
 				((double)ambossKapazitaet.current / (double)ambossKapazitaet.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			renderSingleInfoOverlay(context, client, "Amboss: " + ambossKapazitaet.getDisplayString(), 
-				percent, showPercent, showWarning, "amboss",
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+			String displayText = showIcon ? ambossKapazitaet.getDisplayString() : "Amboss: " + ambossKapazitaet.getDisplayString();
+			renderSingleInfoOverlay(context, client, displayText, 
+				percent, showPercent, showWarning, "amboss", showIcon,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossY);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground);
 		}
 		
 		// Schmelzofen
@@ -958,10 +1084,13 @@ public class TabInfoUtility {
 				((double)schmelzofenKapazitaet.current / (double)schmelzofenKapazitaet.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			renderSingleInfoOverlay(context, client, "Schmelzofen: " + schmelzofenKapazitaet.getDisplayString(), 
-				percent, showPercent, showWarning, "schmelzofen",
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+			String displayText = showIcon ? schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + schmelzofenKapazitaet.getDisplayString();
+			renderSingleInfoOverlay(context, client, displayText, 
+				percent, showPercent, showWarning, "schmelzofen", showIcon,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenY);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground);
 		}
 		
 		// Jäger
@@ -977,9 +1106,10 @@ public class TabInfoUtility {
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
 			renderSingleInfoOverlay(context, client, "Jäger: " + jaegerKapazitaet.getDisplayString(), 
-				percent, showPercent, showWarning, "jaeger",
+				percent, showPercent, showWarning, "jaeger", false,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerY);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground);
 		}
 		
 		// Seelen
@@ -995,9 +1125,10 @@ public class TabInfoUtility {
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
 			renderSingleInfoOverlay(context, client, "Seelen: " + seelenKapazitaet.getDisplayString(), 
-				percent, showPercent, showWarning, "seelen",
+				percent, showPercent, showWarning, "seelen", false,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenY);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground);
 		}
 		
 		// Essenzen
@@ -1013,9 +1144,10 @@ public class TabInfoUtility {
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
 			renderSingleInfoOverlay(context, client, "Essenzen: " + essenzenKapazitaet.getDisplayString(), 
-				percent, showPercent, showWarning, "essenzen",
+				percent, showPercent, showWarning, "essenzen", false,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenY);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground);
 		}
 		
 		// Machtkristalle
@@ -1026,9 +1158,10 @@ public class TabInfoUtility {
 				if (entry.getValue().isValid()) {
 					renderSingleInfoOverlay(context, client, 
 						"Machtkristall " + entry.getKey() + ": " + entry.getValue().getDisplayString(), 
-						null, false, false, null,
+						null, false, false, null, false,
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleX,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleY + yOffset);
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleY + yOffset,
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground);
 					yOffset += LINE_HEIGHT;
 				}
 			}
@@ -1046,10 +1179,13 @@ public class TabInfoUtility {
 				((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1WarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			renderSingleInfoOverlay(context, client, "Recycler Slot 1: " + recyclerSlot1.getDisplayString(), 
-				percent, showPercent, showWarning, "recyclerSlot1",
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+			String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
+			renderSingleInfoOverlay(context, client, displayText, 
+				percent, showPercent, showWarning, "recyclerSlot1", showIcon,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1X,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Y);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Y,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowBackground);
 		}
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
 		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay) {
@@ -1062,10 +1198,13 @@ public class TabInfoUtility {
 				((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2WarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			renderSingleInfoOverlay(context, client, "Recycler Slot 2: " + recyclerSlot2.getDisplayString(), 
-				percent, showPercent, showWarning, "recyclerSlot2",
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+			String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
+			renderSingleInfoOverlay(context, client, displayText, 
+				percent, showPercent, showWarning, "recyclerSlot2", showIcon,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2X,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Y);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Y,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowBackground);
 		}
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
 		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay) {
@@ -1078,10 +1217,13 @@ public class TabInfoUtility {
 				((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3WarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			renderSingleInfoOverlay(context, client, "Recycler Slot 3: " + recyclerSlot3.getDisplayString(), 
-				percent, showPercent, showWarning, "recyclerSlot3",
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+			String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
+			renderSingleInfoOverlay(context, client, displayText, 
+				percent, showPercent, showWarning, "recyclerSlot3", showIcon,
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3X,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Y);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Y,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowBackground);
 		}
 	}
 	
@@ -1091,13 +1233,77 @@ public class TabInfoUtility {
 	private static void renderSingleInfoOverlay(DrawContext context, MinecraftClient client, 
 		String text, String percentText, boolean showPercent, boolean showWarning, String configKey,
 		int xPosition, int yPosition) {
+		renderSingleInfoOverlay(context, client, text, percentText, showPercent, showWarning, configKey, false, xPosition, yPosition);
+	}
+	
+	/**
+	 * Rendert ein einzelnes Overlay für eine Information (mit Icon-Support)
+	 */
+	private static void renderSingleInfoOverlay(DrawContext context, MinecraftClient client, 
+		String text, String percentText, boolean showPercent, boolean showWarning, String configKey,
+		boolean showIcon, int xPosition, int yPosition) {
+		// Standardmäßig Hintergrund anzeigen, wenn nicht spezifiziert
+		boolean showBackground = true;
+		if (configKey != null) {
+			switch (configKey) {
+				case "forschung":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground;
+					break;
+				case "amboss":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground;
+					break;
+				case "schmelzofen":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground;
+					break;
+				case "jaeger":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground;
+					break;
+				case "seelen":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground;
+					break;
+				case "essenzen":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground;
+					break;
+				case "machtkristalle":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground;
+					break;
+				case "recyclerSlot1":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowBackground;
+					break;
+				case "recyclerSlot2":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowBackground;
+					break;
+				case "recyclerSlot3":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowBackground;
+					break;
+			}
+		}
+		renderSingleInfoOverlay(context, client, text, percentText, showPercent, showWarning, configKey, showIcon, xPosition, yPosition, showBackground);
+	}
+	
+	/**
+	 * Rendert ein einzelnes Overlay für eine Information (mit Icon-Support und Hintergrund-Option)
+	 */
+	private static void renderSingleInfoOverlay(DrawContext context, MinecraftClient client, 
+		String text, String percentText, boolean showPercent, boolean showWarning, String configKey,
+		boolean showIcon, int xPosition, int yPosition, boolean showBackground) {
 		final int PADDING = 5;
 		final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
 		int textColor = 0xFFFFFFFF;
 		int percentColor = 0xFFFFFF00;
 		
 		// Berechne Breite
-		int width = client.textRenderer.getWidth(text);
+		int width;
+		if (showIcon && (configKey != null && ("amboss".equals(configKey) || "schmelzofen".equals(configKey) || 
+		                                        "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
+		                                        "recyclerSlot3".equals(configKey)))) {
+			int iconSize = client.textRenderer.fontHeight;
+			width = iconSize + 2; // Icon + Abstand
+			width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+			width += client.textRenderer.getWidth(text); // Werte nach dem Doppelpunkt
+		} else {
+			width = client.textRenderer.getWidth(text);
+		}
 		if (showPercent && percentText != null) {
 			width += client.textRenderer.getWidth(" " + percentText);
 		}
@@ -1107,16 +1313,76 @@ public class TabInfoUtility {
 		int overlayWidth = width + (PADDING * 2);
 		int overlayHeight = LINE_HEIGHT + (PADDING * 2);
 		
-		// Zeichne Hintergrund
-		context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+		// Zeichne Hintergrund (wenn aktiviert)
+		if (showBackground) {
+			context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+		}
 		
 		// Zeichne Text
 		int currentX = xPosition + PADDING;
 		int currentY = yPosition + PADDING;
 		
 		try {
-			context.drawText(client.textRenderer, Text.literal(text), currentX, currentY, textColor, true);
-			currentX += client.textRenderer.getWidth(text);
+			// Zeichne Icon statt Text, wenn aktiviert (für Amboss, Schmelzofen und Recycler)
+			if (showIcon && (configKey != null && ("amboss".equals(configKey) || "schmelzofen".equals(configKey) || 
+			                                        "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
+			                                        "recyclerSlot3".equals(configKey)))) {
+				int iconSize = client.textRenderer.fontHeight;
+				// Zentriere Icon vertikal: Text-Baseline ist unten, also verschiebe Icon nach oben
+				int iconY = currentY - iconSize + client.textRenderer.fontHeight;
+				Identifier iconToUse = null;
+				String fallbackText = null;
+				
+				if ("amboss".equals(configKey)) {
+					iconToUse = AMBOSS_ICON;
+					fallbackText = "Amboss: ";
+				} else if ("schmelzofen".equals(configKey)) {
+					iconToUse = SCHMELZOFEN_ICON;
+					fallbackText = "Schmelzofen: ";
+				} else if ("recyclerSlot1".equals(configKey)) {
+					iconToUse = RECYCLER_ICON;
+					fallbackText = "Recycler Slot 1: ";
+				} else if ("recyclerSlot2".equals(configKey)) {
+					iconToUse = RECYCLER_ICON;
+					fallbackText = "Recycler Slot 2: ";
+				} else if ("recyclerSlot3".equals(configKey)) {
+					iconToUse = RECYCLER_ICON;
+					fallbackText = "Recycler Slot 3: ";
+				}
+				
+				if (iconToUse != null) {
+					try {
+						context.drawTexture(
+							RenderPipelines.GUI_TEXTURED,
+							iconToUse,
+							currentX, iconY,
+							0.0f, 0.0f,
+							iconSize, iconSize,
+							iconSize, iconSize
+						);
+						currentX += iconSize + 2; // Abstand nach Icon
+					} catch (Exception e) {
+						// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
+						if (fallbackText != null) {
+							context.drawText(client.textRenderer, Text.literal(fallbackText), currentX, currentY, textColor, true);
+							currentX += client.textRenderer.getWidth(fallbackText);
+						}
+					}
+					// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert)
+					context.drawText(client.textRenderer, Text.literal(": "), currentX, currentY, textColor, true);
+					currentX += client.textRenderer.getWidth(": ");
+					// Zeichne die Werte nach dem Doppelpunkt
+					context.drawText(client.textRenderer, Text.literal(text), currentX, currentY, textColor, true);
+					currentX += client.textRenderer.getWidth(text);
+				} else {
+					// Fallback: Zeichne normalen Text
+					context.drawText(client.textRenderer, Text.literal(text), currentX, currentY, textColor, true);
+					currentX += client.textRenderer.getWidth(text);
+				}
+			} else {
+				context.drawText(client.textRenderer, Text.literal(text), currentX, currentY, textColor, true);
+				currentX += client.textRenderer.getWidth(text);
+			}
 			
 			// Prozente
 			if (showPercent && percentText != null) {
@@ -1137,8 +1403,63 @@ public class TabInfoUtility {
 		} catch (Exception e) {
 			// Fallback
 			try {
-				context.drawText(client.textRenderer, text, currentX, currentY, textColor, true);
-				currentX += client.textRenderer.getWidth(text);
+				if (showIcon && configKey != null) {
+					int iconSize = client.textRenderer.fontHeight;
+					// Zentriere Icon vertikal: Text-Baseline ist unten, also verschiebe Icon nach oben
+					int iconY = currentY - iconSize + client.textRenderer.fontHeight;
+					Identifier iconToUse = null;
+					String fallbackText = null;
+					
+					if ("amboss".equals(configKey)) {
+						iconToUse = AMBOSS_ICON;
+						fallbackText = "Amboss: ";
+					} else if ("schmelzofen".equals(configKey)) {
+						iconToUse = SCHMELZOFEN_ICON;
+						fallbackText = "Schmelzofen: ";
+					} else if ("recyclerSlot1".equals(configKey)) {
+						iconToUse = RECYCLER_ICON;
+						fallbackText = "Recycler Slot 1: ";
+					} else if ("recyclerSlot2".equals(configKey)) {
+						iconToUse = RECYCLER_ICON;
+						fallbackText = "Recycler Slot 2: ";
+					} else if ("recyclerSlot3".equals(configKey)) {
+						iconToUse = RECYCLER_ICON;
+						fallbackText = "Recycler Slot 3: ";
+					}
+					
+					if (iconToUse != null) {
+						try {
+							context.drawTexture(
+								RenderPipelines.GUI_TEXTURED,
+								iconToUse,
+								currentX, iconY,
+								0.0f, 0.0f,
+								iconSize, iconSize,
+								iconSize, iconSize
+							);
+							currentX += iconSize + 2;
+						} catch (Exception e3) {
+							// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
+							if (fallbackText != null) {
+								context.drawText(client.textRenderer, fallbackText, currentX, currentY, textColor, true);
+								currentX += client.textRenderer.getWidth(fallbackText);
+							}
+						}
+						// Zeichne Doppelpunkt nach dem Icon
+						context.drawText(client.textRenderer, ": ", currentX, currentY, textColor, true);
+						currentX += client.textRenderer.getWidth(": ");
+						// Zeichne die Werte nach dem Doppelpunkt
+						context.drawText(client.textRenderer, text, currentX, currentY, textColor, true);
+						currentX += client.textRenderer.getWidth(text);
+					} else {
+						// Fallback: Zeichne normalen Text
+						context.drawText(client.textRenderer, text, currentX, currentY, textColor, true);
+						currentX += client.textRenderer.getWidth(text);
+					}
+				} else {
+					context.drawText(client.textRenderer, text, currentX, currentY, textColor, true);
+					currentX += client.textRenderer.getWidth(text);
+				}
 				if (showPercent && percentText != null) {
 					context.drawText(client.textRenderer, " " + percentText, currentX, currentY, percentColor, true);
 					currentX += client.textRenderer.getWidth(" " + percentText);

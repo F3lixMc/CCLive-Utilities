@@ -183,11 +183,11 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
             true
         );
         
-        // Render sample text (matching actual overlay content, scaled, relative positions)
+        // Render sample text with "-" instead of example values (scaled, relative positions)
         int currentY = PADDING + 15; // Same as KillsUtility line 561
         context.drawText(
             client.textRenderer,
-            "KPM: 123.4",
+            "KPM: -",
             PADDING, currentY, // Relative position
             0xFFFFFFFF,
             true
@@ -196,7 +196,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         currentY += LINE_HEIGHT;
         context.drawText(
             client.textRenderer,
-            "Kills: 12345",
+            "Kills: -",
             PADDING, currentY, // Relative position
             0xFFFFFFFF,
             true
@@ -205,7 +205,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         currentY += LINE_HEIGHT;
         context.drawText(
             client.textRenderer,
-            "Zeit: 12:34",
+            "Zeit: -",
             PADDING, currentY, // Relative position
             0xFFFFFFFF,
             true
@@ -216,7 +216,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
             currentY += LINE_HEIGHT;
             context.drawText(
                 client.textRenderer,
-                "Nächste Ebene: ?",
+                "Nächste Ebene: -",
                 PADDING, currentY, // Relative position
                 0xFFFFFFFF,
                 true
@@ -228,7 +228,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
             currentY += LINE_HEIGHT;
             context.drawText(
                 client.textRenderer,
-                "Benötigte Kills: ?",
+                "Benötigte Kills: -",
                 PADDING, currentY, // Relative position
                 0xFFFFFFFF,
                 true
@@ -256,8 +256,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityX = 570;
-        CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityY = 100;
+        CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityX = 789;
+        CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityY = 116;
         CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale = 1.0f;
     }
     

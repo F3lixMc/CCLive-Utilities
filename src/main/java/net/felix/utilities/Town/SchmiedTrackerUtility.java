@@ -18,6 +18,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Formatting;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.ZeichenUtility;
+import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -1047,7 +1048,7 @@ public class SchmiedTrackerUtility {
 	}
 	
 	/**
-	 * Rendert farbige Rahmen um Items (wird vom Mixin aufgerufen)
+	 * Rendert farbige Rahmen oder Hintergrund um Items (wird vom Mixin aufgerufen)
 	 */
 	public static void renderColoredFrames(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
 		if (!isInDisassembleChest) {
@@ -1059,7 +1060,9 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 
-		// Zeichne farbige Rahmen um die Items
+		net.felix.ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerItemDisplayMode;
+
+		// Zeichne farbige Rahmen oder Hintergrund um die Items
 		for (Map.Entry<Integer, Integer> entry : slotColors.entrySet()) {
 			int slotIndex = entry.getKey();
 			int color = entry.getValue();
@@ -1075,11 +1078,18 @@ public class SchmiedTrackerUtility {
 				int slotX = screenX + slot.x;
 				int slotY = screenY + slot.y;
 				
-				// Zeichne 1 Pixel dicken Rahmen
-				context.fill(slotX - 1, slotY - 1, slotX + SLOT_SIZE + 1, slotY, color); // Oben (1 Pixel höher)
-				context.fill(slotX - 1, slotY + SLOT_SIZE, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, color); // Unten
-				context.fill(slotX - 1, slotY - 1, slotX, slotY + SLOT_SIZE + 1, color); // Links (erweitert um oberen Rand)
-				context.fill(slotX + SLOT_SIZE, slotY - 1, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, color); // Rechts (erweitert um oberen Rand)
+				if (displayMode == net.felix.ItemDisplayMode.BACKGROUND) {
+					// Zeichne halbtransparenten Hintergrund
+					// Verwende die Rahmenfarbe, aber mit reduzierter Transparenz
+					int backgroundColor = (color & 0x00FFFFFF) | 0x80000000; // 50% Transparenz für bessere Sichtbarkeit
+					context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, backgroundColor);
+				} else {
+					// Zeichne 1 Pixel dicken Rahmen (Standard)
+					context.fill(slotX - 1, slotY - 1, slotX + SLOT_SIZE + 1, slotY, color); // Oben (1 Pixel höher)
+					context.fill(slotX - 1, slotY + SLOT_SIZE, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, color); // Unten
+					context.fill(slotX - 1, slotY - 1, slotX, slotY + SLOT_SIZE + 1, color); // Links (erweitert um oberen Rand)
+					context.fill(slotX + SLOT_SIZE, slotY - 1, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, color); // Rechts (erweitert um oberen Rand)
+				}
 			}
 		}
 	}
@@ -1111,22 +1121,41 @@ public class SchmiedTrackerUtility {
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client == null) return;
 		
-		// Button-Hintergrund
+		// Get scale
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		int unscaledWidth = buttonWidth;
+		int unscaledHeight = buttonHeight;
+		int scaledWidth = (int) (unscaledWidth * scale);
+		int scaledHeight = (int) (unscaledHeight * scale);
+		
+		// Use Matrix transformations for scaling
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Translate to position and scale from there
+		matrices.translate(buttonX, buttonY);
+		matrices.scale(scale, scale);
+		
+		// Button-Hintergrund (scaled, relative to matrix)
 		int backgroundColor = hideUncraftableActive ? 0xFF4B6A69 : 0xFF4B6A69; // Einheitliche Farbe #4B6A69
-		context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + buttonHeight, backgroundColor);
+		context.fill(0, 0, unscaledWidth, unscaledHeight, backgroundColor);
 		
-		// Button-Rahmen mit verschiedenen Farben (2 Pixel dick)
-		context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + 2, 0xFF65857C); // Oben - #65857C
-		context.fill(buttonX, buttonY + buttonHeight - 2, buttonX + buttonWidth, buttonY + buttonHeight, 0xFF1D2F3B); // Unten - #1D2F3B
-		context.fill(buttonX, buttonY, buttonX + 2, buttonY + buttonHeight, 0xFF314E52); // Links - #314E52
-		context.fill(buttonX + buttonWidth - 2, buttonY, buttonX + buttonWidth, buttonY + buttonHeight, 0xFF314E52); // Rechts - #314E52
+		// Button-Rahmen mit verschiedenen Farben (2 Pixel dick, scaled)
+		context.fill(0, 0, unscaledWidth, 2, 0xFF65857C); // Oben - #65857C
+		context.fill(0, unscaledHeight - 2, unscaledWidth, unscaledHeight, 0xFF1D2F3B); // Unten - #1D2F3B
+		context.fill(0, 0, 2, unscaledHeight, 0xFF314E52); // Links - #314E52
+		context.fill(unscaledWidth - 2, 0, unscaledWidth, unscaledHeight, 0xFF314E52); // Rechts - #314E52
 		
-		// Button-Text
+		// Button-Text (scaled, relative to matrix)
 		String buttonText = hideUncraftableActive ? "Show All" : "Hide Uncraftable";
 		int textColor = 0xFF404040; // Dunkelgrau
-		int textX = buttonX + (buttonWidth - client.textRenderer.getWidth(buttonText)) / 2;
-		int textY = buttonY + (buttonHeight - 8) / 2;
+		int textX = (unscaledWidth - client.textRenderer.getWidth(buttonText)) / 2;
+		int textY = (unscaledHeight - 8) / 2;
 		context.drawText(client.textRenderer, buttonText, textX, textY, textColor, false);
+		
+		matrices.popMatrix();
 	}
 	
 	/**
@@ -1145,8 +1174,14 @@ public class SchmiedTrackerUtility {
 			}
 		}
 		
-		if (button == 0 && mouseX >= buttonX && mouseX <= buttonX + buttonWidth &&
-			mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
+		// Get scale for hitbox calculation
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
+		if (scale <= 0) scale = 1.0f;
+		int scaledWidth = (int) (buttonWidth * scale);
+		int scaledHeight = (int) (buttonHeight * scale);
+		
+		if (button == 0 && mouseX >= buttonX && mouseX <= buttonX + scaledWidth &&
+			mouseY >= buttonY && mouseY <= buttonY + scaledHeight) {
 			
 			hideUncraftableActive = !hideUncraftableActive;
 			
@@ -1176,22 +1211,41 @@ public class SchmiedTrackerUtility {
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client == null) return;
 		
-		// Button-Hintergrund
+		// Get scale
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		int unscaledWidth = buttonWidth;
+		int unscaledHeight = buttonHeight;
+		int scaledWidth = (int) (unscaledWidth * scale);
+		int scaledHeight = (int) (unscaledHeight * scale);
+		
+		// Use Matrix transformations for scaling
+		Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Translate to position and scale from there
+		matrices.translate(wrongClassButtonX, wrongClassButtonY);
+		matrices.scale(scale, scale);
+		
+		// Button-Hintergrund (scaled, relative to matrix)
 		int backgroundColor = hideWrongClassActive ? 0xFF4B6A69 : 0xFF4B6A69; // Einheitliche Farbe #4B6A69
-		context.fill(wrongClassButtonX, wrongClassButtonY, wrongClassButtonX + buttonWidth, wrongClassButtonY + buttonHeight, backgroundColor);
+		context.fill(0, 0, unscaledWidth, unscaledHeight, backgroundColor);
 		
-		// Button-Rahmen mit verschiedenen Farben (2 Pixel dick)
-		context.fill(wrongClassButtonX, wrongClassButtonY, wrongClassButtonX + buttonWidth, wrongClassButtonY + 2, 0xFF65857C); // Oben - #65857C
-		context.fill(wrongClassButtonX, wrongClassButtonY + buttonHeight - 2, wrongClassButtonX + buttonWidth, wrongClassButtonY + buttonHeight, 0xFF1D2F3B); // Unten - #1D2F3B
-		context.fill(wrongClassButtonX, wrongClassButtonY, wrongClassButtonX + 2, wrongClassButtonY + buttonHeight, 0xFF314E52); // Links - #314E52
-		context.fill(wrongClassButtonX + buttonWidth - 2, wrongClassButtonY, wrongClassButtonX + buttonWidth, wrongClassButtonY + buttonHeight, 0xFF314E52); // Rechts - #314E52
+		// Button-Rahmen mit verschiedenen Farben (2 Pixel dick, scaled)
+		context.fill(0, 0, unscaledWidth, 2, 0xFF65857C); // Oben - #65857C
+		context.fill(0, unscaledHeight - 2, unscaledWidth, unscaledHeight, 0xFF1D2F3B); // Unten - #1D2F3B
+		context.fill(0, 0, 2, unscaledHeight, 0xFF314E52); // Links - #314E52
+		context.fill(unscaledWidth - 2, 0, unscaledWidth, unscaledHeight, 0xFF314E52); // Rechts - #314E52
 		
-		// Button-Text
+		// Button-Text (scaled, relative to matrix)
 		String buttonText = hideWrongClassActive ? "Show All" : "Hide wrong class";
 		int textColor = 0xFF404040; // Dunkelgrau
-		int textX = wrongClassButtonX + (buttonWidth - client.textRenderer.getWidth(buttonText)) / 2;
-		int textY = wrongClassButtonY + (buttonHeight - 8) / 2;
+		int textX = (unscaledWidth - client.textRenderer.getWidth(buttonText)) / 2;
+		int textY = (unscaledHeight - 8) / 2;
 		context.drawText(client.textRenderer, buttonText, textX, textY, textColor, false);
+		
+		matrices.popMatrix();
 	}
 	
 	/**
@@ -1202,8 +1256,14 @@ public class SchmiedTrackerUtility {
 			return false;
 		}
 		
-		if (button == 0 && mouseX >= wrongClassButtonX && mouseX <= wrongClassButtonX + buttonWidth &&
-			mouseY >= wrongClassButtonY && mouseY <= wrongClassButtonY + buttonHeight) {
+		// Get scale for hitbox calculation
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+		if (scale <= 0) scale = 1.0f;
+		int scaledWidth = (int) (buttonWidth * scale);
+		int scaledHeight = (int) (buttonHeight * scale);
+		
+		if (button == 0 && mouseX >= wrongClassButtonX && mouseX <= wrongClassButtonX + scaledWidth &&
+			mouseY >= wrongClassButtonY && mouseY <= wrongClassButtonY + scaledHeight) {
 			
 			hideWrongClassActive = !hideWrongClassActive;
 			

@@ -124,7 +124,7 @@ public class AspectOverlayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX = 415;
-        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY = 60;
+        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX = 530;
+        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY = 120;
     }
 }

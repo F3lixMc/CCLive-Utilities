@@ -214,13 +214,13 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         int lumberjackWidth = InformationenUtility.getLumberjackOverlayWidth(client);
         String[] texts = miningWidth >= lumberjackWidth ? miningTexts : lumberjackTexts;
         
-        // Replace values with "?" for display in editor
+        // Replace values with "-" for display in editor
         String[] displayTexts = new String[texts.length];
         displayTexts[0] = texts[0]; // Header stays the same
-        displayTexts[1] = texts[1].replaceAll(": .+", ": ?"); // "Letzte XP: 1234" -> "Letzte XP: ?"
-        displayTexts[2] = texts[2].replaceAll(": .+", ": ?"); // "XP/Min: 123.4" -> "XP/Min: ?"
-        displayTexts[3] = texts[3].replaceAll(": .+", ": ?"); // "Zeit bis Level: 12:34" -> "Zeit bis Level: ?"
-        displayTexts[4] = texts[4].replaceAll(": .+", ": ?"); // "Benötigte XP: 12345" -> "Benötigte XP: ?"
+        displayTexts[1] = texts[1].replaceAll(": .+", ": -"); // "Letzte XP: 1234" -> "Letzte XP: -"
+        displayTexts[2] = texts[2].replaceAll(": .+", ": -"); // "XP/Min: 123.4" -> "XP/Min: -"
+        displayTexts[3] = texts[3].replaceAll(": .+", ": -"); // "Zeit bis Level: 12:34" -> "Zeit bis Level: -"
+        displayTexts[4] = texts[4].replaceAll(": .+", ": -"); // "Benötigte XP: 12345" -> "Benötigte XP: -"
         
         // Apply matrix transformations for scaling
         var matrices = context.getMatrices();
@@ -285,21 +285,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.getWindow() != null) {
-            int screenHeight = client.getWindow().getScaledHeight();
-            // Position: am linken Rand (X=5) und vertikal mittig (Y = screenHeight / 2 - overlayHeight / 2)
-            // Da wir die Höhe nicht direkt haben, verwenden wir einen geschätzten Wert
-            // Typische Overlay-Höhe ist etwa 80 Pixel (5 Zeilen * 12 + Padding)
-            int estimatedOverlayHeight = 80;
-            int centerY = (screenHeight / 2) - (estimatedOverlayHeight / 2);
-            CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayX = 5;
-            CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayY = Math.max(5, centerY); // Mindestens 5 Pixel vom Rand
-        } else {
-            // Fallback wenn Client nicht verfügbar ist
-            CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayX = 5;
-            CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayY = 200;
-        }
+        CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayX = 0;
+        CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayY = 109;
         CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayScale = 1.0f;
     }
     

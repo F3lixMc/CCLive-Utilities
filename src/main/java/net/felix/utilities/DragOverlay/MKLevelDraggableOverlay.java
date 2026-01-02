@@ -275,9 +275,8 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        // Standard-Position: -1 = automatisch rechts berechnen, am Inventar ausgerichtet
-        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX = -1;
-        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = -1; // -1 = am Inventar ausrichten
+        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX = 135;
+        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = 134;
         savePosition();
     }
 }

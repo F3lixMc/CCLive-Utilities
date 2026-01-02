@@ -1088,7 +1088,7 @@
             "color": "GOLD",
             "items": [
               "Sturmfeuer Brandbeil",
-              "Axt des Bambusmeister",
+              "Axt des Bambusmeisters",
               "Höllischer Enthaupter",
               "Die Sternschnuppe",
               "Drachentöter Plattenhandpanzer"
@@ -1939,7 +1939,7 @@
               "Der Zeitverzerrer",
               "Gürtel des Gleichgewichts",
               "Frostbiss Plattenhose",
-              "CACTUS_CLICKER.armors.eternal_balance_leggings",
+              "Hose des ewigen Gleichgewichts",
               "Frost Mantel"
             ]
           }
@@ -3077,7 +3077,7 @@
               "Leichte Lederschultertücher",
               "Leichter Bambusbogen",
               "Verbeulte Axt",
-              "CACTUS_CLICKER.tools.rusty_destroyer"
+              "Rostiger Zerstörer"
             ]
           },
           "uncommon": {
@@ -5328,7 +5328,7 @@
               "Donnerkraft-Lederhandrüstung",
               "Sternenlicht Beinkleider",
               "Phönixfeuer Handschützer",
-              "Seidenhandschuhe der Prinzessin"
+              "Seidenhandschuh der Prinzessin"
             ]
           }
         }
@@ -5383,7 +5383,7 @@
               "Sternenlicht Schulterrüstung",
               "Donnerkraft-Ledergürtel",
               "Phönixfeder Schulterumhang",
-              "Sternenlicht Schulterring"
+              "Sternenlicht Schulterringe"
   
             ]
           }

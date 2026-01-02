@@ -209,8 +209,8 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX = 1;
-        CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY = 35;
+        CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX = 0;
+        CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY = 43;
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale = 1.0f;
     }
     

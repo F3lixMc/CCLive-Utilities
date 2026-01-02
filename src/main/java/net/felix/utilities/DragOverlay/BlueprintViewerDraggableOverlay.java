@@ -244,8 +244,8 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX = 1;
-        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = 2; // 2% vom oberen Rand
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX = 654;
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = 44;
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale = 1.0f;
     }
     

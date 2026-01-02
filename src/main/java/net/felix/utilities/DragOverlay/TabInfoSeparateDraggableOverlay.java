@@ -1,10 +1,13 @@
 package net.felix.utilities.DragOverlay;
 
+import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.TabInfoUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 /**
  * Draggable Overlay für einzelne Tab-Info Overlays
@@ -13,6 +16,11 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     
     private final String configKey;
     private final String displayName;
+    
+    // Icon Identifier für Amboss, Schmelzofen und Recycler
+    private static final Identifier AMBOSS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
+    private static final Identifier SCHMELZOFEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
+    private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
     
     public TabInfoSeparateDraggableOverlay(String infoName, String configKey, String displayName) {
         this.configKey = configKey;
@@ -44,8 +52,18 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         String percentText = getPercentText();
         boolean showPercent = getShowPercent();
         boolean showWarning = getShowWarning();
+        boolean showIcon = getShowIcon();
         
-        int width = client.textRenderer.getWidth(text);
+        int width = 0;
+        // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
+        if (showIcon && (configKey != null && ("amboss".equals(configKey) || "schmelzofen".equals(configKey) || 
+                                                "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
+                                                "recyclerSlot3".equals(configKey)))) {
+            int iconSize = client.textRenderer.fontHeight;
+            width += iconSize + 2; // Icon + Abstand
+            width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+        }
+        width += client.textRenderer.getWidth(text);
         if (showPercent && percentText != null) {
             width += client.textRenderer.getWidth(" " + percentText);
         }
@@ -105,11 +123,54 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         String percentText = getPercentText();
         boolean showPercent = getShowPercent();
         boolean showWarning = getShowWarning();
+        boolean showIcon = getShowIcon();
         
         int currentX = x + 5;
         int currentY = y + 5;
         int textColor = 0xFFFFFFFF;
         int percentColor = 0xFFFFFF00;
+        
+        // Zeichne Icon statt Text, wenn aktiviert (für Amboss, Schmelzofen und Recycler)
+        if (showIcon && (configKey != null && ("amboss".equals(configKey) || "schmelzofen".equals(configKey) || 
+                                                "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
+                                                "recyclerSlot3".equals(configKey)))) {
+            int iconSize = client.textRenderer.fontHeight;
+            int iconY = currentY - iconSize + client.textRenderer.fontHeight;
+            Identifier iconToUse = null;
+            
+            if ("amboss".equals(configKey)) {
+                iconToUse = AMBOSS_ICON;
+            } else if ("schmelzofen".equals(configKey)) {
+                iconToUse = SCHMELZOFEN_ICON;
+            } else if ("recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || "recyclerSlot3".equals(configKey)) {
+                iconToUse = RECYCLER_ICON;
+            }
+            
+            if (iconToUse != null) {
+                try {
+                    context.drawTexture(
+                        RenderPipelines.GUI_TEXTURED,
+                        iconToUse,
+                        currentX, iconY,
+                        0.0f, 0.0f,
+                        iconSize, iconSize,
+                        iconSize, iconSize
+                    );
+                    currentX += iconSize + 2; // Abstand nach Icon
+                } catch (Exception e) {
+                    // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
+                }
+            }
+            // Zeichne Doppelpunkt nach dem Icon
+            context.drawText(
+                client.textRenderer,
+                ": ",
+                currentX, currentY,
+                textColor,
+                true
+            );
+            currentX += client.textRenderer.getWidth(": ");
+        }
         
         // Render main text
         context.drawText(
@@ -156,8 +217,44 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && 
-               getSeparateOverlayEnabled();
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
+            return false;
+        }
+        
+        // Prüfe ob die Information selbst aktiviert ist
+        if (!isInfoEnabled()) {
+            return false;
+        }
+        
+        // Prüfe ob das separate Overlay aktiviert ist
+        return getSeparateOverlayEnabled();
+    }
+    
+    private boolean isInfoEnabled() {
+        switch (configKey) {
+            case "forschung":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung;
+            case "amboss":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmboss;
+            case "schmelzofen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen;
+            case "jaeger":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger;
+            case "seelen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen;
+            case "essenzen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen;
+            case "machtkristalle":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle;
+            case "recyclerSlot1":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+            case "recyclerSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+            case "recyclerSlot3":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+            default:
+                return false;
+        }
     }
     
     @Override
@@ -358,13 +455,14 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     }
     
     private String getDisplayText() {
+        boolean showIcon = getShowIcon();
         switch (configKey) {
             case "forschung":
                 return "Forschung: " + TabInfoUtility.forschung.getDisplayString();
             case "amboss":
-                return "Amboss: " + TabInfoUtility.ambossKapazitaet.getDisplayString();
+                return showIcon ? TabInfoUtility.ambossKapazitaet.getDisplayString() : "Amboss: " + TabInfoUtility.ambossKapazitaet.getDisplayString();
             case "schmelzofen":
-                return "Schmelzofen: " + TabInfoUtility.schmelzofenKapazitaet.getDisplayString();
+                return showIcon ? TabInfoUtility.schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + TabInfoUtility.schmelzofenKapazitaet.getDisplayString();
             case "jaeger":
                 return "Jäger: " + TabInfoUtility.jaegerKapazitaet.getDisplayString();
             case "seelen":
@@ -374,13 +472,30 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             case "machtkristalle":
                 return "Machtkristall: X / Y";
             case "recyclerSlot1":
-                return "Recycler Slot 1: " + TabInfoUtility.recyclerSlot1.getDisplayString();
+                return showIcon ? TabInfoUtility.recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + TabInfoUtility.recyclerSlot1.getDisplayString();
             case "recyclerSlot2":
-                return "Recycler Slot 2: " + TabInfoUtility.recyclerSlot2.getDisplayString();
+                return showIcon ? TabInfoUtility.recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + TabInfoUtility.recyclerSlot2.getDisplayString();
             case "recyclerSlot3":
-                return "Recycler Slot 3: " + TabInfoUtility.recyclerSlot3.getDisplayString();
+                return showIcon ? TabInfoUtility.recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + TabInfoUtility.recyclerSlot3.getDisplayString();
             default:
                 return displayName + ": X / Y";
+        }
+    }
+    
+    private boolean getShowIcon() {
+        switch (configKey) {
+            case "amboss":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+            case "schmelzofen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+            case "recyclerSlot1":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+            case "recyclerSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+            case "recyclerSlot3":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+            default:
+                return false;
         }
     }
     

@@ -104,7 +104,7 @@ public class ChatAspectOverlayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayX = 15;
+        CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayX = 7;
         CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayY = 15;
     }
 }

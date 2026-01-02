@@ -4,6 +4,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
+import org.joml.Matrix3x2fStack;
 
 /**
  * Draggable Overlay für den Hide Wrong Class Button
@@ -12,6 +13,14 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 120;
     private static final int DEFAULT_HEIGHT = 20;
+    
+    private int getUnscaledWidth() {
+        return DEFAULT_WIDTH;
+    }
+    
+    private int getUnscaledHeight() {
+        return DEFAULT_HEIGHT;
+    }
     
     @Override
     public String getOverlayName() {
@@ -45,12 +54,18 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getWidth() {
-        return DEFAULT_WIDTH;
+        int unscaledWidth = getUnscaledWidth();
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        if (scale <= 0) scale = 1.0f;
+        return (int) (unscaledWidth * scale);
     }
     
     @Override
     public int getHeight() {
-        return DEFAULT_HEIGHT;
+        int unscaledHeight = getUnscaledHeight();
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        if (scale <= 0) scale = 1.0f;
+        return (int) (unscaledHeight * scale);
     }
     
     @Override
@@ -72,31 +87,67 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public void setSize(int width, int height) {
+        int unscaledWidth = getUnscaledWidth();
+        int unscaledHeight = getUnscaledHeight();
+        
+        // Calculate scale based on width and height
+        float scaleX = (float) width / unscaledWidth;
+        float scaleY = (float) height / unscaledHeight;
+        float scale = (scaleX + scaleY) / 2.0f;
+        
+        // Clamp scale to reasonable values (0.1 to 5.0)
+        scale = Math.max(0.1f, Math.min(5.0f, scale));
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = scale;
+        // Position stays the same - overlay grows from top-left corner
+    }
+    
+    @Override
     public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return;
+        
+        int unscaledWidth = getUnscaledWidth();
+        int unscaledHeight = getUnscaledHeight();
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
         
-        // Render button background
-        context.fill(x, y, x + width, y + height, 0xFF4B6A69);
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        if (scale <= 0) scale = 1.0f;
         
-        // Render border for edit mode
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        int scaledWidth = (int) (unscaledWidth * scale);
+        int scaledHeight = (int) (unscaledHeight * scale);
         
-        // Render button text
+        // Use Matrix transformations for scaling
+        Matrix3x2fStack matrices = context.getMatrices();
+        matrices.pushMatrix();
+        
+        // Translate to position and scale from there
+        matrices.translate(x, y);
+        matrices.scale(scale, scale);
+        
+        // Render button background (scaled, relative to matrix)
+        context.fill(0, 0, unscaledWidth, unscaledHeight, 0xFF4B6A69);
+        
+        // Render button text (scaled, relative to matrix)
         String buttonText = "Hide wrong class";
-        int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(buttonText);
-        int textX = x + (width - textWidth) / 2;
-        int textY = y + (height - 8) / 2;
+        int textWidth = client.textRenderer.getWidth(buttonText);
+        int textX = (unscaledWidth - textWidth) / 2;
+        int textY = (unscaledHeight - 8) / 2;
         
         context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+            client.textRenderer,
             buttonText,
             textX, textY,
             0xFFFFFFFF,
             true
         );
+        
+        matrices.popMatrix();
+        
+        // Render border for edit mode AFTER content (so it's always visible on top)
+        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
     
     @Override
@@ -116,14 +167,26 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX = -80;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY = 80;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX = -195;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY = 126;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = 1.0f;
+    }
+    
+    @Override
+    public void resetSizeToDefault() {
+        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = 1.0f;
     }
     
     @Override
     public boolean isResizeArea(int mouseX, int mouseY) {
-        // Hide Wrong Class Button doesn't support resizing
-        return false;
+        int x = getX();
+        int y = getY();
+        int width = getWidth();
+        int height = getHeight();
+        
+        // Check if mouse is in the bottom-right corner (resize area)
+        int resizeAreaSize = 8;
+        return mouseX >= x + width - resizeAreaSize && mouseX <= x + width &&
+               mouseY >= y + height - resizeAreaSize && mouseY <= y + height;
     }
 }
-

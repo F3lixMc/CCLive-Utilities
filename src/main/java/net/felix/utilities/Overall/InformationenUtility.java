@@ -3,9 +3,11 @@ package net.felix.utilities.Overall;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.text.Text;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
@@ -13,11 +15,19 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.util.Formatting;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.ItemStack;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.scoreboard.ScoreboardDisplaySlot;
+import net.minecraft.scoreboard.ScoreboardEntry;
+import net.minecraft.scoreboard.ScoreboardObjective;
+import net.minecraft.scoreboard.Team;
+import net.minecraft.client.gui.hud.InGameHud;
+import java.util.Collection;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.fabricmc.loader.api.FabricLoader;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -83,6 +93,27 @@ public class InformationenUtility {
 		return mkLevelLastKnownHeight;
 	}
 	
+	// Collection tracking
+	private static final String COLLECTIONS_CONFIG_FILE = "assets/cclive-utilities/Collections.json";
+	private static Map<Integer, Integer> collectionsDatabase = new HashMap<>(); // collection number -> amount needed
+	private static int initialBlocks = -1; // Blocks when tracking started
+	private static int currentBlocks = 0; // Current total blocks from bossbar
+	private static int sessionBlocks = 0; // Blocks mined in this session (currentBlocks - initialBlocks)
+	private static long sessionStartTime = 0; // When tracking started
+	private static double blocksPerMinute = 0.0; // Blocks per minute
+	private static boolean isTrackingCollections = false; // Whether we're currently tracking
+	private static boolean firstBossBarUpdate = true; // First bossbar update flag
+	private static String collectionDimension = null; // Track current dimension for collection tracking
+	private static int nextCollectionNumber = 1; // Next collection to achieve
+	private static int blocksNeededForNextCollection = 0; // Blocks needed for next collection
+	private static String currentBiomName = null; // Track current biom name from scoreboard
+	private static long lastScoreboardCheck = 0; // Last time we checked the scoreboard
+	private static boolean biomDetected = false; // Whether a biom was detected in the scoreboard
+	private static boolean lastShowCollectionOverlayState = true; // Track previous state of showCollectionOverlay
+	
+	// Collection hotkey
+	private static KeyBinding collectionResetKeyBinding;
+	
 	// Mining & Lumberjack XP Tracking
 	private static class XPData {
 		long currentXP = 0;
@@ -104,6 +135,7 @@ public class InformationenUtility {
 	private static long lastTabListCheck = 0;
 	private static final long OVERLAY_DISPLAY_DURATION = 10000; // 10 seconds in milliseconds
 	private static String currentDimension = null; // Track current dimension to detect dimension changes
+	private static String miningLumberjackDimension = null; // Track current dimension for mining/lumberjack overlays
 	private static boolean showOverlays = true; // Whether overlays should be shown (hidden when Tab or F1 is active)
 	
 	/**
@@ -236,6 +268,12 @@ public class InformationenUtility {
 		
 		// Load MKLevel database
 		loadMKLevelDatabase();
+		
+		// Load collections database
+		loadCollectionsDatabase();
+		
+		// Register collection hotkeys
+		registerCollectionHotkeys();
 		
 		// Initialize aspect overlay and renderer
 		AspectOverlay.initialize();
@@ -4079,16 +4117,91 @@ public class InformationenUtility {
 			return;
 		}
 		
+		// Handle collection hotkeys
+		handleCollectionHotkeys();
+		
 		// Check Tab key for overlay visibility
 		checkTabKey();
 		
-		// Always update XP per minute calculation (like updateKPM in KillsUtility)
+		// Check for dimension changes for mining/lumberjack overlays
+		checkMiningLumberjackDimensionChange(client);
+		
+		// Update XP per minute calculation (only if overlay is currently showing)
+		if (miningXP.shouldShowOverlay && miningXP.sessionStartTime > 0) {
 		updateXPM(miningXP);
+		}
+		if (lumberjackXP.shouldShowOverlay && lumberjackXP.sessionStartTime > 0) {
 		updateXPM(lumberjackXP);
+		}
 		
 		// Update overlay visibility timers
 		updateOverlayVisibility(miningXP);
 		updateOverlayVisibility(lumberjackXP);
+		
+		// Collection tracking
+		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+			// Check if overlay was disabled/enabled and handle timer accordingly
+			boolean currentShowCollectionOverlay = CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
+			if (currentShowCollectionOverlay != lastShowCollectionOverlayState) {
+				if (!currentShowCollectionOverlay) {
+					// Overlay was disabled - stop and reset timer
+					resetCollectionTracking();
+					sessionStartTime = 0; // Stop timer
+				} else if (isTrackingCollections) {
+					// Overlay was enabled - restart timer if we're tracking
+					resetCollectionTracking();
+					sessionStartTime = System.currentTimeMillis();
+				}
+				lastShowCollectionOverlayState = currentShowCollectionOverlay;
+			}
+			
+			// Check for dimension changes and reset if necessary
+			checkCollectionDimensionChange(client);
+			
+			// Check if we should track collections (in farmworld dimension)
+			boolean shouldTrack = isInFarmworldDimension(client);
+			if (shouldTrack != isTrackingCollections) {
+				isTrackingCollections = shouldTrack;
+				if (shouldTrack) {
+					// Just entered farmworld, reset everything
+					resetCollectionTracking();
+					// Reset biom detection
+					biomDetected = false;
+					currentBiomName = null;
+					// Check for biom in scoreboard
+					checkCollectionBiomChange(client);
+					// Only start timer if overlay is enabled and biom is detected
+					if (currentShowCollectionOverlay && biomDetected) {
+						sessionStartTime = System.currentTimeMillis();
+					} else {
+						sessionStartTime = 0;
+					}
+				} else {
+					// Left farmworld, reset biom detection
+					biomDetected = false;
+					currentBiomName = null;
+					sessionStartTime = 0;
+				}
+			}
+			
+			// Check for biom changes and reset if necessary (only if tracking)
+			if (isTrackingCollections) {
+				checkCollectionBiomChange(client);
+				// Update timer based on biom detection
+				if (biomDetected && currentShowCollectionOverlay && sessionStartTime == 0) {
+					// Biom detected and overlay enabled, but timer not started - start it
+					sessionStartTime = System.currentTimeMillis();
+				} else if (!biomDetected && sessionStartTime > 0) {
+					// Biom no longer detected, stop timer
+					sessionStartTime = 0;
+				}
+			}
+			
+			// Update blocks per minute calculation (only if overlay is enabled and tracking)
+			if (isTrackingCollections && currentShowCollectionOverlay) {
+				updateBlocksPerMinute();
+			}
+		}
 		
 		// Check if we're in MKLevel inventory
 		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
@@ -4318,20 +4431,36 @@ public class InformationenUtility {
 		if (xpData.lastXPChangeTime > 0) {
 			long timeSinceLastChange = currentTime - xpData.lastXPChangeTime;
 			// Show overlay if less than 10 seconds have passed since last XP change
+			boolean wasShowing = xpData.shouldShowOverlay;
 			xpData.shouldShowOverlay = timeSinceLastChange < OVERLAY_DISPLAY_DURATION;
 			
+			// Stop timer when overlay is hidden
+			if (wasShowing && !xpData.shouldShowOverlay) {
+				// Overlay just got hidden - stop timer
+				xpData.sessionStartTime = 0;
+				xpData.xpPerMinute = 0.0;
+				xpData.isTracking = false;
+			}
+			
 			// Reset XP calculation 10 seconds after overlay is hidden (20 seconds total)
-			// This prevents the calculation from continuing in the background
+			// This prevents stale data from lingering
 			if (timeSinceLastChange >= OVERLAY_DISPLAY_DURATION + 10000) {
-				// Reset XP per minute calculation to prevent stale data
+				// Reset all tracking data
 				xpData.sessionStartTime = 0;
 				xpData.newXP = 0;
 				xpData.xpPerMinute = 0.0;
 				xpData.isTracking = false;
-				// Keep initialXP and lastXPChangeTime for potential future use
+				xpData.initialXP = -1;
+				// Keep lastXPChangeTime for potential future use
 			}
 		} else {
 			xpData.shouldShowOverlay = false;
+			// If overlay is not showing and timer is running, stop it
+			if (xpData.sessionStartTime > 0) {
+				xpData.sessionStartTime = 0;
+				xpData.xpPerMinute = 0.0;
+				xpData.isTracking = false;
+			}
 		}
 	}
 	
@@ -4397,6 +4526,16 @@ public class InformationenUtility {
 			miningXP.shouldShowOverlay &&
 			!shouldHideOverlays) {
 			renderMiningOverlay(context, client);
+		}
+		
+		// Render collection overlay (only if biom is detected in scoreboard)
+		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+			isTrackingCollections &&
+			biomDetected &&
+			!shouldHideOverlays) {
+			// Try to read scoreboard when overlay is active
+			checkCollectionBiomChange(client);
+			renderCollectionOverlay(context, client);
 		}
 		
 		// Render lumberjack overlay (only when XP changed recently and not in player's own dimension or floor dimension)
@@ -4573,17 +4712,11 @@ public class InformationenUtility {
 					xpData.isInitializedInCurrentDimension = true;
 				}
 				
-				// Check if we should start tracking (like KillsUtility)
-				// Start tracking when we first get valid XP data
-				if (!xpData.isTracking && newCurrentXP > 0) {
-					xpData.isTracking = true;
-					xpData.initialXP = newCurrentXP;
-					xpData.newXP = 0;
-					xpData.sessionStartTime = System.currentTimeMillis();
-				}
-				
 				// Check if XP changed (but ignore if this is the first time in this dimension)
 				boolean xpChanged = (newCurrentXP != oldCurrentXP);
+				
+				// Track previous overlay state to detect when overlay is shown for the first time
+				boolean wasShowingOverlay = xpData.shouldShowOverlay;
 				
 				// Only show overlay if XP changed AND it's not the first time we're seeing values in this dimension
 				if (xpChanged && !isFirstTimeInDimension) {
@@ -4595,6 +4728,19 @@ public class InformationenUtility {
 						// Reset overlay timer - show overlay for 10 seconds
 						xpData.lastXPChangeTime = System.currentTimeMillis();
 						xpData.shouldShowOverlay = true;
+						
+						// Start timer when overlay is shown for the first time
+						if (!wasShowingOverlay && xpData.sessionStartTime == 0) {
+							xpData.isTracking = true;
+							xpData.initialXP = newCurrentXP - xpGained; // Set initial to value before this gain
+							xpData.newXP = xpGained;
+							xpData.sessionStartTime = System.currentTimeMillis();
+						} else if (xpData.sessionStartTime > 0) {
+							// Timer already running, just update newXP
+							if (xpData.initialXP >= 0) {
+								xpData.newXP = newCurrentXP - xpData.initialXP;
+							}
+						}
 						
 						// Hide the other overlay when this one gets XP
 						if (xpData == miningXP) {
@@ -4608,7 +4754,13 @@ public class InformationenUtility {
 						// XP decreased (level up or reset) - reset tracking like KillsUtility
 						xpData.initialXP = newCurrentXP;
 						xpData.newXP = 0;
+						// Only start timer if overlay is being shown
+						if (!wasShowingOverlay) {
 						xpData.sessionStartTime = System.currentTimeMillis();
+						} else {
+							xpData.sessionStartTime = System.currentTimeMillis(); // Reset timer on level up
+						}
+						xpData.isTracking = true;
 						// Also reset overlay timer on level up
 						xpData.lastXPChangeTime = System.currentTimeMillis();
 						xpData.shouldShowOverlay = true;
@@ -4616,7 +4768,8 @@ public class InformationenUtility {
 				}
 				
 				// Calculate newXP (like newKills in KillsUtility)
-				if (xpData.initialXP >= 0) {
+				// Only update if timer is running (overlay is showing)
+				if (xpData.initialXP >= 0 && xpData.sessionStartTime > 0) {
 					xpData.newXP = newCurrentXP - xpData.initialXP;
 					if (xpData.newXP < 0) {
 						// Level up happened, reset
@@ -4771,17 +4924,21 @@ public class InformationenUtility {
 			context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
 		}
 		
+		// Get colors from config
+		int headerColor = config.miningLumberjackOverlayHeaderColor.getRGB();
+		int textColor = config.miningLumberjackOverlayTextColor.getRGB();
+		
 		// Draw text (scaled, relative to matrix)
 		int textY = padding;
-		context.drawText(client.textRenderer, header, padding, textY, 0xFFFFFF00, true);
+		context.drawText(client.textRenderer, header, padding, textY, headerColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, lastXP, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, lastXP, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, xpPerMin, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, xpPerMin, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, timeToNext, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, requiredXP, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -4860,17 +5017,21 @@ public class InformationenUtility {
 			context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
 		}
 		
+		// Get colors from config
+		int headerColor = config.miningLumberjackOverlayHeaderColor.getRGB();
+		int textColor = config.miningLumberjackOverlayTextColor.getRGB();
+		
 		// Draw text (scaled, relative to matrix)
 		int textY = padding;
-		context.drawText(client.textRenderer, header, padding, textY, 0xFFFFFF00, true);
+		context.drawText(client.textRenderer, header, padding, textY, headerColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, lastXP, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, lastXP, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, xpPerMin, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, xpPerMin, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, timeToNext, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, requiredXP, padding, textY, 0xFFFFFFFF, true);
+		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -5683,6 +5844,852 @@ public class InformationenUtility {
 							mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 		mkLevelSearchCursorPosition++;
 		mkLevelScrollOffset = 0; // Reset scroll when search changes
+	}
+	
+	/**
+	 * Loads the collections database from Collections.json
+	 */
+	private static void loadCollectionsDatabase() {
+		try {
+			// Load from mod resources
+			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
+				.orElseThrow(() -> new RuntimeException("Mod container not found"))
+				.findPath(COLLECTIONS_CONFIG_FILE)
+				.orElseThrow(() -> new RuntimeException("Collections config file not found"));
+			
+			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
+				try (var reader = new java.io.InputStreamReader(inputStream)) {
+					JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+					JsonObject collections = json.getAsJsonObject("collections");
+					
+					for (String collectionKey : collections.keySet()) {
+						JsonObject collectionData = collections.getAsJsonObject(collectionKey);
+						int collectionNumber = Integer.parseInt(collectionKey.replace("collection_", ""));
+						int amount = collectionData.get("amount").getAsInt();
+						
+						collectionsDatabase.put(collectionNumber, amount);
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Failed to load collections database: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Process bossbar collection from mixin
+	 * This method is called by BossBarMixin when a bossbar with collection information is found
+	 */
+	public static void processBossBarCollection(String bossBarName) {
+		try {
+			if (!isTrackingCollections) {
+				return;
+			}
+			
+			int blocks = decodeChineseNumber(bossBarName);
+			
+			if (blocks >= 0) {
+				if (firstBossBarUpdate) {
+					initialBlocks = blocks;
+					currentBlocks = blocks;
+					sessionBlocks = 0;
+					firstBossBarUpdate = false;
+					updateNextCollection();
+				} else if (blocks > currentBlocks) {
+					currentBlocks = blocks;
+					sessionBlocks = currentBlocks - initialBlocks;
+					updateNextCollection();
+				} else if (blocks < currentBlocks) {
+					// Blocks decreased (dimension change or reset)
+					initialBlocks = blocks;
+					currentBlocks = blocks;
+					sessionBlocks = 0;
+					updateNextCollection();
+				} else {
+					currentBlocks = blocks;
+					sessionBlocks = currentBlocks - initialBlocks;
+				}
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+	
+	/**
+	 * Decodes a Chinese number from text using aincraft_bottom_font
+	 */
+	private static int decodeChineseNumber(String text) {
+		try {
+			Map<Character, Integer> chineseNumbers = ZeichenUtility.getAincraftBottomFontNumbers();
+			StringBuilder numberStr = new StringBuilder();
+			
+			for (char c : text.toCharArray()) {
+				Integer digit = chineseNumbers.get(c);
+				if (digit != null) {
+					numberStr.append(digit);
+				}
+			}
+			
+			if (numberStr.length() > 0) {
+				return Integer.parseInt(numberStr.toString());
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+		return -1;
+	}
+	
+	/**
+	 * Updates the next collection information based on current blocks
+	 */
+	private static void updateNextCollection() {
+		if (collectionsDatabase.isEmpty()) {
+			nextCollectionNumber = 1;
+			blocksNeededForNextCollection = 0;
+			return;
+		}
+		
+		// Find the next collection we haven't reached yet
+		for (int i = 1; i <= 10; i++) {
+			Integer requiredBlocks = collectionsDatabase.get(i);
+			if (requiredBlocks != null && currentBlocks < requiredBlocks) {
+				nextCollectionNumber = i;
+				blocksNeededForNextCollection = requiredBlocks - currentBlocks;
+				return;
+			}
+		}
+		
+		// All collections reached
+		nextCollectionNumber = 11; // Beyond max
+		blocksNeededForNextCollection = 0;
+	}
+	
+	/**
+	 * Checks for dimension changes for mining/lumberjack overlays and resets tracking if necessary
+	 */
+	private static void checkMiningLumberjackDimensionChange(MinecraftClient client) {
+		try {
+			if (client.world != null && client.player != null) {
+				String newDimension = client.world.getRegistryKey().getValue().toString();
+				
+				if (miningLumberjackDimension != null && !miningLumberjackDimension.equals(newDimension)) {
+					// Dimension changed, reset mining/lumberjack tracking
+					resetMiningLumberjackTracking();
+				}
+				
+				miningLumberjackDimension = newDimension;
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+	
+	/**
+	 * Resets mining/lumberjack tracking (timer and XP data)
+	 */
+	private static void resetMiningLumberjackTracking() {
+		// Reset mining XP tracking
+		miningXP.sessionStartTime = 0;
+		miningXP.newXP = 0;
+		miningXP.xpPerMinute = 0.0;
+		miningXP.isTracking = false;
+		miningXP.initialXP = -1;
+		miningXP.shouldShowOverlay = false;
+		miningXP.lastXPChangeTime = 0;
+		miningXP.isInitializedInCurrentDimension = false;
+		
+		// Reset lumberjack XP tracking
+		lumberjackXP.sessionStartTime = 0;
+		lumberjackXP.newXP = 0;
+		lumberjackXP.xpPerMinute = 0.0;
+		lumberjackXP.isTracking = false;
+		lumberjackXP.initialXP = -1;
+		lumberjackXP.shouldShowOverlay = false;
+		lumberjackXP.lastXPChangeTime = 0;
+		lumberjackXP.isInitializedInCurrentDimension = false;
+	}
+	
+	/**
+	 * Checks if player is in farmworld dimension
+	 */
+	private static boolean isInFarmworldDimension(MinecraftClient client) {
+		try {
+			if (client == null || client.world == null) {
+				return false;
+			}
+			
+			String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
+			// Farmworld is usually minecraft:overworld
+			return dimensionId.equals("minecraft:overworld");
+		} catch (Exception e) {
+			return false;
+		}
+	}
+	
+	/**
+	 * Checks for dimension changes and resets collection tracking if necessary
+	 */
+	private static void checkCollectionDimensionChange(MinecraftClient client) {
+		try {
+			if (client.world != null && client.player != null) {
+				String newDimension = client.world.getRegistryKey().getValue().toString();
+				
+				if (collectionDimension != null && !collectionDimension.equals(newDimension)) {
+					// Dimension changed, reset collection tracking
+					resetCollectionTracking();
+					// Reset biom detection
+					biomDetected = false;
+					currentBiomName = null;
+					// Stop timer
+					sessionStartTime = 0;
+					// Check if we're in farmworld and if biom is detected
+					if (isInFarmworldDimension(client)) {
+						checkCollectionBiomChange(client);
+						// Start timer if overlay is enabled and biom is detected
+						boolean currentShowCollectionOverlay = CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
+						if (currentShowCollectionOverlay && biomDetected) {
+							sessionStartTime = System.currentTimeMillis();
+						}
+					}
+				}
+				
+				collectionDimension = newDimension;
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+	
+	/**
+	 * Resets collection tracking
+	 */
+	private static void resetCollectionTracking() {
+		initialBlocks = -1;
+		currentBlocks = 0;
+		sessionBlocks = 0;
+		firstBossBarUpdate = true;
+		blocksPerMinute = 0.0;
+		// Don't reset sessionStartTime here - it's set separately when starting tracking
+		collectionDimension = null;
+		nextCollectionNumber = 1;
+		blocksNeededForNextCollection = 0;
+		currentBiomName = null; // Reset biom name when tracking resets
+	}
+	
+	/**
+	 * Checks for biom changes in scoreboard and resets collection tracking if necessary
+	 */
+	private static void checkCollectionBiomChange(MinecraftClient client) {
+		try {
+			// Only check every 100ms to avoid performance issues
+			long currentTime = System.currentTimeMillis();
+			long timeSinceLastCheck = currentTime - lastScoreboardCheck;
+			
+			if (timeSinceLastCheck < 100) {
+				return;
+			}
+			lastScoreboardCheck = currentTime;
+			
+			if (client == null || client.world == null) {
+				return;
+			}
+			
+			// Get scoreboard
+			net.minecraft.scoreboard.Scoreboard scoreboard = client.world.getScoreboard();
+			if (scoreboard == null) {
+				return;
+			}
+			
+			// Get sidebar objective
+			net.minecraft.scoreboard.ScoreboardObjective sidebarObjective = 
+				scoreboard.getObjectiveForSlot(net.minecraft.scoreboard.ScoreboardDisplaySlot.SIDEBAR);
+			if (sidebarObjective == null) {
+				return;
+			}
+			
+			// Check if title is "Cactus Clicker"
+			String titleStr = sidebarObjective.getDisplayName().getString();
+			String cleanTitle = titleStr.replaceAll("§[0-9a-fk-or]", "").trim();
+			
+			if (!cleanTitle.equalsIgnoreCase("Cactus Clicker")) {
+				return; // Not the right scoreboard
+			}
+			
+			// Read all scoreboard lines
+			List<String> lines = readScoreboardLines(scoreboard, sidebarObjective);
+			
+			// Extract biom and ressource
+			String biomName = extractBiomFromLines(lines);
+			String ressourceName = extractRessourceFromLines(lines);
+			
+			// Check if biom changed
+			if (biomName != null) {
+				biomDetected = true; // Biom was detected
+				if (currentBiomName != null && !currentBiomName.equals(biomName)) {
+					// Biom changed, reset collection tracking
+					resetCollectionTracking();
+					// Restart timer if overlay is enabled
+					if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+						sessionStartTime = System.currentTimeMillis();
+					} else {
+						sessionStartTime = 0;
+					}
+					currentBiomName = biomName;
+				} else if (currentBiomName == null) {
+					// First time setting biom name, just set it without resetting
+					currentBiomName = biomName;
+				}
+			} else {
+				biomDetected = false; // No biom detected
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+	
+	/**
+	 * Reads all scoreboard lines from sidebar in order (top to bottom)
+	 * Uses the official 1.21.x API: getScoreboardEntries(ScoreboardObjective)
+	 * No Reflection - uses direct Minecraft classes
+	 */
+	private static List<String> readScoreboardLines(net.minecraft.scoreboard.Scoreboard scoreboard, 
+			net.minecraft.scoreboard.ScoreboardObjective sidebarObjective) {
+		List<String> lines = new ArrayList<>();
+		
+		try {
+			// Helper method to remove Minecraft formatting codes (§ codes)
+			java.util.function.Function<String, String> removeFormatting = (text) -> {
+				if (text == null) return "";
+				return text.replaceAll("§[0-9a-fk-or]", "").trim();
+			};
+			
+			// Use official 1.21.x API: getScoreboardEntries(ScoreboardObjective)
+			Collection<ScoreboardEntry> rawEntries = scoreboard.getScoreboardEntries(sidebarObjective);
+			
+			if (rawEntries == null || rawEntries.isEmpty()) {
+				return lines;
+			}
+			
+			// Filter hidden entries and sort like in HUD
+			List<ScoreboardEntry> filteredEntries = rawEntries.stream()
+					.filter(e -> !e.hidden())
+					.toList();
+			
+			// Try to sort with InGameHud.SCOREBOARD_ENTRY_COMPARATOR (via reflection if needed)
+			List<ScoreboardEntry> entries;
+			try {
+				java.lang.reflect.Field comparatorField = InGameHud.class.getField("SCOREBOARD_ENTRY_COMPARATOR");
+				@SuppressWarnings("unchecked")
+				java.util.Comparator<ScoreboardEntry> comparator = (java.util.Comparator<ScoreboardEntry>) comparatorField.get(null);
+				entries = filteredEntries.stream()
+						.sorted(comparator)
+						.toList();
+			} catch (Exception e) {
+				// Fallback: sort by score value (descending)
+				entries = filteredEntries.stream()
+						.sorted((a, b) -> Integer.compare(b.value(), a.value()))
+						.toList();
+			}
+			
+			// Extract text from each entry
+			for (int i = 0; i < entries.size(); i++) {
+				ScoreboardEntry entry = entries.get(i);
+				
+				String owner = entry.owner();
+				
+				// Get the team for this owner using getScoreHolderTeam
+				Team team = null;
+				try {
+					java.lang.reflect.Method getScoreHolderTeamMethod = scoreboard.getClass().getMethod("getScoreHolderTeam", String.class);
+					team = (Team) getScoreHolderTeamMethod.invoke(scoreboard, owner);
+				} catch (Exception e) {
+					// Try alternative method names
+					try {
+						java.lang.reflect.Method method = scoreboard.getClass().getMethod("method_1164", String.class);
+						team = (Team) method.invoke(scoreboard, owner);
+					} catch (Exception e2) {
+						// Ignore
+					}
+				}
+				
+				// WICHTIG: sichtbarer Text kommt aus entry.name()
+				// Aber wenn entry.name() nur den Owner zurückgibt, müssen wir Team.decorateName() manuell verwenden
+				Text lineText = entry.name();
+				String nameString = lineText != null ? lineText.getString() : "";
+				
+				// Prüfe ob entry.name() nur den Owner zurückgibt (dann ist Team.decorateName() nötig)
+				if (nameString.equals(owner)) {
+					// entry.name() hat nur den Owner zurückgegeben - versuche Teams zu finden
+					
+					// Versuche alle Teams im Scoreboard zu durchsuchen
+					try {
+						java.lang.reflect.Field[] fields = scoreboard.getClass().getDeclaredFields();
+						for (java.lang.reflect.Field field : fields) {
+							if (java.util.Map.class.isAssignableFrom(field.getType())) {
+								field.setAccessible(true);
+								Object fieldValue = field.get(scoreboard);
+								if (fieldValue instanceof java.util.Map) {
+									@SuppressWarnings("unchecked")
+									java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
+									// Prüfe ob dies die Teams-Map ist (Map<String, Team>)
+									if (!map.isEmpty()) {
+										Object firstKey = map.keySet().iterator().next();
+										Object firstValue = map.get(firstKey);
+										if (firstKey instanceof String && firstValue instanceof Team) {
+											@SuppressWarnings("unchecked")
+											java.util.Map<String, Team> teamsMap = (java.util.Map<String, Team>) map;
+											
+											// Suche nach einem Team, das diesen Owner enthält
+											for (java.util.Map.Entry<String, Team> teamEntry : teamsMap.entrySet()) {
+												Team t = teamEntry.getValue();
+												if (t != null) {
+													// Prüfe ob dieses Team den Owner als Mitglied hat
+													try {
+														java.lang.reflect.Method getMembersMethod = t.getClass().getMethod("getMembers");
+														java.util.Collection<?> members = (java.util.Collection<?>) getMembersMethod.invoke(t);
+														if (members != null && members.contains(owner)) {
+															team = t;
+															break;
+														}
+													} catch (Exception ex) {
+														// Ignoriere Fehler
+													}
+												}
+											}
+											
+											// Wenn kein Team über Members gefunden wurde, versuche über Team-Name zu suchen
+											if (team == null) {
+												// Versuche Team-Name, der dem Owner entspricht (z.B. Team "§e" für Owner "§e")
+												Team possibleTeam = teamsMap.get(owner);
+												if (possibleTeam != null) {
+													team = possibleTeam;
+												}
+											}
+											
+											if (team != null) {
+												Text base = Text.literal(owner);
+												lineText = Team.decorateName(team, base);
+											}
+											break;
+										}
+									}
+								}
+							}
+						}
+					} catch (Exception e) {
+						// Silent error handling
+					}
+				}
+				
+				if (lineText != null) {
+					String rawText = lineText.getString();   // z.B. "Biom", "-> Kohle", "[Kohle Mine]"
+					String cleanText = removeFormatting.apply(rawText);
+					
+					lines.add(cleanText);
+				}
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+		
+		return lines;
+	}
+	
+	/**
+	 * Helper class to store score entry information
+	 */
+	private static class ScoreEntry {
+		int score;
+		String displayText;
+		String playerName;
+		
+		ScoreEntry(int score, String displayText, String playerName) {
+			this.score = score;
+			this.displayText = displayText;
+			this.playerName = playerName;
+		}
+	}
+	
+	/**
+	 * Gets the raw display text from a score entry (with formatting codes)
+	 */
+	private static String getScoreEntryTextRaw(net.minecraft.scoreboard.Scoreboard scoreboard, Object scoreObj) {
+		try {
+			// Try to get display name directly (preferred method)
+			try {
+				java.lang.reflect.Method getDisplayNameMethod = scoreObj.getClass().getMethod("getDisplayName");
+				net.minecraft.text.Text displayName = (net.minecraft.text.Text) getDisplayNameMethod.invoke(scoreObj);
+				if (displayName != null) {
+					return displayName.getString();
+				}
+			} catch (Exception e) {
+				// Fallback to owner name
+			}
+			
+			// Get owner name (internal name) as fallback
+			java.lang.reflect.Method getPlayerNameMethod = scoreObj.getClass().getMethod("getPlayerName");
+			String ownerName = (String) getPlayerNameMethod.invoke(scoreObj);
+			
+			if (ownerName == null) {
+				return null;
+			}
+			
+			// Try to get team for prefix/suffix using reflection
+			net.minecraft.scoreboard.Team team = null;
+			try {
+				java.lang.reflect.Method getPlayerTeamMethod = scoreboard.getClass().getMethod("getPlayerTeam", String.class);
+				team = (net.minecraft.scoreboard.Team) getPlayerTeamMethod.invoke(scoreboard, ownerName);
+			} catch (Exception e) {
+				// Method not available, continue without team
+			}
+			
+			// Build display text like in HUD
+			net.minecraft.text.Text displayText;
+			if (team != null) {
+				displayText = net.minecraft.scoreboard.Team.decorateName(team, net.minecraft.text.Text.literal(ownerName));
+			} else {
+				displayText = net.minecraft.text.Text.literal(ownerName);
+			}
+			
+			return displayText.getString();
+		} catch (Exception e) {
+			// Silent error handling
+			return null;
+		}
+	}
+	
+	/**
+	 * Helper: Checks if a line is empty (only whitespace/formatting)
+	 */
+	private static boolean isEmptyLine(String s) {
+		if (s == null) return true;
+		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
+		return clean.isEmpty();
+	}
+	
+	/**
+	 * Helper: Checks if a line is the "Biom" label
+	 * Can be "Biom" or "▌ Biom"
+	 */
+	private static boolean isBiomLabel(String s) {
+		if (s == null) return false;
+		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
+		// Remove the ▌ symbol if present
+		clean = clean.replace("▌", "").trim();
+		return clean.equalsIgnoreCase("Biom");
+	}
+	
+	/**
+	 * Helper: Checks if a line is the "Ressource" label
+	 * Can be "Ressource" or "▌ Ressource"
+	 */
+	private static boolean isRessourceLabel(String s) {
+		if (s == null) return false;
+		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
+		// Remove the ▌ symbol if present
+		clean = clean.replace("▌", "").trim();
+		return clean.equalsIgnoreCase("Ressource");
+	}
+	
+	/**
+	 * Helper: Checks if a line starts with arrow (-> or ➥)
+	 */
+	private static boolean isArrowLine(String s) {
+		if (s == null) return false;
+		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
+		return clean.startsWith("->") || clean.startsWith("➥");
+	}
+	
+	/**
+	 * Helper: Extracts text after arrow (-> or ➥)
+	 * Removes square brackets if present: "[Kohle Mine]" -> "Kohle Mine"
+	 */
+	private static String extractAfterArrow(String s) {
+		if (s == null) return null;
+		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
+		
+		// Find arrow position
+		int arrowIdx = -1;
+		if (clean.startsWith("➥")) {
+			arrowIdx = 0;
+			clean = clean.substring(1).trim();
+		} else {
+			int idx = clean.indexOf("->");
+			if (idx != -1) {
+				arrowIdx = idx;
+				clean = clean.substring(idx + 2).trim();
+			}
+		}
+		
+		if (arrowIdx == -1) return clean;
+		
+		// Remove square brackets if present
+		if (clean.startsWith("[") && clean.endsWith("]")) {
+			clean = clean.substring(1, clean.length() - 1).trim();
+		}
+		
+		return clean;
+	}
+	
+	/**
+	 * Extracts biom name from scoreboard lines
+	 */
+	private static String extractBiomFromLines(List<String> lines) {
+		for (int i = 0; i < lines.size(); i++) {
+			String line = lines.get(i);
+			if (isBiomLabel(line)) {
+				// Look for next non-empty line with arrow
+				for (int j = i + 1; j < lines.size(); j++) {
+					String next = lines.get(j);
+					if (isEmptyLine(next)) continue;
+					if (isArrowLine(next)) {
+						return extractAfterArrow(next);
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Extracts ressource name from scoreboard lines
+	 */
+	private static String extractRessourceFromLines(List<String> lines) {
+		for (int i = 0; i < lines.size(); i++) {
+			String line = lines.get(i);
+			if (isRessourceLabel(line)) {
+				// Look for next non-empty line with arrow
+				for (int j = i + 1; j < lines.size(); j++) {
+					String next = lines.get(j);
+					if (isEmptyLine(next)) continue;
+					if (isArrowLine(next)) {
+						return extractAfterArrow(next);
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Registers collection hotkeys
+	 */
+	private static void registerCollectionHotkeys() {
+		// Register reset hotkey
+		collectionResetKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+			"key.cclive-utilities.collection-reset",
+			InputUtil.Type.KEYSYM,
+			InputUtil.UNKNOWN_KEY.getCode(), // Unbound by default
+			"category.cclive-utilities.collection"
+		));
+	}
+	
+	/**
+	 * Handles collection hotkeys
+	 */
+	private static void handleCollectionHotkeys() {
+		// Handle reset hotkey
+		if (collectionResetKeyBinding != null && collectionResetKeyBinding.wasPressed()) {
+			resetCollectionTracking();
+			// Restart timer if overlay is enabled and we're tracking
+			if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay && isTrackingCollections) {
+				sessionStartTime = System.currentTimeMillis();
+			} else {
+				sessionStartTime = 0;
+			}
+		}
+	}
+	
+	/**
+	 * Updates blocks per minute calculation
+	 */
+	private static void updateBlocksPerMinute() {
+		// Only calculate if overlay is enabled and timer is running
+		if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay && 
+		    sessionStartTime > 0 && sessionBlocks > 0) {
+			long elapsedTime = System.currentTimeMillis() - sessionStartTime;
+			if (elapsedTime > 0) {
+				double minutes = elapsedTime / 60000.0;
+				blocksPerMinute = sessionBlocks / minutes;
+			}
+		} else {
+			blocksPerMinute = 0.0;
+		}
+	}
+	
+	/**
+	 * Calculates time until next collection in minutes
+	 */
+	private static double calculateTimeUntilNextCollection() {
+		if (blocksNeededForNextCollection <= 0 || blocksPerMinute <= 0) {
+			return -1;
+		}
+		
+		return (double)blocksNeededForNextCollection / blocksPerMinute;
+	}
+	
+	/**
+	 * Formats time in minutes to readable string
+	 */
+	private static String formatTimeMinutes(double minutes) {
+		if (minutes < 0) {
+			return "-";
+		}
+		
+		if (minutes < 1) {
+			return "<1m";
+		} else if (minutes < 60) {
+			return String.format("%.1f min", minutes);
+		} else {
+			int hours = (int)(minutes / 60);
+			int mins = (int)(minutes % 60);
+			return String.format("%d:%02d h", hours, mins);
+		}
+	}
+	
+	/**
+	 * Renders the collection overlay
+	 */
+	private static void renderCollectionOverlay(DrawContext context, MinecraftClient client) {
+		if (!isTrackingCollections || client.player == null) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.options.hudHidden) {
+			return;
+		}
+		
+		// Render only when overlays are visible
+		if (!showOverlays) {
+			return;
+		}
+		
+		// Check if overlay is enabled in config
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+			return;
+		}
+		
+		// Get position and scale from config
+		int x = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayX;
+		int y = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayY;
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		int padding = 5;
+		
+		// Calculate elapsed time (format like Kill Tracker: XX:XX)
+		long elapsedTime = System.currentTimeMillis() - sessionStartTime;
+		long minutes = elapsedTime / 60000;
+		long seconds = (elapsedTime % 60000) / 1000;
+		String timeText = String.format("Zeit: %02d:%02d", minutes, seconds);
+		
+		// Build overlay text
+		String header = "Collection:";
+		String timeLine = timeText; // timeText already contains "Zeit: XX:XX"
+		String blocksLine = "Blöcke: " + formatNumberWithSeparator(sessionBlocks);
+		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
+		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
+		
+		// Calculate overlay width (unscaled)
+		int maxWidth = Math.max(
+			Math.max(client.textRenderer.getWidth(header),
+				Math.max(client.textRenderer.getWidth(timeLine),
+					Math.max(client.textRenderer.getWidth(blocksLine),
+						Math.max(client.textRenderer.getWidth(blocksPerMinLine),
+							Math.max(client.textRenderer.getWidth(blocksNeededLine),
+								client.textRenderer.getWidth(timeToNextLine)))))),
+			100);
+		
+		int unscaledWidth = maxWidth + padding * 2;
+		int unscaledHeight = 6 * 11 + padding * 2; // 6 lines with 11px line height
+		
+		// Use Matrix transformations for scaling
+		org.joml.Matrix3x2fStack matrices = context.getMatrices();
+		matrices.pushMatrix();
+		
+		// Translate to position and scale from there
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
+		
+		// Draw background (scaled, relative to matrix)
+		context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
+		
+		// Get colors from config
+		int headerColor = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayHeaderColor.getRGB();
+		int textColor = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayTextColor.getRGB();
+		
+		// Draw text (scaled, relative to matrix)
+		int textY = padding;
+		context.drawText(client.textRenderer, header, padding, textY, headerColor, true);
+		textY += 11;
+		context.drawText(client.textRenderer, timeLine, padding, textY, textColor, true);
+		textY += 11;
+		context.drawText(client.textRenderer, blocksLine, padding, textY, textColor, true);
+		textY += 11;
+		context.drawText(client.textRenderer, blocksPerMinLine, padding, textY, textColor, true);
+		textY += 11;
+		context.drawText(client.textRenderer, blocksNeededLine, padding, textY, textColor, true);
+		textY += 11;
+		context.drawText(client.textRenderer, timeToNextLine, padding, textY, textColor, true);
+		
+		matrices.popMatrix();
+	}
+	
+	/**
+	 * Returns whether collection tracking is currently active
+	 * Used by CollectionDraggableOverlay to determine if overlay should be enabled
+	 */
+	public static boolean isTrackingCollections() {
+		return isTrackingCollections;
+	}
+	
+	/**
+	 * Get current overlay width based on actual text content
+	 * Used by CollectionDraggableOverlay to match the actual overlay size
+	 */
+	public static int getCurrentCollectionOverlayWidth(MinecraftClient client) {
+		if (client == null || client.textRenderer == null) {
+			return 200; // Default fallback width
+		}
+		
+		int padding = 5;
+		
+		// Calculate elapsed time (format like Kill Tracker: XX:XX)
+		long elapsedTime = sessionStartTime > 0 ? System.currentTimeMillis() - sessionStartTime : 0;
+		long minutes = elapsedTime / 60000;
+		long seconds = (elapsedTime % 60000) / 1000;
+		String timeText = String.format("Zeit: %02d:%02d", minutes, seconds);
+		
+		// Build overlay text (same as in renderCollectionOverlay)
+		String header = "Collection:";
+		String timeLine = timeText;
+		String blocksLine = "Blöcke: " + formatNumberWithSeparator(sessionBlocks);
+		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
+		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
+		
+		// Calculate overlay width (same as renderCollectionOverlay)
+		int maxWidth = Math.max(
+			Math.max(client.textRenderer.getWidth(header),
+				Math.max(client.textRenderer.getWidth(timeLine),
+					Math.max(client.textRenderer.getWidth(blocksLine),
+						Math.max(client.textRenderer.getWidth(blocksPerMinLine),
+							Math.max(client.textRenderer.getWidth(blocksNeededLine),
+								client.textRenderer.getWidth(timeToNextLine)))))),
+			100);
+		
+		return maxWidth + padding * 2;
+	}
+	
+	/**
+	 * Get current overlay height based on actual content
+	 */
+	public static int getCurrentCollectionOverlayHeight() {
+		int padding = 5;
+		return 6 * 11 + padding * 2; // 6 lines with 11px line height
 	}
 }
 

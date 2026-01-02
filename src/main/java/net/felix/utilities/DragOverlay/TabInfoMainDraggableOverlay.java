@@ -1,15 +1,21 @@
 package net.felix.utilities.DragOverlay;
 
+import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.TabInfoUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 /**
  * Draggable Overlay für das große Tab-Info Overlay
  */
 public class TabInfoMainDraggableOverlay implements DraggableOverlay {
+    
+    // Icon Identifier für Amboss (für Beispiel im F6-Menü)
+    private static final Identifier AMBOSS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
     
     @Override
     public String getOverlayName() {
@@ -86,20 +92,53 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         
         // Render sample content
         int currentY = y + 20;
+        int currentX = x + 5;
+        int textColor = 0xFFFFFFFF;
+        
+        // Forschung (kein Icon)
         context.drawText(
             client.textRenderer,
             "Forschung: 5 / 10",
-            x + 5, currentY,
-            0xFFFFFFFF,
+            currentX, currentY,
+            textColor,
             true
         );
         
         currentY += client.textRenderer.fontHeight + 2;
+        currentX = x + 5;
+        
+        // Amboss (mit Icon, wenn aktiviert)
+        boolean showAmbossIcon = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+        if (showAmbossIcon) {
+            int iconSize = client.textRenderer.fontHeight;
+            int iconY = currentY - iconSize + client.textRenderer.fontHeight;
+            try {
+                context.drawTexture(
+                    RenderPipelines.GUI_TEXTURED,
+                    AMBOSS_ICON,
+                    currentX, iconY,
+                    0.0f, 0.0f,
+                    iconSize, iconSize,
+                    iconSize, iconSize
+                );
+                currentX += iconSize + 2;
+            } catch (Exception e) {
+                // Fallback
+            }
+            context.drawText(
+                client.textRenderer,
+                ": ",
+                currentX, currentY,
+                textColor,
+                true
+            );
+            currentX += client.textRenderer.getWidth(": ");
+        }
         context.drawText(
             client.textRenderer,
-            "Amboss: 100 / 500 50.0%",
-            x + 5, currentY,
-            0xFFFFFFFF,
+            showAmbossIcon ? "100 / 500 50.0%" : "Amboss: 100 / 500 50.0%",
+            currentX, currentY,
+            textColor,
             true
         );
     }

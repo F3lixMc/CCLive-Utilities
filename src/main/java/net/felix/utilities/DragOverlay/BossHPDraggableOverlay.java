@@ -194,8 +194,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = 562;
-        CCLiveUtilitiesConfig.HANDLER.instance().bossHPY = 201;
+        CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = 854;
+        CCLiveUtilitiesConfig.HANDLER.instance().bossHPY = 261;
     }
     
     @Override

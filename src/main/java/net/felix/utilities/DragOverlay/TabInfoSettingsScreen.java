@@ -217,6 +217,12 @@ public class TabInfoSettingsScreen extends Screen {
                 boolean newValue = !entry.isEnabled.get();
                 entry.setEnabled.accept(newValue);
                 CCLiveUtilitiesConfig.HANDLER.save();
+                
+                // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
+                if (parent instanceof OverlayEditorScreen) {
+                    ((OverlayEditorScreen) parent).refreshOverlays();
+                }
+                
                 return true;
             } else if (clickedOnGear) {
                 // Öffne Detail-Screen für diese Information
@@ -234,6 +240,11 @@ public class TabInfoSettingsScreen extends Screen {
     
     @Override
     public void close() {
+        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
+        if (parent instanceof OverlayEditorScreen) {
+            ((OverlayEditorScreen) parent).refreshOverlays();
+        }
+        
         if (client != null) {
             client.setScreen(parent);
         }

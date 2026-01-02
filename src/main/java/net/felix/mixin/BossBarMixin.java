@@ -6,6 +6,7 @@ import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Factory.WaveUtility;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -99,10 +100,13 @@ public class BossBarMixin {
                     // Collection bossbars also contain Chinese numbers
                     // Check if it's not a kills bossbar but contains Chinese numbers
                     if (!name.contains("Kills") && !name.contains("Kill") && 
-                        name.matches(".*[㚏㚐㚑㚒㚓㚔㚕㚖㚗㚘].*")) {
+                        name.matches(".*[" + ZeichenUtility.getAincraftBottomFont() + "].*")) {
                         
-                        // Process the collection information
+                        // Process the collection information for leaderboard
                         FarmworldCollectionsCollector.processBossBarCollection(name);
+                        
+                        // Process the collection information for overlay
+                        InformationenUtility.processBossBarCollection(name);
                     }
                 }
             }

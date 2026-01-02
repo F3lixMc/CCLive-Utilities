@@ -16,9 +16,11 @@
     "key.cclive-utilities.previous-blueprint-rarity": "Previous Blueprint Rarity",
     "key.cclive-utilities.overlay-editor": "Open Overlay Editor",
     "key.cclive-utilities.toggle-schmied-frames": "Toggle Smithing State Frames",
+    "key.cclive-utilities.collection-reset": "Reset Collection Tracker",
   
     "key.categories.cclive-utilities.blueprints": "CCLive Utilities - Blueprints",
     "categories.cclive-utilities.overlay": "CCLive Utilities - Overlay Editor",
     "category.cclive-utilities.schmied": "CCLive Utilities - Smithing Tracker",
+    "category.cclive-utilities.collection": "CCLive Utilities - Collection",
       "key.categories.cclive-utilities": "CCLive Utilities"
   }
