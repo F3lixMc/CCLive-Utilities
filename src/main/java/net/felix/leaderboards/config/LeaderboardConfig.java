@@ -34,14 +34,14 @@ public class LeaderboardConfig {
         // Für Development/Testing
         if (System.getProperty("leaderboard.debug") != null) {
             debugMode = true;
-            System.out.println("🐛 LeaderboardConfig: Debug-Modus aktiviert");
+            // Silent error handling("🐛 LeaderboardConfig: Debug-Modus aktiviert");
         }
         
         // Server-URL aus System Property überschreiben
         String customUrl = System.getProperty("leaderboard.server.url");
         if (customUrl != null && !customUrl.isEmpty()) {
             serverUrl = customUrl;
-            System.out.println("🔧 LeaderboardConfig: Server-URL überschrieben: " + serverUrl);
+            // Silent error handling("🔧 LeaderboardConfig: Server-URL überschrieben: " + serverUrl);
         }
     }
     

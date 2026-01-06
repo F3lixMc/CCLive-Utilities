@@ -2838,7 +2838,7 @@ public class InformationenUtility {
 						HoverEvent result = (HoverEvent) constructor.newInstance(HoverEvent.Action.SHOW_TEXT, hoverText);
 						return result;
 					} catch (Exception e) {
-						e.printStackTrace();
+						// Silent error handling
 					}
 				}
 			}
@@ -2851,7 +2851,7 @@ public class InformationenUtility {
 						HoverEvent result = (HoverEvent) constructor.newInstance(HoverEvent.Action.SHOW_TEXT, hoverText);
 						return result;
 					} catch (Exception e) {
-						e.printStackTrace();
+						// Silent error handling
 					}
 				}
 			}
@@ -2871,7 +2871,7 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			// Silent error handling
 		}
 		return null;
 	}
@@ -3059,8 +3059,7 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load materials database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 	}
 	
@@ -3093,8 +3092,7 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load essences database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 	}
 	
@@ -3139,8 +3137,8 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load cards/statues database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Failed to load cards/statues database: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -3554,8 +3552,8 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load gadgets database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Failed to load gadgets database: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -3597,8 +3595,8 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load licenses database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Failed to load licenses database: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -3630,8 +3628,8 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load aspects database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Failed to load aspects database: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -3661,8 +3659,8 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load MKLevel database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Failed to load MKLevel database: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -3712,8 +3710,8 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load blueprints database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Failed to load blueprints database: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -4172,7 +4170,7 @@ public class InformationenUtility {
 					checkCollectionBiomChange(client);
 					// Only start timer if overlay is enabled and biom is detected
 					if (currentShowCollectionOverlay && biomDetected) {
-						sessionStartTime = System.currentTimeMillis();
+					sessionStartTime = System.currentTimeMillis();
 					} else {
 						sessionStartTime = 0;
 					}
@@ -5872,8 +5870,8 @@ public class InformationenUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Failed to load collections database: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Failed to load collections database: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	

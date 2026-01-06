@@ -80,8 +80,7 @@ public class PlayerIconNetworking {
             PayloadTypeRegistry.playS2C().register(ModPresencePayload.ID, ModPresencePayload.CODEC);
             PayloadTypeRegistry.playC2S().register(ModPresencePayload.ID, ModPresencePayload.CODEC);
         } catch (Exception e) {
-            System.err.println("[CCLive-Utilities] Failed to register payload type: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling
         }
         
         // Register receiver for S2C payloads (when server forwards mod presence from other clients)

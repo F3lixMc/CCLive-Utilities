@@ -683,23 +683,38 @@ public class CCLiveUtilitiesConfig {
     public boolean showTabInfoEssenzenPercent = true; // Prozente für Essenzen anzeigen
     
     @SerialEntry
-    public boolean showTabInfoRecyclerSlot1Percent = true; // Prozente für Recycler Slot 1 anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoRecyclerSlot2Percent = true; // Prozente für Recycler Slot 2 anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoRecyclerSlot3Percent = true; // Prozente für Recycler Slot 3 anzeigen
+    public boolean showTabInfoRecyclerPercent = true; // Prozente für Recycler anzeigen (gilt für alle 3 Slots)
     
     // Tab Info Warn-Prozentwerte (für jede Information einzeln, -1 = deaktiviert)
     @SerialEntry
     public double tabInfoAmbossWarnPercent = -1.0; // Warn-Prozentwert für Amboss (-1 = deaktiviert)
     
     @SerialEntry
+    public boolean tabInfoForschungShowIcon = false; // Forschung Icon statt Text anzeigen
+    
+    @SerialEntry
+    public boolean showTabInfoForschungPercent = true; // Prozente für Forschung anzeigen
+    
+    @SerialEntry
+    public double tabInfoForschungWarnPercent = -1.0; // Warn-Prozentwert für Forschung (-1 = deaktiviert, warnt wenn Prozent UNTER diesem Wert)
+    
+    @SerialEntry
     public boolean tabInfoAmbossShowIcon = false; // Amboss Icon statt Text anzeigen
     
     @SerialEntry
     public boolean tabInfoSchmelzofenShowIcon = false; // Schmelzofen Icon statt Text anzeigen
+    
+    @SerialEntry
+    public boolean tabInfoSeelenShowIcon = false; // Seelen Icon statt Text anzeigen
+    
+    @SerialEntry
+    public boolean tabInfoEssenzenShowIcon = false; // Essenzen Icon statt Text anzeigen
+    
+    @SerialEntry
+    public boolean tabInfoJaegerShowIcon = false; // Jäger Icon statt Text anzeigen
+    
+    @SerialEntry
+    public boolean tabInfoMachtkristalleShowIcon = false; // Machtkristalle Icon statt Text anzeigen
     
     @SerialEntry
     public boolean tabInfoRecyclerSlot1ShowIcon = false; // Recycler Slot 1 Icon statt Text anzeigen
@@ -724,13 +739,77 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean tabInfoMachtkristalleShowBackground = true; // Hintergrund für Machtkristalle anzeigen
     @SerialEntry
-    public boolean tabInfoRecyclerSlot1ShowBackground = true; // Hintergrund für Recycler Slot 1 anzeigen
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot2ShowBackground = true; // Hintergrund für Recycler Slot 2 anzeigen
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot3ShowBackground = true; // Hintergrund für Recycler Slot 3 anzeigen
+    public boolean tabInfoRecyclerShowBackground = true; // Hintergrund für Recycler anzeigen (gilt für alle 3 Slots)
     @SerialEntry
     public boolean tabInfoMainOverlayShowBackground = true; // Hintergrund für Haupt-Overlay anzeigen
+    
+    @SerialEntry
+    public float tabInfoMainOverlayScale = 1.0f; // Skalierung des Haupt-Overlays
+    
+    @SerialEntry
+    public float tabInfoForschungScale = 1.0f; // Skalierung des Forschung-Overlays
+    @SerialEntry
+    public float tabInfoAmbossScale = 1.0f; // Skalierung des Amboss-Overlays
+    @SerialEntry
+    public float tabInfoSchmelzofenScale = 1.0f; // Skalierung des Schmelzofen-Overlays
+    @SerialEntry
+    public float tabInfoJaegerScale = 1.0f; // Skalierung des Jäger-Overlays
+    @SerialEntry
+    public float tabInfoSeelenScale = 1.0f; // Skalierung des Seelen-Overlays
+    @SerialEntry
+    public float tabInfoEssenzenScale = 1.0f; // Skalierung des Essenzen-Overlays
+    @SerialEntry
+    public float tabInfoMachtkristalleScale = 1.0f; // Skalierung des Machtkristalle-Overlays
+    @SerialEntry
+    public float tabInfoRecyclerScale = 1.0f; // Skalierung des Recycler-Overlays
+    @SerialEntry
+    public float tabInfoRecyclerSlot1Scale = 1.0f; // Skalierung des Recycler Slot 1-Overlays
+    @SerialEntry
+    public float tabInfoRecyclerSlot2Scale = 1.0f; // Skalierung des Recycler Slot 2-Overlays
+    @SerialEntry
+    public float tabInfoRecyclerSlot3Scale = 1.0f; // Skalierung des Recycler Slot 3-Overlays
+    
+    // Tab Info Farb-Einstellungen (für jede Information einzeln)
+    @SerialEntry
+    public Color tabInfoForschungTextColor = new Color(0xFFFFFFFF); // Textfarbe für Forschung
+    @SerialEntry
+    public Color tabInfoForschungPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Forschung
+    @SerialEntry
+    public Color tabInfoAmbossTextColor = new Color(0xFFFFFFFF); // Textfarbe für Amboss
+    @SerialEntry
+    public Color tabInfoAmbossPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Amboss
+    @SerialEntry
+    public Color tabInfoSchmelzofenTextColor = new Color(0xFFFFFFFF); // Textfarbe für Schmelzofen
+    @SerialEntry
+    public Color tabInfoSchmelzofenPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Schmelzofen
+    @SerialEntry
+    public Color tabInfoJaegerTextColor = new Color(0xFFFFFFFF); // Textfarbe für Jäger
+    @SerialEntry
+    public Color tabInfoJaegerPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Jäger
+    @SerialEntry
+    public Color tabInfoSeelenTextColor = new Color(0xFFFFFFFF); // Textfarbe für Seelen
+    @SerialEntry
+    public Color tabInfoSeelenPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Seelen
+    @SerialEntry
+    public Color tabInfoEssenzenTextColor = new Color(0xFFFFFFFF); // Textfarbe für Essenzen
+    @SerialEntry
+    public Color tabInfoEssenzenPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Essenzen
+    @SerialEntry
+    public Color tabInfoMachtkristalleTextColor = new Color(0xFFFFFFFF); // Textfarbe für Machtkristalle
+    @SerialEntry
+    public Color tabInfoMachtkristallePercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Machtkristalle
+    @SerialEntry
+    public Color tabInfoRecyclerSlot1TextColor = new Color(0xFFFFFFFF); // Textfarbe für Recycler Slot 1
+    @SerialEntry
+    public Color tabInfoRecyclerSlot1PercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Recycler Slot 1
+    @SerialEntry
+    public Color tabInfoRecyclerSlot2TextColor = new Color(0xFFFFFFFF); // Textfarbe für Recycler Slot 2
+    @SerialEntry
+    public Color tabInfoRecyclerSlot2PercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Recycler Slot 2
+    @SerialEntry
+    public Color tabInfoRecyclerSlot3TextColor = new Color(0xFFFFFFFF); // Textfarbe für Recycler Slot 3
+    @SerialEntry
+    public Color tabInfoRecyclerSlot3PercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Recycler Slot 3
     
     @SerialEntry
     public double tabInfoSchmelzofenWarnPercent = -1.0; // Warn-Prozentwert für Schmelzofen
@@ -745,13 +824,10 @@ public class CCLiveUtilitiesConfig {
     public double tabInfoEssenzenWarnPercent = -1.0; // Warn-Prozentwert für Essenzen
     
     @SerialEntry
-    public double tabInfoRecyclerSlot1WarnPercent = -1.0; // Warn-Prozentwert für Recycler Slot 1
+    public double tabInfoRecyclerWarnPercent = -1.0; // Warn-Prozentwert für Recycler (gilt für alle 3 Slots)
     
     @SerialEntry
-    public double tabInfoRecyclerSlot2WarnPercent = -1.0; // Warn-Prozentwert für Recycler Slot 2
-    
-    @SerialEntry
-    public double tabInfoRecyclerSlot3WarnPercent = -1.0; // Warn-Prozentwert für Recycler Slot 3
+    public double tabInfoMachtkristalleWarnPercent = -1.0; // Warn-Prozentwert für Machtkristalle (gilt für alle 3 Slots)
     
     // Tab Info Separate Overlays (für jede Information einzeln)
     @SerialEntry
@@ -774,15 +850,25 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean tabInfoMachtkristalleSeparateOverlay = false; // Machtkristalle in separatem Overlay
+    @SerialEntry
+    public boolean tabInfoMachtkristalleSlot1Separate = false; // MK Slot 1 einzeln rendern
+    @SerialEntry
+    public boolean tabInfoMachtkristalleSlot2Separate = false; // MK Slot 2 einzeln rendern
+    @SerialEntry
+    public boolean tabInfoMachtkristalleSlot3Separate = false; // MK Slot 3 einzeln rendern
     
     @SerialEntry
     public boolean tabInfoRecyclerSlot1SeparateOverlay = false; // Recycler Slot 1 in separatem Overlay
-    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot1Separate = false; // Recycler Slot 1 einzeln rendern
     @SerialEntry
     public boolean tabInfoRecyclerSlot2SeparateOverlay = false; // Recycler Slot 2 in separatem Overlay
-    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot2Separate = false; // Recycler Slot 2 einzeln rendern
     @SerialEntry
     public boolean tabInfoRecyclerSlot3SeparateOverlay = false; // Recycler Slot 3 in separatem Overlay
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot3Separate = false; // Recycler Slot 3 einzeln rendern
     
     // Tab Info Separate Overlay Positionen (x, y für jede Information)
     @SerialEntry
@@ -826,6 +912,33 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public int tabInfoMachtkristalleY = 250;
+    
+    // Recycler Position (für Multi-Line-Overlay)
+    @SerialEntry
+    public int tabInfoRecyclerX = 10;
+    
+    @SerialEntry
+    public int tabInfoRecyclerY = 290;
+    
+    // Individuelle Positionen für einzelne MK-Slots (wenn "Einzeln" aktiviert ist)
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot1X = 10;
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot1Y = 250;
+    @SerialEntry
+    public float tabInfoMachtkristalleSlot1Scale = 1.0f;
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot2X = 10;
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot2Y = 280;
+    @SerialEntry
+    public float tabInfoMachtkristalleSlot2Scale = 1.0f;
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot3X = 10;
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot3Y = 310;
+    @SerialEntry
+    public float tabInfoMachtkristalleSlot3Scale = 1.0f;
     
     @SerialEntry
     public int tabInfoRecyclerSlot1X = 10;

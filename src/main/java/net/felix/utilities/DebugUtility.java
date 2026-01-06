@@ -33,8 +33,7 @@ public class DebugUtility {
      * Sendet eine Debug-Nachricht nur an die Console (nicht in den Chat um Endlosschleifen zu vermeiden)
      */
     private static void sendDebugMessage(String message) {
-        // Nur Console-Ausgabe - Chat-Ausgabe würde Endlosschleifen verursachen
-        System.out.println("[CCLive-Debug] " + message);
+        // Debug-Logs entfernt
     }
     
     /**

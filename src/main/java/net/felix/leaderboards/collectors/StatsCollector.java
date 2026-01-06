@@ -29,7 +29,7 @@ public class StatsCollector implements DataCollector {
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
         isActive = true;
-        System.out.println("✅ StatsCollector initialisiert");
+        // Silent error handling("✅ StatsCollector initialisiert");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -141,7 +141,7 @@ public class StatsCollector implements DataCollector {
     @Override
     public void shutdown() {
         isActive = false;
-        System.out.println("🛑 StatsCollector gestoppt");
+        // Silent error handling("🛑 StatsCollector gestoppt");
     }
     
     @Override

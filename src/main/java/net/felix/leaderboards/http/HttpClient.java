@@ -38,24 +38,24 @@ public class HttpClient {
             .build();
             
         if (config.isDebugMode()) {
-            System.out.println("🌐 HTTP GET: " + config.getServerUrl() + endpoint);
+            // Silent error handling("🌐 HTTP GET: " + config.getServerUrl() + endpoint);
         }
         
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         
         if (config.isDebugMode()) {
-            System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
+            // Silent error handling("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
         }
         
         if (response.statusCode() == 200) {
             try {
                 return gson.fromJson(response.body(), JsonObject.class);
             } catch (JsonSyntaxException e) {
-                System.err.println("❌ JSON Parse Error: " + e.getMessage());
+                // Silent error handling("❌ JSON Parse Error: " + e.getMessage());
                 return null;
             }
         } else {
-            System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
+            // Silent error handling("❌ HTTP Error " + response.statusCode() + ": " + response.body());
             return null;
         }
     }
@@ -71,24 +71,24 @@ public class HttpClient {
             .build();
             
         if (config.isDebugMode()) {
-            System.out.println("🌐 HTTP GET: " + config.getServerUrl() + endpoint);
+            // Silent error handling("🌐 HTTP GET: " + config.getServerUrl() + endpoint);
         }
         
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         
         if (config.isDebugMode()) {
-            System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
+            // Silent error handling("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
         }
         
         if (response.statusCode() == 200) {
             try {
                 return gson.fromJson(response.body(), JsonArray.class);
             } catch (JsonSyntaxException e) {
-                System.err.println("❌ JSON Parse Error: " + e.getMessage());
+                // Silent error handling("❌ JSON Parse Error: " + e.getMessage());
                 return null;
             }
         } else {
-            System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
+            // Silent error handling("❌ HTTP Error " + response.statusCode() + ": " + response.body());
             return null;
         }
     }
@@ -126,16 +126,16 @@ public class HttpClient {
             .build();
             
         if (config.isDebugMode()) {
-            System.out.println("🌐 HTTP DELETE: " + config.getServerUrl() + endpoint);
+            // Silent error handling("🌐 HTTP DELETE: " + config.getServerUrl() + endpoint);
             if (token != null) {
-                System.out.println("🔐 With Token: " + token.substring(0, 8) + "...");
+                // Silent error handling("🔐 With Token: " + token.substring(0, 8) + "...");
             }
         }
         
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         
         if (config.isDebugMode()) {
-            System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
+            // Silent error handling("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
         }
         
         if (response.statusCode() == 200 || response.statusCode() == 204) {
@@ -149,11 +149,11 @@ public class HttpClient {
                     return emptyResponse;
                 }
             } catch (JsonSyntaxException e) {
-                System.err.println("❌ JSON Parse Error: " + e.getMessage());
+                // Silent error handling("❌ JSON Parse Error: " + e.getMessage());
                 return null;
             }
         } else {
-            System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
+            // Silent error handling("❌ HTTP Error " + response.statusCode() + ": " + response.body());
             return null;
         }
     }
@@ -178,28 +178,28 @@ public class HttpClient {
             .build();
             
         if (config.isDebugMode()) {
-            System.out.println("🌐 HTTP POST: " + config.getServerUrl() + endpoint);
-            System.out.println("📤 Request Body: " + jsonBody);
+            // Silent error handling("🌐 HTTP POST: " + config.getServerUrl() + endpoint);
+            // Silent error handling("📤 Request Body: " + jsonBody);
             if (token != null) {
-                System.out.println("🔐 With Token: " + token.substring(0, 8) + "...");
+                // Silent error handling("🔐 With Token: " + token.substring(0, 8) + "...");
             }
         }
         
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         
         if (config.isDebugMode()) {
-            System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
+            // Silent error handling("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
         }
         
         if (response.statusCode() == 200 || response.statusCode() == 201) {
             try {
                 return gson.fromJson(response.body(), JsonObject.class);
             } catch (JsonSyntaxException e) {
-                System.err.println("❌ JSON Parse Error: " + e.getMessage());
+                // Silent error handling("❌ JSON Parse Error: " + e.getMessage());
                 return null;
             }
         } else {
-            System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
+            // Silent error handling("❌ HTTP Error " + response.statusCode() + ": " + response.body());
             return null;
         }
     }

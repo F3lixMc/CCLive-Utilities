@@ -45,7 +45,7 @@ public class PlayerHoverStatsUtility {
         isInitialized = true;
         
         if (CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging) {
-            System.out.println("[PlayerHoverStats] ✅ Initialisiert");
+            // Silent error handling("[PlayerHoverStats] ✅ Initialisiert");
         }
     }
     
@@ -67,7 +67,7 @@ public class PlayerHoverStatsUtility {
         
         if (playerName == null || playerName.isEmpty()) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Kein Spielername gefunden in Chat-Nachricht");
+                // Silent error handling("[PlayerHoverStats] 🔍 Kein Spielername gefunden in Chat-Nachricht");
             }
             return null;
         }
@@ -75,30 +75,30 @@ public class PlayerHoverStatsUtility {
         // Filtere offensichtlich keine Spielernamen aus
         if (playerName.length() > 20 || playerName.length() < 2) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ Ungültiger Spielername (Länge): " + playerName);
+                // Silent error handling("[PlayerHoverStats] ⚠️ Ungültiger Spielername (Länge): " + playerName);
             }
             return null;
         }
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] 🔍 Spielername extrahiert: " + playerName);
+            // Silent error handling("[PlayerHoverStats] 🔍 Spielername extrahiert: " + playerName);
         }
         
         // Hole Stats vom Server synchron (da wir die Nachricht sofort modifizieren müssen)
         try {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Hole Stats vom Server für: " + playerName);
+                // Silent error handling("[PlayerHoverStats] 🔍 Hole Stats vom Server für: " + playerName);
             }
             
             JsonObject stats = httpClient.get("/profile/" + playerName);
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Stats-Response: " + (stats != null ? stats.toString() : "null"));
+                // Silent error handling("[PlayerHoverStats] 🔍 Stats-Response: " + (stats != null ? stats.toString() : "null"));
             }
             
             if (stats == null) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Keine Stats gefunden für: " + playerName);
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Keine Stats gefunden für: " + playerName);
                 }
                 return null; // Spieler nicht registriert oder Fehler → kein Hover-Override
             }
@@ -106,41 +106,41 @@ public class PlayerHoverStatsUtility {
             // Prüfe ob Stats vorhanden sind
             if (!stats.has("player") || stats.get("player").isJsonNull()) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Spieler nicht registriert: " + playerName);
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Spieler nicht registriert: " + playerName);
                 }
                 return null; // Spieler nicht registriert → kein Hover-Override
             }
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ✅ Stats gefunden, erstelle Hover-Text...");
+                // Silent error handling("[PlayerHoverStats] ✅ Stats gefunden, erstelle Hover-Text...");
             }
             
             // Erstelle Hover-Text mit Stats (inkl. bestehender Hover-Info)
             Text hoverText = createStatsHoverText(originalMessage, stats);
             if (hoverText == null) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Hover-Text konnte nicht erstellt werden");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Hover-Text konnte nicht erstellt werden");
                 }
                 return null;
             }
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ✅ Hover-Text erstellt, erstelle Hover-Event...");
-                System.out.println("[PlayerHoverStats] 🔍 Hover-Text String: " + hoverText.getString());
-                System.out.println("[PlayerHoverStats] 🔍 Hover-Text Siblings: " + hoverText.getSiblings().size());
+                // Silent error handling("[PlayerHoverStats] ✅ Hover-Text erstellt, erstelle Hover-Event...");
+                // Silent error handling("[PlayerHoverStats] 🔍 Hover-Text String: " + hoverText.getString());
+                // Silent error handling("[PlayerHoverStats] 🔍 Hover-Text Siblings: " + hoverText.getSiblings().size());
             }
             
             // Erstelle neues Hover-Event
             HoverEvent newHoverEvent = createHoverEvent(hoverText);
             if (newHoverEvent == null) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Hover-Event konnte nicht erstellt werden");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Hover-Event konnte nicht erstellt werden");
                 }
                 return null;
             }
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ✅ Hover-Event erstellt, modifiziere Nachricht...");
+                // Silent error handling("[PlayerHoverStats] ✅ Hover-Event erstellt, modifiziere Nachricht...");
             }
             
             // Modifiziere die Nachricht mit dem neuen Hover-Event
@@ -148,7 +148,7 @@ public class PlayerHoverStatsUtility {
             
             if (modified == null) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Nachricht konnte nicht modifiziert werden");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Nachricht konnte nicht modifiziert werden");
                 }
                 return null;
             }
@@ -157,13 +157,13 @@ public class PlayerHoverStatsUtility {
             modified = insertIconBetweenNameAndArrow(modified, playerName);
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ✅ Stats-Hover erstellt für: " + playerName);
+                // Silent error handling("[PlayerHoverStats] ✅ Stats-Hover erstellt für: " + playerName);
             }
             
             return modified;
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ❌ Fehler beim Abrufen der Stats für " + playerName + ": " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ❌ Fehler beim Abrufen der Stats für " + playerName + ": " + e.getMessage());
                 e.printStackTrace();
             }
             return null;
@@ -462,14 +462,14 @@ public class PlayerHoverStatsUtility {
         
         if (stats == null) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ createStatsHoverText: stats ist null");
+                // Silent error handling("[PlayerHoverStats] ⚠️ createStatsHoverText: stats ist null");
             }
             return null;
         }
         
         try {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 createStatsHoverText gestartet");
+                // Silent error handling("[PlayerHoverStats] 🔍 createStatsHoverText gestartet");
             }
             
             // Extrahiere Kaktusrang und Seelenrang aus dem bestehenden Hover-Text
@@ -477,7 +477,7 @@ public class PlayerHoverStatsUtility {
             int seelenrang = extractSeelenrang(originalMessage);
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Kaktusrang: " + kaktusrang + ", Seelenrang: " + seelenrang);
+                // Silent error handling("[PlayerHoverStats] 🔍 Kaktusrang: " + kaktusrang + ", Seelenrang: " + seelenrang);
             }
             
             // Erstelle neuen Hover-Text
@@ -498,7 +498,7 @@ public class PlayerHoverStatsUtility {
             }
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Floor: " + floor + ", Wave: " + wave);
+                // Silent error handling("[PlayerHoverStats] 🔍 Floor: " + floor + ", Wave: " + wave);
             }
             
             if (floor > 0 || wave > 0) {
@@ -517,30 +517,30 @@ public class PlayerHoverStatsUtility {
             }
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Chosen Stat vom Server: " + chosenStat);
+                // Silent error handling("[PlayerHoverStats] 🔍 Chosen Stat vom Server: " + chosenStat);
             }
             
             String statValue = getStatValue(chosenStat, stats, playerNameForStat);
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Stat-Wert (" + chosenStat + "): " + statValue);
+                // Silent error handling("[PlayerHoverStats] 🔍 Stat-Wert (" + chosenStat + "): " + statValue);
             }
             if (statValue != null && !statValue.isEmpty()) {
                 hoverText.append(Text.literal(statValue));
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ✅ Stat-Wert zum Hover-Text hinzugefügt");
+                    // Silent error handling("[PlayerHoverStats] ✅ Stat-Wert zum Hover-Text hinzugefügt");
                 }
             } else if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ Kein Stat-Wert gefunden für: " + chosenStat);
+                // Silent error handling("[PlayerHoverStats] ⚠️ Kein Stat-Wert gefunden für: " + chosenStat);
             }
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ✅ createStatsHoverText erfolgreich abgeschlossen");
+                // Silent error handling("[PlayerHoverStats] ✅ createStatsHoverText erfolgreich abgeschlossen");
             }
             
             return hoverText;
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ❌ Fehler in createStatsHoverText: " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ❌ Fehler in createStatsHoverText: " + e.getMessage());
                 e.printStackTrace();
             }
             return null;
@@ -562,7 +562,7 @@ public class PlayerHoverStatsUtility {
         HoverEvent hoverEvent = findHoverEventInText(message);
         if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractKaktusrang: Kein HoverEvent gefunden");
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: Kein HoverEvent gefunden");
             }
             return 0;
         }
@@ -571,7 +571,7 @@ public class PlayerHoverStatsUtility {
         Text hoverText = extractHoverTextFromEvent(hoverEvent);
         if (hoverText == null) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractKaktusrang: HoverText ist null");
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: HoverText ist null");
             }
             return 0;
         }
@@ -580,19 +580,19 @@ public class PlayerHoverStatsUtility {
         String hoverString = getFullTextString(hoverText);
         if (hoverString == null || hoverString.isEmpty()) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractKaktusrang: HoverString ist null oder leer");
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: HoverString ist null oder leer");
             }
             return 0;
         }
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] 🔍 extractKaktusrang: HoverString = '" + hoverString + "'");
+            // Silent error handling("[PlayerHoverStats] 🔍 extractKaktusrang: HoverString = '" + hoverString + "'");
         }
         
         // Entferne Farbcodes (§ gefolgt von einem Zeichen)
         String cleanedString = hoverString.replaceAll("§[0-9a-fk-or]", "");
         if (debugging) {
-            System.out.println("[PlayerHoverStats] 🔍 extractKaktusrang: CleanedString = '" + cleanedString + "'");
+            // Silent error handling("[PlayerHoverStats] 🔍 extractKaktusrang: CleanedString = '" + cleanedString + "'");
         }
         
         // Suche nach [Kaktusrang]: x (unterstützt auch Kommas als Tausendertrennzeichen)
@@ -604,19 +604,19 @@ public class PlayerHoverStatsUtility {
                 String numberString = matcher.group(1).replace(",", "");
                 int value = Integer.parseInt(numberString);
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ✅ extractKaktusrang: " + value);
+                    // Silent error handling("[PlayerHoverStats] ✅ extractKaktusrang: " + value);
                 }
                 return value;
             } catch (NumberFormatException e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ extractKaktusrang: NumberFormatException: " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: NumberFormatException: " + e.getMessage());
                 }
                 return 0;
             }
         }
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] ⚠️ extractKaktusrang: Pattern nicht gefunden");
+            // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: Pattern nicht gefunden");
         }
         return 0;
     }
@@ -636,7 +636,7 @@ public class PlayerHoverStatsUtility {
         HoverEvent hoverEvent = findHoverEventInText(message);
         if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractSeelenrang: Kein HoverEvent gefunden");
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: Kein HoverEvent gefunden");
             }
             return 0;
         }
@@ -645,7 +645,7 @@ public class PlayerHoverStatsUtility {
         Text hoverText = extractHoverTextFromEvent(hoverEvent);
         if (hoverText == null) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractSeelenrang: HoverText ist null");
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: HoverText ist null");
             }
             return 0;
         }
@@ -654,19 +654,19 @@ public class PlayerHoverStatsUtility {
         String hoverString = getFullTextString(hoverText);
         if (hoverString == null || hoverString.isEmpty()) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractSeelenrang: HoverString ist null oder leer");
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: HoverString ist null oder leer");
             }
             return 0;
         }
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] 🔍 extractSeelenrang: HoverString = '" + hoverString + "'");
+            // Silent error handling("[PlayerHoverStats] 🔍 extractSeelenrang: HoverString = '" + hoverString + "'");
         }
         
         // Entferne Farbcodes (§ gefolgt von einem Zeichen)
         String cleanedString = hoverString.replaceAll("§[0-9a-fk-or]", "");
         if (debugging) {
-            System.out.println("[PlayerHoverStats] 🔍 extractSeelenrang: CleanedString = '" + cleanedString + "'");
+            // Silent error handling("[PlayerHoverStats] 🔍 extractSeelenrang: CleanedString = '" + cleanedString + "'");
         }
         
         // Suche nach [Seelenrang]: x (unterstützt auch Kommas als Tausendertrennzeichen)
@@ -678,19 +678,19 @@ public class PlayerHoverStatsUtility {
                 String numberString = matcher.group(1).replace(",", "");
                 int value = Integer.parseInt(numberString);
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ✅ extractSeelenrang: " + value);
+                    // Silent error handling("[PlayerHoverStats] ✅ extractSeelenrang: " + value);
                 }
                 return value;
             } catch (NumberFormatException e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ extractSeelenrang: NumberFormatException: " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: NumberFormatException: " + e.getMessage());
                 }
                 return 0;
             }
         }
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] ⚠️ extractSeelenrang: Pattern nicht gefunden");
+            // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: Pattern nicht gefunden");
         }
         return 0;
     }
@@ -767,13 +767,13 @@ public class PlayerHoverStatsUtility {
             Object value = getValueMethod.invoke(hoverEvent, HoverEvent.Action.SHOW_TEXT);
             if (value instanceof Text) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via getValue(Action) gefunden");
+                    // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via getValue(Action) gefunden");
                 }
                 return (Text) value;
             }
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: getValue(Action) fehlgeschlagen: " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: getValue(Action) fehlgeschlagen: " + e.getMessage());
             }
         }
         
@@ -784,13 +784,13 @@ public class PlayerHoverStatsUtility {
             Object value = valueMethod.invoke(hoverEvent);
             if (value instanceof Text) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via value() gefunden");
+                    // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via value() gefunden");
                 }
                 return (Text) value;
             }
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: value() fehlgeschlagen: " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: value() fehlgeschlagen: " + e.getMessage());
             }
         }
         
@@ -803,7 +803,7 @@ public class PlayerHoverStatsUtility {
                     Object value = field.get(hoverEvent);
                     if (value instanceof Text) {
                         if (debugging) {
-                            System.out.println("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Field gefunden");
+                            // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Field gefunden");
                         }
                         return (Text) value;
                     }
@@ -811,7 +811,7 @@ public class PlayerHoverStatsUtility {
             }
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Field-Suche fehlgeschlagen: " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Field-Suche fehlgeschlagen: " + e.getMessage());
             }
         }
         
@@ -821,43 +821,43 @@ public class PlayerHoverStatsUtility {
             String className = hoverEvent.getClass().getName();
             Class<?> actualClass = hoverEvent.getClass();
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: HoverEvent Klasse: " + className);
-                System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Ist Record: " + actualClass.isRecord());
+                // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: HoverEvent Klasse: " + className);
+                // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Ist Record: " + actualClass.isRecord());
             }
             
             // Prüfe ob es ein Record ist (direkt auf der tatsächlichen Klasse)
             if (actualClass.isRecord()) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: HoverEvent ist ein Record");
+                    // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: HoverEvent ist ein Record");
                 }
                 try {
                     java.lang.reflect.RecordComponent[] components = actualClass.getRecordComponents();
                     if (debugging) {
-                        System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Record-Komponenten: " + components.length);
+                        // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Record-Komponenten: " + components.length);
                     }
                     for (java.lang.reflect.RecordComponent component : components) {
                         if (debugging) {
-                            System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Komponente: " + component.getName() + " (" + component.getType().getName() + ")");
+                            // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Komponente: " + component.getName() + " (" + component.getType().getName() + ")");
                         }
                         if (Text.class.isAssignableFrom(component.getType())) {
                             try {
                                 Object value = component.getAccessor().invoke(hoverEvent);
                                 if (value instanceof Text) {
                                     if (debugging) {
-                                        System.out.println("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Record-Komponente gefunden: " + component.getName());
+                                        // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Record-Komponente gefunden: " + component.getName());
                                     }
                                     return (Text) value;
                                 }
                             } catch (Exception e) {
                                 if (debugging) {
-                                    System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Record-Komponente-Zugriff fehlgeschlagen: " + e.getMessage());
+                                    // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Record-Komponente-Zugriff fehlgeschlagen: " + e.getMessage());
                                 }
                             }
                         }
                     }
                 } catch (Exception e) {
                     if (debugging) {
-                        System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Record-Komponenten-Zugriff fehlgeschlagen: " + e.getMessage());
+                        // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Record-Komponenten-Zugriff fehlgeschlagen: " + e.getMessage());
                     }
                 }
             }
@@ -866,11 +866,11 @@ public class PlayerHoverStatsUtility {
             try {
                 java.lang.reflect.Field[] allFields = actualClass.getDeclaredFields();
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Felder in Klasse: " + allFields.length);
+                    // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Felder in Klasse: " + allFields.length);
                 }
                 for (java.lang.reflect.Field field : allFields) {
                     if (debugging) {
-                        System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Feld: " + field.getName() + " (" + field.getType().getName() + ")");
+                        // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Feld: " + field.getName() + " (" + field.getType().getName() + ")");
                     }
                     if (Text.class.isAssignableFrom(field.getType())) {
                         try {
@@ -878,20 +878,20 @@ public class PlayerHoverStatsUtility {
                             Object value = field.get(hoverEvent);
                             if (value instanceof Text) {
                                 if (debugging) {
-                                    System.out.println("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Feld gefunden: " + field.getName());
+                                    // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Feld gefunden: " + field.getName());
                                 }
                                 return (Text) value;
                             }
                         } catch (Exception e) {
                             if (debugging) {
-                                System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Feld-Zugriff fehlgeschlagen: " + e.getMessage());
+                                // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Feld-Zugriff fehlgeschlagen: " + e.getMessage());
                             }
                         }
                     }
                 }
             } catch (Exception e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Feld-Suche fehlgeschlagen: " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Feld-Suche fehlgeschlagen: " + e.getMessage());
                 }
             }
             
@@ -899,43 +899,43 @@ public class PlayerHoverStatsUtility {
             try {
                 java.lang.reflect.Method[] methods = actualClass.getDeclaredMethods();
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Methoden in Klasse: " + methods.length);
+                    // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Methoden in Klasse: " + methods.length);
                 }
                 for (java.lang.reflect.Method method : methods) {
                     if (Text.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0) {
                         if (debugging) {
-                            System.out.println("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Methode: " + method.getName() + " -> " + method.getReturnType().getName());
+                            // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Methode: " + method.getName() + " -> " + method.getReturnType().getName());
                         }
                         try {
                             method.setAccessible(true);
                             Object value = method.invoke(hoverEvent);
                             if (value instanceof Text) {
                                 if (debugging) {
-                                    System.out.println("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Methode gefunden: " + method.getName());
+                                    // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Methode gefunden: " + method.getName());
                                 }
                                 return (Text) value;
                             }
                         } catch (Exception e) {
                             if (debugging) {
-                                System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Methode-Zugriff fehlgeschlagen: " + e.getMessage());
+                                // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Methode-Zugriff fehlgeschlagen: " + e.getMessage());
                             }
                         }
                     }
                 }
             } catch (Exception e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Methode-Suche fehlgeschlagen: " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: Methode-Suche fehlgeschlagen: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: ShowText-Klasse-Handling fehlgeschlagen: " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ⚠️ extractHoverTextFromEvent: ShowText-Klasse-Handling fehlgeschlagen: " + e.getMessage());
                 e.printStackTrace();
             }
         }
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] ❌ extractHoverTextFromEvent: Alle Versuche fehlgeschlagen");
+            // Silent error handling("[PlayerHoverStats] ❌ extractHoverTextFromEvent: Alle Versuche fehlgeschlagen");
         }
         return null;
     }
@@ -986,12 +986,12 @@ public class PlayerHoverStatsUtility {
                                 method.setAccessible(true);
                                 HoverEvent result = (HoverEvent) method.invoke(null, hoverText);
                                 if (debugging) {
-                                    System.out.println("[PlayerHoverStats] ✅ HoverEvent erstellt via ShowText static factory");
+                                    // Silent error handling("[PlayerHoverStats] ✅ HoverEvent erstellt via ShowText static factory");
                                 }
                                 return result;
                             } catch (Exception e) {
                                 if (debugging) {
-                                    System.out.println("[PlayerHoverStats] ⚠️ ShowText static factory fehlgeschlagen: " + e.getMessage());
+                                    // Silent error handling("[PlayerHoverStats] ⚠️ ShowText static factory fehlgeschlagen: " + e.getMessage());
                                 }
                             }
                         }
@@ -1010,7 +1010,7 @@ public class PlayerHoverStatsUtility {
                             // Check if ShowText is directly assignable to HoverEvent
                             if (HoverEvent.class.isAssignableFrom(showTextInstance.getClass())) {
                                 if (debugging) {
-                                    System.out.println("[PlayerHoverStats] ✅ HoverEvent erstellt via ShowText (direkt assignable)");
+                                    // Silent error handling("[PlayerHoverStats] ✅ HoverEvent erstellt via ShowText (direkt assignable)");
                                 }
                                 return (HoverEvent) showTextInstance;
                             }
@@ -1026,26 +1026,26 @@ public class PlayerHoverStatsUtility {
                                         hoverEventConstructor.setAccessible(true);
                                         HoverEvent result = (HoverEvent) hoverEventConstructor.newInstance(HoverEvent.Action.SHOW_TEXT, showTextInstance);
                                         if (debugging) {
-                                            System.out.println("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent constructor mit ShowText");
+                                            // Silent error handling("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent constructor mit ShowText");
                                         }
                                         return result;
                                     } catch (Exception e) {
                                         if (debugging) {
-                                            System.out.println("[PlayerHoverStats] ⚠️ HoverEvent constructor fehlgeschlagen: " + e.getMessage());
+                                            // Silent error handling("[PlayerHoverStats] ⚠️ HoverEvent constructor fehlgeschlagen: " + e.getMessage());
                                         }
                                     }
                                 }
                             }
                         } catch (Exception e) {
                             if (debugging) {
-                                System.out.println("[PlayerHoverStats] ⚠️ ShowText constructor fehlgeschlagen: " + e.getMessage());
+                                // Silent error handling("[PlayerHoverStats] ⚠️ ShowText constructor fehlgeschlagen: " + e.getMessage());
                             }
                         }
                     }
                 }
             } catch (Exception e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ ShowText class handling fehlgeschlagen: " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ⚠️ ShowText class handling fehlgeschlagen: " + e.getMessage());
                 }
             }
         }
@@ -1061,12 +1061,12 @@ public class PlayerHoverStatsUtility {
                             method.setAccessible(true);
                             HoverEvent result = (HoverEvent) method.invoke(null, HoverEvent.Action.SHOW_TEXT, hoverText);
                             if (debugging) {
-                                System.out.println("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent static factory (Action, Text)");
+                                // Silent error handling("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent static factory (Action, Text)");
                             }
                             return result;
                         } catch (Exception e) {
                             if (debugging) {
-                                System.out.println("[PlayerHoverStats] ⚠️ HoverEvent static factory (Action, Text) fehlgeschlagen: " + e.getMessage());
+                                // Silent error handling("[PlayerHoverStats] ⚠️ HoverEvent static factory (Action, Text) fehlgeschlagen: " + e.getMessage());
                             }
                         }
                     } else if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
@@ -1074,12 +1074,12 @@ public class PlayerHoverStatsUtility {
                             method.setAccessible(true);
                             HoverEvent result = (HoverEvent) method.invoke(null, hoverText);
                             if (debugging) {
-                                System.out.println("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent static factory (Text)");
+                                // Silent error handling("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent static factory (Text)");
                             }
                             return result;
                         } catch (Exception e) {
                             if (debugging) {
-                                System.out.println("[PlayerHoverStats] ⚠️ HoverEvent static factory (Text) fehlgeschlagen: " + e.getMessage());
+                                // Silent error handling("[PlayerHoverStats] ⚠️ HoverEvent static factory (Text) fehlgeschlagen: " + e.getMessage());
                             }
                         }
                     }
@@ -1095,12 +1095,12 @@ public class PlayerHoverStatsUtility {
                         constructor.setAccessible(true);
                         HoverEvent result = (HoverEvent) constructor.newInstance(HoverEvent.Action.SHOW_TEXT, hoverText);
                         if (debugging) {
-                            System.out.println("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent constructor (Action, Text)");
+                            // Silent error handling("[PlayerHoverStats] ✅ HoverEvent erstellt via HoverEvent constructor (Action, Text)");
                         }
                         return result;
                     } catch (Exception e) {
                         if (debugging) {
-                            System.out.println("[PlayerHoverStats] ⚠️ HoverEvent constructor (Action, Text) fehlgeschlagen: " + e.getMessage());
+                            // Silent error handling("[PlayerHoverStats] ⚠️ HoverEvent constructor (Action, Text) fehlgeschlagen: " + e.getMessage());
                             e.printStackTrace();
                         }
                     }
@@ -1108,13 +1108,13 @@ public class PlayerHoverStatsUtility {
             }
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ❌ Alle HoverEvent-Erstellungsversuche fehlgeschlagen: " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ❌ Alle HoverEvent-Erstellungsversuche fehlgeschlagen: " + e.getMessage());
                 e.printStackTrace();
             }
         }
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] ❌ HoverEvent konnte nicht erstellt werden");
+            // Silent error handling("[PlayerHoverStats] ❌ HoverEvent konnte nicht erstellt werden");
         }
         return null;
     }
@@ -1156,21 +1156,21 @@ public class PlayerHoverStatsUtility {
         boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
         
         if (debugging) {
-            System.out.println("[PlayerHoverStats] 🔍 getPlaytimeValue() aufgerufen");
+            // Silent error handling("[PlayerHoverStats] 🔍 getPlaytimeValue() aufgerufen");
         }
         
         try {
             LeaderboardManager manager = LeaderboardManager.getInstance();
             if (manager == null) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ LeaderboardManager ist null");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ LeaderboardManager ist null");
                 }
                 return null;
             }
             
             if (!manager.isRegistered()) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ LeaderboardManager nicht registriert");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ LeaderboardManager nicht registriert");
                 }
                 return null;
             }
@@ -1179,20 +1179,20 @@ public class PlayerHoverStatsUtility {
             String searchPlayerName = playerName != null ? playerName : manager.getPlayerName();
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Versuche Playtime für Spieler '" + searchPlayerName + "' zu holen...");
+                // Silent error handling("[PlayerHoverStats] 🔍 Versuche Playtime für Spieler '" + searchPlayerName + "' zu holen...");
             }
             
             // Hole Playtime direkt für den spezifischen Spieler vom Leaderboard
             // Direkter HTTP-Request für den spezifischen Spieler (synchron)
             String endpoint = "/leaderboard/playtime/" + searchPlayerName;
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 HTTP GET Request: " + endpoint);
-                System.out.println("[PlayerHoverStats] 🔍 HttpClient ist " + (httpClient != null ? "initialisiert" : "NULL"));
+                // Silent error handling("[PlayerHoverStats] 🔍 HTTP GET Request: " + endpoint);
+                // Silent error handling("[PlayerHoverStats] 🔍 HttpClient ist " + (httpClient != null ? "initialisiert" : "NULL"));
             }
             
             if (httpClient == null) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ❌ HttpClient ist null - kann Playtime nicht abrufen");
+                    // Silent error handling("[PlayerHoverStats] ❌ HttpClient ist null - kann Playtime nicht abrufen");
                 }
                 return null;
             }
@@ -1200,15 +1200,15 @@ public class PlayerHoverStatsUtility {
             JsonObject result = null;
             try {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] 🔍 Sende HTTP GET Request...");
+                    // Silent error handling("[PlayerHoverStats] 🔍 Sende HTTP GET Request...");
                 }
                 result = httpClient.get(endpoint);
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ✅ HTTP GET Request abgeschlossen");
+                    // Silent error handling("[PlayerHoverStats] ✅ HTTP GET Request abgeschlossen");
                 }
             } catch (java.io.IOException e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ❌ IOException beim HTTP GET: " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ❌ IOException beim HTTP GET: " + e.getMessage());
                     e.printStackTrace();
                 } else {
                     // Auch ohne Debug-Modus sollten wir kritische Fehler loggen
@@ -1216,14 +1216,14 @@ public class PlayerHoverStatsUtility {
                 }
             } catch (InterruptedException e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ❌ InterruptedException beim HTTP GET: " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ❌ InterruptedException beim HTTP GET: " + e.getMessage());
                     e.printStackTrace();
                 } else {
                     System.err.println("[PlayerHoverStats] ❌ InterruptedException beim HTTP GET: " + e.getMessage());
                 }
             } catch (Exception e) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ❌ Unerwartete Exception beim HTTP GET: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+                    // Silent error handling("[PlayerHoverStats] ❌ Unerwartete Exception beim HTTP GET: " + e.getClass().getSimpleName() + " - " + e.getMessage());
                     e.printStackTrace();
                 } else {
                     System.err.println("[PlayerHoverStats] ❌ Unerwartete Exception beim HTTP GET: " + e.getClass().getSimpleName() + " - " + e.getMessage());
@@ -1231,13 +1231,13 @@ public class PlayerHoverStatsUtility {
             }
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] 🔍 Leaderboard-Result erhalten: " + (result != null ? result.toString() : "null"));
+                // Silent error handling("[PlayerHoverStats] 🔍 Leaderboard-Result erhalten: " + (result != null ? result.toString() : "null"));
             }
             
             if (result == null) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Kein Leaderboard-Result für playtime (result ist null)");
-                    System.out.println("[PlayerHoverStats] 💡 Tipp: Aktiviere 'Leaderboard Debugging' in der Config, um HTTP-Details zu sehen");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Kein Leaderboard-Result für playtime (result ist null)");
+                    // Silent error handling("[PlayerHoverStats] 💡 Tipp: Aktiviere 'Leaderboard Debugging' in der Config, um HTTP-Details zu sehen");
                 }
                 return null;
             }
@@ -1250,7 +1250,7 @@ public class PlayerHoverStatsUtility {
                 if (self.has("score") && !self.get("score").isJsonNull()) {
                     playtimeSeconds = self.get("score").getAsLong();
                     if (debugging) {
-                        System.out.println("[PlayerHoverStats] ✅ Playtime aus 'self' geholt: " + playtimeSeconds);
+                        // Silent error handling("[PlayerHoverStats] ✅ Playtime aus 'self' geholt: " + playtimeSeconds);
                     }
                 }
             }
@@ -1260,7 +1260,7 @@ public class PlayerHoverStatsUtility {
                 com.google.gson.JsonArray top = result.getAsJsonArray("top");
                 
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] 🔍 Suche Spieler '" + searchPlayerName + "' im top-Array...");
+                    // Silent error handling("[PlayerHoverStats] 🔍 Suche Spieler '" + searchPlayerName + "' im top-Array...");
                 }
                 
                 if (top != null && searchPlayerName != null) {
@@ -1270,7 +1270,7 @@ public class PlayerHoverStatsUtility {
                             if (entry.has("score") && !entry.get("score").isJsonNull()) {
                                 playtimeSeconds = entry.get("score").getAsLong();
                                 if (debugging) {
-                                    System.out.println("[PlayerHoverStats] ✅ Playtime aus 'top'-Array geholt für '" + searchPlayerName + "': " + playtimeSeconds);
+                                    // Silent error handling("[PlayerHoverStats] ✅ Playtime aus 'top'-Array geholt für '" + searchPlayerName + "': " + playtimeSeconds);
                                 }
                                 break;
                             }
@@ -1279,13 +1279,13 @@ public class PlayerHoverStatsUtility {
                 }
                 
                 if (playtimeSeconds == 0 && debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Spieler '" + searchPlayerName + "' nicht im top-Array gefunden");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Spieler '" + searchPlayerName + "' nicht im top-Array gefunden");
                 }
             }
             
             if (playtimeSeconds <= 0) {
                 if (debugging) {
-                    System.out.println("[PlayerHoverStats] ⚠️ Playtime ist 0 oder nicht gefunden");
+                    // Silent error handling("[PlayerHoverStats] ⚠️ Playtime ist 0 oder nicht gefunden");
                 }
                 return null;
             }
@@ -1305,13 +1305,13 @@ public class PlayerHoverStatsUtility {
             playtimeStr.append(minutes).append("m");
             
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ✅ Playtime formatiert: " + playtimeStr.toString() + " (aus " + playtimeSeconds + " Sekunden)");
+                // Silent error handling("[PlayerHoverStats] ✅ Playtime formatiert: " + playtimeStr.toString() + " (aus " + playtimeSeconds + " Sekunden)");
             }
             
             return "§7⏱ §f" + playtimeStr.toString();
         } catch (Exception e) {
             if (debugging) {
-                System.out.println("[PlayerHoverStats] ❌ Fehler beim Abrufen von Playtime: " + e.getMessage());
+                // Silent error handling("[PlayerHoverStats] ❌ Fehler beim Abrufen von Playtime: " + e.getMessage());
                 e.printStackTrace();
             }
             return null;
@@ -1414,7 +1414,7 @@ public class PlayerHoverStatsUtility {
                 return null;
             }
             String formatted = formatNumber(damage);
-            System.out.println("[PlayerHoverStats] 🔍 Max Damage Formatierung: damage=" + damage + ", formatted=" + formatted);
+            // Silent error handling("[PlayerHoverStats] 🔍 Max Damage Formatierung: damage=" + damage + ", formatted=" + formatted);
             return "§c🗡 §f" + formatted;
         } catch (Exception e) {
             // Bei Fehler: null zurückgeben, damit die Nachricht trotzdem angezeigt wird
@@ -1456,9 +1456,9 @@ public class PlayerHoverStatsUtility {
             if (number >= 1_000L) {
                 // Verwende double für präzise Division
                 double value = (double) number / 1_000.0;
-                System.out.println("[PlayerHoverStats] 🔍 formatNumber: K-Bereich, number=" + number + ", value=" + value + " (berechnet: " + number + " / 1000.0)");
+                // Silent error handling("[PlayerHoverStats] 🔍 formatNumber: K-Bereich, number=" + number + ", value=" + value + " (berechnet: " + number + " / 1000.0)");
                 String result = formatWithThousandsSeparator(value, "K");
-                System.out.println("[PlayerHoverStats] 🔍 formatNumber: K-Bereich Ergebnis: " + result);
+                // Silent error handling("[PlayerHoverStats] 🔍 formatNumber: K-Bereich Ergebnis: " + result);
                 return result;
             }
             
@@ -1475,10 +1475,10 @@ public class PlayerHoverStatsUtility {
      * z.B. 1.000 K, 10.000 K, 100.000 K
      */
     private static String formatWithThousandsSeparator(double value, String suffix) {
-        System.out.println("[PlayerHoverStats] 🔍 formatWithThousandsSeparator aufgerufen: value=" + value + ", suffix=" + suffix);
+        // Silent error handling("[PlayerHoverStats] 🔍 formatWithThousandsSeparator aufgerufen: value=" + value + ", suffix=" + suffix);
         // Prüfe auf ungültige Werte
         if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
-            System.out.println("[PlayerHoverStats] ⚠️ formatWithThousandsSeparator: Ungültiger Wert");
+            // Silent error handling("[PlayerHoverStats] ⚠️ formatWithThousandsSeparator: Ungültiger Wert");
             return "0" + suffix;
         }
         
@@ -1487,14 +1487,14 @@ public class PlayerHoverStatsUtility {
         if (suffix.equals("K")) {
             // Verwende direkt die formatierte Zahl mit 3 Dezimalstellen
             // WICHTIG: Verwende Locale.US um sicherzustellen, dass ein Punkt (nicht Komma) verwendet wird
-            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung START: value=" + value + " (Typ: double)");
+            // Silent error handling("[PlayerHoverStats] 🔍 K-Formatierung START: value=" + value + " (Typ: double)");
             String formatted = String.format(java.util.Locale.US, "%.3f", value);
-            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung: String.format(Locale.US, \"%.3f\", " + value + ") = " + formatted);
+            // Silent error handling("[PlayerHoverStats] 🔍 K-Formatierung: String.format(Locale.US, \"%.3f\", " + value + ") = " + formatted);
             int dotIndex = formatted.indexOf('.');
-            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung: dotIndex=" + dotIndex);
+            // Silent error handling("[PlayerHoverStats] 🔍 K-Formatierung: dotIndex=" + dotIndex);
             if (dotIndex < 0) {
                 // Fallback: Kein Punkt gefunden (sollte nicht passieren)
-                System.out.println("[PlayerHoverStats] ⚠️ K-Formatierung: Kein Punkt gefunden!");
+                // Silent error handling("[PlayerHoverStats] ⚠️ K-Formatierung: Kein Punkt gefunden!");
                 String wholePartStr = addThousandsSeparator(String.valueOf((long) value));
                 return wholePartStr + ".000" + suffix;
             }
@@ -1502,13 +1502,13 @@ public class PlayerHoverStatsUtility {
             String wholePartStr = formatted.substring(0, dotIndex);
             String decimalPart = formatted.substring(dotIndex); // Enthält bereits den Punkt und 3 Dezimalstellen
             // Debug: Zeige Zwischenwerte
-            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung: value=" + value + ", formatted=" + formatted + ", wholePartStr=" + wholePartStr + ", decimalPart=" + decimalPart);
+            // Silent error handling("[PlayerHoverStats] 🔍 K-Formatierung: value=" + value + ", formatted=" + formatted + ", wholePartStr=" + wholePartStr + ", decimalPart=" + decimalPart);
             // Füge Tausendertrennzeichen zur Ganzzahl hinzu (falls >= 1000)
             // WICHTIG: addThousandsSeparator arbeitet nur mit der Ganzzahl, nicht mit Dezimalstellen
             String wholePartWithSeparator = addThousandsSeparator(wholePartStr);
             String result = wholePartWithSeparator + decimalPart + suffix;
             // Debug: Zeige Endergebnis
-            System.out.println("[PlayerHoverStats] 🔍 K-Formatierung Ergebnis: wholePartWithSeparator=" + wholePartWithSeparator + ", result=" + result);
+            // Silent error handling("[PlayerHoverStats] 🔍 K-Formatierung Ergebnis: wholePartWithSeparator=" + wholePartWithSeparator + ", result=" + result);
             return result;
         }
         

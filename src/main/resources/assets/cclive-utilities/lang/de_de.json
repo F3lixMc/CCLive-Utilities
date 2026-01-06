@@ -15,5 +15,8 @@
     "key.categories.cclive-utilities.overlay": "CCLive Utilities - Overlay Editor",
     "category.cclive-utilities.schmied": "CCLive Utilities - Schmied Tracker",
     "category.cclive-utilities.collection": "CCLive Utilities - Collection",
+    "key.cclive-utilities.item-info-extract": "Item-Infos extrahieren",
+    "key.cclive-utilities.item-info-auto-click": "Nicht registrierte Items automatisch rechtsklicken",
+    "category.cclive-utilities.item-info": "CCLive Utilities - Item Info",
       "key.categories.cclive-utilities": "CCLive Utilities"
   } 

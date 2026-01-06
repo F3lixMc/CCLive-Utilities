@@ -22,5 +22,8 @@
     "categories.cclive-utilities.overlay": "CCLive Utilities - Overlay Editor",
     "category.cclive-utilities.schmied": "CCLive Utilities - Smithing Tracker",
     "category.cclive-utilities.collection": "CCLive Utilities - Collection",
+    "key.cclive-utilities.item-info-extract": "Extract Item Info",
+    "key.cclive-utilities.item-info-auto-click": "Auto Right-Click Unregistered Items",
+    "category.cclive-utilities.item-info": "CCLive Utilities - Item Info",
       "key.categories.cclive-utilities": "CCLive Utilities"
   }

@@ -40,8 +40,7 @@ public class DamageTrackingUtility {
             
             isInitialized = true;
         } catch (Exception e) {
-            System.err.println("[DamageTracking] ❌ Fehler beim Initialisieren: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     

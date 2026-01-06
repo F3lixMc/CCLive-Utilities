@@ -271,8 +271,7 @@ public class AspectInfoGUI extends Screen {
             }
             }
         } catch (Exception e) {
-            System.err.println("Failed to load aspects database for GUI: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     

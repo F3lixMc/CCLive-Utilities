@@ -207,7 +207,7 @@ public class ProfileStatsManager {
         
         isInitialized = true;
         if (isDebugEnabled()) {
-            System.out.println("[ProfileStats] ✅ ProfileStatsManager initialisiert");
+            // Silent error handling("[ProfileStats] ✅ ProfileStatsManager initialisiert");
         }
     }
     
@@ -231,7 +231,7 @@ public class ProfileStatsManager {
             // Playtime regelmäßig an Leaderboard senden
             if (playtimeTicks >= PLAYTIME_UPDATE_INTERVAL) {
                 if (isDebugEnabled()) {
-                    System.out.println("⏱️ [ProfileStats] PLAYTIME_UPDATE_INTERVAL erreicht - playtimeTicks=" + playtimeTicks);
+                    // Silent error handling("⏱️ [ProfileStats] PLAYTIME_UPDATE_INTERVAL erreicht - playtimeTicks=" + playtimeTicks);
                 }
                 sendPlaytimeToLeaderboard();
                 playtimeTicks = 0; // Reset nach Update
@@ -259,7 +259,7 @@ public class ProfileStatsManager {
         try {
             boolean debug = isDebugEnabled();
             if (debug) {
-                System.out.println("=== [ProfileStats] Server-Name Debug Log ===");
+                // Silent error handling("=== [ProfileStats] Server-Name Debug Log ===");
             }
             
             // Methode 1: getCurrentServerEntry (Server-Liste)
@@ -268,16 +268,16 @@ public class ProfileStatsManager {
                 if (client.getCurrentServerEntry() != null) {
                     serverEntryName = client.getCurrentServerEntry().name;
                     if (debug) {
-                        System.out.println("[ProfileStats] getCurrentServerEntry().name = '" + serverEntryName + "'");
+                        // Silent error handling("[ProfileStats] getCurrentServerEntry().name = '" + serverEntryName + "'");
                     }
                 } else {
                     if (debug) {
-                        System.out.println("[ProfileStats] getCurrentServerEntry() = null");
+                        // Silent error handling("[ProfileStats] getCurrentServerEntry() = null");
                     }
                 }
             } catch (Exception e) {
                 if (debug) {
-                    System.out.println("[ProfileStats] getCurrentServerEntry() Fehler: " + e.getMessage());
+                    // Silent error handling("[ProfileStats] getCurrentServerEntry() Fehler: " + e.getMessage());
                 }
             }
             
@@ -288,21 +288,21 @@ public class ProfileStatsManager {
                     if (client.getNetworkHandler().getServerInfo() != null) {
                         serverInfoName = client.getNetworkHandler().getServerInfo().name;
                         if (debug) {
-                            System.out.println("[ProfileStats] getNetworkHandler().getServerInfo().name = '" + serverInfoName + "'");
+                            // Silent error handling("[ProfileStats] getNetworkHandler().getServerInfo().name = '" + serverInfoName + "'");
                         }
                     } else {
                         if (debug) {
-                            System.out.println("[ProfileStats] getNetworkHandler().getServerInfo() = null");
+                            // Silent error handling("[ProfileStats] getNetworkHandler().getServerInfo() = null");
                         }
                     }
                 } else {
                     if (debug) {
-                        System.out.println("[ProfileStats] getNetworkHandler() = null");
+                        // Silent error handling("[ProfileStats] getNetworkHandler() = null");
                     }
                 }
             } catch (Exception e) {
                 if (debug) {
-                    System.out.println("[ProfileStats] getNetworkHandler() Fehler: " + e.getMessage());
+                    // Silent error handling("[ProfileStats] getNetworkHandler() Fehler: " + e.getMessage());
                 }
             }
             
@@ -310,30 +310,30 @@ public class ProfileStatsManager {
             if (serverEntryName != null && !serverEntryName.isEmpty()) {
                 currentServerName = serverEntryName;
                 if (debug) {
-                    System.out.println("[ProfileStats] ✅ Verwende getCurrentServerEntry: '" + currentServerName + "'");
+                    // Silent error handling("[ProfileStats] ✅ Verwende getCurrentServerEntry: '" + currentServerName + "'");
                 }
             } else if (serverInfoName != null && !serverInfoName.isEmpty()) {
                 currentServerName = serverInfoName;
                 if (debug) {
-                    System.out.println("[ProfileStats] ✅ Verwende getNetworkHandler().getServerInfo(): '" + currentServerName + "'");
+                    // Silent error handling("[ProfileStats] ✅ Verwende getNetworkHandler().getServerInfo(): '" + currentServerName + "'");
                 }
             } else {
                 currentServerName = null;
                 if (debug) {
-                    System.out.println("[ProfileStats] ❌ WARNUNG: Server-Name konnte nicht erkannt werden!");
+                    // Silent error handling("[ProfileStats] ❌ WARNUNG: Server-Name konnte nicht erkannt werden!");
                 }
             }
             
             if (debug) {
-                System.out.println("[ProfileStats] Erwarteter Server-Name: '" + ALLOWED_SERVER_NAME + "'");
-                System.out.println("[ProfileStats] Aktueller Server-Name: '" + currentServerName + "'");
-                System.out.println("[ProfileStats] Match: " + (currentServerName != null && currentServerName.equalsIgnoreCase(ALLOWED_SERVER_NAME)));
-                System.out.println("=== [ProfileStats] Debug Log Ende ===");
+                // Silent error handling("[ProfileStats] Erwarteter Server-Name: '" + ALLOWED_SERVER_NAME + "'");
+                // Silent error handling("[ProfileStats] Aktueller Server-Name: '" + currentServerName + "'");
+                // Silent error handling("[ProfileStats] Match: " + (currentServerName != null && currentServerName.equalsIgnoreCase(ALLOWED_SERVER_NAME)));
+                // Silent error handling("=== [ProfileStats] Debug Log Ende ===");
             }
             
         } catch (Exception e) {
-            System.err.println("[ProfileStats] Fehler beim Erkennen des Server-Namens: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling("[ProfileStats] Fehler beim Erkennen des Server-Namens: " + e.getMessage());
+            // Silent error handling
             currentServerName = null;
         }
     }
@@ -356,7 +356,7 @@ public class ProfileStatsManager {
         if ((ALLOWED_SERVER_ADDRESS == null || ALLOWED_SERVER_ADDRESS.isEmpty()) &&
             (ALLOWED_SERVER_NAME == null || ALLOWED_SERVER_NAME.isEmpty())) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ Keine Server-Prüfung konfiguriert → Playtime-Tracking auf allen Servern aktiviert");
+                // Silent error handling("[ProfileStats] ⚠️ Keine Server-Prüfung konfiguriert → Playtime-Tracking auf allen Servern aktiviert");
             }
             return true;
         }
@@ -382,16 +382,16 @@ public class ProfileStatsManager {
                 if (currentAddress != null) {
                     matchesAddress = currentAddress.equalsIgnoreCase(ALLOWED_SERVER_ADDRESS);
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] Server-Adresse: '" + currentAddress + "' (erwartet: '" + ALLOWED_SERVER_ADDRESS + "') → " + (matchesAddress ? "✅" : "❌"));
+                        // Silent error handling("[ProfileStats] Server-Adresse: '" + currentAddress + "' (erwartet: '" + ALLOWED_SERVER_ADDRESS + "') → " + (matchesAddress ? "✅" : "❌"));
                     }
                 } else {
                     matchesAddress = false;
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] ❌ Server-Adresse konnte nicht ermittelt werden");
+                        // Silent error handling("[ProfileStats] ❌ Server-Adresse konnte nicht ermittelt werden");
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[ProfileStats] Fehler beim Prüfen der Server-Adresse: " + e.getMessage());
+                // Silent error handling("[ProfileStats] Fehler beim Prüfen der Server-Adresse: " + e.getMessage());
                 matchesAddress = false;
             }
         }
@@ -409,16 +409,16 @@ public class ProfileStatsManager {
                 if (currentName != null) {
                     matchesName = currentName.equalsIgnoreCase(ALLOWED_SERVER_NAME);
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] Server-Name: '" + currentName + "' (erwartet: '" + ALLOWED_SERVER_NAME + "') → " + (matchesName ? "✅" : "❌"));
+                        // Silent error handling("[ProfileStats] Server-Name: '" + currentName + "' (erwartet: '" + ALLOWED_SERVER_NAME + "') → " + (matchesName ? "✅" : "❌"));
                     }
                 } else {
                     matchesName = false;
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] ❌ Server-Name konnte nicht ermittelt werden");
+                        // Silent error handling("[ProfileStats] ❌ Server-Name konnte nicht ermittelt werden");
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[ProfileStats] Fehler beim Prüfen des Server-Namens: " + e.getMessage());
+                // Silent error handling("[ProfileStats] Fehler beim Prüfen des Server-Namens: " + e.getMessage());
                 matchesName = false;
             }
         }
@@ -429,9 +429,9 @@ public class ProfileStatsManager {
         
         if (isDebugEnabled()) {
             if (isAllowed) {
-                System.out.println("[ProfileStats] ✅ Spieler ist auf dem erlaubten Server → Playtime-Tracking aktiviert");
+                // Silent error handling("[ProfileStats] ✅ Spieler ist auf dem erlaubten Server → Playtime-Tracking aktiviert");
             } else {
-                System.out.println("[ProfileStats] ⚠️ Spieler ist NICHT auf dem erlaubten Server → Playtime-Tracking deaktiviert");
+                // Silent error handling("[ProfileStats] ⚠️ Spieler ist NICHT auf dem erlaubten Server → Playtime-Tracking deaktiviert");
             }
         }
         
@@ -444,17 +444,17 @@ public class ProfileStatsManager {
     private void sendPlaytimeToLeaderboard() {
         boolean debug = isDebugEnabled();
         if (debug) {
-            System.out.println("⏱️ [ProfileStats] sendPlaytimeToLeaderboard() aufgerufen");
+            // Silent error handling("⏱️ [ProfileStats] sendPlaytimeToLeaderboard() aufgerufen");
             LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
-            System.out.println("⏱️ [ProfileStats] isRegistered: " + leaderboardManager.isRegistered());
-            System.out.println("⏱️ [ProfileStats] playtimeTicks: " + playtimeTicks);
-            System.out.println("⏱️ [ProfileStats] isOnAllowedServerForPlaytime: " + isOnAllowedServerForPlaytime);
+            // Silent error handling("⏱️ [ProfileStats] isRegistered: " + leaderboardManager.isRegistered());
+            // Silent error handling("⏱️ [ProfileStats] playtimeTicks: " + playtimeTicks);
+            // Silent error handling("⏱️ [ProfileStats] isOnAllowedServerForPlaytime: " + isOnAllowedServerForPlaytime);
         }
         
         LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
         if (!leaderboardManager.isRegistered()) {
             if (debug) {
-                System.out.println("⏱️ [ProfileStats] ABGEBROCHEN - nicht registriert");
+                // Silent error handling("⏱️ [ProfileStats] ABGEBROCHEN - nicht registriert");
             }
             return;
         }
@@ -462,12 +462,12 @@ public class ProfileStatsManager {
         // Berechne Playtime in Sekunden
         long playtimeSeconds = playtimeTicks / 20; // Ticks zu Sekunden
         if (debug) {
-            System.out.println("⏱️ [ProfileStats] playtimeSeconds berechnet: " + playtimeSeconds);
+            // Silent error handling("⏱️ [ProfileStats] playtimeSeconds berechnet: " + playtimeSeconds);
         }
         
         if (playtimeSeconds <= 0) {
             if (debug) {
-                System.out.println("⏱️ [ProfileStats] ABGEBROCHEN - playtimeSeconds <= 0");
+                // Silent error handling("⏱️ [ProfileStats] ABGEBROCHEN - playtimeSeconds <= 0");
             }
             return; // Keine Playtime zu senden
         }
@@ -476,12 +476,12 @@ public class ProfileStatsManager {
         // Der Server summiert automatisch
         // Verwende updateScoreAdditive() damit additive Updates nicht blockiert werden
         if (debug) {
-            System.out.println("⏱️ [ProfileStats] Rufe updateScoreAdditive auf für playtime = " + playtimeSeconds + " Sekunden");
+            // Silent error handling("⏱️ [ProfileStats] Rufe updateScoreAdditive auf für playtime = " + playtimeSeconds + " Sekunden");
         }
         leaderboardManager.updateScoreAdditive("playtime", playtimeSeconds);
         
         if (debug) {
-            System.out.println("[ProfileStats] ⏱️ Playtime gesendet: " + playtimeSeconds + " Sekunden (gesamt: " + (playtimeTicks / 20) + " Ticks)");
+            // Silent error handling("[ProfileStats] ⏱️ Playtime gesendet: " + playtimeSeconds + " Sekunden (gesamt: " + (playtimeTicks / 20) + " Ticks)");
         }
     }
     
@@ -540,7 +540,7 @@ public class ProfileStatsManager {
                         cardsLevels.put(cardName, level);
                         cardUpdated = true;
                         if (isDebugEnabled()) {
-                            System.out.println("[ProfileStats] ✅ Karte aus Chat aktualisiert: " + cardName + " = Level " + level);
+                            // Silent error handling("[ProfileStats] ✅ Karte aus Chat aktualisiert: " + cardName + " = Level " + level);
                         }
                     }
                 } catch (NumberFormatException e) {
@@ -565,7 +565,7 @@ public class ProfileStatsManager {
                         statuesLevels.put(statueName, level);
                         statueUpdated = true;
                         if (isDebugEnabled()) {
-                            System.out.println("[ProfileStats] ✅ Statue aus Chat aktualisiert: " + statueName + " = Level " + level);
+                            // Silent error handling("[ProfileStats] ✅ Statue aus Chat aktualisiert: " + statueName + " = Level " + level);
                         }
                     }
                 } catch (NumberFormatException e) {
@@ -624,7 +624,7 @@ public class ProfileStatsManager {
         LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
         if (!leaderboardManager.isRegistered() || leaderboardManager.getPlayerToken() == null) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ❌ Stats-Update abgebrochen: Leaderboard nicht registriert oder kein Token");
+                // Silent error handling("[ProfileStats] ❌ Stats-Update abgebrochen: Leaderboard nicht registriert oder kein Token");
             }
             return; // Nicht registriert, kein Update
         }
@@ -682,13 +682,13 @@ public class ProfileStatsManager {
         // Wenn Payload leer ist, kein sinnvolles Update
         if (payload.entrySet().isEmpty()) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ Stats-Update übersprungen (Payload leer)");
+                // Silent error handling("[ProfileStats] ⚠️ Stats-Update übersprungen (Payload leer)");
             }
             return;
         }
 
         if (isDebugEnabled()) {
-            System.out.println("[ProfileStats] 📤 Sende Stats-Update " + (isFinal ? "(final)" : "") + ": " + payload.toString());
+            // Silent error handling("[ProfileStats] 📤 Sende Stats-Update " + (isFinal ? "(final)" : "") + ": " + payload.toString());
         }
 
         // Sende Update asynchron
@@ -697,7 +697,7 @@ public class ProfileStatsManager {
                 httpClient.postWithToken("/profile/update", payload, leaderboardManager.getPlayerToken());
                 return true;
             } catch (Exception e) {
-                System.err.println("❌ Fehler beim Senden von Profil-Stats: " + e.getMessage());
+                // Silent error handling("❌ Fehler beim Senden von Profil-Stats: " + e.getMessage());
                 return false;
             }
         }).thenAccept(success -> {
@@ -789,7 +789,7 @@ public class ProfileStatsManager {
         if (damage > maxDamage) {
             maxDamage = damage;
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚔️ Neuer Max-Damage: " + maxDamage);
+                // Silent error handling("[ProfileStats] ⚔️ Neuer Max-Damage: " + maxDamage);
             }
         }
     }
@@ -833,7 +833,7 @@ public class ProfileStatsManager {
                 }
             }
         } catch (IOException e) {
-            System.err.println("❌ [ProfileStats] Fehler beim Laden von Karten/Statuen-Level: " + e.getMessage());
+            // Silent error handling("❌ [ProfileStats] Fehler beim Laden von Karten/Statuen-Level: " + e.getMessage());
         }
     }
     
@@ -866,7 +866,7 @@ public class ProfileStatsManager {
                 gson.toJson(json, writer);
             }
         } catch (IOException e) {
-            System.err.println("❌ [ProfileStats] Fehler beim Speichern von Karten/Statuen-Level: " + e.getMessage());
+            // Silent error handling("❌ [ProfileStats] Fehler beim Speichern von Karten/Statuen-Level: " + e.getMessage());
         }
     }
     
@@ -877,19 +877,19 @@ public class ProfileStatsManager {
     public void onCardFromChat(CardsStatuesUtility.CardData cardData) {
         if (cardData == null) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ onCardFromChat: cardData ist null");
+                // Silent error handling("[ProfileStats] ⚠️ onCardFromChat: cardData ist null");
             }
             return;
         }
         if (cardData.getName() == null || cardData.getName().isEmpty()) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ onCardFromChat: Karten-Name ist null oder leer");
+                // Silent error handling("[ProfileStats] ⚠️ onCardFromChat: Karten-Name ist null oder leer");
             }
             return;
         }
         if (cardData.getLevel() == null || cardData.getLevel().isEmpty()) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ onCardFromChat: Karten-Level ist null oder leer für: " + cardData.getName());
+                // Silent error handling("[ProfileStats] ⚠️ onCardFromChat: Karten-Level ist null oder leer für: " + cardData.getName());
             }
             return;
         }
@@ -902,14 +902,14 @@ public class ProfileStatsManager {
                 cardsLevels.put(cardName, level);
                 saveCardsStatuesLevels();
                 if (isDebugEnabled()) {
-                    System.out.println("[ProfileStats] ✅ Karte aus Chat sofort gespeichert: " + cardName + " = Level " + level);
+                    // Silent error handling("[ProfileStats] ✅ Karte aus Chat sofort gespeichert: " + cardName + " = Level " + level);
                 }
             } else if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ Karten-Level nicht höher: " + cardName + " (alt: " + oldLevel + ", neu: " + level + ")");
+                // Silent error handling("[ProfileStats] ⚠️ Karten-Level nicht höher: " + cardName + " (alt: " + oldLevel + ", neu: " + level + ")");
             }
         } catch (NumberFormatException e) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ❌ Fehler beim Parsen von Karten-Level: " + cardData.getLevel() + " für " + cardData.getName());
+                // Silent error handling("[ProfileStats] ❌ Fehler beim Parsen von Karten-Level: " + cardData.getLevel() + " für " + cardData.getName());
             }
         }
     }
@@ -920,19 +920,19 @@ public class ProfileStatsManager {
     public void onStatueFromChat(CardsStatuesUtility.StatueData statueData) {
         if (statueData == null) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ onStatueFromChat: statueData ist null");
+                // Silent error handling("[ProfileStats] ⚠️ onStatueFromChat: statueData ist null");
             }
             return;
         }
         if (statueData.getName() == null || statueData.getName().isEmpty()) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ onStatueFromChat: Statue-Name ist null oder leer");
+                // Silent error handling("[ProfileStats] ⚠️ onStatueFromChat: Statue-Name ist null oder leer");
             }
             return;
         }
         if (statueData.getLevel() == null || statueData.getLevel().isEmpty()) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ onStatueFromChat: Statue-Level ist null oder leer für: " + statueData.getName());
+                // Silent error handling("[ProfileStats] ⚠️ onStatueFromChat: Statue-Level ist null oder leer für: " + statueData.getName());
             }
             return;
         }
@@ -945,14 +945,14 @@ public class ProfileStatsManager {
                 statuesLevels.put(statueName, level);
                 saveCardsStatuesLevels();
                 if (isDebugEnabled()) {
-                    System.out.println("[ProfileStats] ✅ Statue aus Chat sofort gespeichert: " + statueName + " = Level " + level);
+                    // Silent error handling("[ProfileStats] ✅ Statue aus Chat sofort gespeichert: " + statueName + " = Level " + level);
                 }
             } else if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ⚠️ Statue-Level nicht höher: " + statueName + " (alt: " + oldLevel + ", neu: " + level + ")");
+                // Silent error handling("[ProfileStats] ⚠️ Statue-Level nicht höher: " + statueName + " (alt: " + oldLevel + ", neu: " + level + ")");
             }
         } catch (NumberFormatException e) {
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] ❌ Fehler beim Parsen von Statue-Level: " + statueData.getLevel() + " für " + statueData.getName());
+                // Silent error handling("[ProfileStats] ❌ Fehler beim Parsen von Statue-Level: " + statueData.getLevel() + " für " + statueData.getName());
             }
         }
     }
@@ -1047,7 +1047,7 @@ public class ProfileStatsManager {
                 if (cardLevel > currentLevel) {
                     cardsLevels.put(cardName, cardLevel);
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] ✅ Karte validiert/aktualisiert: " + cardName + " = Level " + cardLevel);
+                        // Silent error handling("[ProfileStats] ✅ Karte validiert/aktualisiert: " + cardName + " = Level " + cardLevel);
                     }
                 }
             }
@@ -1091,9 +1091,9 @@ public class ProfileStatsManager {
             
             // Debug: Zeige alle Tooltip-Zeilen
             if (isDebugEnabled()) {
-                System.out.println("[ProfileStats] 🔍 Tooltip-Zeilen für Statue:");
+                // Silent error handling("[ProfileStats] 🔍 Tooltip-Zeilen für Statue:");
                 for (int i = 0; i < tooltip.size(); i++) {
-                    System.out.println("  [" + i + "] " + tooltip.get(i).getString());
+                    // Silent error handling("  [" + i + "] " + tooltip.get(i).getString());
                 }
             }
             
@@ -1112,7 +1112,7 @@ public class ProfileStatsManager {
                 if (lineText.contains("[Statue]")) {
                     isStatue = true;
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] 🔍 [Statue] gefunden in Tooltip-Zeile: " + lineText);
+                        // Silent error handling("[ProfileStats] 🔍 [Statue] gefunden in Tooltip-Zeile: " + lineText);
                     }
                     // Name ist die erste Zeile (ohne Formatierung)
                     if (tooltip.size() > 0) {
@@ -1125,7 +1125,7 @@ public class ProfileStatsManager {
                             // Entferne "[Statue]" aus dem Namen
                             statueName = statueName.replaceAll("\\[Statue\\]", "").trim();
                             if (isDebugEnabled()) {
-                                System.out.println("[ProfileStats] 🔍 Statue-Name extrahiert: " + statueName);
+                                // Silent error handling("[ProfileStats] 🔍 Statue-Name extrahiert: " + statueName);
                             }
                         }
                     }
@@ -1137,7 +1137,7 @@ public class ProfileStatsManager {
                     String cleanLine = lineText.replaceAll("§[0-9a-fk-or]", "");
                     if (cleanLine.contains("Stufe") && !cleanLine.contains("Nächste")) {
                         if (isDebugEnabled()) {
-                            System.out.println("[ProfileStats] 🔍 'Stufe' gefunden in Zeile: " + lineText + " (clean: " + cleanLine + ")");
+                            // Silent error handling("[ProfileStats] 🔍 'Stufe' gefunden in Zeile: " + lineText + " (clean: " + cleanLine + ")");
                         }
                         // Suche nach Zahl nach "Stufe" (mit oder ohne Doppelpunkt)
                         String levelStr = cleanLine.replaceAll(".*[Ss]tufe\\s*:?\\s*", "").replaceAll("[^0-9].*", "").trim();
@@ -1149,15 +1149,15 @@ public class ProfileStatsManager {
                             try {
                                 statueLevel = Integer.parseInt(levelStr);
                                 if (isDebugEnabled()) {
-                                    System.out.println("[ProfileStats] 🔍 Statue-Level geparst: " + statueLevel);
+                                    // Silent error handling("[ProfileStats] 🔍 Statue-Level geparst: " + statueLevel);
                                 }
                             } catch (NumberFormatException e) {
                                 if (isDebugEnabled()) {
-                                    System.out.println("[ProfileStats] ❌ Fehler beim Parsen von Statue-Level: " + levelStr);
+                                    // Silent error handling("[ProfileStats] ❌ Fehler beim Parsen von Statue-Level: " + levelStr);
                                 }
                             }
                         } else if (isDebugEnabled()) {
-                            System.out.println("[ProfileStats] ⚠️ Keine Zahl nach 'Stufe' gefunden in: " + cleanLine);
+                            // Silent error handling("[ProfileStats] ⚠️ Keine Zahl nach 'Stufe' gefunden in: " + cleanLine);
                         }
                     }
                 }
@@ -1165,7 +1165,7 @@ public class ProfileStatsManager {
                 if (isStatue && lineText.contains("Maximale Stufe erreicht!")) {
                     statueLevel = 40;
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] 🔍 Statue-Level (max): 40");
+                        // Silent error handling("[ProfileStats] 🔍 Statue-Level (max): 40");
                     }
                 }
             }
@@ -1176,13 +1176,13 @@ public class ProfileStatsManager {
                 if (statueLevel > currentLevel) {
                     statuesLevels.put(statueName, statueLevel);
                     if (isDebugEnabled()) {
-                        System.out.println("[ProfileStats] ✅ Statue validiert/aktualisiert: " + statueName + " = Level " + statueLevel);
+                        // Silent error handling("[ProfileStats] ✅ Statue validiert/aktualisiert: " + statueName + " = Level " + statueLevel);
                     }
                 } else if (isDebugEnabled()) {
-                    System.out.println("[ProfileStats] ⚠️ Statue-Level nicht höher: " + statueName + " (alt: " + currentLevel + ", neu: " + statueLevel + ")");
+                    // Silent error handling("[ProfileStats] ⚠️ Statue-Level nicht höher: " + statueName + " (alt: " + currentLevel + ", neu: " + statueLevel + ")");
                 }
             } else if (isDebugEnabled() && isStatue) {
-                System.out.println("[ProfileStats] ⚠️ Statue erkannt aber nicht gespeichert - Name: " + statueName + ", Level: " + statueLevel);
+                // Silent error handling("[ProfileStats] ⚠️ Statue erkannt aber nicht gespeichert - Name: " + statueName + ", Level: " + statueLevel);
             }
         }
         

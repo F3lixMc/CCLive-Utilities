@@ -15,6 +15,22 @@
       "9": "㚘"
     }
   },
+  "factory_bottom_font": {
+    "description": "Factory Bottom Font - Zahlen 0-9",
+    "characters": "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪",
+    "numbers": {
+      "0": "㝡",
+      "1": "㝢",
+      "2": "㝣",
+      "3": "㝤",
+      "4": "㝥",
+      "5": "㝦",
+      "6": "㝧",
+      "7": "㝨",
+      "8": "㝩",
+      "9": "㝪"
+    }
+  },
   "equipment_display": {
     "description": "Equipment Display",
     "characters": ["㬄", "㬅", "㬆", "㬇"]
@@ -67,6 +83,7 @@
   "airship": {
     "description": "Airship",
     "characters": "㭉㭊㭋㭌㭍㭎㭏㭐㭑㭒㭓㭔㭕㭖㭗㭘㭙㭚㭛㭜㭝㭞㭟㭠㭡㭢㭣㭤㭥㭦㭧㭨㭩㭪㭫㭬㭭㭮㭯㭰㭱㭲㭳㭴㭵㭶㭷㭸㭹㭺㭻㭼㭽㭾㭿㮀"
+
   }
 }
 

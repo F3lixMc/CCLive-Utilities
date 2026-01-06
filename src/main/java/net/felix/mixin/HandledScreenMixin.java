@@ -58,7 +58,23 @@ public abstract class HandledScreenMixin {
         
         // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
         renderMKLevelOverlay(context);
+        
+        // Render unregistered item overlays (red background on items not in extracted_items.json)
+        renderUnregisteredItemOverlays(context);
     }
+    
+    /**
+     * Renders red background overlay on unregistered items
+     */
+    private void renderUnregisteredItemOverlays(DrawContext context) {
+        try {
+            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, x, y);
+        } catch (Exception e) {
+            // Ignore rendering errors
+        }
+    }
+    
     
     /**
      * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory

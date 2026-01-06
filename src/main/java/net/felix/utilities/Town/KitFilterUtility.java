@@ -330,8 +330,8 @@ public class KitFilterUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Fehler beim Laden der gespeicherten Kit-Auswahlen: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Fehler beim Laden der gespeicherten Kit-Auswahlen: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -378,8 +378,8 @@ public class KitFilterUtility {
 			// Speichere die Config
 			CCLiveUtilitiesConfig.HANDLER.save();
 		} catch (Exception e) {
-			System.err.println("Fehler beim Speichern der Kit-Auswahl: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Fehler beim Speichern der Kit-Auswahl: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -403,7 +403,7 @@ public class KitFilterUtility {
 						// Konvertiere String zu KitType
 						KitType kitType = getKitTypeFromKey(kitKey);
 						if (kitType == null) {
-							System.err.println("Unbekannter Kit-Typ in JSON: " + kitKey);
+							// Silent error handling("Unbekannter Kit-Typ in JSON: " + kitKey);
 							continue;
 						}
 						
@@ -482,8 +482,8 @@ public class KitFilterUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Fehler beim Laden der Kit-Item-Namen: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Fehler beim Laden der Kit-Item-Namen: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	

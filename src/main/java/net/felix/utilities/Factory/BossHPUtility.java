@@ -15,7 +15,10 @@ import net.felix.utilities.Town.EquipmentDisplayUtility;
 import org.joml.Matrix3x2fStack;
 
 
+import java.math.BigInteger;
+import java.text.NumberFormat;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,7 +38,7 @@ public class BossHPUtility {
 	private boolean bossDefeated = false;
 	
 	// DPM-Tracking-Variablen
-	private Integer initialBossHP = null; // Initiale HP beim ersten Erkennen des Bosses
+	private BigInteger initialBossHP = null; // Initiale HP beim ersten Erkennen des Bosses
 	private long bossFightStartTime = 0; // Zeitpunkt, wann der Kampf begonnen hat
 	private String lastTrackedBossName = null; // Letzter Boss-Name für Erkennung von Boss-Wechsel
 	
@@ -352,7 +355,7 @@ public class BossHPUtility {
 						String[] parts = text.split("\\|{5}");
 						if (parts.length >= 2) {
 							try {
-								initialBossHP = Integer.parseInt(parts[1].trim());
+								initialBossHP = new BigInteger(parts[1].trim());
 								bossFightStartTime = System.currentTimeMillis();
 								lastTrackedBossName = bossName;
 							} catch (NumberFormatException e) {
@@ -548,14 +551,14 @@ public class BossHPUtility {
 		// Parse HP-Werte
 		String displayText = null;
 		String displayHP = null;
-		Integer currentHP = null;
+		BigInteger currentHP = null;
 		
 		if (isDisappeared) {
 			displayText = bossName + " verbleibend";
 			// Formatiere HP mit Tausender-Trennung
 			try {
-				int hpValue = Integer.parseInt(hpText);
-				displayHP = String.format("%,d", hpValue);
+				BigInteger hpValue = new BigInteger(hpText);
+				displayHP = formatBigInteger(hpValue);
 			} catch (NumberFormatException e) {
 				// HP konnte nicht geparst werden, verwende Original-Text
 				displayHP = hpText;
@@ -570,9 +573,9 @@ public class BossHPUtility {
 				displayText = parts[0].trim();
 				String rawHP = parts[1].trim();
 				try {
-					currentHP = Integer.parseInt(rawHP);
+					currentHP = new BigInteger(rawHP);
 					// Formatiere HP mit Tausender-Trennung
-					displayHP = String.format("%,d", currentHP);
+					displayHP = formatBigInteger(currentHP);
 				} catch (NumberFormatException e) {
 					// HP konnte nicht geparst werden, verwende Original-Text
 					displayHP = rawHP;
@@ -594,13 +597,15 @@ public class BossHPUtility {
 			
 			if (fightDuration > 0) {
 				// Berechne abgezogene HP
-				int damageDealt = instance.initialBossHP - currentHP;
+				BigInteger damageDealt = instance.initialBossHP.subtract(currentHP);
 				
 				// Berechne DPM (Damage Per Minute)
 				// fightDuration ist in Millisekunden, also teilen durch 60000 für Minuten
 				double minutes = fightDuration / 60000.0;
 				if (minutes > 0) {
-					double dpm = damageDealt / minutes;
+					// Konvertiere BigInteger zu double für Division
+					double damageDealtDouble = damageDealt.doubleValue();
+					double dpm = damageDealtDouble / minutes;
 					// Formatiere DPM mit Tausendertrennzeichen
 					dpmText = String.format("DPM: %,.0f", dpm);
 				}
@@ -840,7 +845,12 @@ public class BossHPUtility {
 		return instance != null ? instance.currentBossText : null;
 	}
 	
-
-	
+	/**
+	 * Formatiert eine BigInteger-Zahl mit Tausendertrennzeichen
+	 */
+	private static String formatBigInteger(BigInteger value) {
+		NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
+		return formatter.format(value);
+	}
 
 } 

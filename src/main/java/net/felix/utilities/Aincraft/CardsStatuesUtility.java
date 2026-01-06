@@ -303,8 +303,8 @@ public class CardsStatuesUtility {
 					hoverContent = parseHoverEventData(hoverString);
 				}
 			} catch (Exception e) {
-				System.err.println("[CardsStatues] ❌ Fehler beim Extrahieren des Hover-Texts: " + e.getMessage());
-				e.printStackTrace();
+				// Silent error handling("[CardsStatues] ❌ Fehler beim Extrahieren des Hover-Texts: " + e.getMessage());
+				// Silent error handling
 			}
 		}
 		
@@ -508,8 +508,8 @@ public class CardsStatuesUtility {
 		try {
 			net.felix.profile.ProfileStatsManager.getInstance().onCardFromChat(cardData);
 		} catch (Exception e) {
-			System.err.println("[CardsStatues] ❌ Fehler beim Aufruf von onCardFromChat: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("[CardsStatues] ❌ Fehler beim Aufruf von onCardFromChat: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -585,8 +585,8 @@ public class CardsStatuesUtility {
 		try {
 			net.felix.profile.ProfileStatsManager.getInstance().onStatueFromChat(statueData);
 		} catch (Exception e) {
-			System.err.println("[CardsStatues] ❌ Fehler beim Aufruf von onStatueFromChat: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("[CardsStatues] ❌ Fehler beim Aufruf von onStatueFromChat: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	

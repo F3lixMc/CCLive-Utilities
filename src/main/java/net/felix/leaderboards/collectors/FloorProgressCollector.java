@@ -38,7 +38,7 @@ public class FloorProgressCollector implements DataCollector {
         });
         
         isActive = true;
-        System.out.println("✅ FloorProgressCollector initialisiert");
+        // Silent error handling("✅ FloorProgressCollector initialisiert");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -82,7 +82,7 @@ public class FloorProgressCollector implements DataCollector {
      */
     private void handleFloorEnter(String floor) {
         floorStartTime = Instant.now();
-        System.out.println("🏠 Floor betreten: " + floor);
+        // Silent error handling("🏠 Floor betreten: " + floor);
     }
     
     /**
@@ -95,7 +95,7 @@ public class FloorProgressCollector implements DataCollector {
             // Aktualisiere Statistiken
             updateFloorStats(currentFloor, timeSpent);
             
-            System.out.println("🏠 Floor verlassen: " + currentFloor + " (Zeit: " + (timeSpent / 1000) + "s)");
+            // Silent error handling("🏠 Floor verlassen: " + currentFloor + " (Zeit: " + (timeSpent / 1000) + "s)");
         }
         
         floorStartTime = null;
@@ -197,7 +197,7 @@ public class FloorProgressCollector implements DataCollector {
         currentFloor = null;
         floorStartTime = null;
         
-        System.out.println("🛑 FloorProgressCollector gestoppt");
+        // Silent error handling("🛑 FloorProgressCollector gestoppt");
     }
     
     @Override

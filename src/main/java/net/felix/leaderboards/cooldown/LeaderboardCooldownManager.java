@@ -226,7 +226,7 @@ public class LeaderboardCooldownManager {
         lastScoreUpdates.clear();
         lastLeaderboardFetches.clear();
         pendingScoreUpdates.clear();
-        System.out.println("🔄 Alle Leaderboard-Cooldowns zurückgesetzt");
+        // Silent error handling("🔄 Alle Leaderboard-Cooldowns zurückgesetzt");
     }
     
     /**
@@ -236,6 +236,6 @@ public class LeaderboardCooldownManager {
         lastScoreUpdates.remove(leaderboardName);
         lastLeaderboardFetches.remove(leaderboardName);
         pendingScoreUpdates.remove(leaderboardName);
-        System.out.println("🔄 Cooldown für " + leaderboardName + " zurückgesetzt");
+        // Silent error handling("🔄 Cooldown für " + leaderboardName + " zurückgesetzt");
     }
 }

@@ -136,7 +136,7 @@ public class CollectionCollector implements DataCollector {
         });
         
         isActive = true;
-        System.out.println("✅ CollectionCollector initialisiert (Tooltip-basiert)");
+        // Silent error handling("✅ CollectionCollector initialisiert (Tooltip-basiert)");
     }
     
     /**
@@ -196,7 +196,7 @@ public class CollectionCollector implements DataCollector {
         isShiftPressed = leftShift || rightShift;
         
         if (DebugUtility.isLeaderboardDebuggingEnabled() && isShiftPressed) {
-            System.out.println("🔧 Shift gedrückt - Leaderboard-Overlay aktiviert");
+            // Silent error handling("🔧 Shift gedrückt - Leaderboard-Overlay aktiviert");
         }
     }
     
@@ -226,7 +226,7 @@ public class CollectionCollector implements DataCollector {
             String lineText = line.getString();
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                System.out.println("🔍 Main Collection Tooltip Line: " + lineText);
+                // Silent error handling("🔍 Main Collection Tooltip Line: " + lineText);
             }
             
             // Prüfe auf "12,345/25,000" Format (aus Placeholder)
@@ -239,7 +239,7 @@ public class CollectionCollector implements DataCollector {
                     handleCollectionData(collectionName, collectionValue);
                     
                     if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                        System.out.println("📦 Main Collection-Wert gefunden: " + collectionName + " = " + collectionValue);
+                        // Silent error handling("📦 Main Collection-Wert gefunden: " + collectionName + " = " + collectionValue);
                     }
                 } catch (NumberFormatException e) {
                     System.err.println("❌ Fehler beim Parsen der Main Collection-Zahl: " + valueStr);
@@ -269,7 +269,7 @@ public class CollectionCollector implements DataCollector {
             String lineText = line.getString();
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                System.out.println("🔍 Sub Collection Tooltip Line: " + lineText);
+                // Silent error handling("🔍 Sub Collection Tooltip Line: " + lineText);
             }
             
             // Prüfe auf "10,130&a/&f50" Format
@@ -282,7 +282,7 @@ public class CollectionCollector implements DataCollector {
                     handleCollectionData(collectionName, collectionValue);
                     
                     if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                        System.out.println("📦 Sub Collection-Wert gefunden: " + collectionName + " = " + collectionValue);
+                        // Silent error handling("📦 Sub Collection-Wert gefunden: " + collectionName + " = " + collectionValue);
                     }
                 } catch (NumberFormatException e) {
                     System.err.println("❌ Fehler beim Parsen der Sub Collection-Zahl: " + valueStr);
@@ -316,7 +316,7 @@ public class CollectionCollector implements DataCollector {
         String leaderboardName = findLeaderboardName(materialName);
         if (leaderboardName == null) {
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                System.out.println("⚠️ Unbekannte Collection: " + materialName);
+                // Silent error handling("⚠️ Unbekannte Collection: " + materialName);
             }
             return;
         }
@@ -330,7 +330,7 @@ public class CollectionCollector implements DataCollector {
             LeaderboardManager.getInstance().updateScore(leaderboardName, value);
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                System.out.println("📦 Collection Update: " + materialName + " = " + value + " (war: " + currentValue + ")");
+                // Silent error handling("📦 Collection Update: " + materialName + " = " + value + " (war: " + currentValue + ")");
             }
         }
         
@@ -346,7 +346,7 @@ public class CollectionCollector implements DataCollector {
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
                 LocalDateTime nextFetch = getNextFetchTime();
                 String nextFetchStr = nextFetch.format(TIME_FORMATTER);
-                System.out.println("⏳ Leaderboard-Fetch für " + leaderboardName + " - nächster Fetch: " + nextFetchStr);
+                // Silent error handling("⏳ Leaderboard-Fetch für " + leaderboardName + " - nächster Fetch: " + nextFetchStr);
             }
             return;
         }
@@ -356,7 +356,7 @@ public class CollectionCollector implements DataCollector {
         
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
             LocalDateTime now = LocalDateTime.now(GERMAN_TIMEZONE);
-            System.out.println("🕐 Leaderboard-Fetch gestartet um " + now.format(TIME_FORMATTER) + " für: " + leaderboardName);
+            // Silent error handling("🕐 Leaderboard-Fetch gestartet um " + now.format(TIME_FORMATTER) + " für: " + leaderboardName);
         }
         
         // Asynchron Rang abrufen
@@ -367,7 +367,7 @@ public class CollectionCollector implements DataCollector {
                     setPlayerRank(leaderboardName, rank);
                     
                     if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                        System.out.println("📊 Player-Rang aktualisiert: " + leaderboardName + " = #" + rank);
+                        // Silent error handling("📊 Player-Rang aktualisiert: " + leaderboardName + " = #" + rank);
                     }
                 }
             });
@@ -510,7 +510,7 @@ public class CollectionCollector implements DataCollector {
             prepareLeaderboardOverlay(leaderboardName);
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                System.out.println("🏆 Sub-Inventar Shift-Overlay vorbereitet für: " + leaderboardName);
+                // Silent error handling("🏆 Sub-Inventar Shift-Overlay vorbereitet für: " + leaderboardName);
             }
         }
     }
@@ -522,7 +522,7 @@ public class CollectionCollector implements DataCollector {
         // TODO: Implementiere Links-Leaderboard-Rendering
         // Position: Links neben dem Inventar
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            System.out.println("📊 Links-Leaderboard vorbereitet für: " + leaderboardName);
+            // Silent error handling("📊 Links-Leaderboard vorbereitet für: " + leaderboardName);
         }
         
         // Hier würde das Links-Rendering implementiert werden:
@@ -535,8 +535,8 @@ public class CollectionCollector implements DataCollector {
             .thenAccept(response -> {
                 if (response != null) {
                     if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                        System.out.println("📊 Leaderboard-Daten für Links-Rendering erhalten: " + leaderboardName);
-                        // System.out.println("🔍 Response: " + response.toString());
+                        // Silent error handling("📊 Leaderboard-Daten für Links-Rendering erhalten: " + leaderboardName);
+                        // // Silent error handling("🔍 Response: " + response.toString());
                     }
                     // TODO: Hier würde das Rendering aufgerufen werden
                 }
@@ -604,7 +604,7 @@ public class CollectionCollector implements DataCollector {
             lines.add(insertIndex++, Text.literal("=====================").formatted(Formatting.YELLOW));
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                System.out.println("📊 Rang zu Tooltip hinzugefügt: " + leaderboardName + " #" + playerRank + " (Update in: " + countdownText + ")");
+                // Silent error handling("📊 Rang zu Tooltip hinzugefügt: " + leaderboardName + " #" + playerRank + " (Update in: " + countdownText + ")");
             }
         } else {
             // Zeige "Laden..." wenn noch kein Rang verfügbar
@@ -634,7 +634,7 @@ public class CollectionCollector implements DataCollector {
         // TODO: Implementiere Leaderboard-Overlay Rendering
         // Für jetzt nur Debug-Ausgabe und Datenabfrage
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            System.out.println("🏆 Bereite Top10 Overlay vor für: " + leaderboardName);
+            // Silent error handling
         }
         
         // Hier könnte später das Top10 Leaderboard abgerufen und gerendert werden
@@ -673,7 +673,7 @@ public class CollectionCollector implements DataCollector {
         playerRankings.put(leaderboardName, rank);
         
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            System.out.println("📊 Player-Rang gesetzt: " + leaderboardName + " = #" + rank);
+            // Silent error handling
         }
     }
     
@@ -735,13 +735,13 @@ public class CollectionCollector implements DataCollector {
         
         if (leaderboardName == null) {
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                System.out.println("⚠️ Unterinventar + Collection nicht erkannt: " + collectionName);
+                // Silent error handling("⚠️ Unterinventar + Collection nicht erkannt: " + collectionName);
             }
             return;
         }
         
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            System.out.println("📋 Unterinventar + Collection " + collectionName + " erkannt");
+            // Silent error handling("📋 Unterinventar + Collection " + collectionName + " erkannt");
         }
         
         // Scanne alle Items im Inventar
@@ -767,9 +767,9 @@ public class CollectionCollector implements DataCollector {
      */
     private void scanProgressItem(ItemStack stack, String collectionName, String leaderboardName) {
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            System.out.println("🔍 Progress-Item gefunden: " + stack.getName().getString());
-            System.out.println("📋 Unterinventar + Collection " + collectionName + " erkannt");
-            System.out.println("💡 System bereit - Wert wird beim ersten Hover extrahiert");
+            // Silent error handling("🔍 Progress-Item gefunden: " + stack.getName().getString());
+            // Silent error handling("📋 Unterinventar + Collection " + collectionName + " erkannt");
+            // Silent error handling("💡 System bereit - Wert wird beim ersten Hover extrahiert");
         }
         
         // Starte Leaderboard-Rendering vorbereitung
@@ -784,7 +784,7 @@ public class CollectionCollector implements DataCollector {
      */
     private void startSubInventoryLeaderboardRendering(String leaderboardName) {
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            System.out.println("🎨 LB wird gerendert (Rendering aktuell noch nicht vorhanden): " + leaderboardName);
+            // Silent error handling("🎨 LB wird gerendert (Rendering aktuell noch nicht vorhanden): " + leaderboardName);
         }
         
         // Hole Leaderboard-Daten
@@ -792,7 +792,7 @@ public class CollectionCollector implements DataCollector {
             .thenAccept(response -> {
                 if (response != null) {
                     if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                        System.out.println("📊 Leaderboard-Daten für Rendering erhalten: " + leaderboardName);
+                        // Silent error handling("📊 Leaderboard-Daten für Rendering erhalten: " + leaderboardName);
                         // TODO: Hier würde das echte Rendering starten
                     }
                 }
@@ -805,7 +805,7 @@ public class CollectionCollector implements DataCollector {
         collectionValues.clear();
         playerRankings.clear();
         lastRankFetch.clear();
-        System.out.println("🛑 CollectionCollector gestoppt");
+        // Silent error handling("🛑 CollectionCollector gestoppt");
     }
     
     @Override

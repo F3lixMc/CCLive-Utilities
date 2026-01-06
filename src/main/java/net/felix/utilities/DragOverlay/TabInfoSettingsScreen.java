@@ -1,11 +1,13 @@
 package net.felix.utilities.DragOverlay;
 
+import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +18,11 @@ import java.util.List;
  */
 public class TabInfoSettingsScreen extends Screen {
     
+    // Settings Icon Identifier
+    private static final Identifier SETTINGS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_settings.png");
+    
     private final Screen parent;
     private TextWidget titleWidget;
-    private ButtonWidget doneButton;
     private List<TabInfoEntry> entries;
     
     public TabInfoSettingsScreen(Screen parent) {
@@ -38,13 +42,6 @@ public class TabInfoSettingsScreen extends Screen {
         titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, 20);
         addDrawableChild(titleWidget);
         
-        // Done Button
-        doneButton = ButtonWidget.builder(
-            Text.literal("Done"),
-            button -> close()
-        ).dimensions(width / 2 - 40, height - 30, 80, 20).build();
-        addDrawableChild(doneButton);
-        
         // Erstelle Einträge
         entries = new ArrayList<>();
         entries.add(new TabInfoEntry("Forschung", "forschung", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung, 
@@ -61,12 +58,15 @@ public class TabInfoSettingsScreen extends Screen {
             val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen = val));
         entries.add(new TabInfoEntry("Machtkristalle", "machtkristalle", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle, 
             val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle = val));
-        entries.add(new TabInfoEntry("Recycler Slot 1", "recyclerSlot1", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1, 
-            val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 = val));
-        entries.add(new TabInfoEntry("Recycler Slot 2", "recyclerSlot2", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2, 
-            val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 = val));
-        entries.add(new TabInfoEntry("Recycler Slot 3", "recyclerSlot3", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3, 
-            val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 = val));
+        entries.add(new TabInfoEntry("Recycler", "recycler", 
+            () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 || 
+                  CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 || 
+                  CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3, 
+            val -> {
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 = val;
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 = val;
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 = val;
+            }));
     }
     
     @Override
@@ -91,7 +91,7 @@ public class TabInfoSettingsScreen extends Screen {
     
     private void renderSettingsBox(DrawContext context, int mouseX, int mouseY) {
         int boxWidth = 300;
-        int boxHeight = Math.min(500, entries.size() * 25 + 40);
+        int boxHeight = Math.min(500, (entries.size() + 1) * 25 + 40); // +1 für "Haupt Overlay Hintergrund"
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -104,16 +104,90 @@ public class TabInfoSettingsScreen extends Screen {
         // Titel
         context.drawText(textRenderer, "Tab Info Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
         
-        // Checkboxen für alle Einträge
+        // Rotes Kreuz oben rechts zum Schließen
+        int closeButtonSize = 12;
+        int closeButtonX = boxX + boxWidth - closeButtonSize - 5;
+        int closeButtonY = boxY + 5;
+        
+        // Prüfe ob Maus über dem Kreuz ist
+        boolean isHovering = mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonSize &&
+                             mouseY >= closeButtonY && mouseY <= closeButtonY + closeButtonSize;
+        int crossColor = isHovering ? 0xFFFF6666 : 0xFFFF0000; // Helleres Rot beim Hover
+        
+        // Zeichne das Kreuz (X) - zwei diagonale Linien
+        drawDiagonalLine(context, closeButtonX + 2, closeButtonY + 2, 
+                        closeButtonX + closeButtonSize - 2, closeButtonY + closeButtonSize - 2, crossColor, 2);
+        drawDiagonalLine(context, closeButtonX + closeButtonSize - 2, closeButtonY + 2, 
+                        closeButtonX + 2, closeButtonY + closeButtonSize - 2, crossColor, 2);
+        
+        // Checkbox für "Haupt Overlay Hintergrund" ganz oben
         int y = boxY + 35;
         int checkboxSize = 10;
         int checkboxSpacing = 25;
+        int checkboxX = boxX + 10;
         
+        // Haupt Overlay Hintergrund Checkbox
+        boolean mainOverlayBackground = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground;
+        int mainCheckboxY = y;
+        
+        // Checkbox-Hintergrund
+        context.fill(checkboxX, mainCheckboxY, checkboxX + checkboxSize, mainCheckboxY + checkboxSize, 0xFF808080);
+        context.drawBorder(checkboxX, mainCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+        
+        // Checkmark wenn aktiviert
+        if (mainOverlayBackground) {
+            // Zeichne Häkchen (✓)
+            int checkX = checkboxX + 2;
+            int checkY = mainCheckboxY + 2;
+            int checkSize = checkboxSize - 4;
+            // Zeichne Häkchen als zwei Linien
+            // Linke Linie (von oben-links nach mitte)
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + i;
+                int py = checkY + checkSize / 2 + i;
+                if (px < checkboxX + checkboxSize - 2 && py < mainCheckboxY + checkboxSize - 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+            // Rechte Linie (von mitte nach unten-rechts)
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + checkSize / 2 + i;
+                int py = checkY + checkSize - 2 - i;
+                if (px < checkboxX + checkboxSize - 2 && py >= mainCheckboxY + 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+        }
+        
+        // Eintrags-Name
+        String mainEntryName = "Haupt Overlay Hintergrund";
+        int mainTextX = checkboxX + checkboxSize + 5;
+        int mainTextWidth = textRenderer.getWidth(mainEntryName);
+        int mainTextHeight = textRenderer.fontHeight;
+        context.drawText(textRenderer, mainEntryName, mainTextX, mainCheckboxY + 1, mainOverlayBackground ? 0xFFFFFFFF : 0xFF808080, false);
+        
+        // Prüfe ob Maus über Checkbox oder Text ist
+        boolean isHoveringMainCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
+                                        mouseY >= mainCheckboxY && mouseY <= mainCheckboxY + checkboxSize;
+        boolean isHoveringMainText = mouseX >= mainTextX && mouseX <= mainTextX + mainTextWidth &&
+                                   mouseY >= mainCheckboxY && mouseY <= mainCheckboxY + mainTextHeight;
+        boolean isHoveringMainEntry = isHoveringMainCheckbox || isHoveringMainText;
+        
+        // Zeichne Hover-Hintergrund NACH allen Elementen, damit es darüber liegt
+        if (isHoveringMainEntry) {
+            // Hover-Hintergrund für Checkbox und Text
+            int hoverStartX = checkboxX - 2;
+            int hoverEndX = mainTextX + mainTextWidth + 2;
+            context.fill(hoverStartX, mainCheckboxY - 1, hoverEndX, mainCheckboxY + checkboxSize + 1, 0x40FFFFFF);
+        }
+        
+        y += checkboxSpacing;
+        
+        // Checkboxen für alle Einträge
         for (TabInfoEntry entry : entries) {
             boolean isEnabled = entry.isEnabled.get();
             
             // Checkbox-Hintergrund
-            int checkboxX = boxX + 10;
             int checkboxY = y;
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
             context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
@@ -146,13 +220,41 @@ public class TabInfoSettingsScreen extends Screen {
             // Eintrags-Name
             String entryName = entry.displayName;
             int textX = checkboxX + checkboxSize + 5;
+            int textWidth = textRenderer.getWidth(entryName);
+            int textHeight = textRenderer.fontHeight;
             context.drawText(textRenderer, entryName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
             
             // Zahnrad-Icon am Ende der Zeile
             int gearSize = 12;
             int gearX = boxX + boxWidth - gearSize - 10;
             int gearY = checkboxY - 1;
+            
+            // Prüfe ob Maus über Checkbox, Text oder Icon ist
+            boolean isHoveringCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
+                                        mouseY >= checkboxY && mouseY <= checkboxY + checkboxSize;
+            boolean isHoveringText = mouseX >= textX && mouseX <= textX + textWidth &&
+                                   mouseY >= checkboxY && mouseY <= checkboxY + textHeight;
+            boolean isHoveringGear = mouseX >= gearX && mouseX <= gearX + gearSize &&
+                                     mouseY >= gearY && mouseY <= gearY + gearSize;
+            boolean isHoveringEntry = isHoveringCheckbox || isHoveringText;
+            
+            // Zeichne weißen Rahmen um das Zahnrad-Icon
+            context.drawBorder(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
+            
             drawGearIcon(context, gearX, gearY, gearSize);
+            
+            // Zeichne Hover-Hintergrund NACH allen Elementen, damit es darüber liegt
+            if (isHoveringEntry) {
+                // Hover-Hintergrund für Checkbox und Text
+                int hoverStartX = checkboxX - 2;
+                int hoverEndX = textX + textWidth + 2;
+                context.fill(hoverStartX, checkboxY - 1, hoverEndX, checkboxY + checkboxSize + 1, 0x40FFFFFF);
+            }
+            
+            // Zeichne Hover-Hintergrund für Zahnrad-Icon
+            if (isHoveringGear) {
+                context.fill(gearX - 1, gearY - 1, gearX + gearSize + 1, gearY + gearSize + 1, 0x40FFFFFF);
+            }
             
             y += checkboxSpacing;
         }
@@ -161,6 +263,22 @@ public class TabInfoSettingsScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
+            // Prüfe zuerst ob auf das Schließen-Kreuz geklickt wurde
+            int boxWidth = 300;
+            int boxHeight = Math.min(500, (entries.size() + 1) * 25 + 40); // +1 für "Haupt Overlay Hintergrund"
+            int boxX = width / 2 - boxWidth / 2;
+            int boxY = height / 2 - boxHeight / 2;
+            
+            int closeButtonSize = 12;
+            int closeButtonX = boxX + boxWidth - closeButtonSize - 5;
+            int closeButtonY = boxY + 5;
+            
+            if (mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonSize &&
+                mouseY >= closeButtonY && mouseY <= closeButtonY + closeButtonSize) {
+                close();
+                return true;
+            }
+            
             if (handleSettingsClick(mouseX, mouseY, button)) {
                 return true;
             }
@@ -174,7 +292,7 @@ public class TabInfoSettingsScreen extends Screen {
         }
         
         int boxWidth = 300;
-        int boxHeight = Math.min(500, entries.size() * 25 + 40);
+        int boxHeight = Math.min(500, (entries.size() + 1) * 25 + 40); // +1 für "Haupt Overlay Hintergrund"
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -190,12 +308,42 @@ public class TabInfoSettingsScreen extends Screen {
         int checkboxSpacing = 25;
         int checkboxX = boxX + 10;
         int textX = checkboxX + checkboxSize + 5;
-        int textWidth = boxWidth - textX - 30; // Platz für Zahnrad-Icon
         int gearSize = 12;
+        
+        // Prüfe zuerst ob Klick auf "Haupt Overlay Hintergrund" Checkbox
+        int mainCheckboxY = y;
+        String mainEntryName = "Haupt Overlay Hintergrund";
+        int mainTextX = checkboxX + checkboxSize + 5;
+        int mainTextWidth = textRenderer.getWidth(mainEntryName);
+        int mainTextHeight = textRenderer.fontHeight;
+        
+        boolean clickedOnMainCheckbox = (mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
+                                       mouseY >= mainCheckboxY && mouseY <= mainCheckboxY + checkboxSize);
+        boolean clickedOnMainText = (mouseX >= mainTextX && mouseX <= mainTextX + mainTextWidth &&
+                                   mouseY >= mainCheckboxY && mouseY <= mainCheckboxY + mainTextHeight);
+        
+        if (clickedOnMainCheckbox || clickedOnMainText) {
+            // Toggle Haupt Overlay Hintergrund
+            boolean newValue = !CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground;
+            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground = newValue;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            
+            // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
+            if (parent instanceof OverlayEditorScreen) {
+                ((OverlayEditorScreen) parent).refreshOverlays();
+            }
+            
+            return true;
+        }
+        
+        y += checkboxSpacing;
         
         for (TabInfoEntry entry : entries) {
             int checkboxY = y;
             int textY = checkboxY;
+            // Verwende die tatsächliche Text-Breite für korrekte Click-Erkennung
+            String entryName = entry.displayName;
+            int textWidth = textRenderer.getWidth(entryName);
             int textHeight = textRenderer.fontHeight;
             int gearX = boxX + boxWidth - gearSize - 10;
             int gearY = checkboxY - 1;
@@ -251,38 +399,69 @@ public class TabInfoSettingsScreen extends Screen {
     }
     
     /**
-     * Zeichnet ein Zahnrad-Icon (vereinfachte Version mit fill)
+     * Zeichnet eine diagonale Linie
+     */
+    private void drawDiagonalLine(DrawContext context, int x1, int y1, int x2, int y2, int color, int width) {
+        // Einfache Implementierung: Zeichne mehrere Pixel entlang der Diagonale
+        int steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+        for (int i = 0; i <= steps; i++) {
+            int x = x1 + (x2 - x1) * i / steps;
+            int y = y1 + (y2 - y1) * i / steps;
+            // Zeichne einen kleinen Quadrat für die Linie
+            for (int dx = -width/2; dx <= width/2; dx++) {
+                for (int dy = -width/2; dy <= width/2; dy++) {
+                    if (dx*dx + dy*dy <= (width/2)*(width/2)) {
+                        context.fill(x + dx, y + dy, x + dx + 1, y + dy + 1, color);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Zeichnet das Settings-Icon (Zahnräder)
      */
     private void drawGearIcon(DrawContext context, int x, int y, int size) {
-        // Zeichne ein einfaches Zahnrad-Icon als gefüllte Formen
-        // Verwende ein einfaches Icon: ein Quadrat mit diagonalen Linien
-        // Äußerer Rahmen
-        context.drawBorder(x, y, size, size, 0xFFFFFFFF);
-        
-        // Diagonale Linien (als gefüllte Rechtecke)
-        int lineWidth = 1;
-        // Hauptdiagonale
-        for (int i = 0; i < size; i++) {
-            int px = x + i;
-            int py = y + i;
-            if (px < x + size && py < y + size) {
-                context.fill(px, py, px + lineWidth, py + lineWidth, 0xFFFFFFFF);
+        try {
+            // Zeichne das Settings-Icon aus der Textur
+            context.drawTexture(
+                RenderPipelines.GUI_TEXTURED,
+                SETTINGS_ICON,
+                x, y,
+                0.0f, 0.0f,
+                size, size,
+                size, size
+            );
+        } catch (Exception e) {
+            // Fallback: Zeichne ein einfaches Zahnrad-Icon als gefüllte Formen
+            // Äußerer Rahmen
+            context.drawBorder(x, y, size, size, 0xFFFFFFFF);
+            
+            // Diagonale Linien (als gefüllte Rechtecke)
+            int lineWidth = 1;
+            // Hauptdiagonale
+            for (int i = 0; i < size; i++) {
+                int px = x + i;
+                int py = y + i;
+                if (px < x + size && py < y + size) {
+                    context.fill(px, py, px + lineWidth, py + lineWidth, 0xFFFFFFFF);
+                }
             }
-        }
-        // Nebendiagonale
-        for (int i = 0; i < size; i++) {
-            int px = x + size - 1 - i;
-            int py = y + i;
-            if (px >= x && py < y + size) {
-                context.fill(px, py, px + lineWidth, py + lineWidth, 0xFFFFFFFF);
+            // Nebendiagonale
+            for (int i = 0; i < size; i++) {
+                int px = x + size - 1 - i;
+                int py = y + i;
+                if (px >= x && py < y + size) {
+                    context.fill(px, py, px + lineWidth, py + lineWidth, 0xFFFFFFFF);
+                }
             }
+            
+            // Horizontal und vertikal
+            int centerX = x + size / 2;
+            int centerY = y + size / 2;
+            context.fill(centerX - 1, y, centerX + 1, y + size, 0xFFFFFFFF);
+            context.fill(x, centerY - 1, x + size, centerY + 1, 0xFFFFFFFF);
         }
-        
-        // Horizontal und vertikal
-        int centerX = x + size / 2;
-        int centerY = y + size / 2;
-        context.fill(centerX - 1, y, centerX + 1, y + size, 0xFFFFFFFF);
-        context.fill(x, centerY - 1, x + size, centerY + 1, 0xFFFFFFFF);
     }
     
     /**
