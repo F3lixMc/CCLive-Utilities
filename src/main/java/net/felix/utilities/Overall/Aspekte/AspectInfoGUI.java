@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Overall.Aspekte;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;

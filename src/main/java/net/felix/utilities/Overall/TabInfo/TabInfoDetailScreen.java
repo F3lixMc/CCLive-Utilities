@@ -1,6 +1,7 @@
-package net.felix.utilities.DragOverlay;
+package net.felix.utilities.Overall.TabInfo;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextWidget;
@@ -1450,11 +1451,11 @@ public class TabInfoDetailScreen extends Screen {
             if (currentParent instanceof OverlayEditorScreen) {
                 ((OverlayEditorScreen) currentParent).refreshOverlays();
                 break;
-            } else if (currentParent instanceof TabInfoSettingsScreen) {
+            } else if (currentParent instanceof net.felix.utilities.Overall.TabInfo.TabInfoSettingsScreen) {
                 // TabInfoSettingsScreen hat auch ein parent, das das OverlayEditorScreen sein könnte
                 // Wir müssen das parent des TabInfoSettingsScreen prüfen
                 try {
-                    java.lang.reflect.Field parentField = TabInfoSettingsScreen.class.getDeclaredField("parent");
+                    java.lang.reflect.Field parentField = net.felix.utilities.Overall.TabInfo.TabInfoSettingsScreen.class.getDeclaredField("parent");
                     parentField.setAccessible(true);
                     Screen settingsParent = (Screen) parentField.get(currentParent);
                     if (settingsParent instanceof OverlayEditorScreen) {

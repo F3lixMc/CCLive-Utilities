@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Overall.Aspekte;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;

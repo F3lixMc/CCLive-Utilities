@@ -537,10 +537,13 @@ public class BossHPUtility {
 		// Konstanten für das Layout
 		final int TEXT_COLOR = 0xFFFFFFFF; // Weiß
 		final int HP_COLOR = 0xFFFF5555;   // Rot
-		final int DPM_COLOR = 0xFFFFFF00;  // Gelb für DPM
 		final int BACKGROUND_COLOR = 0x80000000; // Halbtransparentes Schwarz
 		final int PADDING = 4;
 		final int LINE_SPACING = 2; // Abstand zwischen Zeilen
+		
+		// Hole Farben aus Config
+		int dpmColor = CCLiveUtilitiesConfig.HANDLER.instance().bossHPDPMColor.getRGB();
+		int percentageColor = CCLiveUtilitiesConfig.HANDLER.instance().bossHPPercentageColor.getRGB();
 		
 		// Get scale from config
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale;
@@ -588,6 +591,17 @@ public class BossHPUtility {
 			return;
 		}
 		
+		// Berechne Prozentwert (nur wenn initialBossHP und currentHP verfügbar sind und Prozentwert-Anzeige aktiviert ist)
+		String percentageText = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowPercentage &&
+			instance.initialBossHP != null && currentHP != null && 
+			instance.initialBossHP.compareTo(BigInteger.ZERO) > 0) {
+			// Berechne Prozent: (currentHP / initialBossHP) * 100
+			double percentage = currentHP.doubleValue() / instance.initialBossHP.doubleValue() * 100.0;
+			// Formatiere mit einer Dezimalstelle
+			percentageText = String.format(Locale.US, "%.1f%%", percentage);
+		}
+		
 		// Berechne DPM (nur wenn Boss aktiv ist und nicht verschwunden und DPM-Anzeige aktiviert ist)
 		String dpmText = null;
 		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM && 
@@ -615,9 +629,11 @@ public class BossHPUtility {
 		// Berechne die Breiten für das Layout (unscaled)
 		int nameWidth = client.textRenderer.getWidth(displayText);
 		int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
+		int separatorWidth = percentageText != null ? client.textRenderer.getWidth("|") : 0;
+		int percentageWidth = percentageText != null ? client.textRenderer.getWidth(percentageText) : 0;
 		int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
 		int totalWidth = Math.max(
-			nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth), // Erste Zeile
+			nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth + (percentageText != null ? 5 + separatorWidth + 5 + percentageWidth : 0)), // Erste Zeile
 			dpmWidth // Zweite Zeile (DPM)
 		);
 		int totalHeight = client.textRenderer.fontHeight + PADDING * 2;
@@ -657,13 +673,22 @@ public class BossHPUtility {
 		
 		// Zeichne die HP (rot) nur wenn vorhanden - relativ zur Matrix
 		if (!displayHP.isEmpty()) {
-			context.drawText(client.textRenderer, displayHP, PADDING + nameWidth + 10, PADDING, HP_COLOR, true);
+			int hpX = PADDING + nameWidth + 10;
+			context.drawText(client.textRenderer, displayHP, hpX, PADDING, HP_COLOR, true);
+			
+			// Zeichne Prozentwert direkt nach den HP
+			if (percentageText != null) {
+				int separatorX = hpX + hpWidth + 5; // 5 Pixel Abstand nach den HP
+				context.drawText(client.textRenderer, "|", separatorX, PADDING, HP_COLOR, true);
+				int percentageX = separatorX + separatorWidth + 5; // 5 Pixel Abstand nach dem Separator
+				context.drawText(client.textRenderer, percentageText, percentageX, PADDING, percentageColor, true);
+			}
 		}
 		
-		// Zeichne DPM (gelb) in zweiter Zeile, wenn verfügbar - relativ zur Matrix
+		// Zeichne DPM in zweiter Zeile, wenn verfügbar - relativ zur Matrix
 		if (dpmText != null) {
 			int dpmY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
-			context.drawText(client.textRenderer, dpmText, PADDING, dpmY, DPM_COLOR, true);
+			context.drawText(client.textRenderer, dpmText, PADDING, dpmY, dpmColor, true);
 		}
 
 		matrices.popMatrix();

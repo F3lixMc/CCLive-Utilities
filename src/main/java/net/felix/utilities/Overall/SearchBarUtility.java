@@ -1785,14 +1785,17 @@ public class SearchBarUtility {
 		
 		String[] helpText = {
 			"Grundlegende Suche:",
-			"• Makiert Items mit dem eingegebenen Namen",
+			"• Markiert Items mit dem eingegebenen Namen",
 			"",
 			"Erweiterte Suche (@):",
-			"• @Ring - Makiert alle Ringe",
-			"• @Schaden>100 - Makiert items mit mehr als 100 Schaden",
+			"• @Ring - Markiert alle Ringe",
+			"• @Schaden>100 - Markiert items mit mehr als 100 Schaden",
 			"• @Ring, @Rüstung>100 - Kombinierte Suche",
+			"• @Bogen / Armbrust - Items die Bogen oder Armbrust enthalten",
+			"• e10 - Markiert alle items von Ebene 10",
 			"",
 			"Vergleichsoperatoren:",
+			"• / (Entweder Oder)",
 			"• > (größer als)",
 			"• < (kleiner als)",
 			"• = (gleich)",
@@ -1802,6 +1805,7 @@ public class SearchBarUtility {
 			"• @Rüstung>50 - Items mit Rüstung>50",
 			"• @Ring, @Rüstung>50 - Ringe mit mehr als 50 Rüstung und",
 			"  Göttlich im Namen",
+			"• >e10 - Items von Ebene 10 oder höher",
 			""
 		};
 		

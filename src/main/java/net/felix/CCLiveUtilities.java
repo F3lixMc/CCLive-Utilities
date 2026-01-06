@@ -13,7 +13,7 @@ import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.felix.utilities.Overall.KillAnimationUtility;
 import net.felix.utilities.Overall.DamageTrackingUtility;
-import net.felix.utilities.Overall.TabInfoUtility;
+import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;

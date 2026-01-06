@@ -1,17 +1,18 @@
-package net.felix.utilities.DragOverlay;
+package net.felix.utilities.DragOverlay.Schmied;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 import org.joml.Matrix3x2fStack;
 
 /**
- * Draggable Overlay für den Hide Wrong Class Button
+ * Draggable Overlay für den Kit Filter Button 3
  */
-public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
+public class KitFilterButton3DraggableOverlay implements DraggableOverlay {
     
-    private static final int DEFAULT_WIDTH = 120;
+    private static final int DEFAULT_WIDTH = 100;
     private static final int DEFAULT_HEIGHT = 20;
     
     private int getUnscaledWidth() {
@@ -24,7 +25,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String getOverlayName() {
-        return "Hide wrong class Button";
+        return "Kit Filter Button 3";
     }
     
     @Override
@@ -33,29 +34,26 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         if (client.getWindow() == null) return 0;
         
         int screenWidth = client.getWindow().getScaledWidth();
-        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX;
+        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3X;
         
-        // Calculate position based on right edge (same as SchmiedTrackerUtility)
-        int baseX = screenWidth - DEFAULT_WIDTH - 20; // Right edge minus button width minus margin
+        // Calculate position based on right edge
+        int baseX = screenWidth - DEFAULT_WIDTH - 20;
         return baseX + xOffset;
     }
     
     @Override
     public int getY() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getWindow() == null) return 0;
+        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Y;
         
-        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY;
-        
-        // Calculate position based on top edge (same as SchmiedTrackerUtility)
-        int baseY = 20; // Top edge with margin
+        // Calculate position based on top edge
+        int baseY = 100;
         return baseY + yOffset;
     }
     
     @Override
     public int getWidth() {
         int unscaledWidth = getUnscaledWidth();
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale;
         if (scale <= 0) scale = 1.0f;
         return (int) (unscaledWidth * scale);
     }
@@ -63,7 +61,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     @Override
     public int getHeight() {
         int unscaledHeight = getUnscaledHeight();
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale;
         if (scale <= 0) scale = 1.0f;
         return (int) (unscaledHeight * scale);
     }
@@ -75,15 +73,15 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         
-        // Calculate offset from right edge (same as SchmiedTrackerUtility)
+        // Calculate offset from right edge
         int baseX = screenWidth - DEFAULT_WIDTH - 20;
-        int baseY = 20;
+        int baseY = 100;
         
         int xOffset = x - baseX;
         int yOffset = y - baseY;
         
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX = xOffset;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY = yOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3X = xOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Y = yOffset;
     }
     
     @Override
@@ -99,7 +97,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         // Clamp scale to reasonable values (0.1 to 5.0)
         scale = Math.max(0.1f, Math.min(5.0f, scale));
         
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = scale;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale = scale;
         // Position stays the same - overlay grows from top-left corner
     }
     
@@ -113,7 +111,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         int x = getX();
         int y = getY();
         
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale;
         if (scale <= 0) scale = 1.0f;
         
         int scaledWidth = (int) (unscaledWidth * scale);
@@ -131,7 +129,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         context.fill(0, 0, unscaledWidth, unscaledHeight, 0xFF4B6A69);
         
         // Render button text (scaled, relative to matrix)
-        String buttonText = "Hide wrong class";
+        String buttonText = "Kit 3";
         int textWidth = client.textRenderer.getWidth(buttonText);
         int textX = (unscaledWidth - textWidth) / 2;
         int textY = (unscaledHeight - 8) / 2;
@@ -140,8 +138,8 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
             client.textRenderer,
             buttonText,
             textX, textY,
-            0xFFFFFFFF,
-            true
+            0xFF404040,
+            false
         );
         
         matrices.popMatrix();
@@ -157,24 +155,25 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled;
+        return CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+               CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
     }
     
     @Override
     public Text getTooltip() {
-        return Text.literal("Hide wrong class Button - Toggles visibility of items not suitable for your class");
+        return Text.literal("Kit Filter Button 3 - Filter items by kit type and level");
     }
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX = -195;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY = 126;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = 1.0f;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3X = -215;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Y = 115;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale = 1.0f;
     }
     
     @Override
     public void resetSizeToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = 1.0f;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale = 1.0f;
     }
     
     @Override

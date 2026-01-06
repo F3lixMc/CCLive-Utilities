@@ -1,5 +1,7 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Overall.Aspekte;
 
+import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Overall.InformationenUtility.AspectInfo;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.InputUtil;

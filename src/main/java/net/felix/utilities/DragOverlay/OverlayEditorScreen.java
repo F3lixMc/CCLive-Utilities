@@ -1,6 +1,24 @@
 package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.Aincraft.BlueprintViewerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Aincraft.CardsDraggableOverlay;
+import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
+import net.felix.utilities.DragOverlay.Aincraft.KillsUtilityDraggableOverlay;
+import net.felix.utilities.DragOverlay.Aincraft.MaterialTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
+import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
+import net.felix.utilities.DragOverlay.Factory.MKLevelDraggableOverlay;
+import net.felix.utilities.DragOverlay.Farmworld.CollectionDraggableOverlay;
+import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.HideUncraftableButtonDraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.HideWrongClassButtonDraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.KitFilterButton1DraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.KitFilterButton2DraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.KitFilterButton3DraggableOverlay;
+import net.felix.utilities.DragOverlay.TabInfo.AspectOverlayDraggableOverlay;
+import net.felix.utilities.DragOverlay.TabInfo.TabInfoMainDraggableOverlay;
+import net.felix.utilities.DragOverlay.TabInfo.TabInfoSeparateDraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -511,7 +529,7 @@ public class OverlayEditorScreen extends Screen {
             Text.literal("Tab Info"),
             button -> {
                 if (client != null) {
-                    client.setScreen(new net.felix.utilities.DragOverlay.TabInfoSettingsScreen(this));
+                    client.setScreen(new net.felix.utilities.Overall.TabInfo.TabInfoSettingsScreen(this));
                 }
             }
         ).dimensions(width / 2, height - 30, 80, 20).build();

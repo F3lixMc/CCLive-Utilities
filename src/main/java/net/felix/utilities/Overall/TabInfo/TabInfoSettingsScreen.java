@@ -1,7 +1,8 @@
-package net.felix.utilities.DragOverlay;
+package net.felix.utilities.Overall.TabInfo;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextWidget;

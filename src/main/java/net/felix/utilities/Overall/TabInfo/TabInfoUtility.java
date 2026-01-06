@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Overall.TabInfo;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -9,6 +9,7 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.felix.CCLiveUtilities;
+import net.felix.utilities.Overall.KeyBindingUtility;
 import org.joml.Matrix3x2fStack;
 
 import java.util.HashMap;
@@ -1431,25 +1432,17 @@ public class TabInfoUtility {
 			}
 		}
 		
+		// Wenn keine Zeilen vorhanden sind, rendere nichts (auch keinen Hintergrund)
+		// Rendere nur separate Overlays
+		if (lines.isEmpty()) {
+			renderSeparateOverlays(context, client);
+			return;
+		}
+		
 		// Berechne unskalierte Overlay-Dimensionen
 		// Berücksichtige zusätzlichen Abstand für Zeilen mit Icons (2 Pixel pro Icon-Zeile)
-		int unscaledWidth;
-		int unscaledHeight;
-		
-		if (lines.isEmpty()) {
-			// Wenn keine Zeilen vorhanden sind, verwende minimale Dimensionen
-			// aber rendere trotzdem, wenn Hintergrund aktiviert ist
-			if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
-				// Keine Zeilen und kein Hintergrund = rendere nur separate Overlays
-				renderSeparateOverlays(context, client);
-				return;
-			}
-			unscaledWidth = 50; // Minimale Breite
-			unscaledHeight = 20; // Minimale Höhe
-		} else {
-			unscaledWidth = maxWidth + (PADDING * 2);
-			unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * 2) + (PADDING * 2);
-		}
+		int unscaledWidth = maxWidth + (PADDING * 2);
+		int unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * 2) + (PADDING * 2);
 		
 		// Get scale
 		float scale = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale;

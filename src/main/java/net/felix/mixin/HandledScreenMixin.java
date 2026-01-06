@@ -54,18 +54,21 @@ public abstract class HandledScreenMixin {
         }
         
         // Clear tooltip bounds after rendering
-        net.felix.utilities.Overall.AspectOverlay.clearTooltipBounds();
+        net.felix.utilities.Overall.Aspekte.AspectOverlay.clearTooltipBounds();
         
         // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
         renderMKLevelOverlay(context);
         
         // Render unregistered item overlays (red background on items not in extracted_items.json)
-        renderUnregisteredItemOverlays(context);
+        // DISABLED: ItemInfoUtility is deactivated
+        // renderUnregisteredItemOverlays(context);
     }
     
     /**
      * Renders red background overlay on unregistered items
+     * DISABLED: ItemInfoUtility is deactivated
      */
+    /*
     private void renderUnregisteredItemOverlays(DrawContext context) {
         try {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
@@ -74,6 +77,7 @@ public abstract class HandledScreenMixin {
             // Ignore rendering errors
         }
     }
+    */
     
     
     /**
@@ -249,7 +253,7 @@ public abstract class HandledScreenMixin {
                                 }
                                 
                                 // Store tooltip information in AspectOverlay
-                                net.felix.utilities.Overall.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                                net.felix.utilities.Overall.Aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
                             }
                         } catch (Exception e) {
                             // If reflection fails, try alternative approach
@@ -262,7 +266,7 @@ public abstract class HandledScreenMixin {
                                 int tooltipX = mouseX + 12;
                                 int tooltipY = mouseY - 12;
                                 
-                                net.felix.utilities.Overall.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                                net.felix.utilities.Overall.Aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
                             }
                         }
                     }
@@ -296,18 +300,18 @@ public abstract class HandledScreenMixin {
                     // Check if the item name contains Epic colors - if so, don't show overlay
                     net.minecraft.text.Text itemNameText = itemStack.getName();
                     if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
-                        net.felix.utilities.Overall.AspectOverlay.onHoverStopped();
+                        net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
                         return;
                     }
                     
                     // Update the aspect overlay with this item
-                    net.felix.utilities.Overall.AspectOverlay.updateAspectInfo(itemStack);
+                    net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfo(itemStack);
                     return;
                 }
             }
             
             // If no valid item is hovered, hide the overlay
-            net.felix.utilities.Overall.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
             
         } catch (Exception e) {
             // Ignore errors
@@ -319,7 +323,7 @@ public abstract class HandledScreenMixin {
      */
     private void renderAspectOverlay(DrawContext context) {
         try {
-            net.felix.utilities.Overall.AspectOverlay.renderForeground(context);
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
         } catch (Exception e) {
             // Ignore rendering errors
         }

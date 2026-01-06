@@ -1,8 +1,9 @@
-package net.felix.utilities.DragOverlay;
+package net.felix.utilities.DragOverlay.TabInfo;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.TabInfoUtility;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -380,7 +381,12 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled;
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
+            return false;
+        }
+        // Prüfe ob es Zeilen gibt, die im Haupt-Overlay angezeigt werden sollen
+        List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLines();
+        return !lines.isEmpty();
     }
     
     @Override

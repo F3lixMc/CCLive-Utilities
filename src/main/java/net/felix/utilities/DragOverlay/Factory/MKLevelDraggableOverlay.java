@@ -1,6 +1,8 @@
-package net.felix.utilities.DragOverlay;
+package net.felix.utilities.DragOverlay.Factory;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;

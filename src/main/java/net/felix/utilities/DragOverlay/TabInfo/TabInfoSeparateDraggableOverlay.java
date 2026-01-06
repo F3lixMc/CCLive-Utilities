@@ -1,8 +1,9 @@
-package net.felix.utilities.DragOverlay;
+package net.felix.utilities.DragOverlay.TabInfo;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.TabInfoUtility;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;

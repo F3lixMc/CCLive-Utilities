@@ -488,6 +488,15 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean bossHPShowDPM = true; // DPM (Damage Per Minute) Anzeige im Boss HP Overlay
     
+    @SerialEntry
+    public boolean bossHPShowPercentage = true; // Prozentwert-Anzeige im Boss HP Overlay
+    
+    @SerialEntry
+    public Color bossHPPercentageColor = new Color(0xFFFF5555); // Farbe für den Prozentwert (Rot)
+    
+    @SerialEntry
+    public Color bossHPDPMColor = new Color(0xFFFFFF00); // Farbe für DPM (Gelb)
+    
     // MKLevel Settings
     @SerialEntry
     public boolean mkLevelEnabled = true; // MKLevel Overlay aktiviert
@@ -1033,12 +1042,6 @@ public class CCLiveUtilitiesConfig {
                                         .binding(new Color(0xFFFF0000), () -> HANDLER.instance().searchBarFrameColor, newVal -> HANDLER.instance().searchBarFrameColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hintergrund anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter der Suchleiste anzeigen oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().searchBarShowBackground, newVal -> HANDLER.instance().searchBarShowBackground = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
                                 .option(Option.<ItemDisplayMode>createBuilder()
                                         .name(Text.literal("Item-Anzeigemodus"))
                                         .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für gefilterte Items")))
@@ -1146,6 +1149,24 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("DPM (Damage Per Minute) Anzeige im Boss HP Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowDPM, newVal -> HANDLER.instance().bossHPShowDPM = newVal)
                                         .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Text.literal("DPM Farbe"))
+                                        .description(OptionDescription.of(Text.literal("Farbe für die DPM (Damage Per Minute) Anzeige")))
+                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().bossHPDPMColor, newVal -> HANDLER.instance().bossHPDPMColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Prozentwert anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Prozentwert-Anzeige im Boss HP Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowPercentage, newVal -> HANDLER.instance().bossHPShowPercentage = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Text.literal("Prozentwert Farbe"))
+                                        .description(OptionDescription.of(Text.literal("Farbe für den Prozentwert in der Boss-HP Anzeige")))
+                                        .binding(new Color(0xFFFF5555), () -> HANDLER.instance().bossHPPercentageColor, newVal -> HANDLER.instance().bossHPPercentageColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())

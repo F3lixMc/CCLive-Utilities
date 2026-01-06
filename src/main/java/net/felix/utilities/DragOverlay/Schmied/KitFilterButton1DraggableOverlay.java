@@ -1,17 +1,18 @@
-package net.felix.utilities.DragOverlay;
+package net.felix.utilities.DragOverlay.Schmied;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 import org.joml.Matrix3x2fStack;
 
 /**
- * Draggable Overlay für den Hide Uncraftable Button
+ * Draggable Overlay für den Kit Filter Button 1
  */
-public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
+public class KitFilterButton1DraggableOverlay implements DraggableOverlay {
     
-    private static final int DEFAULT_WIDTH = 120;
+    private static final int DEFAULT_WIDTH = 100;
     private static final int DEFAULT_HEIGHT = 20;
     
     private int getUnscaledWidth() {
@@ -24,7 +25,7 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String getOverlayName() {
-        return "Hide Uncraftable Button";
+        return "Kit Filter Button 1";
     }
     
     @Override
@@ -33,29 +34,26 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
         if (client.getWindow() == null) return 0;
         
         int screenWidth = client.getWindow().getScaledWidth();
-        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonX;
+        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1X;
         
-        // Calculate position based on right edge (same as SchmiedTrackerUtility)
-        int baseX = screenWidth - DEFAULT_WIDTH - 20; // Right edge minus button width minus margin
+        // Calculate position based on right edge
+        int baseX = screenWidth - DEFAULT_WIDTH - 20;
         return baseX + xOffset;
     }
     
     @Override
     public int getY() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getWindow() == null) return 0;
+        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Y;
         
-        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonY;
-        
-        // Calculate position based on top edge (same as SchmiedTrackerUtility)
-        int baseY = 20; // Top edge with margin
+        // Calculate position based on top edge
+        int baseY = 50;
         return baseY + yOffset;
     }
     
     @Override
     public int getWidth() {
         int unscaledWidth = getUnscaledWidth();
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale;
         if (scale <= 0) scale = 1.0f;
         return (int) (unscaledWidth * scale);
     }
@@ -63,7 +61,7 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
     @Override
     public int getHeight() {
         int unscaledHeight = getUnscaledHeight();
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale;
         if (scale <= 0) scale = 1.0f;
         return (int) (unscaledHeight * scale);
     }
@@ -75,32 +73,15 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         
-        // Calculate offset from right edge (same as SchmiedTrackerUtility)
+        // Calculate offset from right edge
         int baseX = screenWidth - DEFAULT_WIDTH - 20;
-        int baseY = 20;
+        int baseY = 50;
         
         int xOffset = x - baseX;
         int yOffset = y - baseY;
         
-        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonX = xOffset;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonY = yOffset;
-    }
-    
-    @Override
-    public void setSize(int width, int height) {
-        int unscaledWidth = getUnscaledWidth();
-        int unscaledHeight = getUnscaledHeight();
-        
-        // Calculate scale based on width and height
-        float scaleX = (float) width / unscaledWidth;
-        float scaleY = (float) height / unscaledHeight;
-        float scale = (scaleX + scaleY) / 2.0f;
-        
-        // Clamp scale to reasonable values (0.1 to 5.0)
-        scale = Math.max(0.1f, Math.min(5.0f, scale));
-        
-        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale = scale;
-        // Position stays the same - overlay grows from top-left corner
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1X = xOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Y = yOffset;
     }
     
     @Override
@@ -113,7 +94,7 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
         int x = getX();
         int y = getY();
         
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale;
         if (scale <= 0) scale = 1.0f;
         
         int scaledWidth = (int) (unscaledWidth * scale);
@@ -131,7 +112,7 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
         context.fill(0, 0, unscaledWidth, unscaledHeight, 0xFF4B6A69);
         
         // Render button text (scaled, relative to matrix)
-        String buttonText = "Hide Uncraftable";
+        String buttonText = "Kit 1";
         int textWidth = client.textRenderer.getWidth(buttonText);
         int textX = (unscaledWidth - textWidth) / 2;
         int textY = (unscaledHeight - 8) / 2;
@@ -140,8 +121,8 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
             client.textRenderer,
             buttonText,
             textX, textY,
-            0xFFFFFFFF,
-            true
+            0xFF404040,
+            false
         );
         
         matrices.popMatrix();
@@ -157,24 +138,42 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled;
+        return CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+               CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
     }
     
     @Override
     public Text getTooltip() {
-        return Text.literal("Hide Uncraftable Button - Toggles visibility of uncraftable items");
+        return Text.literal("Kit Filter Button 1 - Filter items by kit type and level");
+    }
+    
+    @Override
+    public void setSize(int width, int height) {
+        int unscaledWidth = getUnscaledWidth();
+        int unscaledHeight = getUnscaledHeight();
+        
+        // Calculate scale based on width and height
+        float scaleX = (float) width / unscaledWidth;
+        float scaleY = (float) height / unscaledHeight;
+        float scale = (scaleX + scaleY) / 2.0f;
+        
+        // Clamp scale to reasonable values (0.1 to 5.0)
+        scale = Math.max(0.1f, Math.min(5.0f, scale));
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale = scale;
+        // Position stays the same - overlay grows from top-left corner
     }
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonX = -195;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonY = 103;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale = 1.0f;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1X = -215;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Y = 119;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale = 1.0f;
     }
     
     @Override
     public void resetSizeToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale = 1.0f;
+        CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale = 1.0f;
     }
     
     @Override
@@ -190,3 +189,4 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
                mouseY >= y + height - resizeAreaSize && mouseY <= y + height;
     }
 }
+

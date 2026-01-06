@@ -24,6 +24,8 @@ import net.minecraft.client.gui.hud.InGameHud;
 import java.util.Collection;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.Aspekte.AspectOverlay;
+import net.felix.utilities.Overall.Aspekte.AspectOverlayRenderer;
 import net.fabricmc.loader.api.FabricLoader;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -4342,9 +4344,7 @@ public class InformationenUtility {
 			mkLevelScrollOffset -= scrollAmount;
 			mkLevelScrollOffset = Math.max(0, mkLevelScrollOffset);
 			
-			// Limit scroll offset based on number of entries
-			// Each entry has 2 lines (Level + Essence), so we need to account for that
-			// Calculate max scroll based on total entries and visible entries
+			// Limit scroll offset based on actual entry heights
 			MinecraftClient client = MinecraftClient.getInstance();
 			if (client != null && client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
 				try {
@@ -4362,46 +4362,68 @@ public class InformationenUtility {
 					// Get filtered entries
 					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
 					
-					// Calculate max scroll: allow scrolling until Level 200 is visible
-					int linesPerEntry = 2;
-					int entryHeight = lineHeight * linesPerEntry;
-					int totalEntries = filteredEntries.size();
+					// Calculate actual heights for all entries
+					int totalHeight = 0;
+					int lastEntryHeight = 0;
+					for (MKLevelInfo levelInfo : filteredEntries) {
+						// Base height: Level (1 line) + Essenz (1 line) = 2 lines
+						int height = 2 * lineHeight;
+						// Add 1 line if wave is present
+						if (findWaveForEssence(levelInfo.essence) != null) {
+							height += lineHeight;
+						}
+						totalHeight += height;
+						lastEntryHeight = height; // Store the last entry height
+					}
 					
-					// Calculate total height needed for all entries
-					int totalHeight = totalEntries * entryHeight;
-					
-					// Maximum scroll should allow us to show the last entry (Level 200) at the bottom
-					// This means: maxScroll = totalHeight - availableHeight
-					// Add one more entry height to ensure Level 200 is fully visible
-					// This accounts for any rounding errors and ensures we can scroll until Level 200 is visible
-					int maxScroll = Math.max(0, totalHeight - availableHeight + entryHeight);
+					// Maximum scroll should allow us to show the last entry at the bottom
+					// Add the height of the last entry to ensure it's fully visible
+					int maxScroll = Math.max(0, totalHeight - availableHeight + lastEntryHeight);
 					mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
 				} catch (Exception e) {
-					// Fallback: use default calculation
+					// Fallback: use default calculation with actual heights
 					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
 					int lineHeight = 12;
-					int linesPerEntry = 2;
-					int entryHeight = lineHeight * linesPerEntry;
-					int totalEntries = filteredEntries.size();
-					int totalHeight = totalEntries * entryHeight;
+					
+					// Calculate actual heights for all entries
+					int totalHeight = 0;
+					int lastEntryHeight = 0;
+					for (MKLevelInfo levelInfo : filteredEntries) {
+						int height = 2 * lineHeight;
+						if (findWaveForEssence(levelInfo.essence) != null) {
+							height += lineHeight;
+						}
+						totalHeight += height;
+						lastEntryHeight = height; // Store the last entry height
+					}
+					
 					// Estimate available height (default inventory height minus search bar and padding)
 					int estimatedAvailableHeight = 166 - 16 - 10 - 3; // Default inventory height minus search bar, padding, contentOffset
-					// Add one more entry height to ensure Level 200 is fully visible
-					int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + entryHeight);
+					// Add the height of the last entry to ensure it's fully visible
+					int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
 					mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
 				}
 			} else {
-				// Fallback: use default calculation
+				// Fallback: use default calculation with actual heights
 				List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
 				int lineHeight = 12;
-				int linesPerEntry = 2;
-				int entryHeight = lineHeight * linesPerEntry;
-				int totalEntries = filteredEntries.size();
-				int totalHeight = totalEntries * entryHeight;
+				
+				// Calculate actual heights for all entries
+				int totalHeight = 0;
+				int lastEntryHeight = 0;
+				for (MKLevelInfo levelInfo : filteredEntries) {
+					int height = 2 * lineHeight;
+					if (findWaveForEssence(levelInfo.essence) != null) {
+						height += lineHeight;
+					}
+					totalHeight += height;
+					lastEntryHeight = height; // Store the last entry height
+				}
+				
 				// Estimate available height (default inventory height minus search bar and padding)
 				int estimatedAvailableHeight = 166 - 16 - 10 - 3; // Default inventory height minus search bar, padding, contentOffset
-				// Add one more entry height to ensure Level 200 is fully visible
-				int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + entryHeight);
+				// Add the height of the last entry to ensure it's fully visible
+				int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
 				mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
 			}
 		}
@@ -5134,60 +5156,52 @@ public class InformationenUtility {
 		// Filter entries based on search text
 		List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
 		
-		// Get scroll offset
-		// Each entry has 2 lines, so we need to calculate the start index based on that
-		int linesPerEntry = 2;
-		int startIndex = mkLevelScrollOffset / (lineHeight * linesPerEntry);
-		
-		// Calculate how many entries can fit in the available space (minus search bar and contentOffset)
-		// Use unscaled height for calculation
+		// Calculate available height for content
 		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
-		int entryHeight = lineHeight * linesPerEntry;
-		// Use floor division to get the exact number of entries that fully fit
-		int maxVisibleEntries = availableHeight / entryHeight;
 		
-		// Reset scroll if filtered list is smaller or adjust to show last entries
-		if (startIndex >= filteredEntries.size()) {
-			startIndex = Math.max(0, filteredEntries.size() - maxVisibleEntries);
-			mkLevelScrollOffset = startIndex * entryHeight;
+		// Calculate actual heights for all entries
+		int[] entryHeights = new int[filteredEntries.size()];
+		int totalHeight = 0;
+		for (int i = 0; i < filteredEntries.size(); i++) {
+			MKLevelInfo levelInfo = filteredEntries.get(i);
+			// Base height: Level (1 line) + Essenz (1 line) = 2 lines
+			int height = 2 * lineHeight;
+			// Add 1 line if wave is present
+			if (findWaveForEssence(levelInfo.essence) != null) {
+				height += lineHeight;
+			}
+			entryHeights[i] = height;
+			totalHeight += height;
 		}
 		
-		// Ensure we can scroll to the last entry (Level 200)
-		// Calculate the maximum scroll offset based on total height
-		// This ensures we can scroll until Level 200 is visible at the bottom
-		int totalHeight = filteredEntries.size() * entryHeight;
-		// Add one more entry height to ensure Level 200 is fully visible
-		// This accounts for any rounding errors and ensures we can scroll until Level 200 is visible
-		int maxScrollOffset = Math.max(0, totalHeight - availableHeight + entryHeight);
+		// Calculate startIndex based on scroll offset
+		int startIndex = 0;
+		int accumulatedHeight = 0;
+		for (int i = 0; i < filteredEntries.size(); i++) {
+			if (accumulatedHeight + entryHeights[i] > mkLevelScrollOffset) {
+				startIndex = i;
+				break;
+			}
+			accumulatedHeight += entryHeights[i];
+		}
 		
-		// Limit the scroll offset to ensure we can see Level 200
+		// Calculate maximum scroll offset to ensure we can scroll to the last entry
+		// Add the height of the last entry to ensure it's fully visible
+		int lastEntryHeight = filteredEntries.size() > 0 ? entryHeights[filteredEntries.size() - 1] : 0;
+		int maxScrollOffset = Math.max(0, totalHeight - availableHeight + lastEntryHeight);
+		
+		// Limit the scroll offset
 		if (mkLevelScrollOffset > maxScrollOffset) {
 			mkLevelScrollOffset = maxScrollOffset;
-		}
-		
-		// Recalculate startIndex based on the corrected scroll offset
-		startIndex = mkLevelScrollOffset / entryHeight;
-		
-		// Ensure we can always reach the last entry (Level 200)
-		// The maximum startIndex should allow the last entry (index size-1) to be visible
-		// This means: startIndex + maxVisibleEntries - 1 >= size - 1
-		// So: startIndex >= size - maxVisibleEntries
-		// But we want to allow scrolling until the last entry is at the bottom, so we allow one more entry
-		if (filteredEntries.size() > maxVisibleEntries) {
-			// Calculate maxStartIndex to ensure the last entry is visible
-			// We allow scrolling until the last entry can be the last visible entry
-			// Add one more entry to ensure we can fully scroll to show Level 200 at the bottom
-			int maxStartIndex = filteredEntries.size() - maxVisibleEntries + 1;
-			// Ensure we can scroll enough to show the last entry
-			int maxScrollForLastEntry = maxStartIndex * entryHeight;
-			// Use the larger of the two calculations to ensure Level 200 is always reachable
-			if (maxScrollOffset < maxScrollForLastEntry) {
-				maxScrollOffset = maxScrollForLastEntry;
-			}
-			// Update scroll offset if needed
-			if (mkLevelScrollOffset > maxScrollOffset) {
-				mkLevelScrollOffset = maxScrollOffset;
-				startIndex = mkLevelScrollOffset / entryHeight;
+			// Recalculate startIndex
+			accumulatedHeight = 0;
+			startIndex = 0;
+			for (int i = 0; i < filteredEntries.size(); i++) {
+				if (accumulatedHeight + entryHeights[i] > mkLevelScrollOffset) {
+					startIndex = i;
+					break;
+				}
+				accumulatedHeight += entryHeights[i];
 			}
 		}
 		
@@ -5204,8 +5218,8 @@ public class InformationenUtility {
 		int visibleEntryCount = 0;
 		
 		while (currentIndex < filteredEntries.size() && textY < maxY) {
-			// Check if we have space for another entry before drawing
-			if (textY + lineHeight * 2 > maxY) {
+			// Check if we have space for another entry before drawing (3 lines worst case: Level + Essenz + Welle)
+			if (textY + lineHeight * 3 > maxY) {
 				break;
 			}
 			
@@ -5221,6 +5235,23 @@ public class InformationenUtility {
 			context.drawText(client.textRenderer, essenceText, textX, textY, 0xFFFFFFFF, true);
 			textY += lineHeight;
 			
+			// Find wave for this essence and draw in separate line
+			Integer wave = findWaveForEssence(levelInfo.essence);
+			if (wave != null) {
+				// Draw "-> Welle: " in gray
+				String wavePrefix = "-> Welle: ";
+				int grayColor = 0xFFC0C0C0; // Light gray (with alpha channel)
+				int greenColor = 0xFF55FF55; // Light green (with alpha channel)
+				
+				int prefixWidth = client.textRenderer.getWidth(wavePrefix);
+				context.drawText(client.textRenderer, wavePrefix, textX, textY, grayColor, true);
+				
+				// Draw wave number in green
+				String waveNumber = String.valueOf(wave);
+				context.drawText(client.textRenderer, waveNumber, textX + prefixWidth, textY, greenColor, true);
+				textY += lineHeight;
+			}
+			
 			currentIndex++;
 			visibleEntryCount++;
 		}
@@ -5233,6 +5264,118 @@ public class InformationenUtility {
 		
 		// Pop matrix transformation
 		matrices.popMatrix();
+	}
+	
+	/**
+	 * Finds the wave for an essence from MKLevel format (e.g., "Pferd T1") by converting it to Essenz.json format
+	 * @param mkLevelEssenceName The essence name from MKLevel.json (e.g., "Pferd T1")
+	 * @return The wave number if found, null otherwise
+	 */
+	private static Integer findWaveForEssence(String mkLevelEssenceName) {
+		if (mkLevelEssenceName == null || mkLevelEssenceName.isEmpty()) {
+			return null;
+		}
+		
+		// Parse the MKLevel format: "Pferd T1" -> name="Pferd", tier="1"
+		String[] parts = mkLevelEssenceName.split("\\s+");
+		if (parts.length < 2) {
+			return null;
+		}
+		
+		String name = parts[0];
+		String tierStr = parts[1].replace("T", "").trim();
+		
+		// Convert name to plural form (matching Essenz.json format)
+		String pluralName = convertToPlural(name);
+		
+		// Build the Essenz.json format: "Pferde [Essenz] Tier 1"
+		String essenceJsonName = pluralName + " [Essenz] Tier " + tierStr;
+		
+		// Look up in database
+		EssenceInfo essenceInfo = essencesDatabase.get(essenceJsonName);
+		if (essenceInfo != null) {
+			return essenceInfo.wave;
+		}
+		
+		// If not found, try alternative formats (e.g., "Piglin" vs "Pigling")
+		// Try with "Pigling" if it was "Piglin"
+		if (name.equals("Piglin")) {
+			String alternativeName = "Pigling [Essenz] Tier " + tierStr;
+			EssenceInfo altInfo = essencesDatabase.get(alternativeName);
+			if (altInfo != null) {
+				return altInfo.wave;
+			}
+		}
+		// Also try "Piglin" if it was "Pigling" (though this shouldn't happen in MKLevel.json)
+		if (name.equals("Pigling")) {
+			String alternativeName = "Piglin [Essenz] Tier " + tierStr;
+			EssenceInfo altInfo = essencesDatabase.get(alternativeName);
+			if (altInfo != null) {
+				return altInfo.wave;
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Converts a singular essence name to plural form (matching Essenz.json format)
+	 * @param singular The singular name (e.g., "Pferd")
+	 * @return The plural form (e.g., "Pferde")
+	 */
+	private static String convertToPlural(String singular) {
+		if (singular == null || singular.isEmpty()) {
+			return singular;
+		}
+		
+		// Check if already in plural form (e.g., "Hühner" in MKLevel.json)
+		// This handles cases where MKLevel.json already has plural forms
+		if (singular.equals("Hühner")) {
+			return "Hühner";
+		}
+		
+		// Mapping for special cases
+		switch (singular) {
+			case "Pferd": return "Pferde";
+			case "Lohe": return "Lohen";
+			case "Ziege": return "Ziegen";
+			case "Biene": return "Bienen";
+			case "Huhn": return "Hühner";
+			case "Piglin": return "Piglin"; // Can be "Piglin" or "Pigling" in Essenz.json
+			case "Schneemann": return "Schneemann"; // Stays the same
+			case "Wächter": return "Wächter"; // Stays the same
+			case "Fuchs": return "Fuchs"; // Stays the same
+			case "Creeper": return "Creeper"; // Stays the same
+			case "Frosch": return "Frosch"; // Stays the same
+			case "Vindicator": return "Vindicator"; // Stays the same
+			case "Hexe": return "Hexen";
+			case "Schildkröte": return "Schildkröten";
+			case "Spinne": return "Spinnen";
+			case "Axolotl": return "Axolotl"; // Stays the same
+			case "Enderman": return "Enderman"; // Stays the same
+			case "Zoglin": return "Zoglin"; // Stays the same
+			case "Panda": return "Panda"; // Stays the same
+			case "Evoker": return "Evoker"; // Stays the same
+			case "Ertrunkener": return "Ertrunkener"; // Stays the same
+			case "Ocelot": return "Ocelot"; // Stays the same
+			case "Zombiepferd": return "Zombiepferde";
+			case "Husk": return "Husk"; // Stays the same
+			case "Wither": return "Wither"; // Stays the same
+			case "Skelett": return "Skelett"; // Stays the same
+			case "Witherskelett": return "Witherskelett"; // Stays the same
+			case "Stray": return "Stray"; // Stays the same
+			case "Zombie": return "Zombie"; // Stays the same
+			case "Wolf": return "Wolf"; // Stays the same
+			case "Endermite": return "Endermite"; // Stays the same
+			case "Hoglin": return "Hoglin"; // Stays the same
+			default:
+				// For names ending in "e", often just add "n"
+				if (singular.endsWith("e")) {
+					return singular + "n";
+				}
+				// For other names, try adding "e" or "en"
+				return singular + "e";
+		}
 	}
 	
 	/**
@@ -5260,46 +5403,91 @@ public class InformationenUtility {
 				// Ignore
 			}
 		} else {
-			// Check if search text is just "level" (without number)
-			if (searchLower.equals("level") || searchLower.equals("level:")) {
+			// Check if search text starts with "level" (for live search, e.g., "lev", "leve", "level", "level:")
+			if (searchLower.startsWith("level") || searchLower.equals("level:")) {
 				isLevelOnlySearch = true;
+			}
+		}
+		
+		// Check if search text contains "welle" followed by a number (e.g., "Welle 701", "welle: 701", "welle701")
+		Integer waveFromSearch = null;
+		boolean isWaveOnlySearch = false;
+		// Pattern matches: "welle" (case-insensitive), optional ":", optional whitespace, then digits
+		java.util.regex.Pattern wavePattern = java.util.regex.Pattern.compile("welle\\s*:?\\s*(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+		java.util.regex.Matcher waveMatcher = wavePattern.matcher(searchText);
+		if (waveMatcher.find()) {
+			try {
+				waveFromSearch = Integer.parseInt(waveMatcher.group(1));
+			} catch (NumberFormatException e) {
+				// Ignore
+			}
+		} else {
+			// Check if search text starts with "welle" (for live search, e.g., "wel", "welle", "welle:")
+			if (searchLower.startsWith("welle") || searchLower.equals("welle:")) {
+				isWaveOnlySearch = true;
 			}
 		}
 		
 		for (MKLevelInfo entry : mkLevelDatabase) {
 			boolean matches = false;
 			
-			// If only "Level" was searched (without number), show all entries
+			// If search text starts with "Level" (for live search), show all entries
 			if (isLevelOnlySearch) {
 				matches = true;
+			}
+			// If search text starts with "Welle" (for live search), show all entries
+			else if (isWaveOnlySearch) {
+				matches = true;
+			}
+			// Search for "Welle X" pattern - search for waves containing the number as substring
+			else if (waveFromSearch != null) {
+				Integer entryWave = findWaveForEssence(entry.essence);
+				if (entryWave != null) {
+					// Check if the wave number contains the searched number as substring
+					// e.g., "welle 8" should match "welle 800", "welle 581", etc.
+					String waveStr = String.valueOf(entryWave);
+					String searchWaveStr = String.valueOf(waveFromSearch);
+					if (waveStr.contains(searchWaveStr)) {
+						matches = true;
+					}
+				}
 			}
 			// Search for "Level X" pattern (prioritize exact level match)
 			else if (levelFromSearch != null && entry.level == levelFromSearch) {
 				matches = true;
 			}
-			// Search in displayed text "-Level X" - check if search text matches any part of the displayed text
+			// General search: check all fields for matches
 			else {
+				// Search in displayed text "-Level X" - check if search text matches any part of the displayed text
 				String displayedLevelText = "-Level " + entry.level;
 				if (displayedLevelText.toLowerCase().contains(searchLower)) {
 					matches = true;
 				}
-			}
-			
-			// Search in Level (as number) - only if not already matched
-			if (!matches && String.valueOf(entry.level).contains(searchLower)) {
-				matches = true;
-			}
-			
-			// Search in Essence
-			if (!matches && entry.essence.toLowerCase().contains(searchLower)) {
-				matches = true;
-			}
-			
-			// Search in Amount
-			if (!matches) {
-				String amountStr = formatNumberWithSeparator(entry.amount);
-				if (amountStr.contains(searchLower) || String.valueOf(entry.amount).contains(searchLower)) {
+				
+				// Search in Level (as number) - only if not already matched
+				if (!matches && String.valueOf(entry.level).contains(searchLower)) {
 					matches = true;
+				}
+				
+				// Search in Essence
+				if (!matches && entry.essence.toLowerCase().contains(searchLower)) {
+					matches = true;
+				}
+				
+				// Search in Amount
+				if (!matches) {
+					String amountStr = formatNumberWithSeparator(entry.amount);
+					if (amountStr.contains(searchLower) || String.valueOf(entry.amount).contains(searchLower)) {
+						matches = true;
+					}
+				}
+				
+				// Search in Wave (as number) - only if not already matched
+				if (!matches) {
+					Integer entryWave = findWaveForEssence(entry.essence);
+					if (entryWave != null && String.valueOf(entryWave).contains(searchLower)) {
+						matches = true;
+					}
 				}
 			}
 			
