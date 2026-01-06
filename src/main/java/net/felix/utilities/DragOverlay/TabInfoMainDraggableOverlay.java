@@ -54,7 +54,13 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
             // Fallback: Verwende Edit-Mode Zeilen wenn keine echten Daten verfügbar
             lines = TabInfoUtility.getMainOverlayLinesForEditMode();
         }
-        if (lines.isEmpty()) return 200;
+        // Wenn leer, verwende minimale Breite (aber nur wenn Hintergrund aktiviert ist)
+        if (lines.isEmpty()) {
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+                return 50; // Minimale Breite
+            }
+            return 200; // Fallback
+        }
         
         int maxWidth = 0;
         for (TabInfoUtility.LineWithPercent line : lines) {
@@ -92,7 +98,13 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         if (client == null) return 100;
         
         List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLinesForEditMode();
-        if (lines.isEmpty()) return 100;
+        // Wenn leer, verwende minimale Höhe (aber nur wenn Hintergrund aktiviert ist)
+        if (lines.isEmpty()) {
+            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+                return 20; // Minimale Höhe
+            }
+            return 100; // Fallback
+        }
         
         final int PADDING = 5;
         final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
@@ -173,13 +185,22 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         
         // Hole die Zeilen für das Overlay
         List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLinesForEditMode();
-        if (lines.isEmpty()) return;
+        // Rendere auch wenn leer, wenn Hintergrund aktiviert ist
+        if (lines.isEmpty() && !CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+            return;
+        }
         
         // Render content with scale using matrix transformation
         Matrix3x2fStack matrices = context.getMatrices();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
+        
+        // Wenn keine Zeilen vorhanden sind, rendere nur Hintergrund (wird bereits oben gerendert)
+        if (lines.isEmpty()) {
+            matrices.popMatrix();
+            return;
+        }
         
         final int PADDING = 5;
         final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;

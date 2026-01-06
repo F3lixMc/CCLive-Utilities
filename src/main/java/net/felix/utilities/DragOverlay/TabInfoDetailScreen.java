@@ -1015,6 +1015,8 @@ public class TabInfoDetailScreen extends Screen {
                         return true; // Nur ein Punkt erlaubt
                     }
                     warnPercentInput += c;
+                    // Automatisch speichern nach jeder Eingabe
+                    saveWarnPercent();
                 }
                 return true;
             }
@@ -1028,6 +1030,8 @@ public class TabInfoDetailScreen extends Screen {
             if (keyCode == 259) { // Backspace
                 if (!warnPercentInput.isEmpty()) {
                     warnPercentInput = warnPercentInput.substring(0, warnPercentInput.length() - 1);
+                    // Automatisch speichern nach Backspace
+                    saveWarnPercent();
                 }
                 return true;
             } else if (keyCode == 257 || keyCode == 335) { // Enter oder Numpad Enter

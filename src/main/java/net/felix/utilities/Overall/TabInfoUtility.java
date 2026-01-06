@@ -1431,15 +1431,25 @@ public class TabInfoUtility {
 			}
 		}
 		
-		// Wenn keine Zeilen vorhanden sind (alle Informationen in separaten Overlays), rendere nichts
-		if (lines.isEmpty()) {
-			return;
-		}
-		
 		// Berechne unskalierte Overlay-Dimensionen
 		// Berücksichtige zusätzlichen Abstand für Zeilen mit Icons (2 Pixel pro Icon-Zeile)
-		int unscaledWidth = maxWidth + (PADDING * 2);
-		int unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * 2) + (PADDING * 2);
+		int unscaledWidth;
+		int unscaledHeight;
+		
+		if (lines.isEmpty()) {
+			// Wenn keine Zeilen vorhanden sind, verwende minimale Dimensionen
+			// aber rendere trotzdem, wenn Hintergrund aktiviert ist
+			if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+				// Keine Zeilen und kein Hintergrund = rendere nur separate Overlays
+				renderSeparateOverlays(context, client);
+				return;
+			}
+			unscaledWidth = 50; // Minimale Breite
+			unscaledHeight = 20; // Minimale Höhe
+		} else {
+			unscaledWidth = maxWidth + (PADDING * 2);
+			unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * 2) + (PADDING * 2);
+		}
 		
 		// Get scale
 		float scale = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale;
@@ -1464,26 +1474,25 @@ public class TabInfoUtility {
 		matrices.translate(xPosition, yPosition);
 		matrices.scale(scale, scale);
 		
-		// Zeichne alle Zeilen - vertikal zentriert
-		// Berechne die tatsächliche Text-Höhe (inkl. zusätzlicher Abstände für Icon-Zeilen)
-		int totalTextHeight = 0;
-		for (LineWithPercent line : lines) {
-			totalTextHeight += actualLineHeight;
-			if (line.showIcon && line.configKey != null) {
-				totalTextHeight += 2; // Zusätzlicher Abstand für Icon-Zeilen
+		// Zeichne alle Zeilen - vertikal zentriert (nur wenn Zeilen vorhanden sind)
+		if (!lines.isEmpty()) {
+			// Berechne die tatsächliche Text-Höhe (inkl. zusätzlicher Abstände für Icon-Zeilen)
+			int totalTextHeight = 0;
+			for (LineWithPercent line : lines) {
+				totalTextHeight += actualLineHeight;
+				if (line.showIcon && line.configKey != null) {
+					totalTextHeight += 2; // Zusätzlicher Abstand für Icon-Zeilen
+				}
 			}
-		}
-		// Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der Text-Höhe
-		// Die erste Zeile beginnt bei overlayCenterY - totalTextHeight / 2
-		// Da die Text-Baseline unten ist, müssen wir die erste Zeile etwas nach oben verschieben
-		// Verwende unskalierte Höhe für Zentrierung (Koordinaten sind nach Matrix-Transformation relativ)
-		int overlayCenterY = unscaledHeight / 2;
-		int currentY = overlayCenterY - totalTextHeight / 2;
-		int warningColor = 0xFFFF0000; // Rot für Warnungen
-		
-		// Stelle sicher, dass mindestens eine Zeile vorhanden ist (sollte bereits durch obige Prüfung abgedeckt sein)
-		
-		for (LineWithPercent line : lines) {
+			// Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der Text-Höhe
+			// Die erste Zeile beginnt bei overlayCenterY - totalTextHeight / 2
+			// Da die Text-Baseline unten ist, müssen wir die erste Zeile etwas nach oben verschieben
+			// Verwende unskalierte Höhe für Zentrierung (Koordinaten sind nach Matrix-Transformation relativ)
+			int overlayCenterY = unscaledHeight / 2;
+			int currentY = overlayCenterY - totalTextHeight / 2;
+			int warningColor = 0xFFFF0000; // Rot für Warnungen
+			
+			for (LineWithPercent line : lines) {
 			// Hole konfigurierte Farben für diese Zeile
 			int textColor = getTextColorForConfigKey(line.configKey);
 			int percentColor = getPercentColorForConfigKey(line.configKey);
@@ -1699,6 +1708,7 @@ public class TabInfoUtility {
 			}
 			currentY += lineSpacing;
 		}
+		} // Ende if (!lines.isEmpty())
 		
 		matrices.popMatrix();
 		
@@ -2215,10 +2225,23 @@ public class TabInfoUtility {
 		
 		// Zeichne alle Zeilen
 		int currentY = PADDING;
+		int warningColor = 0xFFFF0000; // Rot für Warnungen
 		for (LineWithPercent line : lines) {
 			if (line.text == null || line.text.trim().isEmpty()) {
 				currentY += actualLineHeight;
 				continue;
+			}
+			
+			// Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
+			int currentTextColor = textColor;
+			if (line.showWarning) {
+				// Blink-Animation: alle 300ms wechseln
+				boolean isVisible = (System.currentTimeMillis() / 300) % 2 == 0;
+				if (isVisible) {
+					currentTextColor = warningColor;
+				} else {
+					currentTextColor = textColor;
+				}
 			}
 			
 			int currentX = PADDING;
@@ -2286,15 +2309,15 @@ public class TabInfoUtility {
 					} catch (Exception e) {
 						// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
 						if (fallbackText != null) {
-							context.drawText(client.textRenderer, Text.literal(fallbackText), currentX, currentY, textColor, true);
+							context.drawText(client.textRenderer, Text.literal(fallbackText), currentX, currentY, currentTextColor, true);
 							currentX += client.textRenderer.getWidth(fallbackText);
 						}
 					}
 					// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-					context.drawText(client.textRenderer, Text.literal(": "), currentX, textYForIcon, textColor, true);
+					context.drawText(client.textRenderer, Text.literal(": "), currentX, textYForIcon, currentTextColor, true);
 					currentX += client.textRenderer.getWidth(": ");
 					// Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-					context.drawText(client.textRenderer, Text.literal(line.text), currentX, textYForIcon, textColor, true);
+					context.drawText(client.textRenderer, Text.literal(line.text), currentX, textYForIcon, currentTextColor, true);
 					currentX += client.textRenderer.getWidth(line.text);
 				} else {
 					// Fallback: Zeichne normalen Text
@@ -2308,7 +2331,7 @@ public class TabInfoUtility {
 					line.text,
 					currentX,
 					currentY,
-					textColor,
+					currentTextColor,
 					true
 				);
 				currentX += client.textRenderer.getWidth(line.text);
@@ -2322,12 +2345,14 @@ public class TabInfoUtility {
 					int lineCenterY = currentY + actualLineHeight / 2;
 					percentY = lineCenterY - client.textRenderer.fontHeight / 2;
 				}
+				// Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
+				int currentPercentColor = line.showWarning ? currentTextColor : percentColor;
 				context.drawText(
 					client.textRenderer,
 					" " + line.percentText,
 					currentX,
 					percentY,
-					percentColor,
+					currentPercentColor,
 					true
 				);
 			}
