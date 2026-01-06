@@ -18,6 +18,10 @@ public abstract class SearchBarMixin {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void renderSearchBar(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        // Blockiere das Rendern der Suchleiste, wenn das Hilfe-Overlay vom ItemViewer offen ist
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            return;
+        }
         SearchBarUtility.renderInScreen(context, (HandledScreen<?>) (Object) this, x, y);
         SearchBarUtility.renderSearchFrames(context, (HandledScreen<?>) (Object) this, x, y);
     }

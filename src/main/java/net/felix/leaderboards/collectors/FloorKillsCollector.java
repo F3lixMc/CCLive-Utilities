@@ -35,16 +35,16 @@ public class FloorKillsCollector implements DataCollector {
     @Override
     public void initialize() {
         if (isActive) {
-            // Silent error handling("⚠️ [FloorKillsCollector] Bereits initialisiert - überspringe");
+            System.out.println("⚠️ [FloorKillsCollector] Bereits initialisiert - überspringe");
             return;
         }
         
-        // Silent error handling("🔍 [FloorKillsCollector] Starte Initialisierung...");
+        System.out.println("🔍 [FloorKillsCollector] Starte Initialisierung...");
         // Registriere Tick-Event für Kill-Tracking
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
         isActive = true;
-        // Silent error handling("✅ [FloorKillsCollector] FloorKillsCollector initialisiert und aktiv");
+        System.out.println("✅ [FloorKillsCollector] FloorKillsCollector initialisiert und aktiv");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -88,7 +88,7 @@ public class FloorKillsCollector implements DataCollector {
             if (currentFloor.equals(lastFloor)) {
                 int currentKills = KillsUtility.getTotalKills();
                 cachedKillsForCurrentFloor = currentKills;
-                // Silent error handling("💾 [FloorKillsCollector] Cache-Update für '" + currentFloor + "': " + cachedKillsForCurrentFloor + " kills");
+                System.out.println("💾 [FloorKillsCollector] Cache-Update für '" + currentFloor + "': " + cachedKillsForCurrentFloor + " kills");
             }
         } catch (Exception e) {
             // Silent error handling
@@ -112,11 +112,11 @@ public class FloorKillsCollector implements DataCollector {
                 // da die Bossbar bereits den Wert des neuen Floors zeigt!
                 if (lastFloor != null && cachedKillsForCurrentFloor > 0) {
                     updateFloorScore(lastFloor, cachedKillsForCurrentFloor);
-                    // Silent error handling("🔄 Floor-Wechsel erkannt: " + lastFloor + " → " + currentFloor + " (Gecachte Kills: " + cachedKillsForCurrentFloor + ", Aktuelle Bossbar: " + KillsUtility.getTotalKills() + ")");
+                    System.out.println("🔄 Floor-Wechsel erkannt: " + lastFloor + " → " + currentFloor + " (Gecachte Kills: " + cachedKillsForCurrentFloor + ", Aktuelle Bossbar: " + KillsUtility.getTotalKills() + ")");
                 } else if (lastFloor != null && lastTotalKills > 0) {
                     // Fallback: Falls kein gecachter Wert vorhanden, verwende lastTotalKills
                     updateFloorScore(lastFloor, lastTotalKills);
-                    // Silent error handling("🔄 Floor-Wechsel erkannt (Fallback): " + lastFloor + " → " + currentFloor + " (Kills: " + lastTotalKills + ")");
+                    System.out.println("🔄 Floor-Wechsel erkannt (Fallback): " + lastFloor + " → " + currentFloor + " (Kills: " + lastTotalKills + ")");
                 }
 
                 // Nach dem Speichern des vorherigen Floors Alltime-Kills sofort aktualisieren
@@ -134,7 +134,7 @@ public class FloorKillsCollector implements DataCollector {
                 // In diesem Fall sollten wir den Cache-Wert mit dem aktuellen Wert überschreiben
                 long cachedKills = floorKills.getOrDefault(currentFloor, 0L);
                 if (newFloorKills < cachedKills) {
-                    // Silent error handling("🔄 Floor neu betreten: " + currentFloor + " - Cache (" + cachedKills + ") > Aktuell (" + newFloorKills + "), überschreibe Cache");
+                    System.out.println("🔄 Floor neu betreten: " + currentFloor + " - Cache (" + cachedKills + ") > Aktuell (" + newFloorKills + "), überschreibe Cache");
                     floorKills.put(currentFloor, (long) newFloorKills);
                     // Sende sofort den korrekten Wert an den Server
                     LeaderboardManager.getInstance().updateScore(currentFloor, newFloorKills);
@@ -180,10 +180,32 @@ public class FloorKillsCollector implements DataCollector {
     }
     
     /**
+     * Prüft ob ein Floor-Name gültig ist (nur floor_1 bis floor_100)
+     */
+    private boolean isValidFloorName(String floor) {
+        if (floor == null || !floor.startsWith("floor_")) {
+            return false;
+        }
+        String floorNumber = floor.substring("floor_".length());
+        try {
+            int floorNum = Integer.parseInt(floorNumber);
+            return floorNum >= 1 && floorNum <= 100; // Erlaube floor_1 bis floor_100
+        } catch (NumberFormatException e) {
+            return false; // Ungültige Floor-Namen wie "all", "legendary", "none" werden abgelehnt
+        }
+    }
+    
+    /**
      * Aktualisiert den Score für einen Floor
      */
     private void updateFloorScore(String floor, int kills) {
         if (floor == null || kills < 0) return; // Erlaube auch 0 (falls Bossbar 0 zeigt)
+        
+        // Validiere Floor-Name - ignoriere ungültige Floor-Namen
+        if (!isValidFloorName(floor)) {
+            System.out.println("⚠️ [FloorKillsCollector] Ungültiger Floor-Name ignoriert: " + floor);
+            return;
+        }
         
         // Hole bisherige Kills für diesen Floor
         long currentTotal = floorKills.getOrDefault(floor, 0L);
@@ -203,16 +225,16 @@ public class FloorKillsCollector implements DataCollector {
         // Nur updaten wenn sich der Wert geändert hat
         if (newTotal != currentTotal) {
             floorKills.put(floor, newTotal);
-            // Silent error handling("🗡️ [FloorKillsCollector] Rufe updateScore auf für " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
+            System.out.println("🗡️ [FloorKillsCollector] Rufe updateScore auf für " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
             LeaderboardManager.getInstance().updateScore(floor, newTotal);
             
             if (kills < currentTotal) {
-                // Silent error handling("🗡️ Floor-Kills Update (neu betreten): " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
+                System.out.println("🗡️ Floor-Kills Update (neu betreten): " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
             } else {
-                // Silent error handling("🗡️ Floor-Kills Update: " + floor + " = " + newTotal + " kills (absolut)");
+                System.out.println("🗡️ Floor-Kills Update: " + floor + " = " + newTotal + " kills (absolut)");
             }
         } else {
-            // Silent error handling("🗡️ [FloorKillsCollector] updateFloorScore - Keine Änderung für " + floor + " (aktuell: " + currentTotal + ", neu: " + newTotal + ")");
+            System.out.println("🗡️ [FloorKillsCollector] updateFloorScore - Keine Änderung für " + floor + " (aktuell: " + currentTotal + ", neu: " + newTotal + ")");
         }
     }
     
@@ -250,7 +272,17 @@ public class FloorKillsCollector implements DataCollector {
                     String[] parts = floorPart.split("_");
                     if (parts.length >= 1) {
                         String floorNumber = parts[0];
-                        return "floor_" + floorNumber;
+                        // Validiere: Nur floor_1 bis floor_100 sind gültig
+                        try {
+                            int floorNum = Integer.parseInt(floorNumber);
+                            if (floorNum >= 1 && floorNum <= 100) {
+                                return "floor_" + floorNumber;
+                            }
+                        } catch (NumberFormatException e) {
+                            // floorNumber ist keine Zahl (z.B. "all", "legendary", "none")
+                            // Ignoriere diese ungültigen Floor-Namen
+                            System.out.println("⚠️ [FloorKillsCollector] Ungültige Dimension erkannt: " + dimensionId);
+                        }
                     }
                 }
             }
@@ -315,13 +347,13 @@ public class FloorKillsCollector implements DataCollector {
                     double percentageDiff = (difference * 100.0) / Math.max(calculatedAlltimeKills, lastMenuAlltimeKills);
                     
                     if (percentageDiff > 10.0) { // Mehr als 10% Unterschied
-                        // Silent error handling("⚠️ [FloorKillsCollector] WARNUNG: Große Differenz zwischen berechneter Summe und Menü-Wert!");
-                        // Silent error handling("   Berechnet (PRIMÄR): " + calculatedAlltimeKills);
-                        // Silent error handling("   Aus Menü (SEKUNDÄR): " + lastMenuAlltimeKills);
-                        // Silent error handling("   Differenz: " + difference + " (" + String.format("%.2f", percentageDiff) + "%)");
-                        // Silent error handling("   → Berechneter Wert wird verwendet (Summe aller Floor-Kills)");
+                        System.out.println("⚠️ [FloorKillsCollector] WARNUNG: Große Differenz zwischen berechneter Summe und Menü-Wert!");
+                        System.out.println("   Berechnet (PRIMÄR): " + calculatedAlltimeKills);
+                        System.out.println("   Aus Menü (SEKUNDÄR): " + lastMenuAlltimeKills);
+                        System.out.println("   Differenz: " + difference + " (" + String.format("%.2f", percentageDiff) + "%)");
+                        System.out.println("   → Berechneter Wert wird verwendet (Summe aller Floor-Kills)");
                     } else {
-                        // Silent error handling("✅ [FloorKillsCollector] Doppelcheck OK: Berechnet=" + calculatedAlltimeKills + ", Menü=" + lastMenuAlltimeKills);
+                        System.out.println("✅ [FloorKillsCollector] Doppelcheck OK: Berechnet=" + calculatedAlltimeKills + ", Menü=" + lastMenuAlltimeKills);
                     }
                 }
                 
@@ -341,7 +373,7 @@ public class FloorKillsCollector implements DataCollector {
     public void setMenuAlltimeKills(long kills) {
         if (kills > 0) {
             lastMenuAlltimeKills = kills;
-            // Silent error handling("📋 [FloorKillsCollector] Menü-Alltime-Kills empfangen: " + kills);
+            System.out.println("📋 [FloorKillsCollector] Menü-Alltime-Kills empfangen: " + kills);
         }
     }
     
@@ -387,7 +419,7 @@ public class FloorKillsCollector implements DataCollector {
         }
         
         isActive = false;
-        // Silent error handling("🛑 FloorKillsCollector gestoppt");
+        System.out.println("🛑 FloorKillsCollector gestoppt");
     }
     
     @Override

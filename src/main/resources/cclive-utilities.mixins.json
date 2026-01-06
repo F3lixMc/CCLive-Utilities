@@ -18,7 +18,8 @@
 		"ClientPlayNetworkHandlerTestMixin",
 		"PlayerHoverStatsMixin",
 		"DrawContextMixin",
-		"ScreenMixin"
+		"ScreenMixin",
+		"InventoryScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

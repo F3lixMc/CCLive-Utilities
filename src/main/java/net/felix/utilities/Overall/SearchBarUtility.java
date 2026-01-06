@@ -43,6 +43,7 @@ public class SearchBarUtility {
 	private static int symbolButtonSize = 16;
 	private static boolean isSymbolMenuOpen = false;
 	private static boolean isSymbolButtonHovered = false;
+	private static final net.minecraft.util.Identifier APPLE_ICON_TEXTURE = net.minecraft.util.Identifier.of("cclive-utilities", "textures/icons/apple_icon_2.png");
 	
 	private static Set<Integer> matchingSlots = new HashSet<>();
 	private static final int SLOT_SIZE = 16;
@@ -450,8 +451,26 @@ public class SearchBarUtility {
 		
 		matchingSlots.clear();
 		
-		// Prüfe ob ODER-Suche mit "/" vorhanden ist (bevor @ entfernt wird)
-		boolean isOrSearch = searchText.contains("/");
+		// Prüfe ob es eine @-Suche ist (ein oder mehrere @)
+		boolean isAtSearch = searchText.startsWith("@");
+		String searchTerm;
+		
+		if (isAtSearch) {
+			// Entferne nur das erste @ und führende Leerzeichen
+			searchTerm = searchText.substring(1).trim();
+			if (searchTerm.isEmpty()) {
+				return;
+			}
+		} else {
+			// Normale Suche
+			searchTerm = searchText;
+		}
+		
+		String searchLower = searchTerm.toLowerCase();
+		String searchExact = searchTerm;
+		
+		// Prüfe auf mehrere Filter (durch Komma getrennt)
+		List<SearchFilter> filters = parseMultipleFilters(searchTerm);
 		
 		// Verwende die gleichen Slots wie bei der Inventarüberwachung
 		int[] slotsToSearch = getSlotsForMenu(handledScreen);
@@ -464,108 +483,177 @@ public class SearchBarUtility {
 				if (!itemStack.isEmpty()) {
 					boolean matches = false;
 					
-					if (isOrSearch) {
-						// ODER-Suche: Teile durch "/" und prüfe jeden Term einzeln
-						String[] orTerms = searchText.split("/");
-						for (String orTerm : orTerms) {
-							orTerm = orTerm.trim();
-							if (orTerm.isEmpty()) continue;
-							
-							// Prüfe ob innerhalb dieses ODER-Terms Kommas vorhanden sind (UND-Filter)
-							boolean hasCommaInTerm = orTerm.contains(",");
-							boolean termMatches = false;
-							
-							if (hasCommaInTerm) {
-								// Innerhalb dieses ODER-Terms: UND-Logik mit Komma-getrennten Filtern
-								String[] andFilters = orTerm.split(",");
-								boolean allFiltersMatch = true;
-								
-								for (String filter : andFilters) {
-									filter = filter.trim();
-									if (filter.isEmpty()) continue;
-									
-									boolean filterMatches = false;
-									
-									// Prüfe ob dieser Filter mit @ beginnt
-									boolean isFilterAtSearch = filter.startsWith("@");
-									String filterSearchText;
-									
-									if (isFilterAtSearch) {
-										// Entferne @ und führende Leerzeichen
-										filterSearchText = filter.substring(1).trim();
-										if (filterSearchText.isEmpty()) continue;
-										
-										// @-Suche für diesen Filter
-										filterMatches = searchInItemTooltips(itemStack, filterSearchText, filterSearchText.toLowerCase());
-									} else {
-										// Normale Suche für diesen Filter
-										filterMatches = searchItemNormal(itemStack, filter, filter.toLowerCase());
-									}
-									
-									if (!filterMatches) {
-										allFiltersMatch = false;
-										break; // Ein Filter schlägt fehl, UND-Bedingung nicht erfüllt
-									}
-								}
-								
-								termMatches = allFiltersMatch;
-							} else {
-								// Kein Komma in diesem Term: Einfache Suche
-								// Prüfe für jeden Term einzeln, ob er mit @ beginnt
-								boolean isTermAtSearch = orTerm.startsWith("@");
-								String termSearchText;
-								
-								if (isTermAtSearch) {
-									// Entferne @ und führende Leerzeichen
-									termSearchText = orTerm.substring(1).trim();
-									if (termSearchText.isEmpty()) continue;
-									
-									// @-Suche für diesen Term
-									termMatches = searchInItemTooltips(itemStack, termSearchText, termSearchText.toLowerCase());
-								} else {
-									// Normale Suche für diesen Term
-									termMatches = searchItemNormal(itemStack, orTerm, orTerm.toLowerCase());
-								}
-							}
-							
-							if (termMatches) {
-								matches = true;
-								break; // Ein Term passt, ODER-Bedingung erfüllt
-							}
+					if (isAtSearch) {
+						// @-Suche: Prüfe alle Filter
+						if (!filters.isEmpty()) {
+							matches = checkAllFilters(itemStack, filters);
+						} else {
+							// Fallback: Normale @-Suche
+							matches = searchInItemTooltips(itemStack, searchExact, searchLower);
 						}
 					} else {
-						// Keine ODER-Suche: Prüfe ob es eine @-Suche ist
-						boolean isAtSearch = searchText.startsWith("@");
-						String searchTerm;
+						// Normale Suche: Item-Name, Aspekte und Ebenen
+						String itemName = itemStack.getName().getString();
+						String itemNameLower = itemName.toLowerCase();
 						
-						if (isAtSearch) {
-							// Entferne nur das erste @ und führende Leerzeichen
-							searchTerm = searchText.substring(1).trim();
-							if (searchTerm.isEmpty()) {
-								continue;
-							}
-						} else {
-							// Normale Suche
-							searchTerm = searchText;
+						// Prüfe zuerst ob es eine Ebenen-Suche mit Vergleichsoperator ist (>e5, <e5, =e5)
+						boolean isEbeneComparison = false;
+						String ebeneOperator = null;
+						String ebeneNumber = null;
+						
+						// Prüfe auf Vergleichsoperatoren vor "e" (>e5, <e5, =e5, >=e5, <=e5)
+						java.util.regex.Pattern ebeneComparisonPattern = java.util.regex.Pattern.compile("^(>=|<=|[><=])\\s*e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+						java.util.regex.Matcher ebeneComparisonMatcher = ebeneComparisonPattern.matcher(searchExact);
+						if (ebeneComparisonMatcher.matches()) {
+							isEbeneComparison = true;
+							ebeneOperator = ebeneComparisonMatcher.group(1);
+							ebeneNumber = ebeneComparisonMatcher.group(2);
 						}
 						
-						if (isAtSearch) {
-							// @-Suche ohne ODER: Prüfe alle Filter (Komma-getrennt = UND)
-							String searchLower = searchTerm.toLowerCase();
-							String searchExact = searchTerm;
-							List<SearchFilter> filters = parseMultipleFilters(searchTerm);
+						// Prüfe ob es eine reine Ebenen-Suche ist (ohne Operator)
+						boolean isEbeneSearch = false;
+						if (!isEbeneComparison) {
+							// Entferne eckige Klammern vom Suchbegriff für die Prüfung
+							String searchWithoutBrackets = searchExact.replaceAll("^\\[|\\]$", "");
+							// Prüfe ob der Suchbegriff mit "e" beginnt (case-insensitive) und nur eine Zahl enthält
+							java.util.regex.Pattern ebeneSearchPattern = java.util.regex.Pattern.compile("^e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+							java.util.regex.Matcher ebeneSearchMatcher = ebeneSearchPattern.matcher(searchWithoutBrackets);
+							if (ebeneSearchMatcher.matches()) {
+								isEbeneSearch = true;
+								ebeneNumber = ebeneSearchMatcher.group(1);
+							}
+						}
+						
+						// Wenn es eine Ebenen-Suche mit Vergleichsoperator ist
+						if (isEbeneComparison && ebeneNumber != null && itemName.contains("[Bauplan]")) {
+							// Extrahiere den Bauplan-Namen
+							String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
 							
-							if (!filters.isEmpty()) {
-								matches = checkAllFilters(itemStack, filters);
+							// Entferne führende/trailing Bindestriche
+							if (blueprintName.startsWith("-")) {
+								blueprintName = blueprintName.substring(1).trim();
+							}
+							if (blueprintName.endsWith("-")) {
+								blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+							}
+							
+							// Entferne Formatierungscodes und Unicode-Zeichen
+							String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+																	.replaceAll("[\\u3400-\\u4DBF]", "")
+																	.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+							
+							// Hole die Ebene aus dem Item-Namen oder der Datenbank
+							Integer itemFloorNumber = null;
+							
+							// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+							java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+							java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+							if (ebeneMatcher.find()) {
+								itemFloorNumber = Integer.parseInt(ebeneMatcher.group(1));
 							} else {
-								// Fallback: Normale @-Suche
-								matches = searchInItemTooltips(itemStack, searchExact, searchLower);
+								// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+								itemFloorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+							}
+							
+							// Führe Vergleich durch
+							if (itemFloorNumber != null) {
+								int targetEbene = Integer.parseInt(ebeneNumber);
+								switch (ebeneOperator) {
+									case ">":
+									case ">=":
+										// ">e5" bedeutet Ebene 5 oder größer (>=)
+										matches = itemFloorNumber >= targetEbene;
+										break;
+									case "<":
+									case "<=":
+										// "<e4" bedeutet Ebene 4 oder kleiner (<=)
+										matches = itemFloorNumber <= targetEbene;
+										break;
+									case "=":
+										matches = itemFloorNumber.equals(targetEbene);
+										break;
+								}
+							}
+						}
+						// Wenn es eine reine Ebenen-Suche ist (ohne Operator), suche nur nach der Ebene
+						else if (isEbeneSearch && ebeneNumber != null && itemName.contains("[Bauplan]")) {
+							// Extrahiere den Bauplan-Namen
+							String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
+							
+							// Entferne führende/trailing Bindestriche
+							if (blueprintName.startsWith("-")) {
+								blueprintName = blueprintName.substring(1).trim();
+							}
+							if (blueprintName.endsWith("-")) {
+								blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+							}
+							
+							// Entferne Formatierungscodes und Unicode-Zeichen
+							String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+																	.replaceAll("[\\u3400-\\u4DBF]", "")
+																	.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+							
+							// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+							java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+							java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+							if (ebeneMatcher.find()) {
+								String itemEbene = ebeneMatcher.group(1);
+								if (itemEbene.equals(ebeneNumber)) {
+									matches = true;
+								}
+							}
+							
+							// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+							if (!matches) {
+								Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+								if (floorNumber != null && floorNumber.toString().equals(ebeneNumber)) {
+									matches = true;
+								}
 							}
 						} else {
-							// Normale Suche: Item-Name, Aspekte und Ebenen
-							String searchLower = searchTerm.toLowerCase();
-							String searchExact = searchTerm;
-							matches = searchItemNormal(itemStack, searchExact, searchLower);
+							// Normale Suche: Item-Name und Ebenen (Aspekte nur mit @)
+						matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
+							
+							// Wenn es ein Bauplan ist, suche auch nach Ebene (Aspekt nur mit @)
+							if (!matches && itemName.contains("[Bauplan]")) {
+								// Extrahiere den Bauplan-Namen
+								String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
+								
+								// Entferne führende/trailing Bindestriche
+								if (blueprintName.startsWith("-")) {
+									blueprintName = blueprintName.substring(1).trim();
+								}
+								if (blueprintName.endsWith("-")) {
+									blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+								}
+								
+								// Entferne Formatierungscodes und Unicode-Zeichen
+								String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+																		.replaceAll("[\\u3400-\\u4DBF]", "")
+																		.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+								
+								// Suche nach Ebene im Item-Namen oder in der Datenbank (Aspekt-Suche nur mit @)
+								// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+								java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+								java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+								if (ebeneMatcher.find()) {
+									String ebene = ebeneMatcher.group(1);
+									if (ebene.contains(searchExact) || ebene.toLowerCase().contains(searchLower)) {
+										matches = true;
+									}
+								}
+								
+								// Falls nicht im Item-Namen gefunden, suche in der Datenbank
+								if (!matches) {
+									Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+									if (floorNumber != null) {
+										String floorStr = floorNumber.toString();
+										if (floorStr.contains(searchExact) || floorStr.toLowerCase().contains(searchLower)) {
+											matches = true;
+										}
+									}
+								}
+							}
 						}
 					}
 					
@@ -574,173 +662,6 @@ public class SearchBarUtility {
 					}
 				}
 			}
-		}
-	}
-	
-	/**
-	 * Führt eine normale Suche (ohne @) für ein Item durch
-	 * Sucht nach Item-Name, Ebenen und anderen Attributen
-	 */
-	private static boolean searchItemNormal(ItemStack itemStack, String searchExact, String searchLower) {
-		String itemName = itemStack.getName().getString();
-		String itemNameLower = itemName.toLowerCase();
-		
-		// Prüfe zuerst ob es eine Ebenen-Suche mit Vergleichsoperator ist (>e5, <e5, =e5)
-		boolean isEbeneComparison = false;
-		String ebeneOperator = null;
-		String ebeneNumber = null;
-		
-		// Prüfe auf Vergleichsoperatoren vor "e" (>e5, <e5, =e5, >=e5, <=e5)
-		java.util.regex.Pattern ebeneComparisonPattern = java.util.regex.Pattern.compile("^(>=|<=|[><=])\\s*e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
-		java.util.regex.Matcher ebeneComparisonMatcher = ebeneComparisonPattern.matcher(searchExact);
-		if (ebeneComparisonMatcher.matches()) {
-			isEbeneComparison = true;
-			ebeneOperator = ebeneComparisonMatcher.group(1);
-			ebeneNumber = ebeneComparisonMatcher.group(2);
-		}
-		
-		// Prüfe ob es eine reine Ebenen-Suche ist (ohne Operator)
-		boolean isEbeneSearch = false;
-		if (!isEbeneComparison) {
-			// Entferne eckige Klammern vom Suchbegriff für die Prüfung
-			String searchWithoutBrackets = searchExact.replaceAll("^\\[|\\]$", "");
-			// Prüfe ob der Suchbegriff mit "e" beginnt (case-insensitive) und nur eine Zahl enthält
-			java.util.regex.Pattern ebeneSearchPattern = java.util.regex.Pattern.compile("^e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
-			java.util.regex.Matcher ebeneSearchMatcher = ebeneSearchPattern.matcher(searchWithoutBrackets);
-			if (ebeneSearchMatcher.matches()) {
-				isEbeneSearch = true;
-				ebeneNumber = ebeneSearchMatcher.group(1);
-			}
-		}
-		
-		// Wenn es eine Ebenen-Suche mit Vergleichsoperator ist
-		if (isEbeneComparison && ebeneNumber != null && itemName.contains("[Bauplan]")) {
-			// Extrahiere den Bauplan-Namen
-			String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
-			
-			// Entferne führende/trailing Bindestriche
-			if (blueprintName.startsWith("-")) {
-				blueprintName = blueprintName.substring(1).trim();
-			}
-			if (blueprintName.endsWith("-")) {
-				blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
-			}
-			
-			// Entferne Formatierungscodes und Unicode-Zeichen
-			String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
-													.replaceAll("[\\u3400-\\u4DBF]", "")
-													.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-			
-			// Hole die Ebene aus dem Item-Namen oder der Datenbank
-			Integer itemFloorNumber = null;
-			
-			// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
-			java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-			java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
-			if (ebeneMatcher.find()) {
-				itemFloorNumber = Integer.parseInt(ebeneMatcher.group(1));
-			} else {
-				// Falls nicht im Item-Namen gefunden, suche in der Datenbank
-				itemFloorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
-			}
-			
-			// Führe Vergleich durch
-			if (itemFloorNumber != null) {
-				int targetEbene = Integer.parseInt(ebeneNumber);
-				switch (ebeneOperator) {
-					case ">":
-					case ">=":
-						// ">e5" bedeutet Ebene 5 oder größer (>=)
-						return itemFloorNumber >= targetEbene;
-					case "<":
-					case "<=":
-						// "<e4" bedeutet Ebene 4 oder kleiner (<=)
-						return itemFloorNumber <= targetEbene;
-					case "=":
-						return itemFloorNumber.equals(targetEbene);
-				}
-			}
-			return false;
-		}
-		// Wenn es eine reine Ebenen-Suche ist (ohne Operator), suche nur nach der Ebene
-		else if (isEbeneSearch && ebeneNumber != null && itemName.contains("[Bauplan]")) {
-			// Extrahiere den Bauplan-Namen
-			String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
-			
-			// Entferne führende/trailing Bindestriche
-			if (blueprintName.startsWith("-")) {
-				blueprintName = blueprintName.substring(1).trim();
-			}
-			if (blueprintName.endsWith("-")) {
-				blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
-			}
-			
-			// Entferne Formatierungscodes und Unicode-Zeichen
-			String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
-													.replaceAll("[\\u3400-\\u4DBF]", "")
-													.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-			
-			// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
-			java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-			java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
-			if (ebeneMatcher.find()) {
-				String itemEbene = ebeneMatcher.group(1);
-				if (itemEbene.equals(ebeneNumber)) {
-					return true;
-				}
-			}
-			
-			// Falls nicht im Item-Namen gefunden, suche in der Datenbank
-			Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
-			if (floorNumber != null && floorNumber.toString().equals(ebeneNumber)) {
-				return true;
-			}
-			return false;
-		} else {
-			// Normale Suche: Item-Name und Ebenen (Aspekte nur mit @)
-			boolean matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
-			
-			// Wenn es ein Bauplan ist, suche auch nach Ebene (Aspekt nur mit @)
-			if (!matches && itemName.contains("[Bauplan]")) {
-				// Extrahiere den Bauplan-Namen
-				String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
-				
-				// Entferne führende/trailing Bindestriche
-				if (blueprintName.startsWith("-")) {
-					blueprintName = blueprintName.substring(1).trim();
-				}
-				if (blueprintName.endsWith("-")) {
-					blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
-				}
-				
-				// Entferne Formatierungscodes und Unicode-Zeichen
-				String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
-														.replaceAll("[\\u3400-\\u4DBF]", "")
-														.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-				
-				// Suche nach Ebene im Item-Namen oder in der Datenbank (Aspekt-Suche nur mit @)
-				// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
-				java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-				java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
-				if (ebeneMatcher.find()) {
-					String ebene = ebeneMatcher.group(1);
-					if (ebene.contains(searchExact) || ebene.toLowerCase().contains(searchLower)) {
-						matches = true;
-					}
-				}
-				
-				// Falls nicht im Item-Namen gefunden, suche in der Datenbank
-				if (!matches) {
-					Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
-					if (floorNumber != null) {
-						String floorStr = floorNumber.toString();
-						if (floorStr.contains(searchExact) || floorStr.toLowerCase().contains(searchLower)) {
-							matches = true;
-						}
-					}
-				}
-			}
-			return matches;
 		}
 	}
 	
@@ -966,7 +887,7 @@ public class SearchBarUtility {
 				ebeneNumber = ebeneSearchMatcher.group(1);
 			}
 			
-			// Wenn es eine reine Ebenen-Suche ist, suche NUR in der Datenbank (ohne Item-Namen)
+			// Wenn es eine reine Ebenen-Suche ist, suche NUR nach der Ebene (ohne Item-Namen)
 			if (isEbeneSearch && ebeneNumber != null) {
 				// Prüfe zuerst, ob es ein Bauplan ist
 				if (itemName.contains("[Bauplan]")) {
@@ -986,17 +907,41 @@ public class SearchBarUtility {
 															.replaceAll("[\\u3400-\\u4DBF]", "")
 															.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 					
-					// Suche nur in der Datenbank (nicht im Item-Namen)
+					// Suche nach "[eX]" oder " [eX]" Format im Item-Namen (falls bereits hinzugefügt)
+					java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+					java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+					if (ebeneMatcher.find()) {
+						String itemEbene = ebeneMatcher.group(1);
+						if (itemEbene.equals(ebeneNumber)) {
+							return true;
+						}
+					}
+					
+					// Falls nicht im Item-Namen gefunden, suche in der Datenbank
 					Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
 					if (floorNumber != null && floorNumber.toString().equals(ebeneNumber)) {
 						return true;
 					}
+				} else {
+					// Für Nicht-Baupläne: Suche nach "[eX]" Format im Item-Namen
+					java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+					java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+					if (ebeneMatcher.find()) {
+						String itemEbene = ebeneMatcher.group(1);
+						if (itemEbene.equals(ebeneNumber)) {
+							return true;
+						}
+					}
 				}
-				// Für Nicht-Baupläne: Keine Ebenen-Suche ohne Item-Namen
+				// Wenn keine Übereinstimmung gefunden, return false (nur Ebenen-Suche, kein Item-Name)
 				return false;
 			}
 			
-			// @-Suche: Item-Name wird NICHT durchsucht, nur Hover-Info
+			// Normale Suche: Suche im Item-Namen
+			String itemNameLower = itemName.toLowerCase();
+			if (itemName.contains(searchExact) || itemNameLower.contains(searchLower)) {
+				return true;
+			}
 			
 			// Suche in Lore-Komponente
 			var loreComponent = itemStack.get(DataComponentTypes.LORE);
@@ -1021,9 +966,9 @@ public class SearchBarUtility {
 				}
 			}
 			
-			// Suche nach Aspekten und Ebenen für Baupläne (nur in Datenbank, nicht im Item-Namen)
+			// Suche nach Aspekten und Ebenen für Baupläne
 			if (itemName.contains("[Bauplan]")) {
-				// Extrahiere den Bauplan-Namen (alles vor "[Bauplan]")
+				// Normale Suche: Extrahiere den Bauplan-Namen (alles vor "[Bauplan]")
 				String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
 				
 				// Entferne führende/trailing Bindestriche
@@ -1039,7 +984,7 @@ public class SearchBarUtility {
 														.replaceAll("[\\u3400-\\u4DBF]", "")
 														.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 				
-				// Suche nach Aspekt (aus Datenbank)
+				// Suche nach Aspekt
 				String aspectName = net.felix.utilities.Overall.InformationenUtility.getAspectInfoForBlueprint(cleanBlueprintName);
 				if (aspectName != null && !aspectName.isEmpty()) {
 					String aspectLower = aspectName.toLowerCase();
@@ -1048,7 +993,23 @@ public class SearchBarUtility {
 					}
 				}
 				
-				// Suche nach Ebene: Nur in der Datenbank (nicht im Item-Namen)
+				// Suche nach Ebene: Zuerst im Item-Namen (falls bereits hinzugefügt), dann in der Datenbank
+				// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
+				java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
+				java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+				if (ebeneMatcher.find()) {
+					String ebene = ebeneMatcher.group(1);
+					// Suche nach "eX" oder "[eX]" Format
+					String ebeneText1 = "e" + ebene;
+					String ebeneText2 = "[e" + ebene + "]";
+					if (ebeneText1.equalsIgnoreCase(searchWithoutBrackets) || 
+						ebeneText2.equalsIgnoreCase(searchExact) ||
+						ebene.contains(searchExact) || ebene.toLowerCase().contains(searchLower)) {
+						return true;
+					}
+				}
+				
+				// Falls nicht im Item-Namen gefunden, suche in der Datenbank
 				Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
 				if (floorNumber != null) {
 					String floorStr = String.valueOf(floorNumber);
@@ -1785,17 +1746,14 @@ public class SearchBarUtility {
 		
 		String[] helpText = {
 			"Grundlegende Suche:",
-			"• Markiert Items mit dem eingegebenen Namen",
+			"• Makiert Items mit dem eingegebenen Namen",
 			"",
 			"Erweiterte Suche (@):",
-			"• @Ring - Markiert alle Ringe",
-			"• @Schaden>100 - Markiert items mit mehr als 100 Schaden",
+			"• @Ring - Makiert alle Ringe",
+			"• @Schaden>100 - Makiert items mit mehr als 100 Schaden",
 			"• @Ring, @Rüstung>100 - Kombinierte Suche",
-			"• @Bogen / Armbrust - Items die Bogen oder Armbrust enthalten",
-			"• e10 - Markiert alle items von Ebene 10",
 			"",
 			"Vergleichsoperatoren:",
-			"• / (Entweder Oder)",
 			"• > (größer als)",
 			"• < (kleiner als)",
 			"• = (gleich)",
@@ -1805,7 +1763,6 @@ public class SearchBarUtility {
 			"• @Rüstung>50 - Items mit Rüstung>50",
 			"• @Ring, @Rüstung>50 - Ringe mit mehr als 50 Rüstung und",
 			"  Göttlich im Namen",
-			"• >e10 - Items von Ebene 10 oder höher",
 			""
 		};
 		
@@ -1824,7 +1781,7 @@ public class SearchBarUtility {
 	}
 	
 	/**
-	 * Zeichnet den Symbol-Button (Stern)
+	 * Zeichnet den Symbol-Button (Apple-Icon)
 	 */
 	private static void drawSymbolButton(DrawContext context, MinecraftClient client) {
 		// Button-Hintergrund (gelb wenn gehovered oder Menü offen)
@@ -1838,20 +1795,37 @@ public class SearchBarUtility {
 		context.fill(symbolButtonX, symbolButtonY, symbolButtonX + 1, symbolButtonY + symbolButtonSize, borderColor);
 		context.fill(symbolButtonX + symbolButtonSize - 1, symbolButtonY, symbolButtonX + symbolButtonSize, symbolButtonY + symbolButtonSize, borderColor);
 		
-		// Stern-Zeichen (★) - zentriert
-		String starSymbol = "★";
-		int starTextWidth = client.textRenderer.getWidth(starSymbol);
-		int starTextHeight = client.textRenderer.fontHeight;
-		int starX = symbolButtonX + (symbolButtonSize - starTextWidth) / 2;
-		int starY = symbolButtonY + (symbolButtonSize - starTextHeight) / 2;
-		context.drawText(
-			client.textRenderer,
-			starSymbol,
-			starX,
-			starY,
-			0xFFFFFF00,
-			true
-		);
+		// Rendere Apple-Icon (Textur) - 12x12 Pixel für 16x16 Button
+		try {
+			int iconSize = 12; // Etwas kleiner als Button für bessere Darstellung
+			int iconX = symbolButtonX + (symbolButtonSize - iconSize) / 2;
+			int iconY = symbolButtonY + (symbolButtonSize - iconSize) / 2;
+			
+			// Verwende drawTexture mit RenderPipeline
+			context.drawTexture(
+				net.minecraft.client.gl.RenderPipelines.GUI_TEXTURED,
+				APPLE_ICON_TEXTURE,
+				iconX, iconY,
+				0.0f, 0.0f,
+				iconSize, iconSize,
+				iconSize, iconSize
+			);
+		} catch (Exception e) {
+			// Fallback: Zeige "★" als Text wenn Textur nicht geladen werden kann
+			String starSymbol = "★";
+			int starTextWidth = client.textRenderer.getWidth(starSymbol);
+			int starTextHeight = client.textRenderer.fontHeight;
+			int starX = symbolButtonX + (symbolButtonSize - starTextWidth) / 2;
+			int starY = symbolButtonY + (symbolButtonSize - starTextHeight) / 2;
+			context.drawText(
+				client.textRenderer,
+				starSymbol,
+				starX,
+				starY,
+				0xFFFFFF00,
+				true
+			);
+		}
 	}
 	
 	/**
@@ -2000,7 +1974,7 @@ public class SearchBarUtility {
 	}
 	
 	/**
-	 * Rendert rote Rahmen oder Hintergrund um Items die mit dem Suchfilter übereinstimmen
+	 * Rendert rote Rahmen um Items die mit dem Suchfilter übereinstimmen
 	 */
 	public static void renderSearchFrames(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
 		if (!isSearchBarVisible || searchText.isEmpty() || matchingSlots.isEmpty()) {
@@ -2008,9 +1982,8 @@ public class SearchBarUtility {
 		}
 
 		int frameColor = CCLiveUtilitiesConfig.HANDLER.instance().searchBarFrameColor.getRGB();
-		net.felix.ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().searchBarItemDisplayMode;
 		
-		// Zeichne Rahmen oder Hintergrund um die passenden Items
+		// Zeichne rote Rahmen um die passenden Items
 		for (Integer slotIndex : matchingSlots) {
 			if (slotIndex < screen.getScreenHandler().slots.size()) {
 				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
@@ -2019,18 +1992,11 @@ public class SearchBarUtility {
 				int slotX = screenX + slot.x;
 				int slotY = screenY + slot.y;
 				
-				if (displayMode == net.felix.ItemDisplayMode.BACKGROUND) {
-					// Zeichne halbtransparenten Hintergrund
-					// Verwende die Rahmenfarbe, aber mit reduzierter Transparenz
-					int backgroundColor = (frameColor & 0x00FFFFFF) | 0x80000000; // 50% Transparenz für bessere Sichtbarkeit
-					context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, backgroundColor);
-				} else {
-					// Zeichne 1 Pixel dicken Rahmen (Standard)
-					context.fill(slotX - 1, slotY - 1, slotX + SLOT_SIZE + 1, slotY, frameColor); // Oben
-					context.fill(slotX - 1, slotY + SLOT_SIZE, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Unten
-					context.fill(slotX - 1, slotY - 1, slotX, slotY + SLOT_SIZE + 1, frameColor); // Links
-					context.fill(slotX + SLOT_SIZE, slotY - 1, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Rechts
-				}
+				// Zeichne 1 Pixel dicken roten Rahmen
+				context.fill(slotX - 1, slotY - 1, slotX + SLOT_SIZE + 1, slotY, frameColor); // Oben
+				context.fill(slotX - 1, slotY + SLOT_SIZE, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Unten
+				context.fill(slotX - 1, slotY - 1, slotX, slotY + SLOT_SIZE + 1, frameColor); // Links
+				context.fill(slotX + SLOT_SIZE, slotY - 1, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Rechts
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 package net.felix.utilities.ItemViewer;
 
+import com.google.gson.JsonObject;
 import java.util.List;
 
 /**
@@ -12,7 +13,10 @@ public class ItemData {
     public List<LocationData> foundAt;  // Fundorte
     public PriceData price;             // Kosten
     public BlueprintShopData blueprint_shop; // Blueprint-Shop Preise (optional)
+    public TimeData time;                // Forschungs-Zeit (für Power Crystal Slots)
     public ItemInfo info;               // Zusatzinfos (Aspekt, Rarity, etc.)
     public List<String> tags;           // Tags für Suche/Kategorisierung
+    public String category;              // Kategorie aus JSON (z.B. "blueprints", "abilities", "modules", etc.)
+    public JsonObject jsonObject;        // Vollständiges JSON-Objekt (für Favoriten)
 }
 

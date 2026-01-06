@@ -12,5 +12,6 @@ public class PriceData {
     public CostItem Amboss;      // Amboss Item
     public CostItem Ressource;   // Ressourcen Item
     public CostItem paper_shreds; // Pergamentfetzen (für blueprint_shop)
+    public CostItem time;        // Zeit (für Power Crystal Slots)
 }
 

@@ -97,7 +97,7 @@ public class LeaderboardManager {
         // Farmworld-Collection-Sammler (Zone-basierte Collections)
         collectors.put("farmworld_collections", new FarmworldCollectionsCollector());
         
-        // Silent error handling("✅ LeaderboardManager: " + collectors.size() + " Datensammler initialisiert");
+        System.out.println("✅ LeaderboardManager: " + collectors.size() + " Datensammler initialisiert");
     }
     
     
@@ -106,7 +106,7 @@ public class LeaderboardManager {
      */
     public void initialize() {
         if (!config.isEnabled()) {
-            // Silent error handling("⚠️ LeaderboardManager: System deaktiviert in Konfiguration");
+            System.out.println("⚠️ LeaderboardManager: System deaktiviert in Konfiguration");
             return;
         }
         
@@ -122,15 +122,15 @@ public class LeaderboardManager {
         for (Map.Entry<String, DataCollector> entry : collectors.entrySet()) {
             try {
                 entry.getValue().initialize();
-                // Silent error handling("✅ Datensammler '" + entry.getKey() + "' gestartet");
+                System.out.println("✅ Datensammler '" + entry.getKey() + "' gestartet");
             } catch (Exception e) {
-                // Silent error handling("❌ Fehler beim Starten von Sammler '" + entry.getKey() + "': " + e.getMessage());
+                System.err.println("❌ Fehler beim Starten von Sammler '" + entry.getKey() + "': " + e.getMessage());
             }
         }
         
         // Registriere Server-Join Event für verzögerte Registrierung
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            // Silent error handling("🌐 [LeaderboardManager] Server beigetreten - starte Spieler-Registrierung...");
+            System.out.println("🌐 [LeaderboardManager] Server beigetreten - starte Spieler-Registrierung...");
             schedulePlayerRegistration();
             // Prüfe Season-ID beim Server-Join
             checkSeasonChange();
@@ -139,13 +139,13 @@ public class LeaderboardManager {
         // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
         MinecraftClient client = MinecraftClient.getInstance();
         if (client != null && client.player != null && client.getNetworkHandler() != null) {
-            // Silent error handling("🌐 [LeaderboardManager] Spieler bereits auf Server - starte sofortige Registrierung...");
+            System.out.println("🌐 [LeaderboardManager] Spieler bereits auf Server - starte sofortige Registrierung...");
             schedulePlayerRegistration();
             // Prüfe Season-ID sofort
             checkSeasonChange();
         }
         
-        // Silent error handling("🚀 LeaderboardManager vollständig initialisiert!");
+        System.out.println("🚀 LeaderboardManager vollständig initialisiert!");
     }
     
     /**
@@ -165,24 +165,24 @@ public class LeaderboardManager {
                     // Wenn wir noch keine Season-ID kennen, speichere sie einfach
                     if (lastKnownSeasonId == null) {
                         lastKnownSeasonId = currentSeasonId;
-                        // Silent error handling("📅 [LeaderboardManager] Aktuelle Season-ID: " + currentSeasonId);
+                        System.out.println("📅 [LeaderboardManager] Aktuelle Season-ID: " + currentSeasonId);
                         return;
                     }
                     
                     // Prüfe ob sich die Season-ID geändert hat
                     if (currentSeasonId != lastKnownSeasonId) {
-                        // Silent error handling("🔄 [LeaderboardManager] Season-Wechsel erkannt: " + lastKnownSeasonId + " → " + currentSeasonId);
-                        // Silent error handling("🔄 [LeaderboardManager] Führe automatischen Blueprint-Reset durch...");
+                        System.out.println("🔄 [LeaderboardManager] Season-Wechsel erkannt: " + lastKnownSeasonId + " → " + currentSeasonId);
+                        System.out.println("🔄 [LeaderboardManager] Führe automatischen Blueprint-Reset durch...");
                         
                         // Führe automatischen Blueprint-Reset durch
                         try {
                             net.felix.utilities.Aincraft.BPViewerUtility bpViewer = net.felix.utilities.Aincraft.BPViewerUtility.getInstance();
                             if (bpViewer != null) {
                                 bpViewer.resetFoundBlueprints();
-                                // Silent error handling("✅ [LeaderboardManager] Blueprint-Reset erfolgreich durchgeführt!");
+                                System.out.println("✅ [LeaderboardManager] Blueprint-Reset erfolgreich durchgeführt!");
                             }
                         } catch (Exception e) {
-                            // Silent error handling("❌ [LeaderboardManager] Fehler beim Blueprint-Reset: " + e.getMessage());
+                            System.err.println("❌ [LeaderboardManager] Fehler beim Blueprint-Reset: " + e.getMessage());
                         }
                         
                         // Aktualisiere die gespeicherte Season-ID
@@ -211,7 +211,7 @@ public class LeaderboardManager {
      */
     private void scheduleRegistrationRetry(int attempt) {
         if (attempt >= 12) { // Max. 12 Versuche (1 Minute)
-            // Silent error handling("⚠️ Spieler-Registrierung nach 1 Minute aufgegeben");
+            System.out.println("⚠️ Spieler-Registrierung nach 1 Minute aufgegeben");
             return;
         }
         
@@ -230,7 +230,7 @@ public class LeaderboardManager {
     private boolean tryRegisterPlayer() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) {
-            // Silent error handling("⚠️ Spieler noch nicht verfügbar - Retry in 5 Sekunden");
+            System.out.println("⚠️ Spieler noch nicht verfügbar - Retry in 5 Sekunden");
             return false;
         }
         
@@ -244,41 +244,41 @@ public class LeaderboardManager {
     private void registerPlayer() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) {
-            // Silent error handling("⚠️ [LeaderboardManager] Spieler nicht verfügbar - Registrierung später versuchen");
+            System.out.println("⚠️ [LeaderboardManager] Spieler nicht verfügbar - Registrierung später versuchen");
             return;
         }
         
         playerName = client.player.getName().getString();
-        // Silent error handling("🔍 [LeaderboardManager] Starte Registrierung für Spieler: " + playerName);
-        // Silent error handling("🔍 [LeaderboardManager] HTTP-Client Status: " + (httpClient != null ? "vorhanden" : "null"));
-        // Silent error handling("🔍 [LeaderboardManager] Config Status: enabled=" + config.isEnabled());
+        System.out.println("🔍 [LeaderboardManager] Starte Registrierung für Spieler: " + playerName);
+        System.out.println("🔍 [LeaderboardManager] HTTP-Client Status: " + (httpClient != null ? "vorhanden" : "null"));
+        System.out.println("🔍 [LeaderboardManager] Config Status: enabled=" + config.isEnabled());
         
         CompletableFuture.supplyAsync(() -> {
             try {
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("player", playerName);
                 
-                // Silent error handling("🔍 [LeaderboardManager] Sende Registrierungs-Request: " + requestData.toString());
+                System.out.println("🔍 [LeaderboardManager] Sende Registrierungs-Request: " + requestData.toString());
                 JsonObject response = httpClient.post("/register", requestData);
-                // Silent error handling("🔍 [LeaderboardManager] Registrierungs-Response erhalten: " + (response != null ? response.toString() : "null"));
+                System.out.println("🔍 [LeaderboardManager] Registrierungs-Response erhalten: " + (response != null ? response.toString() : "null"));
                 
                 if (response != null && response.has("token")) {
                     playerToken = response.get("token").getAsString();
                     isRegistered = true;
                     isEnabled = true; // Stelle sicher, dass isEnabled true ist
-                    // Silent error handling("✅ [LeaderboardManager] Spieler '" + playerName + "' erfolgreich registriert!");
-                    // Silent error handling("✅ [LeaderboardManager] Token erhalten: " + (playerToken != null ? playerToken.substring(0, Math.min(10, playerToken.length())) + "..." : "null"));
-                    // Silent error handling("✅ [LeaderboardManager] Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered);
+                    System.out.println("✅ [LeaderboardManager] Spieler '" + playerName + "' erfolgreich registriert!");
+                    System.out.println("✅ [LeaderboardManager] Token erhalten");
+                    System.out.println("✅ [LeaderboardManager] Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered);
                     return true;
                 } else {
-                    // Silent error handling("❌ [LeaderboardManager] Registrierungs-Response ungültig - kein Token gefunden");
+                    System.err.println("❌ [LeaderboardManager] Registrierungs-Response ungültig - kein Token gefunden");
                     if (response != null) {
-                        // Silent error handling("❌ [LeaderboardManager] Response-Inhalt: " + response.toString());
+                        System.err.println("❌ [LeaderboardManager] Response-Inhalt: " + response.toString());
                     }
                 }
             } catch (Exception e) {
-                // Silent error handling("❌ [LeaderboardManager] Registrierung fehlgeschlagen: " + e.getMessage());
-                // Silent error handling
+                System.err.println("❌ [LeaderboardManager] Registrierung fehlgeschlagen: " + e.getMessage());
+                e.printStackTrace();
             }
             return false;
         }).thenAccept(success -> {
@@ -286,12 +286,12 @@ public class LeaderboardManager {
                 // Nur deaktivieren, wenn noch kein Token vorhanden ist
                 // Wenn bereits ein Token existiert, behalte den Status bei
                 if (playerToken == null) {
-                    // Silent error handling("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen - Leaderboards deaktiviert");
-                    // Silent error handling("⚠️ [LeaderboardManager] Aktueller Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+                    System.err.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen - Leaderboards deaktiviert");
+                    System.err.println("⚠️ [LeaderboardManager] Aktueller Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
                     isEnabled = false;
                 } else {
                     // Token bereits vorhanden - verwende es und aktiviere System
-                    // Silent error handling("⚠️ [LeaderboardManager] Registrierungs-Request fehlgeschlagen, aber Token bereits vorhanden - System bleibt aktiviert");
+                    System.out.println("⚠️ [LeaderboardManager] Registrierungs-Request fehlgeschlagen, aber Token bereits vorhanden - System bleibt aktiviert");
                     isRegistered = true;
                     isEnabled = true;
                 }
@@ -307,13 +307,13 @@ public class LeaderboardManager {
      */
     public void updateScore(String boardName, long score) {
         if (config.isDebugMode()) {
-            // Silent error handling("🔥 DEBUG: updateScore aufgerufen - boardName=" + boardName + ", score=" + score);
-            // Silent error handling("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+            System.out.println("🔥 DEBUG: updateScore aufgerufen - boardName=" + boardName + ", score=" + score);
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
         }
         
         if (!isEnabled || !isRegistered || playerToken == null) {
             if (config.isDebugMode()) {
-                // Silent error handling("🔥 DEBUG: updateScore ABGEBROCHEN - Bedingungen nicht erfüllt");
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Bedingungen nicht erfüllt");
             }
             return;
         }
@@ -321,11 +321,11 @@ public class LeaderboardManager {
         // Prüfe ob sich der Wert geändert hat
         Object lastValue = lastSentValues.get(boardName);
         if (config.isDebugMode()) {
-            // Silent error handling("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
+            System.out.println("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
         }
         if (lastValue != null && lastValue.equals(score)) {
             if (config.isDebugMode()) {
-                // Silent error handling("🔥 DEBUG: updateScore ABGEBROCHEN - Wert hat sich nicht geändert");
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Wert hat sich nicht geändert");
             }
             return; // Keine Änderung
         }
@@ -335,23 +335,27 @@ public class LeaderboardManager {
         // Prüfe Cooldown
         if (!cooldownManager.canUpdateScore(boardName)) {
             if (config.isDebugMode()) {
-                // Silent error handling("🔥 DEBUG: updateScore ABGEBROCHEN - Cooldown aktiv");
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Cooldown aktiv");
             }
             // Füge zur Warteschlange hinzu
             cooldownManager.queueScoreUpdate(boardName, score);
             
-            // Silent error handling
+            if (config.isDebugMode()) {
+                long timeRemaining = cooldownManager.getTimeUntilNextScoreUpdate(boardName);
+                System.out.println("⏳ Score Update für " + boardName + " in Warteschlange (" + 
+                    cooldownManager.formatTimeRemaining(timeRemaining) + ")");
+            }
             return;
         }
         if (config.isDebugMode()) {
-            // Silent error handling("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
+            System.out.println("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
         }
         
         // Sende Update asynchron
         CompletableFuture.runAsync(() -> {
             try {
                 if (config.isDebugMode()) {
-                    // Silent error handling("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
+                    System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
                 }
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("board", boardName);
@@ -359,14 +363,14 @@ public class LeaderboardManager {
                 
                 JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
                 if (config.isDebugMode()) {
-                    // Silent error handling("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                    System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
                 }
                 if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
                     lastSentValues.put(boardName, score);
                     cooldownManager.markScoreUpdated(boardName);
                     
                     if (config.isDebugMode()) {
-                        // Silent error handling("📊 Score Update: " + boardName + " = " + score);
+                        System.out.println("📊 Score Update: " + boardName + " = " + score);
                         DebugUtility.debugLeaderboard("✅ Erfolgreich an Server gesendet");
                     }
                     
@@ -378,7 +382,7 @@ public class LeaderboardManager {
                         }
                     }
                 } else {
-                    // Silent error handling("❌ Score Update fehlgeschlagen für " + boardName);
+                    System.err.println("❌ Score Update fehlgeschlagen für " + boardName);
                     if (config.isDebugMode()) {
                         DebugUtility.debugLeaderboard("❌ Server-Fehler bei " + boardName);
                     }
@@ -392,7 +396,7 @@ public class LeaderboardManager {
                     }
                 }
             } catch (Exception e) {
-                // Silent error handling("❌ Fehler beim Score Update für " + boardName + ": " + e.getMessage());
+                System.err.println("❌ Fehler beim Score Update für " + boardName + ": " + e.getMessage());
                 
                 // Callback für Exception-Fehler
                 if ("current_coins".equals(boardName)) {
@@ -413,13 +417,13 @@ public class LeaderboardManager {
      */
     public void updateScoreManual(String boardName, long score) {
         if (config.isDebugMode()) {
-            // Silent error handling("🔥 DEBUG: updateScoreManual aufgerufen - boardName=" + boardName + ", score=" + score);
-            // Silent error handling("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+            System.out.println("🔥 DEBUG: updateScoreManual aufgerufen - boardName=" + boardName + ", score=" + score);
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
         }
         
         if (!isEnabled || !isRegistered || playerToken == null) {
             if (config.isDebugMode()) {
-                // Silent error handling("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Bedingungen nicht erfüllt");
+                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Bedingungen nicht erfüllt");
             }
             return;
         }
@@ -427,26 +431,26 @@ public class LeaderboardManager {
         // Prüfe ob sich der Wert geändert hat
         Object lastValue = lastSentValues.get(boardName);
         if (config.isDebugMode()) {
-            // Silent error handling("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
+            System.out.println("🔥 DEBUG: Wert-Check - lastValue=" + lastValue + ", newScore=" + score);
         }
         if (lastValue != null && lastValue.equals(score)) {
             if (config.isDebugMode()) {
-                // Silent error handling("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Wert hat sich nicht geändert");
+                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Wert hat sich nicht geändert");
             }
             return; // Keine Änderung
         }
         
         // KEIN Cooldown-Check für manuelle Updates!
         if (config.isDebugMode()) {
-            // Silent error handling("🔥 DEBUG: Manueller Update - überspringe Cooldown-Check");
-            // Silent error handling("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
+            System.out.println("🔥 DEBUG: Manueller Update - überspringe Cooldown-Check");
+            System.out.println("🔥 DEBUG: Alle Checks bestanden - sende HTTP-Request");
         }
         
         // Sende Update asynchron
         CompletableFuture.runAsync(() -> {
             try {
                 if (config.isDebugMode()) {
-                    // Silent error handling("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
+                    System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
                 }
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("board", boardName);
@@ -454,14 +458,14 @@ public class LeaderboardManager {
                 
                 JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
                 if (config.isDebugMode()) {
-                    // Silent error handling("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                    System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
                 }
                 if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
                     lastSentValues.put(boardName, score);
                     // Für manuelle Updates KEINEN Cooldown setzen - das würde automatische Updates blockieren!
                     
                     if (config.isDebugMode()) {
-                        // Silent error handling("📊 Manueller Score Update: " + boardName + " = " + score);
+                        System.out.println("📊 Manueller Score Update: " + boardName + " = " + score);
                         DebugUtility.debugLeaderboard("✅ Erfolgreich an Server gesendet");
                     }
                     
@@ -473,7 +477,7 @@ public class LeaderboardManager {
                         }
                     }
                 } else {
-                    // Silent error handling("❌ Manueller Score Update fehlgeschlagen für " + boardName);
+                    System.err.println("❌ Manueller Score Update fehlgeschlagen für " + boardName);
                     if (config.isDebugMode()) {
                         DebugUtility.debugLeaderboard("❌ Server-Fehler bei " + boardName);
                     }
@@ -487,7 +491,7 @@ public class LeaderboardManager {
                     }
                 }
             } catch (Exception e) {
-                // Silent error handling("❌ Fehler beim manuellen Score Update für " + boardName + ": " + e.getMessage());
+                System.err.println("❌ Fehler beim manuellen Score Update für " + boardName + ": " + e.getMessage());
                 
                 // Callback für Exception-Fehler
                 if ("current_coins".equals(boardName)) {
@@ -508,20 +512,20 @@ public class LeaderboardManager {
      */
     public void updateScoreAdditive(String boardName, long score) {
         if (config.isDebugMode()) {
-            // Silent error handling("🔥 DEBUG: updateScoreAdditive aufgerufen - boardName=" + boardName + ", score=" + score);
-            // Silent error handling("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+            System.out.println("🔥 DEBUG: updateScoreAdditive aufgerufen - boardName=" + boardName + ", score=" + score);
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
         }
         
         if (!isEnabled || !isRegistered || playerToken == null) {
             if (config.isDebugMode()) {
-                // Silent error handling("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Bedingungen nicht erfüllt");
+                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Bedingungen nicht erfüllt");
             }
             return;
         }
         
         if (score <= 0) {
             if (config.isDebugMode()) {
-                // Silent error handling("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - score <= 0");
+                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - score <= 0");
             }
             return; // Keine negativen oder null Werte senden
         }
@@ -533,7 +537,7 @@ public class LeaderboardManager {
         CompletableFuture.runAsync(() -> {
             try {
                 if (config.isDebugMode()) {
-                    // Silent error handling("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = +" + score + " (additiv)");
+                    System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = +" + score + " (additiv)");
                 }
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("board", boardName);
@@ -541,20 +545,20 @@ public class LeaderboardManager {
                 
                 JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
                 if (config.isDebugMode()) {
-                    // Silent error handling("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
+                    System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
                 }
                 if (response != null && response.has("success") && response.get("success").getAsBoolean()) {
                     // Für additive Updates NICHT lastSentValues aktualisieren, damit wiederholte Werte durchgehen
                     
                     if (config.isDebugMode()) {
-                        // Silent error handling("📊 Additiver Score Update: " + boardName + " +" + score);
+                        System.out.println("📊 Additiver Score Update: " + boardName + " +" + score);
                     }
                 } else {
-                    // Silent error handling("❌ Additiver Score Update fehlgeschlagen für " + boardName);
+                    System.err.println("❌ Additiver Score Update fehlgeschlagen für " + boardName);
                 }
             } catch (Exception e) {
-                // Silent error handling("❌ Fehler beim additiven Score Update für " + boardName + ": " + e.getMessage());
-                // Silent error handling
+                System.err.println("❌ Fehler beim additiven Score Update für " + boardName + ": " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }
@@ -571,7 +575,11 @@ public class LeaderboardManager {
         
         // Prüfe Cooldown
         if (!cooldownManager.canFetchLeaderboard(boardName)) {
-            // Silent error handling
+            if (config.isDebugMode()) {
+                long timeRemaining = cooldownManager.getTimeUntilNextLeaderboardFetch(boardName);
+                System.out.println("⏳ Leaderboard-Fetch für " + boardName + " noch im Cooldown (" + 
+                    cooldownManager.formatTimeRemaining(timeRemaining) + ")");
+            }
             return CompletableFuture.completedFuture(null);
         }
         
@@ -583,7 +591,7 @@ public class LeaderboardManager {
                 }
                 return result;
             } catch (Exception e) {
-                // Silent error handling("❌ Fehler beim Abrufen von Leaderboard " + boardName + ": " + e.getMessage());
+                System.err.println("❌ Fehler beim Abrufen von Leaderboard " + boardName + ": " + e.getMessage());
                 return null;
             }
         });
@@ -597,10 +605,10 @@ public class LeaderboardManager {
             try {
                 entry.getValue().shutdown();
             } catch (Exception e) {
-                // Silent error handling("❌ Fehler beim Stoppen von Sammler '" + entry.getKey() + "': " + e.getMessage());
+                System.err.println("❌ Fehler beim Stoppen von Sammler '" + entry.getKey() + "': " + e.getMessage());
             }
         }
-        // Silent error handling("🛑 LeaderboardManager gestoppt");
+        System.out.println("🛑 LeaderboardManager gestoppt");
     }
     
     // Getter/Setter
@@ -642,7 +650,7 @@ public class LeaderboardManager {
             
         } catch (Exception e) {
             if (config.isDebugMode()) {
-                // Silent error handling("❌ Fehler bei Chat-Nachricht-Verarbeitung: " + e.getMessage());
+                System.err.println("❌ Fehler bei Chat-Nachricht-Verarbeitung: " + e.getMessage());
             }
         }
         
@@ -654,7 +662,7 @@ public class LeaderboardManager {
      * Manueller Refresh der Registrierung (falls beim Start fehlgeschlagen)
      */
     public void refreshRegistration() {
-        // Silent error handling("🔄 [LeaderboardManager] Manueller Refresh der Registrierung...");
+        System.out.println("🔄 [LeaderboardManager] Manueller Refresh der Registrierung...");
         // Speichere das alte Token als Fallback
         String oldToken = playerToken;
         isRegistered = false;
@@ -665,7 +673,7 @@ public class LeaderboardManager {
         // Falls die Registrierung fehlschlägt, verwende das alte Token als Fallback
         CompletableFuture.delayedExecutor(5, java.util.concurrent.TimeUnit.SECONDS).execute(() -> {
             if (!isRegistered && oldToken != null) {
-                // Silent error handling("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen, verwende altes Token als Fallback");
+                System.out.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen, verwende altes Token als Fallback");
                 playerToken = oldToken;
                 isRegistered = true;
                 isEnabled = true;
@@ -677,19 +685,19 @@ public class LeaderboardManager {
      * Diagnose-Funktion: Gibt den aktuellen Status des Leaderboard-Systems aus
      */
     public void printDiagnostics() {
-        // Silent error handling("═══════════════════════════════════════════════════════");
-        // Silent error handling("🔍 [LeaderboardManager] DIAGNOSE");
-        // Silent error handling("═══════════════════════════════════════════════════════");
-        // Silent error handling("Status:");
-        // Silent error handling("  isEnabled: " + isEnabled);
-        // Silent error handling("  isRegistered: " + isRegistered);
-        // Silent error handling("  config.isEnabled(): " + config.isEnabled());
-        // Silent error handling("  playerName: " + (playerName != null ? playerName : "null"));
-        // Silent error handling("  playerToken: " + (playerToken != null ? playerToken.substring(0, Math.min(20, playerToken.length())) + "..." : "null"));
-        // Silent error handling("  httpClient: " + (httpClient != null ? "vorhanden" : "null"));
-        // Silent error handling("  Datensammler: " + collectors.size());
-        // Silent error handling("  Letzte gesendete Werte: " + lastSentValues.size());
-        // Silent error handling("═══════════════════════════════════════════════════════");
+        System.out.println("═══════════════════════════════════════════════════════");
+        System.out.println("🔍 [LeaderboardManager] DIAGNOSE");
+        System.out.println("═══════════════════════════════════════════════════════");
+        System.out.println("Status:");
+        System.out.println("  isEnabled: " + isEnabled);
+        System.out.println("  isRegistered: " + isRegistered);
+        System.out.println("  config.isEnabled(): " + config.isEnabled());
+        System.out.println("  playerName: " + (playerName != null ? playerName : "null"));
+        System.out.println("  playerToken: " + (playerToken != null ? "vorhanden" : "null"));
+        System.out.println("  httpClient: " + (httpClient != null ? "vorhanden" : "null"));
+        System.out.println("  Datensammler: " + collectors.size());
+        System.out.println("  Letzte gesendete Werte: " + lastSentValues.size());
+        System.out.println("═══════════════════════════════════════════════════════");
     }
     
     /**

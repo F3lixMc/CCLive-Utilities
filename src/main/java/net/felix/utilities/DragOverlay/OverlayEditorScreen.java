@@ -1,6 +1,7 @@
 package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.DragOverlay.Aincraft.BlueprintViewerDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.CardsDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
@@ -17,8 +18,6 @@ import net.felix.utilities.DragOverlay.Schmied.KitFilterButton1DraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButton2DraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButton3DraggableOverlay;
 import net.felix.utilities.DragOverlay.TabInfo.AspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.TabInfo.TabInfoMainDraggableOverlay;
-import net.felix.utilities.DragOverlay.TabInfo.TabInfoSeparateDraggableOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -58,6 +57,10 @@ public class OverlayEditorScreen extends Screen {
     // Overlay settings overlay
     private boolean overlaySettingsOpen = false;
     
+    // Clipboard settings overlay
+    private boolean clipboardSettingsOpen = false;
+    private DraggableOverlay hoveredClipboardOverlay = null;
+    
     public OverlayEditorScreen() {
         super(Text.literal("Overlay Editor"));
         // Store the current screen before opening the overlay editor
@@ -65,109 +68,9 @@ public class OverlayEditorScreen extends Screen {
         initializeOverlays();
     }
     
-    /**
-     * Initialisiert die Overlays neu (z.B. wenn sich Config-Werte ändern)
-     */
     public void refreshOverlays() {
-        // Entferne alle TabInfo-Overlays aus der Liste
-        overlays.removeIf(overlay -> overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay);
-        
-        // Füge TabInfo-Overlays wieder hinzu (basierend auf aktuellen Config-Werten)
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
-            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
-            TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
-            if (mainOverlay.isEnabled()) {
-                overlays.add(mainOverlay);
-            }
-            
-            // Separate Overlays (nur wenn aktiviert)
-            TabInfoSeparateDraggableOverlay forschungOverlay = new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung");
-            if (forschungOverlay.isEnabled()) {
-                overlays.add(forschungOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay ambossOverlay = new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss");
-            if (ambossOverlay.isEnabled()) {
-                overlays.add(ambossOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay schmelzofenOverlay = new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen");
-            if (schmelzofenOverlay.isEnabled()) {
-                overlays.add(schmelzofenOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay jaegerOverlay = new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger");
-            if (jaegerOverlay.isEnabled()) {
-                overlays.add(jaegerOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay seelenOverlay = new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen");
-            if (seelenOverlay.isEnabled()) {
-                overlays.add(seelenOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay essenzenOverlay = new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen");
-            if (essenzenOverlay.isEnabled()) {
-                overlays.add(essenzenOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay machtkristalleOverlay = new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle");
-            if (machtkristalleOverlay.isEnabled()) {
-                overlays.add(machtkristalleOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay recyclerOverlay = new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler");
-            if (recyclerOverlay.isEnabled()) {
-                overlays.add(recyclerOverlay);
-            }
-            
-            // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
-                    TabInfoSeparateDraggableOverlay mkSlot1Overlay = new TabInfoSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1");
-                    if (mkSlot1Overlay.isEnabled()) {
-                        overlays.add(mkSlot1Overlay);
-                    }
-                }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
-                    TabInfoSeparateDraggableOverlay mkSlot2Overlay = new TabInfoSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2");
-                    if (mkSlot2Overlay.isEnabled()) {
-                        overlays.add(mkSlot2Overlay);
-                    }
-                }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
-                    TabInfoSeparateDraggableOverlay mkSlot3Overlay = new TabInfoSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3");
-                    if (mkSlot3Overlay.isEnabled()) {
-                        overlays.add(mkSlot3Overlay);
-                    }
-                }
-            }
-            
-            // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate) {
-                TabInfoSeparateDraggableOverlay recyclerSlot1Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1");
-                if (recyclerSlot1Overlay.isEnabled()) {
-                    overlays.add(recyclerSlot1Overlay);
-                }
-            }
-            
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate) {
-                TabInfoSeparateDraggableOverlay recyclerSlot2Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2");
-                if (recyclerSlot2Overlay.isEnabled()) {
-                    overlays.add(recyclerSlot2Overlay);
-                }
-            }
-            
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate) {
-                TabInfoSeparateDraggableOverlay recyclerSlot3Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3");
-                if (recyclerSlot3Overlay.isEnabled()) {
-                    overlays.add(recyclerSlot3Overlay);
-                }
-            }
-        }
+        overlays.clear();
+        initializeOverlays();
     }
     
     private void initializeOverlays() {
@@ -176,6 +79,9 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
         boolean isInBlueprintInventory = isInInventoryScreen();
+        
+        // Check if ItemViewer is visible (where AspectOverlay is also used)
+        boolean isItemViewerVisible = net.felix.utilities.ItemViewer.ItemViewerUtility.isVisible();
         
         // Check if we're in any inventory screen
         boolean isInAnyInventory = isInAnyInventoryScreen();
@@ -189,17 +95,22 @@ public class OverlayEditorScreen extends Screen {
         if (isInChatScreen) {
             // In chat screen, show chat-specific overlays
             overlays.add(new ChatAspectOverlayDraggableOverlay());
-        } else if (isInBlueprintInventory) {
-            // In blueprint inventory screens, show overlays that are relevant for blueprint inventories
+        } else if (isInBlueprintInventory || isItemViewerVisible) {
+            // In blueprint inventory screens or when ItemViewer is visible, show overlays that are relevant
+            // AspectOverlay is used in both blueprint inventories and ItemViewer
             overlays.add(new AspectOverlayDraggableOverlay());
-            overlays.add(new HideUncraftableButtonDraggableOverlay());
-            overlays.add(new HideWrongClassButtonDraggableOverlay());
             
-            // Check if we're in a Kit Filter relevant inventory
-            if (isInKitFilterInventory()) {
-                overlays.add(new KitFilterButton1DraggableOverlay());
-                overlays.add(new KitFilterButton2DraggableOverlay());
-                overlays.add(new KitFilterButton3DraggableOverlay());
+            // Hide Uncraftable and Hide Wrong Class buttons are only in blueprint inventories
+            if (isInBlueprintInventory) {
+                overlays.add(new HideUncraftableButtonDraggableOverlay());
+                overlays.add(new HideWrongClassButtonDraggableOverlay());
+                
+                // Check if we're in a Kit Filter relevant inventory
+                if (isInKitFilterInventory()) {
+                    overlays.add(new KitFilterButton1DraggableOverlay());
+                    overlays.add(new KitFilterButton2DraggableOverlay());
+                    overlays.add(new KitFilterButton3DraggableOverlay());
+                }
             }
         } else {
             // Check if player is in a floor dimension
@@ -227,11 +138,6 @@ public class OverlayEditorScreen extends Screen {
                     overlays.add(new MiningLumberjackDraggableOverlay());
                 }
                 
-                // Collection overlay - only available in Overworld (Farmworld) when not in inventory
-                if (isInOverworld() && !isInventoryOpen()) {
-                    overlays.add(new CollectionDraggableOverlay());
-                }
-                
                 // MKLevel overlay - only available in "Machtkristalle Verbessern" inventory
                 if (isInMKLevelInventory()) {
                     overlays.add(new MKLevelDraggableOverlay());
@@ -244,102 +150,8 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        // Tab Info Overlays - immer verfügbar wenn aktiviert
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
-            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
-            TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
-            if (mainOverlay.isEnabled()) {
-                overlays.add(mainOverlay);
-            }
-            
-            // Separate Overlays (nur wenn aktiviert)
-            TabInfoSeparateDraggableOverlay forschungOverlay = new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung");
-            if (forschungOverlay.isEnabled()) {
-                overlays.add(forschungOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay ambossOverlay = new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss");
-            if (ambossOverlay.isEnabled()) {
-                overlays.add(ambossOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay schmelzofenOverlay = new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen");
-            if (schmelzofenOverlay.isEnabled()) {
-                overlays.add(schmelzofenOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay jaegerOverlay = new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger");
-            if (jaegerOverlay.isEnabled()) {
-                overlays.add(jaegerOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay seelenOverlay = new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen");
-            if (seelenOverlay.isEnabled()) {
-                overlays.add(seelenOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay essenzenOverlay = new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen");
-            if (essenzenOverlay.isEnabled()) {
-                overlays.add(essenzenOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay machtkristalleOverlay = new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle");
-            if (machtkristalleOverlay.isEnabled()) {
-                overlays.add(machtkristalleOverlay);
-            }
-            
-            TabInfoSeparateDraggableOverlay recyclerOverlay = new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler");
-            if (recyclerOverlay.isEnabled()) {
-                overlays.add(recyclerOverlay);
-            }
-            
-            // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
-                    TabInfoSeparateDraggableOverlay mkSlot1Overlay = new TabInfoSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1");
-                    if (mkSlot1Overlay.isEnabled()) {
-                        overlays.add(mkSlot1Overlay);
-                    }
-                }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
-                    TabInfoSeparateDraggableOverlay mkSlot2Overlay = new TabInfoSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2");
-                    if (mkSlot2Overlay.isEnabled()) {
-                        overlays.add(mkSlot2Overlay);
-                    }
-                }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
-                    TabInfoSeparateDraggableOverlay mkSlot3Overlay = new TabInfoSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3");
-                    if (mkSlot3Overlay.isEnabled()) {
-                        overlays.add(mkSlot3Overlay);
-                    }
-                }
-            }
-            
-            // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate) {
-                TabInfoSeparateDraggableOverlay recyclerSlot1Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1");
-                if (recyclerSlot1Overlay.isEnabled()) {
-                    overlays.add(recyclerSlot1Overlay);
-                }
-            }
-            
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate) {
-                TabInfoSeparateDraggableOverlay recyclerSlot2Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2");
-                if (recyclerSlot2Overlay.isEnabled()) {
-                    overlays.add(recyclerSlot2Overlay);
-                }
-            }
-            
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate) {
-                TabInfoSeparateDraggableOverlay recyclerSlot3Overlay = new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3");
-                if (recyclerSlot3Overlay.isEnabled()) {
-                    overlays.add(recyclerSlot3Overlay);
-                }
-            }
-        }
+        // Clipboard is available everywhere
+        overlays.add(new ClipboardDraggableOverlay());
     }
     
     /**
@@ -494,8 +306,9 @@ public class OverlayEditorScreen extends Screen {
         
         String title = handledScreen.getTitle().getString();
         
-        // Check if the title contains "Machtkristalle Verbessern"
-        return title.contains("Machtkristalle Verbessern");
+        // Check if the title contains "Machtkristalle Verbessern" or the Glyph "㮌" (Essence Harvester UI)
+        return title.contains("Machtkristalle Verbessern") || 
+               ZeichenUtility.containsEssenceHarvesterUi(title);
     }
     
     @Override
@@ -514,32 +327,21 @@ public class OverlayEditorScreen extends Screen {
         doneButton = ButtonWidget.builder(
             Text.literal("Done"),
             button -> close()
-        ).dimensions(width / 2 - 180, height - 30, 80, 20).build();
+        ).dimensions(width / 2 - 130, height - 30, 80, 20).build();
         addDrawableChild(doneButton);
         
         // Overlay Button
         overlayButton = ButtonWidget.builder(
             Text.literal("Overlay"),
             button -> overlaySettingsOpen = !overlaySettingsOpen
-        ).dimensions(width / 2 - 90, height - 30, 80, 20).build();
+        ).dimensions(width / 2 - 40, height - 30, 80, 20).build();
         addDrawableChild(overlayButton);
-        
-        // Tab Info Button
-        ButtonWidget tabInfoButton = ButtonWidget.builder(
-            Text.literal("Tab Info"),
-            button -> {
-                if (client != null) {
-                    client.setScreen(new net.felix.utilities.Overall.TabInfo.TabInfoSettingsScreen(this));
-                }
-            }
-        ).dimensions(width / 2, height - 30, 80, 20).build();
-        addDrawableChild(tabInfoButton);
         
         // Reset Button
         resetButton = ButtonWidget.builder(
             Text.literal("Reset All"),
             button -> resetAllOverlays()
-        ).dimensions(width / 2 + 90, height - 30, 80, 20).build();
+        ).dimensions(width / 2 + 50, height - 30, 80, 20).build();
         addDrawableChild(resetButton);
     }
     
@@ -556,16 +358,8 @@ public class OverlayEditorScreen extends Screen {
         // Render title
         titleWidget.render(context, mouseX, mouseY, delta);
         
-        // Render all overlays in edit mode (nur wenn enabled)
-        // Entferne disabled TabInfo-Overlays aus der Liste bei jedem Render, um sicherzustellen, dass sie nicht angezeigt werden
-        // Dies stellt sicher, dass Overlays sofort verschwinden, wenn sie deaktiviert werden
-        overlays.removeIf(overlay -> {
-            if (overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay) {
-                return !overlay.isEnabled();
-            }
-            return false;
-        });
-        
+        // Render all overlays in edit mode
+        hoveredClipboardOverlay = null;
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isEnabled()) {
                 overlay.renderInEditMode(context, mouseX, mouseY, delta);
@@ -574,6 +368,12 @@ public class OverlayEditorScreen extends Screen {
                 if (overlay.isHovered(mouseX, mouseY)) {
                     renderResizeHandle(context, overlay);
                     renderResetHandle(context, overlay);
+                    
+                    // Check if this is a Clipboard overlay and render settings button
+                    if (overlay instanceof ClipboardDraggableOverlay) {
+                        hoveredClipboardOverlay = overlay;
+                        renderClipboardSettingsButton(context, overlay, mouseX, mouseY);
+                    }
                 }
             }
         }
@@ -584,6 +384,11 @@ public class OverlayEditorScreen extends Screen {
         // Render overlay settings overlay if open
         if (overlaySettingsOpen) {
             renderOverlaySettings(context, mouseX, mouseY);
+        }
+        
+        // Render clipboard settings overlay if open
+        if (clipboardSettingsOpen) {
+            renderClipboardSettings(context, mouseX, mouseY);
         }
         
         // Render buttons
@@ -668,7 +473,24 @@ public class OverlayEditorScreen extends Screen {
     
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Handle overlay settings click first
+        // Handle clipboard settings button click first
+        if (hoveredClipboardOverlay != null && button == 0) {
+            int buttonSize = 16;
+            int buttonX = hoveredClipboardOverlay.getX() + hoveredClipboardOverlay.getWidth() - buttonSize - 10;
+            int buttonY = hoveredClipboardOverlay.getY() + 5;
+            if (mouseX >= buttonX && mouseX <= buttonX + buttonSize &&
+                mouseY >= buttonY && mouseY <= buttonY + buttonSize) {
+                clipboardSettingsOpen = !clipboardSettingsOpen;
+                return true;
+            }
+        }
+        
+        // Handle clipboard settings click
+        if (handleClipboardSettingsClick(mouseX, mouseY, button)) {
+            return true;
+        }
+        
+        // Handle overlay settings click
         if (handleOverlaySettingsClick(mouseX, mouseY, button)) {
             return true;
         }
@@ -765,19 +587,14 @@ public class OverlayEditorScreen extends Screen {
                     int screenHeight = client.getWindow().getScaledHeight();
                     int currentY = resizingOverlay.getY();
                     
-                    // Prüfe, ob es das MKLevel-Overlay oder ein Button-Overlay ist (sollte immer von oben links vergrößern)
+                    // Prüfe, ob es das MKLevel-Overlay ist (sollte immer von oben links vergrößern)
                     boolean isMKLevelOverlay = resizingOverlay instanceof MKLevelDraggableOverlay;
-                    boolean isButtonOverlay = resizingOverlay instanceof KitFilterButton1DraggableOverlay ||
-                                             resizingOverlay instanceof KitFilterButton2DraggableOverlay ||
-                                             resizingOverlay instanceof KitFilterButton3DraggableOverlay ||
-                                             resizingOverlay instanceof HideUncraftableButtonDraggableOverlay ||
-                                             resizingOverlay instanceof HideWrongClassButtonDraggableOverlay;
                     
                     int newX;
                     int newY = currentY;
                     
-                    if (isMKLevelOverlay || isButtonOverlay) {
-                        // Für MKLevel und Buttons: Obere linke Ecke immer fixiert
+                    if (isMKLevelOverlay) {
+                        // Für MKLevel: Obere linke Ecke immer fixiert
                         newX = resizeStartOverlayX;
                         // Stelle sicher, dass das Overlay nicht aus dem Bildschirm ragt
                         if (newX + newWidth > screenWidth) {
@@ -903,58 +720,10 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void resetAllOverlays() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.getWindow() == null) {
-            return;
-        }
-        
-        // Reset all overlays to default positions
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isEnabled()) {
                 overlay.resetToDefault();
             }
-        }
-        
-        // After resetting, ensure all overlays are within screen bounds
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
-        
-        // Adjust all overlay positions to keep them within bounds
-        for (DraggableOverlay overlay : overlays) {
-            if (overlay.isEnabled()) {
-                adjustOverlayPosition(overlay, screenWidth, screenHeight);
-            }
-        }
-    }
-    
-    /**
-     * Adjusts a single overlay position to keep it within screen bounds
-     */
-    private void adjustOverlayPosition(DraggableOverlay overlay, int screenWidth, int screenHeight) {
-        int x = overlay.getX();
-        int y = overlay.getY();
-        int width = overlay.getWidth();
-        int height = overlay.getHeight();
-        
-        // Adjust X position if overlay is outside screen
-        int newX = x;
-        if (x < 0) {
-            newX = 0;
-        } else if (x + width > screenWidth) {
-            newX = Math.max(0, screenWidth - width);
-        }
-        
-        // Adjust Y position if overlay is outside screen
-        int newY = y;
-        if (y < 0) {
-            newY = 0;
-        } else if (y + height > screenHeight) {
-            newY = Math.max(0, screenHeight - height);
-        }
-        
-        // Update position if adjustment is needed
-        if (newX != x || newY != y) {
-            overlay.setPosition(newX, newY);
         }
     }
     
@@ -1031,16 +800,11 @@ public class OverlayEditorScreen extends Screen {
      * Check if dragging is allowed for the given overlay
      */
     private boolean canDragOverlay(DraggableOverlay overlay) {
-        // Overlays cannot be dragged when in an inventory
-        if (isInventoryOpen()) {
-            return false;
-        }
-        
         // Mining/Lumberjack overlay can only be dragged in Overworld and not in inventories
         if (overlay instanceof MiningLumberjackDraggableOverlay) {
             return isInOverworld() && !isInventoryOpen();
         }
-        // All other overlays can be dragged normally (when not in inventory)
+        // All other overlays can be dragged normally
         return true;
     }
     
@@ -1139,11 +903,6 @@ public class OverlayEditorScreen extends Screen {
         boolean kitFilterEnabled = false;
         
         for (DraggableOverlay overlay : overlays) {
-            // Überspringe Tab Info Overlays - diese sollen nicht im Overlay Picker erscheinen
-            if (overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay) {
-                continue;
-            }
-            
             // Prüfe ob es ein Kit-Filter-Button ist
             if (overlay instanceof KitFilterButton1DraggableOverlay ||
                 overlay instanceof KitFilterButton2DraggableOverlay ||
@@ -1196,13 +955,11 @@ public class OverlayEditorScreen extends Screen {
         int checkboxSpacing = 25;
         int checkboxX = boxX + 10;
         int textX = checkboxX + checkboxSize + 5;
+        int textWidth = boxWidth - textX - 10; // Restliche Breite für Text
         
         for (OverlayEntry entry : displayOverlays) {
             int checkboxY = y;
             int textY = checkboxY;
-            // Verwende die tatsächliche Text-Breite für korrekte Click-Erkennung
-            String overlayName = entry.displayName;
-            int textWidth = textRenderer.getWidth(overlayName);
             int textHeight = textRenderer.fontHeight;
             
             // Prüfe ob Klick auf Checkbox
@@ -1266,9 +1023,126 @@ public class OverlayEditorScreen extends Screen {
             CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
         } else if (overlay instanceof MKLevelDraggableOverlay) {
             CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled;
-        } else if (overlay instanceof CollectionDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
+        } else if (overlay instanceof ClipboardDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled;
         }
+    }
+    
+    /**
+     * Rendert den Settings-Button für das Clipboard-Overlay (rechts oben)
+     */
+    private void renderClipboardSettingsButton(DrawContext context, DraggableOverlay overlay, int mouseX, int mouseY) {
+        int buttonSize = 16;
+        int buttonX = overlay.getX() + overlay.getWidth() - buttonSize - 10; // 10px vom rechten Rand
+        int buttonY = overlay.getY() + 5; // 5px vom oberen Rand
+        
+        // Button-Hintergrund
+        boolean isHovered = mouseX >= buttonX && mouseX <= buttonX + buttonSize &&
+                           mouseY >= buttonY && mouseY <= buttonY + buttonSize;
+        int bgColor = isHovered ? 0xFF404040 : 0xFF202020;
+        context.fill(buttonX, buttonY, buttonX + buttonSize, buttonY + buttonSize, bgColor);
+        context.drawBorder(buttonX, buttonY, buttonSize, buttonSize, 0xFFFFFFFF);
+        
+        // Settings-Icon (⚙ oder "⚙")
+        String icon = "⚙";
+        int iconWidth = textRenderer.getWidth(icon);
+        int iconHeight = textRenderer.fontHeight;
+        int iconX = buttonX + (buttonSize - iconWidth) / 2;
+        int iconY = buttonY + (buttonSize - iconHeight) / 2;
+        context.drawText(textRenderer, icon, iconX, iconY, 0xFFFFFFFF, false);
+    }
+    
+    /**
+     * Rendert das Clipboard-Settings-Overlay
+     */
+    private void renderClipboardSettings(DrawContext context, int mouseX, int mouseY) {
+        int boxWidth = 300;
+        int boxHeight = 200;
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        
+        // Hintergrund
+        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
+        
+        // Rahmen
+        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        
+        // Titel
+        context.drawText(textRenderer, "Clipboard Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
+        
+        // Buttons (noch ohne Funktionalität)
+        int buttonY = boxY + 40;
+        int buttonHeight = 20;
+        int buttonSpacing = 30;
+        int buttonWidth = boxWidth - 20;
+        
+        // Button 1: Blueprint Shop Kosten anzeigen/ausblenden
+        boolean showBPCosts = CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts;
+        int button1Y = buttonY;
+        boolean button1Hovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                                 mouseY >= button1Y && mouseY <= button1Y + buttonHeight;
+        int button1Color = button1Hovered ? 0xFF404040 : 0xFF202020;
+        context.fill(boxX + 10, button1Y, boxX + 10 + buttonWidth, button1Y + buttonHeight, button1Color);
+        context.drawBorder(boxX + 10, button1Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        String button1Text = "Blueprint Shop Kosten: " + (showBPCosts ? "An" : "Aus");
+        context.drawText(textRenderer, button1Text, boxX + 15, button1Y + 6, 0xFFFFFFFF, false);
+        
+        // Button 2: Platzhalter für weitere Settings
+        int button2Y = buttonY + buttonSpacing;
+        boolean button2Hovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                                 mouseY >= button2Y && mouseY <= button2Y + buttonHeight;
+        int button2Color = button2Hovered ? 0xFF404040 : 0xFF202020;
+        context.fill(boxX + 10, button2Y, boxX + 10 + buttonWidth, button2Y + buttonHeight, button2Color);
+        context.drawBorder(boxX + 10, button2Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.drawText(textRenderer, "Weitere Einstellungen...", boxX + 15, button2Y + 6, 0xFFFFFFFF, false);
+    }
+    
+    /**
+     * Behandelt Klicks im Clipboard-Settings-Overlay
+     */
+    private boolean handleClipboardSettingsClick(double mouseX, double mouseY, int button) {
+        if (!clipboardSettingsOpen || button != 0) {
+            return false;
+        }
+        
+        int boxWidth = 300;
+        int boxHeight = 200;
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        
+        // Prüfe ob Klick innerhalb des Overlays ist
+        if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
+            // Klick außerhalb - schließe Overlay
+            clipboardSettingsOpen = false;
+            return false;
+        }
+        
+        // Button-Koordinaten
+        int buttonY = boxY + 40;
+        int buttonHeight = 20;
+        int buttonSpacing = 30;
+        int buttonWidth = boxWidth - 20;
+        
+        // Button 1: Blueprint Shop Kosten
+        int button1Y = buttonY;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= button1Y && mouseY <= button1Y + buttonHeight) {
+            // Toggle Blueprint Shop Kosten
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts = 
+                !CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
+        // Button 2: Platzhalter (noch keine Funktionalität)
+        int button2Y = buttonY + buttonSpacing;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= button2Y && mouseY <= button2Y + buttonHeight) {
+            // Noch keine Funktionalität
+            return true;
+        }
+        
+        return false;
     }
 }
 

@@ -40,6 +40,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
+import net.felix.CCLiveUtilities;
 import java.util.regex.Pattern;
 
 public class BPViewerUtility {
@@ -116,8 +118,10 @@ public class BPViewerUtility {
     
     public BPViewerUtility() {
         INSTANCE = this;
-        this.saveFile = new File("config", SAVE_FILE_NAME);
-        this.progressFile = new File("config", PROGRESS_FILE_NAME);
+        // Speichere in config/cclive-utilities/ für Konsistenz mit allen anderen Mod-Daten
+        Path configDir = CCLiveUtilities.getConfigDir().resolve("cclive-utilities");
+        this.saveFile = configDir.resolve(SAVE_FILE_NAME).toFile();
+        this.progressFile = configDir.resolve(PROGRESS_FILE_NAME).toFile();
         loadFoundBlueprints();
         loadProgress();
         loadBlueprintConfig();
@@ -140,6 +144,7 @@ public class BPViewerUtility {
     /**
      * Gibt die Anzahl aller gefundenen Blueprints zurück (für ProfileStatsManager)
      * Dies ist die autoritative Quelle, da foundBlueprints die Hauptliste aller gefundenen Blueprints ist.
+     * Zählt einfach die Anzahl der Einträge in foundBlueprints.
      */
     public int getFoundBlueprintsCount() {
         return foundBlueprints.size();
@@ -596,7 +601,7 @@ public class BPViewerUtility {
             }
             
         } catch (Exception e) {
-            // Silent error handling
+            e.printStackTrace();
         }
         
         // Reset debug flag for next frame
@@ -1329,6 +1334,22 @@ public class BPViewerUtility {
         if (floor != null && !floor.startsWith("floor_")) {
             floor = "floor_" + floor;
         }
+        // Validiere Floor-Name - nur floor_1 bis floor_100 sind gültig
+        if (floor != null) {
+            String floorNumber = floor.substring("floor_".length());
+            try {
+                int floorNum = Integer.parseInt(floorNumber);
+                if (floorNum < 1 || floorNum > 100) {
+                    System.out.println("⚠️ [BPViewerUtility] Ungültiger manueller Floor-Name: " + floor);
+                    manualFloor = null;
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("⚠️ [BPViewerUtility] Ungültiger manueller Floor-Name: " + floor);
+                manualFloor = null;
+                return;
+            }
+        }
         manualFloor = floor;
     }
     
@@ -1342,8 +1363,17 @@ public class BPViewerUtility {
                 String[] parts = floorPart.split("_");
                 if (parts.length >= 1) {
                     String floorNumber = parts[0];
-                    String floorKey = "floor_" + floorNumber;
-                    return floorKey;
+                    // Validiere: Nur floor_1 bis floor_100 sind gültig
+                    try {
+                        int floorNum = Integer.parseInt(floorNumber);
+                        if (floorNum >= 1 && floorNum <= 100) {
+                            return "floor_" + floorNumber;
+                        }
+                    } catch (NumberFormatException e) {
+                        // floorNumber ist keine Zahl (z.B. "all", "legendary", "none")
+                        // Ignoriere diese ungültigen Floor-Namen
+                        System.out.println("⚠️ [BPViewerUtility] Ungültige Dimension erkannt: " + dimensionId);
+                    }
                 }
             }
         }
@@ -1351,6 +1381,21 @@ public class BPViewerUtility {
     }
     
     private void loadFoundBlueprints() {
+        // Migration: Prüfe ob alte Datei in config/ existiert und verschiebe sie nach config/cclive-utilities/
+        File oldSaveFile = new File("config", SAVE_FILE_NAME);
+        if (oldSaveFile.exists() && !saveFile.exists()) {
+            try {
+                // Erstelle Verzeichnis falls nicht vorhanden
+                saveFile.getParentFile().mkdirs();
+                // Verschiebe Datei
+                java.nio.file.Files.move(oldSaveFile.toPath(), saveFile.toPath(), 
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("✅ [BPViewer] Migriert " + SAVE_FILE_NAME + " nach config/cclive-utilities/");
+            } catch (IOException e) {
+                System.err.println("⚠️ [BPViewer] Fehler beim Migrieren von " + SAVE_FILE_NAME + ": " + e.getMessage());
+            }
+        }
+        
         if (saveFile.exists()) {
             try (FileReader reader = new FileReader(saveFile)) {
                 Type type = new TypeToken<HashMap<String, String>>(){}.getType();
@@ -1369,20 +1414,38 @@ public class BPViewerUtility {
                     }
                 }
             } catch (IOException e) {
-                // Silent error handling
+                e.printStackTrace();
             }
         }
     }
     
     private void saveFoundBlueprints() {
-        try (FileWriter writer = new FileWriter(saveFile)) {
-            gson.toJson(foundBlueprints, writer);
+        try {
+            saveFile.getParentFile().mkdirs();
+            try (FileWriter writer = new FileWriter(saveFile)) {
+                gson.toJson(foundBlueprints, writer);
+            }
         } catch (IOException e) {
-            // Silent error handling
+            e.printStackTrace();
         }
     }
     
     private void loadProgress() {
+        // Migration: Prüfe ob alte Datei in config/ existiert und verschiebe sie nach config/cclive-utilities/
+        File oldProgressFile = new File("config", PROGRESS_FILE_NAME);
+        if (oldProgressFile.exists() && !progressFile.exists()) {
+            try {
+                // Erstelle Verzeichnis falls nicht vorhanden
+                progressFile.getParentFile().mkdirs();
+                // Verschiebe Datei
+                java.nio.file.Files.move(oldProgressFile.toPath(), progressFile.toPath(), 
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("✅ [BPViewer] Migriert " + PROGRESS_FILE_NAME + " nach config/cclive-utilities/");
+            } catch (IOException e) {
+                System.err.println("⚠️ [BPViewer] Fehler beim Migrieren von " + PROGRESS_FILE_NAME + ": " + e.getMessage());
+            }
+        }
+        
         if (progressFile.exists()) {
             try (FileReader reader = new FileReader(progressFile)) {
                 JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
@@ -1395,7 +1458,7 @@ public class BPViewerUtility {
                     floorProgress.put(floor, floorBlueprints);
                 }
             } catch (IOException e) {
-                // Silent error handling
+                e.printStackTrace();
             }
         }
     }
@@ -1425,7 +1488,7 @@ public class BPViewerUtility {
                 gson.toJson(json, writer);
             }
         } catch (IOException e) {
-            // Silent error handling
+            e.printStackTrace();
         }
     }
     
@@ -1572,8 +1635,8 @@ public class BPViewerUtility {
                 }
             }
         } catch (Exception e) {
-            // Silent error handling("Failed to load blueprint config: " + e.getMessage());
-            // Silent error handling
+            System.err.println("Failed to load blueprint config: " + e.getMessage());
+            e.printStackTrace();
             // Fallback to hardcoded config
             initializeFallbackFloors();
         }

@@ -1,6 +1,5 @@
 package net.felix.utilities.ItemViewer;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -13,10 +12,6 @@ public enum SortMode {
     NAME_ZA("Name Z-A", Comparator.comparing((ItemData item) -> item.name.toLowerCase()).reversed()),
     FLOOR_ASC("Ebene 1-100", Comparator.comparing(SortMode::getMinFloor)),
     FLOOR_DESC("Ebene 100-1", Comparator.comparing(SortMode::getMinFloor).reversed());
-    
-    private static final List<String> DEFAULT_TAG_ORDER = Arrays.asList(
-        "armor", "weapon", "tool", "module", "rune", "ability"
-    );
     
     private final String displayName;
     private final Comparator<ItemData> comparator;
@@ -39,57 +34,88 @@ public enum SortMode {
     
     private static Comparator<ItemData> getDefaultComparator() {
         return (item1, item2) -> {
-            // Hole ersten Tag von jedem Item (in der definierten Reihenfolge)
-            String tag1 = getFirstTagInOrder(item1);
-            String tag2 = getFirstTagInOrder(item2);
+            // Hole Kategorie-Index von jedem Item
+            int categoryIndex1 = getCategoryIndex(item1);
+            int categoryIndex2 = getCategoryIndex(item2);
             
-            // Vergleiche nach Tag-Reihenfolge
-            int index1 = DEFAULT_TAG_ORDER.indexOf(tag1);
-            int index2 = DEFAULT_TAG_ORDER.indexOf(tag2);
+            // Vergleiche nach Kategorie-Reihenfolge
+            int compare = Integer.compare(categoryIndex1, categoryIndex2);
+            if (compare != 0) return compare;
             
-            // Beide haben einen Tag in der Liste
-            if (index1 != -1 && index2 != -1) {
-                int compare = Integer.compare(index1, index2);
-                if (compare != 0) return compare;
-                // Gleicher Tag: nach Name A-Z
-                return item1.name.compareToIgnoreCase(item2.name);
-            }
-            
-            // Nur item1 hat einen Tag → kommt zuerst
-            if (index1 != -1) return -1;
-            
-            // Nur item2 hat einen Tag → kommt zuerst
-            if (index2 != -1) return 1;
-            
-            // Beide haben keinen passenden Tag: nach Name A-Z
+            // Gleiche Kategorie: nach Name A-Z
             return item1.name.compareToIgnoreCase(item2.name);
         };
     }
     
-    private static String getFirstTagInOrder(ItemData item) {
-        if (item.tags == null || item.tags.isEmpty()) return null;
-        
-        // Finde ersten Tag, der in DEFAULT_TAG_ORDER vorkommt
-        for (String tag : item.tags) {
-            String lowerTag = tag.toLowerCase();
-            if (DEFAULT_TAG_ORDER.contains(lowerTag)) {
-                return lowerTag;
-            }
+    // Kategorien-Reihenfolge für Sortierung
+    private static final List<String> CATEGORY_ORDER = java.util.Arrays.asList(
+        "blueprints",
+        "abilities",
+        "modules",
+        "module_bags",
+        "runes",
+        "power_crystals",
+        "power_crystal_slots",
+        "card_slots",
+        "essences",
+        "items" // Fallback für alte Struktur
+    );
+    
+    /**
+     * Gibt den Kategorie-Index für ein Item zurück (für Sortierung)
+     * @param item Das Item
+     * @return Index der Kategorie basierend auf category-Feld, 999 wenn keine Kategorie gefunden
+     */
+    private static int getCategoryIndex(ItemData item) {
+        if (item.category == null || item.category.isEmpty()) {
+            return 999; // Keine Kategorie
         }
         
-        return null;
+        String category = item.category.toLowerCase();
+        int index = CATEGORY_ORDER.indexOf(category);
+        
+        if (index != -1) {
+            return index;
+        }
+        
+        return 999; // Kategorie nicht in der Liste
     }
     
     private static int getMinFloor(ItemData item) {
         // Extrahiere minimale Floor-Nummer aus foundAt
+        // Unterstützt sowohl "floor_X" als auch "Ebene X" Formate
         if (item.foundAt == null || item.foundAt.isEmpty()) return 999;
         
         int minFloor = 999;
         for (LocationData location : item.foundAt) {
-            if (location.floor != null && location.floor.startsWith("floor_")) {
+            if (location.floor != null && !location.floor.isEmpty()) {
                 try {
-                    int floorNum = Integer.parseInt(location.floor.substring(6));
-                    minFloor = Math.min(minFloor, floorNum);
+                    int floorNum = -1;
+                    String floorStr = location.floor.toLowerCase();
+                    
+                    // Prüfe "floor_X" Format
+                    if (floorStr.startsWith("floor_")) {
+                        floorNum = Integer.parseInt(floorStr.substring(6));
+                    }
+                    // Prüfe "Ebene X" Format
+                    else if (floorStr.contains("ebene")) {
+                        // Extrahiere Zahl aus "Ebene X" oder "ebene X"
+                        String floorNumStr = floorStr.replaceAll("[^0-9]", "");
+                        if (!floorNumStr.isEmpty()) {
+                            floorNum = Integer.parseInt(floorNumStr);
+                        }
+                    }
+                    // Prüfe ob es nur eine Zahl ist
+                    else {
+                        String floorNumStr = floorStr.replaceAll("[^0-9]", "");
+                        if (!floorNumStr.isEmpty()) {
+                            floorNum = Integer.parseInt(floorNumStr);
+                        }
+                    }
+                    
+                    if (floorNum > 0) {
+                        minFloor = Math.min(minFloor, floorNum);
+                    }
                 } catch (NumberFormatException e) {
                     // Ignoriere
                 }

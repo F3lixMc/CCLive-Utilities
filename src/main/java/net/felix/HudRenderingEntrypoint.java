@@ -3,6 +3,7 @@ package net.felix;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
@@ -14,7 +15,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
     public void onInitializeClient() {
         // Verifiziere, dass die Font-Definition geladen wird
         // Die Font wird automatisch aus assets/cclive-utilities/font/default.json geladen
-        // Silent error handling("✅ [CCLive-Utilities] Client initialisiert - Font sollte automatisch geladen werden");
+        System.out.println("✅ [CCLive-Utilities] Client initialisiert - Font sollte automatisch geladen werden");
         
         // Registriere Resource-Reload-Listener, um zu prüfen, ob die Font geladen wird
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(
@@ -29,17 +30,17 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
                     // Prüfe, ob die Font-Definition existiert
                     var fontResource = manager.getResource(FONT_IDENTIFIER.withPath("font/default.json"));
                     if (fontResource.isPresent()) {
-                        // Silent error handling("✅ [CCLive-Utilities] Font-Definition gefunden: " + FONT_IDENTIFIER);
+                        System.out.println("✅ [CCLive-Utilities] Font-Definition gefunden: " + FONT_IDENTIFIER);
                     } else {
-                        // Silent error handling("❌ [CCLive-Utilities] Font-Definition NICHT gefunden: " + FONT_IDENTIFIER);
+                        System.err.println("❌ [CCLive-Utilities] Font-Definition NICHT gefunden: " + FONT_IDENTIFIER);
                     }
                     
                     // Prüfe, ob die Icon-Textur existiert
                     var iconResource = manager.getResource(Identifier.of("cclive-utilities", "textures/8_chat_icon.png"));
                     if (iconResource.isPresent()) {
-                        // Silent error handling("✅ [CCLive-Utilities] Icon-Textur gefunden: textures/8_chat_icon.png");
+                        System.out.println("✅ [CCLive-Utilities] Icon-Textur gefunden: textures/8_chat_icon.png");
                     } else {
-                        // Silent error handling("❌ [CCLive-Utilities] Icon-Textur NICHT gefunden: textures/8_chat_icon.png");
+                        System.err.println("❌ [CCLive-Utilities] Icon-Textur NICHT gefunden: textures/8_chat_icon.png");
                     }
                 }
             }
@@ -68,6 +69,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
         //     }
         // });
         
-        // TODO: Hier kannst du später deine HUD-Rendering-Features implementieren
+        // Initialisiere Item-Viewer
+        ItemViewerUtility.initialize();
     }
 }

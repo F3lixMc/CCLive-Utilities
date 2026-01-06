@@ -6,14 +6,12 @@ import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Aincraft.MaterialTrackerUtility;
-import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.felix.utilities.Overall.KillAnimationUtility;
 import net.felix.utilities.Overall.DamageTrackingUtility;
-import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
@@ -40,6 +38,9 @@ public class CCLiveUtilities implements ModInitializer {
 
 
 		// Initialize configuration
+		// Migriere Config-Datei von config/ nach config/cclive-utilities/ (falls nötig)
+		CCLiveUtilitiesConfig.migrateConfigLocation();
+		
 		CCLiveUtilitiesConfig.HANDLER.load();
 		
 		// Migriere Overlay-Typ von String zu Enum
@@ -59,12 +60,10 @@ public class CCLiveUtilities implements ModInitializer {
 		AnimationBlockerUtility.initialize();
 		KillAnimationUtility.initialize();
 		BPViewerUtility.initialize();
-		//ItemInfoUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
-		TabInfoUtility.initialize();
 		
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
@@ -72,22 +71,28 @@ public class CCLiveUtilities implements ModInitializer {
 		// Initialisiere Chat-System
 		try {
 			ChatManager.getInstance().initialize();
+			System.out.println("✅ ChatManager initialisiert");
 		} catch (Exception e) {
-			// Silent error handling
+			System.err.println("[CCLive-Utilities] Error initializing ChatManager: " + e.getMessage());
+			e.printStackTrace();
 		}
 		
 		// Initialisiere Profile-Stats-System
 		try {
 			ProfileStatsManager.getInstance().initialize();
+			System.out.println("✅ ProfileStatsManager initialisiert");
 		} catch (Exception e) {
-			// Silent error handling
+			System.err.println("[CCLive-Utilities] Error initializing ProfileStatsManager: " + e.getMessage());
+			e.printStackTrace();
 		}
 		
 		// Initialisiere Player Hover Stats Utility
 		try {
 			PlayerHoverStatsUtility.initialize();
+			System.out.println("✅ PlayerHoverStatsUtility initialisiert");
 		} catch (Exception e) {
-			// Silent error handling
+			System.err.println("[CCLive-Utilities] Error initializing PlayerHoverStatsUtility: " + e.getMessage());
+			e.printStackTrace();
 		}
 		
 		// Registriere alle CCLive-Commands (Blueprint + Leaderboard)
@@ -97,8 +102,10 @@ public class CCLiveUtilities implements ModInitializer {
 		try {
 			net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.initialize();
 			net.felix.utilities.Other.PlayericonUtility.PlayerIconNetworking.initialize();
+			System.out.println("✅ Player Icon System initialisiert");
 		} catch (Exception e) {
-			// Silent error handling
+			System.err.println("[CCLive-Utilities] Error initializing Player Icon System: " + e.getMessage());
+			e.printStackTrace();
 		}
 
 	}

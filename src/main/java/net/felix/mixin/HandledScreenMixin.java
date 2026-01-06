@@ -76,9 +76,17 @@ public abstract class HandledScreenMixin {
         // Render Item Viewer overlay (nach allen anderen Overlays, damit es über dem dunklen Hintergrund liegt)
         renderItemViewer(context, mouseX, mouseY);
         
-        // Render unregistered item overlays (red background on items not in extracted_items.json)
-        // DISABLED: ItemInfoUtility is deactivated
-        // renderUnregisteredItemOverlays(context);
+        // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
+        // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isVisible()) {
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+        }
+        
+        // Rendere Help-Overlay ganz am Ende, damit es über allem liegt (wie im Blueprint Shop)
+        // Wird sowohl hier als auch in InGameHudHelpOverlayMixin gerendert, um sicherzustellen, dass es überall funktioniert
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            net.felix.utilities.ItemViewer.ItemViewerUtility.renderHelpOverlay(context);
+        }
     }
     
     /**
@@ -95,21 +103,6 @@ public abstract class HandledScreenMixin {
             // Ignore rendering errors
         }
     }
-    
-    /**
-     * Renders red background overlay on unregistered items
-     * DISABLED: ItemInfoUtility is deactivated
-     */
-    /*
-    private void renderUnregisteredItemOverlays(DrawContext context) {
-        try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
-            net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, x, y);
-        } catch (Exception e) {
-            // Ignore rendering errors
-        }
-    }
-    */
     
     /**
      * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory or Essence Harvester UI (Glyph "㮌")
@@ -136,10 +129,45 @@ public abstract class HandledScreenMixin {
     }
     
     /**
+     * Blockiert Tooltips wenn das Hilfe-Overlay offen ist (wie im Bauplan-Shop)
+     */
+    @Inject(method = "getTooltipFromItem", at = @At("HEAD"), cancellable = true)
+    private void blockTooltipsFromItem(net.minecraft.item.ItemStack stack, CallbackInfoReturnable<java.util.List<net.minecraft.text.Text>> cir) {
+        // Blockiere Tooltips wenn das Hilfe-Overlay offen ist
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            cir.setReturnValue(java.util.Collections.emptyList());
+        }
+    }
+    
+    /**
+     * Blockiert das Rendern der Items in InventoryScreen, wenn das Hilfe-Overlay offen ist
+     * Injiziert in die drawSlot-Methode, um das Rendern der Items zu blockieren
+     */
+    @Inject(method = "drawSlot", at = @At("HEAD"), cancellable = true)
+    private void blockSlotRenderingInInventoryScreen(DrawContext context, Slot slot, CallbackInfo ci) {
+        HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+        // Blockiere das Rendern der Items nur für InventoryScreen, wenn das Hilfe-Overlay offen ist
+        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen && 
+            net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            ci.cancel();
+        }
+    }
+    
+    
+    /**
      * Injects into mouseClicked to handle clicks on the Hide Uncraftable button
      */
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
+        // Dies muss vor allen anderen Klicks geprüft werden
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleHelpOverlayClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+        
         // Handle clicks on Item Viewer buttons
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);

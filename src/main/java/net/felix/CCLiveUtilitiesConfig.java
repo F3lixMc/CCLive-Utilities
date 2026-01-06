@@ -11,15 +11,36 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import java.awt.Color;
 import net.felix.OverlayType;
-import net.felix.ItemDisplayMode;
 
 public class CCLiveUtilitiesConfig {
     public static final ConfigClassHandler<CCLiveUtilitiesConfig> HANDLER = ConfigClassHandler.createBuilder(CCLiveUtilitiesConfig.class)
             .id(Identifier.of(CCLiveUtilities.MOD_ID, "config"))
             .serializer(config -> GsonConfigSerializerBuilder.create(config)
-                    .setPath(CCLiveUtilities.getConfigDir().resolve("cclive-utilities.json"))
+                    .setPath(CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve("cclive-utilities.json"))
                     .build())
             .build();
+    
+    // Migration: Verschiebe alte Config-Datei von config/ nach config/cclive-utilities/
+    public static void migrateConfigLocation() {
+        try {
+            java.nio.file.Path oldConfigPath = CCLiveUtilities.getConfigDir().resolve("cclive-utilities.json");
+            java.nio.file.Path newConfigDir = CCLiveUtilities.getConfigDir().resolve("cclive-utilities");
+            java.nio.file.Path newConfigPath = newConfigDir.resolve("cclive-utilities.json");
+            
+            // Erstelle neuen Ordner falls nicht vorhanden
+            if (!java.nio.file.Files.exists(newConfigDir)) {
+                java.nio.file.Files.createDirectories(newConfigDir);
+            }
+            
+            // Verschiebe alte Datei falls vorhanden und neue noch nicht existiert
+            if (java.nio.file.Files.exists(oldConfigPath) && !java.nio.file.Files.exists(newConfigPath)) {
+                java.nio.file.Files.move(oldConfigPath, newConfigPath);
+                System.out.println("✅ [Config] Migriert cclive-utilities.json nach config/cclive-utilities/");
+            }
+        } catch (Exception e) {
+            System.err.println("[Config] Fehler beim Migrieren der Config-Datei: " + e.getMessage());
+        }
+    }
     
     // Migration von String zu Enum
     public static void migrateOverlayType() {
@@ -117,10 +138,10 @@ public class CCLiveUtilitiesConfig {
     public Color equipmentDisplayHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
     
     @SerialEntry
-    public int equipmentDisplayArmorX = 1; // X-Position der Rüstungsanzeige (optimiert)
+    public int equipmentDisplayArmorX = -134; // X-Position der Rüstungsanzeige (optimiert)
     
     @SerialEntry
-    public int equipmentDisplayArmorY = 382; // Y-Position der Rüstungsanzeige (Pixel vom unteren Rand, optimiert)
+    public int equipmentDisplayArmorY = 300; // Y-Position der Rüstungsanzeige (Pixel vom unteren Rand, optimiert)
     
     // equipmentDisplayShowBackground wurde durch equipmentDisplayOverlayType ersetzt
     // true = CUSTOM/BLACK, false = NONE
@@ -154,10 +175,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showKillsUtility = true;
     
     @SerialEntry
-    public int killsUtilityX = 789; // X-Position der Kills-Anzeige (Pixel vom rechten Rand, optimiert)
+    public int killsUtilityX = 570; // X-Position der Kills-Anzeige (Pixel vom rechten Rand, optimiert)
     
     @SerialEntry
-    public int killsUtilityY = 116; // Y-Position der Kills-Anzeige (Pixel vom oberen Rand, optimiert)
+    public int killsUtilityY = 100; // Y-Position der Kills-Anzeige (Pixel vom oberen Rand, optimiert)
     
     @SerialEntry
     public Color killsUtilityHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
@@ -176,25 +197,6 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean killsUtilityShowNextLevel = true; // "Nächste Ebene" Zeile anzeigen
-
-    // Collection Overlay Settings
-    @SerialEntry
-    public boolean showCollectionOverlay = true;
-    
-    @SerialEntry
-    public int collectionOverlayX = 10; // X-Position des Collection Overlays
-    
-    @SerialEntry
-    public int collectionOverlayY = 10; // Y-Position des Collection Overlays
-    
-    @SerialEntry
-    public float collectionOverlayScale = 1.0f; // Skalierung des Collection Overlays (0.1f bis 5.0f)
-    
-    @SerialEntry
-    public Color collectionOverlayHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
-    
-    @SerialEntry
-    public Color collectionOverlayTextColor = new Color(0xFFFFFFFF); // Textfarbe (Weiß)
 
 
     // Schmied Tracker Settings
@@ -244,19 +246,13 @@ public class CCLiveUtilitiesConfig {
     public boolean showMiningOverlay = true; // Bergbau Overlay anzeigen
     
     @SerialEntry
-    public int miningOverlayX = 0; // X-Position des Bergbau Overlays (am linken Bildschirmrand)
+    public int miningOverlayX = 5; // X-Position des Bergbau Overlays (am linken Bildschirmrand)
     
     @SerialEntry
-    public int miningOverlayY = 109; // Y-Position des Bergbau Overlays (mittig am linken Rand)
+    public int miningOverlayY = 200; // Y-Position des Bergbau Overlays (mittig am linken Rand)
     
     @SerialEntry
     public boolean miningOverlayShowBackground = true; // Schwarzer Hintergrund für Bergbau Overlay
-    
-    @SerialEntry
-    public Color miningLumberjackOverlayHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
-    
-    @SerialEntry
-    public Color miningLumberjackOverlayTextColor = new Color(0xFFFFFFFF); // Textfarbe (Weiß)
     
     @SerialEntry
     public boolean lumberjackOverlayEnabled = true; // Holzfäller Overlay aktivieren
@@ -289,7 +285,7 @@ public class CCLiveUtilitiesConfig {
     public boolean schmiedTrackerShowBackground = true; // Schwarzer Hintergrund für Schmied Tracker
     
     @SerialEntry
-    public ItemDisplayMode schmiedTrackerItemDisplayMode = ItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
+    public net.felix.ItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.ItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
     
     @SerialEntry
     public boolean hideUncraftableEnabled = true; // Hide Uncraftable Button aktiviert
@@ -306,10 +302,10 @@ public class CCLiveUtilitiesConfig {
     public boolean hideUncraftableUseAlternativeAnalysis = true; // Alternative Analyse-Methode
     
     @SerialEntry
-    public int hideUncraftableButtonX = -195; // X-Position des Hide Uncraftable Buttons (Offset)
+    public int hideUncraftableButtonX = -80; // X-Position des Hide Uncraftable Buttons (Offset)
     
     @SerialEntry
-    public int hideUncraftableButtonY = 103; // Y-Position des Hide Uncraftable Buttons (Offset)
+    public int hideUncraftableButtonY = 54; // Y-Position des Hide Uncraftable Buttons (Offset)
     
     @SerialEntry
     public float hideUncraftableButtonScale = 1.0f; // Skalierung des Hide Uncraftable Buttons
@@ -318,38 +314,38 @@ public class CCLiveUtilitiesConfig {
     public boolean hideWrongClassEnabled = true; // Hide Wrong Class Button aktiviert
     
     @SerialEntry
-    public int hideWrongClassButtonX = -195; // X-Position des Hide Wrong Class Buttons (Offset)
+    public int hideWrongClassButtonX = -80; // X-Position des Hide Wrong Class Buttons (Offset)
     
     @SerialEntry
-    public int hideWrongClassButtonY = 126; // Y-Position des Hide Wrong Class Buttons (Offset)
+    public int hideWrongClassButtonY = 80; // Y-Position des Hide Wrong Class Buttons (Offset)
     
     @SerialEntry
     public float hideWrongClassButtonScale = 1.0f; // Skalierung des Hide Wrong Class Buttons
     
     // Kit Filter Button Positions
     @SerialEntry
-    public int kitFilterButton1X = -215; // X-Position des Kit Filter Button 1 (Offset)
+    public int kitFilterButton1X = -100; // X-Position des Kit Filter Button 1 (Offset)
     
     @SerialEntry
-    public int kitFilterButton1Y = 119; // Y-Position des Kit Filter Button 1 (Offset)
+    public int kitFilterButton1Y = 50; // Y-Position des Kit Filter Button 1 (Offset)
     
     @SerialEntry
     public float kitFilterButton1Scale = 1.0f; // Skalierung des Kit Filter Button 1
     
     @SerialEntry
-    public int kitFilterButton2X = -215; // X-Position des Kit Filter Button 2 (Offset)
+    public int kitFilterButton2X = -100; // X-Position des Kit Filter Button 2 (Offset)
     
     @SerialEntry
-    public int kitFilterButton2Y = 117; // Y-Position des Kit Filter Button 2 (Offset)
+    public int kitFilterButton2Y = 75; // Y-Position des Kit Filter Button 2 (Offset)
     
     @SerialEntry
     public float kitFilterButton2Scale = 1.0f; // Skalierung des Kit Filter Button 2
     
     @SerialEntry
-    public int kitFilterButton3X = -215; // X-Position des Kit Filter Button 3 (Offset)
+    public int kitFilterButton3X = -100; // X-Position des Kit Filter Button 3 (Offset)
     
     @SerialEntry
-    public int kitFilterButton3Y = 115; // Y-Position des Kit Filter Button 3 (Offset)
+    public int kitFilterButton3Y = 100; // Y-Position des Kit Filter Button 3 (Offset)
     
     @SerialEntry
     public float kitFilterButton3Scale = 1.0f; // Skalierung des Kit Filter Button 3
@@ -430,10 +426,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showMaterialTracker = true;
     
     @SerialEntry
-    public int materialTrackerX = 0; // Pixel vom rechten Rand (optimiert)
+    public int materialTrackerX = 1; // Pixel vom rechten Rand (optimiert)
     
     @SerialEntry
-    public int materialTrackerY = 43; // Pixel vom oberen Rand (optimiert)
+    public int materialTrackerY = 35; // Pixel vom oberen Rand (optimiert)
     
     @SerialEntry
     public boolean materialTrackerShowBackground = true; // Schwarzer Hintergrund für Material Tracker (veraltet, wird durch materialTrackerOverlayType ersetzt)
@@ -446,6 +442,47 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public OverlayType materialTrackerOverlayType = OverlayType.CUSTOM; // Overlay-Typ für Material Tracker
+
+    // Collection Overlay Settings
+    @SerialEntry
+    public boolean showCollectionOverlay = true;
+    
+    @SerialEntry
+    public int collectionOverlayX = 10; // X-Position des Collection Overlays
+    
+    @SerialEntry
+    public int collectionOverlayY = 10; // Y-Position des Collection Overlays
+    
+    @SerialEntry
+    public float collectionOverlayScale = 1.0f; // Skalierung des Collection Overlays (0.1f bis 5.0f)
+    
+    @SerialEntry
+    public Color collectionOverlayHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
+    
+    @SerialEntry
+    public Color collectionOverlayTextColor = new Color(0xFFFFFFFF); // Textfarbe (Weiß)
+
+    // Clipboard Settings
+    @SerialEntry
+    public boolean clipboardEnabled = true;
+    
+    @SerialEntry
+    public boolean showClipboard = true;
+    
+    @SerialEntry
+    public int clipboardX = 10; // Pixel vom linken Rand (oben links)
+    
+    @SerialEntry
+    public int clipboardY = 10; // Pixel vom oberen Rand (oben links)
+    
+    @SerialEntry
+    public int clipboardWidth = 200; // Breite des Clipboard-Overlays
+    
+    @SerialEntry
+    public int clipboardHeight = 300; // Höhe des Clipboard-Overlays
+    
+    @SerialEntry
+    public boolean clipboardShowBlueprintShopCosts = false; // Zeige Blueprint Shop Kosten an
 
     // Search Bar Settings
     @SerialEntry
@@ -460,9 +497,6 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean searchBarShowBackground = true; // Schwarzer Hintergrund für Search Bar
     
-    @SerialEntry
-    public ItemDisplayMode searchBarItemDisplayMode = ItemDisplayMode.BORDER; // Anzeigemodus für gefilterte Items (Rahmen oder Hintergrund)
-    
     // Boss HP Settings
     @SerialEntry
     public boolean bossHPEnabled = true;
@@ -471,10 +505,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showBossHP = true;
     
     @SerialEntry
-    public int bossHPX = 854; // X-Position der Boss-HP Anzeige (optimiert)
+    public int bossHPX = 562; // X-Position der Boss-HP Anzeige (optimiert)
     
     @SerialEntry
-    public int bossHPY = 261; // Y-Position der Boss-HP Anzeige (optimiert)
+    public int bossHPY = 201; // Y-Position der Boss-HP Anzeige (optimiert)
     
     @SerialEntry
     public Color bossHPTextColor = new Color(0xFFFFFFFF); // Textfarbe (Weiß)
@@ -488,15 +522,6 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean bossHPShowDPM = true; // DPM (Damage Per Minute) Anzeige im Boss HP Overlay
     
-    @SerialEntry
-    public boolean bossHPShowPercentage = true; // Prozentwert-Anzeige im Boss HP Overlay
-    
-    @SerialEntry
-    public Color bossHPPercentageColor = new Color(0xFFFF5555); // Farbe für den Prozentwert (Rot)
-    
-    @SerialEntry
-    public Color bossHPDPMColor = new Color(0xFFFFFF00); // Farbe für DPM (Gelb)
-    
     // MKLevel Settings
     @SerialEntry
     public boolean mkLevelEnabled = true; // MKLevel Overlay aktiviert
@@ -505,10 +530,10 @@ public class CCLiveUtilitiesConfig {
     public float mkLevelScale = 1.0f; // Skalierung des MKLevel Overlays
     
     @SerialEntry
-    public int mkLevelX = 135; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
+    public int mkLevelX = -1; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
     
     @SerialEntry
-    public int mkLevelY = 134; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
+    public int mkLevelY = -1; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
     
     // Cards/Statues Settings
     @SerialEntry
@@ -592,10 +617,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showBlueprintViewer = true;
     
     @SerialEntry
-    public int blueprintViewerX = 654; // X-Position des Blueprint Viewers (Pixel vom rechten Rand)
+    public int blueprintViewerX = 1; // X-Position des Blueprint Viewers (Pixel vom rechten Rand)
     
     @SerialEntry
-    public int blueprintViewerY = 44; // Y-Position des Blueprint Viewers (Prozent vom oberen Rand)
+    public int blueprintViewerY = 2; // Y-Position des Blueprint Viewers (Prozent vom oberen Rand)
     
     @SerialEntry
     public OverlayType blueprintViewerOverlayType = OverlayType.CUSTOM; // Overlay-Typ für Blueprint Viewer
@@ -617,16 +642,16 @@ public class CCLiveUtilitiesConfig {
     public boolean showAspectOverlay = true;
     
     @SerialEntry
-    public int aspectOverlayX = 530; // X-Position des Aspect Overlays (Pixel vom rechten Rand)
+    public int aspectOverlayX = 10; // X-Position des Aspect Overlays (Pixel vom rechten Rand)
     
     @SerialEntry
-    public int aspectOverlayY = 120; // Y-Position des Aspect Overlays (Pixel vom oberen Rand)
+    public int aspectOverlayY = 100; // Y-Position des Aspect Overlays (Pixel vom oberen Rand)
     
     @SerialEntry
     public boolean aspectOverlayShowBackground = true; // Schwarzer Hintergrund für Aspect Overlay
     
     @SerialEntry
-    public int chatAspectOverlayX = 7; // X-Position des Chat Aspect Overlays (Pixel vom linken Rand)
+    public int chatAspectOverlayX = 15; // X-Position des Chat Aspect Overlays (Pixel vom linken Rand)
     
     @SerialEntry
     public int chatAspectOverlayY = 15; // Y-Position des Chat Aspect Overlays (Pixel vom oberen Rand)
@@ -641,41 +666,10 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showOverlayEditor = true; // Overlay Editor anzeigen
 
-    // Tab Info Utility Settings
+    // Tab Info Prozent-Einstellungen
     @SerialEntry
-    public boolean tabInfoUtilityEnabled = true; // Tab Info Utility aktivieren
+    public boolean showTabInfoForschungPercent = true; // Prozente für Forschung anzeigen
     
-    @SerialEntry
-    public boolean showTabInfoForschung = true; // Forschung anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoAmboss = true; // Amboss Kapazität anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoSchmelzofen = true; // Schmelzofen Kapazität anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoJaeger = true; // Jäger Kapazität anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoSeelen = true; // Seelen Kapazität anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoEssenzen = true; // Essenzen Kapazität anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoMachtkristalle = true; // Machtkristalle anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoRecyclerSlot1 = true; // Recycler Slot 1 anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoRecyclerSlot2 = true; // Recycler Slot 2 anzeigen
-    
-    @SerialEntry
-    public boolean showTabInfoRecyclerSlot3 = true; // Recycler Slot 3 anzeigen
-    
-    // Tab Info Prozent-Einstellungen (für jede Information einzeln)
     @SerialEntry
     public boolean showTabInfoAmbossPercent = true; // Prozente für Amboss anzeigen
     
@@ -694,197 +688,296 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showTabInfoRecyclerPercent = true; // Prozente für Recycler anzeigen (gilt für alle 3 Slots)
     
-    // Tab Info Warn-Prozentwerte (für jede Information einzeln, -1 = deaktiviert)
+    // Tab Info Separate Overlay Settings
     @SerialEntry
-    public double tabInfoAmbossWarnPercent = -1.0; // Warn-Prozentwert für Amboss (-1 = deaktiviert)
+    public boolean tabInfoForschungSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoForschungShowIcon = false; // Forschung Icon statt Text anzeigen
+    public boolean tabInfoAmbossSeparateOverlay = false;
     
     @SerialEntry
-    public boolean showTabInfoForschungPercent = true; // Prozente für Forschung anzeigen
+    public boolean tabInfoSchmelzofenSeparateOverlay = false;
     
     @SerialEntry
-    public double tabInfoForschungWarnPercent = -1.0; // Warn-Prozentwert für Forschung (-1 = deaktiviert, warnt wenn Prozent UNTER diesem Wert)
+    public boolean tabInfoJaegerSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoAmbossShowIcon = false; // Amboss Icon statt Text anzeigen
+    public boolean tabInfoSeelenSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoSchmelzofenShowIcon = false; // Schmelzofen Icon statt Text anzeigen
+    public boolean tabInfoEssenzenSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoSeelenShowIcon = false; // Seelen Icon statt Text anzeigen
+    public boolean tabInfoMachtkristalleSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoEssenzenShowIcon = false; // Essenzen Icon statt Text anzeigen
+    public boolean tabInfoMachtkristalleSlot1Separate = false;
     
     @SerialEntry
-    public boolean tabInfoJaegerShowIcon = false; // Jäger Icon statt Text anzeigen
+    public boolean tabInfoMachtkristalleSlot2Separate = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleShowIcon = false; // Machtkristalle Icon statt Text anzeigen
+    public boolean tabInfoMachtkristalleSlot3Separate = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot1ShowIcon = false; // Recycler Slot 1 Icon statt Text anzeigen
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot2ShowIcon = false; // Recycler Slot 2 Icon statt Text anzeigen
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot3ShowIcon = false; // Recycler Slot 3 Icon statt Text anzeigen
-    
-    // Tab Info Hintergrund-Einstellungen (für jede Information einzeln)
-    @SerialEntry
-    public boolean tabInfoForschungShowBackground = true; // Hintergrund für Forschung anzeigen
-    @SerialEntry
-    public boolean tabInfoAmbossShowBackground = true; // Hintergrund für Amboss anzeigen
-    @SerialEntry
-    public boolean tabInfoSchmelzofenShowBackground = true; // Hintergrund für Schmelzofen anzeigen
-    @SerialEntry
-    public boolean tabInfoJaegerShowBackground = true; // Hintergrund für Jäger anzeigen
-    @SerialEntry
-    public boolean tabInfoSeelenShowBackground = true; // Hintergrund für Seelen anzeigen
-    @SerialEntry
-    public boolean tabInfoEssenzenShowBackground = true; // Hintergrund für Essenzen anzeigen
-    @SerialEntry
-    public boolean tabInfoMachtkristalleShowBackground = true; // Hintergrund für Machtkristalle anzeigen
-    @SerialEntry
-    public boolean tabInfoRecyclerShowBackground = true; // Hintergrund für Recycler anzeigen (gilt für alle 3 Slots)
-    @SerialEntry
-    public boolean tabInfoMainOverlayShowBackground = true; // Hintergrund für Haupt-Overlay anzeigen
+    public boolean tabInfoRecyclerSlot1SeparateOverlay = false;
     
     @SerialEntry
-    public float tabInfoMainOverlayScale = 1.0f; // Skalierung des Haupt-Overlays
+    public boolean tabInfoRecyclerSlot1Separate = false;
     
     @SerialEntry
-    public float tabInfoForschungScale = 1.0f; // Skalierung des Forschung-Overlays
-    @SerialEntry
-    public float tabInfoAmbossScale = 1.0f; // Skalierung des Amboss-Overlays
-    @SerialEntry
-    public float tabInfoSchmelzofenScale = 1.0f; // Skalierung des Schmelzofen-Overlays
-    @SerialEntry
-    public float tabInfoJaegerScale = 1.0f; // Skalierung des Jäger-Overlays
-    @SerialEntry
-    public float tabInfoSeelenScale = 1.0f; // Skalierung des Seelen-Overlays
-    @SerialEntry
-    public float tabInfoEssenzenScale = 1.0f; // Skalierung des Essenzen-Overlays
-    @SerialEntry
-    public float tabInfoMachtkristalleScale = 1.0f; // Skalierung des Machtkristalle-Overlays
-    @SerialEntry
-    public float tabInfoRecyclerScale = 1.0f; // Skalierung des Recycler-Overlays
-    @SerialEntry
-    public float tabInfoRecyclerSlot1Scale = 1.0f; // Skalierung des Recycler Slot 1-Overlays
-    @SerialEntry
-    public float tabInfoRecyclerSlot2Scale = 1.0f; // Skalierung des Recycler Slot 2-Overlays
-    @SerialEntry
-    public float tabInfoRecyclerSlot3Scale = 1.0f; // Skalierung des Recycler Slot 3-Overlays
-    
-    // Tab Info Farb-Einstellungen (für jede Information einzeln)
-    @SerialEntry
-    public Color tabInfoForschungTextColor = new Color(0xFFFFFFFF); // Textfarbe für Forschung
-    @SerialEntry
-    public Color tabInfoForschungPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Forschung
-    @SerialEntry
-    public Color tabInfoAmbossTextColor = new Color(0xFFFFFFFF); // Textfarbe für Amboss
-    @SerialEntry
-    public Color tabInfoAmbossPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Amboss
-    @SerialEntry
-    public Color tabInfoSchmelzofenTextColor = new Color(0xFFFFFFFF); // Textfarbe für Schmelzofen
-    @SerialEntry
-    public Color tabInfoSchmelzofenPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Schmelzofen
-    @SerialEntry
-    public Color tabInfoJaegerTextColor = new Color(0xFFFFFFFF); // Textfarbe für Jäger
-    @SerialEntry
-    public Color tabInfoJaegerPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Jäger
-    @SerialEntry
-    public Color tabInfoSeelenTextColor = new Color(0xFFFFFFFF); // Textfarbe für Seelen
-    @SerialEntry
-    public Color tabInfoSeelenPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Seelen
-    @SerialEntry
-    public Color tabInfoEssenzenTextColor = new Color(0xFFFFFFFF); // Textfarbe für Essenzen
-    @SerialEntry
-    public Color tabInfoEssenzenPercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Essenzen
-    @SerialEntry
-    public Color tabInfoMachtkristalleTextColor = new Color(0xFFFFFFFF); // Textfarbe für Machtkristalle
-    @SerialEntry
-    public Color tabInfoMachtkristallePercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Machtkristalle
-    @SerialEntry
-    public Color tabInfoRecyclerSlot1TextColor = new Color(0xFFFFFFFF); // Textfarbe für Recycler Slot 1
-    @SerialEntry
-    public Color tabInfoRecyclerSlot1PercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Recycler Slot 1
-    @SerialEntry
-    public Color tabInfoRecyclerSlot2TextColor = new Color(0xFFFFFFFF); // Textfarbe für Recycler Slot 2
-    @SerialEntry
-    public Color tabInfoRecyclerSlot2PercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Recycler Slot 2
-    @SerialEntry
-    public Color tabInfoRecyclerSlot3TextColor = new Color(0xFFFFFFFF); // Textfarbe für Recycler Slot 3
-    @SerialEntry
-    public Color tabInfoRecyclerSlot3PercentColor = new Color(0xFFFFFF00); // Prozentfarbe für Recycler Slot 3
+    public boolean tabInfoRecyclerSlot2SeparateOverlay = false;
     
     @SerialEntry
-    public double tabInfoSchmelzofenWarnPercent = -1.0; // Warn-Prozentwert für Schmelzofen
+    public boolean tabInfoRecyclerSlot2Separate = false;
     
     @SerialEntry
-    public double tabInfoJaegerWarnPercent = -1.0; // Warn-Prozentwert für Jäger
+    public boolean tabInfoRecyclerSlot3SeparateOverlay = false;
     
     @SerialEntry
-    public double tabInfoSeelenWarnPercent = -1.0; // Warn-Prozentwert für Seelen
+    public boolean tabInfoRecyclerSlot3Separate = false;
+    
+    // Tab Info Warn-Prozentwerte
+    @SerialEntry
+    public double tabInfoForschungWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoEssenzenWarnPercent = -1.0; // Warn-Prozentwert für Essenzen
+    public double tabInfoAmbossWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoRecyclerWarnPercent = -1.0; // Warn-Prozentwert für Recycler (gilt für alle 3 Slots)
+    public double tabInfoSchmelzofenWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoMachtkristalleWarnPercent = -1.0; // Warn-Prozentwert für Machtkristalle (gilt für alle 3 Slots)
-    
-    // Tab Info Separate Overlays (für jede Information einzeln)
-    @SerialEntry
-    public boolean tabInfoForschungSeparateOverlay = false; // Forschung in separatem Overlay
+    public double tabInfoJaegerWarnPercent = -1.0;
     
     @SerialEntry
-    public boolean tabInfoAmbossSeparateOverlay = false; // Amboss in separatem Overlay
+    public double tabInfoSeelenWarnPercent = -1.0;
     
     @SerialEntry
-    public boolean tabInfoSchmelzofenSeparateOverlay = false; // Schmelzofen in separatem Overlay
+    public double tabInfoEssenzenWarnPercent = -1.0;
     
     @SerialEntry
-    public boolean tabInfoJaegerSeparateOverlay = false; // Jäger in separatem Overlay
+    public double tabInfoRecyclerWarnPercent = -1.0;
     
     @SerialEntry
-    public boolean tabInfoSeelenSeparateOverlay = false; // Seelen in separatem Overlay
+    public double tabInfoMachtkristalleWarnPercent = -1.0;
+    
+    // Tab Info Show Icon Settings
+    @SerialEntry
+    public boolean tabInfoForschungShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoEssenzenSeparateOverlay = false; // Essenzen in separatem Overlay
+    public boolean tabInfoAmbossShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleSeparateOverlay = false; // Machtkristalle in separatem Overlay
-    @SerialEntry
-    public boolean tabInfoMachtkristalleSlot1Separate = false; // MK Slot 1 einzeln rendern
-    @SerialEntry
-    public boolean tabInfoMachtkristalleSlot2Separate = false; // MK Slot 2 einzeln rendern
-    @SerialEntry
-    public boolean tabInfoMachtkristalleSlot3Separate = false; // MK Slot 3 einzeln rendern
+    public boolean tabInfoSchmelzofenShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot1SeparateOverlay = false; // Recycler Slot 1 in separatem Overlay
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot1Separate = false; // Recycler Slot 1 einzeln rendern
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot2SeparateOverlay = false; // Recycler Slot 2 in separatem Overlay
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot2Separate = false; // Recycler Slot 2 einzeln rendern
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot3SeparateOverlay = false; // Recycler Slot 3 in separatem Overlay
-    @SerialEntry
-    public boolean tabInfoRecyclerSlot3Separate = false; // Recycler Slot 3 einzeln rendern
-    
-    // Tab Info Separate Overlay Positionen (x, y für jede Information)
-    @SerialEntry
-    public int tabInfoForschungX = 10; // X-Position für Forschung Overlay
+    public boolean tabInfoSeelenShowIcon = false;
     
     @SerialEntry
-    public int tabInfoForschungY = 10; // Y-Position für Forschung Overlay
+    public boolean tabInfoEssenzenShowIcon = false;
+    
+    @SerialEntry
+    public boolean tabInfoJaegerShowIcon = false;
+    
+    @SerialEntry
+    public boolean tabInfoMachtkristalleShowIcon = false;
+    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot1ShowIcon = false;
+    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot2ShowIcon = false;
+    
+    @SerialEntry
+    public boolean tabInfoRecyclerSlot3ShowIcon = false;
+    
+    // Tab Info Show Background Settings
+    @SerialEntry
+    public boolean tabInfoForschungShowBackground = true;
+    
+    @SerialEntry
+    public boolean tabInfoAmbossShowBackground = true;
+    
+    @SerialEntry
+    public boolean tabInfoSchmelzofenShowBackground = true;
+    
+    @SerialEntry
+    public boolean tabInfoJaegerShowBackground = true;
+    
+    @SerialEntry
+    public boolean tabInfoSeelenShowBackground = true;
+    
+    @SerialEntry
+    public boolean tabInfoEssenzenShowBackground = true;
+    
+    @SerialEntry
+    public boolean tabInfoMachtkristalleShowBackground = true;
+    
+    @SerialEntry
+    public boolean tabInfoRecyclerShowBackground = true;
+    
+    // Tab Info Text Colors
+    @SerialEntry
+    public Color tabInfoForschungTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoAmbossTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoSchmelzofenTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoJaegerTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoSeelenTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoEssenzenTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoMachtkristalleTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoRecyclerSlot1TextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoRecyclerSlot2TextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoRecyclerSlot3TextColor = new Color(0xFFFFFFFF);
+    
+    // Tab Info Percent Colors
+    @SerialEntry
+    public Color tabInfoForschungPercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoAmbossPercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoSchmelzofenPercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoJaegerPercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoSeelenPercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoEssenzenPercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoMachtkristallePercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoRecyclerSlot1PercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoRecyclerSlot2PercentColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color tabInfoRecyclerSlot3PercentColor = new Color(0xFFFFFF00);
+    
+    // Tab Info Main Overlay Settings
+    @SerialEntry
+    public int tabInfoMainOverlayX = 5;
+    
+    @SerialEntry
+    public int tabInfoMainOverlayY = 5;
+    
+    @SerialEntry
+    public float tabInfoMainOverlayScale = 1.0f;
+    
+    @SerialEntry
+    public boolean tabInfoMainOverlayShowBackground = true;
+    
+    // Tab Info Utility Enabled
+    @SerialEntry
+    public boolean tabInfoUtilityEnabled = true;
+    
+    // Tab Info Scales
+    @SerialEntry
+    public float tabInfoForschungScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoAmbossScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoSchmelzofenScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoJaegerScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoSeelenScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoEssenzenScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoMachtkristalleScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoMachtkristalleSlot1Scale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoMachtkristalleSlot2Scale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoMachtkristalleSlot3Scale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoRecyclerScale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoRecyclerSlot1Scale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoRecyclerSlot2Scale = 1.0f;
+    
+    @SerialEntry
+    public float tabInfoRecyclerSlot3Scale = 1.0f;
+    
+    // Tab Info Show Settings
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot1 = true;
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot2 = true;
+    
+    @SerialEntry
+    public boolean showTabInfoRecyclerSlot3 = true;
+    
+    // Tab Info Show Settings
+    @SerialEntry
+    public boolean showTabInfoForschung = true;
+    
+    @SerialEntry
+    public boolean showTabInfoAmboss = true;
+    
+    @SerialEntry
+    public boolean showTabInfoSchmelzofen = true;
+    
+    @SerialEntry
+    public boolean showTabInfoJaeger = true;
+    
+    @SerialEntry
+    public boolean showTabInfoSeelen = true;
+    
+    @SerialEntry
+    public boolean showTabInfoEssenzen = true;
+    
+    @SerialEntry
+    public boolean showTabInfoMachtkristalle = true;
+    
+    // Tab Info Position Settings
+    @SerialEntry
+    public int tabInfoForschungX = 10;
+    
+    @SerialEntry
+    public int tabInfoForschungY = 10;
     
     @SerialEntry
     public int tabInfoAmbossX = 10;
@@ -922,32 +1015,29 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public int tabInfoMachtkristalleY = 250;
     
-    // Recycler Position (für Multi-Line-Overlay)
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot1X = 10;
+    
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot1Y = 250;
+    
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot2X = 10;
+    
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot2Y = 280;
+    
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot3X = 10;
+    
+    @SerialEntry
+    public int tabInfoMachtkristalleSlot3Y = 310;
+    
     @SerialEntry
     public int tabInfoRecyclerX = 10;
     
     @SerialEntry
     public int tabInfoRecyclerY = 290;
-    
-    // Individuelle Positionen für einzelne MK-Slots (wenn "Einzeln" aktiviert ist)
-    @SerialEntry
-    public int tabInfoMachtkristalleSlot1X = 10;
-    @SerialEntry
-    public int tabInfoMachtkristalleSlot1Y = 250;
-    @SerialEntry
-    public float tabInfoMachtkristalleSlot1Scale = 1.0f;
-    @SerialEntry
-    public int tabInfoMachtkristalleSlot2X = 10;
-    @SerialEntry
-    public int tabInfoMachtkristalleSlot2Y = 280;
-    @SerialEntry
-    public float tabInfoMachtkristalleSlot2Scale = 1.0f;
-    @SerialEntry
-    public int tabInfoMachtkristalleSlot3X = 10;
-    @SerialEntry
-    public int tabInfoMachtkristalleSlot3Y = 310;
-    @SerialEntry
-    public float tabInfoMachtkristalleSlot3Scale = 1.0f;
     
     @SerialEntry
     public int tabInfoRecyclerSlot1X = 10;
@@ -967,15 +1057,22 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public int tabInfoRecyclerSlot3Y = 370;
     
-    // Tab Info Haupt-Overlay Position
+    // Boss HP Settings (fehlende Variablen)
     @SerialEntry
-    public int tabInfoMainOverlayX = 5; // X-Position für das große Overlay
+    public Color bossHPDPMColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public int tabInfoMainOverlayY = 5; // Y-Position für das große Overlay
-
-
-
+    public Color bossHPPercentageColor = new Color(0xFFFF5555);
+    
+    @SerialEntry
+    public boolean bossHPShowPercentage = true;
+    
+    // Mining Lumberjack Overlay Colors
+    @SerialEntry
+    public Color miningLumberjackOverlayHeaderColor = new Color(0xFFFFFF00);
+    
+    @SerialEntry
+    public Color miningLumberjackOverlayTextColor = new Color(0xFFFFFFFF);
 
     public static Screen createConfigScreen(Screen parent) {
         return YetAnotherConfigLib.createBuilder()
@@ -1042,19 +1139,11 @@ public class CCLiveUtilitiesConfig {
                                         .binding(new Color(0xFFFF0000), () -> HANDLER.instance().searchBarFrameColor, newVal -> HANDLER.instance().searchBarFrameColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
-                                .option(Option.<ItemDisplayMode>createBuilder()
-                                        .name(Text.literal("Item-Anzeigemodus"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für gefilterte Items")))
-                                        .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().searchBarItemDisplayMode, newVal -> HANDLER.instance().searchBarItemDisplayMode = newVal)
-                                        .controller(opt -> EnumControllerBuilder.create(opt)
-                                                .enumClass(ItemDisplayMode.class)
-                                                .valueFormatter(mode -> {
-                                                    if (mode == ItemDisplayMode.BORDER) {
-                                                        return Text.literal("Rahmen");
-                                                    } else {
-                                                        return Text.literal("Hintergrund");
-                                                    }
-                                                }))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter der Suchleiste anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().searchBarShowBackground, newVal -> HANDLER.instance().searchBarShowBackground = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
@@ -1150,24 +1239,6 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().bossHPShowDPM, newVal -> HANDLER.instance().bossHPShowDPM = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
-                                .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("DPM Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die DPM (Damage Per Minute) Anzeige")))
-                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().bossHPDPMColor, newVal -> HANDLER.instance().bossHPDPMColor = newVal)
-                                        .controller(ColorControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Prozentwert anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Prozentwert-Anzeige im Boss HP Overlay ein- oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().bossHPShowPercentage, newVal -> HANDLER.instance().bossHPShowPercentage = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Prozentwert Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den Prozentwert in der Boss-HP Anzeige")))
-                                        .binding(new Color(0xFFFF5555), () -> HANDLER.instance().bossHPPercentageColor, newVal -> HANDLER.instance().bossHPPercentageColor = newVal)
-                                        .controller(ColorControllerBuilder::create)
-                                        .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
@@ -1207,23 +1278,11 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Schmied Filter"))
+                                .name(Text.literal("KitFilter"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Text.literal("Kit Filter Buttons Ein/Aus"))
                                         .description(OptionDescription.of(Text.literal("Kit Filter Buttons in Baupläne Inventaren ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().kitFilterButtonsEnabled, newVal -> HANDLER.instance().kitFilterButtonsEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hide Uncraftable Button"))
-                                        .description(OptionDescription.of(Text.literal("Hide Uncraftable Button in Baupläne Inventaren aktivieren")))
-                                        .binding(true, () -> HANDLER.instance().hideUncraftableEnabled, newVal -> HANDLER.instance().hideUncraftableEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hide Wrong Class Button"))
-                                        .description(OptionDescription.of(Text.literal("Hide Wrong Class Button in Baupläne Inventaren aktivieren")))
-                                        .binding(true, () -> HANDLER.instance().hideWrongClassEnabled, newVal -> HANDLER.instance().hideWrongClassEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
@@ -1235,21 +1294,12 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().schmiedTrackerEnabled, newVal -> HANDLER.instance().schmiedTrackerEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
-                                .option(Option.<ItemDisplayMode>createBuilder()
-                                        .name(Text.literal("Item-Anzeigemodus"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für Schmiedezustand Items")))
-                                        .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().schmiedTrackerItemDisplayMode, newVal -> HANDLER.instance().schmiedTrackerItemDisplayMode = newVal)
-                                        .controller(opt -> EnumControllerBuilder.create(opt)
-                                                .enumClass(ItemDisplayMode.class)
-                                                .valueFormatter(mode -> {
-                                                    if (mode == ItemDisplayMode.BORDER) {
-                                                        return Text.literal("Rahmen");
-                                                    } else {
-                                                        return Text.literal("Hintergrund");
-                                                    }
-                                                }))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Hide Uncraftable Button"))
+                                        .description(OptionDescription.of(Text.literal("Hide Uncraftable Button in Baupläne Inventaren aktivieren")))
+                                        .binding(true, () -> HANDLER.instance().hideUncraftableEnabled, newVal -> HANDLER.instance().hideUncraftableEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
                                         .build())
-  
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Frostgeschmiedet"))
@@ -1544,47 +1594,11 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().showLicenseInformation, newVal -> HANDLER.instance().showLicenseInformation = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Holzfäller/Bergbau"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Holzfäller/Bergbau Overlay ein/aus"))
+                                        .name(Text.literal("Holzfäller / Bergbau Overlay ein/aus"))
                                         .description(OptionDescription.of(Text.literal("Aktiviert oder deaktiviert sowohl das Holzfäller- als auch das Bergbau-Overlay")))
                                         .binding(true, () -> HANDLER.instance().miningLumberjackOverlayEnabled, newVal -> HANDLER.instance().miningLumberjackOverlayEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Überschriftenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschriften (Bergbau/Holzfäller)")))
-                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().miningLumberjackOverlayHeaderColor, newVal -> HANDLER.instance().miningLumberjackOverlayHeaderColor = newVal)
-                                        .controller(ColorControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den normalen Text im Holzfäller/Bergbau Overlay")))
-                                        .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().miningLumberjackOverlayTextColor, newVal -> HANDLER.instance().miningLumberjackOverlayTextColor = newVal)
-                                        .controller(ColorControllerBuilder::create)
-                                        .build())
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Collection"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Collection Overlay ein/aus"))
-                                        .description(OptionDescription.of(Text.literal("Collection Overlay aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().showCollectionOverlay, newVal -> HANDLER.instance().showCollectionOverlay = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Überschriftenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschrift (Collection:)")))
-                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().collectionOverlayHeaderColor, newVal -> HANDLER.instance().collectionOverlayHeaderColor = newVal)
-                                        .controller(ColorControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den normalen Text im Collection Overlay")))
-                                        .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().collectionOverlayTextColor, newVal -> HANDLER.instance().collectionOverlayTextColor = newVal)
-                                        .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())
