@@ -47,7 +47,7 @@ public class CoinCollector implements DataCollector {
         
         isActive = true;
         long timeUntilFirst = (nextCommandTime - System.currentTimeMillis()) / 60000; // Millisekunden zu Minuten
-        System.out.println("✅ CoinCollector initialisiert (erster Command in " + timeUntilFirst + " Minuten)");
+        // Silent error handling("✅ CoinCollector initialisiert (erster Command in " + timeUntilFirst + " Minuten)");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -58,7 +58,7 @@ public class CoinCollector implements DataCollector {
         // Prüfe ob es Zeit für den nächsten Command ist
         long currentTime = System.currentTimeMillis();
         if (currentTime >= nextCommandTime && nextCommandTime > 0) {
-            System.out.println("💰 [CoinCollector] Automatischer /cc coins Command wird ausgeführt (waitingForResponse wird auf true gesetzt)");
+            // Silent error handling("💰 [CoinCollector] Automatischer /cc coins Command wird ausgeführt (waitingForResponse wird auf true gesetzt)");
             executeCoinsCommand(client);
             scheduleNextCommand();
         }
@@ -73,7 +73,7 @@ public class CoinCollector implements DataCollector {
             
             // Prüfe Mindestabstand
             if (currentTime - lastCommandTime < MIN_DISTANCE * 50) { // 50ms pro tick
-                System.out.println("⚠️ CoinCollector: Mindestabstand noch nicht erreicht, Command übersprungen");
+                // Silent error handling("⚠️ CoinCollector: Mindestabstand noch nicht erreicht, Command übersprungen");
                 return;
             }
             
@@ -85,7 +85,7 @@ public class CoinCollector implements DataCollector {
             lastCommandTime = currentTime;
             waitingForResponse = true;
             
-            System.out.println("💰 CoinCollector: /cc coins Command ausgeführt");
+            // Silent error handling("💰 CoinCollector: /cc coins Command ausgeführt");
             
         } catch (Exception e) {
             System.err.println("❌ Fehler beim Ausführen von /cc coins: " + e.getMessage());
@@ -103,7 +103,7 @@ public class CoinCollector implements DataCollector {
         nextCommandTime = System.currentTimeMillis() + (firstInterval * 50); // 50ms pro tick
         
         int minutesUntilNext = firstInterval / 1200;
-        System.out.println("💰 CoinCollector: Erster Command in " + minutesUntilNext + " Minuten (dann normale 30-60min Intervalle)");
+        // Silent error handling("💰 CoinCollector: Erster Command in " + minutesUntilNext + " Minuten (dann normale 30-60min Intervalle)");
     }
     
     /**
@@ -114,7 +114,7 @@ public class CoinCollector implements DataCollector {
         nextCommandTime = System.currentTimeMillis() + (interval * 50); // 50ms pro tick
         
         int minutesUntilNext = interval / 1200; // 1200 ticks = 1 Minute
-        System.out.println("💰 CoinCollector: Nächster Command in " + minutesUntilNext + " Minuten");
+        // Silent error handling("💰 CoinCollector: Nächster Command in " + minutesUntilNext + " Minuten");
     }
     
     /**
@@ -167,7 +167,7 @@ public class CoinCollector implements DataCollector {
                         pendingCoins = coins;
                     }
                     
-                    System.out.println("💰 Coins aktualisiert: " + coins + " (formatiert: " + matcher.group(1) + ")");
+                    // Silent error handling("💰 Coins aktualisiert: " + coins + " (formatiert: " + matcher.group(1) + ")");
                 }
                 
                 // Bestimme ob Nachricht unterdrückt werden soll
@@ -175,7 +175,7 @@ public class CoinCollector implements DataCollector {
                 // AUTOMATISCH (waitingForResponse): Minecraft-Server Feedback unterdrücken
                 boolean shouldSuppress = waitingForResponse;
                 boolean wasManual = !waitingForResponse;  // Merke ob es manuell war
-                System.out.println("💰 [CoinCollector] Chat-Nachricht verarbeitet - waitingForResponse=" + waitingForResponse + ", wasManual=" + wasManual);
+                // Silent error handling("💰 [CoinCollector] Chat-Nachricht verarbeitet - waitingForResponse=" + waitingForResponse + ", wasManual=" + wasManual);
                 waitingForResponse = false;
                 
                 // Server-Update NACH dem Return - damit Server-Feedback zuerst kommt!
@@ -244,7 +244,7 @@ public class CoinCollector implements DataCollector {
     @Override
     public void shutdown() {
         isActive = false;
-        System.out.println("🛑 CoinCollector gestoppt");
+        // Silent error handling("🛑 CoinCollector gestoppt");
     }
     
     @Override
@@ -309,10 +309,10 @@ public class CoinCollector implements DataCollector {
      * Callback-Methode für erfolgreiche Server-Updates
      */
     public void onServerUpdateSuccess(long coins) {
-        System.out.println("🔥 DEBUG: onServerUpdateSuccess - pendingSuccessFeedback=" + pendingSuccessFeedback + ", debugEnabled=" + DebugUtility.isLeaderboardDebuggingEnabled());
+        // Silent error handling("🔥 DEBUG: onServerUpdateSuccess - pendingSuccessFeedback=" + pendingSuccessFeedback + ", debugEnabled=" + DebugUtility.isLeaderboardDebuggingEnabled());
         
         if (pendingSuccessFeedback && DebugUtility.isLeaderboardDebuggingEnabled()) {
-            System.out.println("🔥 DEBUG: Sende Success-Feedback...");
+            // Silent error handling("🔥 DEBUG: Sende Success-Feedback...");
             // Chat-Nachrichten müssen im Main-Thread gesendet werden
             MinecraftClient.getInstance().execute(() -> {
                 // Leaderboard-Feedback NUR bei Debug-Modus
@@ -321,7 +321,7 @@ public class CoinCollector implements DataCollector {
                 sendDebugSeparator("§6=== Coin Collector Ende ===");
             });
         } else {
-            System.out.println("🔥 DEBUG: KEIN Success-Feedback - Bedingung nicht erfüllt");
+            // Silent error handling("🔥 DEBUG: KEIN Success-Feedback - Bedingung nicht erfüllt");
         }
         pendingSuccessFeedback = false;
         pendingCoins = 0;

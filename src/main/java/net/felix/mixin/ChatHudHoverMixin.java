@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.AspectOverlay;
 import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Overall.Aspekte.AspectOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatHud;
 import net.minecraft.client.gui.screen.Screen;

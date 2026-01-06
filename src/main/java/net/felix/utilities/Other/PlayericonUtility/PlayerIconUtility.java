@@ -32,8 +32,7 @@ public class PlayerIconUtility {
         try {
             PlayerNametagRenderer.initialize();
         } catch (Exception e) {
-            System.err.println("[CCLive-Utilities] Failed to initialize Nametag Renderer: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     

@@ -3,8 +3,8 @@ package net.felix.utilities.Factory;
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.MinecraftClient;
 import net.felix.profile.ProfileStatsManager;
+import net.felix.utilities.Overall.ZeichenUtility;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -19,22 +19,12 @@ import java.util.Map;
  */
 public class WaveUtility {
 
-    // Mapping der chinesischen Ziffern → normale Ziffern (wie in KillsUtility)
-    private static final Map<Character, Integer> CHINESE_NUMBERS = new HashMap<>();
-    static {
-        // Mapping laut deiner Angabe:
-        // 0 1 2 3 4 5 6 7 8 9
-        // 㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪
-        CHINESE_NUMBERS.put('㝡', 0);
-        CHINESE_NUMBERS.put('㝢', 1);
-        CHINESE_NUMBERS.put('㝣', 2);
-        CHINESE_NUMBERS.put('㝤', 3);
-        CHINESE_NUMBERS.put('㝥', 4);
-        CHINESE_NUMBERS.put('㝦', 5);
-        CHINESE_NUMBERS.put('㝧', 6);
-        CHINESE_NUMBERS.put('㝨', 7);
-        CHINESE_NUMBERS.put('㝩', 8);
-        CHINESE_NUMBERS.put('㝪', 9);
+    /**
+     * Gibt das Mapping der chinesischen Ziffern → normale Ziffern zurück.
+     * Lädt die Zeichen aus zeichen.json über ZeichenUtility.
+     */
+    private static Map<Character, Integer> getChineseNumbers() {
+        return ZeichenUtility.getFactoryBottomFontNumbers();
     }
 
     private WaveUtility() {
@@ -58,13 +48,13 @@ public class WaveUtility {
 
             String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
             if (debug) {
-                System.out.println("[WaveUtility] Bossbar #" + index + " in Dimension '" + dimensionId + "': '" + bossBarName + "'");
+                // Silent error handling("[WaveUtility] Bossbar #" + index + " in Dimension '" + dimensionId + "': '" + bossBarName + "'");
             }
 
             // Floors enthalten "floor" im Dimensionsnamen → das ist KEINE Fabrik
             if (dimensionId.contains("floor")) {
                 if (debug) {
-                    System.out.println("[WaveUtility] Dimension enthält 'floor' → kein Fabrik-Run, breche ab");
+                    // Silent error handling("[WaveUtility] Dimension enthält 'floor' → kein Fabrik-Run, breche ab");
                 }
                 return;
             }
@@ -79,19 +69,20 @@ public class WaveUtility {
 
             if (!isFactoryDimension) {
                 if (debug) {
-                    System.out.println("[WaveUtility] Dimension ist keine Fabrik-Dimension für Spieler '" + playerName + "' → breche ab");
+                    // Silent error handling("[WaveUtility] Dimension ist keine Fabrik-Dimension für Spieler '" + playerName + "' → breche ab");
                 }
                 return;
             }
 
             if (debug) {
-                System.out.println("[WaveUtility] Fabrik-Dimension erkannt für Spieler '" + playerName + "': " + dimensionId);
+                // Silent error handling("[WaveUtility] Fabrik-Dimension erkannt für Spieler '" + playerName + "': " + dimensionId);
             }
 
             // Prüfe, ob diese Bossbar überhaupt unsere Wellen-Ziffern enthält
+            Map<Character, Integer> chineseNumbers = getChineseNumbers();
             boolean hasWaveDigit = false;
             for (int i = 0; i < bossBarName.length(); i++) {
-                if (CHINESE_NUMBERS.containsKey(bossBarName.charAt(i))) {
+                if (chineseNumbers.containsKey(bossBarName.charAt(i))) {
                     hasWaveDigit = true;
                     break;
                 }
@@ -99,7 +90,7 @@ public class WaveUtility {
 
             if (!hasWaveDigit) {
                 if (debug) {
-                    System.out.println("[WaveUtility] Bossbar #" + index + " enthält keine bekannten Wellen-Ziffern → ignoriere");
+                    // Silent error handling("[WaveUtility] Bossbar #" + index + " enthält keine bekannten Wellen-Ziffern → ignoriere");
                 }
                 return;
             }
@@ -107,13 +98,13 @@ public class WaveUtility {
             int wave = decodeChineseNumber(bossBarName, debug);
             if (wave <= 0) {
                 if (debug) {
-                    System.out.println("[WaveUtility] Keine gültige Welle aus Bossbar dekodiert → wave=" + wave);
+                    // Silent error handling("[WaveUtility] Keine gültige Welle aus Bossbar dekodiert → wave=" + wave);
                 }
                 return;
             }
 
             if (debug) {
-                System.out.println("[WaveUtility] Dekodierte Welle: " + wave + " → updateHighestWave()");
+                // Silent error handling("[WaveUtility] Dekodierte Welle: " + wave + " → updateHighestWave()");
             }
 
             try {
@@ -121,7 +112,7 @@ public class WaveUtility {
             } catch (Exception e) {
                 // Fehler im Profil-Tracking sollen den Client nicht crashen
                 if (debug) {
-                    System.out.println("[WaveUtility] Fehler beim Aktualisieren von highest_wave: " + e.getMessage());
+                    // Silent error handling("[WaveUtility] Fehler beim Aktualisieren von highest_wave: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
@@ -143,11 +134,12 @@ public class WaveUtility {
         }
 
         try {
+            Map<Character, Integer> chineseNumbers = getChineseNumbers();
             StringBuilder numberStr = new StringBuilder();
             if (debug) {
                 StringBuilder debugChars = new StringBuilder();
                 for (char c : text.toCharArray()) {
-                    Integer digit = CHINESE_NUMBERS.get(c);
+                    Integer digit = chineseNumbers.get(c);
                     if (digit != null) {
                         numberStr.append(digit);
                         debugChars.append("'").append(c).append("'(").append((int) c).append(")->").append(digit).append(" ");
@@ -155,10 +147,10 @@ public class WaveUtility {
                         debugChars.append("'").append(c).append("'(").append((int) c).append(")->? ");
                     }
                 }
-                System.out.println("[WaveUtility] DEBUG decodeChineseNumber - Zeichen-Mapping: " + debugChars);
+                // Silent error handling("[WaveUtility] DEBUG decodeChineseNumber - Zeichen-Mapping: " + debugChars);
             } else {
                 for (char c : text.toCharArray()) {
-                    Integer digit = CHINESE_NUMBERS.get(c);
+                    Integer digit = chineseNumbers.get(c);
                     if (digit != null) {
                         numberStr.append(digit);
                     }
@@ -168,15 +160,15 @@ public class WaveUtility {
             if (numberStr.length() > 0) {
                 int result = Integer.parseInt(numberStr.toString());
                 if (debug) {
-                    System.out.println("[WaveUtility] DEBUG decodeChineseNumber - Ergebnis: " + result + " (aus String: '" + numberStr + "')");
+                    // Silent error handling("[WaveUtility] DEBUG decodeChineseNumber - Ergebnis: " + result + " (aus String: '" + numberStr + "')");
                 }
                 return result;
             } else if (debug) {
-                System.out.println("[WaveUtility] DEBUG decodeChineseNumber - KEINE ZAHL GEFUNDEN!");
+                // Silent error handling("[WaveUtility] DEBUG decodeChineseNumber - KEINE ZAHL GEFUNDEN!");
             }
         } catch (Exception e) {
             if (debug) {
-                System.out.println("[WaveUtility] DEBUG decodeChineseNumber - Fehler: " + e.getMessage());
+                // Silent error handling("[WaveUtility] DEBUG decodeChineseNumber - Fehler: " + e.getMessage());
             }
         }
 

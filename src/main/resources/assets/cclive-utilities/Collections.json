@@ -1,0 +1,44 @@
+{
+    "collections": {
+        "collection_1": {
+            "name": "I",
+            "amount": 50
+        },
+        "collection_2": {
+            "name": "II",
+            "amount": 100
+        },
+        "collection_3": {
+            "name": "III",
+            "amount": 250
+        },
+        "collection_4": {
+            "name": "IV",
+            "amount": 1000
+        },
+        "collection_5": {
+            "name": "V",
+            "amount": 2500
+        },
+        "collection_6": {
+            "name": "VI",
+            "amount": 5000
+        },
+        "collection_7": {
+            "name": "VII",
+            "amount": 10000
+        },
+        "collection_8": {
+            "name": "VIII",
+            "amount": 25000
+        },
+        "collection_9": {
+            "name": "IX",
+            "amount": 50000
+        },
+        "collection_10": {
+            "name": "X",
+            "amount": 100000
+        }
+    }
+}

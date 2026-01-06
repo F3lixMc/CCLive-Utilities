@@ -510,7 +510,7 @@ public class KillsUtility {
 		// Calculate time until next level - only show if enabled in config
 		String nextLevelText = "";
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowNextLevel) {
-			nextLevelText = "Nächste Ebene: ?";
+			nextLevelText = "Nächste Ebene: -";
 			double timeUntilNextLevel = calculateTimeUntilNextLevel();
 			if (timeUntilNextLevel >= 0 && killsUntilNextLevel >= 0) {
 				long totalMinutes = (long)timeUntilNextLevel;
@@ -534,7 +534,7 @@ public class KillsUtility {
 		// Calculate required kills text - only show if enabled in config
 		String requiredKillsText = "";
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowRequiredKills) {
-			requiredKillsText = "Benötigte Kills: ?";
+			requiredKillsText = "Benötigte Kills: -";
 			if (killsUntilNextLevel >= 0) {
 				requiredKillsText = String.format("Benötigte Kills: %d", killsUntilNextLevel);
 			}
@@ -770,7 +770,7 @@ public class KillsUtility {
 		// Calculate time until next level - only show if enabled in config
 		String nextLevelText = "";
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowNextLevel) {
-			nextLevelText = "Nächste Ebene: ?";
+			nextLevelText = "Nächste Ebene: -";
 			double timeUntilNextLevel = calculateTimeUntilNextLevel();
 			if (timeUntilNextLevel >= 0 && killsUntilNextLevel >= 0) {
 				long totalMinutes = (long)timeUntilNextLevel;
@@ -794,7 +794,7 @@ public class KillsUtility {
 		// Calculate required kills text - only show if enabled in config
 		String requiredKillsText = "";
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowRequiredKills) {
-			requiredKillsText = "Benötigte Kills: ?";
+			requiredKillsText = "Benötigte Kills: -";
 			if (killsUntilNextLevel >= 0) {
 				requiredKillsText = String.format("Benötigte Kills: %d", killsUntilNextLevel);
 			}

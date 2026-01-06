@@ -596,7 +596,7 @@ public class BPViewerUtility {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+            // Silent error handling
         }
         
         // Reset debug flag for next frame
@@ -1369,7 +1369,7 @@ public class BPViewerUtility {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                // Silent error handling
             }
         }
     }
@@ -1378,7 +1378,7 @@ public class BPViewerUtility {
         try (FileWriter writer = new FileWriter(saveFile)) {
             gson.toJson(foundBlueprints, writer);
         } catch (IOException e) {
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     
@@ -1395,7 +1395,7 @@ public class BPViewerUtility {
                     floorProgress.put(floor, floorBlueprints);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                // Silent error handling
             }
         }
     }
@@ -1425,7 +1425,7 @@ public class BPViewerUtility {
                 gson.toJson(json, writer);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     
@@ -1572,8 +1572,8 @@ public class BPViewerUtility {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to load blueprint config: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling("Failed to load blueprint config: " + e.getMessage());
+            // Silent error handling
             // Fallback to hardcoded config
             initializeFallbackFloors();
         }

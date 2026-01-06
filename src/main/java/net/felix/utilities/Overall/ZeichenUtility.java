@@ -32,6 +32,8 @@ public class ZeichenUtility {
     // Zeichen-Speicher
     private static String aincraftBottomFont = "";
     private static Map<Character, Integer> aincraftBottomFontNumbers = new HashMap<>();
+    private static String factoryBottomFont = "";
+    private static Map<Character, Integer> factoryBottomFontNumbers = new HashMap<>();
     private static String[] equipmentDisplay = new String[4];
     private static String moblexicon = "";
     private static String pixelSpacer = "";
@@ -71,7 +73,7 @@ public class ZeichenUtility {
                 isInitialized = true;
                 return;
             } catch (Exception e) {
-                System.err.println("Failed to load local zeichen.json: " + e.getMessage());
+                // Silent error handling("Failed to load local zeichen.json: " + e.getMessage());
             }
         }
         
@@ -85,8 +87,8 @@ public class ZeichenUtility {
             loadFromFile(resource);
             isInitialized = true;
         } catch (Exception e) {
-            System.err.println("Failed to load zeichen.json: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling("Failed to load zeichen.json: " + e.getMessage());
+            // Silent error handling
             // Fallback zu hardcodierten Werten
             initializeFallback();
         }
@@ -158,7 +160,7 @@ public class ZeichenUtility {
                                     isInitialized = false;
                                     initialize();
                                     
-                                    System.out.println("✅ Zeichen-Config aktualisiert (Version " + serverVersion + ")");
+                                    // Silent error handling("✅ Zeichen-Config aktualisiert (Version " + serverVersion + ")");
                                 }
                             }
                         }
@@ -166,7 +168,7 @@ public class ZeichenUtility {
                 }
             } catch (Exception e) {
                 // Fehler beim Server-Check sind nicht kritisch
-                System.err.println("⚠️ Fehler beim Prüfen der Zeichen-Config-Version: " + e.getMessage());
+                // Silent error handling("⚠️ Fehler beim Prüfen der Zeichen-Config-Version: " + e.getMessage());
             }
         });
     }
@@ -301,6 +303,24 @@ public class ZeichenUtility {
             JsonObject essenceHarvesterObj = json.getAsJsonObject("essence_harvester_ui");
             essenceHarvesterUi = essenceHarvesterObj.get("character").getAsString();
         }
+        
+        // Lade Factory Bottom Font
+        if (json.has("factory_bottom_font")) {
+            JsonObject factoryObj = json.getAsJsonObject("factory_bottom_font");
+            factoryBottomFont = factoryObj.get("characters").getAsString();
+            
+            // Lade Zahlen-Mapping
+            if (factoryObj.has("numbers")) {
+                factoryBottomFontNumbers.clear();
+                JsonObject numbers = factoryObj.getAsJsonObject("numbers");
+                for (String key : numbers.keySet()) {
+                    String charStr = numbers.get(key).getAsString();
+                    if (charStr.length() > 0) {
+                        factoryBottomFontNumbers.put(charStr.charAt(0), Integer.parseInt(key));
+                    }
+                }
+            }
+        }
     }
     
     /**
@@ -337,6 +357,18 @@ public class ZeichenUtility {
         miningLevelUp = "㫚㫛㫜㫝㫞㫟㫠㫡㫢㫣㫤㫥㫦㫧㫨㫩㫪㫫㫬㫭㫮㫯㫰㫱㫲㫳㫴㫵㫶㫷㫸㫹㫺㫻㫼㫽㫾㫿㬀㬁";
         airship = "㭉㭊㭋㭌㭍㭎㭏㭐㭑㭒㭓㭔㭕㭖㭗㭘㭙㭚㭛㭜㭝㭞㭟㭠㭡㭢㭣㭤㭥㭦㭧㭨㭩㭪㭫㭬㭭㭮㭯㭰㭱㭲㭳㭴㭵㭶㭷㭸㭹㭺㭻㭼㭽㭾㭿㮀";
         essenceHarvesterUi = "㮌";
+        
+        factoryBottomFont = "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪";
+        factoryBottomFontNumbers.put('㝡', 0);
+        factoryBottomFontNumbers.put('㝢', 1);
+        factoryBottomFontNumbers.put('㝣', 2);
+        factoryBottomFontNumbers.put('㝤', 3);
+        factoryBottomFontNumbers.put('㝥', 4);
+        factoryBottomFontNumbers.put('㝦', 5);
+        factoryBottomFontNumbers.put('㝧', 6);
+        factoryBottomFontNumbers.put('㝨', 7);
+        factoryBottomFontNumbers.put('㝩', 8);
+        factoryBottomFontNumbers.put('㝪', 9);
         
         isInitialized = true;
     }
@@ -530,6 +562,22 @@ public class ZeichenUtility {
     public static boolean containsEssenceHarvesterUi(String text) {
         ensureInitialized();
         return text != null && text.contains(essenceHarvesterUi);
+    }
+    
+    /**
+     * Gibt alle Factory Bottom Font Zeichen als String zurück
+     */
+    public static String getFactoryBottomFont() {
+        ensureInitialized();
+        return factoryBottomFont;
+    }
+    
+    /**
+     * Gibt die Map der Factory Bottom Font Zahlen zurück
+     */
+    public static Map<Character, Integer> getFactoryBottomFontNumbers() {
+        ensureInitialized();
+        return new HashMap<>(factoryBottomFontNumbers);
     }
     
     /**

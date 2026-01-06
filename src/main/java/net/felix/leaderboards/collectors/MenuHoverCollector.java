@@ -44,7 +44,7 @@ public class MenuHoverCollector implements DataCollector {
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
         isActive = true;
-        System.out.println("✅ MenuHoverCollector initialisiert");
+        // Silent error handling("✅ MenuHoverCollector initialisiert");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -408,7 +408,7 @@ public class MenuHoverCollector implements DataCollector {
         if (lastValue == null || !lastValue.equals(newValue)) {
             lastValues.put(leaderboardName, newValue);
             LeaderboardManager.getInstance().updateScore(leaderboardName, newValue);
-            System.out.println("📊 Menu-Hover Update: " + leaderboardName + " = " + newValue);
+            // Silent error handling("📊 Menu-Hover Update: " + leaderboardName + " = " + newValue);
         }
     }
     
@@ -430,7 +430,7 @@ public class MenuHoverCollector implements DataCollector {
     public void shutdown() {
         isActive = false;
         lastValues.clear();
-        System.out.println("🛑 MenuHoverCollector gestoppt");
+        // Silent error handling("🛑 MenuHoverCollector gestoppt");
     }
     
     @Override

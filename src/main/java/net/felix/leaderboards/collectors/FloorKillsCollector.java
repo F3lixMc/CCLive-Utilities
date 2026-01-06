@@ -35,16 +35,16 @@ public class FloorKillsCollector implements DataCollector {
     @Override
     public void initialize() {
         if (isActive) {
-            System.out.println("⚠️ [FloorKillsCollector] Bereits initialisiert - überspringe");
+            // Silent error handling("⚠️ [FloorKillsCollector] Bereits initialisiert - überspringe");
             return;
         }
         
-        System.out.println("🔍 [FloorKillsCollector] Starte Initialisierung...");
+        // Silent error handling("🔍 [FloorKillsCollector] Starte Initialisierung...");
         // Registriere Tick-Event für Kill-Tracking
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
         isActive = true;
-        System.out.println("✅ [FloorKillsCollector] FloorKillsCollector initialisiert und aktiv");
+        // Silent error handling("✅ [FloorKillsCollector] FloorKillsCollector initialisiert und aktiv");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -88,7 +88,7 @@ public class FloorKillsCollector implements DataCollector {
             if (currentFloor.equals(lastFloor)) {
                 int currentKills = KillsUtility.getTotalKills();
                 cachedKillsForCurrentFloor = currentKills;
-                System.out.println("💾 [FloorKillsCollector] Cache-Update für '" + currentFloor + "': " + cachedKillsForCurrentFloor + " kills");
+                // Silent error handling("💾 [FloorKillsCollector] Cache-Update für '" + currentFloor + "': " + cachedKillsForCurrentFloor + " kills");
             }
         } catch (Exception e) {
             // Silent error handling
@@ -112,11 +112,11 @@ public class FloorKillsCollector implements DataCollector {
                 // da die Bossbar bereits den Wert des neuen Floors zeigt!
                 if (lastFloor != null && cachedKillsForCurrentFloor > 0) {
                     updateFloorScore(lastFloor, cachedKillsForCurrentFloor);
-                    System.out.println("🔄 Floor-Wechsel erkannt: " + lastFloor + " → " + currentFloor + " (Gecachte Kills: " + cachedKillsForCurrentFloor + ", Aktuelle Bossbar: " + KillsUtility.getTotalKills() + ")");
+                    // Silent error handling("🔄 Floor-Wechsel erkannt: " + lastFloor + " → " + currentFloor + " (Gecachte Kills: " + cachedKillsForCurrentFloor + ", Aktuelle Bossbar: " + KillsUtility.getTotalKills() + ")");
                 } else if (lastFloor != null && lastTotalKills > 0) {
                     // Fallback: Falls kein gecachter Wert vorhanden, verwende lastTotalKills
                     updateFloorScore(lastFloor, lastTotalKills);
-                    System.out.println("🔄 Floor-Wechsel erkannt (Fallback): " + lastFloor + " → " + currentFloor + " (Kills: " + lastTotalKills + ")");
+                    // Silent error handling("🔄 Floor-Wechsel erkannt (Fallback): " + lastFloor + " → " + currentFloor + " (Kills: " + lastTotalKills + ")");
                 }
 
                 // Nach dem Speichern des vorherigen Floors Alltime-Kills sofort aktualisieren
@@ -134,7 +134,7 @@ public class FloorKillsCollector implements DataCollector {
                 // In diesem Fall sollten wir den Cache-Wert mit dem aktuellen Wert überschreiben
                 long cachedKills = floorKills.getOrDefault(currentFloor, 0L);
                 if (newFloorKills < cachedKills) {
-                    System.out.println("🔄 Floor neu betreten: " + currentFloor + " - Cache (" + cachedKills + ") > Aktuell (" + newFloorKills + "), überschreibe Cache");
+                    // Silent error handling("🔄 Floor neu betreten: " + currentFloor + " - Cache (" + cachedKills + ") > Aktuell (" + newFloorKills + "), überschreibe Cache");
                     floorKills.put(currentFloor, (long) newFloorKills);
                     // Sende sofort den korrekten Wert an den Server
                     LeaderboardManager.getInstance().updateScore(currentFloor, newFloorKills);
@@ -203,16 +203,16 @@ public class FloorKillsCollector implements DataCollector {
         // Nur updaten wenn sich der Wert geändert hat
         if (newTotal != currentTotal) {
             floorKills.put(floor, newTotal);
-            System.out.println("🗡️ [FloorKillsCollector] Rufe updateScore auf für " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
+            // Silent error handling("🗡️ [FloorKillsCollector] Rufe updateScore auf für " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
             LeaderboardManager.getInstance().updateScore(floor, newTotal);
             
             if (kills < currentTotal) {
-                System.out.println("🗡️ Floor-Kills Update (neu betreten): " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
+                // Silent error handling("🗡️ Floor-Kills Update (neu betreten): " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
             } else {
-                System.out.println("🗡️ Floor-Kills Update: " + floor + " = " + newTotal + " kills (absolut)");
+                // Silent error handling("🗡️ Floor-Kills Update: " + floor + " = " + newTotal + " kills (absolut)");
             }
         } else {
-            System.out.println("🗡️ [FloorKillsCollector] updateFloorScore - Keine Änderung für " + floor + " (aktuell: " + currentTotal + ", neu: " + newTotal + ")");
+            // Silent error handling("🗡️ [FloorKillsCollector] updateFloorScore - Keine Änderung für " + floor + " (aktuell: " + currentTotal + ", neu: " + newTotal + ")");
         }
     }
     
@@ -315,13 +315,13 @@ public class FloorKillsCollector implements DataCollector {
                     double percentageDiff = (difference * 100.0) / Math.max(calculatedAlltimeKills, lastMenuAlltimeKills);
                     
                     if (percentageDiff > 10.0) { // Mehr als 10% Unterschied
-                        System.out.println("⚠️ [FloorKillsCollector] WARNUNG: Große Differenz zwischen berechneter Summe und Menü-Wert!");
-                        System.out.println("   Berechnet (PRIMÄR): " + calculatedAlltimeKills);
-                        System.out.println("   Aus Menü (SEKUNDÄR): " + lastMenuAlltimeKills);
-                        System.out.println("   Differenz: " + difference + " (" + String.format("%.2f", percentageDiff) + "%)");
-                        System.out.println("   → Berechneter Wert wird verwendet (Summe aller Floor-Kills)");
+                        // Silent error handling("⚠️ [FloorKillsCollector] WARNUNG: Große Differenz zwischen berechneter Summe und Menü-Wert!");
+                        // Silent error handling("   Berechnet (PRIMÄR): " + calculatedAlltimeKills);
+                        // Silent error handling("   Aus Menü (SEKUNDÄR): " + lastMenuAlltimeKills);
+                        // Silent error handling("   Differenz: " + difference + " (" + String.format("%.2f", percentageDiff) + "%)");
+                        // Silent error handling("   → Berechneter Wert wird verwendet (Summe aller Floor-Kills)");
                     } else {
-                        System.out.println("✅ [FloorKillsCollector] Doppelcheck OK: Berechnet=" + calculatedAlltimeKills + ", Menü=" + lastMenuAlltimeKills);
+                        // Silent error handling("✅ [FloorKillsCollector] Doppelcheck OK: Berechnet=" + calculatedAlltimeKills + ", Menü=" + lastMenuAlltimeKills);
                     }
                 }
                 
@@ -341,7 +341,7 @@ public class FloorKillsCollector implements DataCollector {
     public void setMenuAlltimeKills(long kills) {
         if (kills > 0) {
             lastMenuAlltimeKills = kills;
-            System.out.println("📋 [FloorKillsCollector] Menü-Alltime-Kills empfangen: " + kills);
+            // Silent error handling("📋 [FloorKillsCollector] Menü-Alltime-Kills empfangen: " + kills);
         }
     }
     
@@ -387,7 +387,7 @@ public class FloorKillsCollector implements DataCollector {
         }
         
         isActive = false;
-        System.out.println("🛑 FloorKillsCollector gestoppt");
+        // Silent error handling("🛑 FloorKillsCollector gestoppt");
     }
     
     @Override

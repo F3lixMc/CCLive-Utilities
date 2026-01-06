@@ -21,6 +21,7 @@ public class OverlayEditorUtility {
     // KeyBinding for the overlay editor
     private static KeyBinding overlayEditorKeyBinding;
     
+    
     public static void initialize() {
         if (isInitialized) {
             return;
@@ -35,7 +36,7 @@ public class OverlayEditorUtility {
             
             isInitialized = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     
@@ -50,7 +51,7 @@ public class OverlayEditorUtility {
     }
     
     private static void onClientTick(MinecraftClient client) {
-        if (client.player == null) {
+        if (client.player == null || client.getWindow() == null) {
             return;
         }
         
@@ -83,7 +84,7 @@ public class OverlayEditorUtility {
             client.setScreen(new OverlayEditorScreen());
             isOverlayEditorOpen = true;
             } catch (Exception e) {
-                e.printStackTrace();
+                // Silent error handling
             }
         }
     }

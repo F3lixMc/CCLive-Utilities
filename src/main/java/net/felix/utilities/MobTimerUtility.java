@@ -83,16 +83,16 @@ public class MobTimerUtility {
                         for (String levelKey : cooldowns.keySet()) {
                             JsonObject levelData = cooldowns.getAsJsonObject(levelKey);
                             // Diese Zeilen sind nicht mehr nötig, da wir FloorData verwenden
-                            System.out.println("Geladen: " + levelKey + " = " + levelData.get("current_average_seconds").getAsInt() + "s");
+                            // Silent error handling("Geladen: " + levelKey + " = " + levelData.get("current_average_seconds").getAsInt() + "s");
                         }
                     }
                 }
                 inputStream.close();
             } else {
-                System.out.println("Cooldown-Datei nicht gefunden!");
+                // Silent error handling("Cooldown-Datei nicht gefunden!");
             }
         } catch (Exception e) {
-            System.out.println("Fehler beim Laden der Cooldown-Daten: " + e.getMessage());
+            // Silent error handling("Fehler beim Laden der Cooldown-Daten: " + e.getMessage());
         }
     }
     
@@ -241,8 +241,8 @@ public class MobTimerUtility {
      */
     public static void setTestFloor(String floor) {
         testFloor = floor;
-        System.out.println("🧪 TEST-MODUS: Floor manuell auf " + floor + " gesetzt!");
-        System.out.println("🧪 Verfügbare Floors: " + String.join(", ", floorData.keySet()));
+        // Silent error handling("🧪 TEST-MODUS: Floor manuell auf " + floor + " gesetzt!");
+        // Silent error handling("🧪 Verfügbare Floors: " + String.join(", ", floorData.keySet()));
     }
     
     /**
@@ -250,7 +250,7 @@ public class MobTimerUtility {
      */
     public static void clearTestFloor() {
         testFloor = null;
-        System.out.println("🧪 TEST-MODUS: Manueller Floor entfernt - automatische Erkennung aktiviert");
+        // Silent error handling("🧪 TEST-MODUS: Manueller Floor entfernt - automatische Erkennung aktiviert");
     }
     
     /**
@@ -258,9 +258,9 @@ public class MobTimerUtility {
      */
     public static void showTestFloor() {
         if (testFloor != null) {
-            System.out.println("🧪 AKTUELLER TEST-FLOOR: " + testFloor);
+            // Silent error handling("🧪 AKTUELLER TEST-FLOOR: " + testFloor);
         } else {
-            System.out.println("🧪 KEIN TEST-FLOOR: Automatische Erkennung aktiv");
+            // Silent error handling("🧪 KEIN TEST-FLOOR: Automatische Erkennung aktiv");
         }
     }
     
@@ -268,11 +268,11 @@ public class MobTimerUtility {
      * Zeigt alle verfügbaren Floors an
      */
     public static void listAvailableFloors() {
-        System.out.println("🧪 VERFÜGBARE FLOORS:");
+        // Silent error handling("🧪 VERFÜGBARE FLOORS:");
         for (Map.Entry<String, FloorData> entry : floorData.entrySet()) {
             String floorKey = entry.getKey();
             FloorData data = entry.getValue();
-            System.out.println("  " + floorKey + " (" + data.name + "): " + data.currentAverageSeconds + "s");
+            // Silent error handling("  " + floorKey + " (" + data.name + "): " + data.currentAverageSeconds + "s");
         }
     }
     
@@ -403,16 +403,16 @@ public class MobTimerUtility {
                             );
                             
                             floorData.put(levelKey, data);
-                            System.out.println("Geladen: " + levelKey + " = " + data.currentAverageSeconds + "s (Durchschnitt)");
+                            // Silent error handling("Geladen: " + levelKey + " = " + data.currentAverageSeconds + "s (Durchschnitt)");
                         }
                     }
                 }
                 inputStream.close();
             } else {
-                System.out.println("Lebensdauer-Datei nicht gefunden!");
+                // Silent error handling("Lebensdauer-Datei nicht gefunden!");
             }
         } catch (Exception e) {
-            System.out.println("Fehler beim Laden der Lebensdauer-Daten: " + e.getMessage());
+            // Silent error handling("Fehler beim Laden der Lebensdauer-Daten: " + e.getMessage());
         }
     }
     

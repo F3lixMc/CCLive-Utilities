@@ -330,8 +330,8 @@ public class KitFilterUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Fehler beim Laden der gespeicherten Kit-Auswahlen: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Fehler beim Laden der gespeicherten Kit-Auswahlen: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -378,8 +378,8 @@ public class KitFilterUtility {
 			// Speichere die Config
 			CCLiveUtilitiesConfig.HANDLER.save();
 		} catch (Exception e) {
-			System.err.println("Fehler beim Speichern der Kit-Auswahl: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Fehler beim Speichern der Kit-Auswahl: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -403,7 +403,7 @@ public class KitFilterUtility {
 						// Konvertiere String zu KitType
 						KitType kitType = getKitTypeFromKey(kitKey);
 						if (kitType == null) {
-							System.err.println("Unbekannter Kit-Typ in JSON: " + kitKey);
+							// Silent error handling("Unbekannter Kit-Typ in JSON: " + kitKey);
 							continue;
 						}
 						
@@ -482,8 +482,8 @@ public class KitFilterUtility {
 				}
 			}
 		} catch (Exception e) {
-			System.err.println("Fehler beim Laden der Kit-Item-Namen: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling("Fehler beim Laden der Kit-Item-Namen: " + e.getMessage());
+			// Silent error handling
 		}
 	}
 	
@@ -709,48 +709,66 @@ public class KitFilterUtility {
 		for (int i = 0; i < BUTTON_COUNT; i++) {
 			// Berechne Position direkt aus Config
 			int buttonX, buttonY;
+			float scale;
 			switch (i) {
 				case 0:
 					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1X;
 					buttonY = 50 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Y;
+					scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale;
 					break;
 				case 1:
 					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2X;
 					buttonY = 75 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2Y;
+					scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2Scale;
 					break;
 				case 2:
 					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3X;
 					buttonY = 100 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Y;
+					scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale;
 					break;
 				default:
 					continue;
 			}
 			
+			if (scale <= 0) scale = 1.0f;
+			int scaledWidth = (int) (BUTTON_WIDTH * scale);
+			int scaledHeight = (int) (BUTTON_HEIGHT * scale);
+			
 			ButtonPosition pos = new ButtonPosition(buttonX, buttonY);
 			
-			// Prüfe ob Maus über diesem Button ist
-			if (mouseX >= pos.x && mouseX <= pos.x + BUTTON_WIDTH &&
-				mouseY >= pos.y && mouseY <= pos.y + BUTTON_HEIGHT) {
+			// Prüfe ob Maus über diesem Button ist (mit scaled dimensions)
+			if (mouseX >= pos.x && mouseX <= pos.x + scaledWidth &&
+				mouseY >= pos.y && mouseY <= pos.y + scaledHeight) {
 				hoveredButtonIndex = i;
 			}
 			
-			// Button-Hintergrund (andere Farbe wenn Filter aktiv ist)
+			// Use Matrix transformations for scaling
+			org.joml.Matrix3x2fStack matrices = context.getMatrices();
+			matrices.pushMatrix();
+			
+			// Translate to position and scale from there
+			matrices.translate(pos.x, pos.y);
+			matrices.scale(scale, scale);
+			
+			// Button-Hintergrund (andere Farbe wenn Filter aktiv ist, scaled, relative to matrix)
 			boolean isActive = activeFilters.getOrDefault(i, false) && selectedKits.containsKey(i);
 			int backgroundColor = isActive ? 0xFF5A8A7A : 0xFF4B6A69; // Heller wenn aktiv
-			context.fill(pos.x, pos.y, pos.x + BUTTON_WIDTH, pos.y + BUTTON_HEIGHT, backgroundColor);
+			context.fill(0, 0, BUTTON_WIDTH, BUTTON_HEIGHT, backgroundColor);
 			
-			// Button-Rahmen
-			context.fill(pos.x, pos.y, pos.x + BUTTON_WIDTH, pos.y + 2, 0xFF65857C); // Oben
-			context.fill(pos.x, pos.y + BUTTON_HEIGHT - 2, pos.x + BUTTON_WIDTH, pos.y + BUTTON_HEIGHT, 0xFF1D2F3B); // Unten
-			context.fill(pos.x, pos.y, pos.x + 2, pos.y + BUTTON_HEIGHT, 0xFF314E52); // Links
-			context.fill(pos.x + BUTTON_WIDTH - 2, pos.y, pos.x + BUTTON_WIDTH, pos.y + BUTTON_HEIGHT, 0xFF314E52); // Rechts
+			// Button-Rahmen (scaled, relative to matrix)
+			context.fill(0, 0, BUTTON_WIDTH, 2, 0xFF65857C); // Oben
+			context.fill(0, BUTTON_HEIGHT - 2, BUTTON_WIDTH, BUTTON_HEIGHT, 0xFF1D2F3B); // Unten
+			context.fill(0, 0, 2, BUTTON_HEIGHT, 0xFF314E52); // Links
+			context.fill(BUTTON_WIDTH - 2, 0, BUTTON_WIDTH, BUTTON_HEIGHT, 0xFF314E52); // Rechts
 			
-			// Button-Text
+			// Button-Text (scaled, relative to matrix)
 			String buttonText = getButtonText(i);
 			int textColor = 0xFF404040; // Dunkelgrau
-			int textX = pos.x + (BUTTON_WIDTH - client.textRenderer.getWidth(buttonText)) / 2;
-			int textY = pos.y + (BUTTON_HEIGHT - 8) / 2;
+			int textX = (BUTTON_WIDTH - client.textRenderer.getWidth(buttonText)) / 2;
+			int textY = (BUTTON_HEIGHT - 8) / 2;
 			context.drawText(client.textRenderer, buttonText, textX, textY, textColor, false);
+			
+			matrices.popMatrix();
 		}
 		
 		// Rendere Tooltip wenn über einem Button gehovered wird
@@ -861,8 +879,27 @@ public class KitFilterUtility {
 					continue;
 			}
 			
-			if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH &&
-				mouseY >= buttonY && mouseY <= buttonY + BUTTON_HEIGHT) {
+			// Get scale for hitbox calculation
+			float scale;
+			switch (i) {
+				case 0:
+					scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Scale;
+					break;
+				case 1:
+					scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2Scale;
+					break;
+				case 2:
+					scale = CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Scale;
+					break;
+				default:
+					scale = 1.0f;
+			}
+			if (scale <= 0) scale = 1.0f;
+			int scaledWidth = (int) (BUTTON_WIDTH * scale);
+			int scaledHeight = (int) (BUTTON_HEIGHT * scale);
+			
+			if (mouseX >= buttonX && mouseX <= buttonX + scaledWidth &&
+				mouseY >= buttonY && mouseY <= buttonY + scaledHeight) {
 				
 				if (button == 0) {
 					// Linksklick: Toggle Filter

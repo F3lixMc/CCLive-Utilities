@@ -69,7 +69,7 @@ public class ChatManager {
         
         // Überspringe Initialisierung wenn Chat deaktiviert ist
         if (!isEnabled) {
-            System.out.println("⚠️ ChatManager: Chat-System ist deaktiviert");
+            // Silent error handling("⚠️ ChatManager: Chat-System ist deaktiviert");
             isInitialized = true; // Markiere als initialisiert, um erneute Versuche zu vermeiden
             return;
         }
@@ -82,12 +82,12 @@ public class ChatManager {
             // Setze Timestamp auf aktuelle Zeit beim Join (keine alten Nachrichten laden)
             long joinTimestamp = System.currentTimeMillis();
             lastMessageTimestamp.set(joinTimestamp);
-            System.out.println("[CCLive-Utilities] 🎮 Server-Join: Lade nur Nachrichten ab jetzt");
+            // Silent error handling("[CCLive-Utilities] 🎮 Server-Join: Lade nur Nachrichten ab jetzt");
             // Lade keine Historie beim Join - nur neue Nachrichten ab jetzt
         });
         
         isInitialized = true;
-        System.out.println("✅ ChatManager initialisiert");
+        // Silent error handling("✅ ChatManager initialisiert");
     }
     
     /**
@@ -100,7 +100,7 @@ public class ChatManager {
         
         LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
         if (!leaderboardManager.isRegistered() || leaderboardManager.getPlayerToken() == null) {
-            System.err.println("⚠️ Chat: Spieler nicht registriert");
+            // Silent error handling("⚠️ Chat: Spieler nicht registriert");
             return CompletableFuture.completedFuture(false);
         }
         
@@ -119,7 +119,7 @@ public class ChatManager {
                     return true;
                 }
             } catch (Exception e) {
-                System.err.println("❌ Fehler beim Senden der Chat-Nachricht: " + e.getMessage());
+                // Silent error handling("❌ Fehler beim Senden der Chat-Nachricht: " + e.getMessage());
             }
             return false;
         });

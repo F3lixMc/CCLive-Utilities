@@ -138,8 +138,8 @@ public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorX = -134;
-        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorY = 300;
+        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorX = 1;
+        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorY = 382;
     }
     
     /**

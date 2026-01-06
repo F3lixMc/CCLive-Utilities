@@ -14,7 +14,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
     public void onInitializeClient() {
         // Verifiziere, dass die Font-Definition geladen wird
         // Die Font wird automatisch aus assets/cclive-utilities/font/default.json geladen
-        System.out.println("✅ [CCLive-Utilities] Client initialisiert - Font sollte automatisch geladen werden");
+        // Silent error handling("✅ [CCLive-Utilities] Client initialisiert - Font sollte automatisch geladen werden");
         
         // Registriere Resource-Reload-Listener, um zu prüfen, ob die Font geladen wird
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(
@@ -29,17 +29,17 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
                     // Prüfe, ob die Font-Definition existiert
                     var fontResource = manager.getResource(FONT_IDENTIFIER.withPath("font/default.json"));
                     if (fontResource.isPresent()) {
-                        System.out.println("✅ [CCLive-Utilities] Font-Definition gefunden: " + FONT_IDENTIFIER);
+                        // Silent error handling("✅ [CCLive-Utilities] Font-Definition gefunden: " + FONT_IDENTIFIER);
                     } else {
-                        System.err.println("❌ [CCLive-Utilities] Font-Definition NICHT gefunden: " + FONT_IDENTIFIER);
+                        // Silent error handling("❌ [CCLive-Utilities] Font-Definition NICHT gefunden: " + FONT_IDENTIFIER);
                     }
                     
                     // Prüfe, ob die Icon-Textur existiert
                     var iconResource = manager.getResource(Identifier.of("cclive-utilities", "textures/8_chat_icon.png"));
                     if (iconResource.isPresent()) {
-                        System.out.println("✅ [CCLive-Utilities] Icon-Textur gefunden: textures/8_chat_icon.png");
+                        // Silent error handling("✅ [CCLive-Utilities] Icon-Textur gefunden: textures/8_chat_icon.png");
                     } else {
-                        System.err.println("❌ [CCLive-Utilities] Icon-Textur NICHT gefunden: textures/8_chat_icon.png");
+                        // Silent error handling("❌ [CCLive-Utilities] Icon-Textur NICHT gefunden: textures/8_chat_icon.png");
                     }
                 }
             }

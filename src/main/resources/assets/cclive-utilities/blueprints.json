@@ -1,5 +1,15 @@
 {
     "floors": {
+      "floor_0": {
+        "blueprints": {
+          "common": {
+            "color": "WHITE",
+            "items": [
+              "Holzschwert"
+            ]
+          }
+        }
+      },
       "floor_1": {
         "blueprints": {
           "common": {
@@ -292,7 +302,7 @@
             "items": [
               "Langbogen des Jägers",
               "Dämonenhauer",
-              "Wächterschwerte",
+              "Wächterschwert",
               "Arkane Großaxt",
               "Kette des Windes"
             ]
@@ -777,6 +787,7 @@
               "Gebeulte Stahlbeinkleider",
               "Restaurierte Beinschienen",
               "Schülerarmbrust",
+              "Streitaxt",
               "Kurzschwert"
             ]
           },
@@ -1058,7 +1069,7 @@
             "color": "GREEN",
             "items": [
               "Silberner Plattengürtel",
-              "Klassiche Schnürloafer",
+              "Klassische Schnürloafer",
               "Ruhmreicher Brustharnisch",
               "Verzierte Schulterschützer",
               "Plattenbeinkleider"
@@ -1067,8 +1078,8 @@
           "rare": {
             "color": "BLUE",
             "items": [
-              "Kolossale Helmklappe",
-              "Makellose Beinkleder",
+              "Kolossale Helmkappe",
+              "Makellose Beinkleider",
               "Ritterschwert",
               "Flora Helmhaube"
             ]
@@ -1088,7 +1099,7 @@
             "color": "GOLD",
             "items": [
               "Sturmfeuer Brandbeil",
-              "Axt des Bambusmeister",
+              "Axt des Bambusmeisters",
               "Höllischer Enthaupter",
               "Die Sternschnuppe",
               "Drachentöter Plattenhandpanzer"
@@ -1653,7 +1664,7 @@
             "color": "BLUE",
             "items": [
               "Ring des Aufstiegs",
-              "Zwecksmäßige Ledersandalen",
+              "Zweckmäßige Ledersandalen",
               "Phönixfedern-Kultivator",
               "Donnerknall Medaillon"
             ]
@@ -1939,7 +1950,7 @@
               "Der Zeitverzerrer",
               "Gürtel des Gleichgewichts",
               "Frostbiss Plattenhose",
-              "CACTUS_CLICKER.armors.eternal_balance_leggings",
+              "Hose des ewigen Gleichgewichts",
               "Frost Mantel"
             ]
           }
@@ -2132,7 +2143,7 @@
               "Goldene Beinschützer",
               "Flora Gurtband",
               "Ritterliche Plattenbeinkleider",
-              "Nietenvertärkter Gürtel",
+              "Nietenverstärkter Gürtel",
               "Edle Halbschuhe"
             ]
           },
@@ -2300,6 +2311,7 @@
             "items": [
               "Seelenstrang",
               "Alptraumhafter Spalter",
+              "Seelengebundene Plattenhose",
               "Haube des Schlächters",
               "Seelengebundene Plattenschuhe"
             ]
@@ -2350,7 +2362,7 @@
             "color": "PURPLE",
             "items": [
               "Höllenwächter",
-              "Säbel des Piratenkönigs",
+              "Säbel des Piratenkönig",
               "Blutfinger des Schlächters",
               "Lederschultern des Schlächters",
               "Hosenträger des Schlächters"
@@ -2865,7 +2877,7 @@
           "uncommon": {
             "color": "GREEN",
             "items": [
-              "Smaragbeinschutz",
+              "Smaragdbeinschutz",
               "Froststachelbogen",
               "Zarter Ledergürtel",
               "Salvenschussbogen",
@@ -3077,7 +3089,7 @@
               "Leichte Lederschultertücher",
               "Leichter Bambusbogen",
               "Verbeulte Axt",
-              "CACTUS_CLICKER.tools.rusty_destroyer"
+              "Rostiger Zerstörer"
             ]
           },
           "uncommon": {
@@ -3257,7 +3269,7 @@
             "items": [
               "Phönixfedern-Bambusholzhacker",
               "Klassische Lederhaube",
-              "Perfekte Handschützer des Gerbers",
+              "Perfekte Hanschützer des Gerbers",
               "Giftstachel",
               "Hackbeil des Metzgers"
             ]
@@ -4595,7 +4607,7 @@
               "Breitschwert",
               "Sengender Langbogen",
               "Kreuzritter Sabatons",
-              "Herausforderer Schutzband"
+              "Herausforderer  Schutzband"
             ]
           },
           "rare": {
@@ -5220,7 +5232,7 @@
               "Ragnaröks Beinkleider",
               "Aurora-Flügel-Lederhandschuhe",
               "Phönixhaupt",
-              "Flügelklappe"
+              "Flügelkappe"
   
             ]
           }
@@ -5328,7 +5340,7 @@
               "Donnerkraft-Lederhandrüstung",
               "Sternenlicht Beinkleider",
               "Phönixfeuer Handschützer",
-              "Seidenhandschuhe der Prinzessin"
+              "Seidenhandschuh der Prinzessin"
             ]
           }
         }
@@ -5383,7 +5395,7 @@
               "Sternenlicht Schulterrüstung",
               "Donnerkraft-Ledergürtel",
               "Phönixfeder Schulterumhang",
-              "Sternenlicht Schulterring"
+              "Sternenlicht Schulterringe"
   
             ]
           }

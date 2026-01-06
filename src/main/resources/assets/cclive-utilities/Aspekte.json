@@ -263,7 +263,7 @@
     "aspect_name": "Aspekt des Blitzfokus",
     "aspect_description": "Deine Angriffe haben eine Chance von 1% - 3% deine Ausweichchance für 3 - 10 Sekunden um 1% - 3% zu erhöhen. Der Effekt ist bis zu 2 - 5 mal Stapelbar."
   },
-  "Axt des Bambusmeister": {
+  "Axt des Bambusmeisters": {
     "aspect_name": "-",
     "aspect_description": "Kein Aspekt auf diesem Bauplan"
   },
@@ -1635,7 +1635,7 @@
     "aspect_name": "Aspekt der Seele",
     "aspect_description": "Wenn du einen Gegner besiegst, besteht eine Chance von 1% - 3% das du Seelen im Wert von 1% - 5% deiner bisher höchst erreichten Welle generierst."
   },
-  "Flügelklappe": {
+  "Flügelkappe": {
     "aspect_name": "-",
     "aspect_description": "Kein Aspekt auf diesem Bauplan"
   },

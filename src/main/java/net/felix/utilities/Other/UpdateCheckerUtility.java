@@ -46,7 +46,7 @@ public class UpdateCheckerUtility {
                 .map(container -> container.getMetadata().getVersion().getFriendlyString())
                 .orElse("1.4.2"); // Fallback falls das Laden fehlschlägt
         } catch (Exception e) {
-            System.out.println("Fehler beim Laden der Mod-Version: " + e.getMessage());
+            // Silent error handling("Fehler beim Laden der Mod-Version: " + e.getMessage());
             return "1.4.2"; // Fallback
         }
     }
@@ -72,11 +72,11 @@ public class UpdateCheckerUtility {
                 if (response.statusCode() == 200) {
                     parseUpdateResponse(response.body());
                 } else {
-                    System.out.println("Update-Check fehlgeschlagen: HTTP " + response.statusCode());
+                    // Silent error handling("Update-Check fehlgeschlagen: HTTP " + response.statusCode());
                 }
                 
             } catch (IOException | InterruptedException e) {
-                System.out.println("Fehler beim Update-Check: " + e.getMessage());
+                // Silent error handling("Fehler beim Update-Check: " + e.getMessage());
             }
         });
     }
@@ -110,7 +110,7 @@ public class UpdateCheckerUtility {
             }
             
         } catch (Exception e) {
-            System.out.println("Fehler beim Parsen der Update-Response: " + e.getMessage());
+            // Silent error handling("Fehler beim Parsen der Update-Response: " + e.getMessage());
         }
         
         updateCheckCompleted = true;
@@ -202,7 +202,7 @@ public class UpdateCheckerUtility {
                 }
             } catch (Exception e) {
                 // Silent fail - wenn Server nicht erreichbar ist, einfach ignorieren
-                // System.out.println("Fehler beim Abrufen der Server-Update-Message: " + e.getMessage());
+                // // Silent error handling("Fehler beim Abrufen der Server-Update-Message: " + e.getMessage());
             }
         });
     }

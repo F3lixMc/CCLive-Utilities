@@ -350,6 +350,10 @@
             "wave": 3422
         },
         {
+            "name": "Wächter [Essenz] Tier 7",
+            "wave": 5524
+        },
+        {
             "name": "Wächter [Essenz] Tier 8",
             "wave": 5836
         },
@@ -603,7 +607,7 @@
 
         {
             "name": "Wither [Essenz] Tier 4",
-            "wave": 100000
+            "wave": 10000
         }
         
         

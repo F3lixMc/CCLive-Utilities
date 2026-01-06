@@ -17,7 +17,7 @@ public class RareMobCollector implements DataCollector {
         // Die eigentliche Datensammlung erfolgt über die bestehende MobTimerUtility
         
         isActive = true;
-        System.out.println("✅ RareMobCollector initialisiert (Bridge zu MobTimerUtility)");
+        // Silent error handling("✅ RareMobCollector initialisiert (Bridge zu MobTimerUtility)");
     }
     
     /**
@@ -29,7 +29,7 @@ public class RareMobCollector implements DataCollector {
         rareMobKills++;
         LeaderboardManager.getInstance().updateScore("alltime_rare_mob_kills", rareMobKills);
         
-        System.out.println("💀 Rare Mob getötet! Total: " + rareMobKills);
+        // Silent error handling("💀 Rare Mob getötet! Total: " + rareMobKills);
     }
     
     /**
@@ -42,7 +42,7 @@ public class RareMobCollector implements DataCollector {
         // TODO: Hier könnten weitere Statistiken gesammelt werden
         // z.B. durchschnittliche Lebensdauer pro Floor, etc.
         
-        System.out.println("👻 Rare Mob despawned auf " + floor + " nach " + lifetimeSeconds + "s");
+        // Silent error handling("👻 Rare Mob despawned auf " + floor + " nach " + lifetimeSeconds + "s");
     }
     
     /**
@@ -68,14 +68,14 @@ public class RareMobCollector implements DataCollector {
         if (manager.isEnabled()) {
             // Hole den RareMobCollector aus dem Manager
             // TODO: Implementiere Getter im LeaderboardManager falls nötig
-            System.out.println("💀 Rare Mob Kill-Benachrichtigung empfangen");
+            // Silent error handling("💀 Rare Mob Kill-Benachrichtigung empfangen");
         }
     }
     
     @Override
     public void shutdown() {
         isActive = false;
-        System.out.println("🛑 RareMobCollector gestoppt");
+        // Silent error handling("🛑 RareMobCollector gestoppt");
     }
     
     @Override
