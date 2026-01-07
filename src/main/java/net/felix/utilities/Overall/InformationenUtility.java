@@ -4207,15 +4207,20 @@ public class InformationenUtility {
 		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
 			Text titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
+			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			boolean wasInMKLevelInventory = isInMKLevelInventory;
-			isInMKLevelInventory = title.contains("Machtkristalle Verbessern");
+			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
+			isInMKLevelInventory = title.contains("Machtkristalle Verbessern") || 
+			                        net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode);
 			
-			// Reset search when leaving inventory
+			// Reset search when leaving inventory (nur wenn man wirklich ein anderes Inventar öffnet)
+			// Die Scroll-Position wird NICHT zurückgesetzt, damit sie beim erneuten Öffnen erhalten bleibt
 			if (wasInMKLevelInventory && !isInMKLevelInventory) {
 				mkLevelSearchText = "";
 				mkLevelSearchFocused = false;
 				mkLevelSearchCursorPosition = 0;
-				mkLevelScrollOffset = 0;
+				// Scroll-Position NICHT zurücksetzen - wird beibehalten
+				// mkLevelScrollOffset = 0;
 			}
 			
 			if (isInMKLevelInventory) {

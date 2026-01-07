@@ -797,9 +797,11 @@ public class ItemViewerUtility {
         
         // Berechne Viewer-Dimensionen
         // Nutze maximale verfügbare Breite, aber mindestens die minimale Breite (Standard-Grid)
+        // Für Spielerinventar: Maximal 40% der Bildschirmbreite, damit es nicht zu breit wird
         int minViewerWidth = ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
         int maxViewerWidth = screenWidth - VIEWER_PADDING * 2;
-        int viewerWidth = Math.max(minViewerWidth, maxViewerWidth);
+        int maxAllowedWidth = (int) (screenWidth * 0.4); // Maximal 40% der Bildschirmbreite
+        int viewerWidth = Math.max(minViewerWidth, Math.min(maxViewerWidth, maxAllowedWidth));
         
         // Zentriere horizontal
         int viewerX = (screenWidth - viewerWidth) / 2;
@@ -852,6 +854,16 @@ public class ItemViewerUtility {
         // Prüfe ob sichtbar
         if (!isVisible) {
             return;
+        }
+        
+        // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
+        // Diese Menüs sollten keine JEI UI anzeigen
+        if (screen != null) {
+            net.minecraft.text.Text titleText = screen.getTitle();
+            String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
+            if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+                return; // KEINE JEI UI in diesen speziellen Menüs
+            }
         }
         
         // DEBUG: Logge UI-Rendering nur wenn sich der Screen-Typ ändert
@@ -2341,6 +2353,7 @@ public class ItemViewerUtility {
         int inventoryX = 0;
         int inventoryWidth = 176;
         
+        boolean reflectionSuccess = false;
         try {
             java.lang.reflect.Field xField = HandledScreen.class.getDeclaredField("x");
             xField.setAccessible(true);
@@ -2349,8 +2362,47 @@ public class ItemViewerUtility {
             java.lang.reflect.Field widthField = HandledScreen.class.getDeclaredField("backgroundWidth");
             widthField.setAccessible(true);
             inventoryWidth = widthField.getInt(handledScreen);
+            reflectionSuccess = true;
         } catch (Exception e) {
-            // Fallback
+            // Fallback: Versuche alternative Reflection-Methoden
+            try {
+                // Versuche über getClass().getDeclaredField mit verschiedenen Feldnamen
+                Class<?> screenClass = handledScreen.getClass();
+                
+                // Versuche verschiedene mögliche Feldnamen für x
+                for (String fieldName : new String[]{"x", "field_2772", "left", "xPos"}) {
+                    try {
+                        java.lang.reflect.Field xFieldAlt = screenClass.getDeclaredField(fieldName);
+                        xFieldAlt.setAccessible(true);
+                        inventoryX = xFieldAlt.getInt(handledScreen);
+                        break;
+                    } catch (Exception ignored) {}
+                }
+                
+                // Versuche verschiedene mögliche Feldnamen für backgroundWidth
+                for (String fieldName : new String[]{"backgroundWidth", "field_2773", "imageWidth", "width"}) {
+                    try {
+                        java.lang.reflect.Field widthFieldAlt = screenClass.getDeclaredField(fieldName);
+                        widthFieldAlt.setAccessible(true);
+                        inventoryWidth = widthFieldAlt.getInt(handledScreen);
+                        break;
+                    } catch (Exception ignored) {}
+                }
+                
+                // Wenn immer noch nicht gefunden, verwende Fallback
+                if (inventoryX == 0 && inventoryWidth == 176) {
+                    inventoryX = (screen.width - inventoryWidth) / 2;
+                }
+            } catch (Exception e2) {
+                // Finaler Fallback: Verwende Standardwerte und zentriere das Inventar
+                // Die meisten Inventare sind zentriert
+                inventoryX = (screen.width - inventoryWidth) / 2;
+            }
+        }
+        
+        // Debug: Logge nur wenn Reflection fehlgeschlagen ist (um zu sehen, was auf dem Server passiert)
+        if (!reflectionSuccess && handledScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
+            System.out.println("[ItemViewer] WARNUNG: Reflection fehlgeschlagen für InventoryScreen - verwende Fallback: inventoryX=" + inventoryX + ", inventoryWidth=" + inventoryWidth);
         }
         
         // Berechne verfügbaren Platz
@@ -2363,11 +2415,11 @@ public class ItemViewerUtility {
         int maxViewerWidth;
         
         if (placeRight) {
-            // Nutze volle verfügbare Breite rechts vom Inventar
+            // Nutze verfügbare Breite rechts vom Inventar
             viewerX = inventoryX + inventoryWidth + 10;
             maxViewerWidth = screen.width - viewerX - 10; // Volle Breite bis zum rechten Rand
         } else {
-            // Nutze volle verfügbare Breite links vom Inventar
+            // Nutze verfügbare Breite links vom Inventar
             viewerX = 10; // Starte am linken Rand mit Padding
             maxViewerWidth = availableWidthLeft; // Volle Breite bis zum Inventar
         }
@@ -2375,7 +2427,10 @@ public class ItemViewerUtility {
         // Berechne Viewer-Dimensionen
         // Nutze maximale verfügbare Breite, aber mindestens die minimale Breite (Standard-Grid)
         int minViewerWidth = ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
-        int viewerWidth = Math.max(minViewerWidth, maxViewerWidth);
+        // Setze maximale Breite auf verfügbaren Platz, aber nicht mehr als 40% der Bildschirmbreite
+        // Das verhindert, dass der Viewer zu groß wird, während er sich trotzdem anpasst
+        int maxAllowedWidth = Math.min(maxViewerWidth, (int) (screen.width * 0.4));
+        int viewerWidth = Math.max(minViewerWidth, maxAllowedWidth);
         
         // Berechne Dropdown-Breite
         int maxDropdownWidth = 0;

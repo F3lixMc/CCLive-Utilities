@@ -19,7 +19,10 @@
 		"PlayerHoverStatsMixin",
 		"DrawContextMixin",
 		"ScreenMixin",
-		"InventoryScreenMixin"
+		"InventoryScreenMixin",
+		"HelpOverlayMixin",
+		"HelpOverlayScreenMixin",
+		"InGameHudHelpOverlayMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

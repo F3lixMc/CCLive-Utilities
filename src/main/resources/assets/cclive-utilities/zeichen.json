@@ -59,6 +59,22 @@
     "description": "Essence Harvester UI",
     "character": "㮌"
   },
+  "ui_categories_factory": {
+    "description": "UI Categories Factory - JEI should not be displayed",
+    "character": "㮕"
+  },
+  "ui_categories_aincrad": {
+    "description": "UI Categories Aincrad - JEI should not be displayed",
+    "character": "㮖"
+  },
+  "ui_categories_farmzone": {
+    "description": "UI Categories Farmzone - JEI should not be displayed",
+    "character": "㮗"
+  },
+  "ui_categories_hub": {
+    "description": "UI Categories Hub - JEI should not be displayed",
+    "character": "㮘"
+  },
 
   "epic_drops": {
     "description": "Epic drops",

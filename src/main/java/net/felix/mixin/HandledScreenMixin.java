@@ -29,8 +29,14 @@ public abstract class HandledScreenMixin {
     
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        // DEBUG: Logge Inventar-Erkennung (Kiste) nur wenn sich der Screen ändert
         HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+        
+        // Überspringe InventoryScreen - wird im ScreenMixin behandelt, um Doppel-Rendering zu vermeiden
+        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
+            return;
+        }
+        
+        // DEBUG: Logge Inventar-Erkennung (Kiste) nur wenn sich der Screen ändert
         String currentScreen = screen.getClass().getSimpleName();
         if (!currentScreen.equals(lastDetectedScreen)) {
             System.out.println("[ItemViewer] Inventar erkannt: HandledScreen (Kiste) - " + currentScreen);

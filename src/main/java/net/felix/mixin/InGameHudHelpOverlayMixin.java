@@ -3,6 +3,7 @@ package net.felix.mixin;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.hud.InGameHud;
+import net.minecraft.client.render.RenderTickCounter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,7 +21,7 @@ public abstract class InGameHudHelpOverlayMixin {
      * wirklich nach allen Screen-Render-Layern gerendert wird (auch nach Items)
      */
     @Inject(method = "render", at = @At(value = "RETURN"))
-    private void renderHelpOverlayAtReturn(DrawContext context, float tickDelta, CallbackInfo ci) {
+    private void renderHelpOverlayAtReturn(DrawContext context, RenderTickCounter tickCounter, CallbackInfo ci) {
         // Rendere Help-Overlay nur wenn ein Screen offen ist und das Overlay geöffnet ist
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
         if (client != null && client.currentScreen != null && ItemViewerUtility.isHelpOverlayOpen()) {

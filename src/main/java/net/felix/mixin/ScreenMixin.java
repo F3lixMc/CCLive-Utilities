@@ -55,8 +55,16 @@ public class ScreenMixin {
         String screenClassName = screen.getClass().getName();
         
         // Prüfe zuerst ob es ein InventoryScreen ist (Spielerinventar)
-        // InventoryScreen ist ein HandledScreen, wird aber hier explizit behandelt
-        if (screenClassName.contains("InventoryScreen") && screen instanceof HandledScreen<?>) {
+        // Verwende instanceof für robustere Erkennung (funktioniert auch bei obfuscated class names)
+        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen && screen instanceof HandledScreen<?>) {
+            // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
+            HandledScreen<?> handledScreen = (HandledScreen<?>) screen;
+            net.minecraft.text.Text titleText = handledScreen.getTitle();
+            String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
+            if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+                return; // KEINE JEI UI in diesen speziellen Menüs
+            }
+            
             // DEBUG: Logge nur wenn sich der Screen ändert
             if (!screenClassName.equals(lastRenderedScreen)) {
                 System.out.println("[ItemViewer] Inventar erkannt: Spielerinventar - " + screenClassName);
@@ -67,7 +75,7 @@ public class ScreenMixin {
             // Update mouse position
             ItemViewerUtility.updateMousePosition(mouseX, mouseY);
             // Render Item Viewer (als HandledScreen behandeln)
-            ItemViewerUtility.renderItemViewerInScreen(context, client, (HandledScreen<?>) screen, mouseX, mouseY);
+            ItemViewerUtility.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
             
             // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
             // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
