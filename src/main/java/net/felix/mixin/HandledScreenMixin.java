@@ -52,12 +52,6 @@ public abstract class HandledScreenMixin {
         // Update mouse position for DebugUtility (Item Logger)
         net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
         
-        // Render Clipboard Overlay (wenn aktiviert)
-        net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
-        
-        // Render Clipboard Button Tooltips
-        net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
-        
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
         
@@ -192,18 +186,6 @@ public abstract class HandledScreenMixin {
                 cir.setReturnValue(true);
                 return;
             }
-        }
-        
-        // Handle clicks on Clipboard Overlay buttons (inkl. Delete-Button)
-        if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {
-            cir.setReturnValue(true);
-            return;
-        }
-        
-        // Handle clicks on Clipboard quantity text field
-        if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, button)) {
-            cir.setReturnValue(true);
-            return;
         }
         
         // Handle clicks on Item Viewer buttons
