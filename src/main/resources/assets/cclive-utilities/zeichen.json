@@ -55,6 +55,10 @@
     "description": "Hunter ui_background",
     "character": "㨷"
   },
+  "hunter_target_ui": {
+    "description": "Hunter target ui",
+    "character": "㨸"
+  },
     "essence_harvester_ui": {
     "description": "Essence Harvester UI",
     "character": "㮌"

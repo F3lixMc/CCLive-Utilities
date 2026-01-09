@@ -83,6 +83,12 @@ public abstract class SearchBarInputMixin {
             return;
         }
         
+        // Handle Item Logger hotkey (works in inventories)
+        if (net.felix.utilities.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        
         // Handle ItemInfo auto-click hotkey (works in inventories)
         // Get screen position using reflection (same pattern as MKLevel)
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();

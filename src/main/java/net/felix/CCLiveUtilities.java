@@ -6,7 +6,6 @@ import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Aincraft.MaterialTrackerUtility;
-import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Other.UpdateCheckerUtility;
@@ -65,6 +64,7 @@ public class CCLiveUtilities implements ModInitializer {
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
 		TabInfoUtility.initialize();
+		net.felix.utilities.DebugUtility.initializeItemLogger();
 		
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();

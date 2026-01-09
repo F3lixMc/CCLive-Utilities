@@ -41,7 +41,34 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        return getXFromConfig();
+        // Calculate X position using the same logic as Mining/Holzfäller overlays
+        // baseX is the left edge position (like Mining overlays)
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            return getXFromConfig();
+        }
+        
+        int screenWidth = client.getWindow().getScaledWidth();
+        int baseX = getXFromConfig();
+        int overlayWidth = getWidth(); // Use scaled width for positioning
+        
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = baseX < screenWidth / 2;
+        
+        // Calculate X position based on side (same logic as Mining overlays)
+        int x;
+        if (isOnLeftSide) {
+            // On left side: keep left edge fixed, expand to the right
+            x = baseX;
+        } else {
+            // On right side: keep right edge fixed, expand to the left
+            // Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+            // Keep this right edge fixed, so left edge moves left when width increases
+            x = baseX - overlayWidth;
+        }
+        
+        // Ensure overlay stays within screen bounds
+        return Math.max(0, Math.min(x, screenWidth - overlayWidth));
     }
     
     @Override
@@ -139,6 +166,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     
     /**
      * Berechnet die unskalierte Breite
+     * Dynamische Verbreiterung basierend auf Inhalt (wie BossHP-Overlay)
      */
     private int calculateUnscaledWidth() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -198,6 +226,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 }
             }
             int padding = 5;
+            // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
             return maxWidth + (padding * 2);
         }
         
@@ -257,6 +286,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 }
             }
             int padding = 5;
+            // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
             return maxWidth + (padding * 2);
         }
         
@@ -299,6 +329,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             }
             
             int padding = 5;
+            // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
             return width + (padding * 2);
         }
         
@@ -327,6 +358,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         }
         
         int padding = 5;
+        // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
         return width + (padding * 2);
     }
     
@@ -468,7 +500,33 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        setXInConfig(x);
+        // Calculate baseX using the same logic as Mining/Holzfäller overlays
+        // We need to reverse the calculation: from the actual x position, calculate baseX
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            setXInConfig(x);
+            setYInConfig(y);
+            return;
+        }
+        
+        int screenWidth = client.getWindow().getScaledWidth();
+        int overlayWidth = getWidth(); // Use scaled width for positioning
+        
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = x < screenWidth / 2;
+        
+        // Calculate baseX based on side (reverse of getX() calculation)
+        int baseX;
+        if (isOnLeftSide) {
+            // On left side: baseX is the same as x (left edge)
+            baseX = x;
+        } else {
+            // On right side: baseX is the right edge (x + overlayWidth)
+            // We store the right edge as baseX so it stays fixed when width changes
+            baseX = x + overlayWidth;
+        }
+        
+        setXInConfig(baseX);
         setYInConfig(y);
     }
     
@@ -850,6 +908,11 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             return false;
         }
         
+        // Hide overlay if in general_lobby dimension
+        if (isInGeneralLobby()) {
+            return false;
+        }
+        
         // Prüfe ob die Information selbst aktiviert ist
         if (!isInfoEnabled()) {
             return false;
@@ -857,6 +920,19 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         
         // Prüfe ob das separate Overlay aktiviert ist
         return getSeparateOverlayEnabled();
+    }
+    
+    /**
+     * Prüft, ob der Spieler in der "general_lobby" Dimension ist
+     */
+    private boolean isInGeneralLobby() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.world == null) {
+            return false;
+        }
+        
+        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        return dimensionPath.equals("general_lobby");
     }
     
     private boolean isInfoEnabled() {

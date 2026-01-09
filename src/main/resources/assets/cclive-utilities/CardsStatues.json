@@ -1,150 +1,574 @@
 {
   "karten": {
-    "Kaninchen": "Ausweichchance (Additiv)",
-    "Huhn": "Bogenschaden (Additiv)",
-    "Schwein": "Vitalität (Additiv)",
-    "Schaf": "Ausweichlevel (Additiv)",
-    "Kuh": "Axtschaden (Additiv)",
-    "Pferd": "Laufgeschwindigkeit (Prozentual)",
-    "Esel": "Verteidigung (Prozentual)",
-    "Lama": "Schaden (Additiv)",
-    "Kamel": "Kaktus Ertrag (Prozentual)",
-    "Ozelot": "Schwertschaden (Additiv)",
-    "Ziege": "Bergbau Erfahrung (Prozentual)",
-    "Fuchs": "Glückslevel (Additiv)",
-    "Schildkröte": "Verteidigung (Additiv)",
-    "Wolf": "Kritischtrefferchancelevel (Additiv)",
-    "Panda": "Vitalitätslevel (Additiv)",
-    "Polarbär": "Stärkelevel (Additiv)",
-    "Axolotl": "Geschicklichkeitslevel (Additiv)",
-    "Allay": "Vitalität (Additiv)",
-    "Biene": "Schild Kapazität (Additiv)",
-    "Papagei": "Charakter Erfahrung (Prozentual)",
-    "Fledermaus": "Lebensentzug (Additiv)",
-    "Frosch": "Armbrustschaden (Additiv)",
-    "Tintenfisch": "Schild Kapazität (Prozentual)",
-    "Killer Kaninchen": "Dropchance (Prozentual)",
-    "Spinne": "Schild Regeneration (Additiv)",
-    "Goblin": "Vitalität (Prozentual)",
-    "Zombie": "Seelen Ertrag (Prozentual)",
-    "Feuerzombie": "Essenzen Dropchance (Prozentual)",
-    "Wasserzombie": "Lebensregeneration (Additiv)",
-    "Steinzombie": "Verteidigung (Prozentual)",
-    "Zombie Bewohner": "Münz Menge (Additiv)",
-    "Mumien": "Klingenschaden (Additiv)",
-    "Diener": "Schaden (Additiv)",
-    "Skelett": "Pfeilschaden (Additiv)",
-    "Schleim": "Charakter Erfahrung (Prozentual)",
-    "Hexen": "Münz Menge (Prozentual)",
-    "Streuner": "Bogenschaden (Prozentual)",
-    "Ertrunkener": "Holzfäller Erfahrung (Prozentual)",
-    "Plünderer": "Armbrustschaden (Prozentual)",
-    "Creeper": "Schaden (Additiv)",
-    "Magier": "Amboss Geschwindigkeit (Additiv)",
-    "Silberfisch": "Amboss Kapazität (Additiv)",
-    "Wächter": "Ofen Geschwindigkeit (Prozentual)",
-    "Spinnereiter": "Schild Geschwindigkeit (Prozentual)",
-    "Höhlenspinne": "Münz Menge (Additiv)",
-    "Skelettpferd": "Pfeilschaden (Additiv)",
-    "Pilzkuh": "Jackpot (Prozentual)",
-    "Hühnchenreiter": "Klingenschaden (Additiv)",
-    "Magmaschleim": "Schmelz Geschwindigkeit (Prozentual)",
-    "Skelettreiter": "Charakter Erfahrung (Prozentual)",
-    "Verwüster": "Kritischschadenlevel (Additiv)",
-    "Eisengolem": "Verteidigung (Prozentual)",
-    "Sniffer": "Holzertrag Chance (Prozentual)",
-    "Schneegolem": "Respawnrate (Prozentual)",
-    "Schweini": "Pfeilschaden (Prozentual)",
-    "Schreiter": "Schmelz Geschwindigkeit (Additiv)",
-    "Zombie-Schweini": "Schmelzofen Kapazität (Additiv)",
-    "Zoglin": "Fabrik Erfahrung (Prozentual)",
-    "Schweini-Grobian": "Axtschaden (Prozentual)",
-    "Lohe": "Schmelz Effizienz (Prozentual)",
-    "Ghast": "Amboss Kapazität (Prozentual)",
-    "Leuchttintenfisch": "Boss Schaden (Prozentual)",
-    "Geladener Creeper": "Amboss Erfahrung (Prozentual)",
-    "Phantom": "Kritischtrefferschaden (Prozentual)",
-    "Endermilbe": "Bergbauertrag Chance (Prozentual)",
-    "Vex": "Schwertschaden (Prozentual)",
-    "Hoglin": "Schmelz Kapazität (Prozentual)",
-    "Shulker": "Amboss Geschwindigkeit (Prozentual)",
-    "Enderman": "Kritischtrefferchance (Prozentual)",
-    "Witherskelett": "Klingenschaden (Prozentual)",
-    "Verwüster Reiter": "Kaktus Ertrag (Prozentual)",
-    "Riesen": "Bossschaden (Additiv)",
-    "Wächterältester": "Seelen Ertrag (Prozentual)",
-    "Wither": "Kritischtrefferschaden (Prozentual)",
-    "Warden": "Bossschaden (Prozentual)"
+    "Kaninchen": {
+      "effect": "Ausweichchance (Additiv)",
+      "floor": [1, 22]
+    },
+    "Huhn": {
+      "effect": "Bogenschaden (Additiv)",
+      "floor": [2, 23]
+    },
+    "Schwein": {
+      "effect": "Vitalität (Additiv)",
+      "floor": [3, 24]
+    },
+    "Schaf": {
+      "effect": "Ausweichlevel (Additiv)",
+      "floor": [4, 25]
+    },
+    "Kuh": {
+      "effect": "Axtschaden (Additiv)",
+      "floor": [5, 26]
+    },
+    "Pferd": {
+      "effect": "Laufgeschwindigkeit (Prozentual)",
+      "floor": [6, 27]
+    },
+    "Esel": {
+      "effect": "Verteidigung (Prozentual)",
+      "floor": [7, 28]
+    },
+    "Lama": {
+      "effect": "Schaden (Additiv)",
+      "floor": [8, 29]
+    },
+    "Kamel": {
+      "effect": "Kaktus Ertrag (Prozentual)",
+      "floor": [9, 30]
+    },
+    "Ozelot": {
+      "effect": "Schwertschaden (Additiv)",
+      "floor": [10, 31]
+    },
+    "Ziege": {
+      "effect": "Bergbau Erfahrung (Prozentual)",
+      "floor": [11, 32]
+    },
+    "Fuchs": {
+      "effect": "Glückslevel (Additiv)",
+      "floor": [12, 33]
+    },
+    "Schildkröte": {
+      "effect": "Verteidigung (Additiv)",
+      "floor": [13, 34]
+    },
+    "Wolf": {
+      "effect": "Kritischtrefferchancelevel (Additiv)",
+      "floor": [14, 35]
+    },
+    "Panda": {
+      "effect": "Vitalitätslevel (Additiv)",
+      "floor": [15, 36]
+    },
+    "Polarbär": {
+      "effect": "Stärkelevel (Additiv)",
+      "floor": [16, 37]
+    },
+    "Axolotl": {
+      "effect": "Geschicklichkeitslevel (Additiv)",
+      "floor": [17, 38]
+    },
+    "Allay": {
+      "effect": "Vitalität (Additiv)",
+      "floor": [18]
+    },
+    "Biene": {
+      "effect": "Schild Kapazität (Additiv)",
+      "floor": [19, 40]
+    },
+    "Papagei": {
+      "effect": "Charakter Erfahrung (Prozentual)",
+      "floor": [20]
+    },
+    "Fledermaus": {
+      "effect": "Lebensentzug (Additiv)",
+      "floor": [21]
+    },
+    "Frosch": {
+      "effect": "Armbrustschaden (Additiv)",
+      "floor": [39]
+    },
+    "Tintenfisch": {
+      "effect": "Schild Kapazität (Prozentual)",
+      "floor": [41]
+    },
+    "Killer Kaninchen": {
+      "effect": "Dropchance (Prozentual)",
+      "floor": [42]
+    },
+    "Spinne": {
+      "effect": "Schild Regeneration (Additiv)",
+      "floor": [43]
+    },
+    "Goblin": {
+      "effect": "Vitalität (Prozentual)",
+      "floor": [44]
+    },
+    "Zombie": {
+      "effect": "Seelen Ertrag (Prozentual)",
+      "floor": [45, 46]
+    },
+    "Feuerzombie": {
+      "effect": "Essenzen Dropchance (Prozentual)",
+      "floor": [47]
+    },
+    "Wasserzombie": {
+      "effect": "Lebensregeneration (Additiv)",
+      "floor": [48]
+    },
+    "Steinzombie": {
+      "effect": "Verteidigung (Prozentual)",
+      "floor": [49]
+    },
+    "Zombie Bewohner": {
+      "effect": "Münz Menge (Additiv)",
+      "floor": [50]
+    },
+    "Mumien": {
+      "effect": "Klingenschaden (Additiv)",
+      "floor": [51]
+    },
+    "Diener": {
+      "effect": "Schaden (Additiv)",
+      "floor": [52]
+    },
+    "Skelett": {
+      "effect": "Pfeilschaden (Additiv)",
+      "floor": [53]
+    },
+    "Schleim": {
+      "effect": "Charakter Erfahrung (Prozentual)",
+      "floor": [54, 63, 88, 95]
+    },
+    "Hexen": {
+      "effect": "Münz Menge (Prozentual)",
+      "floor": [55]
+    },
+    "Streuner": {
+      "effect": "Bogenschaden (Prozentual)",
+      "floor": [56]
+    },
+    "Ertrunkener": {
+      "effect": "Holzfäller Erfahrung (Prozentual)",
+      "floor": [57]
+    },
+    "Plünderer": {
+      "effect": "Armbrustschaden (Prozentual)",
+      "floor": [58]
+    },
+    "Creeper": {
+      "effect": "Schaden (Additiv)",
+      "floor": [59]
+    },
+    "Magier": {
+      "effect": "Amboss Geschwindigkeit (Additiv)",
+      "floor": [60]
+    },
+    "Silberfisch": {
+      "effect": "Amboss Kapazität (Additiv)",
+      "floor": [61]
+    },
+    "Wächter": {
+      "effect": "Ofen Geschwindigkeit (Prozentual)",
+      "floor": [62]
+    },
+    "Spinnereiter": {
+      "effect": "Schild Geschwindigkeit (Prozentual)",
+      "floor": [64]
+    },
+    "Höhlenspinne": {
+      "effect": "Münz Menge (Additiv)",
+      "floor": [65]
+    },
+    "Skelettpferd": {
+      "effect": "Pfeilschaden (Additiv)",
+      "floor": [66]
+    },
+    "Pilzkuh": {
+      "effect": "Jackpot (Prozentual)",
+      "floor": [67]
+    },
+    "Hühnchenreiter": {
+      "effect": "Klingenschaden (Additiv)",
+      "floor": [68]
+    },
+    "Magmaschleim": {
+      "effect": "Schmelz Geschwindigkeit (Prozentual)",
+      "floor": [69, 81, 92, 98]
+    },
+    "Skelettreiter": {
+      "effect": "Charakter Erfahrung (Prozentual)",
+      "floor": [70]
+    },
+    "Verwüster": {
+      "effect": "Kritischschadenlevel (Additiv)",
+      "floor": [71]
+    },
+    "Eisengolem": {
+      "effect": "Verteidigung (Prozentual)",
+      "floor": [72]
+    },
+    "Sniffer": {
+      "effect": "Holzertrag Chance (Prozentual)",
+      "floor": [73]
+    },
+    "Schneegolem": {
+      "effect": "Respawnrate (Prozentual)",
+      "floor": [74]
+    },
+    "Schweini": {
+      "effect": "Pfeilschaden (Prozentual)",
+      "floor": [75]
+    },
+    "Schreiter": {
+      "effect": "Schmelz Geschwindigkeit (Additiv)",
+      "floor": [76]
+    },
+    "Zombie-Schweini": {
+      "effect": "Schmelzofen Kapazität (Additiv)",
+      "floor": [77]
+    },
+    "Zoglin": {
+      "effect": "Fabrik Erfahrung (Prozentual)",
+      "floor": [78]
+    },
+    "Schweini-Grobian": {
+      "effect": "Axtschaden (Prozentual)",
+      "floor": [79]
+    },
+    "Lohe": {
+      "effect": "Schmelz Effizienz (Prozentual)",
+      "floor": [80]
+    },
+    "Ghast": {
+      "effect": "Amboss Kapazität (Prozentual)",
+      "floor": [82]
+    },
+    "Leuchttintenfisch": {
+      "effect": "Boss Schaden (Prozentual)",
+      "floor": [83]
+    },
+    "Geladener Creeper": {
+      "effect": "Amboss Erfahrung (Prozentual)",
+      "floor": [84]
+    },
+    "Phantom": {
+      "effect": "Kritischtrefferschaden (Prozentual)",
+      "floor": [85]
+    },
+    "Endermilbe": {
+      "effect": "Bergbauertrag Chance (Prozentual)",
+      "floor": [86]
+    },
+    "Vex": {
+      "effect": "Schwertschaden (Prozentual)",
+      "floor": [87]
+    },
+    "Hoglin": {
+      "effect": "Schmelz Kapazität (Prozentual)",
+      "floor": [89]
+    },
+    "Shulker": {
+      "effect": "Amboss Geschwindigkeit (Prozentual)",
+      "floor": [90]
+    },
+    "Enderman": {
+      "effect": "Kritischtrefferchance (Prozentual)",
+      "floor": [91]
+    },
+    "Witherskelett": {
+      "effect": "Klingenschaden (Prozentual)",
+      "floor": [93]
+    },
+    "Verwüster Reiter": {
+      "effect": "Kaktus Ertrag (Prozentual)",
+      "floor": [94]
+    },
+    "Riesen": {
+      "effect": "Bossschaden (Additiv)",
+      "floor": [96]
+    },
+    "Wächterältester": {
+      "effect": "Seelen Ertrag (Prozentual)",
+      "floor": [97]
+    },
+    "Wither": {
+      "effect": "Kritischtrefferschaden (Prozentual)",
+      "floor": [99]
+    },
+    "Warden": {
+      "effect": "Bossschaden (Prozentual)",
+      "floor": [100]
+    }
   },
   "statuen": {
-    "Schwert": "Schwertschaden (Additiv)",
-    "Bogen": "Bogenschaden (Additiv)",
-    "Axt": "Axtschaden (Additiv)",
-    "Ofen": "Schmelzgeschwindigkeit (Additiv)",
-    "Armbrust": "Armbrustschaden (Additiv)",
-    "Geschwindigkeits": "Laufgeschwindigkeit (Prozentual)",
-    "Kaktus": "Kaktus Ertrag (Prozentual)",
-    "Seelen": "Seelen Ertrag (Prozentual)",
-    "Kraft": "Schaden (Additiv)",
-    "Bergbau": "Bergbau Ertrag (Additiv)",
-    "Fabelhafte": "Schmelz Effizienz (Additiv)",
-    "Muschel": "Schild Kapazität (Additiv)",
-    "Holzfäller": "Holz Ertrag (Prozentual)",
-    "Kleeblatt": "Glückslevel (Additiv)",
-    "Herz": "Vitalität (Additiv)",
-    "Gesundheits": "Vitalität (Additiv)",
-    "Essenz": "Essenzen Dropchance (Prozentual)",
-    "Buch": "Charakter Erfahrung (Prozentual)",
-    "Amboss": "Amboss Geschwindigkeit (Additiv)",
-    "Schmelztiegel": "Schmelz Kapazität (Additiv)",
-    "Hasenpfote": "Dropchance (Prozentual)",
-    "Fuß": "Geschicklichkeitslevel (Additiv)",
-    "Hantel": "Stärkelevel (Additiv)",
-    "Goldtopf": "Münz Menge (Additiv)",
-    "Bullseye": "Pfeilschaden (Additiv)",
-    "Faust": "Klingenschaden (Additiv)",
-    "Pharao": "Münz Menge (Prozentual)",
-    "Kriegsaxt": "Axtschaden (Prozentual)",
-    "Pfeil": "Pfeilschaden (Prozentual)",
-    "Schraubenschlüssel": "Fabrik Erfahrung (Prozentual)",
-    "Blatt": "Lebensregeneration (Additiv)",
-    "Dart": "Pfeilschaden (Prozentual)",
-    "Schatz": "Münzchance (Prozentual)",
-    "Bolzen": "Armbrustschaden (Prozentual)",
-    "Spitzhacke": "Bergbau Erfahrung (Prozentual)",
-    "Klingen": "Klingenschaden (Prozentual)",
-    "Tarn": "Ausweichlevel (Additiv)",
-    "Spritzen": "Lebensentzug (Additiv)",
-    "Kristallschwert": "Schwertschaden (Prozentual)",
-    "Funken": "Schmelz Effizienz (Prozentual)",
-    "Stern": "Charakter Erfahrung (Prozentual)",
-    "Setzling": "Respawnrate (Prozentual)",
-    "Zahnrad": "Amboss Kapazität (Additiv)",
-    "Säge": "Holzfäller Erfahrung (Prozentual)",
-    "Teleskop": "Kritischtrefferchancelevel (Additiv)",
-    "Boxhandschuh": "Schaden (Additiv)",
-    "Riesen": "Bossschaden (Additiv)",
-    "Rüstung": "Verteidigung (Additiv)",
-    "Barriere": "Schild Kapazität (Prozentual)",
-    "Goldenes Zahnrad": "Amboss Kapazität (Prozentual)",
-    "Kaktusmeister": "Kaktus Ertrag (Prozentual)",
-    "Präzision": "Kritischtrefferchance (Prozentual)",
-    "Seelenmeister": "Seelen Ertrag (Prozentual)",
-    "Goldhammer": "Amboss Erfahrung (Prozentual)",
-    "Hochofen": "Schmelzgeschwindigkeit (Prozentual)",
-    "Barren": "Schmelz Kapazität (Prozentual)",
-    "Blut": "Vitalität (Prozentual)",
-    "Gießkannen": "Respawnrate (Prozentual)",
-    "Goldenespitzhacke": "Bergbau Erfahrung (Prozentual)",
-    "Schnitter": "Kritischtrefferschaden (Prozentual)",
-    "Stundenglas": "Schildgeschwindigkeit (Additiv)",
-    "Baum": "Holzfäller Erfahrung (Prozentual)",
-    "Scope": "Kritischtrefferschadenlevel (Additiv)",
-    "Goldener Amboss": "Amboss Geschwindigkeit (Prozentual)",
-    "Festungs": "Verteidigungslevel (Additiv)",
-    "Titanen": "Bossschaden (Prozentual)",
-    "Kraftgürtel": "Schaden (Additiv)"
+    "Schwert": {
+      "effect": "Schwertschaden (Additiv)",
+      "floor": [1]
+    },
+    "Bogen": {
+      "effect": "Bogenschaden (Additiv)",
+      "floor": [2]
+    },
+    "Axt": {
+      "effect": "Axtschaden (Additiv)",
+      "floor": [3]
+    },
+    "Ofen": {
+      "effect": "Schmelzgeschwindigkeit (Additiv)",
+      "floor": [4]
+    },
+    "Armbrust": {
+      "effect": "Armbrustschaden (Additiv)",
+      "floor": [5]
+    },
+    "Geschwindigkeits": {
+      "effect": "Laufgeschwindigkeit (Prozentual)",
+      "floor": [6, 27]
+    },
+    "Kaktus": {
+      "effect": "Kaktus Ertrag (Prozentual)",
+      "floor": [7, 28]
+    },
+    "Seelen": {
+      "effect": "Seelen Ertrag (Prozentual)",
+      "floor": [8, 29]
+    },
+    "Kraft": {
+      "effect": "Schaden (Additiv)",
+      "floor": [10, 31]
+    },
+    "Bergbau": {
+      "effect": "Bergbau Ertrag (Additiv)",
+      "floor": [11, 32]
+    },
+    "Fabelhafte": {
+      "effect": "Schmelz Effizienz (Additiv)",
+    "floor": [12]
+    },
+    "Muschel": {
+      "effect": "Schild Kapazität (Additiv)",
+      "floor": [13, 34]
+    },
+    "Holzfäller": {
+      "effect": "Holz Ertrag (Prozentual)",
+      "floor": [14, 35]
+    },
+    "Kleeblatt": {
+      "effect": "Glückslevel (Additiv)",
+      "floor": [15]
+    },
+    "Herz": {
+      "effect": "Vitalität (Additiv)",
+      "floor": [16, 37]
+    },
+    "Gesundheits": {
+      "effect": "Vitalität (Additiv)",
+      "floor": [17]
+    },
+    "Essenz": {
+      "effect": "Essenzen Dropchance (Prozentual)",
+      "floor": [18, 39]
+    },
+    "Buch": {
+      "effect": "Charakter Erfahrung (Prozentual)",
+      "floor": [19, 40]
+    },
+    "Amboss": {
+      "effect": "Amboss Geschwindigkeit (Additiv)",
+      "floor": [20, 45]
+    },
+    "Schmelztiegel": {
+      "effect": "Schmelz Kapazität (Additiv)",
+      "floor": [21, 50]
+    },
+    "Hasenpfote": {
+      "effect": "Dropchance (Prozentual)",
+      "floor": [22, 42]
+    },
+    "Fuß": {
+      "effect": "Geschicklichkeitslevel (Additiv)",
+      "floor": [23, 49]
+    },
+    "Hantel": {
+      "effect": "Stärkelevel (Additiv)",
+      "floor": [25, 47]
+    },
+    "Goldtopf": {
+      "effect": "Münz Menge (Additiv)",
+      "floor": [26]
+    },
+    "Bullseye": {
+      "effect": "Pfeilschaden (Additiv)",
+      "floor": [33, 43]
+    },
+    "Faust": {
+      "effect": "Klingenschaden (Additiv)",
+      "floor": [36, 44]
+    },
+    "Pharao": {
+      "effect": "Münz Menge (Prozentual)",
+      "floor": [51]
+    },
+    "Kriegsaxt": {
+      "effect": "Axtschaden (Prozentual)",
+      "floor": [52]
+    },
+    "Pfeil": {
+      "effect": "Pfeilschaden (Prozentual)",
+      "floor": [53]
+    },
+    "Schraubenschlüssel": {
+      "effect": "Fabrik Erfahrung (Prozentual)",
+      "floor": [54, 63, 88, 95]
+    },
+    "Blatt": {
+      "effect": "Lebensregeneration (Additiv)",
+      "floor": [55]
+    },
+    "Dart": {
+      "effect": "Pfeilschaden (Prozentual)",
+      "floor": [56]
+    },
+    "Schatz": {
+      "effect": "Münzchance (Prozentual)",
+      "floor": [57]
+    },
+    "Bolzen": {
+      "effect": "Armbrustschaden (Prozentual)",
+      "floor": [58]
+    },
+    "Spitzhacke": {
+      "effect": "Bergbau Erfahrung (Prozentual)",
+      "floor": [59]
+    },
+    "Klingen": {
+      "effect": "Klingenschaden (Prozentual)",
+      "floor": [60]
+    },
+    "Tarn": {
+      "effect": "Ausweichlevel (Additiv)",
+      "floor": [61]
+    },
+    "Spritzen": {
+      "effect": "Lebensentzug (Additiv)",
+      "floor": [62]
+    },
+    "Kristallschwert": {
+      "effect": "Schwertschaden (Prozentual)",
+      "floor": [64]
+    },
+    "Funken": {
+      "effect": "Schmelz Effizienz (Prozentual)",
+      "floor": [65]
+    },
+    "Stern": {
+      "effect": "Charakter Erfahrung (Prozentual)",
+      "floor": [66]
+    },
+    "Setzling": {
+      "effect": "Respawnrate (Prozentual)",
+      "floor": [67]
+    },
+    "Zahnrad": {
+      "effect": "Amboss Kapazität (Additiv)",
+      "floor": [68]
+    },
+    "Säge": {
+      "effect": "Holzfäller Erfahrung (Prozentual)",
+      "floor": [69]
+    },
+    "Teleskop": {
+      "effect": "Kritischtrefferchancelevel (Additiv)",
+      "floor": [70]
+    },
+    "Boxhandschuh": {
+      "effect": "Schaden (Additiv)",
+      "floor": [71]
+    },
+    "Riesen": {
+      "effect": "Bossschaden (Additiv)",
+      "floor": [72]
+    },
+    "Rüstung": {
+      "effect": "Verteidigung (Additiv)",
+      "floor": [73, 92, 99]
+    },
+    "Barriere": {
+      "effect": "Schild Kapazität (Prozentual)",
+      "floor": [74]
+    },
+    "Goldenes Zahnrad": {
+      "effect": "Amboss Kapazität (Prozentual)",
+      "floor": [75]
+    },
+    "Kaktusmeister": {
+      "effect": "Kaktus Ertrag (Prozentual)",
+      "floor": [76, 90]
+    },
+    "Präzision": {
+      "effect": "Kritischtrefferchance (Prozentual)",
+      "floor": [77, 87]
+    },
+    "Seelenmeister": {
+      "effect": "Seelen Ertrag (Prozentual)",
+      "floor": [78, 93]
+    },
+    "Goldhammer": {
+      "effect": "Amboss Erfahrung (Prozentual)",
+      "floor": [79]
+    },
+    "Hochofen": {
+      "effect": "Schmelzgeschwindigkeit (Prozentual)",
+      "floor": [80]
+    },
+    "Barren": {
+      "effect": "Schmelz Kapazität (Prozentual)",
+      "floor": [81]
+    },
+    "Blut": {
+      "effect": "Vitalität (Prozentual)",
+      "floor": [82]
+    },
+    "Gießkannen": {
+      "effect": "Respawnrate (Prozentual)",
+      "floor": [83]
+    },
+    "Goldenespitzhacke": {
+      "effect": "Bergbau Erfahrung (Prozentual)",
+      "floor": [84]
+    },
+    "Schnitter": {
+      "effect": "Kritischtrefferschaden (Prozentual)",
+      "floor": [85]
+    },
+    "Stundenglas": {
+      "effect": "Schildgeschwindigkeit (Additiv)",
+      "floor": [86]
+    },
+    "Baum": {
+      "effect": "Holzfäller Erfahrung (Prozentual)",
+      "floor": [89]
+    },
+    "Scope": {
+      "effect": "Kritischtrefferschadenlevel (Additiv)",
+      "floor": [91]
+    },
+    "Goldener Amboss": {
+      "effect": "Amboss Geschwindigkeit (Prozentual)",
+      "floor": [94]
+    },
+    "Festungs": {
+      "effect": "Verteidigungslevel (Additiv)",
+      "floor": [96]
+    },
+    "Titanen": {
+      "effect": "Bossschaden (Prozentual)",
+      "floor": [97]
+    },
+    "Kraftgürtel": {
+      "effect": "Schaden (Additiv)",
+      "floor": [100]
+    }
   }
 }
-
-

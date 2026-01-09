@@ -146,7 +146,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         currentY += LINE_HEIGHT;
         context.drawText(
             client.textRenderer,
-            "Blöcke: -",
+            "Abgebaut: -",
             PADDING, currentY,
             0xFFFFFFFF,
             true

@@ -7,6 +7,9 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 import org.joml.Matrix3x2fStack;
 
+import java.math.BigInteger;
+import java.util.Locale;
+
 /**
  * Draggable Overlay für die Boss HP Anzeige
  */
@@ -21,10 +24,34 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        // Return the left edge position for dragging (right edge minus width)
-        int rightEdge = CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
-        int width = getWidth();
-        return rightEdge - width;
+        // Calculate X position using the same logic as Mining/Holzfäller overlays
+        // baseX is the left edge position (like Mining overlays)
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            return CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
+        }
+        
+        int screenWidth = client.getWindow().getScaledWidth();
+        int baseX = CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
+        int overlayWidth = getWidth(); // Use scaled width for positioning
+        
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = baseX < screenWidth / 2;
+        
+        // Calculate X position based on side (same logic as Mining overlays)
+        int x;
+        if (isOnLeftSide) {
+            // On left side: keep left edge fixed, expand to the right
+            x = baseX;
+        } else {
+            // On right side: keep right edge fixed, expand to the left
+            // Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+            // Keep this right edge fixed, so left edge moves left when width increases
+            x = baseX - overlayWidth;
+        }
+        
+        // Ensure overlay stays within screen bounds
+        return Math.max(0, Math.min(x, screenWidth - overlayWidth));
     }
     
     @Override
@@ -34,6 +61,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     /**
      * Calculate unscaled width (without applying scale factor)
+     * Uses actual boss data to calculate real width dynamically
      */
     private int calculateUnscaledWidth() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -48,29 +76,95 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                 String[] parts = bossText.split("\\|{5}");
                 if (parts.length >= 2) {
                     String displayText = parts[0].trim();
-                    String displayHP = parts[1].trim();
+                    String rawHP = parts[1].trim();
+                    
+                    // Format HP with thousand separator (exactly like standard overlay)
+                    String displayHP = "";
+                    BigInteger currentHP = null;
+                    try {
+                        currentHP = new BigInteger(rawHP);
+                        displayHP = net.felix.utilities.Factory.BossHPUtility.formatBigInteger(currentHP);
+                    } catch (NumberFormatException e) {
+                        displayHP = rawHP;
+                    }
 
                     int nameWidth = client.textRenderer.getWidth(displayText);
                     int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
-                    // Use exact same calculation as standard overlay
-                    int firstLineWidth = nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth);
                     
-                    // Include DPM line width (only if DPM is enabled)
-                    int totalWidth = firstLineWidth;
-                    if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
-                        String dpmText = "DPM: XXXX";
-                        int dpmWidth = client.textRenderer.getWidth(dpmText);
-                        totalWidth = Math.max(firstLineWidth, dpmWidth);
+                    // Calculate percentage text (exactly like standard overlay)
+                    String percentageText = null;
+                    BigInteger initialBossHP = net.felix.utilities.Factory.BossHPUtility.getInitialBossHP();
+                    if (!displayHP.isEmpty() && 
+                        net.felix.utilities.Factory.BossHPUtility.isBossActive() &&
+                        CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowPercentage &&
+                        initialBossHP != null && currentHP != null && 
+                        initialBossHP.compareTo(BigInteger.ZERO) > 0) {
+                        // Calculate percentage: (currentHP / initialBossHP) * 100
+                        double percentage = currentHP.doubleValue() / initialBossHP.doubleValue() * 100.0;
+                        // Format with one decimal place
+                        percentageText = String.format(Locale.US, "%.1f%%", percentage);
                     }
+                    
+                    int separatorWidth = percentageText != null ? client.textRenderer.getWidth("|") : 0;
+                    int percentageWidth = percentageText != null ? client.textRenderer.getWidth(percentageText) : 0;
+                    
+                    // Use exact same calculation as standard overlay (including percentage if applicable)
+                    int firstLineWidth = nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth + 
+                        (percentageText != null ? 5 + separatorWidth + 5 + percentageWidth : 0));
+                    
+                    // Calculate DPM text (exactly like standard overlay)
+                    String dpmText = null;
+                    if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM && 
+                        initialBossHP != null && currentHP != null) {
+                        long bossFightStartTime = net.felix.utilities.Factory.BossHPUtility.getBossFightStartTime();
+                        if (bossFightStartTime > 0) {
+                            long currentTime = System.currentTimeMillis();
+                            long fightDuration = currentTime - bossFightStartTime;
+                            
+                            if (fightDuration > 0) {
+                                // Calculate damage dealt
+                                BigInteger damageDealt = initialBossHP.subtract(currentHP);
+                                
+                                // Calculate DPM (Damage Per Minute)
+                                double minutes = fightDuration / 60000.0;
+                                if (minutes > 0) {
+                                    double damageDealtDouble = damageDealt.doubleValue();
+                                    double dpm = damageDealtDouble / minutes;
+                                    // Format DPM with thousand separator
+                                    dpmText = String.format("DPM: %,.0f", dpm);
+                                }
+                            }
+                        }
+                    }
+                    
+                    int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
+                    
+                    // Use exact same calculation as standard overlay
+                    int totalWidth = Math.max(firstLineWidth, dpmWidth);
                     
                     return totalWidth + PADDING * 2;
                 }
             }
         }
 
-        // No boss data available - calculate width for preview text "Boss-Name: XXXX" and optionally "DPM: XXXX"
+        // No boss data available - calculate width for preview text (compact preview)
+        // Use smaller example values for preview to keep overlay compact
         String previewText = "Boss-Name: XXXX";
         int previewWidth = client.textRenderer.getWidth(previewText);
+        
+        // Add HP width estimate (use smaller value for preview)
+        String previewHP = "100,000";
+        int previewHPWidth = client.textRenderer.getWidth(previewHP);
+        previewWidth += 10 + previewHPWidth; // 10 pixels spacing + HP width
+        
+        // Add percentage width if enabled (use smaller value for preview)
+        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowPercentage) {
+            String previewPercentageText = "50.0%";
+            int percentageWidth = client.textRenderer.getWidth(previewPercentageText);
+            int separatorWidth = client.textRenderer.getWidth("|");
+            previewWidth += 5 + separatorWidth + 5 + percentageWidth; // Spacing + separator + spacing + percentage
+        }
+        
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
             String dpmText = "DPM: XXXX";
             previewWidth = Math.max(previewWidth, client.textRenderer.getWidth(dpmText));
@@ -80,6 +174,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     /**
      * Calculate unscaled height (without applying scale factor)
+     * Uses actual boss data to calculate real height dynamically
      */
     private int calculateUnscaledHeight() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -89,7 +184,48 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         
         // Height includes: first line (Boss-Name + HP) + optionally DPM line
         int height = client.textRenderer.fontHeight + PADDING * 2; // First line
+        
+        // Check if DPM should be displayed
+        boolean shouldShowDPM = false;
+        
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+            BossData bossData = getCurrentBossData();
+            
+            // If boss data is available, check if DPM should actually be displayed (exactly like standard overlay)
+            if (bossData != null && net.felix.utilities.Factory.BossHPUtility.isBossActive()) {
+                String bossText = bossData.getBossText();
+                if (bossText != null && !bossText.isEmpty()) {
+                    String[] parts = bossText.split("\\|{5}");
+                    if (parts.length >= 2) {
+                        try {
+                            BigInteger currentHP = new BigInteger(parts[1].trim());
+                            BigInteger initialBossHP = net.felix.utilities.Factory.BossHPUtility.getInitialBossHP();
+                            long bossFightStartTime = net.felix.utilities.Factory.BossHPUtility.getBossFightStartTime();
+                            
+                            // DPM is shown if initialBossHP, currentHP, and fightStartTime are available
+                            if (initialBossHP != null && currentHP != null && bossFightStartTime > 0) {
+                                long currentTime = System.currentTimeMillis();
+                                long fightDuration = currentTime - bossFightStartTime;
+                                if (fightDuration > 0) {
+                                    double minutes = fightDuration / 60000.0;
+                                    if (minutes > 0) {
+                                        shouldShowDPM = true;
+                                    }
+                                }
+                            }
+                        } catch (NumberFormatException e) {
+                            // HP could not be parsed, DPM won't be shown
+                        }
+                    }
+                }
+            } else {
+                // No boss data available (preview mode) - show DPM line if option is enabled
+                // This ensures the preview text "DPM: XXXX" is visible in the overlay
+                shouldShowDPM = true;
+            }
+        }
+        
+        if (shouldShowDPM) {
             height += client.textRenderer.fontHeight + LINE_SPACING; // DPM line
         }
         
@@ -114,9 +250,33 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        // x is the left edge position from dragging, convert to right edge for storage
-        int width = getWidth();
-        CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = x + width;
+        // Calculate baseX using the same logic as Mining/Holzfäller overlays
+        // We need to reverse the calculation: from the actual x position, calculate baseX
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = x;
+            CCLiveUtilitiesConfig.HANDLER.instance().bossHPY = y;
+            return;
+        }
+        
+        int screenWidth = client.getWindow().getScaledWidth();
+        int overlayWidth = getWidth(); // Use scaled width for positioning
+        
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = x < screenWidth / 2;
+        
+        // Calculate baseX based on side (reverse of getX() calculation)
+        int baseX;
+        if (isOnLeftSide) {
+            // On left side: baseX is the same as x (left edge)
+            baseX = x;
+        } else {
+            // On right side: baseX is the right edge (x + overlayWidth)
+            // We store the right edge as baseX so it stays fixed when width changes
+            baseX = x + overlayWidth;
+        }
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = baseX;
         CCLiveUtilitiesConfig.HANDLER.instance().bossHPY = y;
     }
     

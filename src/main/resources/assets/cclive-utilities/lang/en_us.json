@@ -24,6 +24,10 @@
     "category.cclive-utilities.collection": "CCLive Utilities - Collection",
     "key.cclive-utilities.item-info-extract": "Extract Item Info",
     "key.cclive-utilities.item-info-auto-click": "Auto Right-Click Unregistered Items",
+    "key.cclive-utilities.log-hover-info": "Log Hover Info",
+    "key.cclive-utilities.log-inventory-name": "Log Inventory Name",
+    "key.cclive-utilities.log-bossbars": "Log Bossbars",
+    "key.cclive-utilities.log-scoreboard": "Log Scoreboard",
     "category.cclive-utilities.item-info": "CCLive Utilities - Item Info",
       "key.categories.cclive-utilities": "CCLive Utilities"
   }

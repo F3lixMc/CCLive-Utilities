@@ -1,4 +1,5 @@
-[
+{
+  "levels": [
   {
     "Level": 2,
     "Essence": "Pferd T1",
@@ -191,7 +192,7 @@
   },
   {
     "Level": 40,
-    "Essence": "Schneemann T2",
+    "Essence": "Piglin T3",
     "Amount": 41000
   },
   {
@@ -994,4 +995,43 @@
     "Essence": "Wither T4",
     "Amount": 201000
   }
-]
+  ],
+  "combined_waves": [
+    {
+      "Level": "1-13",
+      "Wave": 603
+    },
+    {
+      "Level": "15-20",
+      "Wave": 946,
+      "without":["Piglin T1"]
+    },
+    {
+      "Level": "21-24",
+      "Wave": 1141
+    },
+    {
+      "Level": "21-29",
+      "Wave": 1237,
+      "without":["Endermite T2"]
+    },
+    {
+      "Level": "25+30",
+      "Wave": 1471
+    },
+    {
+      "Level": "30-40",
+      "Wave": 1923,
+      "without":["Skelett T3"]
+    },
+    {
+      "Level": "31-41",
+      "Wave": 1929,
+      "without":["Witherskelett T3, Endermite T2"]
+    },
+    {
+      "Level": "31-34",
+      "Wave": 1950
+    }
+  ]
+}

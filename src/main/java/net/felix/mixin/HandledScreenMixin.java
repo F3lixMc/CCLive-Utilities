@@ -26,6 +26,12 @@ public abstract class HandledScreenMixin {
      */
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        // Store mouse position for use in tooltip callbacks
+        net.felix.utilities.Overall.InformationenUtility.setLastMousePosition(mouseX, mouseY);
+        
+        // Update mouse position for DebugUtility (Item Logger)
+        net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
+        
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
         
@@ -43,14 +49,22 @@ public abstract class HandledScreenMixin {
         // Render Kit Filter buttons in relevant inventories
         renderKitFilterButtons(context, mouseX, mouseY);
         
-        // Only show aspect overlay in specific blueprint inventories and if enabled in config
+        // Show aspect overlay in blueprint inventories OR when hovering over items with "⭐" in tooltip
         // Render AFTER all buttons to ensure it appears on top
-        if (isBlueprintInventory() && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
-            // Update aspect overlay with current hovered item
+        if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
+            // Update aspect overlay with current hovered item (works for both blueprint items and items with "⭐")
             updateAspectOverlay(mouseX, mouseY);
             
-            // Render our aspect overlay AFTER everything else (including buttons and tooltips)
-            renderAspectOverlay(context);
+            // Render aspect overlay if:
+            // 1. We're in a blueprint inventory (for blueprint items), OR
+            // 2. We're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
+            // This allows aspect overlay to work in ALL inventories for items with "⭐"
+            boolean shouldRender = isBlueprintInventory() || net.felix.utilities.Overall.Aspekte.AspectOverlay.isCurrentlyHovering();
+            
+            if (shouldRender) {
+                // Render our aspect overlay AFTER everything else (including buttons and tooltips)
+                renderAspectOverlay(context);
+            }
         }
         
         // Clear tooltip bounds after rendering
@@ -113,8 +127,28 @@ public abstract class HandledScreenMixin {
             }
         }
         
-        // Handle clicks on MKLevel search bar - pass screen position directly from mixin (@Shadow fields)
+        // Handle clicks on MKLevel search bar and scrollbar - pass screen position directly from mixin (@Shadow fields)
         if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, x, y, backgroundHeight)) {
+            cir.setReturnValue(true);
+        }
+    }
+    
+    /**
+     * Handles mouse dragging for MKLevel scrollbar
+     */
+    @Inject(method = "mouseDragged", at = @At("HEAD"), cancellable = true)
+    private void onMouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
+        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarDrag(mouseX, mouseY, button, x, y, backgroundHeight)) {
+            cir.setReturnValue(true);
+        }
+    }
+    
+    /**
+     * Handles mouse release to stop scrollbar dragging
+     */
+    @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
+    private void onMouseReleased(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
     }
@@ -294,6 +328,22 @@ public abstract class HandledScreenMixin {
                 }
             }
             
+            // Check if we're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
+            // The tooltip callback manages the lifecycle of "⭐" items
+            boolean isHoveringStarItem = net.felix.utilities.Overall.Aspekte.AspectOverlay.isCurrentlyHovering();
+            
+            // If we're hovering over a "⭐" item, don't override it with blueprint item detection
+            // But we still need to check if we're still hovering over a slot
+            if (isHoveringStarItem) {
+                // If we're not hovering over any slot, clear the overlay immediately
+                // This ensures the overlay disappears as soon as we move away from the item
+                if (hoveredSlot == null || !hoveredSlot.hasStack()) {
+                    net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+                }
+                return;
+            }
+            
+            // Handle blueprint items
             if (hoveredSlot != null && hoveredSlot.hasStack()) {
                 ItemStack itemStack = hoveredSlot.getStack();
                 if (itemStack != null && !itemStack.isEmpty()) {
@@ -304,13 +354,16 @@ public abstract class HandledScreenMixin {
                         return;
                     }
                     
-                    // Update the aspect overlay with this item
-                    net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfo(itemStack);
+                    // Update the aspect overlay with this item (for blueprint items only)
+                    // Items with "⭐" are handled by addAspectNameToTooltip
+                    if (isBlueprintInventory()) {
+                        net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfo(itemStack);
+                    }
                     return;
                 }
             }
             
-            // If no valid item is hovered, hide the overlay
+            // If no valid item is hovered, hide the overlay immediately
             net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
             
         } catch (Exception e) {
@@ -379,6 +432,9 @@ public abstract class HandledScreenMixin {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
             String title = screen.getTitle().getString();
             
+            // IMPORTANT: Check for Equipment Display BEFORE cleaning, as cleaning removes the characters
+            boolean isEquipmentDisplay = ZeichenUtility.containsEquipmentDisplay(title);
+            
             // Remove Minecraft formatting codes and Unicode characters for comparison (same as in SchmiedTrackerUtility)
             String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
                                      .replaceAll("[\\u3400-\\u4DBF]", "");
@@ -393,7 +449,7 @@ public abstract class HandledScreenMixin {
                    cleanTitle.contains("Werkzeug Sammlung")  ||
                    cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
                    cleanTitle.contains("Geschützte Items")  ||
-                   ZeichenUtility.containsEquipmentDisplay(cleanTitle); //Equipment Display
+                   isEquipmentDisplay; //Equipment Display - checked BEFORE cleaning
                    
         } catch (Exception e) {
             return false; // Default to false if there's an error

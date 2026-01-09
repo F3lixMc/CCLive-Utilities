@@ -17,13 +17,14 @@ import java.util.List;
  */
 public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
-    // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger und Recycler
+    // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler
     private static final Identifier FORSCHUNG_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
     private static final Identifier AMBOSS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
     private static final Identifier SCHMELZOFEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
     private static final Identifier SEELEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
     private static final Identifier ESSENZEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
     private static final Identifier JAEGER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+    private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
     private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
     
     @Override
@@ -33,7 +34,34 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
+        // Calculate X position using the same logic as Mining/Holzfäller overlays
+        // baseX is the left edge position (like Mining overlays)
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
+        }
+        
+        int screenWidth = client.getWindow().getScaledWidth();
+        int baseX = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
+        int overlayWidth = getWidth(); // Use scaled width for positioning
+        
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = baseX < screenWidth / 2;
+        
+        // Calculate X position based on side (same logic as Mining overlays)
+        int x;
+        if (isOnLeftSide) {
+            // On left side: keep left edge fixed, expand to the right
+            x = baseX;
+        } else {
+            // On right side: keep right edge fixed, expand to the left
+            // Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+            // Keep this right edge fixed, so left edge moves left when width increases
+            x = baseX - overlayWidth;
+        }
+        
+        // Ensure overlay stays within screen bounds
+        return Math.max(0, Math.min(x, screenWidth - overlayWidth));
     }
     
     @Override
@@ -44,10 +72,11 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     /**
      * Berechnet die unskalierte Breite
      * Verwendet die tatsächlichen Werte aus dem originalen Overlay für genaue Breitenberechnung
+     * Dynamische Verbreiterung basierend auf Inhalt (wie BossHP-Overlay)
      */
     private int calculateUnscaledWidth() {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return 200;
+        if (client == null) return 200; // Fallback width
         
         // Verwende die tatsächlichen Zeilen aus dem originalen Overlay für genaue Breitenberechnung
         List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLines();
@@ -60,7 +89,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
             if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
                 return 50; // Minimale Breite
             }
-            return 200; // Fallback
+            return 200; // Fallback width
         }
         
         int maxWidth = 0;
@@ -70,6 +99,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
             if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
                                                                "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
                                                                "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || 
+                                                               "machtkristalle".equals(line.configKey) ||
                                                                "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
                                                                "recyclerSlot3".equals(line.configKey)))) {
                 int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
@@ -88,6 +118,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         }
         
         final int PADDING = 5;
+        // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
         return maxWidth + (PADDING * 2);
     }
     
@@ -143,7 +174,33 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX = x;
+        // Calculate baseX using the same logic as Mining/Holzfäller overlays
+        // We need to reverse the calculation: from the actual x position, calculate baseX
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX = x;
+            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY = y;
+            return;
+        }
+        
+        int screenWidth = client.getWindow().getScaledWidth();
+        int overlayWidth = getWidth(); // Use scaled width for positioning
+        
+        // Determine if overlay is on left or right side of screen
+        boolean isOnLeftSide = x < screenWidth / 2;
+        
+        // Calculate baseX based on side (reverse of getX() calculation)
+        int baseX;
+        if (isOnLeftSide) {
+            // On left side: baseX is the same as x (left edge)
+            baseX = x;
+        } else {
+            // On right side: baseX is the right edge (x + overlayWidth)
+            // We store the right edge as baseX so it stays fixed when width changes
+            baseX = x + overlayWidth;
+        }
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX = baseX;
         CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY = y;
     }
     
@@ -244,7 +301,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
             try {
                 int currentX = xPosition + PADDING;
                 
-                // Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger und Recycler)
+                // Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
                 if (line.showIcon && (line.configKey != null)) {
                     int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
                     int lineCenterY = currentY + actualLineHeight / 2;
@@ -270,6 +327,9 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                     } else if ("jaeger".equals(line.configKey)) {
                         iconToUse = JAEGER_ICON;
                         fallbackText = "Jäger: ";
+                    } else if ("machtkristalle".equals(line.configKey)) {
+                        iconToUse = MACHTKRISTALL_ICON;
+                        fallbackText = "MK: ";
                     } else if ("recyclerSlot1".equals(line.configKey)) {
                         iconToUse = RECYCLER_ICON;
                         fallbackText = "Recycler Slot 1: ";
@@ -384,9 +444,28 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         if (!CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
             return false;
         }
+        
+        // Hide overlay if in general_lobby dimension
+        if (isInGeneralLobby()) {
+            return false;
+        }
+        
         // Prüfe ob es Zeilen gibt, die im Haupt-Overlay angezeigt werden sollen
         List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLines();
         return !lines.isEmpty();
+    }
+    
+    /**
+     * Prüft, ob der Spieler in der "general_lobby" Dimension ist
+     */
+    private boolean isInGeneralLobby() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.world == null) {
+            return false;
+        }
+        
+        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        return dimensionPath.equals("general_lobby");
     }
     
     @Override

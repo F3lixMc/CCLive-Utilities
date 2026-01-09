@@ -551,9 +551,23 @@
         "floor": "e29",
         "modifier":"[Schaden], [Schaden], [Andere]"
       },
+      "Magisches Platinamulett",
+      {
+        "item_type":"Halskette",
+        "rarity":"Epic",
+        "floor": "e29",
+        "modifier":"[Schaden], [Schaden], [Andere]"
+      },
       "Giftiger Gürtel",
       {
         "item_type":"Gürtel",
+        "rarity":"Epic",
+        "floor": "e30",
+        "modifier":"[Schaden], [Schaden], [Verteidigung]"
+      },
+      "Giftige Stachelhandschuhe",
+      {
+        "item_type":"Handschuhe",
         "rarity":"Epic",
         "floor": "e30",
         "modifier":"[Schaden], [Schaden], [Verteidigung]"
@@ -860,6 +874,13 @@
         "item_type":"Gürtel",
         "rarity":"Legendary",
         "floor": "e98",
+        "modifier":"[Schaden], [Schaden], [Andere], [Attribute]"
+      },
+      "Phönixfeder Beinkleid",
+      {
+        "item_type":"Hose",
+        "rarity":"Legendary",
+        "floor": "e99",
         "modifier":"[Schaden], [Schaden], [Andere], [Attribute]"
       },
       "Phönixfeuer Handschützer",

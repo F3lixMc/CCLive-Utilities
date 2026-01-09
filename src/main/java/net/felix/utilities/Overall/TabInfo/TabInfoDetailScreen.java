@@ -235,11 +235,26 @@ public class TabInfoDetailScreen extends Screen {
                 isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
             
             // Eingabefeld Text
-            String displayText = warnPercentInput.isEmpty() ? "-1 (deaktiviert)" : warnPercentInput + "%";
-            if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
-                displayText += "_"; // Blinkender Cursor
+            String displayText = warnPercentInput;
+            boolean showCursor = isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500;
+            
+            // Zeichne den Text (ohne Cursor)
+            int textX = fieldX + 3;
+            if (!displayText.isEmpty()) {
+                context.drawText(textRenderer, displayText, textX, inputY + 4, 0xFFFFFFFF, false);
+                textX += textRenderer.getWidth(displayText);
             }
-            context.drawText(textRenderer, displayText, fieldX + 3, inputY + 4, 0xFFFFFFFF, false);
+            
+            // Zeichne das %-Zeichen (wenn Text vorhanden ist)
+            if (!displayText.isEmpty()) {
+                context.drawText(textRenderer, "%", textX, inputY + 4, 0xFFFFFFFF, false);
+                textX += textRenderer.getWidth("%");
+            }
+            
+            // Zeichne den blinkenden Cursor separat
+            if (showCursor) {
+                context.drawText(textRenderer, "_", textX, inputY + 4, 0xFFFFFFFF, false);
+            }
             
             // Hinweis
             context.drawText(textRenderer, "(Leer lassen oder -1 = deaktiviert)", 
@@ -1052,7 +1067,7 @@ public class TabInfoDetailScreen extends Screen {
             double value = -1.0;
             if (!warnPercentInput.trim().isEmpty()) {
                 value = Double.parseDouble(warnPercentInput.replace(",", "."));
-                // Begrenze auf 0-100
+                // Begrenze auf 0-100 (0 ist erlaubt für Warnung bei 0%)
                 if (value < 0) value = -1.0;
                 if (value > 100) value = 100.0;
             }

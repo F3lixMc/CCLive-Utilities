@@ -125,6 +125,9 @@ public class SchmiedTrackerUtility {
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
+			// IMPORTANT: Check for Equipment Display BEFORE cleaning, as cleaning removes the characters
+			boolean isEquipmentDisplay = ZeichenUtility.containsEquipmentDisplay(title);
+			
 			// Remove Minecraft formatting codes and Unicode characters for comparison
 			String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
 								   .replaceAll("[\\u3400-\\u4DBF]", "");
@@ -159,7 +162,7 @@ public class SchmiedTrackerUtility {
 			cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Waffen Sammlung") || 
 			cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
 			cleanTitle.contains("Geschützte Items") ||
-			ZeichenUtility.containsEquipmentDisplay(cleanTitle)) {//Equipment Display
+			isEquipmentDisplay) {//Equipment Display - checked BEFORE cleaning
 				isInDisassembleChest = true;
 				isInBlueprintInventory = false;
 				updateSlotColors(handledScreen, client);
@@ -206,8 +209,24 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 		
-		// Prüfe Slots 9-44
-		for (int slotIndex = 9; slotIndex <= 44; slotIndex++) {
+		// Prüfe ob es sich um ein Equipment Display Inventar handelt
+		String title = screen.getTitle().getString();
+		boolean isEquipmentDisplay = ZeichenUtility.containsEquipmentDisplay(title);
+		
+		// Bestimme die zu prüfenden Slots basierend auf dem Inventar-Typ
+		int startSlot, endSlot;
+		if (isEquipmentDisplay) {
+			// In Equipment Display Inventaren: Slots 0-53
+			startSlot = 0;
+			endSlot = 53;
+		} else {
+			// In anderen Inventaren: Slots 9-44 (Standard)
+			startSlot = 9;
+			endSlot = 44;
+		}
+		
+		// Prüfe die entsprechenden Slots
+		for (int slotIndex = startSlot; slotIndex <= endSlot; slotIndex++) {
 			if (slotIndex < screen.getScreenHandler().slots.size()) {
 				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
 				ItemStack itemStack = slot.getStack();
