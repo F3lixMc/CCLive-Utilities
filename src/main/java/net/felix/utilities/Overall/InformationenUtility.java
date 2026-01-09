@@ -675,7 +675,6 @@ public class InformationenUtility {
 			return; // Don't show aspect information if aspect overlay is disabled
 		}
 		
-<<<<<<< HEAD
 		// First, extract the item name from the tooltip (usually the first line)
 		String itemName = extractItemNameFromTooltip(lines, stack);
 		
