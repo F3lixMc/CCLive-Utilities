@@ -27,7 +27,9 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextWidget;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
@@ -63,7 +65,6 @@ public class OverlayEditorScreen extends Screen {
     
     // Clipboard settings overlay
     private boolean clipboardSettingsOpen = false;
-    private DraggableOverlay hoveredClipboardOverlay = null;
     
     public OverlayEditorScreen() {
         super(Text.literal("Overlay Editor"));
@@ -203,7 +204,8 @@ public class OverlayEditorScreen extends Screen {
                 
                 // Collection overlay - only available in Overworld (Farmworld) when not in inventory
                 // Only show if biome is detected in scoreboard
-                if (isInOverworld() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
+                // Not available in player name dimension or in any inventory
+                if (isInOverworld() && !isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
                     overlays.add(new CollectionDraggableOverlay());
                 }
                 
@@ -487,7 +489,6 @@ public class OverlayEditorScreen extends Screen {
         titleWidget.render(context, mouseX, mouseY, delta);
         
         // Render all overlays in edit mode
-        hoveredClipboardOverlay = null;
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isEnabled()) {
                 overlay.renderInEditMode(context, mouseX, mouseY, delta);
@@ -496,12 +497,6 @@ public class OverlayEditorScreen extends Screen {
                 if (overlay.isHovered(mouseX, mouseY)) {
                     renderResizeHandle(context, overlay);
                     renderResetHandle(context, overlay);
-                    
-                    // Check if this is a Clipboard overlay and render settings button
-                    if (overlay instanceof ClipboardDraggableOverlay) {
-                        hoveredClipboardOverlay = overlay;
-                        renderClipboardSettingsButton(context, overlay, mouseX, mouseY);
-                    }
                 }
             }
         }
@@ -601,18 +596,6 @@ public class OverlayEditorScreen extends Screen {
     
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Handle clipboard settings button click first
-        if (hoveredClipboardOverlay != null && button == 0) {
-            int buttonSize = 16;
-            int buttonX = hoveredClipboardOverlay.getX() + hoveredClipboardOverlay.getWidth() - buttonSize - 10;
-            int buttonY = hoveredClipboardOverlay.getY() + 5;
-            if (mouseX >= buttonX && mouseX <= buttonX + buttonSize &&
-                mouseY >= buttonY && mouseY <= buttonY + buttonSize) {
-                clipboardSettingsOpen = !clipboardSettingsOpen;
-                return true;
-            }
-        }
-        
         // Handle clipboard settings click
         if (handleClipboardSettingsClick(mouseX, mouseY, button)) {
             return true;
@@ -974,12 +957,12 @@ public class OverlayEditorScreen extends Screen {
         int y = boxY + 35;
         int checkboxSize = 10;
         int checkboxSpacing = 25;
+        int checkboxX = boxX + 10;
         
         for (OverlayEntry entry : displayOverlays) {
             boolean isEnabled = entry.isEnabled;
             
             // Checkbox-Hintergrund
-            int checkboxX = boxX + 10;
             int checkboxY = y;
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
             context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
@@ -1011,7 +994,44 @@ public class OverlayEditorScreen extends Screen {
             
             // Overlay-Name
             String overlayName = entry.displayName;
-            context.drawText(textRenderer, overlayName, checkboxX + checkboxSize + 5, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
+            int textX = checkboxX + checkboxSize + 5;
+            int textWidth = textRenderer.getWidth(overlayName);
+            int textHeight = textRenderer.fontHeight;
+            context.drawText(textRenderer, overlayName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
+            
+            // Settings-Button für Clipboard (rechts in der Zeile, wie TabInfo)
+            if (entry.overlay instanceof ClipboardDraggableOverlay) {
+                int gearSize = 12;
+                int gearX = boxX + boxWidth - gearSize - 10;
+                int gearY = checkboxY - 1;
+                
+                // Prüfe ob Maus über Checkbox, Text oder Icon ist
+                boolean isHoveringCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
+                                            mouseY >= checkboxY && mouseY <= checkboxY + checkboxSize;
+                boolean isHoveringText = mouseX >= textX && mouseX <= textX + textWidth &&
+                                       mouseY >= checkboxY && mouseY <= checkboxY + textHeight;
+                boolean isHoveringGear = mouseX >= gearX && mouseX <= gearX + gearSize &&
+                                         mouseY >= gearY && mouseY <= gearY + gearSize;
+                boolean isHoveringEntry = isHoveringCheckbox || isHoveringText;
+                
+                // Zeichne weißen Rahmen um das Zahnrad-Icon
+                context.drawBorder(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
+                
+                drawGearIcon(context, gearX, gearY, gearSize);
+                
+                // Zeichne Hover-Hintergrund NACH allen Elementen, damit es darüber liegt
+                if (isHoveringEntry) {
+                    // Hover-Hintergrund für Checkbox und Text
+                    int hoverStartX = checkboxX - 2;
+                    int hoverEndX = textX + textWidth + 2;
+                    context.fill(hoverStartX, checkboxY - 1, hoverEndX, checkboxY + checkboxSize + 1, 0x40FFFFFF);
+                }
+                
+                // Zeichne Hover-Hintergrund für Zahnrad-Icon
+                if (isHoveringGear) {
+                    context.fill(gearX - 1, gearY - 1, gearX + gearSize + 1, gearY + gearSize + 1, 0x40FFFFFF);
+                }
+            }
             
             y += checkboxSpacing;
         }
@@ -1095,18 +1115,18 @@ public class OverlayEditorScreen extends Screen {
             return false;
         }
         
-        // Prüfe ob Klick auf eine Checkbox oder den Namen ist
+        // Prüfe ob Klick auf eine Checkbox, den Namen oder Settings-Button ist
         int y = boxY + 35;
         int checkboxSize = 10;
         int checkboxSpacing = 25;
         int checkboxX = boxX + 10;
         int textX = checkboxX + checkboxSize + 5;
-        int textWidth = boxWidth - textX - 10; // Restliche Breite für Text
         
         for (OverlayEntry entry : displayOverlays) {
             int checkboxY = y;
             int textY = checkboxY;
             int textHeight = textRenderer.fontHeight;
+            int textWidth = textRenderer.getWidth(entry.displayName);
             
             // Prüfe ob Klick auf Checkbox
             boolean clickedOnCheckbox = (mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
@@ -1115,6 +1135,22 @@ public class OverlayEditorScreen extends Screen {
             // Prüfe ob Klick auf Text (Overlay-Name)
             boolean clickedOnText = (mouseX >= textX && mouseX <= textX + textWidth &&
                                      mouseY >= textY && mouseY <= textY + textHeight);
+            
+            // Prüfe ob Klick auf Settings-Button für Clipboard
+            boolean clickedOnSettings = false;
+            if (entry.overlay instanceof ClipboardDraggableOverlay) {
+                int gearSize = 12;
+                int gearX = boxX + boxWidth - gearSize - 10;
+                int gearY = checkboxY - 1;
+                clickedOnSettings = (mouseX >= gearX - 1 && mouseX <= gearX + gearSize + 1 &&
+                                     mouseY >= gearY - 1 && mouseY <= gearY + gearSize + 1);
+            }
+            
+            if (clickedOnSettings) {
+                // Öffne Clipboard-Settings
+                clipboardSettingsOpen = !clipboardSettingsOpen;
+                return true;
+            }
             
             if (clickedOnCheckbox || clickedOnText) {
                 // Toggle Overlay
@@ -1155,6 +1191,8 @@ public class OverlayEditorScreen extends Screen {
             CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay = !CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay;
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
             CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled;
+        } else if (overlay instanceof CollectionDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
         } else if (overlay instanceof AspectOverlayDraggableOverlay) {
             CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
         } else if (overlay instanceof StarAspectOverlayDraggableOverlay) {
@@ -1177,27 +1215,44 @@ public class OverlayEditorScreen extends Screen {
     }
     
     /**
-     * Rendert den Settings-Button für das Clipboard-Overlay (rechts oben)
+     * Zeichnet das Zahnrad-Icon (Settings-Icon) wie in TabInfoSettingsScreen
      */
-    private void renderClipboardSettingsButton(DrawContext context, DraggableOverlay overlay, int mouseX, int mouseY) {
-        int buttonSize = 16;
-        int buttonX = overlay.getX() + overlay.getWidth() - buttonSize - 10; // 10px vom rechten Rand
-        int buttonY = overlay.getY() + 5; // 5px vom oberen Rand
-        
-        // Button-Hintergrund
-        boolean isHovered = mouseX >= buttonX && mouseX <= buttonX + buttonSize &&
-                           mouseY >= buttonY && mouseY <= buttonY + buttonSize;
-        int bgColor = isHovered ? 0xFF404040 : 0xFF202020;
-        context.fill(buttonX, buttonY, buttonX + buttonSize, buttonY + buttonSize, bgColor);
-        context.drawBorder(buttonX, buttonY, buttonSize, buttonSize, 0xFFFFFFFF);
-        
-        // Settings-Icon (⚙ oder "⚙")
-        String icon = "⚙";
-        int iconWidth = textRenderer.getWidth(icon);
-        int iconHeight = textRenderer.fontHeight;
-        int iconX = buttonX + (buttonSize - iconWidth) / 2;
-        int iconY = buttonY + (buttonSize - iconHeight) / 2;
-        context.drawText(textRenderer, icon, iconX, iconY, 0xFFFFFFFF, false);
+    private void drawGearIcon(DrawContext context, int x, int y, int size) {
+        try {
+            // Zeichne das Settings-Icon aus der Textur
+            Identifier settingsIcon = Identifier.of("cclive-utilities", "textures/alert_icons/alert_icons_settings.png");
+            context.drawTexture(
+                RenderPipelines.GUI_TEXTURED,
+                settingsIcon,
+                x, y,
+                0.0f, 0.0f,
+                size, size,
+                size, size
+            );
+        } catch (Exception e) {
+            // Fallback: Zeichne ein einfaches Zahnrad-Icon als gefüllte Formen
+            // Äußerer Rahmen
+            context.drawBorder(x, y, size, size, 0xFFFFFFFF);
+            
+            // Diagonale Linien (als gefüllte Rechtecke)
+            int lineWidth = 1;
+            // Hauptdiagonale
+            for (int i = 0; i < size; i++) {
+                int px = x + i;
+                int py = y + i;
+                if (px < x + size && py < y + size) {
+                    context.fill(px, py, px + lineWidth, py + lineWidth, 0xFFFFFFFF);
+                }
+            }
+            // Nebendiagonale
+            for (int i = 0; i < size; i++) {
+                int px = x + size - 1 - i;
+                int py = y + i;
+                if (px >= x && py < y + size) {
+                    context.fill(px, py, px + lineWidth, py + lineWidth, 0xFFFFFFFF);
+                }
+            }
+        }
     }
     
     /**
@@ -1205,7 +1260,7 @@ public class OverlayEditorScreen extends Screen {
      */
     private void renderClipboardSettings(DrawContext context, int mouseX, int mouseY) {
         int boxWidth = 300;
-        int boxHeight = 200;
+        int boxHeight = 340; // Angepasst für neue Buttons (Fertige Kosten)
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -1218,7 +1273,7 @@ public class OverlayEditorScreen extends Screen {
         // Titel
         context.drawText(textRenderer, "Clipboard Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
         
-        // Buttons (noch ohne Funktionalität)
+        // Buttons
         int buttonY = boxY + 40;
         int buttonHeight = 20;
         int buttonSpacing = 30;
@@ -1235,14 +1290,67 @@ public class OverlayEditorScreen extends Screen {
         String button1Text = "Blueprint Shop Kosten: " + (showBPCosts ? "An" : "Aus");
         context.drawText(textRenderer, button1Text, boxX + 15, button1Y + 6, 0xFFFFFFFF, false);
         
-        // Button 2: Platzhalter für weitere Settings
-        int button2Y = buttonY + buttonSpacing;
+        // Überschrift: Material Sortierung
+        int headerY = buttonY + buttonSpacing + 5;
+        context.drawText(textRenderer, "Material Sortierung", boxX + 10, headerY, 0xFFFFFF00, false);
+        
+        // Button 2: Material Sortierung An/Aus
+        int button2Y = headerY + 20;
+        boolean materialSortEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortEnabled;
         boolean button2Hovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
                                  mouseY >= button2Y && mouseY <= button2Y + buttonHeight;
         int button2Color = button2Hovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, button2Y, boxX + 10 + buttonWidth, button2Y + buttonHeight, button2Color);
         context.drawBorder(boxX + 10, button2Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
-        context.drawText(textRenderer, "Weitere Einstellungen...", boxX + 15, button2Y + 6, 0xFFFFFFFF, false);
+        String button2Text = "Material Sortierung: " + (materialSortEnabled ? "An" : "Aus");
+        context.drawText(textRenderer, button2Text, boxX + 15, button2Y + 6, 0xFFFFFFFF, false);
+        
+        // Button 3: Aufsteigend/Absteigend Sortierung
+        int button3Y = button2Y + buttonSpacing;
+        boolean materialSortAscending = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortAscending;
+        boolean button3Hovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                                 mouseY >= button3Y && mouseY <= button3Y + buttonHeight;
+        int button3Color = button3Hovered ? 0xFF404040 : 0xFF202020;
+        // Button nur aktiv, wenn Sortierung aktiviert ist
+        if (!materialSortEnabled) {
+            button3Color = 0xFF101010; // Dunkler wenn deaktiviert
+        }
+        context.fill(boxX + 10, button3Y, boxX + 10 + buttonWidth, button3Y + buttonHeight, button3Color);
+        context.drawBorder(boxX + 10, button3Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        String button3Text = "Sortierung: " + (materialSortAscending ? "Aufsteigend (1-100)" : "Absteigend (100-1)");
+        int button3TextColor = materialSortEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
+        context.drawText(textRenderer, button3Text, boxX + 15, button3Y + 6, button3TextColor, false);
+        
+        // Überschrift: Fertige Kosten
+        int costHeaderY = button3Y + buttonSpacing + 5;
+        context.drawText(textRenderer, "Fertige Kosten", boxX + 10, costHeaderY, 0xFFFFFF00, false);
+        
+        // Button 4: Fertige Kosten Sortierung An/Aus
+        int button4Y = costHeaderY + 20;
+        boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
+        boolean button4Hovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                                 mouseY >= button4Y && mouseY <= button4Y + buttonHeight;
+        int button4Color = button4Hovered ? 0xFF404040 : 0xFF202020;
+        context.fill(boxX + 10, button4Y, boxX + 10 + buttonWidth, button4Y + buttonHeight, button4Color);
+        context.drawBorder(boxX + 10, button4Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        String button4Text = "Fertige Kosten Sortierung: " + (costDisplayEnabled ? "An" : "Aus");
+        context.drawText(textRenderer, button4Text, boxX + 15, button4Y + 6, 0xFFFFFFFF, false);
+        
+        // Button 5: Option 1/2 - Ausblenden/Ans Ende setzen (wechselt zwischen beiden)
+        int button5Y = button4Y + buttonSpacing;
+        int costDisplayMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
+        boolean button5Hovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                                 mouseY >= button5Y && mouseY <= button5Y + buttonHeight;
+        int button5Color = button5Hovered ? 0xFF404040 : 0xFF202020;
+        // Button nur aktiv, wenn Sortierung aktiviert ist
+        if (!costDisplayEnabled) {
+            button5Color = 0xFF101010; // Dunkler wenn deaktiviert
+        }
+        context.fill(boxX + 10, button5Y, boxX + 10 + buttonWidth, button5Y + buttonHeight, button5Color);
+        context.drawBorder(boxX + 10, button5Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        String button5Text = costDisplayMode == 1 ? "Ausblenden" : "Ans Ende setzen";
+        int button5TextColor = costDisplayEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
+        context.drawText(textRenderer, button5Text, boxX + 15, button5Y + 6, button5TextColor, false);
     }
     
     /**
@@ -1254,7 +1362,7 @@ public class OverlayEditorScreen extends Screen {
         }
         
         int boxWidth = 300;
-        int boxHeight = 200;
+        int boxHeight = 340; // Angepasst für neue Buttons (Fertige Kosten)
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -1282,11 +1390,53 @@ public class OverlayEditorScreen extends Screen {
             return true;
         }
         
-        // Button 2: Platzhalter (noch keine Funktionalität)
-        int button2Y = buttonY + buttonSpacing;
+        // Button 2: Material Sortierung An/Aus
+        int headerY = buttonY + buttonSpacing + 5;
+        int button2Y = headerY + 20;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
             mouseY >= button2Y && mouseY <= button2Y + buttonHeight) {
-            // Noch keine Funktionalität
+            // Toggle Material Sortierung
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortEnabled = 
+                !CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortEnabled;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
+        // Button 3: Aufsteigend/Absteigend Sortierung
+        int button3Y = button2Y + buttonSpacing;
+        boolean materialSortEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortEnabled;
+        if (materialSortEnabled && // Nur klickbar wenn Sortierung aktiviert ist
+            mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= button3Y && mouseY <= button3Y + buttonHeight) {
+            // Toggle Sortierungsrichtung
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortAscending = 
+                !CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortAscending;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
+        // Button 4: Fertige Kosten Sortierung An/Aus
+        int costHeaderY = button3Y + buttonSpacing + 5;
+        int button4Y = costHeaderY + 20;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= button4Y && mouseY <= button4Y + buttonHeight) {
+            // Toggle Fertige Kosten Sortierung
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled = 
+                !CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
+        // Button 5: Option 1/2 - Ausblenden/Ans Ende setzen (wechselt zwischen beiden)
+        int button5Y = button4Y + buttonSpacing;
+        boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
+        if (costDisplayEnabled && // Nur klickbar wenn Sortierung aktiviert ist
+            mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= button5Y && mouseY <= button5Y + buttonHeight) {
+            // Toggle zwischen Option 1 (Ausblenden) und Option 2 (Ans Ende setzen)
+            int currentMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode = (currentMode == 1) ? 2 : 1;
+            CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
         

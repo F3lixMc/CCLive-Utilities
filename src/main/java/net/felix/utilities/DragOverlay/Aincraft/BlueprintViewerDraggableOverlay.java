@@ -18,6 +18,11 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     private static final int DEFAULT_HEIGHT = 100;
     private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/blueprint_background.png");
     
+    // Performance-Optimierung: Cache für Reflection-Fields (einmalig beim ersten Zugriff)
+    private static java.lang.reflect.Field cachedConfigField = null;
+    private static java.lang.reflect.Field cachedCurrentRarityField = null;
+    private static boolean reflectionFieldsCached = false;
+    
     @Override
     public String getOverlayName() {
         return "Blueprint Viewer";
@@ -153,10 +158,22 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
                 return DEFAULT_HEIGHT;
             }
             
-            // Use reflection to access the private config field
-            java.lang.reflect.Field configField = BPViewerUtility.class.getDeclaredField("config");
-            configField.setAccessible(true);
-            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) configField.get(instance);
+            // Performance-Optimierung: Cache Reflection-Fields
+            if (!reflectionFieldsCached) {
+                try {
+                    cachedConfigField = BPViewerUtility.class.getDeclaredField("config");
+                    cachedConfigField.setAccessible(true);
+                    cachedCurrentRarityField = BPViewerUtility.class.getDeclaredField("currentRarity");
+                    cachedCurrentRarityField.setAccessible(true);
+                    reflectionFieldsCached = true;
+                } catch (Exception e) {
+                    // Fallback: Reflection failed, use default
+                    return DEFAULT_HEIGHT;
+                }
+            }
+            
+            // Use cached reflection field
+            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) cachedConfigField.get(instance);
             
             BPViewerUtility.BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
             
@@ -271,10 +288,22 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
                 return DEFAULT_WIDTH;
             }
             
-            // Use reflection to access the private config field
-            java.lang.reflect.Field configField = BPViewerUtility.class.getDeclaredField("config");
-            configField.setAccessible(true);
-            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) configField.get(instance);
+            // Performance-Optimierung: Cache Reflection-Fields
+            if (!reflectionFieldsCached) {
+                try {
+                    cachedConfigField = BPViewerUtility.class.getDeclaredField("config");
+                    cachedConfigField.setAccessible(true);
+                    cachedCurrentRarityField = BPViewerUtility.class.getDeclaredField("currentRarity");
+                    cachedCurrentRarityField.setAccessible(true);
+                    reflectionFieldsCached = true;
+                } catch (Exception e) {
+                    // Fallback: Reflection failed, use default
+                    return DEFAULT_HEIGHT;
+                }
+            }
+            
+            // Use cached reflection field
+            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) cachedConfigField.get(instance);
             
             BPViewerUtility.BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
             
@@ -327,10 +356,22 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
                 return DEFAULT_WIDTH;
             }
             
-            // Use reflection to access the private config field
-            java.lang.reflect.Field configField = BPViewerUtility.class.getDeclaredField("config");
-            configField.setAccessible(true);
-            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) configField.get(instance);
+            // Performance-Optimierung: Cache Reflection-Fields
+            if (!reflectionFieldsCached) {
+                try {
+                    cachedConfigField = BPViewerUtility.class.getDeclaredField("config");
+                    cachedConfigField.setAccessible(true);
+                    cachedCurrentRarityField = BPViewerUtility.class.getDeclaredField("currentRarity");
+                    cachedCurrentRarityField.setAccessible(true);
+                    reflectionFieldsCached = true;
+                } catch (Exception e) {
+                    // Fallback: Reflection failed, use default
+                    return DEFAULT_HEIGHT;
+                }
+            }
+            
+            // Use cached reflection field
+            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) cachedConfigField.get(instance);
             
             BPViewerUtility.BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
             
@@ -385,10 +426,22 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
                 return DEFAULT_HEIGHT;
             }
             
-            // Use reflection to access the private config field
-            java.lang.reflect.Field configField = BPViewerUtility.class.getDeclaredField("config");
-            configField.setAccessible(true);
-            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) configField.get(instance);
+            // Performance-Optimierung: Cache Reflection-Fields
+            if (!reflectionFieldsCached) {
+                try {
+                    cachedConfigField = BPViewerUtility.class.getDeclaredField("config");
+                    cachedConfigField.setAccessible(true);
+                    cachedCurrentRarityField = BPViewerUtility.class.getDeclaredField("currentRarity");
+                    cachedCurrentRarityField.setAccessible(true);
+                    reflectionFieldsCached = true;
+                } catch (Exception e) {
+                    // Fallback: Reflection failed, use default
+                    return DEFAULT_HEIGHT;
+                }
+            }
+            
+            // Use cached reflection field
+            BPViewerUtility.BlueprintConfig config = (BPViewerUtility.BlueprintConfig) cachedConfigField.get(instance);
             
             BPViewerUtility.BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
             
@@ -424,15 +477,29 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     
     /**
      * Get current rarity (same logic as BPViewerUtility)
+     * Performance-Optimierung: Verwendet gecachtes Reflection-Field
      */
     private String getCurrentRarity() {
         // Try to get current rarity from BPViewerUtility instance
         try {
             BPViewerUtility instance = BPViewerUtility.getInstance();
-            // Use reflection to access the private currentRarity field
-            java.lang.reflect.Field field = BPViewerUtility.class.getDeclaredField("currentRarity");
-            field.setAccessible(true);
-            return (String) field.get(instance);
+            
+            // Performance-Optimierung: Cache Reflection-Fields
+            if (!reflectionFieldsCached) {
+                try {
+                    cachedConfigField = BPViewerUtility.class.getDeclaredField("config");
+                    cachedConfigField.setAccessible(true);
+                    cachedCurrentRarityField = BPViewerUtility.class.getDeclaredField("currentRarity");
+                    cachedCurrentRarityField.setAccessible(true);
+                    reflectionFieldsCached = true;
+                } catch (Exception e) {
+                    // Fallback to default rarity
+                    return "common";
+                }
+            }
+            
+            // Use cached reflection field
+            return (String) cachedCurrentRarityField.get(instance);
         } catch (Exception e) {
             // Fallback to default rarity
             return "common";

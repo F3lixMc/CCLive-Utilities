@@ -444,11 +444,13 @@ public class ItemViewerGrid {
                             tooltipLines.add(Text.literal("Mit Rechtsklick zu Favoriten hinzufügen")
                                 .setStyle(Style.EMPTY.withColor(0xFF16A80C).withItalic(false))); // uncommon grün #16a80c (dunkleres grün)
                         }
+                        
+                        // Bauplan Anpinnen Hotkey-Information (nach Favoriten, in grau)
+                        // Keine leere Zeile davor, da es die letzte Zeile sein soll
+                        String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
+                        tooltipLines.add(Text.literal("Bauplan Anpinnen mit Hotkey: " + hotkeyText)
+                            .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false))); // grau
                     }
-                    
-                    // Leere Zeilen am Ende
-                    tooltipLines.add(Text.empty());
-                    tooltipLines.add(Text.empty());
                     }
                 }
                 
@@ -636,9 +638,55 @@ public class ItemViewerGrid {
     private void addCostItem(java.util.List<Text> tooltipLines, CostItem costItem) {
         if (costItem != null && costItem.itemName != null && costItem.amount != null) {
             String amountStr = formatAmount(costItem.amount);
-            String line = amountStr + " " + costItem.itemName;
-            tooltipLines.add(Text.literal(line)
-                .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false))); // green
+            String materialLine = amountStr + " " + costItem.itemName;
+            
+            // Prüfe ob es ein Aincraft-Material ist und füge Ebene hinzu
+            net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo floorInfo = 
+                net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(costItem.itemName);
+            
+            if (floorInfo != null) {
+                // Erstelle Text mit Material-Name in grün und "(Ebene X)" in Rarity-Farbe
+                MutableText materialText = Text.literal(materialLine)
+                    .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false)); // Grün für Material
+                
+                String floorText = " (Ebene " + floorInfo.floor + ")";
+                int rarityColor = getMaterialRarityColor(floorInfo.rarity);
+                Text floorTextObj = Text.literal(floorText)
+                    .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false)); // Rarity-Farbe für "(Ebene X)"
+                
+                // Kombiniere beide Texte
+                tooltipLines.add(materialText.append(floorTextObj));
+            } else {
+                // Normale Anzeige ohne Ebene
+                tooltipLines.add(Text.literal(materialLine)
+                    .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false)));
+            }
+        }
+    }
+    
+    /**
+     * Gets the color for a material rarity level (same as InformationenUtility.getRarityColor)
+     */
+    private int getMaterialRarityColor(String rarity) {
+        if (rarity == null) {
+            return 0xFF55FF55; // Default green
+        }
+        
+        switch (rarity.toLowerCase()) {
+            case "common":
+                return 0xFFFFFFFF; // White
+            case "uncommon":
+                return 0xFF1EFC00; // #1EFC00
+            case "rare":
+                return 0xFF006FDA; // #006FDA
+            case "epic":
+                return 0xFFA134EB; // #A134EB
+            case "legendary":
+                return 0xFFFF7E00; // #FC7E00
+            case "mob":
+                return 0xFFFFFFFF; // White for mob names
+            default:
+                return 0xFF808080; // Gray
         }
     }
     
