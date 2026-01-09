@@ -42,16 +42,25 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     @Override
     public int getY() {
         // Y-Position: -1 = am Inventar ausrichten, >= 0 = absolute Position
+        // Buttons are rendered above the overlay, so we need to shift Y up by button height
         int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
+        if (scale <= 0) scale = 1.0f;
+        
+        int buttonHeight = 20; // Unscaled button height
+        int scaledButtonHeight = Math.round(buttonHeight * scale);
+        
         if (yOffset == -1) {
             // Im F6-Editor: Wenn -1, zeige eine Standard-Position (zentriert)
             MinecraftClient client = MinecraftClient.getInstance();
             if (client != null && client.getWindow() != null) {
                 int screenHeight = client.getWindow().getScaledHeight();
-                return (screenHeight - getHeight()) / 2;
+                // Shift up by button height to include buttons in the overlay area
+                return (screenHeight - getHeight()) / 2 - scaledButtonHeight;
             }
         }
-        return yOffset;
+        // Shift up by button height to include buttons in the overlay area
+        return yOffset - scaledButtonHeight;
     }
     
     /**
@@ -168,11 +177,14 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     @Override
     public int getHeight() {
         // Return scaled height - ensure we use the same calculation as the real overlay
+        // Include button height in the total height
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
         if (scale <= 0) scale = 1.0f; // Safety check
         
         int unscaledHeight = calculateUnscaledHeight();
-        int scaledHeight = Math.round(unscaledHeight * scale);
+        int buttonHeight = 20; // Unscaled button height
+        int totalUnscaledHeight = unscaledHeight + buttonHeight; // Include buttons
+        int scaledHeight = Math.round(totalUnscaledHeight * scale);
         
         return scaledHeight;
     }
@@ -185,7 +197,15 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         
         // Y-Position: Speichere die absolute Y-Position
         // -1 = am Inventar ausrichten, >= 0 = absolute Position
-        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = y;
+        // Since getY() shifts up by button height, we need to add it back when saving
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
+        if (scale <= 0) scale = 1.0f;
+        
+        int buttonHeight = 20; // Unscaled button height
+        int scaledButtonHeight = Math.round(buttonHeight * scale);
+        
+        // Add button height back to get the actual overlay Y position (without button offset)
+        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = y + scaledButtonHeight;
     }
     
     @Override
@@ -215,36 +235,87 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         int x = getX();
         int y = getY();
         int width = getWidth();
+        int height = getHeight(); // This now includes button height
         
         // Get scale
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
         if (scale <= 0) scale = 1.0f;
         
-        // Calculate height the same way as the real overlay (unscaledHeight * scale)
-        // This ensures the F6 overlay matches the real overlay height exactly
-        int unscaledHeight = calculateUnscaledHeight();
-        int height = Math.round(unscaledHeight * scale);
+        // Calculate button height (scaled)
+        int buttonHeight = 20; // Unscaled button height
+        int scaledButtonHeight = Math.round(buttonHeight * scale);
         
-        // Render background (scaled) - use calculated height to match real overlay
-        context.fill(x, y, x + width, y + height, 0x80000000);
+        // Render background for button area (above overlay)
+        context.fill(x, y, x + width, y + scaledButtonHeight, 0x80000000);
         
-        // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        // Render background for overlay area (below buttons)
+        context.fill(x, y + scaledButtonHeight, x + width, y + height, 0x80000000);
         
-        // Render preview text with scale using matrix transformation
+        // Render preview with scale using matrix transformation
         MinecraftClient client = MinecraftClient.getInstance();
         if (client != null) {
+            // Matrix should start at the actual overlay position (not including buttons)
+            // Since getY() returns position including button offset, we need to add it back
             Matrix3x2fStack matrices = context.getMatrices();
             matrices.pushMatrix();
-            matrices.translate(x, y);
+            matrices.translate(x, y + scaledButtonHeight); // Start at actual overlay position
             matrices.scale(scale, scale);
             
+            int unscaledWidth = calculateUnscaledWidth();
             int padding = 5;
             int lineHeight = 12;
+            int searchBarHeight = 16;
+            int contentOffset = 3;
+            int unscaledButtonHeight = 20; // Unscaled button height
             int textX = padding;
-            int textY = padding;
             
-            // Render preview entries
+            // Draw buttons above overlay (at negative Y, aligned with top edge)
+            // This matches the original overlay position exactly
+            // Buttons are rendered first so the red border appears on top
+            int buttonY = -unscaledButtonHeight;
+            int buttonWidth = unscaledWidth / 2;
+            
+            // Left button: "Einzelne Wellen" (same style as right button in F6 preview)
+            int leftButtonBgColor = 0xFF202020; // Same as inactive button color
+            int leftButtonBorderColor = 0xFF808080; // Gray border
+            context.fill(0, buttonY, buttonWidth, buttonY + unscaledButtonHeight, leftButtonBgColor);
+            context.drawBorder(0, buttonY, buttonWidth, unscaledButtonHeight, leftButtonBorderColor);
+            
+            // Center text in left button
+            String leftButtonText = "Einzelne Wellen";
+            int leftTextWidth = client.textRenderer.getWidth(leftButtonText);
+            int leftTextX = (buttonWidth - leftTextWidth) / 2;
+            int leftTextY = buttonY + (unscaledButtonHeight - client.textRenderer.fontHeight) / 2;
+            context.drawText(client.textRenderer, leftButtonText, leftTextX, leftTextY, 0xFFFFFFFF, false);
+            
+            // Right button: "Kombinierte Wellen" (inactive in preview)
+            int rightButtonBgColor = 0xFF202020; // Inactive button color
+            int rightButtonBorderColor = 0xFF808080; // Gray border for inactive
+            context.fill(buttonWidth, buttonY, unscaledWidth, buttonY + unscaledButtonHeight, rightButtonBgColor);
+            context.drawBorder(buttonWidth, buttonY, buttonWidth, unscaledButtonHeight, rightButtonBorderColor);
+            
+            // Center text in right button
+            String rightButtonText = "Kombinierte Wellen";
+            int rightTextWidth = client.textRenderer.getWidth(rightButtonText);
+            int rightTextX = buttonWidth + (buttonWidth - rightTextWidth) / 2;
+            int rightTextY = buttonY + (unscaledButtonHeight - client.textRenderer.fontHeight) / 2;
+            context.drawText(client.textRenderer, rightButtonText, rightTextX, rightTextY, 0xFFFFFFFF, false);
+            
+            // Draw search bar
+            int searchBarY = padding - contentOffset;
+            int searchBarWidth = unscaledWidth - padding * 2;
+            context.fill(padding, searchBarY, padding + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
+            context.drawBorder(padding, searchBarY, searchBarWidth, searchBarHeight, 0xFF808080);
+            
+            // Draw search text placeholder
+            String searchPlaceholder = "Suchen...";
+            int searchTextY = searchBarY + (searchBarHeight - client.textRenderer.fontHeight) / 2;
+            context.drawText(client.textRenderer, searchPlaceholder, padding + 2, searchTextY, 0xFF808080, false);
+            
+            // Render preview entries below search bar
+            int contentY = searchBarY + searchBarHeight + 2;
+            int textY = contentY;
+            
             String previewLevel = "-Level 2";
             String previewEssence = " Pferd T1, 3.000";
             
@@ -259,6 +330,10 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
             
             matrices.popMatrix();
         }
+        
+        // Render border for edit mode (scaled) - around entire area including buttons
+        // Rendered last so it appears on top of the buttons
+        context.drawBorder(x, y, width, height, 0xFFFF0000);
     }
     
     @Override
@@ -281,7 +356,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     @Override
     public void resetToDefault() {
         CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX = 135;
-        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = 134;
+        CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = 115;
         savePosition();
     }
 }

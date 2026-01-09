@@ -19,6 +19,11 @@ public class AspectOverlay {
     private static String currentAspectName = "";
     private static String currentAspectDescription = "";
     private static String currentItemName = "";
+    private static long lastTooltipUpdateTime = 0; // Track when the tooltip was last updated
+    private static final long TOOLTIP_TIMEOUT_MS = 50; // Consider tooltip inactive after 50ms without update (very short delay to handle frame timing)
+    
+    // Separate state for chat overlay (different from star item overlay)
+    private static boolean isChatHovering = false;
     
     // Tooltip bounds for collision detection
     private static int tooltipX = -1;
@@ -92,6 +97,7 @@ public class AspectOverlay {
             currentAspectDescription = aspectInfo.aspectDescription;
             currentItemName = cleanItemName;
             isCurrentlyHovering = true; // Set to true when hovering over a valid blueprint item
+            lastTooltipUpdateTime = -1; // Use -1 to distinguish blueprint items from chat items (0) and star items (>0)
             // Don't set shouldShow to true here - it will be controlled by Shift key in render method
         } else {
             shouldShow = false;
@@ -99,6 +105,7 @@ public class AspectOverlay {
             currentAspectName = "";
             currentAspectDescription = "";
             currentItemName = "";
+            lastTooltipUpdateTime = 0;
         }
     }
     
@@ -114,36 +121,179 @@ public class AspectOverlay {
     }
     
     /**
-     * Updates aspect info from blueprint name (for chat messages)
+     * Updates aspect info from blueprint name
+     * Can be called for chat messages OR star items (⭐)
+     * For chat: sets isChatHovering = true, lastTooltipUpdateTime = 0
+     * For star items: sets isCurrentlyHovering = true, lastTooltipUpdateTime = currentTime
      */
     public static void updateAspectInfoFromName(String cleanItemName, net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
         if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
             shouldShow = false;
+            isChatHovering = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
             currentItemName = "";
+            lastTooltipUpdateTime = 0;
             return;
         }
         
         currentAspectName = aspectInfo.aspectName;
         currentAspectDescription = aspectInfo.aspectDescription;
         currentItemName = cleanItemName;
+        
+        // Check if this is being called from chat (isChatHovering will be set separately)
+        // or from star items (isCurrentlyHovering will be set)
+        // We can't distinguish here, so we set both flags and let the caller determine which one
+        // Actually, we need to check: if lastTooltipUpdateTime was 0 before, this might be a chat item
+        // But we can't know for sure. Let's use a different approach:
+        // Star items should set lastTooltipUpdateTime > 0, chat items should set it to 0
+        
+        // For now, assume this is a star item (most common case)
+        // Chat items will explicitly set isChatHovering separately
         isCurrentlyHovering = true;
+        lastTooltipUpdateTime = System.currentTimeMillis(); // Star items use timeout
+    }
+    
+    /**
+     * Updates aspect info from blueprint name for chat messages only
+     */
+    public static void updateAspectInfoFromNameForChat(String cleanItemName, net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
+        if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
+            shouldShow = false;
+            isChatHovering = false;
+            currentAspectName = "";
+            currentAspectDescription = "";
+            currentItemName = "";
+            lastTooltipUpdateTime = 0;
+            return;
+        }
+        
+        currentAspectName = aspectInfo.aspectName;
+        currentAspectDescription = aspectInfo.aspectDescription;
+        currentItemName = cleanItemName;
+        isChatHovering = true;
+        lastTooltipUpdateTime = 0; // Chat items don't use timeout
     }
     
     /**
      * Called when hovering stops (no item being hovered)
+     * For chat overlays: only clears chat data
+     * For blueprint item overlays: clears blueprint item data
+     * For star item overlays: clears star item data
      */
     public static void onHoverStopped() {
-        isCurrentlyHovering = false;
+        // If lastTooltipUpdateTime == 0, this is a chat item
+        // If lastTooltipUpdateTime == -1, this is a blueprint item
+        // If lastTooltipUpdateTime > 0, this is a star item
+        if (lastTooltipUpdateTime == 0) {
+            // This is a chat item, clear chat data
+            isChatHovering = false;
+            currentAspectName = "";
+            currentAspectDescription = "";
+            currentItemName = "";
+        } else if (lastTooltipUpdateTime == -1) {
+            // This is a blueprint item, clear blueprint item data
+            isCurrentlyHovering = false;
+            currentAspectName = "";
+            currentAspectDescription = "";
+            currentItemName = "";
+            lastTooltipUpdateTime = 0;
+        } else {
+            // This is a star item, clear star item data
+            isCurrentlyHovering = false;
+            currentAspectName = "";
+            currentAspectDescription = "";
+            currentItemName = "";
+            lastTooltipUpdateTime = 0;
+        }
+    }
+    
+    /**
+     * Checks if we're still actively hovering (tooltip was updated recently)
+     * For blueprint items (lastTooltipUpdateTime == -1), we just check isCurrentlyHovering
+     * For chat items (lastTooltipUpdateTime == 0), we check isChatHovering
+     * For "⭐" items (lastTooltipUpdateTime > 0), we check if the tooltip was updated recently
+     */
+    private static boolean isActivelyHovering() {
+        // For chat items (lastTooltipUpdateTime == 0), check isChatHovering
+        if (lastTooltipUpdateTime == 0) {
+            return isChatHovering;
+        }
+        
+        // For blueprint items (lastTooltipUpdateTime == -1), check isCurrentlyHovering
+        if (lastTooltipUpdateTime == -1) {
+            return isCurrentlyHovering;
+        }
+        
+        // For "⭐" items (lastTooltipUpdateTime > 0), check if tooltip was updated recently
+        if (!isCurrentlyHovering) {
+            return false;
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        long timeSinceLastUpdate = currentTime - lastTooltipUpdateTime;
+        
+        if (timeSinceLastUpdate > TOOLTIP_TIMEOUT_MS) {
+            // Tooltip hasn't been updated recently - we're no longer hovering
+            isCurrentlyHovering = false;
+            currentAspectName = "";
+            currentAspectDescription = "";
+            currentItemName = "";
+            lastTooltipUpdateTime = 0;
+            return false;
+        }
+        
+        return true;
     }
     
     /**
      * Returns whether we're currently hovering over a valid blueprint item
      */
     public static boolean isCurrentlyHovering() {
-        return isCurrentlyHovering;
+        return isActivelyHovering();
+    }
+    
+    /**
+     * Returns whether we're currently hovering over a star item (⭐)
+     * Star items have lastTooltipUpdateTime > 0
+     */
+    public static boolean isStarItemHovering() {
+        return lastTooltipUpdateTime > 0 && isCurrentlyHovering;
+    }
+    
+    /**
+     * Checks if we're currently in a blueprint inventory
+     */
+    private static boolean isInBlueprintInventory(MinecraftClient client) {
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Check if the current screen is a HandledScreen (inventory-like screen)
+        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+            return false;
+        }
+        
+        // Get the screen title to check if it's a blueprint inventory
+        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        
+        String title = handledScreen.getTitle().getString();
+        
+        // Remove Minecraft formatting codes and Unicode characters for comparison
+        String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+                               .replaceAll("[\\u3400-\\u4DBF]", "");
+        
+        // Check if the clean title contains any of the blueprint inventory names
+        return cleanTitle.contains("Baupläne [Waffen]") ||
+               cleanTitle.contains("Baupläne [Rüstung]") ||
+               cleanTitle.contains("Baupläne [Werkzeuge]") ||
+               cleanTitle.contains("Bauplan [Shop]") ||
+               cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
+               cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
+               cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
+               cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
     }
     
     /**
@@ -294,21 +444,19 @@ public class AspectOverlay {
             return;
         }
         
-        // Check if Shift is pressed - overlay only shows when Shift is held
-        boolean isShiftPressed = InputUtil.isKeyPressed(
-            client.getWindow().getHandle(), 
-            InputUtil.GLFW_KEY_LEFT_SHIFT) || 
-            InputUtil.isKeyPressed(
-                client.getWindow().getHandle(), 
-                InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        // Check if Shift is pressed
+        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
+                                                       InputUtil.GLFW_KEY_LEFT_SHIFT) || 
+                                InputUtil.isKeyPressed(client.getWindow().getHandle(), 
+                                                       InputUtil.GLFW_KEY_RIGHT_SHIFT);
         
         if (!isShiftPressed) {
             // Shift not pressed, don't render overlay
             return;
         }
         
-        // Check if we have aspect information and are currently hovering
-        if (currentAspectName.isEmpty() || currentItemName.isEmpty() || !isCurrentlyHovering) {
+        // Check if we have aspect information and are currently hovering (chat hover)
+        if (currentAspectName.isEmpty() || currentItemName.isEmpty() || !isChatHovering) {
             return;
         }
         
@@ -432,8 +580,13 @@ public class AspectOverlay {
             return;
         }
         
-        // Check if we have aspect information, are currently hovering, and shift is pressed
-        if (currentAspectName.isEmpty() || currentItemName.isEmpty() || !isCurrentlyHovering) {
+        // Check if we're actively hovering (tooltip was updated recently)
+        if (!isActivelyHovering()) {
+            return;
+        }
+        
+        // Check if we have aspect information
+        if (currentAspectName.isEmpty() || currentItemName.isEmpty()) {
             return;
         }
         
@@ -467,9 +620,27 @@ public class AspectOverlay {
             return;
         }
         
+        // Check if we're in a blueprint inventory AND this is a "⭐" item (not a blueprint item)
+        // If so, don't render this overlay (the blueprint Aspect Overlay is handled separately)
+        // For blueprint items (lastTooltipUpdateTime == 0), we should render in blueprint inventories
+        // For "⭐" items (lastTooltipUpdateTime > 0), we should NOT render in blueprint inventories
+        if (isInBlueprintInventory(client) && lastTooltipUpdateTime > 0) {
+            return;
+        }
+        
         // Get configurable position and scale from config
-        int configX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX;
-        int configY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY;
+        // Use different positions for blueprint items vs "⭐" items
+        boolean isStarItem = (lastTooltipUpdateTime > 0);
+        int configX, configY;
+        if (isStarItem) {
+            // For "⭐" items, use starAspectOverlayX/Y (from left/top)
+            configX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayX;
+            configY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayY;
+        } else {
+            // For blueprint items, use aspectOverlayX/Y (from right/top)
+            configX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX;
+            configY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY;
+        }
         boolean showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayShowBackground;
         float overlayScale = 1.0f; // Default scale - add aspectOverlayScale to config later
 
@@ -499,13 +670,19 @@ public class AspectOverlay {
         int overlayWidth = baseOverlayWidth;
         int overlayHeight = baseOverlayHeight;
         
-        // Position overlay using config values (same logic as AspectOverlayDraggableOverlay)
-        // configX is the offset from the right edge, so calculate X position from right
-        int overlayX = screenWidth - overlayWidth - configX;
-        int overlayY = configY; // Y is absolute position from top
+        // Position overlay using config values
+        int overlayX, overlayY;
+        if (isStarItem) {
+            // For "⭐" items: X is absolute position from left, Y is absolute position from top
+            overlayX = configX;
+            overlayY = configY;
+        } else {
+            // For blueprint items: X is from right edge, Y is from top
+            overlayX = screenWidth - configX - overlayWidth;
+            overlayY = configY;
+        }
         
-        // Check for collision with tooltip and mirror position if needed
-        boolean shouldMirror = false;
+        // Check for collision with tooltip and adjust position if needed
         if (tooltipActive && tooltipWidth > 0 && tooltipHeight > 0) {
             // Calculate actual overlay bounds (with scaling)
             int scaledWidth = (int) (overlayWidth * overlayScale);
@@ -521,17 +698,9 @@ public class AspectOverlay {
             // Check if tooltip overlaps with overlay
             if (rectanglesOverlap(overlayActualX, overlayActualY, overlayActualWidth, overlayActualHeight,
                                  tooltipX, tooltipY, tooltipWidth, tooltipHeight)) {
-                shouldMirror = true;
+                // Move overlay to the right side if it overlaps with tooltip
+                overlayX = screenWidth - overlayWidth - 10; // 10px margin from right edge
             }
-        }
-        
-        // Mirror position to left side if tooltip overlaps
-        if (shouldMirror) {
-            // Position on left side instead (configX from left edge)
-            overlayX = configX;
-        } else {
-            // Keep original position on right side
-            overlayX = screenWidth - overlayWidth - configX;
         }
         
         // Ensure overlay doesn't go off-screen

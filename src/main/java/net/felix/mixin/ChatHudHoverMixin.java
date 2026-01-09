@@ -23,6 +23,16 @@ abstract class ChatHudHoverMixin {
      */
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(net.minecraft.client.gui.DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        // IMPORTANT: Don't clear overlay if we're hovering over an item with "⭐" in tooltip
+        // Items with "⭐" are managed by addAspectNameToTooltip, not by this chat hover mixin
+        // This mixin is only for chat message hover events
+        // Only skip if it's a star item (lastTooltipUpdateTime > 0), not if it's a chat item (lastTooltipUpdateTime == 0)
+        if (AspectOverlay.isCurrentlyHovering() && AspectOverlay.isStarItemHovering()) {
+            // We're hovering over an item with "⭐" - don't interfere
+            // The overlay will be managed by HandledScreenMixin and the tooltip callback
+            return;
+        }
+        
         // Check if aspect overlay is enabled in config
         boolean aspectOverlayEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled;
         boolean showAspectOverlay = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
@@ -42,47 +52,27 @@ abstract class ChatHudHoverMixin {
         // Note: We don't check client.world because the chat overlay should work
         // even when no world is loaded (e.g., in main menu with chat history visible)
         
-        // Check if Shift is pressed - overlay only shows when Shift is held
+        // Check if Shift is pressed
         boolean isShiftPressed = Screen.hasShiftDown();
-        
-        if (!isShiftPressed) {
-            // Shift not pressed, clear overlay
-            AspectOverlay.onHoverStopped();
-            return;
-        }
         
         // Use Minecraft's built-in method to check if a HoverEvent is being rendered
         // This is the same method Minecraft uses internally to determine tooltip hover
         ChatHud chatHud = client.inGameHud.getChatHud();
-        if (chatHud == null) {
-            AspectOverlay.onHoverStopped();
-            return;
-        }
-        
-        // Convert mouse coordinates to double (as required by getTextStyleAt)
-        double mouseXDouble = (double) mouseX;
-        double mouseYDouble = (double) mouseY;
-        
-        // Try to find and call getTextStyleAt method via reflection (may be obfuscated)
-        Style hoveredStyle = null;
+        boolean hasHoverEvent = false;
         Text hoveredMessage = null;
         
-        try {
-            // Find getTextStyleAt method - it takes two double parameters and returns Style
-            java.lang.reflect.Method getTextStyleAtMethod = null;
-            for (java.lang.reflect.Method method : ChatHud.class.getDeclaredMethods()) {
-                if (method.getParameterCount() == 2 &&
-                    method.getParameterTypes()[0] == double.class &&
-                    method.getParameterTypes()[1] == double.class &&
-                    method.getReturnType() == Style.class) {
-                    getTextStyleAtMethod = method;
-                    break;
-                }
-            }
+        if (chatHud != null) {
+            // Convert mouse coordinates to double (as required by getTextStyleAt)
+            double mouseXDouble = (double) mouseX;
+            double mouseYDouble = (double) mouseY;
             
-            // Also try public methods
-            if (getTextStyleAtMethod == null) {
-                for (java.lang.reflect.Method method : ChatHud.class.getMethods()) {
+            // Try to find and call getTextStyleAt method via reflection (may be obfuscated)
+            Style hoveredStyle = null;
+            
+            try {
+                // Find getTextStyleAt method - it takes two double parameters and returns Style
+                java.lang.reflect.Method getTextStyleAtMethod = null;
+                for (java.lang.reflect.Method method : ChatHud.class.getDeclaredMethods()) {
                     if (method.getParameterCount() == 2 &&
                         method.getParameterTypes()[0] == double.class &&
                         method.getParameterTypes()[1] == double.class &&
@@ -91,30 +81,32 @@ abstract class ChatHudHoverMixin {
                         break;
                     }
                 }
-            }
-            
-            if (getTextStyleAtMethod != null) {
-                getTextStyleAtMethod.setAccessible(true);
-                hoveredStyle = (Style) getTextStyleAtMethod.invoke(chatHud, mouseXDouble, mouseYDouble);
-            }
-            
-            // If we found a HoverEvent, try to get the Text message
-            if (hoveredStyle != null && hoveredStyle.getHoverEvent() != null) {
-                // Find getTextAt method - it takes two double parameters and returns Text
-                java.lang.reflect.Method getTextAtMethod = null;
-                for (java.lang.reflect.Method method : ChatHud.class.getDeclaredMethods()) {
-                    if (method.getParameterCount() == 2 &&
-                        method.getParameterTypes()[0] == double.class &&
-                        method.getParameterTypes()[1] == double.class &&
-                        method.getReturnType() == Text.class) {
-                        getTextAtMethod = method;
-                        break;
+                
+                // Also try public methods
+                if (getTextStyleAtMethod == null) {
+                    for (java.lang.reflect.Method method : ChatHud.class.getMethods()) {
+                        if (method.getParameterCount() == 2 &&
+                            method.getParameterTypes()[0] == double.class &&
+                            method.getParameterTypes()[1] == double.class &&
+                            method.getReturnType() == Style.class) {
+                            getTextStyleAtMethod = method;
+                            break;
+                        }
                     }
                 }
                 
-                // Also try public methods
-                if (getTextAtMethod == null) {
-                    for (java.lang.reflect.Method method : ChatHud.class.getMethods()) {
+                if (getTextStyleAtMethod != null) {
+                    getTextStyleAtMethod.setAccessible(true);
+                    hoveredStyle = (Style) getTextStyleAtMethod.invoke(chatHud, mouseXDouble, mouseYDouble);
+                }
+                
+                // If we found a HoverEvent, try to get the Text message
+                if (hoveredStyle != null && hoveredStyle.getHoverEvent() != null) {
+                    hasHoverEvent = true;
+                    
+                    // Find getTextAt method - it takes two double parameters and returns Text
+                    java.lang.reflect.Method getTextAtMethod = null;
+                    for (java.lang.reflect.Method method : ChatHud.class.getDeclaredMethods()) {
                         if (method.getParameterCount() == 2 &&
                             method.getParameterTypes()[0] == double.class &&
                             method.getParameterTypes()[1] == double.class &&
@@ -123,47 +115,57 @@ abstract class ChatHudHoverMixin {
                             break;
                         }
                     }
+                    
+                    // Also try public methods
+                    if (getTextAtMethod == null) {
+                        for (java.lang.reflect.Method method : ChatHud.class.getMethods()) {
+                            if (method.getParameterCount() == 2 &&
+                                method.getParameterTypes()[0] == double.class &&
+                                method.getParameterTypes()[1] == double.class &&
+                                method.getReturnType() == Text.class) {
+                                getTextAtMethod = method;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (getTextAtMethod != null) {
+                        getTextAtMethod.setAccessible(true);
+                        hoveredMessage = (Text) getTextAtMethod.invoke(chatHud, mouseXDouble, mouseYDouble);
+                    }
+                    
+                    // If we couldn't get the message via getTextAt, search through chat messages
+                    if (hoveredMessage == null) {
+                        hoveredMessage = findChatMessageWithHoverEvent(client, hoveredStyle.getHoverEvent());
+                    }
                 }
-                
-                if (getTextAtMethod != null) {
-                    getTextAtMethod.setAccessible(true);
-                    hoveredMessage = (Text) getTextAtMethod.invoke(chatHud, mouseXDouble, mouseYDouble);
-                }
+            } catch (Exception e) {
+                // Reflection failed, ignore
             }
-        } catch (Exception e) {
-            // Reflection failed, clear overlay
+        }
+        
+        // Overlay is only shown when BOTH conditions are met: Shift pressed AND HoverEvent present
+        // If either condition is not met, hide the overlay immediately
+        if (!isShiftPressed || !hasHoverEvent) {
+            // At least one condition is not met - hide overlay immediately
             AspectOverlay.onHoverStopped();
             return;
         }
         
-        // Check if a HoverEvent is being rendered
-        if (hoveredStyle == null || hoveredStyle.getHoverEvent() == null) {
-            // No HoverEvent being rendered, clear overlay
-            AspectOverlay.onHoverStopped();
-            return;
-        }
-        
-        // If we couldn't get the message via getTextAt, search through chat messages
-        // to find the one that has this HoverEvent
-        if (hoveredMessage == null) {
-            hoveredMessage = findChatMessageWithHoverEvent(client, hoveredStyle.getHoverEvent());
-        }
-        
-        if (hoveredMessage == null) {
-            AspectOverlay.onHoverStopped();
-            return;
-        }
-        
-        // All conditions are met:
-        // 1. Shift is pressed ✓
-        // 2. HoverEvent is being rendered (detected via getTextStyleAt) ✓
+        // Both conditions are met: Shift pressed AND HoverEvent present
         // Extract blueprint name from chat message (text with color #FC7E00)
-        String blueprintName = InformationenUtility.extractBlueprintNameFromChatMessage(hoveredMessage);
-        if (blueprintName != null && !blueprintName.isEmpty()) {
-            // Pass the text object to check for Epic colors
-            InformationenUtility.updateAspectOverlayFromBlueprintName(blueprintName, hoveredMessage);
-            AspectOverlay.renderForegroundForChat(context);
+        if (hoveredMessage != null) {
+            String blueprintName = InformationenUtility.extractBlueprintNameFromChatMessage(hoveredMessage);
+            if (blueprintName != null && !blueprintName.isEmpty()) {
+                // Pass the text object to check for Epic colors
+                InformationenUtility.updateAspectOverlayFromBlueprintName(blueprintName, hoveredMessage);
+                AspectOverlay.renderForegroundForChat(context);
+            } else {
+                // HoverEvent exists but no valid blueprint - hide overlay
+                AspectOverlay.onHoverStopped();
+            }
         } else {
+            // HoverEvent exists but couldn't get message - hide overlay
             AspectOverlay.onHoverStopped();
         }
     }

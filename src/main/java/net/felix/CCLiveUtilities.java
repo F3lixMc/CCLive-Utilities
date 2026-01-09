@@ -66,6 +66,7 @@ public class CCLiveUtilities implements ModInitializer {
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
 		TabInfoUtility.initialize();
+		net.felix.utilities.DebugUtility.initializeItemLogger();
 		
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();

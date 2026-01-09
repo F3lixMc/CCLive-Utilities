@@ -18,8 +18,10 @@ import net.felix.utilities.DragOverlay.Schmied.KitFilterButton1DraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButton2DraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButton3DraggableOverlay;
 import net.felix.utilities.DragOverlay.TabInfo.AspectOverlayDraggableOverlay;
+import net.felix.utilities.DragOverlay.TabInfo.StarAspectOverlayDraggableOverlay;
 import net.felix.utilities.DragOverlay.TabInfo.TabInfoMainDraggableOverlay;
 import net.felix.utilities.DragOverlay.TabInfo.TabInfoSeparateDraggableOverlay;
+import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -75,9 +77,14 @@ public class OverlayEditorScreen extends Screen {
         overlays.removeIf(overlay -> overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay);
         
         // Füge TabInfo-Overlays wieder hinzu (basierend auf aktuellen Config-Werten)
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
-            // Haupt-Overlay - immer hinzufügen wenn Tab Info Utility aktiviert ist (wird nur gerendert wenn enabled)
-            overlays.add(new TabInfoMainDraggableOverlay());
+        // Nicht in general_lobby und nicht in Inventaren anzeigen
+        boolean isInAnyInventoryRefresh = isInAnyInventoryScreen();
+        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInGeneralLobby() && !isInAnyInventoryRefresh) {
+            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
+            TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
+            if (mainOverlay.isEnabled()) {
+                overlays.add(mainOverlay);
+            }
             
             // Separate Overlays - immer hinzufügen (werden nur gerendert wenn enabled)
             overlays.add(new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
@@ -159,7 +166,15 @@ public class OverlayEditorScreen extends Screen {
                     overlays.add(new KitFilterButton3DraggableOverlay());
                 }
             }
-        } else {
+        }
+        
+        // Star Aspect Overlay - available ONLY in inventories EXCEPT blueprint inventories
+        // This is for items with "⭐" in tooltip, different from the blueprint Aspect Overlay
+        if (isInAnyInventory && !isInBlueprintInventory) {
+            overlays.add(new StarAspectOverlayDraggableOverlay());
+        }
+        
+        if (!isInBlueprintInventory) {
             // Check if player is in a floor dimension
             boolean isInFloorDimension = isInFloorDimension();
             
@@ -181,8 +196,15 @@ public class OverlayEditorScreen extends Screen {
                 
                 // Mining/Lumberjack overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
-                if (!isInPlayerNameDimension() && !isInventoryOpen()) {
+                // Only show if biome is detected in scoreboard
+                if (!isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
                     overlays.add(new MiningLumberjackDraggableOverlay());
+                }
+                
+                // Collection overlay - only available in Overworld (Farmworld) when not in inventory
+                // Only show if biome is detected in scoreboard
+                if (isInOverworld() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
+                    overlays.add(new CollectionDraggableOverlay());
                 }
                 
                 // MKLevel overlay - only available in "Machtkristalle Verbessern" inventory
@@ -191,15 +213,16 @@ public class OverlayEditorScreen extends Screen {
                 }
                 
                 // Note: Aspect Overlay and Hide Uncraftable Button are only available in blueprint inventories
+                // Note: Star Aspect Overlay is available in all inventories EXCEPT blueprint inventories
                 // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬃, 㬄, 㬅, 㬆)
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
                 // Note: MKLevel Overlay is only available in "Machtkristalle Verbessern" inventory
             }
         }
         
-        // Tab Info Overlays - immer verfügbar wenn aktiviert
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
-            // Haupt-Overlay - immer hinzufügen wenn Tab Info Utility aktiviert ist (wird nur gerendert wenn enabled)
+        // Tab Info Overlays - immer verfügbar wenn aktiviert (außer in general_lobby und in Inventaren)
+        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInGeneralLobby() && !isInAnyInventory) {
+            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
             TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
             overlays.add(mainOverlay);
             
@@ -889,6 +912,19 @@ public class OverlayEditorScreen extends Screen {
     }
     
     /**
+     * Check if the player is currently in the "general_lobby" dimension
+     */
+    private boolean isInGeneralLobby() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.world == null) {
+            return false;
+        }
+        
+        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        return dimensionPath.equals("general_lobby");
+    }
+    
+    /**
      * Check if an inventory screen is currently open
      */
     private boolean isInventoryOpen() {
@@ -1120,6 +1156,8 @@ public class OverlayEditorScreen extends Screen {
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
             CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled;
         } else if (overlay instanceof AspectOverlayDraggableOverlay) {
+            CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
+        } else if (overlay instanceof StarAspectOverlayDraggableOverlay) {
             CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
         } else if (overlay instanceof ChatAspectOverlayDraggableOverlay) {
             CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled;

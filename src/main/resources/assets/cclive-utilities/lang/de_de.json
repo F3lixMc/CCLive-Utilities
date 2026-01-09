@@ -14,5 +14,13 @@
     "key.categories.cclive-utilities.wellen": "CCLive Utilities - Monster Tracker",
     "key.categories.cclive-utilities.overlay": "CCLive Utilities - Overlay Editor",
     "category.cclive-utilities.schmied": "CCLive Utilities - Schmied Tracker",
+    "category.cclive-utilities.collection": "CCLive Utilities - Collection",
+    "key.cclive-utilities.item-info-extract": "Item-Infos extrahieren",
+    "key.cclive-utilities.item-info-auto-click": "Nicht registrierte Items automatisch rechtsklicken",
+    "key.cclive-utilities.log-hover-info": "Hover-Info loggen",
+    "key.cclive-utilities.log-inventory-name": "Inventarname loggen",
+    "key.cclive-utilities.log-bossbars": "Bossbars loggen",
+    "key.cclive-utilities.log-scoreboard": "Scoreboard loggen",
+    "category.cclive-utilities.item-info": "CCLive Utilities - Item Info",
       "key.categories.cclive-utilities": "CCLive Utilities"
   } 

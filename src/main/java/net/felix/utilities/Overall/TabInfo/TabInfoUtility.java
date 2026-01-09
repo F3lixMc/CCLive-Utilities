@@ -703,6 +703,19 @@ public class TabInfoUtility {
 	}
 	
 	/**
+	 * Prüft, ob der Spieler in der "general_lobby" Dimension ist
+	 */
+	private static boolean isInGeneralLobby() {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null || client.world == null) {
+			return false;
+		}
+		
+		String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+		return dimensionPath.equals("general_lobby");
+	}
+	
+	/**
 	 * HUD Render callback für das Tab-Info Overlay
 	 */
 	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
@@ -713,6 +726,11 @@ public class TabInfoUtility {
 		
 		// Hide overlay if F1 menu (debug screen) is open
 		if (client.options.hudHidden) {
+			return;
+		}
+		
+		// Hide overlay if in general_lobby dimension
+		if (isInGeneralLobby()) {
 			return;
 		}
 		
@@ -897,28 +915,18 @@ public class TabInfoUtility {
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
 		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
-			// Zeige alle 3 Slots (auch wenn leer)
+			// Zeige alle 3 Slots mit Beispielwerten im Edit-Modus
+			// Im Edit-Modus zeigen wir immer "0.0%" als Beispiel, um zu zeigen wie es aussehen würde
 			for (int i = 0; i < 3; i++) {
+				String displayText = showIcon ? "? / ?" : "MK " + (i + 1) + ": ? / ?";
+				// Prüfe ob Prozente in echten Daten verfügbar wären (für Anzeige im Edit-Modus)
 				MachtkristallSlot slot = machtkristallSlots[i];
-				if (slot.isEmpty()) {
-					String displayText = showIcon ? "-" : "MK " + (i + 1) + ": -";
-					lines.add(new LineWithPercent(displayText, null, false, false, "machtkristalle", showIcon));
-				} else {
-					String displayText = slot.getDisplayText();
-					String percentText = slot.getPercentText();
-					if (displayText != null && showIcon) {
-						// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-						displayText = displayText.replaceFirst("^MK [^:]+: ", "");
-					}
-					// Warnung: wenn Prozent >= dem Warnwert ist (wie bei Amboss)
-					boolean showWarning = false;
-					if (percentText != null && slot.xpData.isValid()) {
-						double currentPercent = parsePercentValue(percentText);
-						double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleWarnPercent;
-						showWarning = currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
-					}
-					lines.add(new LineWithPercent(displayText, percentText, percentText != null, showWarning, "machtkristalle", showIcon));
+				String percentText = slot.getPercentText();
+				// Wenn keine Prozente verfügbar sind, zeige trotzdem "0.0%" als Beispiel im Edit-Modus
+				if (percentText == null) {
+					percentText = "0.0%";
 				}
+				lines.add(new LineWithPercent(displayText, percentText, true, false, "machtkristalle", showIcon));
 			}
 		}
 		
@@ -992,7 +1000,7 @@ public class TabInfoUtility {
 			double currentPercent = forschung.isValid() ? 
 				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
-			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent < warnPercent;
+			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "forschung", showIcon));
@@ -1211,7 +1219,7 @@ public class TabInfoUtility {
 			double currentPercent = forschung.isValid() ? 
 				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
-			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent < warnPercent;
+			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "forschung", showIcon));
@@ -1439,7 +1447,7 @@ public class TabInfoUtility {
 			return;
 		}
 		
-		// Berechne unskalierte Overlay-Dimensionen
+		// Berechne unskalierte Overlay-Dimensionen komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
 		// Berücksichtige zusätzlichen Abstand für Zeilen mit Icons (2 Pixel pro Icon-Zeile)
 		int unscaledWidth = maxWidth + (PADDING * 2);
 		int unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * 2) + (PADDING * 2);
@@ -1452,19 +1460,39 @@ public class TabInfoUtility {
 		int overlayWidth = Math.round(unscaledWidth * scale);
 		int overlayHeight = Math.round(unscaledHeight * scale);
 		
-		// Position aus Config (wenn nicht gesetzt, Standard links oben)
-		int xPosition = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
+		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
+		int baseX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
 		int yPosition = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY;
+		
+		// Determine if overlay is on left or right side of screen
+		int screenWidth = client.getWindow().getScaledWidth();
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
+		// Calculate X position based on side (same logic as Mining overlays)
+		int posX;
+		if (isOnLeftSide) {
+			// On left side: keep left edge fixed, expand to the right
+			posX = baseX;
+		} else {
+			// On right side: keep right edge fixed, expand to the left
+			// Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+			// Keep this right edge fixed, so left edge moves left when width increases
+			posX = baseX - overlayWidth;
+		}
+		
+		// Ensure overlay stays within screen bounds
+		posX = Math.max(0, Math.min(posX, screenWidth - overlayWidth));
+		int posY = yPosition;
 		
 		// Zeichne semi-transparenten Hintergrund (wenn aktiviert) - skaliert
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
-			context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+			context.fill(posX, posY, posX + overlayWidth, posY + overlayHeight, 0x80000000);
 		}
 		
 		// Render content with scale using matrix transformation
 		Matrix3x2fStack matrices = context.getMatrices();
 		matrices.pushMatrix();
-		matrices.translate(xPosition, yPosition);
+		matrices.translate(posX, posY);
 		matrices.scale(scale, scale);
 		
 		// Zeichne alle Zeilen - vertikal zentriert (nur wenn Zeilen vorhanden sind)
@@ -1742,7 +1770,7 @@ public class TabInfoUtility {
 			double currentPercent = forschung.isValid() ? 
 				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
-			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent < warnPercent;
+			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			renderSingleInfoOverlay(context, client, displayText, 
@@ -2189,7 +2217,7 @@ public class TabInfoUtility {
 			}
 		}
 		
-		// Berechne unskalierte Overlay-Dimensionen
+		// Berechne unskalierte Overlay-Dimensionen komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
 		int unscaledWidth = maxWidth + (PADDING * 2);
 		int unscaledHeight = (lines.size() * actualLineHeight) + (PADDING * 2);
 		
@@ -2201,15 +2229,38 @@ public class TabInfoUtility {
 		int overlayWidth = Math.round(unscaledWidth * scale);
 		int overlayHeight = Math.round(unscaledHeight * scale);
 		
+		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
+		int baseX = xPosition;
+		
+		// Determine if overlay is on left or right side of screen
+		int screenWidth = client.getWindow().getScaledWidth();
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
+		// Calculate X position based on side (same logic as Mining overlays)
+		int posX;
+		if (isOnLeftSide) {
+			// On left side: keep left edge fixed, expand to the right
+			posX = baseX;
+		} else {
+			// On right side: keep right edge fixed, expand to the left
+			// Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+			// Keep this right edge fixed, so left edge moves left when width increases
+			posX = baseX - overlayWidth;
+		}
+		
+		// Ensure overlay stays within screen bounds
+		posX = Math.max(0, Math.min(posX, screenWidth - overlayWidth));
+		int posY = yPosition;
+		
 		// Zeichne Hintergrund (wenn aktiviert) - skaliert
 		if (showBackground) {
-			context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+			context.fill(posX, posY, posX + overlayWidth, posY + overlayHeight, 0x80000000);
 		}
 		
 		// Render content with scale using matrix transformation
 		Matrix3x2fStack matrices = context.getMatrices();
 		matrices.pushMatrix();
-		matrices.translate(xPosition, yPosition);
+		matrices.translate(posX, posY);
 		matrices.scale(scale, scale);
 		
 		// Hole konfigurierte Farben
@@ -2521,7 +2572,7 @@ public class TabInfoUtility {
 			actualLineHeight = Math.max(actualLineHeight, iconSize);
 		}
 		
-		// Berechne unskalierte Dimensionen
+		// Berechne unskalierte Dimensionen komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
 		int unscaledWidth = width + (PADDING * 2);
 		int unscaledHeight = actualLineHeight + (PADDING * 2);
 		
@@ -2533,19 +2584,42 @@ public class TabInfoUtility {
 		int overlayWidth = Math.round(unscaledWidth * scale);
 		int overlayHeight = Math.round(unscaledHeight * scale);
 		
+		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
+		int baseX = xPosition;
+		
+		// Determine if overlay is on left or right side of screen
+		int screenWidth = client.getWindow().getScaledWidth();
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
+		// Calculate X position based on side (same logic as Mining overlays)
+		int posX;
+		if (isOnLeftSide) {
+			// On left side: keep left edge fixed, expand to the right
+			posX = baseX;
+		} else {
+			// On right side: keep right edge fixed, expand to the left
+			// Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+			// Keep this right edge fixed, so left edge moves left when width increases
+			posX = baseX - overlayWidth;
+		}
+		
+		// Ensure overlay stays within screen bounds
+		posX = Math.max(0, Math.min(posX, screenWidth - overlayWidth));
+		int posY = yPosition;
+		
 		// Zeichne Hintergrund (wenn aktiviert) - skaliert
 		if (showBackground) {
-			context.fill(xPosition, yPosition, xPosition + overlayWidth, yPosition + overlayHeight, 0x80000000);
+			context.fill(posX, posY, posX + overlayWidth, posY + overlayHeight, 0x80000000);
 		}
 		
 		// Render content with scale using matrix transformation
 		Matrix3x2fStack matrices = context.getMatrices();
 		matrices.pushMatrix();
-		matrices.translate(xPosition, yPosition);
+		matrices.translate(posX, posY);
 		matrices.scale(scale, scale);
 		
 		// Zeichne Text - vertikal zentriert (actualLineHeight wurde bereits berechnet)
-		int currentX = PADDING; // Relativ zu (xPosition, yPosition) nach Matrix-Transformation
+		int currentX = PADDING; // Relativ zu (posX, posY) nach Matrix-Transformation
 		// Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der fontHeight (da Text-Baseline unten ist)
 		// Verwende unskalierte Höhe für Zentrierung (Koordinaten sind nach Matrix-Transformation relativ)
 		int overlayCenterY = unscaledHeight / 2;

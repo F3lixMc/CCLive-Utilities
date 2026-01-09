@@ -40,6 +40,18 @@ public class InformationenUtility {
 	
 	private static boolean isInitialized = false;
 	
+	// Store last mouse position from HandledScreen render method
+	private static int lastMouseX = -1;
+	private static int lastMouseY = -1;
+	
+	/**
+	 * Sets the last mouse position (called from HandledScreenMixin)
+	 */
+	public static void setLastMousePosition(int mouseX, int mouseY) {
+		lastMouseX = mouseX;
+		lastMouseY = mouseY;
+	}
+	
 	// Materials tracking
 	private static Map<String, MaterialInfo> materialsDatabase = new HashMap<>();
 	private static final String MATERIALS_CONFIG_FILE = "assets/cclive-utilities/Aincraft.json";
@@ -59,6 +71,9 @@ public class InformationenUtility {
 	// Cards and Statues effects tracking
 	private static Map<String, String> cardsEffects = new HashMap<>();
 	private static Map<String, String> statuesEffects = new HashMap<>();
+	// Cards and Statues floor tracking
+	private static Map<String, List<Integer>> cardsFloors = new HashMap<>();
+	private static Map<String, List<Integer>> statuesFloors = new HashMap<>();
 	private static final String CARDS_STATUES_CONFIG_FILE = "assets/cclive-utilities/CardsStatues.json";
 	
 	// Gadget tracking - Maps: "name/alias" -> Map<"level", "location">
@@ -70,10 +85,12 @@ public class InformationenUtility {
 	
 	// MKLevel tracking - List of level data from MKLevel.json
 	private static List<MKLevelInfo> mkLevelDatabase = new ArrayList<>();
+	private static List<CombinedWaveInfo> mkLevelCombinedWavesDatabase = new ArrayList<>();
 	private static final String MKLEVEL_CONFIG_FILE = "assets/MKLevel.json";
 	
-	// MKLevel overlay scroll variables
-	private static int mkLevelScrollOffset = 0;
+	// MKLevel overlay scroll variables - separate offsets for each tab
+	private static int mkLevelScrollOffsetIndividual = 0; // Scroll offset for "Einzelne Wellen"
+	private static int mkLevelScrollOffsetCombined = 0; // Scroll offset for "Kombinierte Wellen"
 	private static boolean mkLevelOverlayHovered = false;
 	private static boolean isInMKLevelInventory = false;
 	
@@ -86,6 +103,28 @@ public class InformationenUtility {
 	
 	// MKLevel overlay height cache (updated when overlay is rendered, used by F6 editor)
 	private static int mkLevelLastKnownHeight = 166; // Default height
+	
+	// MKLevel overlay mode: true = "Einzelne Wellen", false = "Kombinierte Wellen"
+	private static boolean mkLevelShowIndividualWaves = true;
+	
+	// Helper method to get current scroll offset based on active tab
+	private static int getMKLevelScrollOffset() {
+		return mkLevelShowIndividualWaves ? mkLevelScrollOffsetIndividual : mkLevelScrollOffsetCombined;
+	}
+	
+	// Helper method to set current scroll offset based on active tab
+	private static void setMKLevelScrollOffset(int offset) {
+		if (mkLevelShowIndividualWaves) {
+			mkLevelScrollOffsetIndividual = offset;
+		} else {
+			mkLevelScrollOffsetCombined = offset;
+		}
+	}
+	
+	// MKLevel scrollbar dragging state
+	private static boolean mkLevelScrollbarDragging = false;
+	private static double mkLevelScrollbarDragStartY = 0;
+	private static int mkLevelScrollbarDragStartOffset = 0;
 	
 	/**
 	 * Gets the last known height of the MKLevel overlay (cached from last render)
@@ -112,6 +151,7 @@ public class InformationenUtility {
 	private static long lastScoreboardCheck = 0; // Last time we checked the scoreboard
 	private static boolean biomDetected = false; // Whether a biom was detected in the scoreboard
 	private static boolean lastShowCollectionOverlayState = true; // Track previous state of showCollectionOverlay
+	private static int pendingResets = 0; // Number of pending resets after biome change
 	
 	// Collection hotkey
 	private static KeyBinding collectionResetKeyBinding;
@@ -293,14 +333,20 @@ public class InformationenUtility {
 		ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
 			MinecraftClient client = MinecraftClient.getInstance();
 			
-			// Always process aspect information (even if informationenUtilityEnabled is off)
-			// Add aspect name to tooltip (always visible) - works in inventories
-			addAspectNameToTooltip(lines, client, stack);
-			
-			// Add floor number to blueprint names in inventories
-			addFloorNumberToBlueprintNames(lines, client);
-			
-			// Only process other information if Informationen Utility is enabled in config
+		// Always process aspect information (even if informationenUtilityEnabled is off)
+		// Add aspect name to tooltip (always visible) - works in inventories
+		addAspectNameToTooltip(lines, client, stack);
+		
+		// Add floor number to blueprint names in inventories
+		addFloorNumberToBlueprintNames(lines, client);
+		
+		// Add floor numbers to cards and statues names in inventories
+		addFloorNumberToCardsStatuesNames(lines, client);
+		
+		// Add slot-specific text for "Aspekt [tranferieren]" inventory
+		addAspectTransferSlotText(lines, client, stack);
+		
+		// Only process other information if Informationen Utility is enabled in config
 			if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 				!CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled) {
 				return;
@@ -613,6 +659,42 @@ public class InformationenUtility {
 			return; // Don't show aspect information if aspect overlay is disabled
 		}
 		
+		// First, extract the item name from the tooltip (usually the first line)
+		String itemName = extractItemNameFromTooltip(lines, stack);
+		
+		// Check for lines containing "⭐" (star symbol) - this is for items with aspect info in tooltip
+		for (int i = 0; i < lines.size(); i++) {
+			Text line = lines.get(i);
+			String lineText = line.getString();
+			
+			// Skip if lineText is null or empty
+			if (lineText == null || lineText.isEmpty()) {
+				continue;
+			}
+			
+			// Check if this line contains "⭐"
+			if (lineText.contains("⭐")) {
+				// If we have an item name, look it up directly in the aspects database
+				if (itemName != null && !itemName.isEmpty()) {
+					// Get aspect info for this item directly from the database
+					AspectInfo aspectInfo = aspectsDatabase.get(itemName);
+					
+					if (aspectInfo != null && !aspectInfo.aspectName.equals("-")) {
+						// Modify the line to add "(shift für info)" after the "]"
+						Text modifiedLine = modifyStarLineWithShiftInfo(line, aspectInfo, itemName);
+						if (modifiedLine != null) {
+							lines.set(i, modifiedLine);
+							// Set up aspect overlay to show when Shift is pressed
+							net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromName(itemName, aspectInfo);
+						}
+					}
+				}
+			}
+		}
+		
+		// Note: The "⭐" check above works in ALL inventories, not just blueprint inventories
+		// The code below is only for blueprint items with "[Bauplan]" in the tooltip
+		
 		boolean isInBlueprintInventory = false;
 		
 		// Check if we're in a blueprint inventory
@@ -630,11 +712,14 @@ public class InformationenUtility {
 									  cleanScreenTitle.contains("Bauplan [Shop]") || 
 									  cleanScreenTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
 									  cleanScreenTitle.contains("Favorisierte [Waffenbaupläne]") ||
+									  cleanScreenTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
 									  cleanScreenTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
 		}
 		
+		// Only process blueprint items if we're in a blueprint inventory
+		// Items with "⭐" are processed above and work in all inventories
 		if (!isInBlueprintInventory) {
-			return; // Don't show aspect information in other inventories
+			return; // Don't show aspect information for blueprint items in other inventories
 		}
 		
 		// Check tooltip lines for inventory tooltips (they contain "[Bauplan]")
@@ -664,30 +749,31 @@ public class InformationenUtility {
 		}
 		
 		// If we found a blueprint item, add aspect information
-		String itemName = null;
+		// Note: itemName from tooltip extraction above is for "⭐" items, here we need a separate variable for blueprint items
+		String blueprintItemName = null;
 		if (itemNameToCheck != null && itemNameToCheck.contains("[Bauplan]")) {
 				// Extract the item name (everything before "[Bauplan]")
-			itemName = itemNameToCheck.substring(0, itemNameToCheck.indexOf("[Bauplan]")).trim();
+			blueprintItemName = itemNameToCheck.substring(0, itemNameToCheck.indexOf("[Bauplan]")).trim();
 				
 				// Remove leading dash/minus if present
-				if (itemName.startsWith("-")) {
-					itemName = itemName.substring(1).trim();
+				if (blueprintItemName.startsWith("-")) {
+					blueprintItemName = blueprintItemName.substring(1).trim();
 				}
 				
 				// Remove trailing dash/minus if present
-				if (itemName.endsWith("-")) {
-					itemName = itemName.substring(0, itemName.length() - 1).trim();
+				if (blueprintItemName.endsWith("-")) {
+					blueprintItemName = blueprintItemName.substring(0, blueprintItemName.length() - 1).trim();
 				}
 				
 				// Remove Minecraft formatting codes and Unicode characters
-				itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
-				itemName = itemName.replaceAll("[\\u3400-\\u4DBF]", "");
-				itemName = itemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+				blueprintItemName = blueprintItemName.replaceAll("§[0-9a-fk-or]", "");
+				blueprintItemName = blueprintItemName.replaceAll("[\\u3400-\\u4DBF]", "");
+				blueprintItemName = blueprintItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 		}
 				
 				// Look for this item in the aspects database
-		if (itemName != null && !itemName.isEmpty()) {
-				AspectInfo aspectInfo = aspectsDatabase.get(itemName);
+		if (blueprintItemName != null && !blueprintItemName.isEmpty()) {
+				AspectInfo aspectInfo = aspectsDatabase.get(blueprintItemName);
 				if (aspectInfo != null) {
 				// Find the position of "Benötigt" line
 				int benötigtPosition = -1;
@@ -754,6 +840,168 @@ public class InformationenUtility {
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * Extracts the item name from the tooltip lines
+	 * Usually the first line contains the item name, but we need to clean it
+	 * @param lines The tooltip lines
+	 * @param stack The item stack (as fallback)
+	 * @return The cleaned item name, or null if not found
+	 */
+	private static String extractItemNameFromTooltip(List<Text> lines, ItemStack stack) {
+		if (lines == null || lines.isEmpty()) {
+			return null;
+		}
+		
+		// Try to get item name from first line (usually the item name)
+		if (lines.size() > 0) {
+			Text firstLine = lines.get(0);
+			if (firstLine != null) {
+				String itemName = firstLine.getString();
+				if (itemName != null && !itemName.isEmpty()) {
+					// Remove Minecraft formatting codes
+					itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
+					itemName = itemName.replaceAll("§#[0-9a-fA-F]{6}", "");
+					
+					// Remove Unicode formatting characters (like 㔜㔙㔕)
+					itemName = itemName.replaceAll("[\\u3400-\\u4DBF]", "");
+					
+					// Remove any leading/trailing whitespace
+					itemName = itemName.trim();
+					
+					// Remove prefixes like [+XXX] at the beginning
+					itemName = itemName.replaceAll("^\\[\\+[^\\]]+\\]\\s*", "");
+					
+					// Remove suffixes like [SCHMIEDEZUSTAND] at the end
+					itemName = itemName.replaceAll("\\s*\\[[^\\]]+\\]$", "");
+					
+					// Remove any other brackets and their content (like [Bauplan], etc.)
+					// But keep the item name itself
+					itemName = itemName.replaceAll("\\[[^\\]]+\\]", "");
+					
+					// Remove any leading/trailing whitespace again
+					itemName = itemName.trim();
+					
+					if (!itemName.isEmpty()) {
+						return itemName;
+					}
+				}
+			}
+		}
+		
+		// Fallback: try to get name from ItemStack
+		if (stack != null && !stack.isEmpty()) {
+			Text displayName = stack.getName();
+			if (displayName != null) {
+				String itemName = displayName.getString();
+				if (itemName != null && !itemName.isEmpty()) {
+					// Remove Minecraft formatting codes
+					itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
+					itemName = itemName.replaceAll("§#[0-9a-fA-F]{6}", "");
+					// Remove Unicode formatting characters
+					itemName = itemName.replaceAll("[\\u3400-\\u4DBF]", "");
+					
+					// Remove prefixes like [+XXX] at the beginning
+					itemName = itemName.replaceAll("^\\[\\+[^\\]]+\\]\\s*", "");
+					
+					// Remove suffixes like [SCHMIEDEZUSTAND] at the end
+					itemName = itemName.replaceAll("\\s*\\[[^\\]]+\\]$", "");
+					
+					// Remove any other brackets and their content
+					itemName = itemName.replaceAll("\\[[^\\]]+\\]", "");
+					
+					itemName = itemName.trim();
+					
+					return itemName;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Finds the item name that has a given aspect name (reverse lookup)
+	 * @param aspectName The aspect name to search for
+	 * @return The item name, or null if not found
+	 */
+	private static String findItemNameByAspectName(String aspectName) {
+		if (aspectName == null || aspectName.isEmpty()) {
+			return null;
+		}
+		
+		// Clean the aspect name for comparison
+		String cleanAspectName = aspectName.replaceAll("§[0-9a-fk-or]", "");
+		cleanAspectName = cleanAspectName.replaceAll("§#[0-9a-fA-F]{6}", "");
+		cleanAspectName = cleanAspectName.trim();
+		
+		// Search through the aspects database
+		int checkedCount = 0;
+		for (Map.Entry<String, AspectInfo> entry : aspectsDatabase.entrySet()) {
+			String itemName = entry.getKey();
+			AspectInfo aspectInfo = entry.getValue();
+			checkedCount++;
+			
+			if (aspectInfo != null && aspectInfo.aspectName != null) {
+				// Clean the stored aspect name for comparison
+				String cleanStoredAspectName = aspectInfo.aspectName.replaceAll("§[0-9a-fk-or]", "");
+				cleanStoredAspectName = cleanStoredAspectName.replaceAll("§#[0-9a-fA-F]{6}", "");
+				cleanStoredAspectName = cleanStoredAspectName.trim();
+				
+				// Compare (case-insensitive)
+				if (cleanStoredAspectName.equalsIgnoreCase(cleanAspectName)) {
+					return itemName;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Modifies a line containing "⭐ [ASPEKT DES ITEMS]" to add "(shift für info)" after the "]"
+	 * @param originalLine The original Text line
+	 * @param aspectInfo The aspect info for this item
+	 * @param itemName The item name
+	 * @return The modified Text line, or null if modification failed
+	 */
+	private static Text modifyStarLineWithShiftInfo(Text originalLine, AspectInfo aspectInfo, String itemName) {
+		if (originalLine == null || aspectInfo == null || itemName == null) {
+			return null;
+		}
+		
+		String lineText = originalLine.getString();
+		if (lineText == null || !lineText.contains("⭐") || !lineText.contains("]")) {
+			return null;
+		}
+		
+		// Check if "(shift für info)" is already in the line
+		if (lineText.contains("(Shift für info)") || lineText.contains("(Shift für Info)")) {
+			return originalLine; // Already modified
+		}
+		
+		// Find the position of "]" after "⭐"
+		int starIndex = lineText.indexOf("⭐");
+		int bracketEnd = lineText.indexOf("]", starIndex);
+		if (bracketEnd == -1) {
+			return null;
+		}
+		
+		// Create the shift info text in italic and gray
+		net.minecraft.text.MutableText shiftInfoText = Text.literal(" (Shift für Info)")
+			.styled(style -> style
+				.withColor(0xFF808080) // Gray color
+				.withItalic(true)); // Italic
+		
+		// Copy the original line to preserve its format and structure
+		net.minecraft.text.MutableText result = originalLine.copy();
+		
+		// Simply append the shift info text as a sibling
+		// This preserves the original format while adding the new text
+		result.append(shiftInfoText);
+		
+		return result;
 	}
 	
 	/**
@@ -1132,8 +1380,8 @@ public class InformationenUtility {
 		cleanItemName = cleanItemName.replaceAll("[\\u3400-\\u4DBF]", "");
 		cleanItemName = cleanItemName.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 		
-		// Update overlay
-		AspectOverlay.updateAspectInfoFromName(cleanItemName, aspectInfo);
+		// Update overlay for chat
+		AspectOverlay.updateAspectInfoFromNameForChat(cleanItemName, aspectInfo);
 	}
 	
 	/**
@@ -3118,9 +3366,37 @@ public class InformationenUtility {
 						JsonObject kartenObject = json.getAsJsonObject("karten");
 						for (var entry : kartenObject.entrySet()) {
 							String cardName = entry.getKey();
-							String effect = entry.getValue().getAsString();
-							if (!cardName.isEmpty() && !effect.isEmpty()) {
+							String effect = null;
+							List<Integer> floors = new ArrayList<>();
+							
+							// Support both old format (string) and new format (object with effect and floor)
+							if (entry.getValue().isJsonObject()) {
+								// New format: object with "effect" and "floor"
+								JsonObject cardObject = entry.getValue().getAsJsonObject();
+								if (cardObject.has("effect")) {
+									effect = cardObject.get("effect").getAsString();
+								}
+								if (cardObject.has("floor")) {
+									var floorElement = cardObject.get("floor");
+									if (floorElement.isJsonArray()) {
+										var floorArray = floorElement.getAsJsonArray();
+										for (var floorValue : floorArray) {
+											if (floorValue.isJsonPrimitive() && floorValue.getAsJsonPrimitive().isNumber()) {
+												floors.add(floorValue.getAsInt());
+											}
+										}
+									}
+								}
+							} else {
+								// Old format: direct string
+								effect = entry.getValue().getAsString();
+							}
+							
+							if (!cardName.isEmpty() && effect != null && !effect.isEmpty()) {
 								cardsEffects.put(cardName, effect);
+							}
+							if (!floors.isEmpty()) {
+								cardsFloors.put(cardName, floors);
 							}
 						}
 					}
@@ -3130,9 +3406,37 @@ public class InformationenUtility {
 						JsonObject statuenObject = json.getAsJsonObject("statuen");
 						for (var entry : statuenObject.entrySet()) {
 							String statueName = entry.getKey();
-							String effect = entry.getValue().getAsString();
-							if (!statueName.isEmpty() && !effect.isEmpty()) {
+							String effect = null;
+							List<Integer> floors = new ArrayList<>();
+							
+							// Support both old format (string) and new format (object with effect and floor)
+							if (entry.getValue().isJsonObject()) {
+								// New format: object with "effect" and "floor"
+								JsonObject statueObject = entry.getValue().getAsJsonObject();
+								if (statueObject.has("effect")) {
+									effect = statueObject.get("effect").getAsString();
+								}
+								if (statueObject.has("floor")) {
+									var floorElement = statueObject.get("floor");
+									if (floorElement.isJsonArray()) {
+										var floorArray = floorElement.getAsJsonArray();
+										for (var floorValue : floorArray) {
+											if (floorValue.isJsonPrimitive() && floorValue.getAsJsonPrimitive().isNumber()) {
+												floors.add(floorValue.getAsInt());
+											}
+										}
+									}
+								}
+							} else {
+								// Old format: direct string
+								effect = entry.getValue().getAsString();
+							}
+							
+							if (!statueName.isEmpty() && effect != null && !effect.isEmpty()) {
 								statuesEffects.put(statueName, effect);
+							}
+							if (!floors.isEmpty()) {
+								statuesFloors.put(statueName, floors);
 							}
 						}
 					}
@@ -3187,6 +3491,441 @@ public class InformationenUtility {
 	
 	// License slots that should be checked
 	private static final int[] LICENSE_SLOTS = {1, 2, 3, 10, 11, 12, 19, 20, 21};
+	
+	/**
+	 * Finds the slot index by comparing the item stack
+	 * If multiple slots have the same item, finds the one closest to mouse position
+	 * @param client The Minecraft client
+	 * @param stack The item stack to find
+	 * @return The slot index, or -1 if not found
+	 */
+	private static int findSlotByItemStack(MinecraftClient client, ItemStack stack) {
+		if (client.currentScreen == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+			return -1;
+		}
+		
+		net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+		net.minecraft.screen.ScreenHandler handler = screen.getScreenHandler();
+		
+		// Get mouse position - use stored position from mixin if available
+		double mouseX;
+		double mouseY;
+		if (lastMouseX >= 0 && lastMouseY >= 0) {
+			mouseX = lastMouseX;
+			mouseY = lastMouseY;
+		} else {
+			mouseX = client.mouse.getX() * client.getWindow().getScaledWidth() / client.getWindow().getWidth();
+			mouseY = client.mouse.getY() * client.getWindow().getScaledHeight() / client.getWindow().getHeight();
+		}
+		
+		// Get screen position using same method as getHoveredSlotIndex
+		int screenX = 0;
+		int screenY = 0;
+		try {
+			// Try common field names (deobfuscated and obfuscated)
+			String[] possibleXNames = {"x", "field_2776", "field_2777"};
+			String[] possibleYNames = {"y", "field_2777", "field_2776"};
+			
+			java.lang.reflect.Field xField = null;
+			java.lang.reflect.Field yField = null;
+			
+			// Try to find x field
+			for (String name : possibleXNames) {
+				try {
+					java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(name);
+					field.setAccessible(true);
+					if (field.getType() == int.class) {
+						if (xField == null) {
+							xField = field;
+						} else if (yField == null) {
+							yField = field;
+							break;
+						}
+					}
+				} catch (Exception e) {
+					// Try next name
+				}
+			}
+			
+			// If we didn't find y, try the y names
+			if (yField == null) {
+				for (String name : possibleYNames) {
+					try {
+						java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(name);
+						field.setAccessible(true);
+						if (field.getType() == int.class && field != xField) {
+							yField = field;
+							break;
+						}
+					} catch (Exception e) {
+						// Try next name
+					}
+				}
+			}
+			
+			// If still not found, search all int fields
+			if (xField == null || yField == null) {
+				java.lang.reflect.Field[] fields = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredFields();
+				for (java.lang.reflect.Field field : fields) {
+					if (field.getType() == int.class) {
+						field.setAccessible(true);
+						int value = field.getInt(screen);
+						// Heuristic: x and y are usually small positive values (0-1000)
+						if (value >= 0 && value < 1000) {
+							if (xField == null) {
+								xField = field;
+							} else if (yField == null && field != xField) {
+								yField = field;
+								break;
+							}
+						}
+					}
+				}
+			}
+			
+			if (xField != null && yField != null) {
+				screenX = xField.getInt(screen);
+				screenY = yField.getInt(screen);
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		
+		// Find all slots with matching item
+		java.util.List<Integer> matchingSlots = new java.util.ArrayList<>();
+		for (int slotIndex = 0; slotIndex < handler.slots.size(); slotIndex++) {
+			net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
+			if (slot.hasStack()) {
+				ItemStack slotStack = slot.getStack();
+				// First try reference comparison (faster and more accurate)
+				if (slotStack == stack) {
+					matchingSlots.add(slotIndex);
+					continue;
+				}
+				// Then try content comparison (in case of reference mismatch)
+				if (ItemStack.areEqual(stack, slotStack)) {
+					matchingSlots.add(slotIndex);
+				}
+			}
+		}
+		
+		if (matchingSlots.isEmpty()) {
+			return -1;
+		}
+		
+		// If only one match, return it
+		if (matchingSlots.size() == 1) {
+			return matchingSlots.get(0);
+		}
+		
+		// If multiple matches (like slot 11 and 13), use X position to determine which one
+		java.util.List<Integer> targetSlots = new java.util.ArrayList<>();
+		for (int slotIndex : matchingSlots) {
+			if (slotIndex == 11 || slotIndex == 13) {
+				targetSlots.add(slotIndex);
+			}
+		}
+		
+		if (targetSlots.size() == 2) {
+			// Both slot 11 and 13 have the same item - use X position to determine which one
+			net.minecraft.screen.slot.Slot slot11 = handler.slots.get(11);
+			net.minecraft.screen.slot.Slot slot13 = handler.slots.get(13);
+			
+			int slot11Left = slot11.x + screenX;
+			int slot11Right = slot11Left + 18;
+			int slot11Center = (slot11Left + slot11Right) / 2;
+			int slot13Left = slot13.x + screenX;
+			int slot13Right = slot13Left + 18;
+			int slot13Center = (slot13Left + slot13Right) / 2;
+			
+			// Check which slot the mouse X is closer to (using center of slot)
+			double distToSlot11 = Math.abs(mouseX - slot11Center);
+			double distToSlot13 = Math.abs(mouseX - slot13Center);
+			
+			int selectedSlot = distToSlot11 < distToSlot13 ? 11 : 13;
+			return selectedSlot;
+		} else if (targetSlots.size() == 1) {
+			// Only one target slot found
+			return targetSlots.get(0);
+		}
+		
+		// If no slot 11 or 13 found, return first match
+		return matchingSlots.get(0);
+	}
+	
+	/**
+	 * Gets the slot index of the currently hovered item using mouse position
+	 * @param client The Minecraft client
+	 * @return The slot index, or -1 if not found
+	 */
+	private static int getHoveredSlotIndex(MinecraftClient client) {
+		if (client.currentScreen == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+			return -1;
+		}
+		
+		net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+		net.minecraft.screen.ScreenHandler handler = screen.getScreenHandler();
+		
+		// Get mouse position - use stored position from mixin if available, otherwise calculate
+		double mouseX;
+		double mouseY;
+		if (lastMouseX >= 0 && lastMouseY >= 0) {
+			mouseX = lastMouseX;
+			mouseY = lastMouseY;
+		} else {
+			mouseX = client.mouse.getX() * client.getWindow().getScaledWidth() / client.getWindow().getWidth();
+			mouseY = client.mouse.getY() * client.getWindow().getScaledHeight() / client.getWindow().getHeight();
+		}
+		
+		// Get screen position using reflection - try multiple field names
+		int screenX = 0;
+		int screenY = 0;
+		
+		try {
+			// Try common field names (deobfuscated and obfuscated)
+			String[] possibleXNames = {"x", "field_2776", "field_2777"};
+			String[] possibleYNames = {"y", "field_2777", "field_2776"};
+			
+			java.lang.reflect.Field xField = null;
+			java.lang.reflect.Field yField = null;
+			
+			// Try to find x field
+			for (String name : possibleXNames) {
+				try {
+					java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(name);
+					field.setAccessible(true);
+					if (field.getType() == int.class) {
+						if (xField == null) {
+							xField = field;
+						} else if (yField == null) {
+							yField = field;
+							break;
+						}
+					}
+				} catch (Exception e) {
+					// Try next name
+				}
+			}
+			
+			// If we didn't find y, try the y names
+			if (yField == null) {
+				for (String name : possibleYNames) {
+					try {
+						java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(name);
+						field.setAccessible(true);
+						if (field.getType() == int.class && field != xField) {
+							yField = field;
+							break;
+						}
+					} catch (Exception e) {
+						// Try next name
+					}
+				}
+			}
+			
+			// If still not found, search all int fields
+			if (xField == null || yField == null) {
+				java.lang.reflect.Field[] fields = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredFields();
+				for (java.lang.reflect.Field field : fields) {
+					if (field.getType() == int.class) {
+						field.setAccessible(true);
+						int value = field.getInt(screen);
+						// Heuristic: x and y are usually small positive values (0-1000)
+						if (value >= 0 && value < 1000) {
+							if (xField == null) {
+								xField = field;
+							} else if (yField == null && field != xField) {
+								yField = field;
+								break;
+							}
+						}
+					}
+				}
+			}
+			
+			if (xField != null && yField != null) {
+				screenX = xField.getInt(screen);
+				screenY = yField.getInt(screen);
+			}
+		} catch (Exception e) {
+			// Continue with screenX=0, screenY=0 as fallback
+		}
+		
+		// Find the hovered slot by checking mouse position
+		// Minecraft slots are 18x18 pixels
+		try {
+			// Debug: Check slots 11 and 13 specifically
+			for (int slotIndex = 0; slotIndex < handler.slots.size(); slotIndex++) {
+				net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
+				
+				// Only check slots 11 and 13 to reduce noise
+				if (slotIndex != 11 && slotIndex != 13) {
+					continue;
+				}
+				
+				// Check if mouse is over this slot (Minecraft slots are 18x18)
+				int slotLeft = slot.x + screenX;
+				int slotRight = slotLeft + 18;
+				int slotTop = slot.y + screenY;
+				int slotBottom = slotTop + 18;
+				
+				if (slotLeft <= mouseX && mouseX < slotRight &&
+					slotTop <= mouseY && mouseY < slotBottom) {
+					return slotIndex;
+				}
+			}
+			
+			// If not found in slots 11/13, check all slots
+			for (int slotIndex = 0; slotIndex < handler.slots.size(); slotIndex++) {
+				net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
+				
+				// Skip slots 11 and 13 (already checked)
+				if (slotIndex == 11 || slotIndex == 13) {
+					continue;
+				}
+				
+				int slotLeft = slot.x + screenX;
+				int slotRight = slotLeft + 18;
+				int slotTop = slot.y + screenY;
+				int slotBottom = slotTop + 18;
+				
+				if (slotLeft <= mouseX && mouseX < slotRight &&
+					slotTop <= mouseY && mouseY < slotBottom) {
+					// Don't return this, we only want 11 or 13
+				}
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		
+		return -1;
+	}
+	
+	/**
+	 * Extracts all text recursively from a Text object, including all siblings
+	 * This ensures we get all text even if it's split across multiple Text components
+	 */
+	private static String extractAllTextRecursively(Text text) {
+		if (text == null) {
+			return "";
+		}
+		
+		StringBuilder result = new StringBuilder();
+		
+		// Add the main text
+		String mainText = text.getString();
+		if (mainText != null && !mainText.isEmpty()) {
+			result.append(mainText);
+		}
+		
+		// Recursively process all siblings
+		for (Text sibling : text.getSiblings()) {
+			String siblingText = extractAllTextRecursively(sibling);
+			if (!siblingText.isEmpty()) {
+				result.append(siblingText);
+			}
+		}
+		
+		return result.toString();
+	}
+	
+	/**
+	 * Adds slot-specific text to item names in "Aspekt [tranferieren]" inventory
+	 * Slot 11: "(Wird zerstört)" in red
+	 * Slot 13: "(Bleibt erhalten)" in green
+	 */
+	private static void addAspectTransferSlotText(List<Text> lines, MinecraftClient client, ItemStack stack) {
+		if (lines == null || lines.isEmpty() || stack == null || stack.isEmpty()) {
+			return;
+		}
+		
+		// Check if we're in the "Aspekt [tranferieren]" inventory
+		if (client.currentScreen == null) {
+			return;
+		}
+		
+		// Get the title Text object and extract all text recursively
+		Text titleText = client.currentScreen.getTitle();
+		if (titleText == null) {
+			return;
+		}
+		
+		// Extract all text recursively (handles nested Text components with colors)
+		String screenTitle = extractAllTextRecursively(titleText);
+		
+		if (screenTitle == null || screenTitle.isEmpty()) {
+			return;
+		}
+		
+		// Remove Minecraft formatting codes (like §f, §r, §b, etc.)
+		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-orxA-FK-ORX]", "");
+		cleanScreenTitle = cleanScreenTitle.replaceAll("§#[0-9a-fA-F]{6}", "");
+		cleanScreenTitle = cleanScreenTitle.replaceAll("§x(§[0-9a-fA-F]){6}", "");
+		
+		// Remove Unicode formatting characters (like 㔅㓩㔉㔇㔆㓾㔘)
+		cleanScreenTitle = cleanScreenTitle.replaceAll("[\\u3400-\\u4DBF]", "");
+		
+		// Check for "Aspekt" and "[transferieren]" or "[tranferieren]" (both spellings)
+		boolean hasAspekt = cleanScreenTitle.contains("Aspekt");
+		boolean hasTransfer = cleanScreenTitle.contains("[transferieren]") || cleanScreenTitle.contains("[tranferieren]");
+		
+		if (!hasAspekt || !hasTransfer) {
+			return;
+		}
+		
+		// Get the slot index of the currently hovered item
+		// First try mouse position (more accurate for hover detection)
+		int slotIndex = getHoveredSlotIndex(client);
+		
+		// If mouse position failed OR found a slot that's not 11 or 13, try item stack comparison as fallback
+		if (slotIndex == -1 || (slotIndex != 11 && slotIndex != 13)) {
+			int foundSlot = findSlotByItemStack(client, stack);
+			// Only use itemStack result if it's one of our target slots
+			if (foundSlot == 11 || foundSlot == 13) {
+				slotIndex = foundSlot;
+			}
+		}
+		
+		if (slotIndex == -1) {
+			return;
+		}
+		
+		// Only modify if the slot is exactly 11 or 13
+		if (slotIndex != 11 && slotIndex != 13) {
+			return;
+		}
+		
+		// Check if modification was already added to avoid duplicates
+		Text firstLine = lines.get(0);
+		if (firstLine == null) {
+			return;
+		}
+		
+		String firstLineText = firstLine.getString();
+		boolean alreadyHasWirdZerstoert = firstLineText != null && firstLineText.contains("(Wird zerstört)");
+		boolean alreadyHasBleibtErhalten = firstLineText != null && firstLineText.contains("(Bleibt erhalten)");
+		
+		if (alreadyHasWirdZerstoert || alreadyHasBleibtErhalten) {
+			return;
+		}
+		
+		// Modify the first line (item name) based on slot
+		if (slotIndex == 11) {
+			// Slot 11: Add "(Wird zerstört)" in red
+			MutableText modifiedLine = firstLine.copy().append(
+				Text.literal(" (Wird zerstört)")
+					.styled(style -> style.withColor(0xFFFF5555)) // Red color
+			);
+			lines.set(0, modifiedLine);
+		} else if (slotIndex == 13) {
+			// Slot 13: Add "(Bleibt erhalten)" in green
+			MutableText modifiedLine = firstLine.copy().append(
+				Text.literal(" (Bleibt erhalten)")
+					.styled(style -> style.withColor(0xFF55FF55)) // Green color
+			);
+			lines.set(0, modifiedLine);
+		}
+	}
 	
 	/**
 	 * Checks if the hovered item is in one of the license slots
@@ -3648,15 +4387,62 @@ public class InformationenUtility {
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
-					com.google.gson.JsonArray levelsArray = JsonParser.parseReader(reader).getAsJsonArray();
+					JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
 					
-					for (var element : levelsArray) {
-						JsonObject levelData = element.getAsJsonObject();
-						int level = levelData.get("Level").getAsInt();
-						String essence = levelData.get("Essence").getAsString();
-						int amount = levelData.get("Amount").getAsInt();
+					// Load levels array
+					if (root.has("levels") && root.get("levels").isJsonArray()) {
+						com.google.gson.JsonArray levelsArray = root.getAsJsonArray("levels");
 						
-						mkLevelDatabase.add(new MKLevelInfo(level, essence, amount));
+						for (var element : levelsArray) {
+							JsonObject levelData = element.getAsJsonObject();
+							int level = levelData.get("Level").getAsInt();
+							String essence = levelData.get("Essence").getAsString();
+							int amount = levelData.get("Amount").getAsInt();
+							
+							mkLevelDatabase.add(new MKLevelInfo(level, essence, amount));
+						}
+					}
+					
+					// Load combined_waves array
+					if (root.has("combined_waves") && root.get("combined_waves").isJsonArray()) {
+						com.google.gson.JsonArray combinedWavesArray = root.getAsJsonArray("combined_waves");
+						
+						for (var element : combinedWavesArray) {
+							JsonObject waveData = element.getAsJsonObject();
+							String level = waveData.get("Level").getAsString();
+							int wave = waveData.get("Wave").getAsInt();
+							
+							// Parse "without" array if present
+							List<String> without = new ArrayList<>();
+							if (waveData.has("without")) {
+								if (waveData.get("without").isJsonArray()) {
+									com.google.gson.JsonArray withoutArray = waveData.getAsJsonArray("without");
+									for (var withoutElement : withoutArray) {
+										String withoutStr = withoutElement.getAsString();
+										// Split by comma in case a single array element contains multiple essences
+										String[] parts = withoutStr.split(",");
+										for (String part : parts) {
+											String trimmed = part.trim();
+											if (!trimmed.isEmpty()) {
+												without.add(trimmed);
+											}
+										}
+									}
+								} else if (waveData.get("without").isJsonPrimitive()) {
+									// Handle case where "without" is a single string (comma-separated)
+									String withoutStr = waveData.get("without").getAsString();
+									String[] parts = withoutStr.split(",");
+									for (String part : parts) {
+										String trimmed = part.trim();
+										if (!trimmed.isEmpty()) {
+											without.add(trimmed);
+										}
+									}
+								}
+							}
+							
+							mkLevelCombinedWavesDatabase.add(new CombinedWaveInfo(level, wave, without));
+						}
 					}
 				}
 			}
@@ -3828,6 +4614,142 @@ public class InformationenUtility {
 			
 			// Simply append the floor tag at the end of the text
 			// We need to preserve the original styling
+			Text newLine = appendFloorNumberToText(line, floorTag);
+			if (newLine != null) {
+				lines.set(i, newLine);
+			}
+		}
+	}
+	
+	/**
+	 * Adds floor numbers to cards and statues names in inventories
+	 * Only works in inventories that contain the cards/statues characters (㭆 or 㭂)
+	 */
+	private static void addFloorNumberToCardsStatuesNames(List<Text> lines, MinecraftClient client) {
+		if (client == null || client.currentScreen == null) {
+			return;
+		}
+		
+		// Check if we're in a cards/statues inventory
+		String screenTitle = client.currentScreen.getTitle().getString();
+		if (screenTitle == null) {
+			return;
+		}
+		
+		// Check if the inventory contains one of the cards/statues characters
+		String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
+		boolean isCardsInventory = screenTitle.contains(cardsStatuesChars[0]); // 㭆
+		boolean isStatuesInventory = screenTitle.contains(cardsStatuesChars[1]); // 㭂
+		
+		if (!isCardsInventory && !isStatuesInventory) {
+			return;
+		}
+		
+		// Look for lines containing "[Karte]" or "[Statue]"
+		for (int i = 0; i < lines.size(); i++) {
+			Text line = lines.get(i);
+			String lineText = line.getString();
+			
+			if (lineText == null) {
+				continue;
+			}
+			
+			boolean isCard = false;
+			boolean isStatue = false;
+			String itemName = null;
+			
+			// Check for [Karte] or [Statue]
+			if (lineText.contains("[Karte]")) {
+				isCard = true;
+				// Extract name: everything before "[Karte]"
+				int index = lineText.indexOf("[Karte]");
+				if (index > 0) {
+					itemName = lineText.substring(0, index).trim();
+					// Remove any leading dashes or special characters
+					itemName = itemName.replaceAll("^[-\\s]+", "").trim();
+					// Remove formatting codes
+					itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
+					// Remove Unicode formatting characters (like the ones used in inventories)
+					itemName = itemName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "").trim();
+					// Remove trailing dashes
+					itemName = itemName.replaceAll("\\s*-\\s*$", "").trim();
+				}
+			} else if (lineText.contains("[Statue]")) {
+				isStatue = true;
+				// Extract name: everything before "[Statue]"
+				int index = lineText.indexOf("[Statue]");
+				if (index > 0) {
+					itemName = lineText.substring(0, index).trim();
+					// Remove any leading dashes or special characters
+					itemName = itemName.replaceAll("^[-\\s]+", "").trim();
+					// Remove formatting codes
+					itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
+					// Remove Unicode formatting characters (like the ones used in inventories)
+					itemName = itemName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "").trim();
+					// Remove trailing dashes
+					itemName = itemName.replaceAll("\\s*-\\s*$", "").trim();
+				}
+			}
+			
+			if (itemName == null || itemName.isEmpty()) {
+				continue;
+			}
+			
+			// Check if floor number is already added
+			if (lineText.contains("[e")) {
+				continue; // Already has floor number
+			}
+			
+			// Get floor numbers from database
+			List<Integer> floors = null;
+			if (isCard) {
+				// Try exact match first
+				floors = cardsFloors.get(itemName);
+				// If not found, try case-insensitive search
+				if (floors == null) {
+					for (Map.Entry<String, List<Integer>> entry : cardsFloors.entrySet()) {
+						if (entry.getKey().equalsIgnoreCase(itemName)) {
+							floors = entry.getValue();
+							break;
+						}
+					}
+				}
+			} else if (isStatue) {
+				// Try exact match first
+				floors = statuesFloors.get(itemName);
+				// If not found, try case-insensitive search
+				if (floors == null) {
+					for (Map.Entry<String, List<Integer>> entry : statuesFloors.entrySet()) {
+						if (entry.getKey().equalsIgnoreCase(itemName)) {
+							floors = entry.getValue();
+							break;
+						}
+					}
+				}
+			}
+			
+			if (floors == null || floors.isEmpty()) {
+				continue; // No floor data found
+			}
+			
+			// Format floor numbers: if multiple floors, show as "e1, e22", if single, show as "e1"
+			String floorTag;
+			if (floors.size() == 1) {
+				floorTag = " [e" + floors.get(0) + "]";
+			} else {
+				// Multiple floors: " [e1, e22]"
+				StringBuilder floorBuilder = new StringBuilder(" [");
+				for (int j = 0; j < floors.size(); j++) {
+					if (j > 0) {
+						floorBuilder.append(", ");
+					}
+					floorBuilder.append("e").append(floors.get(j));
+				}
+				floorBuilder.append("]");
+				floorTag = floorBuilder.toString();
+			}
+			
+			// Append the floor tag at the end of the text, preserving styling
 			Text newLine = appendFloorNumberToText(line, floorTag);
 			if (newLine != null) {
 				lines.set(i, newLine);
@@ -4110,6 +5032,80 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Data class to store Combined Wave information
+	 */
+	private static class CombinedWaveInfo {
+		public final String level; // e.g., "1-13", "25+30"
+		public final int wave;
+		public final List<String> without; // Optional list of essences to exclude
+		
+		public CombinedWaveInfo(String level, int wave, List<String> without) {
+			this.level = level;
+			this.wave = wave;
+			this.without = without != null ? without : new ArrayList<>();
+		}
+	}
+	
+	/**
+	 * Data class to represent a single line to render
+	 */
+	private static class RenderLine {
+		public final String text;
+		public final int color;
+		public final int xOffset; // Additional X offset for alignment
+		public final boolean hasSecondPart; // If true, has a second part with different color
+		public final String secondPartText;
+		public final int secondPartColor;
+		public final int secondPartXOffset; // X offset for second part
+		public final boolean hasThirdPart; // If true, has a third part (for wave numbers in green)
+		public final String thirdPartText;
+		public final int thirdPartColor;
+		public final int thirdPartXOffset; // X offset for third part
+		
+		public RenderLine(String text, int color) {
+			this.text = text;
+			this.color = color;
+			this.xOffset = 0;
+			this.hasSecondPart = false;
+			this.secondPartText = null;
+			this.secondPartColor = 0;
+			this.secondPartXOffset = 0;
+			this.hasThirdPart = false;
+			this.thirdPartText = null;
+			this.thirdPartColor = 0;
+			this.thirdPartXOffset = 0;
+		}
+		
+		public RenderLine(String text, int color, int xOffset, String secondPartText, int secondPartColor, int secondPartXOffset) {
+			this.text = text;
+			this.color = color;
+			this.xOffset = xOffset;
+			this.hasSecondPart = true;
+			this.secondPartText = secondPartText;
+			this.secondPartColor = secondPartColor;
+			this.secondPartXOffset = secondPartXOffset;
+			this.hasThirdPart = false;
+			this.thirdPartText = null;
+			this.thirdPartColor = 0;
+			this.thirdPartXOffset = 0;
+		}
+		
+		public RenderLine(String text, int color, int xOffset, String secondPartText, int secondPartColor, int secondPartXOffset, String thirdPartText, int thirdPartColor, int thirdPartXOffset) {
+			this.text = text;
+			this.color = color;
+			this.xOffset = xOffset;
+			this.hasSecondPart = true;
+			this.secondPartText = secondPartText;
+			this.secondPartColor = secondPartColor;
+			this.secondPartXOffset = secondPartXOffset;
+			this.hasThirdPart = true;
+			this.thirdPartText = thirdPartText;
+			this.thirdPartColor = thirdPartColor;
+			this.thirdPartXOffset = thirdPartXOffset;
+		}
+	}
+	
+	/**
 	 * Client tick callback for continuous XP calculation (like KillsUtility)
 	 */
 	private static void onClientTick(MinecraftClient client) {
@@ -4184,9 +5180,23 @@ public class InformationenUtility {
 				}
 			}
 			
-			// Check for biom changes and reset if necessary (only if tracking)
+			// Check for biom changes (always check when in farmworld, not just when tracking)
+			// This ensures biomDetected is up to date for the overlay editor
 			if (isTrackingCollections) {
 				checkCollectionBiomChange(client);
+				
+				// Handle pending resets (multiple resets in quick succession after biome change)
+				if (pendingResets > 0) {
+					resetCollectionTracking();
+					// Restart timer if overlay is enabled
+					if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+						sessionStartTime = System.currentTimeMillis();
+					} else {
+						sessionStartTime = 0;
+					}
+					pendingResets--;
+				}
+				
 				// Update timer based on biom detection
 				if (biomDetected && currentShowCollectionOverlay && sessionStartTime == 0) {
 					// Biom detected and overlay enabled, but timer not started - start it
@@ -4195,6 +5205,9 @@ public class InformationenUtility {
 					// Biom no longer detected, stop timer
 					sessionStartTime = 0;
 				}
+			} else if (isInFarmworldDimension(client)) {
+				// Also check when in farmworld but not tracking yet (for overlay editor)
+				checkCollectionBiomChange(client);
 			}
 			
 			// Update blocks per minute calculation (only if overlay is enabled and tracking)
@@ -4219,8 +5232,7 @@ public class InformationenUtility {
 				mkLevelSearchText = "";
 				mkLevelSearchFocused = false;
 				mkLevelSearchCursorPosition = 0;
-				// Scroll-Position NICHT zurücksetzen - wird beibehalten
-				// mkLevelScrollOffset = 0;
+				setMKLevelScrollOffset(0);
 			}
 			
 			if (isInMKLevelInventory) {
@@ -4345,11 +5357,15 @@ public class InformationenUtility {
 		}
 		
 		if (mkLevelOverlayHovered) {
-			int scrollAmount = (int) (vertical * 12);
-			mkLevelScrollOffset -= scrollAmount;
-			mkLevelScrollOffset = Math.max(0, mkLevelScrollOffset);
+			// Scroll by line height for smooth line-by-line scrolling
+			int lineHeight = 12;
+			int scrollAmount = (int) (vertical * lineHeight);
+			int currentOffset = getMKLevelScrollOffset();
+			currentOffset -= scrollAmount;
+			currentOffset = Math.max(0, currentOffset);
+			setMKLevelScrollOffset(currentOffset);
 			
-			// Limit scroll offset based on actual entry heights
+			// Limit scroll offset based on actual entry heights (including spacing)
 			MinecraftClient client = MinecraftClient.getInstance();
 			if (client != null && client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
 				try {
@@ -4358,78 +5374,135 @@ public class InformationenUtility {
 					int inventoryHeight = bgHeightField.getInt(handledScreen);
 					
 					int padding = 5;
-					int lineHeight = 12;
 					int searchBarHeight = 16;
 					int contentOffset = 3; // Same as in render
 					// Account for contentOffset in available height calculation
 					int availableHeight = inventoryHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
 					
-					// Get filtered entries
-					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
-					
-					// Calculate actual heights for all entries
 					int totalHeight = 0;
 					int lastEntryHeight = 0;
-					for (MKLevelInfo levelInfo : filteredEntries) {
-						// Base height: Level (1 line) + Essenz (1 line) = 2 lines
-						int height = 2 * lineHeight;
-						// Add 1 line if wave is present
-						if (findWaveForEssence(levelInfo.essence) != null) {
+					
+					if (mkLevelShowIndividualWaves) {
+						// Get filtered entries
+						List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+						
+						// Calculate actual heights for all entries (including spacing)
+						for (MKLevelInfo levelInfo : filteredEntries) {
+							// Base height: Level (1 line) + Essenz (1 line) = 2 lines
+							int height = 2 * lineHeight;
+							// Add 1 line if wave is present
+							if (findWaveForEssence(levelInfo.essence) != null) {
+								height += lineHeight;
+							}
+							// Add 1 line for spacing after each entry
 							height += lineHeight;
+							totalHeight += height;
+							lastEntryHeight = height; // Store the last entry height
 						}
-						totalHeight += height;
-						lastEntryHeight = height; // Store the last entry height
+					} else {
+						// Get filtered combined waves
+						List<CombinedWaveInfo> filteredCombinedWaves = filterCombinedWaves(mkLevelSearchText);
+						
+						// Calculate actual heights for all entries (including spacing)
+						for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
+							// Base height: Level (1 line) + Wave (1 line) = 2 lines
+							int height = 2 * lineHeight;
+							// Add 1 line for "Ohne:" header if "without" is present
+							// Then add 1 line for each essence in "without" list
+							if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
+								height += lineHeight; // "Ohne:" header
+								height += waveInfo.without.size() * lineHeight; // One line per essence
+							}
+							// Add 1 line for spacing after each entry
+							height += lineHeight;
+							totalHeight += height;
+							lastEntryHeight = height; // Store the last entry height
+						}
 					}
 					
 					// Maximum scroll should allow us to show the last entry at the bottom
 					// Add the height of the last entry to ensure it's fully visible
 					int maxScroll = Math.max(0, totalHeight - availableHeight + lastEntryHeight);
-					mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
+					setMKLevelScrollOffset(Math.min(getMKLevelScrollOffset(), maxScroll));
 				} catch (Exception e) {
 					// Fallback: use default calculation with actual heights
-					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
-					int lineHeight = 12;
-					
-					// Calculate actual heights for all entries
 					int totalHeight = 0;
 					int lastEntryHeight = 0;
-					for (MKLevelInfo levelInfo : filteredEntries) {
-						int height = 2 * lineHeight;
-						if (findWaveForEssence(levelInfo.essence) != null) {
-							height += lineHeight;
+					
+					if (mkLevelShowIndividualWaves) {
+						List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+						
+						// Calculate actual heights for all entries (including spacing)
+						for (MKLevelInfo levelInfo : filteredEntries) {
+							int height = 2 * lineHeight;
+							if (findWaveForEssence(levelInfo.essence) != null) {
+								height += lineHeight;
+							}
+							height += lineHeight; // Spacing
+							totalHeight += height;
+							lastEntryHeight = height;
 						}
-						totalHeight += height;
-						lastEntryHeight = height; // Store the last entry height
+					} else {
+						List<CombinedWaveInfo> filteredCombinedWaves = filterCombinedWaves(mkLevelSearchText);
+						
+						// Calculate actual heights for all entries (including spacing)
+						for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
+							int height = 2 * lineHeight;
+							if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
+								height += lineHeight; // "Ohne:" header
+								height += waveInfo.without.size() * lineHeight; // One line per essence
+							}
+							height += lineHeight; // Spacing
+							totalHeight += height;
+							lastEntryHeight = height;
+						}
 					}
 					
 					// Estimate available height (default inventory height minus search bar and padding)
 					int estimatedAvailableHeight = 166 - 16 - 10 - 3; // Default inventory height minus search bar, padding, contentOffset
 					// Add the height of the last entry to ensure it's fully visible
 					int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
-					mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
+					setMKLevelScrollOffset(Math.min(getMKLevelScrollOffset(), maxScroll));
 				}
 			} else {
 				// Fallback: use default calculation with actual heights
-				List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
-				int lineHeight = 12;
-				
-				// Calculate actual heights for all entries
 				int totalHeight = 0;
 				int lastEntryHeight = 0;
-				for (MKLevelInfo levelInfo : filteredEntries) {
-					int height = 2 * lineHeight;
-					if (findWaveForEssence(levelInfo.essence) != null) {
-						height += lineHeight;
+				
+				if (mkLevelShowIndividualWaves) {
+					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+					
+					// Calculate actual heights for all entries (including spacing)
+					for (MKLevelInfo levelInfo : filteredEntries) {
+						int height = 2 * lineHeight;
+						if (findWaveForEssence(levelInfo.essence) != null) {
+							height += lineHeight;
+						}
+						height += lineHeight; // Spacing
+						totalHeight += height;
+						lastEntryHeight = height;
 					}
-					totalHeight += height;
-					lastEntryHeight = height; // Store the last entry height
+				} else {
+					List<CombinedWaveInfo> filteredCombinedWaves = filterCombinedWaves(mkLevelSearchText);
+					
+					// Calculate actual heights for all entries (including spacing)
+					for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
+						int height = 2 * lineHeight;
+						if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
+							height += lineHeight; // "Ohne:" header
+							height += waveInfo.without.size() * lineHeight; // One line per essence
+						}
+						height += lineHeight; // Spacing
+						totalHeight += height;
+						lastEntryHeight = height;
+					}
 				}
 				
 				// Estimate available height (default inventory height minus search bar and padding)
 				int estimatedAvailableHeight = 166 - 16 - 10 - 3; // Default inventory height minus search bar, padding, contentOffset
 				// Add the height of the last entry to ensure it's fully visible
 				int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
-				mkLevelScrollOffset = Math.min(mkLevelScrollOffset, maxScroll);
+				setMKLevelScrollOffset(Math.min(getMKLevelScrollOffset(), maxScroll));
 			}
 		}
 	}
@@ -5110,6 +6183,9 @@ public class InformationenUtility {
 		// Ansonsten verwende die absolute Y-Position aus der Config
 		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
 		
+		// Button height (unscaled)
+		int buttonHeight = 20;
+		
 		// Apply matrix transformation for scaling
 		org.joml.Matrix3x2fStack matrices = context.getMatrices();
 		matrices.pushMatrix();
@@ -5122,6 +6198,39 @@ public class InformationenUtility {
 		int searchBarHeight = 16; // Height of search bar
 		int contentOffset = 3; // Shift content 3px up
 		int textX = padding;
+		
+		// Draw buttons above overlay (at negative Y, aligned with top edge)
+		int buttonY = -buttonHeight; // Above the overlay, aligned with top edge
+		int buttonWidth = unscaledWidth / 2; // Each button takes half the width
+		
+		// Left button: "Einzelne Wellen"
+		boolean leftButtonActive = mkLevelShowIndividualWaves;
+		int leftButtonBgColor = leftButtonActive ? 0xFF404040 : 0xFF202020; // Highlighted: lighter gray, inactive: darker gray
+		int leftButtonBorderColor = leftButtonActive ? 0xFFFFFF00 : 0xFF808080; // Highlighted: yellow, inactive: gray
+		context.fill(0, buttonY, buttonWidth, buttonY + buttonHeight, leftButtonBgColor);
+		context.drawBorder(0, buttonY, buttonWidth, buttonHeight, leftButtonBorderColor);
+		
+		// Center text in left button
+		String leftButtonText = "Einzelne Wellen";
+		int leftTextWidth = client.textRenderer.getWidth(leftButtonText);
+		int leftTextX = (buttonWidth - leftTextWidth) / 2;
+		int leftTextY = buttonY + (buttonHeight - client.textRenderer.fontHeight) / 2;
+		context.drawText(client.textRenderer, leftButtonText, leftTextX, leftTextY, 0xFFFFFFFF, false);
+		
+		// Right button: "Kombinierte Wellen"
+		boolean rightButtonActive = !mkLevelShowIndividualWaves;
+		int rightButtonBgColor = rightButtonActive ? 0xFF404040 : 0xFF202020; // Highlighted: lighter gray, inactive: darker gray
+		int rightButtonBorderColor = rightButtonActive ? 0xFFFFFF00 : 0xFF808080; // Highlighted: yellow, inactive: gray
+		context.fill(buttonWidth, buttonY, unscaledWidth, buttonY + buttonHeight, rightButtonBgColor);
+		context.drawBorder(buttonWidth, buttonY, buttonWidth, buttonHeight, rightButtonBorderColor);
+		
+		// Center text in right button
+		String rightButtonText = "Kombinierte Wellen";
+		int rightTextWidth = client.textRenderer.getWidth(rightButtonText);
+		int rightTextX = buttonWidth + (buttonWidth - rightTextWidth) / 2;
+		int rightTextY = buttonY + (buttonHeight - client.textRenderer.fontHeight) / 2;
+		context.drawText(client.textRenderer, rightButtonText, rightTextX, rightTextY, 0xFFFFFFFF, false);
+		
 		int searchBarY = padding - contentOffset; // Shift search bar 3px up
 		int contentY = searchBarY + searchBarHeight + 2; // Content starts below search bar
 		int maxY = unscaledHeight - padding;
@@ -5158,113 +6267,320 @@ public class InformationenUtility {
 			context.fill(cursorX, cursorY, cursorX + 1, cursorY + textHeight, 0xFFFFFFFF);
 		}
 		
-		// Filter entries based on search text
-		List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
-		
 		// Calculate available height for content
 		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
 		
-		// Calculate actual heights for all entries
-		int[] entryHeights = new int[filteredEntries.size()];
-		int totalHeight = 0;
-		for (int i = 0; i < filteredEntries.size(); i++) {
-			MKLevelInfo levelInfo = filteredEntries.get(i);
-			// Base height: Level (1 line) + Essenz (1 line) = 2 lines
-			int height = 2 * lineHeight;
-			// Add 1 line if wave is present
-			if (findWaveForEssence(levelInfo.essence) != null) {
-				height += lineHeight;
-			}
-			entryHeights[i] = height;
-			totalHeight += height;
-		}
-		
-		// Calculate startIndex based on scroll offset
-		int startIndex = 0;
-		int accumulatedHeight = 0;
-		for (int i = 0; i < filteredEntries.size(); i++) {
-			if (accumulatedHeight + entryHeights[i] > mkLevelScrollOffset) {
-				startIndex = i;
-				break;
-			}
-			accumulatedHeight += entryHeights[i];
-		}
-		
-		// Calculate maximum scroll offset to ensure we can scroll to the last entry
-		// Add the height of the last entry to ensure it's fully visible
-		int lastEntryHeight = filteredEntries.size() > 0 ? entryHeights[filteredEntries.size() - 1] : 0;
-		int maxScrollOffset = Math.max(0, totalHeight - availableHeight + lastEntryHeight);
-		
-		// Limit the scroll offset
-		if (mkLevelScrollOffset > maxScrollOffset) {
-			mkLevelScrollOffset = maxScrollOffset;
-			// Recalculate startIndex
-			accumulatedHeight = 0;
-			startIndex = 0;
-			for (int i = 0; i < filteredEntries.size(); i++) {
-				if (accumulatedHeight + entryHeights[i] > mkLevelScrollOffset) {
-					startIndex = i;
-					break;
+		if (mkLevelShowIndividualWaves) {
+			// Render "Einzelne Wellen" mode - convert to lines and render line by line
+			List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+			
+			// Convert all entries to lines
+			List<RenderLine> allLines = new ArrayList<>();
+			for (MKLevelInfo levelInfo : filteredEntries) {
+				// Level header (yellow)
+				allLines.add(new RenderLine("-Level " + levelInfo.level, 0xFFFFFF00));
+				
+				// Essence and amount (white)
+				allLines.add(new RenderLine(" " + levelInfo.essence + ", " + formatNumberWithSeparator(levelInfo.amount), 0xFFFFFFFF));
+				
+				// Wave if present
+				Integer wave = findWaveForEssence(levelInfo.essence);
+				if (wave != null) {
+					String wavePrefix = "-> Welle: ";
+					String waveNumber = String.valueOf(wave);
+					allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveNumber, 0xFF55FF55, client.textRenderer.getWidth(wavePrefix)));
 				}
-				accumulatedHeight += entryHeights[i];
-			}
-		}
-		
-		// Show scroll indicator if needed (in entries, not lines)
-		int textY = contentY;
-		if (startIndex > 0) {
-			String moreText = String.format("↑ %d weitere (Scrollen)", startIndex);
-			context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
-			textY += lineHeight;
-		}
-		
-		// Draw visible entries from filtered list
-		int currentIndex = startIndex;
-		int visibleEntryCount = 0;
-		
-		while (currentIndex < filteredEntries.size() && textY < maxY) {
-			// Check if we have space for another entry before drawing (3 lines worst case: Level + Essenz + Welle)
-			if (textY + lineHeight * 3 > maxY) {
-				break;
+				
+				// Empty line for spacing
+				allLines.add(new RenderLine("", 0xFFFFFFFF));
 			}
 			
-			MKLevelInfo levelInfo = filteredEntries.get(currentIndex);
+			// Calculate total height and max scroll
+			int totalHeight = allLines.size() * lineHeight;
+			int maxScrollOffset = Math.max(0, totalHeight - availableHeight);
 			
-			// Draw level header (yellow)
-			String levelText = "-Level " + levelInfo.level;
-			context.drawText(client.textRenderer, levelText, textX, textY, 0xFFFFFF00, true);
-			textY += lineHeight;
+			// Limit scroll offset
+			int scrollOffset = getMKLevelScrollOffset();
+			if (scrollOffset > maxScrollOffset) {
+				setMKLevelScrollOffset(maxScrollOffset);
+				scrollOffset = maxScrollOffset;
+			}
 			
-			// Draw essence and amount (white)
-			String essenceText = " " + levelInfo.essence + ", " + formatNumberWithSeparator(levelInfo.amount);
-			context.drawText(client.textRenderer, essenceText, textX, textY, 0xFFFFFFFF, true);
-			textY += lineHeight;
+			// Calculate start line based on scroll offset
+			int startLine = scrollOffset / lineHeight;
+			int pixelOffset = scrollOffset % lineHeight;
 			
-			// Find wave for this essence and draw in separate line
-			Integer wave = findWaveForEssence(levelInfo.essence);
-			if (wave != null) {
-				// Draw "-> Welle: " in gray
-				String wavePrefix = "-> Welle: ";
-				int grayColor = 0xFFC0C0C0; // Light gray (with alpha channel)
-				int greenColor = 0xFF55FF55; // Light green (with alpha channel)
+			// Render lines
+			int textY = contentY;
+			int linesRendered = 0;
+			
+			// Show scroll indicator if needed (always at contentY, not affected by pixelOffset)
+			if (startLine > 0) {
+				String moreText = "↑ Weitere Level (Scrollen)";
+				context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+				textY += lineHeight;
+				linesRendered++;
+			}
+			
+			// Adjust textY for pixel offset after rendering the indicator
+			textY -= pixelOffset;
+			
+			// Minimum Y position for rendering lines (below the indicator if present)
+			int minRenderY = startLine > 0 ? contentY + lineHeight : contentY;
+			
+			// Render visible lines (reserve space for bottom indicator if needed)
+			// First, check if there might be more lines below
+			boolean mightHaveMoreLines = startLine + (availableHeight / lineHeight) < allLines.size();
+			int maxRenderY = mightHaveMoreLines ? maxY - lineHeight : maxY;
+			
+			int lastProcessedIndex = startLine - 1;
+			for (int i = startLine; i < allLines.size() && textY < maxRenderY; i++) {
+				// Only render if the line is below the minimum render position
+				if (textY >= minRenderY) {
+					RenderLine line = allLines.get(i);
+					
+					if (line.hasSecondPart) {
+						// Draw first part
+						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
+						// Draw second part
+						context.drawText(client.textRenderer, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
+					} else {
+						// Draw single line
+						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
+					}
+					linesRendered++;
+				}
 				
-				int prefixWidth = client.textRenderer.getWidth(wavePrefix);
-				context.drawText(client.textRenderer, wavePrefix, textX, textY, grayColor, true);
-				
-				// Draw wave number in green
-				String waveNumber = String.valueOf(wave);
-				context.drawText(client.textRenderer, waveNumber, textX + prefixWidth, textY, greenColor, true);
+				lastProcessedIndex = i;
 				textY += lineHeight;
 			}
 			
-			currentIndex++;
-			visibleEntryCount++;
+			// Show scroll indicator only if there are actually more lines below
+			// Check if we've scrolled to the bottom: if scrollOffset >= maxScrollOffset, we're at the bottom
+			boolean hasMoreLines = getMKLevelScrollOffset() < maxScrollOffset;
+			if (hasMoreLines && textY < maxY) {
+				String moreText = "↓ Weitere Level (Scrollen)";
+				context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+			}
+		} else {
+			// Render "Kombinierte Wellen" mode - convert to lines and render line by line
+			List<CombinedWaveInfo> filteredCombinedWaves = filterCombinedWaves(mkLevelSearchText);
+			
+			// Convert all entries to lines
+			List<RenderLine> allLines = new ArrayList<>();
+			for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
+				// Level header (yellow)
+				allLines.add(new RenderLine("-Level (" + waveInfo.level + ")", 0xFFFFFF00));
+				
+				// Wave (gray prefix + green number)
+				String wavePrefix = "-> Welle: ";
+				String waveNumber = String.valueOf(waveInfo.wave);
+				allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveNumber, 0xFF55FF55, client.textRenderer.getWidth(wavePrefix)));
+				
+				// "without" if present
+				if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
+					String withoutHeader = "Ohne: ";
+					int withoutHeaderWidth = client.textRenderer.getWidth(withoutHeader);
+					
+					// First essence on same line as "Ohne:"
+					if (waveInfo.without.size() > 0) {
+						String firstEssence = waveInfo.without.get(0).trim();
+						Integer essenceWave = findWaveForEssence(firstEssence);
+						
+						if (essenceWave != null) {
+							String wavePrefixText = " -> Welle: ";
+							int essenceNameWidth = client.textRenderer.getWidth(firstEssence);
+							String waveNumStr = String.valueOf(essenceWave);
+							int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
+							int waveNumX = wavePrefixX + client.textRenderer.getWidth(wavePrefixText);
+							// First part: "Ohne: " + essence name (red)
+							// Second part: " -> Welle: " (gray)
+							// Third part: wave number (green)
+							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555, 0, wavePrefixText, 0xFFC0C0C0, wavePrefixX, waveNumStr, 0xFF55FF55, waveNumX));
+						} else {
+							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555));
+						}
+					}
+					
+					// Remaining essences
+					for (int i = 1; i < waveInfo.without.size(); i++) {
+						String essenceName = waveInfo.without.get(i).trim();
+						Integer essenceWave = findWaveForEssence(essenceName);
+						
+						if (essenceWave != null) {
+							String wavePrefixText = " -> Welle: ";
+							int essenceNameWidth = client.textRenderer.getWidth(essenceName);
+							String waveNumStr = String.valueOf(essenceWave);
+							int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
+							int waveNumX = wavePrefixX + client.textRenderer.getWidth(wavePrefixText);
+							// First part: essence name (red)
+							// Second part: " -> Welle: " (gray)
+							// Third part: wave number (green)
+							allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, wavePrefixText, 0xFFC0C0C0, wavePrefixX, waveNumStr, 0xFF55FF55, waveNumX));
+						} else {
+							allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, "", 0, 0));
+						}
+					}
+				}
+				
+				// Empty line for spacing
+				allLines.add(new RenderLine("", 0xFFFFFFFF));
+			}
+			
+			// Calculate total height and max scroll
+			int totalHeight = allLines.size() * lineHeight;
+			int maxScrollOffset = Math.max(0, totalHeight - availableHeight);
+			
+			// Limit scroll offset
+			int scrollOffset = getMKLevelScrollOffset();
+			if (scrollOffset > maxScrollOffset) {
+				setMKLevelScrollOffset(maxScrollOffset);
+				scrollOffset = maxScrollOffset;
+			}
+			
+			// Calculate start line based on scroll offset
+			int startLine = scrollOffset / lineHeight;
+			int pixelOffset = scrollOffset % lineHeight;
+			
+			// Render lines
+			int textY = contentY;
+			int linesRendered = 0;
+			
+			// Show scroll indicator if needed (always at contentY, not affected by pixelOffset)
+			if (startLine > 0) {
+				String moreText = "↑ Weitere Level (Scrollen)";
+				context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+				textY += lineHeight;
+				linesRendered++;
+			}
+			
+			// Adjust textY for pixel offset after rendering the indicator
+			textY -= pixelOffset;
+			
+			// Minimum Y position for rendering lines (below the indicator if present)
+			int minRenderY = startLine > 0 ? contentY + lineHeight : contentY;
+			
+			// Render visible lines (reserve space for bottom indicator if needed)
+			// First, check if there might be more lines below
+			boolean mightHaveMoreLines = startLine + (availableHeight / lineHeight) < allLines.size();
+			int maxRenderY = mightHaveMoreLines ? maxY - lineHeight : maxY;
+			
+			int lastProcessedIndex = startLine - 1;
+			for (int i = startLine; i < allLines.size() && textY < maxRenderY; i++) {
+				// Only render if the line is below the minimum render position
+				if (textY >= minRenderY) {
+					RenderLine line = allLines.get(i);
+					
+					if (line.hasThirdPart) {
+						// Draw first part
+						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
+						// Draw second part
+						if (line.secondPartText != null && !line.secondPartText.isEmpty()) {
+							context.drawText(client.textRenderer, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
+						}
+						// Draw third part
+						if (line.thirdPartText != null && !line.thirdPartText.isEmpty()) {
+							context.drawText(client.textRenderer, line.thirdPartText, textX + line.thirdPartXOffset, textY, line.thirdPartColor, true);
+						}
+					} else if (line.hasSecondPart) {
+						// Draw first part
+						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
+						// Draw second part
+						if (line.secondPartText != null && !line.secondPartText.isEmpty()) {
+							context.drawText(client.textRenderer, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
+						}
+					} else {
+						// Draw single line
+						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
+					}
+					linesRendered++;
+				}
+				
+				lastProcessedIndex = i;
+				textY += lineHeight;
+			}
+			
+			// Show scroll indicator only if there are actually more lines below
+			// Check if we've scrolled to the bottom: if scrollOffset >= maxScrollOffset, we're at the bottom
+			boolean hasMoreLines = getMKLevelScrollOffset() < maxScrollOffset;
+			if (hasMoreLines && textY < maxY) {
+				String moreText = "↓ Weitere Level (Scrollen)";
+				context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+			}
 		}
 		
-		// Show scroll indicator if needed (in entries, not lines)
-		if (currentIndex < filteredEntries.size()) {
-			String moreText = String.format("↓ %d weitere (Scrollen)", filteredEntries.size() - currentIndex);
-			context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+		// Draw scrollbar on the right side
+		// Scrollbar goes from bottom of overlay to bottom of search bar
+		int scrollbarWidth = 6; // Width of scrollbar
+		int scrollbarX = unscaledWidth - scrollbarWidth - padding;
+		int scrollbarTop = contentY; // Start below search bar
+		int scrollbarBottom = unscaledHeight - padding; // End at bottom of overlay
+		int scrollbarHeight = scrollbarBottom - scrollbarTop;
+		
+		// Only show scrollbar if there's content to scroll
+		if (scrollbarHeight > 0) {
+			// Calculate total content height using the same method as rendering
+			// We need to count the actual number of lines that will be rendered
+			int totalContentHeight = 0;
+			if (mkLevelShowIndividualWaves) {
+				List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+				// Count lines exactly as in rendering: each entry creates lines
+				for (MKLevelInfo levelInfo : filteredEntries) {
+					totalContentHeight += lineHeight; // Level line
+					totalContentHeight += lineHeight; // Essence line
+					if (findWaveForEssence(levelInfo.essence) != null) {
+						totalContentHeight += lineHeight; // Wave line
+					}
+					totalContentHeight += lineHeight; // Spacing line
+				}
+			} else {
+				List<CombinedWaveInfo> filteredCombinedWaves = filterCombinedWaves(mkLevelSearchText);
+				// Count lines exactly as in rendering - must match allLines.size() calculation
+				for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
+					totalContentHeight += lineHeight; // Level line
+					totalContentHeight += lineHeight; // Wave line
+					if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
+						// "Ohne:" header with first essence on same line = 1 line
+						totalContentHeight += lineHeight;
+						// Remaining essences, each on its own line
+						if (waveInfo.without.size() > 1) {
+							totalContentHeight += (waveInfo.without.size() - 1) * lineHeight;
+						}
+					}
+					totalContentHeight += lineHeight; // Spacing line
+				}
+			}
+			
+			// Only show scrollbar if content is taller than visible area
+			if (totalContentHeight > availableHeight) {
+				// Draw scrollbar background
+				context.fill(scrollbarX, scrollbarTop, scrollbarX + scrollbarWidth, scrollbarBottom, 0xFF404040);
+				context.drawBorder(scrollbarX, scrollbarTop, scrollbarWidth, scrollbarHeight, 0xFF808080);
+				
+				// Calculate handle size and position
+				float scrollRatio = (float) availableHeight / totalContentHeight;
+				int handleHeight = Math.max(10, (int) (scrollbarHeight * scrollRatio));
+				int scrollableTrackHeight = scrollbarHeight - handleHeight;
+				
+				// Calculate handle position based on scroll offset
+				int maxScroll = totalContentHeight - availableHeight;
+				float scrollProgress = maxScroll > 0 ? 
+					(float) getMKLevelScrollOffset() / maxScroll : 0.0f;
+				scrollProgress = Math.max(0.0f, Math.min(1.0f, scrollProgress));
+				
+				// When scrollProgress is 1.0, handle should be at the bottom
+				// handleY = scrollbarTop + scrollableTrackHeight when scrollProgress = 1.0
+				// This ensures handleY + handleHeight = scrollbarBottom when at max scroll
+				int handleY = scrollbarTop + (int) (scrollableTrackHeight * scrollProgress);
+				// Ensure handle doesn't go beyond bounds
+				int maxHandleY = scrollbarBottom - handleHeight;
+				handleY = Math.max(scrollbarTop, Math.min(handleY, maxHandleY));
+				
+				// Draw scrollbar handle
+				int handleColor = mkLevelScrollbarDragging ? 0xFF808080 : 0xFF606060;
+				context.fill(scrollbarX + 1, handleY, scrollbarX + scrollbarWidth - 1, handleY + handleHeight, handleColor);
+				context.drawBorder(scrollbarX + 1, handleY, scrollbarWidth - 2, handleHeight, 0xFFC0C0C0);
+			}
 		}
 		
 		// Pop matrix transformation
@@ -5505,6 +6821,82 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Filters combined waves entries based on search text
+	 * Searches in Level, Wave, and Without fields
+	 */
+	private static List<CombinedWaveInfo> filterCombinedWaves(String searchText) {
+		if (searchText == null || searchText.trim().isEmpty()) {
+			return mkLevelCombinedWavesDatabase;
+		}
+		
+		String searchLower = searchText.toLowerCase().trim();
+		List<CombinedWaveInfo> filtered = new ArrayList<>();
+		
+		// Check if search text contains "welle" followed by a number
+		Integer waveFromSearch = null;
+		boolean isWaveOnlySearch = false;
+		java.util.regex.Pattern wavePattern = java.util.regex.Pattern.compile("welle\\s*:?\\s*(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+		java.util.regex.Matcher waveMatcher = wavePattern.matcher(searchText);
+		if (waveMatcher.find()) {
+			try {
+				waveFromSearch = Integer.parseInt(waveMatcher.group(1));
+			} catch (NumberFormatException e) {
+				// Ignore
+			}
+		} else {
+			// Check if search text starts with "welle" (for live search)
+			if (searchLower.startsWith("welle") || searchLower.equals("welle:")) {
+				isWaveOnlySearch = true;
+			}
+		}
+		
+		for (CombinedWaveInfo entry : mkLevelCombinedWavesDatabase) {
+			boolean matches = false;
+			
+			// If search text starts with "Welle" (for live search), show all entries
+			if (isWaveOnlySearch) {
+				matches = true;
+			}
+			// Search for "Welle X" pattern - search for waves containing the number as substring
+			else if (waveFromSearch != null) {
+				String waveStr = String.valueOf(entry.wave);
+				String searchWaveStr = String.valueOf(waveFromSearch);
+				if (waveStr.contains(searchWaveStr)) {
+					matches = true;
+				}
+			}
+			// General search: check all fields for matches
+			else {
+				// Search in Level (e.g., "1-13", "25+30")
+				if (entry.level.toLowerCase().contains(searchLower)) {
+					matches = true;
+				}
+				
+				// Search in Wave (as number)
+				if (!matches && String.valueOf(entry.wave).contains(searchLower)) {
+					matches = true;
+				}
+				
+				// Search in Without
+				if (!matches && entry.without != null) {
+					for (String withoutItem : entry.without) {
+						if (withoutItem.toLowerCase().contains(searchLower)) {
+							matches = true;
+							break;
+						}
+					}
+				}
+			}
+			
+			if (matches) {
+				filtered.add(entry);
+			}
+		}
+		
+		return filtered;
+	}
+	
+	/**
 	 * Extracts plain text from Text component, removing all formatting codes
 	 */
 	public static String getPlainTextFromText(Text text) {
@@ -5586,6 +6978,39 @@ public class InformationenUtility {
 		// Use the same unscaledHeight as in render (inventoryHeight)
 		int unscaledHeight = inventoryHeight;
 		
+		// Button dimensions (unscaled, same as in render)
+		int unscaledButtonHeight = 20;
+		int unscaledButtonWidth = unscaledWidth / 2;
+		
+		// Calculate button positions in screen coordinates
+		// Buttons are rendered at negative Y (above overlay), aligned with top edge
+		int buttonY = overlayY - Math.round(unscaledButtonHeight * scale);
+		int leftButtonX = overlayX;
+		int leftButtonWidth = Math.round(unscaledButtonWidth * scale);
+		int rightButtonX = overlayX + leftButtonWidth;
+		int rightButtonWidth = Math.round(unscaledButtonWidth * scale);
+		int buttonHeight = Math.round(unscaledButtonHeight * scale);
+		
+		// Check if click is on left button ("Einzelne Wellen")
+		if (mouseX >= leftButtonX && mouseX <= leftButtonX + leftButtonWidth &&
+			mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
+			if (button == 0) { // Left click
+				mkLevelShowIndividualWaves = true;
+				// Keep scroll offset when switching modes
+				return true;
+			}
+		}
+		
+		// Check if click is on right button ("Kombinierte Wellen")
+		if (mouseX >= rightButtonX && mouseX <= rightButtonX + rightButtonWidth &&
+			mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
+			if (button == 0) { // Left click
+				mkLevelShowIndividualWaves = false;
+				// Keep scroll offset when switching modes
+				return true;
+			}
+		}
+		
 		// Calculate search bar position in screen coordinates (same as SearchBarUtility)
 		// In render: searchBarX = padding (5), searchBarY = padding - contentOffset (5 - 3 = 2)
 		// These are unscaled coordinates within the matrix, so we need to scale them
@@ -5617,7 +7042,7 @@ public class InformationenUtility {
 			} else if (button == 1) { // Right click - clear search
 				mkLevelSearchText = "";
 				mkLevelSearchCursorPosition = 0;
-				mkLevelScrollOffset = 0;
+				setMKLevelScrollOffset(0);
 				return true;
 			}
 		} else {
@@ -5625,6 +7050,173 @@ public class InformationenUtility {
 			mkLevelSearchFocused = false;
 		}
 		
+		// Check if click is on scrollbar
+		int scrollbarWidth = 6;
+		int scrollbarX = overlayX + Math.round((unscaledWidth - scrollbarWidth - unscaledPadding) * scale);
+		int scrollbarTop = overlayY + Math.round((unscaledPadding - unscaledContentOffset + unscaledSearchBarHeight + 2) * scale);
+		int scrollbarBottom = overlayY + Math.round((unscaledHeight - unscaledPadding) * scale);
+		int scrollbarHeight = scrollbarBottom - scrollbarTop;
+		
+		if (mouseX >= scrollbarX && mouseX <= scrollbarX + Math.round(scrollbarWidth * scale) &&
+			mouseY >= scrollbarTop && mouseY <= scrollbarBottom) {
+			
+			if (button == 0) { // Left click
+				// Calculate total content height
+				int lineHeight = 12;
+				int totalContentHeight = 0;
+				int availableHeight = unscaledHeight - unscaledPadding * 2 - unscaledSearchBarHeight - 2 - unscaledContentOffset;
+				
+				if (mkLevelShowIndividualWaves) {
+					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+					for (MKLevelInfo levelInfo : filteredEntries) {
+						totalContentHeight += 2 * lineHeight;
+						if (findWaveForEssence(levelInfo.essence) != null) {
+							totalContentHeight += lineHeight;
+						}
+						totalContentHeight += lineHeight;
+					}
+				} else {
+					List<CombinedWaveInfo> filteredCombinedWaves = filterCombinedWaves(mkLevelSearchText);
+					for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
+						totalContentHeight += 2 * lineHeight;
+						if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
+							totalContentHeight += lineHeight;
+							totalContentHeight += waveInfo.without.size() * lineHeight;
+						}
+						totalContentHeight += lineHeight;
+					}
+				}
+				
+				if (totalContentHeight > availableHeight) {
+					// Calculate handle size and position
+					float scrollRatio = (float) availableHeight / totalContentHeight;
+					int handleHeight = Math.max(10, (int) (scrollbarHeight * scrollRatio));
+					
+					// Calculate current handle position
+					float scrollProgress = (float) getMKLevelScrollOffset() / (totalContentHeight - availableHeight);
+					scrollProgress = Math.max(0.0f, Math.min(1.0f, scrollProgress));
+					int handleY = scrollbarTop + (int) ((scrollbarHeight - handleHeight) * scrollProgress);
+					
+					// Check if click is on handle
+					if (mouseY >= handleY && mouseY <= handleY + Math.round(handleHeight * scale)) {
+						// Start dragging
+						mkLevelScrollbarDragging = true;
+						mkLevelScrollbarDragStartY = mouseY;
+						mkLevelScrollbarDragStartOffset = getMKLevelScrollOffset();
+						return true;
+					} else {
+						// Click on scrollbar track - jump to position
+						float clickProgress = (float) (mouseY - scrollbarTop) / scrollbarHeight;
+						clickProgress = Math.max(0.0f, Math.min(1.0f, clickProgress));
+						int newOffset = (int) (clickProgress * (totalContentHeight - availableHeight));
+						setMKLevelScrollOffset(Math.max(0, Math.min(newOffset, totalContentHeight - availableHeight)));
+						return true;
+					}
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Handles mouse drag for MKLevel scrollbar
+	 */
+	public static boolean handleMKLevelScrollbarDrag(double mouseX, double mouseY, int button, int inventoryX, int inventoryY, int inventoryHeight) {
+		if (!mkLevelScrollbarDragging || button != 0) {
+			return false;
+		}
+		
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null || client.getWindow() == null) {
+			return false;
+		}
+		
+		int screenWidth = client.getWindow().getScaledWidth();
+		int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
+		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		int unscaledWidth = 200;
+		int unscaledHeight = inventoryHeight;
+		int overlayWidth = Math.round(unscaledWidth * scale);
+		
+		int overlayX;
+		if (xPos == -1) {
+			overlayX = screenWidth - overlayWidth - 10;
+		} else {
+			overlayX = xPos;
+		}
+		
+		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
+		
+		int padding = 5;
+		int lineHeight = 12;
+		int searchBarHeight = 16;
+		int contentOffset = 3;
+		
+		// Calculate scrollbar position
+		int scrollbarWidth = 6;
+		int scrollbarX = overlayX + Math.round((unscaledWidth - scrollbarWidth - padding) * scale);
+		int scrollbarTop = overlayY + Math.round((padding - contentOffset + searchBarHeight + 2) * scale);
+		int scrollbarBottom = overlayY + Math.round((unscaledHeight - padding) * scale);
+		int scrollbarHeight = scrollbarBottom - scrollbarTop;
+		
+		// Calculate total content height
+		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
+		int totalContentHeight = 0;
+		
+		if (mkLevelShowIndividualWaves) {
+			List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
+			for (MKLevelInfo levelInfo : filteredEntries) {
+				totalContentHeight += 2 * lineHeight;
+				if (findWaveForEssence(levelInfo.essence) != null) {
+					totalContentHeight += lineHeight;
+				}
+				totalContentHeight += lineHeight;
+			}
+		} else {
+			List<CombinedWaveInfo> filteredCombinedWaves = filterCombinedWaves(mkLevelSearchText);
+			for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
+				totalContentHeight += 2 * lineHeight;
+				if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
+					totalContentHeight += lineHeight;
+					totalContentHeight += waveInfo.without.size() * lineHeight;
+				}
+				totalContentHeight += lineHeight;
+			}
+		}
+		
+		if (totalContentHeight <= availableHeight) {
+			return false;
+		}
+		
+		// Calculate new scroll position based on mouse Y position
+		float scrollRatio = (float) availableHeight / totalContentHeight;
+		int handleHeight = Math.max(10, (int) (scrollbarHeight * scrollRatio));
+		int scrollableHeight = scrollbarHeight - handleHeight;
+		
+		// Calculate progress based on mouse position
+		float progress = (float) (mouseY - scrollbarTop - handleHeight / 2) / scrollableHeight;
+		progress = Math.max(0.0f, Math.min(1.0f, progress));
+		
+		// Calculate new scroll offset
+		int maxScroll = totalContentHeight - availableHeight;
+		int newOffset = (int) (progress * maxScroll);
+		setMKLevelScrollOffset(Math.max(0, Math.min(newOffset, maxScroll)));
+		
+		return true;
+	}
+	
+	/**
+	 * Handles mouse release for MKLevel scrollbar
+	 */
+	public static boolean handleMKLevelScrollbarRelease(double mouseX, double mouseY, int button) {
+		if (mkLevelScrollbarDragging && button == 0) {
+			mkLevelScrollbarDragging = false;
+			return true;
+		}
 		return false;
 	}
 	
@@ -5668,7 +7260,7 @@ public class InformationenUtility {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition - 1) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 				mkLevelSearchCursorPosition--;
-				mkLevelScrollOffset = 0; // Reset scroll when search changes
+				setMKLevelScrollOffset(0); // Reset scroll when search changes
 			}
 			return true;
 		}
@@ -5678,7 +7270,7 @@ public class InformationenUtility {
 			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition + 1);
-				mkLevelScrollOffset = 0; // Reset scroll when search changes
+				setMKLevelScrollOffset(0); // Reset scroll when search changes
 			}
 			return true;
 		}
@@ -5689,7 +7281,7 @@ public class InformationenUtility {
 								chr +
 								mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 			mkLevelSearchCursorPosition++;
-			mkLevelScrollOffset = 0; // Reset scroll when search changes
+			setMKLevelScrollOffset(0); // Reset scroll when search changes
 			return true;
 		}
 		
@@ -5741,13 +7333,13 @@ public class InformationenUtility {
 			if (modifiers == 2) { // 2 = Strg
 				mkLevelSearchText = "";
 				mkLevelSearchCursorPosition = 0;
-				mkLevelScrollOffset = 0; // Reset scroll when search changes
+				setMKLevelScrollOffset(0); // Reset scroll when search changes
 			} else if (!mkLevelSearchText.isEmpty() && mkLevelSearchCursorPosition > 0) {
 				// Normaler Backspace: Lösche ein Zeichen
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition - 1) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 				mkLevelSearchCursorPosition--;
-				mkLevelScrollOffset = 0; // Reset scroll when search changes
+				setMKLevelScrollOffset(0); // Reset scroll when search changes
 			}
 			return true;
 		}
@@ -5757,7 +7349,7 @@ public class InformationenUtility {
 			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition + 1);
-				mkLevelScrollOffset = 0; // Reset scroll when search changes
+				setMKLevelScrollOffset(0); // Reset scroll when search changes
 			}
 			return true;
 		}
@@ -5803,7 +7395,7 @@ public class InformationenUtility {
 											clipboardText +
 											mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 						mkLevelSearchCursorPosition += clipboardText.length();
-						mkLevelScrollOffset = 0; // Reset scroll when search changes
+						setMKLevelScrollOffset(0); // Reset scroll when search changes
 					}
 					return true;
 				case 65: // Strg+A - Alles markieren (nicht nötig, aber für Konsistenz)
@@ -6034,7 +7626,7 @@ public class InformationenUtility {
 							character +
 							mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 		mkLevelSearchCursorPosition++;
-		mkLevelScrollOffset = 0; // Reset scroll when search changes
+		setMKLevelScrollOffset(0); // Reset scroll when search changes
 	}
 	
 	/**
@@ -6265,7 +7857,7 @@ public class InformationenUtility {
 		collectionDimension = null;
 		nextCollectionNumber = 1;
 		blocksNeededForNextCollection = 0;
-		currentBiomName = null; // Reset biom name when tracking resets
+		// Don't reset currentBiomName here - it should persist across resets
 	}
 	
 	/**
@@ -6273,22 +7865,32 @@ public class InformationenUtility {
 	 */
 	private static void checkCollectionBiomChange(MinecraftClient client) {
 		try {
-			// Only check every 100ms to avoid performance issues
+			// Only check every 500ms (0.5 seconds) to avoid performance issues
 			long currentTime = System.currentTimeMillis();
 			long timeSinceLastCheck = currentTime - lastScoreboardCheck;
 			
-			if (timeSinceLastCheck < 100) {
+			if (timeSinceLastCheck < 500) {
 				return;
 			}
 			lastScoreboardCheck = currentTime;
 			
 			if (client == null || client.world == null) {
+				// Scoreboard disappeared - hide overlay temporarily
+				if (biomDetected) {
+					biomDetected = false;
+					sessionStartTime = 0;
+				}
 				return;
 			}
 			
 			// Get scoreboard
 			net.minecraft.scoreboard.Scoreboard scoreboard = client.world.getScoreboard();
 			if (scoreboard == null) {
+				// Scoreboard disappeared - hide overlay temporarily
+				if (biomDetected) {
+					biomDetected = false;
+					sessionStartTime = 0;
+				}
 				return;
 			}
 			
@@ -6296,6 +7898,11 @@ public class InformationenUtility {
 			net.minecraft.scoreboard.ScoreboardObjective sidebarObjective = 
 				scoreboard.getObjectiveForSlot(net.minecraft.scoreboard.ScoreboardDisplaySlot.SIDEBAR);
 			if (sidebarObjective == null) {
+				// Scoreboard disappeared - hide overlay temporarily
+				if (biomDetected) {
+					biomDetected = false;
+					sessionStartTime = 0;
+				}
 				return;
 			}
 			
@@ -6304,6 +7911,11 @@ public class InformationenUtility {
 			String cleanTitle = titleStr.replaceAll("§[0-9a-fk-or]", "").trim();
 			
 			if (!cleanTitle.equalsIgnoreCase("Cactus Clicker")) {
+				// Scoreboard disappeared (wrong scoreboard) - hide overlay temporarily
+				if (biomDetected) {
+					biomDetected = false;
+					sessionStartTime = 0;
+				}
 				return; // Not the right scoreboard
 			}
 			
@@ -6316,23 +7928,30 @@ public class InformationenUtility {
 			
 			// Check if biom changed
 			if (biomName != null) {
+				boolean wasDetected = biomDetected;
 				biomDetected = true; // Biom was detected
 				if (currentBiomName != null && !currentBiomName.equals(biomName)) {
-					// Biom changed, reset collection tracking
-					resetCollectionTracking();
-					// Restart timer if overlay is enabled
-					if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
-						sessionStartTime = System.currentTimeMillis();
-					} else {
-						sessionStartTime = 0;
-					}
+					// Biom changed, schedule multiple resets in quick succession
+					pendingResets = 5; // Reset 5 times
 					currentBiomName = biomName;
 				} else if (currentBiomName == null) {
 					// First time setting biom name, just set it without resetting
 					currentBiomName = biomName;
 				}
+				// If biom was just detected (wasn't detected before), reactivate overlay if it was enabled
+				if (!wasDetected && CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+					// Overlay will automatically show because biomDetected is now true
+					// Start timer if we're tracking
+					if (isTrackingCollections && sessionStartTime == 0) {
+						sessionStartTime = System.currentTimeMillis();
+					}
+				}
 			} else {
-				biomDetected = false; // No biom detected
+				// No biom detected - hide overlay temporarily
+				if (biomDetected) {
+					biomDetected = false;
+					sessionStartTime = 0;
+				}
 			}
 		} catch (Exception e) {
 			// Silent error handling
@@ -6762,6 +8381,11 @@ public class InformationenUtility {
 			return;
 		}
 		
+		// Hide overlay if biom is not detected (scoreboard disappeared)
+		if (!biomDetected) {
+			return;
+		}
+		
 		// Get position and scale from config
 		int x = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayX;
 		int y = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayY;
@@ -6779,7 +8403,7 @@ public class InformationenUtility {
 		// Build overlay text
 		String header = "Collection:";
 		String timeLine = timeText; // timeText already contains "Zeit: XX:XX"
-		String blocksLine = "Blöcke: " + formatNumberWithSeparator(sessionBlocks);
+		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
 		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
 		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
 		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
@@ -6838,6 +8462,14 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Returns whether a biome was detected in the scoreboard
+	 * Used by OverlayEditorScreen to determine if overlays should be shown
+	 */
+	public static boolean isBiomDetected() {
+		return biomDetected;
+	}
+	
+	/**
 	 * Get current overlay width based on actual text content
 	 * Used by CollectionDraggableOverlay to match the actual overlay size
 	 */
@@ -6857,7 +8489,7 @@ public class InformationenUtility {
 		// Build overlay text (same as in renderCollectionOverlay)
 		String header = "Collection:";
 		String timeLine = timeText;
-		String blocksLine = "Blöcke: " + formatNumberWithSeparator(sessionBlocks);
+		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
 		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
 		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
 		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());

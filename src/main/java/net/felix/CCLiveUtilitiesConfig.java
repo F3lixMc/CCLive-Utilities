@@ -120,6 +120,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean playerStatsDebugging = false;
     
+    @SerialEntry
+    public boolean debugFunctionsEnabled = false; // Debug Funktionen aktivieren/deaktivieren
+    
     // Player Hover Stats Settings
     @SerialEntry
     public String hoverStatsChosenStat = "playtime"; // "playtime", "max_coins", "messages_sent", "blueprints_found", "max_damage"
@@ -533,7 +536,7 @@ public class CCLiveUtilitiesConfig {
     public int mkLevelX = -1; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
     
     @SerialEntry
-    public int mkLevelY = -1; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
+    public int mkLevelY = 115; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
     
     // Cards/Statues Settings
     @SerialEntry
@@ -658,6 +661,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean chatAspectOverlayEnabled = true; // Chat Aspect Overlay aktivieren
+
+    @SerialEntry
+    public int starAspectOverlayX = 7; // X-Position des Star Aspect Overlays (für Items mit ⭐) (Pixel vom linken Rand)
+    
+    @SerialEntry
+    public int starAspectOverlayY = 15; // Y-Position des Star Aspect Overlays (für Items mit ⭐) (Pixel vom oberen Rand)
 
     // Overlay Editor Settings
     @SerialEntry
@@ -1645,6 +1654,12 @@ public class CCLiveUtilitiesConfig {
                                     HANDLER.instance().hoverStatsChosenStat = isValid ? newVal : "playtime";
                                 })
                                 .controller(StringControllerBuilder::create)
+                                .build())
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Debug Funktionen"))
+                                .description(OptionDescription.of(Text.literal("Debug Funktionen\n-ItemHoverLogger (F8)\n-InventoryNameLogger (F9)\n-ScoreboardLogger (F10)\n-BossBarLogger (F12)")))
+                                .binding(false, () -> HANDLER.instance().debugFunctionsEnabled, newVal -> HANDLER.instance().debugFunctionsEnabled = newVal)
+                                .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .build())
                 .save(() -> {

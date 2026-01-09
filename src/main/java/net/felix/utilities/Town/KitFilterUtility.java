@@ -653,7 +653,8 @@ public class KitFilterUtility {
 		
 		// Prüfe auf die spezifischen Inventare
 		return cleanTitle.contains("Baupläne [Rüstung]") ||
-			   cleanTitle.contains("Bauplan [Shop]");
+			   cleanTitle.contains("Bauplan [Shop]") ||
+			   cleanTitle.contains("Favorisierte [Rüstungsbaupläne]"); 
 	}
 	
 	/**

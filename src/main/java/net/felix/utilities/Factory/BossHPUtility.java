@@ -646,11 +646,29 @@ public class BossHPUtility {
 		
 		// Berechne skalierte Breite
 		float scaledTotalWidth = unscaledTotalWidth * scale;
+		int overlayWidth = Math.round(scaledTotalWidth);
 		
-		// Berechne Position: x ist die rechte Kante, also linke Kante = x - skalierte Breite
-		// Da die Matrix-Transformation die Position nicht skaliert (nur den Inhalt), müssen wir die Position
-		// so berechnen, dass nach der Skalierung die rechte Kante bei x ist
-		int posX = Math.round(x - scaledTotalWidth);
+		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
+		int baseX = x;
+		int screenWidth = client.getWindow().getScaledWidth();
+		
+		// Determine if overlay is on left or right side of screen
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
+		// Calculate X position based on side (same logic as Mining overlays)
+		int posX;
+		if (isOnLeftSide) {
+			// On left side: keep left edge fixed, expand to the right
+			posX = baseX;
+		} else {
+			// On right side: keep right edge fixed, expand to the left
+			// Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+			// Keep this right edge fixed, so left edge moves left when width increases
+			posX = baseX - overlayWidth;
+		}
+		
+		// Ensure overlay stays within screen bounds
+		posX = Math.max(0, Math.min(posX, screenWidth - overlayWidth));
 		int posY = y;
 		
 		// Verwende Matrix-Transformationen für Skalierung
@@ -871,9 +889,25 @@ public class BossHPUtility {
 	}
 	
 	/**
+	 * Gibt die initialen Boss-HP zurück (für Prozentwert-Berechnung)
+	 */
+	public static BigInteger getInitialBossHP() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.initialBossHP : null;
+	}
+	
+	/**
+	 * Gibt die Startzeit des Boss-Kampfes zurück (für DPM-Berechnung)
+	 */
+	public static long getBossFightStartTime() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.bossFightStartTime : 0;
+	}
+	
+	/**
 	 * Formatiert eine BigInteger-Zahl mit Tausendertrennzeichen
 	 */
-	private static String formatBigInteger(BigInteger value) {
+	public static String formatBigInteger(BigInteger value) {
 		NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
 		return formatter.format(value);
 	}
