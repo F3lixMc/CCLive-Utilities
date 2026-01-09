@@ -135,9 +135,11 @@ public class ActionBarData {
             if (client.world != null && client.player != null) {
                 String newDimension = client.world.getRegistryKey().getValue().toString();
                 
-                if (currentDimension != null && !currentDimension.equals(newDimension)) {
-                    reset();
-                }
+                // Materialien werden NICHT mehr beim Dimensionswechsel zurückgesetzt,
+                // damit sie im Clipboard erhalten bleiben
+                // if (currentDimension != null && !currentDimension.equals(newDimension)) {
+                //     reset();
+                // }
                 
                 // Wenn sich die Dimension geändert hat, den Floor-Cache zurücksetzen
                 if (currentDimension == null || !currentDimension.equals(newDimension)) {

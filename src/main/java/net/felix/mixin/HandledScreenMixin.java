@@ -24,13 +24,35 @@ public abstract class HandledScreenMixin {
      * Injects at the very end of the render method to ensure our overlays are drawn last
      * This preserves all normal rendering while ensuring our overlays appear above tooltips
      */
+    // Debug: Letzter erkannter Screen (um Logs zu reduzieren)
+    private static String lastDetectedScreen = "";
+    
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+        
+        // Überspringe InventoryScreen - wird im ScreenMixin behandelt, um Doppel-Rendering zu vermeiden
+        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
+            return;
+        }
+        
+        String currentScreen = screen.getClass().getSimpleName();
+        lastDetectedScreen = currentScreen;
+        
         // Store mouse position for use in tooltip callbacks
         net.felix.utilities.Overall.InformationenUtility.setLastMousePosition(mouseX, mouseY);
         
         // Update mouse position for DebugUtility (Item Logger)
         net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
+        
+        // Update mouse position for Item Viewer
+        net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+        
+        // Render Clipboard Overlay (wenn aktiviert)
+        net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+        
+        // Render Clipboard Button Tooltips
+        net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
         
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
@@ -73,37 +95,56 @@ public abstract class HandledScreenMixin {
         // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
         renderMKLevelOverlay(context);
         
-        // Render unregistered item overlays (red background on items not in extracted_items.json)
-        // DISABLED: ItemInfoUtility is deactivated
-        // renderUnregisteredItemOverlays(context);
+        // Render Item Viewer overlay (nach allen anderen Overlays, damit es über dem dunklen Hintergrund liegt)
+        renderItemViewer(context, mouseX, mouseY);
+        
+        // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
+        // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isVisible()) {
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+        }
+        
+        // Rendere Help-Overlay ganz am Ende, damit es über allem liegt (wie im Blueprint Shop)
+        // Wird sowohl hier als auch in InGameHudHelpOverlayMixin gerendert, um sicherzustellen, dass es überall funktioniert
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            net.felix.utilities.ItemViewer.ItemViewerUtility.renderHelpOverlay(context);
+        }
+        
+        // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
+        net.felix.utilities.ItemViewer.ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
     }
     
     /**
-     * Renders red background overlay on unregistered items
-     * DISABLED: ItemInfoUtility is deactivated
+     * Rendert den Item Viewer Overlay
      */
-    /*
-    private void renderUnregisteredItemOverlays(DrawContext context) {
+    private void renderItemViewer(DrawContext context, int mouseX, int mouseY) {
         try {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
-            net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, x, y);
+            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+            
+            // Rendere Item-Viewer (wird nur gerendert wenn sichtbar)
+            net.felix.utilities.ItemViewer.ItemViewerUtility.renderItemViewerInScreen(context, client, screen, mouseX, mouseY);
         } catch (Exception e) {
             // Ignore rendering errors
         }
     }
-    */
-    
     
     /**
-     * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory
+     * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory or Essence Harvester UI (Glyph "㮌")
      */
     private void renderMKLevelOverlay(DrawContext context) {
         try {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
             net.minecraft.text.Text titleText = screen.getTitle();
-            String title = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
             
-            if (title.contains("Machtkristalle Verbessern")) {
+            // Prüfe direkt auf dem Text-Objekt (bevor getPlainTextFromText Unicode-Zeichen entfernt)
+            String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
+            String titlePlain = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
+            
+            // Prüfe sowohl "Machtkristalle Verbessern" als auch das Glyph "㮌" (Essence Harvester UI)
+            // Verwende titleWithUnicode für die Glyph-Prüfung, da getPlainTextFromText Unicode entfernt
+            if (titlePlain.contains("Machtkristalle Verbessern") || 
+                ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode)) {
                 // Get actual inventory dimensions from the screen using shadow fields
                 net.felix.utilities.Overall.InformationenUtility.renderMKLevelOverlay(context, net.minecraft.client.MinecraftClient.getInstance(), x, y, backgroundWidth, backgroundHeight);
             }
@@ -113,10 +154,65 @@ public abstract class HandledScreenMixin {
     }
     
     /**
+     * Blockiert Tooltips wenn das Hilfe-Overlay offen ist (wie im Bauplan-Shop)
+     */
+    @Inject(method = "getTooltipFromItem", at = @At("HEAD"), cancellable = true)
+    private void blockTooltipsFromItem(net.minecraft.item.ItemStack stack, CallbackInfoReturnable<java.util.List<net.minecraft.text.Text>> cir) {
+        // Blockiere Tooltips wenn das Hilfe-Overlay offen ist
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            cir.setReturnValue(java.util.Collections.emptyList());
+        }
+    }
+    
+    /**
+     * Blockiert das Rendern der Items in InventoryScreen, wenn das Hilfe-Overlay offen ist
+     * Injiziert in die drawSlot-Methode, um das Rendern der Items zu blockieren
+     */
+    @Inject(method = "drawSlot", at = @At("HEAD"), cancellable = true)
+    private void blockSlotRenderingInInventoryScreen(DrawContext context, Slot slot, CallbackInfo ci) {
+        HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+        // Blockiere das Rendern der Items nur für InventoryScreen, wenn das Hilfe-Overlay offen ist
+        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen && 
+            net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            ci.cancel();
+        }
+    }
+    
+    
+    /**
      * Injects into mouseClicked to handle clicks on the Hide Uncraftable button
      */
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
+        // Dies muss vor allen anderen Klicks geprüft werden
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleHelpOverlayClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+        
+        // Handle clicks on Clipboard Overlay buttons (inkl. Delete-Button)
+        if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        
+        // Handle clicks on Clipboard Delete-Button (auch wenn Bestätigungs-Overlay offen ist)
+        // Dies wird bereits in handleButtonClick behandelt, aber wir müssen sicherstellen, dass es auch außerhalb von Screens funktioniert
+        
+        // Handle clicks on Clipboard quantity text field
+        if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, button)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        
+        // Handle clicks on Item Viewer buttons
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+        }
+        
         // Handle clicks on the Hide Uncraftable button ONLY in blueprint inventories
         if (isBlueprintInventory()) {
             if (handleHideUncraftableButtonClick(mouseX, mouseY, button)) {

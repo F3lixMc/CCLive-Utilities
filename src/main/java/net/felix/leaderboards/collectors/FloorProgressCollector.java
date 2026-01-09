@@ -38,7 +38,7 @@ public class FloorProgressCollector implements DataCollector {
         });
         
         isActive = true;
-        // Silent error handling("✅ FloorProgressCollector initialisiert");
+        // System.out.println("✅ FloorProgressCollector initialisiert");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -82,7 +82,7 @@ public class FloorProgressCollector implements DataCollector {
      */
     private void handleFloorEnter(String floor) {
         floorStartTime = Instant.now();
-        // Silent error handling("🏠 Floor betreten: " + floor);
+        // System.out.println("🏠 Floor betreten: " + floor);
     }
     
     /**
@@ -95,7 +95,7 @@ public class FloorProgressCollector implements DataCollector {
             // Aktualisiere Statistiken
             updateFloorStats(currentFloor, timeSpent);
             
-            // Silent error handling("🏠 Floor verlassen: " + currentFloor + " (Zeit: " + (timeSpent / 1000) + "s)");
+            // System.out.println("🏠 Floor verlassen: " + currentFloor + " (Zeit: " + (timeSpent / 1000) + "s)");
         }
         
         floorStartTime = null;
@@ -130,7 +130,16 @@ public class FloorProgressCollector implements DataCollector {
                 String[] parts = floorPart.split("_");
                 if (parts.length >= 1) {
                     String floorNumber = parts[0];
-                    return "floor_" + floorNumber;
+                    // Validiere: Nur floor_1 bis floor_10 sind gültig
+                    try {
+                        int floorNum = Integer.parseInt(floorNumber);
+                        if (floorNum >= 1 && floorNum <= 10) {
+                            return "floor_" + floorNumber;
+                        }
+                    } catch (NumberFormatException e) {
+                        // floorNumber ist keine Zahl (z.B. "all", "legendary", "none")
+                        // Ignoriere diese ungültigen Floor-Namen
+                    }
                 }
             }
         } catch (Exception e) {
@@ -197,7 +206,7 @@ public class FloorProgressCollector implements DataCollector {
         currentFloor = null;
         floorStartTime = null;
         
-        // Silent error handling("🛑 FloorProgressCollector gestoppt");
+        // System.out.println("🛑 FloorProgressCollector gestoppt");
     }
     
     @Override

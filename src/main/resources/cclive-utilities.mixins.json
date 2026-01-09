@@ -18,7 +18,12 @@
 		"ClientPlayNetworkHandlerTestMixin",
 		"PlayerHoverStatsMixin",
 		"DrawContextMixin",
-		"InventoryScreenMixin"
+		"ScreenMixin",
+		"InventoryScreenMixin",
+		"HelpOverlayMixin",
+		"HelpOverlayScreenMixin",
+		"InGameHudHelpOverlayMixin",
+		"MouseClickMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

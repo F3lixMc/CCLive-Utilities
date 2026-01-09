@@ -39,6 +39,9 @@ public class CCLiveUtilities implements ModInitializer {
 
 
 		// Initialize configuration
+		// Migriere Config-Datei von config/ nach config/cclive-utilities/ (falls nötig)
+		CCLiveUtilitiesConfig.migrateConfigLocation();
+		
 		CCLiveUtilitiesConfig.HANDLER.load();
 		
 		// Migriere Overlay-Typ von String zu Enum
@@ -58,13 +61,13 @@ public class CCLiveUtilities implements ModInitializer {
 		AnimationBlockerUtility.initialize();
 		KillAnimationUtility.initialize();
 		BPViewerUtility.initialize();
-		//ItemInfoUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
 		TabInfoUtility.initialize();
 		net.felix.utilities.DebugUtility.initializeItemLogger();
+		net.felix.utilities.DragOverlay.ClipboardUtility.initialize();
 		
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();

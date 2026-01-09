@@ -47,6 +47,11 @@ public class ZeichenUtility {
     private static String miningLevelUp = "";
     private static String airship = "";
     private static String essenceHarvesterUi = "";
+    private static String uiCategoriesFactory = "";
+    private static String uiCategoriesAincrad = "";
+    private static String uiCategoriesFarmzone = "";
+    private static String uiCategoriesHub = "";
+    private static String uiRessourceBag = "";
     
     /**
      * Initialisiert die ZeichenUtility und lädt die Zeichen aus der JSON-Datei
@@ -304,6 +309,30 @@ public class ZeichenUtility {
             essenceHarvesterUi = essenceHarvesterObj.get("character").getAsString();
         }
         
+        // Lade UI Categories (Factory, Aincrad, Farmzone, Hub)
+        if (json.has("ui_categories_factory")) {
+            JsonObject factoryObj = json.getAsJsonObject("ui_categories_factory");
+            uiCategoriesFactory = factoryObj.get("character").getAsString();
+        }
+        if (json.has("ui_categories_aincrad")) {
+            JsonObject aincradObj = json.getAsJsonObject("ui_categories_aincrad");
+            uiCategoriesAincrad = aincradObj.get("character").getAsString();
+        }
+        if (json.has("ui_categories_farmzone")) {
+            JsonObject farmzoneObj = json.getAsJsonObject("ui_categories_farmzone");
+            uiCategoriesFarmzone = farmzoneObj.get("character").getAsString();
+        }
+        if (json.has("ui_categories_hub")) {
+            JsonObject hubObj = json.getAsJsonObject("ui_categories_hub");
+            uiCategoriesHub = hubObj.get("character").getAsString();
+        }
+        
+        // Lade UI Ressource Bag
+        if (json.has("ui_ressource_bag")) {
+            JsonObject ressourceBagObj = json.getAsJsonObject("ui_ressource_bag");
+            uiRessourceBag = ressourceBagObj.get("character").getAsString();
+        }
+        
         // Lade Factory Bottom Font
         if (json.has("factory_bottom_font")) {
             JsonObject factoryObj = json.getAsJsonObject("factory_bottom_font");
@@ -357,6 +386,11 @@ public class ZeichenUtility {
         miningLevelUp = "㫚㫛㫜㫝㫞㫟㫠㫡㫢㫣㫤㫥㫦㫧㫨㫩㫪㫫㫬㫭㫮㫯㫰㫱㫲㫳㫴㫵㫶㫷㫸㫹㫺㫻㫼㫽㫾㫿㬀㬁";
         airship = "㭉㭊㭋㭌㭍㭎㭏㭐㭑㭒㭓㭔㭕㭖㭗㭘㭙㭚㭛㭜㭝㭞㭟㭠㭡㭢㭣㭤㭥㭦㭧㭨㭩㭪㭫㭬㭭㭮㭯㭰㭱㭲㭳㭴㭵㭶㭷㭸㭹㭺㭻㭼㭽㭾㭿㮀";
         essenceHarvesterUi = "㮌";
+        uiCategoriesFactory = "㮕";
+        uiCategoriesAincrad = "㮖";
+        uiCategoriesFarmzone = "㮗";
+        uiCategoriesHub = "㮘";
+        uiRessourceBag = "Ⳅ";
         
         factoryBottomFont = "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪";
         factoryBottomFontNumbers.put('㝡', 0);
@@ -562,6 +596,38 @@ public class ZeichenUtility {
     public static boolean containsEssenceHarvesterUi(String text) {
         ensureInitialized();
         return text != null && text.contains(essenceHarvesterUi);
+    }
+    
+    /**
+     * Prüft ob ein String eines der UI Categories Zeichen enthält (Factory, Aincrad, Farmzone, Hub)
+     * Diese Menüs sollten keine JEI UI anzeigen
+     */
+    public static boolean containsSpecialMenusNoJei(String text) {
+        ensureInitialized();
+        if (text == null) {
+            return false;
+        }
+        // Prüfe ob eines der UI Categories Zeichen im Text enthalten ist
+        return (uiCategoriesFactory != null && !uiCategoriesFactory.isEmpty() && text.contains(uiCategoriesFactory)) ||
+               (uiCategoriesAincrad != null && !uiCategoriesAincrad.isEmpty() && text.contains(uiCategoriesAincrad)) ||
+               (uiCategoriesFarmzone != null && !uiCategoriesFarmzone.isEmpty() && text.contains(uiCategoriesFarmzone)) ||
+               (uiCategoriesHub != null && !uiCategoriesHub.isEmpty() && text.contains(uiCategoriesHub));
+    }
+    
+    /**
+     * Gibt das UI Ressource Bag Zeichen zurück
+     */
+    public static String getUiRessourceBag() {
+        ensureInitialized();
+        return uiRessourceBag;
+    }
+    
+    /**
+     * Prüft ob ein String das UI Ressource Bag Zeichen enthält
+     */
+    public static boolean containsUiRessourceBag(String text) {
+        ensureInitialized();
+        return text != null && text.contains(uiRessourceBag);
     }
     
     /**

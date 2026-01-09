@@ -109,8 +109,11 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
                     net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) previousScreen;
                     net.minecraft.text.Text titleText = handledScreen.getTitle();
                     String title = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
+                    String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
                     
-                    if (title.contains("Machtkristalle Verbessern")) {
+                    // Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
+                    if (title.contains("Machtkristalle Verbessern") || 
+                        net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode)) {
                         screenToCheck = previousScreen;
                         isFromPreviousScreen = true;
                     } else {

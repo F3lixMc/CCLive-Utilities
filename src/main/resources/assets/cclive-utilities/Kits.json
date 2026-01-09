@@ -1677,7 +1677,7 @@
       },
       "Arkanstahl Handhaube",
       {
-        "item_type":"Helm",
+        "item_type":"Handschuhe",
         "rarity":"Legendary",
         "floor": "e66",
         "modifier":"[Herstellung], [Herstellung], [Andere], [Fähigkeiten]"

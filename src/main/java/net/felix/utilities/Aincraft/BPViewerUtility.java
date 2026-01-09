@@ -40,6 +40,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
+import net.felix.CCLiveUtilities;
 import java.util.regex.Pattern;
 
 public class BPViewerUtility {
@@ -116,8 +118,10 @@ public class BPViewerUtility {
     
     public BPViewerUtility() {
         INSTANCE = this;
-        this.saveFile = new File("config", SAVE_FILE_NAME);
-        this.progressFile = new File("config", PROGRESS_FILE_NAME);
+        // Speichere in config/cclive-utilities/ für Konsistenz mit allen anderen Mod-Daten
+        Path configDir = CCLiveUtilities.getConfigDir().resolve("cclive-utilities");
+        this.saveFile = configDir.resolve(SAVE_FILE_NAME).toFile();
+        this.progressFile = configDir.resolve(PROGRESS_FILE_NAME).toFile();
         loadFoundBlueprints();
         loadProgress();
         loadBlueprintConfig();
@@ -140,6 +144,7 @@ public class BPViewerUtility {
     /**
      * Gibt die Anzahl aller gefundenen Blueprints zurück (für ProfileStatsManager)
      * Dies ist die autoritative Quelle, da foundBlueprints die Hauptliste aller gefundenen Blueprints ist.
+     * Zählt einfach die Anzahl der Einträge in foundBlueprints.
      */
     public int getFoundBlueprintsCount() {
         return foundBlueprints.size();
@@ -204,13 +209,18 @@ public class BPViewerUtility {
         
         // Register tooltip render event to show checkmarks for found blueprints
         net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
+            // Performance-Optimierung: Frühe Returns
+            if (stack == null || lines == null) {
+                return;
+            }
+            
             // Only process tooltips if blueprint viewer is enabled in config
             if (!CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled) {
                 return;
             }
             
             // Check if we're hovering over a name_tag item (blueprint items)
-            if (stack != null && stack.getItem().toString().contains("name_tag")) {
+            if (stack.getItem().toString().contains("name_tag")) {
                 // Check if we're in the special inventory (the one with 㬉)
                 MinecraftClient mcClient = MinecraftClient.getInstance();
                 boolean isSpecialInventory = false;
@@ -1329,6 +1339,20 @@ public class BPViewerUtility {
         if (floor != null && !floor.startsWith("floor_")) {
             floor = "floor_" + floor;
         }
+        // Validiere Floor-Name - nur floor_1 bis floor_100 sind gültig
+        if (floor != null) {
+            String floorNumber = floor.substring("floor_".length());
+            try {
+                int floorNum = Integer.parseInt(floorNumber);
+                if (floorNum < 1 || floorNum > 100) {
+                    manualFloor = null;
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                manualFloor = null;
+                return;
+            }
+        }
         manualFloor = floor;
     }
     
@@ -1342,8 +1366,16 @@ public class BPViewerUtility {
                 String[] parts = floorPart.split("_");
                 if (parts.length >= 1) {
                     String floorNumber = parts[0];
-                    String floorKey = "floor_" + floorNumber;
-                    return floorKey;
+                    // Validiere: Nur floor_1 bis floor_100 sind gültig
+                    try {
+                        int floorNum = Integer.parseInt(floorNumber);
+                        if (floorNum >= 1 && floorNum <= 100) {
+                            return "floor_" + floorNumber;
+                        }
+                    } catch (NumberFormatException e) {
+                        // floorNumber ist keine Zahl (z.B. "all", "legendary", "none")
+                        // Ignoriere diese ungültigen Floor-Namen
+                    }
                 }
             }
         }
@@ -1351,6 +1383,20 @@ public class BPViewerUtility {
     }
     
     private void loadFoundBlueprints() {
+        // Migration: Prüfe ob alte Datei in config/ existiert und verschiebe sie nach config/cclive-utilities/
+        File oldSaveFile = new File("config", SAVE_FILE_NAME);
+        if (oldSaveFile.exists() && !saveFile.exists()) {
+            try {
+                // Erstelle Verzeichnis falls nicht vorhanden
+                saveFile.getParentFile().mkdirs();
+                // Verschiebe Datei
+                java.nio.file.Files.move(oldSaveFile.toPath(), saveFile.toPath(), 
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                // Silent error handling
+            }
+        }
+        
         if (saveFile.exists()) {
             try (FileReader reader = new FileReader(saveFile)) {
                 Type type = new TypeToken<HashMap<String, String>>(){}.getType();
@@ -1375,14 +1421,31 @@ public class BPViewerUtility {
     }
     
     private void saveFoundBlueprints() {
-        try (FileWriter writer = new FileWriter(saveFile)) {
-            gson.toJson(foundBlueprints, writer);
+        try {
+            saveFile.getParentFile().mkdirs();
+            try (FileWriter writer = new FileWriter(saveFile)) {
+                gson.toJson(foundBlueprints, writer);
+            }
         } catch (IOException e) {
             // Silent error handling
         }
     }
     
     private void loadProgress() {
+        // Migration: Prüfe ob alte Datei in config/ existiert und verschiebe sie nach config/cclive-utilities/
+        File oldProgressFile = new File("config", PROGRESS_FILE_NAME);
+        if (oldProgressFile.exists() && !progressFile.exists()) {
+            try {
+                // Erstelle Verzeichnis falls nicht vorhanden
+                progressFile.getParentFile().mkdirs();
+                // Verschiebe Datei
+                java.nio.file.Files.move(oldProgressFile.toPath(), progressFile.toPath(), 
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                // Silent error handling
+            }
+        }
+        
         if (progressFile.exists()) {
             try (FileReader reader = new FileReader(progressFile)) {
                 JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
@@ -1572,8 +1635,6 @@ public class BPViewerUtility {
                 }
             }
         } catch (Exception e) {
-            // Silent error handling("Failed to load blueprint config: " + e.getMessage());
-            // Silent error handling
             // Fallback to hardcoded config
             initializeFallbackFloors();
         }

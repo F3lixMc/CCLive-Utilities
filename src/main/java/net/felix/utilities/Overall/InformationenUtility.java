@@ -152,6 +152,7 @@ public class InformationenUtility {
 	private static boolean biomDetected = false; // Whether a biom was detected in the scoreboard
 	private static boolean lastShowCollectionOverlayState = true; // Track previous state of showCollectionOverlay
 	private static int pendingResets = 0; // Number of pending resets after biome change
+	private static int collectionTickCounter = 0; // Tick counter for collection overlay (runs every 20 ticks)
 	
 	// Collection hotkey
 	private static KeyBinding collectionResetKeyBinding;
@@ -331,22 +332,33 @@ public class InformationenUtility {
 		
 		// Register tooltip callback for material information
 		ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
-			MinecraftClient client = MinecraftClient.getInstance();
+			// Performance-Optimierung: Frühe Returns
+			if (stack == null || lines == null || lines.isEmpty()) {
+				return;
+			}
 			
-		// Always process aspect information (even if informationenUtilityEnabled is off)
-		// Add aspect name to tooltip (always visible) - works in inventories
-		addAspectNameToTooltip(lines, client, stack);
-		
-		// Add floor number to blueprint names in inventories
-		addFloorNumberToBlueprintNames(lines, client);
-		
-		// Add floor numbers to cards and statues names in inventories
-		addFloorNumberToCardsStatuesNames(lines, client);
-		
-		// Add slot-specific text for "Aspekt [tranferieren]" inventory
-		addAspectTransferSlotText(lines, client, stack);
-		
-		// Only process other information if Informationen Utility is enabled in config
+			MinecraftClient client = MinecraftClient.getInstance();
+			if (client == null) {
+				return;
+			}
+			
+			// Always process aspect information (even if informationenUtilityEnabled is off)
+			// Add aspect name to tooltip (always visible) - works in inventories
+			addAspectNameToTooltip(lines, client, stack);
+			
+			// Add floor number to blueprint names in inventories
+			addFloorNumberToBlueprintNames(lines, client);
+			
+			// Add floor numbers to cards and statues names in inventories
+			addFloorNumberToCardsStatuesNames(lines, client);
+			
+			// Add slot-specific text for "Aspekt [tranferieren]" inventory
+			addAspectTransferSlotText(lines, client, stack);
+			
+			// Add clipboard pin text input for forge inventories (before other processing)
+			addClipboardPinTextToTooltip(lines, client);
+			
+			// Only process other information if Informationen Utility is enabled in config
 			if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 				!CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled) {
 				return;
@@ -654,9 +666,19 @@ public class InformationenUtility {
 	 * Adds aspect name to tooltip (in blueprint inventories only)
 	 */
 	public static void addAspectNameToTooltip(List<Text> lines, MinecraftClient client, ItemStack stack) {
+		// Performance-Optimierung: Frühe Returns
+		if (lines == null || client == null || stack == null) {
+			return;
+		}
+		
 		// Check if aspect overlay is enabled in config
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
 			return; // Don't show aspect information if aspect overlay is disabled
+		}
+		
+		// Performance-Optimierung: Prüfe Screen früher
+		if (client.currentScreen == null) {
+			return;
 		}
 		
 		// First, extract the item name from the tooltip (usually the first line)
@@ -698,7 +720,6 @@ public class InformationenUtility {
 		boolean isInBlueprintInventory = false;
 		
 		// Check if we're in a blueprint inventory
-		if (client.currentScreen != null) {
 		String screenTitle = client.currentScreen.getTitle().getString();
 		
 		// Remove Minecraft formatting codes and Unicode characters for comparison
@@ -706,15 +727,14 @@ public class InformationenUtility {
 											.replaceAll("[\\u3400-\\u4DBF]", "");
 		
 		// Only show aspect information in specific blueprint inventories
-			isInBlueprintInventory = cleanScreenTitle.contains("Baupläne [Waffen]") ||
-									  cleanScreenTitle.contains("Baupläne [Rüstung]") ||
-									  cleanScreenTitle.contains("Baupläne [Werkzeuge]") ||
-									  cleanScreenTitle.contains("Bauplan [Shop]") || 
-									  cleanScreenTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
-									  cleanScreenTitle.contains("Favorisierte [Waffenbaupläne]") ||
-									  cleanScreenTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
-									  cleanScreenTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
-		}
+		isInBlueprintInventory = cleanScreenTitle.contains("Baupläne [Waffen]") ||
+								  cleanScreenTitle.contains("Baupläne [Rüstung]") ||
+								  cleanScreenTitle.contains("Baupläne [Werkzeuge]") ||
+								  cleanScreenTitle.contains("Bauplan [Shop]") || 
+								  cleanScreenTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
+								  cleanScreenTitle.contains("Favorisierte [Waffenbaupläne]") ||
+								  cleanScreenTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
+								  cleanScreenTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
 		
 		// Only process blueprint items if we're in a blueprint inventory
 		// Items with "⭐" are processed above and work in all inventories
@@ -4507,13 +4527,83 @@ public class InformationenUtility {
 	 * Adds floor number to blueprint names in inventory tooltips
 	 * Format: "BAUPLAN NAME - [Bauplan] [eX]" where X is the floor number (at the end)
 	 */
+	/**
+	 * Fügt "Bauplan Anpinnen mit Hotkey: [Hotkey]" Text zu Tooltips in Bauplan-Inventaren hinzu
+	 * Wird über "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen" eingefügt
+	 * Verwendet den gleichen Text wie im ItemViewer-Tooltip
+	 */
+	private static void addClipboardPinTextToTooltip(List<Text> lines, MinecraftClient client) {
+		// Performance-Optimierung: Frühe Returns
+		if (lines == null || lines.isEmpty() || client == null) {
+			return;
+		}
+		
+		if (client.currentScreen == null) {
+			return;
+		}
+		
+		// Prüfe ob wir in einem Bauplan-Inventar sind (Baupläne [Waffen], Bauplan [Shop], etc.)
+		String screenTitle = client.currentScreen.getTitle().getString();
+		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
+											.replaceAll("[\\u3400-\\u4DBF]", "");
+		
+		// Prüfe auf Bauplan-Inventare (Baupläne [Waffen], Baupläne [Rüstung], Bauplan [Shop], etc.)
+		boolean isInBlueprintInventory = cleanScreenTitle.contains("Baupläne [Waffen]") ||
+										 cleanScreenTitle.contains("Baupläne [Rüstung]") ||
+										 cleanScreenTitle.contains("Baupläne [Werkzeuge]") ||
+										 cleanScreenTitle.contains("Bauplan [Shop]") ||
+										 cleanScreenTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
+										 cleanScreenTitle.contains("Favorisierte [Waffenbaupläne]") ||
+										 cleanScreenTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
+										 cleanScreenTitle.contains("Favorisierte [Shop-Baupläne]") ||
+										 cleanScreenTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
+		
+		if (!isInBlueprintInventory) {
+			return;
+		}
+		
+		// Hole den Hotkey-Text vom ItemViewer (gleicher Text wie im ItemViewer-Tooltip)
+		String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
+		String clipboardText = "Bauplan Anpinnen mit Hotkey: " + hotkeyText;
+		
+		// Durchsuche Tooltip-Zeilen nach "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen"
+		for (int i = 0; i < lines.size(); i++) {
+			Text line = lines.get(i);
+			String lineText = line.getString();
+			
+			if (lineText == null) {
+				continue;
+			}
+			
+			// Entferne Formatierungs-Codes für Vergleich
+			String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "");
+			
+			// Prüfe ob die Zeile "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen" enthält
+			boolean hasHerstellen = cleanLineText.contains("[Linksklick]: Herstellen");
+			boolean hasKaufen = cleanLineText.contains("[Linksklick] Kaufen");
+			
+			if (hasHerstellen || hasKaufen) {
+				// Füge leere Zeile und "Bauplan Anpinnen mit Hotkey: [Hotkey]" in grau hinzu, direkt vor dieser Zeile
+				lines.add(i, Text.empty()); // Leere Zeile
+				lines.add(i + 1, Text.literal(clipboardText)
+					.setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false))); // Grau
+				return; // Nur einmal einfügen
+			}
+		}
+	}
+	
 	private static void addFloorNumberToBlueprintNames(List<Text> lines, MinecraftClient client) {
+		// Performance-Optimierung: Frühe Returns
+		if (lines == null || lines.isEmpty() || client == null) {
+			return;
+		}
+		
 		// Check if blueprint floor number display is enabled in config
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintFloorNumber) {
 			return;
 		}
 		
-		if (client == null || client.currentScreen == null) {
+		if (client.currentScreen == null) {
 			return;
 		}
 		
@@ -4974,6 +5064,39 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Public data class to return material information
+	 */
+	public static class MaterialFloorInfo {
+		public final int floor;
+		public final String rarity;
+		public final String color;
+		
+		public MaterialFloorInfo(int floor, String rarity, String color) {
+			this.floor = floor;
+			this.rarity = rarity;
+			this.color = color;
+		}
+	}
+	
+	/**
+	 * Gets material floor information for a given material name
+	 * @param materialName Name of the material
+	 * @return MaterialFloorInfo with floor, rarity, and color, or null if not found
+	 */
+	public static MaterialFloorInfo getMaterialFloorInfo(String materialName) {
+		if (materialName == null || materialsDatabase == null) {
+			return null;
+		}
+		
+		MaterialInfo info = materialsDatabase.get(materialName);
+		if (info != null) {
+			return new MaterialFloorInfo(info.floor, info.rarity, info.color);
+		}
+		
+		return null;
+	}
+	
+	/**
 	 * Data class to store essence information
 	 */
 	private static class EssenceInfo {
@@ -5109,6 +5232,11 @@ public class InformationenUtility {
 	 * Client tick callback for continuous XP calculation (like KillsUtility)
 	 */
 	private static void onClientTick(MinecraftClient client) {
+		// Performance-Optimierung: Frühe Returns wenn Mod deaktiviert
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+			return;
+		}
+		
 		if (client == null || client.world == null || client.player == null) {
 			return;
 		}
@@ -5134,9 +5262,12 @@ public class InformationenUtility {
 		updateOverlayVisibility(miningXP);
 		updateOverlayVisibility(lumberjackXP);
 		
-		// Collection tracking
+		// Collection tracking - runs every 20 ticks (1 second)
 		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
-			// Check if overlay was disabled/enabled and handle timer accordingly
+			// Increment tick counter
+			collectionTickCounter++;
+			
+			// Check if overlay was disabled/enabled and handle timer accordingly (every tick for responsiveness)
 			boolean currentShowCollectionOverlay = CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
 			if (currentShowCollectionOverlay != lastShowCollectionOverlayState) {
 				if (!currentShowCollectionOverlay) {
@@ -5151,10 +5282,10 @@ public class InformationenUtility {
 				lastShowCollectionOverlayState = currentShowCollectionOverlay;
 			}
 			
-			// Check for dimension changes and reset if necessary
+			// Check for dimension changes and reset if necessary (every tick for responsiveness)
 			checkCollectionDimensionChange(client);
 			
-			// Check if we should track collections (in farmworld dimension)
+			// Check if we should track collections (in farmworld dimension) (every tick for responsiveness)
 			boolean shouldTrack = isInFarmworldDimension(client);
 			if (shouldTrack != isTrackingCollections) {
 				isTrackingCollections = shouldTrack;
@@ -5180,39 +5311,42 @@ public class InformationenUtility {
 				}
 			}
 			
-			// Check for biom changes (always check when in farmworld, not just when tracking)
-			// This ensures biomDetected is up to date for the overlay editor
-			if (isTrackingCollections) {
-				checkCollectionBiomChange(client);
-				
-				// Handle pending resets (multiple resets in quick succession after biome change)
-				if (pendingResets > 0) {
-					resetCollectionTracking();
-					// Restart timer if overlay is enabled
-					if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+			// Collection-specific checks run every 20 ticks (1 second)
+			if (collectionTickCounter % 20 == 0) {
+				// Check for biom changes (always check when in farmworld, not just when tracking)
+				// This ensures biomDetected is up to date for the overlay editor
+				if (isTrackingCollections) {
+					checkCollectionBiomChange(client);
+					
+					// Handle pending resets (multiple resets in quick succession after biome change)
+					if (pendingResets > 0) {
+						resetCollectionTracking();
+						// Restart timer if overlay is enabled
+						if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+							sessionStartTime = System.currentTimeMillis();
+						} else {
+							sessionStartTime = 0;
+						}
+						pendingResets--;
+					}
+					
+					// Update timer based on biom detection
+					if (biomDetected && currentShowCollectionOverlay && sessionStartTime == 0) {
+						// Biom detected and overlay enabled, but timer not started - start it
 						sessionStartTime = System.currentTimeMillis();
-					} else {
+					} else if (!biomDetected && sessionStartTime > 0) {
+						// Biom no longer detected, stop timer
 						sessionStartTime = 0;
 					}
-					pendingResets--;
+				} else if (isInFarmworldDimension(client)) {
+					// Also check when in farmworld but not tracking yet (for overlay editor)
+					checkCollectionBiomChange(client);
 				}
 				
-				// Update timer based on biom detection
-				if (biomDetected && currentShowCollectionOverlay && sessionStartTime == 0) {
-					// Biom detected and overlay enabled, but timer not started - start it
-					sessionStartTime = System.currentTimeMillis();
-				} else if (!biomDetected && sessionStartTime > 0) {
-					// Biom no longer detected, stop timer
-					sessionStartTime = 0;
+				// Update blocks per minute calculation (only if overlay is enabled and tracking)
+				if (isTrackingCollections && currentShowCollectionOverlay) {
+					updateBlocksPerMinute();
 				}
-			} else if (isInFarmworldDimension(client)) {
-				// Also check when in farmworld but not tracking yet (for overlay editor)
-				checkCollectionBiomChange(client);
-			}
-			
-			// Update blocks per minute calculation (only if overlay is enabled and tracking)
-			if (isTrackingCollections && currentShowCollectionOverlay) {
-				updateBlocksPerMinute();
 			}
 		}
 		
@@ -5220,15 +5354,20 @@ public class InformationenUtility {
 		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
 			Text titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
+			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			boolean wasInMKLevelInventory = isInMKLevelInventory;
-			isInMKLevelInventory = title.contains("Machtkristalle Verbessern");
+			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
+			isInMKLevelInventory = title.contains("Machtkristalle Verbessern") || 
+			                        net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode);
 			
-			// Reset search when leaving inventory
+			// Reset search when leaving inventory (nur wenn man wirklich ein anderes Inventar öffnet)
+			// Die Scroll-Position wird NICHT zurückgesetzt, damit sie beim erneuten Öffnen erhalten bleibt
 			if (wasInMKLevelInventory && !isInMKLevelInventory) {
 				mkLevelSearchText = "";
 				mkLevelSearchFocused = false;
 				mkLevelSearchCursorPosition = 0;
-				setMKLevelScrollOffset(0);
+				// Scroll-Position NICHT zurücksetzen - wird beibehalten
+				// mkLevelScrollOffset = 0;
 			}
 			
 			if (isInMKLevelInventory) {

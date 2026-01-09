@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
 public class DamageTrackingUtility {
     private static boolean isInitialized = false;
     private static int tickCounter = 0;
-    private static final int SCAN_INTERVAL = 10; // Alle 10 Ticks scannen (2x pro Sekunde)
-    private static final double SCAN_RADIUS = 7.0; // 7 Blöcke Umkreis
+    private static final int SCAN_INTERVAL = 20; // Alle 20 Ticks scannen (1x pro Sekunde) - Performance-Optimierung
+    private static final double SCAN_RADIUS = 5.0; // 5 Blöcke Umkreis (reduziert von 7) - Performance-Optimierung
     
     // Pattern zum Entfernen von Minecraft-Formatierungscodes (§0-§f, §r, etc.)
     private static final Pattern FORMAT_CODE_PATTERN = Pattern.compile("§[0-9a-fk-or]");

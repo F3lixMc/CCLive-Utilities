@@ -36,7 +36,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
     // Timing-Mechanismus für Zone-Wechsel: Verzögerung beim Lesen des Bossbar-Werts
     private String pendingZone = null; // Zone, die noch initialisiert werden muss
     private int pendingZoneTicks = 0; // Anzahl Ticks, die seit dem Zone-Wechsel vergangen sind
-    private static final int ZONE_CHANGE_DELAY_TICKS = 50; // Warte 50 Ticks (2.5 Sekunden) nach Zone-Wechsel, damit Bossbar sich aktualisiert hat
+    private static final int ZONE_STABLE_DELAY_TICKS = 200; // Warte 200 Ticks (10 Sekunden), bis die Zone stabil im Scoreboard steht, bevor Bossbar-Wert ausgelesen wird
+    private String stableZone = null; // Zone, die bereits 10 Sekunden stabil ist
     
     // Mapping: Scoreboard-Zonenname -> Collection-Name
     private static final Map<String, String> ZONE_TO_COLLECTION = new HashMap<>();
@@ -59,8 +60,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         ZONE_TO_COLLECTION.put("[Antike Mine]", "ancient_debris_collection");
         ZONE_TO_COLLECTION.put("[Echomine]", "echo_collection");
         ZONE_TO_COLLECTION.put("[Eisenmine]", "raw_iron_collection");
-        ZONE_TO_COLLECTION.put("[Obsidian]", "obsidian_collection");
-        ZONE_TO_COLLECTION.put("[Obsidian Mine]", "obsidian_collection");
+        ZONE_TO_COLLECTION.put("[Obsidianmine]", "obsidian_collection");
     }
     
     // Chinesische Zahlen-Mapping (wie in KillsUtility)
@@ -81,16 +81,16 @@ public class FarmworldCollectionsCollector implements DataCollector {
     @Override
     public void initialize() {
         if (isActive) {
-            // Silent error handling("⚠️ [FarmworldCollectionsCollector] Bereits initialisiert - überspringe");
+            // System.out.println("⚠️ [FarmworldCollectionsCollector] Bereits initialisiert - überspringe");
             return;
         }
         
-        // Silent error handling("🔍 [FarmworldCollectionsCollector] Starte Initialisierung...");
+        // System.out.println("🔍 [FarmworldCollectionsCollector] Starte Initialisierung...");
         // Registriere Tick-Event für Collection-Tracking
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
         isActive = true;
-        // Silent error handling("✅ [FarmworldCollectionsCollector] FarmworldCollectionsCollector initialisiert und aktiv");
+        // System.out.println("✅ [FarmworldCollectionsCollector] FarmworldCollectionsCollector initialisiert und aktiv");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -144,7 +144,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
             String zone = getCurrentZone(client);
             return zone != null;
         } catch (Exception e) {
-            // Silent error handling("❌ [FarmworldCollections] Fehler bei Dimension-Check: " + e.getMessage());
+            System.err.println("❌ [FarmworldCollections] Fehler bei Dimension-Check: " + e.getMessage());
             return false;
         }
     }
@@ -160,8 +160,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
             String currentZone = getCurrentZone(client);
             if (currentZone == null) return;
             
-            // Nur cachen wenn wir noch in der gleichen Zone sind UND nicht auf einen Zone-Wechsel warten
-            if (currentZone.equals(lastZone) && pendingZone == null) {
+            // Nur cachen wenn wir noch in der gleichen Zone sind UND die Zone stabil ist (10 Sekunden im Scoreboard)
+            if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone)) {
                 int currentCollection = getCollectionFromBossbar(client);
                 cachedCollectionForCurrentZone = currentCollection;
             }
@@ -180,12 +180,24 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 // Reset pending zone wenn keine Zone gefunden
                 pendingZone = null;
                 pendingZoneTicks = 0;
+                stableZone = null;
                 return;
             }
             
             // Prüfe ob sich die Zone geändert hat
             if (!currentZone.equals(lastZone)) {
-                // // Silent error handling("🔄 [FarmworldCollections] ZONE-WECHSEL: " + lastZone + " → " + currentZone);
+                // System.out.println("🔄 [FarmworldCollections] ZONE-WECHSEL: " + lastZone + " → " + currentZone);
+                
+                // WICHTIG: Prüfe SOFORT ob die neue Zone gesperrt ist (bevor wir lastZone aktualisieren)
+                // Wenn die Zone gesperrt ist, ignorieren wir sie komplett
+                if (isZoneLocked()) {
+                    // Zone ist nicht freigeschalten - ignoriere diesen Zone-Wechsel komplett
+                    // Setze lastZone NICHT, damit wir beim nächsten Zone-Wechsel die vorherige Zone noch haben
+                    pendingZone = null;
+                    pendingZoneTicks = 0;
+                    stableZone = null;
+                    return;
+                }
                 
                 // Zone-Wechsel erkannt - speichere die vorherige Zone IMMER (forceSend=true)
                 // So wird der Wert auch gesendet, wenn er noch nicht übermittelt wurde
@@ -200,12 +212,13 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 // (zusätzlich zum 60-Sekunden-Intervall), damit kurze Zonen nicht verloren gehen
                 updateAllCollections();
 
-                // Neue Zone als "pending" markieren - warte auf Bossbar-Update
+                // Neue Zone als "pending" markieren - warte auf 10 Sekunden Stabilität
                 pendingZone = currentZone;
                 pendingZoneTicks = 0;
+                stableZone = null; // Reset stabile Zone
                 lastZone = currentZone; // Aktualisiere lastZone sofort, damit wir nicht in eine Schleife geraten
             } else if (pendingZone != null && currentZone.equals(pendingZone)) {
-                // Wir warten noch auf die Initialisierung der neuen Zone
+                // Wir warten noch darauf, dass die Zone 10 Sekunden stabil ist
                 pendingZoneTicks++;
                 
                 // FIX 1: Prüfe ob sich die Zone während der Wartezeit geändert hat
@@ -213,21 +226,31 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 String detectedZone = getCurrentZone(client);
                 if (detectedZone != null && !detectedZone.equals(pendingZone)) {
                     // Zone hat sich geändert - reset pendingZone und starte neu
+                    // WICHTIG: Setze lastZone zurück, damit wir nicht den falschen Wert senden
+                    lastZone = null;
                     pendingZone = null;
                     pendingZoneTicks = 0;
+                    stableZone = null;
                     return;
                 }
                 
-                if (pendingZoneTicks >= ZONE_CHANGE_DELAY_TICKS) {
-                    // FIX 2: Prüfe ob "Nicht Freigeschalten!" im Title/Subtitle steht
-                    if (isZoneLocked()) {
-                        // Zone ist nicht freigeschalten - kein Update senden
-                        pendingZone = null;
-                        pendingZoneTicks = 0;
-                        return;
-                    }
+                // FIX 2: Prüfe ob "Nicht Freigeschalten!" im Title/Subtitle steht
+                if (isZoneLocked()) {
+                    // Zone ist nicht freigeschalten - kein Update senden
+                    // WICHTIG: Setze lastZone zurück, damit wir nicht den falschen Wert senden
+                    lastZone = null;
+                    pendingZone = null;
+                    pendingZoneTicks = 0;
+                    stableZone = null;
+                    return;
+                }
+                
+                // Prüfe ob die Zone jetzt 10 Sekunden (200 Ticks) stabil ist
+                if (pendingZoneTicks >= ZONE_STABLE_DELAY_TICKS) {
+                    // Zone ist jetzt stabil - markiere sie als stabil und lese Bossbar-Wert
+                    stableZone = pendingZone;
                     
-                    // Verzögerung abgelaufen - jetzt Bossbar-Wert abrufen
+                    // Jetzt Bossbar-Wert abrufen (Zone steht seit 10 Sekunden im Scoreboard)
                     int newZoneCollection = getCollectionFromBossbar(client);
                     lastTotalCollection = newZoneCollection;
                     cachedCollectionForCurrentZone = newZoneCollection;
@@ -244,22 +267,22 @@ public class FarmworldCollectionsCollector implements DataCollector {
                         }
                     }
                     
-                    // Reset pending zone
+                    // Reset pending zone - Zone ist jetzt stabil
                     pendingZone = null;
                     pendingZoneTicks = 0;
                 }
-            } else {
-                // Gleiche Zone - aktualisiere lastTotalCollection kontinuierlich (nur wenn höher)
-                // Aber nur wenn wir nicht auf eine Zone-Wechsel warten
-                if (pendingZone == null) {
-                    int currentCollection = getCollectionFromBossbar(client);
-                    if (currentCollection > lastTotalCollection) {
-                        lastTotalCollection = currentCollection;
-                    }
+            } else if (stableZone != null && currentZone.equals(stableZone)) {
+                // Zone ist bereits stabil - aktualisiere lastTotalCollection kontinuierlich (nur wenn höher)
+                int currentCollection = getCollectionFromBossbar(client);
+                if (currentCollection > lastTotalCollection) {
+                    lastTotalCollection = currentCollection;
                 }
+            } else {
+                // Gleiche Zone, aber noch nicht stabil - warte weiter
+                // (Dieser Fall sollte eigentlich nicht auftreten, aber zur Sicherheit)
             }
         } catch (Exception e) {
-            // Silent error handling("❌ [FarmworldCollections] Fehler bei Zone-Check: " + e.getMessage());
+            System.err.println("❌ [FarmworldCollections] Fehler bei Zone-Check: " + e.getMessage());
         }
     }
     
@@ -273,8 +296,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 return;
             }
             
-            // Nur updaten wenn wir noch in der gleichen Zone sind
-            if (currentZone.equals(lastZone)) {
+            // Nur updaten wenn wir noch in der gleichen Zone sind UND die Zone stabil ist (10 Sekunden im Scoreboard)
+            if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone)) {
                 int totalCollection = getCollectionFromBossbar(client);
                 
                 // Aktualisiere lastTotalCollection immer
@@ -287,7 +310,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 }
             }
         } catch (Exception e) {
-            // Silent error handling("❌ [FarmworldCollections] Fehler beim 60-Sekunden-Update: " + e.getMessage());
+            System.err.println("❌ [FarmworldCollections] Fehler beim 60-Sekunden-Update: " + e.getMessage());
         }
     }
     
@@ -357,7 +380,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 }
             }
         } catch (Exception e) {
-            // Silent error handling("❌ [FarmworldCollections] Fehler beim Aktualisieren der All Collections: " + e.getMessage());
+            System.err.println("❌ [FarmworldCollections] Fehler beim Aktualisieren der All Collections: " + e.getMessage());
         }
     }
     
@@ -483,7 +506,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         // Wenn mindestens 50% der Values Maps sind, ist es wahrscheinlich playerObjectives
                                         if (mapValueCount > map.size() * 0.5) {
                                             isPlayerObjectives = true;
-                                            // // Silent error handling("🔍 [FarmworldCollections] Zone-Suche: Map " + field.getName() + " identifiziert als 'playerObjectives' (hat " + mapValueCount + " Map-Values von " + map.size() + " Einträgen)");
                                         }
                                     }
                                     
@@ -491,7 +513,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         @SuppressWarnings("unchecked")
                                         java.util.Map<String, java.util.Map<ScoreboardObjective, ?>> playerObjectivesMap = (java.util.Map<String, java.util.Map<ScoreboardObjective, ?>>) map;
                                         playerObjectives = playerObjectivesMap;
-                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: playerObjectives gefunden: " + field.getName() + " (Größe: " + map.size() + ")");
                                         break;
                                     }
                                 }
@@ -501,8 +522,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                         if (playerObjectives == null) {
                             throw new Exception("playerObjectives Map nicht gefunden");
                         }
-                        
-                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: playerObjectives gefunden, " + playerObjectives.size() + " Einträge");
                             
                             // Priorisiere sb_display_* Keys
                             java.util.List<String> sbDisplayKeys = new java.util.ArrayList<>();
@@ -519,7 +538,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             // Durchsuche zuerst sb_display_* Keys
                             for (String playerName : sbDisplayKeys) {
                                 String cleanName = removeFormatting.apply(playerName);
-                                // // Silent error handling("  📋 playerObjectives sb_display Key: '" + playerName + "' → Clean: '" + cleanName + "'");
                                 
                                 // Prüfe ob dieser Name eine Zone enthält
                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
@@ -539,7 +557,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                             String scorePlayerName = (String) getPlayerNameMethod.invoke(scoreObj);
                                             if (scorePlayerName != null) {
                                                 String cleanScoreName = removeFormatting.apply(scorePlayerName);
-                                                // // Silent error handling("    📋 Score-Player-Name: '" + scorePlayerName + "' → Clean: '" + cleanScoreName + "'");
                                                 
                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                     if (cleanScoreName.contains(zoneName)) {
@@ -568,7 +585,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 }
                             }
                     } catch (Exception e3) {
-                        // // Silent error handling("⚠️ [FarmworldCollections] Zone-Suche: playerObjectives Durchsuchung fehlgeschlagen: " + e3.getMessage());
+                        // Silent error handling
                     }
                     
                     // Ansatz 4: Versuche über Felder direkt auf die Score-Map zuzugreifen
@@ -612,7 +629,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         // Wenn mindestens 80% der Keys Strings sind, ist es wahrscheinlich die scores Map
                                         if (stringKeyCount > map.size() * 0.8) {
                                             isScoresMap = true;
-                                            // // Silent error handling("🔍 [FarmworldCollections] Zone-Suche: Map " + field.getName() + " identifiziert als 'scores' Map (hat " + stringKeyCount + " String-Keys von " + map.size() + " Einträgen)");
                                         }
                                     }
                                     
@@ -624,7 +640,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                     
                                     if (isScoresMap) {
                                         scoresMap = map;
-                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: 'scores' Map gefunden: " + field.getName() + " (Größe: " + map.size() + ")");
                                         break;
                                     }
                                 }
@@ -634,7 +649,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                         // Fallback: Wenn keine scores Map gefunden wurde, verwende die größte Map
                         if (scoresMap == null && largestMap != null && largestSize > 50) {
                             scoresMap = largestMap;
-                            // // Silent error handling("⚠️ [FarmworldCollections] Zone-Suche: 'scores' Map nicht eindeutig identifiziert, verwende größte Map (Größe: " + largestSize + ")");
                         }
                         
                         // Wenn wir die scores Map gefunden haben, durchsuche nur diese
@@ -689,7 +703,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                 String cleanText = removeFormatting.apply(extractedText);
                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                     if (cleanText.contains(zoneName)) {
-                                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in field_1418 (Key: " + key + "): '" + extractedText + "'");
                                                         return zoneName;
                                                     }
                                                 }
@@ -719,7 +732,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                             String cleanText = removeFormatting.apply(extractedText);
                                                             for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                                 if (cleanText.contains(zoneName)) {
-                                                                    // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Team-Feld " + teamField.getName() + " (Key: " + key + "): '" + extractedText + "'");
                                                                     return zoneName;
                                                                 }
                                                             }
@@ -814,7 +826,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                             String cleanText = removeFormatting.apply(text);
                                             for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                 if (cleanText.contains(zoneName)) {
-                                                    // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Team-Objekt (Key: " + key + "): '" + text + "'");
                                                     return zoneName;
                                                 }
                                             }
@@ -826,8 +837,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         
                                         // Prüfe ob der Value direkt ein ScoreboardPlayerScore ist (field_1431 hat diese Struktur)
                                         if (value != null && value.getClass().getName().contains("ScoreboardPlayerScore")) {
-                                            // Silent error handling("  ✅ ScoreboardPlayerScore gefunden! Versuche Text zu extrahieren...");
-                                            
                                             // Versuche Text aus dem Score-Objekt zu extrahieren
                                             String text = null;
                                             try {
@@ -837,20 +846,14 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                     Text displayName = (Text) getDisplayNameMethod.invoke(value);
                                                     if (displayName != null) {
                                                         text = displayName.getString();
-                                                        // Silent error handling("  ✅ getDisplayName() erfolgreich: '" + text + "'");
                                                     }
                                                 } catch (Exception ex1) {
-                                                    // Silent error handling("  ⚠️ getDisplayName() fehlgeschlagen: " + ex1.getMessage());
-                                                    
                                                     // Methode 2: playerName Feld
                                                     try {
                                                         java.lang.reflect.Field playerNameField = value.getClass().getDeclaredField("playerName");
                                                         playerNameField.setAccessible(true);
                                                         text = (String) playerNameField.get(value);
-                                                        // Silent error handling("  ✅ playerName Feld erfolgreich: '" + text + "'");
                                                     } catch (Exception ex2) {
-                                                        // Silent error handling("  ⚠️ playerName Feld fehlgeschlagen: " + ex2.getMessage());
-                                                        
                                                         // Methode 3: Alle String-Felder durchsuchen
                                                         java.lang.reflect.Field[] scoreFields = value.getClass().getDeclaredFields();
                                                         for (java.lang.reflect.Field scoreField : scoreFields) {
@@ -859,7 +862,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                                 Object scoreFieldValue = scoreField.get(value);
                                                                 if (scoreFieldValue instanceof String && !((String) scoreFieldValue).isEmpty()) {
                                                                     text = (String) scoreFieldValue;
-                                                                    // Silent error handling("  ✅ String-Feld gefunden (" + scoreField.getName() + "): '" + text + "'");
                                                                     break;
                                                                 }
                                                             }
@@ -867,17 +869,15 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                     }
                                                 }
                                             } catch (Exception ex3) {
-                                                // Silent error handling("  ❌ Fehler beim Extrahieren von Text: " + ex3.getMessage());
+                                                // Silent error handling
                                             }
                                             
                                             if (text != null && !text.isEmpty()) {
                                                 String cleanText = removeFormatting.apply(text);
-                                                // Silent error handling("  📋 Scoreboard-Eintrag: Raw='" + text + "' → Clean='" + cleanText + "'");
                                                 
                                                 // Prüfe ob dieser Text eine Zone enthält
                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                     if (cleanText.contains(zoneName)) {
-                                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Scoreboard-Eintrag (Key: " + key + ")");
                                                         return zoneName;
                                                     }
                                                 }
@@ -886,8 +886,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         
                                         // Prüfe ob der Value ein Scores-Objekt ist (field_1426 hat diese Struktur)
                                         if (value != null && value.getClass().getName().contains("Scores") && !value.getClass().getName().contains("ScoreboardPlayerScore")) {
-                                            // Silent error handling("  ✅ Scores-Objekt gefunden! Versuche Text zu extrahieren...");
-                                            
                                             try {
                                                 // Durchsuche alle Felder des Scores-Objekts
                                                 java.lang.reflect.Field[] scoresFields = value.getClass().getDeclaredFields();
@@ -900,22 +898,18 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                             if (scoresFieldValue instanceof String) {
                                                                 String text = (String) scoresFieldValue;
                                                                 String cleanText = removeFormatting.apply(text);
-                                                                // Silent error handling("  📋 Scores-Feld " + scoresField.getName() + ": '" + text + "' → Clean: '" + cleanText + "'");
                                                                 
                                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                                     if (cleanText.contains(zoneName)) {
-                                                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Scores-Feld (Key: " + key + "): '" + text + "'");
                                                                         return zoneName;
                                                                     }
                                                                 }
                                                             } else if (scoresFieldValue instanceof Text) {
                                                                 String text = ((Text) scoresFieldValue).getString();
                                                                 String cleanText = removeFormatting.apply(text);
-                                                                // Silent error handling("  📋 Scores-Feld " + scoresField.getName() + " (Text): '" + text + "' → Clean: '" + cleanText + "'");
                                                                 
                                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                                     if (cleanText.contains(zoneName)) {
-                                                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Scores-Feld (Key: " + key + "): '" + text + "'");
                                                                         return zoneName;
                                                                     }
                                                                 }
@@ -932,7 +926,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                                         
                                                                         for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                                             if (cleanInnerKey.contains(zoneName)) {
-                                                                                // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Scores-InnerMap-Key (Key: " + key + "): '" + innerKeyString + "'");
                                                                                 return zoneName;
                                                                             }
                                                                         }
@@ -949,11 +942,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                                             if (displayName != null) {
                                                                                 String text = displayName.getString();
                                                                                 String cleanText = removeFormatting.apply(text);
-                                                                                // Silent error handling("  📋 Scores-InnerMap-Score: '" + text + "' → Clean: '" + cleanText + "'");
                                                                                 
                                                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                                                     if (cleanText.contains(zoneName)) {
-                                                                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Scores-InnerMap-Score (Key: " + key + "): '" + text + "'");
                                                                                         return zoneName;
                                                                                     }
                                                                                 }
@@ -970,7 +961,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                     }
                                                 }
                                             } catch (Exception ex) {
-                                                // Silent error handling("  ⚠️ Fehler beim Extrahieren von Text aus Scores-Objekt: " + ex.getMessage());
+                                                // System.out.println("  ⚠️ Fehler beim Extrahieren von Text aus Scores-Objekt: " + ex.getMessage());
                                             }
                                         }
                                         
@@ -982,7 +973,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                 Object first = tempScores.iterator().next();
                                                 if (first != null && first.getClass().getName().contains("ScoreboardPlayerScore")) {
                                                     scores = tempScores;
-                                                    // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Score-Collection in scores-Map gefunden (Key: " + key + ")");
                                                     break;
                                                 }
                                             }
@@ -1011,7 +1001,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                     if (fieldValue instanceof java.util.Map) {
                                         @SuppressWarnings("unchecked")
                                         java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
-                                        // // Silent error handling("🔍 [FarmworldCollections] Zone-Suche: Map-Feld gefunden: " + field.getName() + " (Größe: " + map.size() + ")");
                                         
                                         // Prüfe Keys
                                         for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
@@ -1022,7 +1011,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                 
                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                                     if (cleanKey.contains(zoneName)) {
-                                                        // // Silent error handling("✅ [FarmworldCollections] Zone-Suche: Zone gefunden! '" + zoneName + "' in Map-Key (Feld: " + field.getName() + "): '" + keyString + "'");
                                                         return zoneName;
                                                     }
                                                 }
@@ -1033,24 +1021,19 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             }
                         }
                     } catch (Exception e3) {
-                        // // Silent error handling("⚠️ [FarmworldCollections] Zone-Suche: Feld-Zugriff fehlgeschlagen: " + e3.getMessage());
-                        // e3.printStackTrace();
+                        // Silent error handling
                     }
                 }
             }
             
             // Wenn wir Scores gefunden haben, durchsuche sie
             if (scores != null && !scores.isEmpty()) {
-                // // Silent error handling("🔍 [FarmworldCollections] Zone-Suche: " + scores.size() + " Scoreboard-Einträge über Collection gefunden");
                 int index = 0;
                 for (Object scoreObj : scores) {
                     if (scoreObj == null) {
-                        
                         index++;
                         continue;
                     }
-                    
-                    // // Silent error handling("🔍 [FarmworldCollections] Zone-Suche: Score #" + index + " Typ: " + scoreObj.getClass().getName());
                     
                     // Versuche Text aus Score-Objekt zu extrahieren
                     String text = null;
@@ -1063,22 +1046,17 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             if (displayName != null) {
                                 rawText = displayName.getString();
                                 text = rawText;
-                                // Silent error handling("  ✅ getDisplayName() erfolgreich");
                             }
                         } catch (Exception e) {
-                            // Silent error handling("  ⚠️ getDisplayName() fehlgeschlagen: " + e.getMessage());
                             // Methode 2: playerName Feld
                             try {
                                 java.lang.reflect.Field playerNameField = scoreObj.getClass().getDeclaredField("playerName");
                                 playerNameField.setAccessible(true);
                                 rawText = (String) playerNameField.get(scoreObj);
                                 text = rawText;
-                                // Silent error handling("  ✅ playerName Feld erfolgreich");
                             } catch (Exception e2) {
-                                // Silent error handling("  ⚠️ playerName Feld fehlgeschlagen: " + e2.getMessage());
                                 // Methode 3: Durchsuche alle Felder nach String-Feldern
                                 java.lang.reflect.Field[] fields = scoreObj.getClass().getDeclaredFields();
-                                // Silent error handling("  🔍 Durchsuche " + fields.length + " Felder...");
                                 for (java.lang.reflect.Field field : fields) {
                                     if (field.getType() == String.class) {
                                         field.setAccessible(true);
@@ -1086,7 +1064,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         if (fieldValue instanceof String && !((String) fieldValue).isEmpty()) {
                                             rawText = (String) fieldValue;
                                             text = rawText;
-                                            // Silent error handling("  ✅ String-Feld gefunden: " + field.getName() + " = '" + rawText + "'");
                                             break;
                                         }
                                     }
@@ -1094,8 +1071,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             }
                         }
                     } catch (Exception e) {
-                        // // Silent error handling("⚠️ [FarmworldCollections] Zone-Suche: Fehler beim Extrahieren von Text aus Score #" + index + ": " + e.getMessage());
-                        // // Silent error handling
                         index++;
                         continue;
                     }
@@ -1108,21 +1083,14 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     
                     String cleanText = removeFormatting.apply(text);
                     
-                    
                     // Prüfe ob dieser Text eine Zone enthält
-                    boolean zoneFound = false;
                     for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                         if (cleanText.contains(zoneName)) {
-                            
                             return zoneName;
                         }
                     }
-                    if (!zoneFound) {
-                        // Silent error handling("  ⚠️ Keine Zone in diesem Eintrag gefunden");
-                    }
                     index++;
                 }
-                // // Silent error handling("📊 [FarmworldCollections] Zone-Suche: Alle " + scores.size() + " Collection-Einträge durchsucht, keine Zone gefunden");
             } else {
                 
                 
@@ -1163,11 +1131,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
                         }
                     }
                     
-                    // // Silent error handling("🔍 [FarmworldCollections] Zone-Suche: " + playerNames.size() + " Player-Namen aus Maps extrahiert");
-                    
                     // WICHTIG: Prüfe zuerst, ob einer der Player-Namen eine Zone enthält!
                     for (String playerName : playerNames) {
-                        // // Silent error handling("  📋 Player-Name: '" + playerName + "'");
                         String cleanPlayerName = removeFormatting.apply(playerName);
                         
                         // Prüfe ob dieser Player-Name eine Zone enthält
@@ -1205,17 +1170,12 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             playerNamesToTry.add("§" + hex);
                         }
                         playerNamesToTry.add("§r");
-                        
-                        // // Silent error handling("🔍 [FarmworldCollections] Zone-Suche: Teste " + playerNamesToTry.size() + " Player-Namen...");
-                        
-                        int foundScores = 0;
                         for (String playerName : playerNamesToTry) {
-                        try {
-                            Object scoreObj = getPlayerScoreMethod.invoke(scoreboard, playerName, sidebarObjective);
-                            
-                            if (scoreObj != null) {
-                                foundScores++;
-                                // Versuche Text zu extrahieren
+                            try {
+                                Object scoreObj = getPlayerScoreMethod.invoke(scoreboard, playerName, sidebarObjective);
+                                
+                                if (scoreObj != null) {
+                                    // Versuche Text zu extrahieren
                                 String text = null;
                                 String rawText = null;
                                 try {
@@ -1253,36 +1213,28 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 if (text != null && !text.isEmpty()) {
                                     String cleanText = removeFormatting.apply(text);
                                     
-                                    
                                     // Prüfe ob dieser Text eine Zone enthält
                                     for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                                         if (cleanText.contains(zoneName)) {
-                                            
                                             return zoneName;
                                         }
                                     }
-                                } else {
-                                    // Zeige auch Score-Objekte ohne Text
-                                    // // Silent error handling("📋 [FarmworldCollections] Zone-Suche: Player-Name '" + playerName + "' → Score-Objekt gefunden, aber kein Text extrahiert (Typ: " + scoreObj.getClass().getName() + ")");
                                 }
                             }
-                        } catch (Exception e) {
-                            // Ignoriere einzelne Fehler
+                            } catch (Exception e) {
+                                // Ignoriere einzelne Fehler
+                            }
                         }
                     }
-                    
-                        
-                    }
                 } catch (Exception e) {
-                    // // Silent error handling("⚠️ [FarmworldCollections] Zone-Suche: Player-Name-Ansatz fehlgeschlagen: " + e.getMessage());
-                    // // Silent error handling
+                    // Silent error handling
                 }
             }
             
             // Keine Zone gefunden - silent return
         } catch (Exception e) {
-            // Silent error handling("❌ [FarmworldCollections] Fehler bei Zone-Suche: " + e.getMessage());
-            // Silent error handling
+            System.err.println("❌ [FarmworldCollections] Fehler bei Zone-Suche: " + e.getMessage());
+            e.printStackTrace();
         }
         return null;
     }
@@ -1309,7 +1261,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 lastBossbarUpdate = System.currentTimeMillis();
             }
         } catch (Exception e) {
-            // Silent error handling("❌ [FarmworldCollections] Fehler bei Bossbar-Verarbeitung: " + e.getMessage());
+            System.err.println("❌ [FarmworldCollections] Fehler bei Bossbar-Verarbeitung: " + e.getMessage());
         }
     }
     
@@ -1415,7 +1367,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         }
         
         isActive = false;
-        // Silent error handling("🛑 FarmworldCollectionsCollector gestoppt");
+        // System.out.println("🛑 FarmworldCollectionsCollector gestoppt");
     }
     
     @Override

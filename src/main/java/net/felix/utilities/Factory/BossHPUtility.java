@@ -154,6 +154,9 @@ public class BossHPUtility {
 		// Keine Commands mehr nötig, da Test-Overlay entfernt wurde
 	}
 	
+	private static int entityScanTickCounter = 0;
+	private static final int ENTITY_SCAN_INTERVAL = 5; // Alle 5 Ticks scannen (4x pro Sekunde) - Performance-Optimierung
+	
 	private static void onClientTick(MinecraftClient client) {
 		// Check Tab key for overlay visibility
 		checkTabKey();
@@ -192,29 +195,33 @@ public class BossHPUtility {
             // Player is in their own dimension - waves are active
             instance.wavesActive = true;
             
-            									// Only scan for bosses when in player's own dimension
-			
-			for (Entity entity : client.world.getEntities()) {
-                String displayText = null;
+            // Performance-Optimierung: Nur alle ENTITY_SCAN_INTERVAL Ticks scannen
+            entityScanTickCounter++;
+            if (entityScanTickCounter >= ENTITY_SCAN_INTERVAL) {
+                entityScanTickCounter = 0;
                 
-                // Check if it's a TextDisplay or Display entity
-                if (entity.getType().toString().contains("text_display") || 
-                    entity.getType().toString().contains("display")) {
-                    displayText = getTextFromDisplayEntity(entity);
-                }
-                // Fallback to custom name check
-                else if (entity.hasCustomName()) {
-                    Text customName = entity.getCustomName();
-                    if (customName != null) {
-                        displayText = customName.getString().trim();
+                // Only scan for bosses when in player's own dimension
+                for (Entity entity : client.world.getEntities()) {
+                    String displayText = null;
+                    
+                    // Check if it's a TextDisplay or Display entity
+                    if (entity.getType().toString().contains("text_display") || 
+                        entity.getType().toString().contains("display")) {
+                        displayText = getTextFromDisplayEntity(entity);
+                    }
+                    // Fallback to custom name check
+                    else if (entity.hasCustomName()) {
+                        Text customName = entity.getCustomName();
+                        if (customName != null) {
+                            displayText = customName.getString().trim();
+                        }
+                    }
+                    
+                    if (displayText != null && !instance.shouldIgnoreEntity(displayText)) {
+                        instance.processTextDisplay(displayText);
                     }
                 }
-                
-                if (displayText != null && !instance.shouldIgnoreEntity(displayText)) {
-                    instance.processTextDisplay(displayText);
-                }
             }
-            
 
         } else {
             // Player is not in their own dimension - waves are inactive

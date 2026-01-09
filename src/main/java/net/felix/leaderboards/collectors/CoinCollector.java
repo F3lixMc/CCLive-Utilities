@@ -55,6 +55,11 @@ public class CoinCollector implements DataCollector {
             return;
         }
         
+        // Prüfe ob ClipboardCoinCollector aktiv ist - wenn ja, deaktiviere diesen Collector
+        if (net.felix.utilities.DragOverlay.ClipboardCoinCollector.isCollecting()) {
+            return; // ClipboardCoinCollector läuft, dieser Collector soll nicht laufen
+        }
+        
         // Prüfe ob es Zeit für den nächsten Command ist
         long currentTime = System.currentTimeMillis();
         if (currentTime >= nextCommandTime && nextCommandTime > 0) {
@@ -125,6 +130,10 @@ public class CoinCollector implements DataCollector {
     public boolean processChatMessage(String message) {
         if (!isActive) return false;
         
+        // Prüfe ob ClipboardCoinCollector aktiv ist - wenn ja, lasse diesen Collector die Nachricht nicht verarbeiten
+        if (net.felix.utilities.DragOverlay.ClipboardCoinCollector.isCollecting()) {
+            return false; // ClipboardCoinCollector verarbeitet die Nachricht
+        }
         
         // Debug: Alle Chat-Nachrichten loggen
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
