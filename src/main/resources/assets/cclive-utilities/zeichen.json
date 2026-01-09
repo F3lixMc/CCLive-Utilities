@@ -76,6 +76,11 @@
     "character": "㮘"
   },
 
+  "ui_ressource_bag": {
+    "description": "UI Ressource Bag",
+    "character": "Ⳅ"
+  },
+
   "epic_drops": {
     "description": "Epic drops",
     "characters": "㩬㩭㩮㩯㩰㩱㩲㩳㩴㩵㩶㩷㩸㩹㩺㩻㩼㩽㩾㩿㪀㪁㪂㪃㪄㪅㪆㪇㪈㪉㪊㪋㪌㪍㪎㪏㪐㪑㪒㪓"

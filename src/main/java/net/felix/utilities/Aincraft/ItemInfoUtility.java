@@ -1117,6 +1117,97 @@ public class ItemInfoUtility {
 	}
 	
 	/**
+	 * Data class to store material floor and rarity information
+	 */
+	public static class MaterialFloorInfo {
+		public final int floor;
+		public final String rarity;
+		public final String color;
+		
+		public MaterialFloorInfo(int floor, String rarity, String color) {
+			this.floor = floor;
+			this.rarity = rarity;
+			this.color = color;
+		}
+	}
+	
+	/**
+	 * Finds the floor and rarity information for a given material name
+	 * @param materialName Name of the material
+	 * @return MaterialFloorInfo with floor number, rarity, and color, or null if not found
+	 */
+	public static MaterialFloorInfo getMaterialFloorInfo(String materialName) {
+		if (materialName == null || aincraftData == null) {
+			return null;
+		}
+		
+		try {
+			if (aincraftData.has("floors")) {
+				JsonObject floors = aincraftData.getAsJsonObject("floors");
+				for (String floorKey : floors.keySet()) {
+					// Extract floor number from "floor_1", "floor_2", etc.
+					int floorNumber = 0;
+					try {
+						String floorNumStr = floorKey.replace("floor_", "");
+						floorNumber = Integer.parseInt(floorNumStr);
+					} catch (NumberFormatException e) {
+						continue;
+					}
+					
+					JsonObject floor = floors.getAsJsonObject(floorKey);
+					if (floor.has("materials")) {
+						JsonObject materials = floor.getAsJsonObject("materials");
+						for (String rarityKey : materials.keySet()) {
+							JsonObject rarity = materials.getAsJsonObject(rarityKey);
+							if (rarity.has("materials")) {
+								JsonArray materialArray = rarity.getAsJsonArray("materials");
+								for (int i = 0; i < materialArray.size(); i++) {
+									String materialNameFromJson = materialArray.get(i).getAsString();
+									if (materialNameFromJson.equals(materialName)) {
+										// Found the material, get color
+										String color = rarity.has("color") ? rarity.get("color").getAsString() : "WHITE";
+										return new MaterialFloorInfo(floorNumber, rarityKey, color);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Converts a color string (WHITE, GREEN, BLUE, PURPLE, GOLD) to an integer color value
+	 * @param colorString Color string from Aincraft.json
+	 * @return Integer color value (0xFFFFFFFF format)
+	 */
+	public static int getRarityColorFromString(String colorString) {
+		if (colorString == null) {
+			return 0xFFFFFFFF; // Default to white
+		}
+		
+		switch (colorString.toUpperCase()) {
+			case "WHITE":
+				return 0xFFFFFFFF;
+			case "GREEN":
+				return 0xFF55FF55;
+			case "BLUE":
+				return 0xFF5555FF;
+			case "PURPLE":
+				return 0xFFAA00AA;
+			case "GOLD":
+				return 0xFFFFAA00;
+			default:
+				return 0xFFFFFFFF; // Default to white
+		}
+	}
+	
+	/**
 	 * Loads registered item names from extracted_items.json
 	 */
 	private static void loadRegisteredItems() {

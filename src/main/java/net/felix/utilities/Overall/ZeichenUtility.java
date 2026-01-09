@@ -51,6 +51,7 @@ public class ZeichenUtility {
     private static String uiCategoriesAincrad = "";
     private static String uiCategoriesFarmzone = "";
     private static String uiCategoriesHub = "";
+    private static String uiRessourceBag = "";
     
     /**
      * Initialisiert die ZeichenUtility und lädt die Zeichen aus der JSON-Datei
@@ -326,6 +327,12 @@ public class ZeichenUtility {
             uiCategoriesHub = hubObj.get("character").getAsString();
         }
         
+        // Lade UI Ressource Bag
+        if (json.has("ui_ressource_bag")) {
+            JsonObject ressourceBagObj = json.getAsJsonObject("ui_ressource_bag");
+            uiRessourceBag = ressourceBagObj.get("character").getAsString();
+        }
+        
         // Lade Factory Bottom Font
         if (json.has("factory_bottom_font")) {
             JsonObject factoryObj = json.getAsJsonObject("factory_bottom_font");
@@ -383,6 +390,7 @@ public class ZeichenUtility {
         uiCategoriesAincrad = "㮖";
         uiCategoriesFarmzone = "㮗";
         uiCategoriesHub = "㮘";
+        uiRessourceBag = "Ⳅ";
         
         factoryBottomFont = "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪";
         factoryBottomFontNumbers.put('㝡', 0);
@@ -604,6 +612,22 @@ public class ZeichenUtility {
                (uiCategoriesAincrad != null && !uiCategoriesAincrad.isEmpty() && text.contains(uiCategoriesAincrad)) ||
                (uiCategoriesFarmzone != null && !uiCategoriesFarmzone.isEmpty() && text.contains(uiCategoriesFarmzone)) ||
                (uiCategoriesHub != null && !uiCategoriesHub.isEmpty() && text.contains(uiCategoriesHub));
+    }
+    
+    /**
+     * Gibt das UI Ressource Bag Zeichen zurück
+     */
+    public static String getUiRessourceBag() {
+        ensureInitialized();
+        return uiRessourceBag;
+    }
+    
+    /**
+     * Prüft ob ein String das UI Ressource Bag Zeichen enthält
+     */
+    public static boolean containsUiRessourceBag(String text) {
+        ensureInitialized();
+        return text != null && text.contains(uiRessourceBag);
     }
     
     /**

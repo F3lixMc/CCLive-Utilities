@@ -43,6 +43,11 @@ public class MobTimerUtility {
     private static String testFloor = null;
     
     public static void initialize() {
+        // DEAKTIVIERT: Feature wurde nie vollwertig implementiert und wird momentan nicht genutzt
+        // Performance-Optimierung: Keine Tick-Events registrieren
+        return;
+        
+        /* AUSKOMMENTIERT - Feature nicht aktiv
         // Lade die Lebensdauer-Daten
         loadLifespanData();
         
@@ -64,8 +69,7 @@ public class MobTimerUtility {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             stopAllTimers();
         });
-        
-
+        */
     }
     
     private static void loadCooldownData() {

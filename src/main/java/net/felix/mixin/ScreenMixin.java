@@ -40,6 +40,15 @@ public class ScreenMixin {
         if (ItemViewerUtility.handleKeyPress(keyCode, scanCode, modifiers)) {
             // Keybind wurde behandelt, verhindere weitere Verarbeitung
             cir.setReturnValue(true);
+            return;
+        }
+        
+        // Handle keyboard input for Clipboard quantity text field (nur in HandledScreens)
+        Screen screen = (Screen) (Object) this;
+        if (screen instanceof HandledScreen) {
+            if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleQuantityTextFieldKeyPress(keyCode, scanCode, modifiers)) {
+                cir.setReturnValue(true);
+            }
         }
     }
     
@@ -74,6 +83,10 @@ public class ScreenMixin {
             MinecraftClient client = MinecraftClient.getInstance();
             // Update mouse position
             ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+            
+            // Render Clipboard Overlay (wenn aktiviert)
+            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+            
             // Render Item Viewer (als HandledScreen behandeln)
             ItemViewerUtility.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
             

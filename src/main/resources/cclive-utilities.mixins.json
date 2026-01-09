@@ -22,7 +22,8 @@
 		"InventoryScreenMixin",
 		"HelpOverlayMixin",
 		"HelpOverlayScreenMixin",
-		"InGameHudHelpOverlayMixin"
+		"InGameHudHelpOverlayMixin",
+		"MouseClickMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

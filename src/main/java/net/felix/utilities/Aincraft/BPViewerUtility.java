@@ -209,13 +209,18 @@ public class BPViewerUtility {
         
         // Register tooltip render event to show checkmarks for found blueprints
         net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback.EVENT.register((stack, context, tooltipType, lines) -> {
+            // Performance-Optimierung: Frühe Returns
+            if (stack == null || lines == null) {
+                return;
+            }
+            
             // Only process tooltips if blueprint viewer is enabled in config
             if (!CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled) {
                 return;
             }
             
             // Check if we're hovering over a name_tag item (blueprint items)
-            if (stack != null && stack.getItem().toString().contains("name_tag")) {
+            if (stack.getItem().toString().contains("name_tag")) {
                 // Check if we're in the special inventory (the one with 㬉)
                 MinecraftClient mcClient = MinecraftClient.getInstance();
                 boolean isSpecialInventory = false;

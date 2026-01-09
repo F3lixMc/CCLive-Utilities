@@ -10,6 +10,8 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 import net.felix.OverlayType;
 
 public class CCLiveUtilitiesConfig {
@@ -482,7 +484,51 @@ public class CCLiveUtilitiesConfig {
     public int clipboardHeight = 300; // Höhe des Clipboard-Overlays
     
     @SerialEntry
+    public float clipboardScale = 1.0f; // Skalierungsfaktor für das gesamte Clipboard-Overlay
+    
+    @SerialEntry
     public boolean clipboardShowBlueprintShopCosts = false; // Zeige Blueprint Shop Kosten an
+    
+    @SerialEntry
+    public int clipboardCurrentPage = 1; // Aktuelle Seite im Clipboard (1-basiert)
+    
+    @SerialEntry
+    public int clipboardTotalPages = 1; // Gesamtanzahl der Seiten im Clipboard
+    
+    @SerialEntry
+    public boolean clipboardMaterialSortEnabled = false; // Material-Sortierung nach Ebenen aktiviert
+    
+    @SerialEntry
+    public boolean clipboardMaterialSortAscending = true; // Material-Sortierung aufsteigend (true) oder absteigend (false)
+    
+    @SerialEntry
+    public boolean clipboardCostDisplayEnabled = false; // Kostenanzeige-Filterung aktiviert
+    
+    @SerialEntry
+    public int clipboardCostDisplayMode = 1; // Kostenanzeige-Modus: 1 = ausblenden, 2 = ans Ende setzen
+    
+    @SerialEntry
+    public List<ClipboardEntryData> clipboardEntries = new ArrayList<>(); // Gespeicherte Clipboard-Einträge
+    
+    /**
+     * Datenklasse für persistente Clipboard-Einträge
+     */
+    public static class ClipboardEntryData {
+        @SerialEntry
+        public String blueprintName;
+        
+        @SerialEntry
+        public int quantity;
+        
+        public ClipboardEntryData() {
+            // Für Deserialisierung benötigt
+        }
+        
+        public ClipboardEntryData(String blueprintName, int quantity) {
+            this.blueprintName = blueprintName;
+            this.quantity = quantity;
+        }
+    }
 
     // Search Bar Settings
     @SerialEntry

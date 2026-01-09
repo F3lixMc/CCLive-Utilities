@@ -38,6 +38,7 @@ public class ItemViewerUtility {
     private static boolean isInitialized = false;
     private static boolean isVisible = true; // Standard: sichtbar
     private static KeyBinding toggleKeyBinding;
+    private static KeyBinding clipboardPinKeyBinding;
     
     private static List<ItemData> allItems = new ArrayList<>();
     private static List<ItemData> filteredItems = new ArrayList<>();
@@ -253,12 +254,210 @@ public class ItemViewerUtility {
             GLFW.GLFW_KEY_I,
             "category.cclive-utilities"
         ));
+        
+        // Registriere KeyBinding für Bauplan Anpinnen (Clipboard)
+        clipboardPinKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key.cclive-utilities.clipboard.pin",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_P,
+            "category.cclive-utilities"
+        ));
+    }
+    
+    /**
+     * Gibt den formatierten Hotkey-Text für das Clipboard-Anpinnen zurück
+     * @return Formatierter Hotkey-Text (z.B. "P")
+     * Verwendet getBoundKeyLocalizedText() um den aktuellen Hotkey zu bekommen (auch nach Config-Änderungen)
+     */
+    public static String getClipboardPinHotkeyText() {
+        if (clipboardPinKeyBinding == null) {
+            return "P"; // Fallback
+        }
+        
+        try {
+            // Verwende getBoundKeyLocalizedText() um den aktuellen Hotkey-Text zu bekommen
+            // Dies funktioniert auch nach Änderungen in der Config
+            java.lang.reflect.Method getBoundKeyLocalizedTextMethod = clipboardPinKeyBinding.getClass().getMethod("getBoundKeyLocalizedText");
+            Object localizedText = getBoundKeyLocalizedTextMethod.invoke(clipboardPinKeyBinding);
+            if (localizedText instanceof net.minecraft.text.Text) {
+                String hotkeyString = ((net.minecraft.text.Text) localizedText).getString();
+                // Entferne mögliche Formatierungs-Codes
+                hotkeyString = hotkeyString.replaceAll("§[0-9a-fk-or]", "");
+                return hotkeyString;
+            }
+        } catch (Exception e) {
+            // Fallback: Versuche über getBoundKey() und KeyCode
+            try {
+                java.lang.reflect.Method getBoundKeyMethod = clipboardPinKeyBinding.getClass().getMethod("getBoundKey");
+                Object boundKey = getBoundKeyMethod.invoke(clipboardPinKeyBinding);
+                
+                // Hole den KeyCode
+                java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getCode");
+                int keyCode = (Integer) getCodeMethod.invoke(boundKey);
+                
+                // Konvertiere GLFW Key Code zu lesbarem String
+                if (keyCode == GLFW.GLFW_KEY_P) {
+                    return "P";
+                } else if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
+                    // Buchstaben A-Z
+                    return String.valueOf((char) ('A' + (keyCode - GLFW.GLFW_KEY_A)));
+                } else if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
+                    // Zahlen 0-9
+                    return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
+                } else {
+                    return "Key " + keyCode;
+                }
+            } catch (Exception e2) {
+                // Fallback: Standard "P"
+                return "P";
+            }
+        }
+        
+        return "P"; // Fallback
     }
     
     private static void onClientTick(MinecraftClient client) {
         if (toggleKeyBinding != null && toggleKeyBinding.wasPressed()) {
+            // Performance-Optimierung: Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
+            // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler "I" tippt
+            if (isTextFieldFocused(client)) {
+                return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
+            }
+            
             isVisible = !isVisible;
         }
+        
+        // Prüfe Clipboard-Pin Hotkey (immer prüfen, nicht nur wenn ItemViewer sichtbar ist)
+        // WICHTIG: wasPressed() funktioniert nur einmal pro Tick, daher müssen wir es hier prüfen
+        // handleKeyPress wird nur aufgerufen, wenn ein Screen geöffnet ist
+        // Wenn der ItemViewer im HUD (ohne Screen) geöffnet ist, müssen wir den Hotkey hier prüfen
+        if (clipboardPinKeyBinding != null && clipboardPinKeyBinding.wasPressed()) {
+            // Prüfe ob ein Textfeld fokussiert ist
+            if (isTextFieldFocused(client)) {
+                return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
+            }
+            
+            // Prüfe ob ItemViewer sichtbar ist und ein Item gehovered wird
+            if (isVisible) {
+                // Hole gehoveres Item aus dem Grid
+                ItemData hoveredItem = getHoveredItemFromGrid();
+                
+                if (hoveredItem != null && hoveredItem.info != null && 
+                    hoveredItem.info.blueprint != null && hoveredItem.info.blueprint) {
+                    // Füge Bauplan zum Clipboard hinzu
+                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
+                }
+            }
+            
+            // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
+            {
+                // Prüfe ob wir in einem Bauplan-Inventar sind
+                if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+                    // Prüfe ob wir in einem Bauplan-Inventar sind
+                    if (isInBlueprintInventory(handledScreen)) {
+                        // Hole gehoverten Slot
+                        net.minecraft.screen.slot.Slot hoveredSlot = getHoveredSlot(handledScreen, client);
+                        if (hoveredSlot != null && hoveredSlot.hasStack()) {
+                            net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
+                            if (stack != null && !stack.isEmpty()) {
+                                // Extrahiere Item-Namen aus Tooltip (erste Zeile: "name - [Bauplan]")
+                                String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
+                                if (itemName == null || itemName.isEmpty()) {
+                                    // Fallback: Verwende ItemStack-Name
+                                    itemName = stack.getName().getString();
+                                    // Entferne Formatierungscodes
+                                    itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
+                                    // Entferne " - [Bauplan]" oder ähnliche Suffixe
+                                    itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\]$", "").trim();
+                                }
+                                
+                                // Suche Item in items.json
+                                ItemData itemData = findItemByName(itemName);
+                                if (itemData != null && itemData.info != null && 
+                                    itemData.info.blueprint != null && itemData.info.blueprint) {
+                                    // Füge Bauplan zum Clipboard hinzu
+                                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Gibt das aktuell gehoverte Item aus dem Grid zurück
+     */
+    private static ItemData getHoveredItemFromGrid() {
+        // Das Grid wird in renderItemViewerInScreen gerendert
+        // Wir müssen das gehoverte Item aus dem aktuellen Grid holen
+        // Da das Grid nicht statisch gespeichert wird, müssen wir es anders lösen
+        // Für jetzt: verwende hoveredItemForClick (wird im Grid gesetzt)
+        return hoveredItemForClick;
+    }
+    
+    /**
+     * Findet ein Item nach Namen in der items.json
+     * @param itemName Name des Items
+     * @return ItemData oder null wenn nicht gefunden
+     */
+    public static ItemData findItemByName(String itemName) {
+        if (itemName == null || itemName.isEmpty()) {
+            return null;
+        }
+        
+        if (allItems == null) {
+            return null;
+        }
+        
+        for (ItemData item : allItems) {
+            if (item.name != null && item.name.equals(itemName)) {
+                return item;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Prüft ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
+     * Verhindert, dass Hotkeys aktiviert werden, wenn der Spieler tippt
+     */
+    private static boolean isTextFieldFocused(MinecraftClient client) {
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Prüfe ob ChatScreen offen ist
+        if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
+            return true;
+        }
+        
+        // Prüfe ob unser eigenes Suchfeld fokussiert ist
+        if (searchFieldFocused) {
+            return true;
+        }
+        
+        // Prüfe ob ein TextFieldWidget fokussiert ist (z.B. in Inventaren)
+        // Verwende Reflection um auf fokussierte Widgets zuzugreifen
+        try {
+            // Prüfe ob Screen ein fokussiertes Widget hat
+            java.lang.reflect.Method getFocusedMethod = client.currentScreen.getClass().getMethod("getFocused");
+            if (getFocusedMethod != null) {
+                Object focused = getFocusedMethod.invoke(client.currentScreen);
+                if (focused instanceof net.minecraft.client.gui.widget.TextFieldWidget) {
+                    net.minecraft.client.gui.widget.TextFieldWidget textField = (net.minecraft.client.gui.widget.TextFieldWidget) focused;
+                    if (textField.isFocused()) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Reflection fehlgeschlagen - ignoriere (nicht kritisch)
+        }
+        
+        return false;
     }
     
     /**
@@ -269,6 +468,67 @@ public class ItemViewerUtility {
      * @return true wenn der Keybind behandelt wurde, false sonst
      */
     public static boolean handleKeyPress(int keyCode, int scanCode, int modifiers) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        
+        // Prüfe Clipboard-Pin Hotkey
+        if (clipboardPinKeyBinding != null && clipboardPinKeyBinding.matchesKey(keyCode, scanCode)) {
+            // Prüfe ob ein Textfeld fokussiert ist
+            if (isTextFieldFocused(client)) {
+                return false; // Ignoriere Hotkey wenn Textfeld fokussiert ist
+            }
+            
+            // Prüfe ob ItemViewer sichtbar ist und ein Item gehovered wird
+            if (isVisible) {
+                // Hole gehoveres Item aus dem Grid
+                ItemData hoveredItem = getHoveredItemFromGrid();
+                
+                if (hoveredItem != null && hoveredItem.info != null && 
+                    hoveredItem.info.blueprint != null && hoveredItem.info.blueprint) {
+                    // Füge Bauplan zum Clipboard hinzu
+                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
+                    return true;
+                }
+            }
+            
+            // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
+            {
+                // Prüfe ob wir in einem Bauplan-Inventar sind
+                if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+                    // Prüfe ob wir in einem Bauplan-Inventar sind
+                    if (isInBlueprintInventory(handledScreen)) {
+                        // Hole gehoverten Slot
+                        net.minecraft.screen.slot.Slot hoveredSlot = getHoveredSlot(handledScreen, client);
+                        if (hoveredSlot != null && hoveredSlot.hasStack()) {
+                            net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
+                            if (stack != null && !stack.isEmpty()) {
+                                // Extrahiere Item-Namen aus Tooltip (erste Zeile: "name - [Bauplan]")
+                                String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
+                                if (itemName == null || itemName.isEmpty()) {
+                                    // Fallback: Verwende ItemStack-Name
+                                    itemName = stack.getName().getString();
+                                    // Entferne Formatierungscodes
+                                    itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
+                                    // Entferne " - [Bauplan]" oder ähnliche Suffixe
+                                    itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\]$", "").trim();
+                                }
+                                
+                                // Suche Item in items.json
+                                ItemData itemData = findItemByName(itemName);
+                                if (itemData != null && 
+                                    itemData.info != null && 
+                                    itemData.info.blueprint != null && itemData.info.blueprint) {
+                                    // Füge Bauplan zum Clipboard hinzu
+                                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Prüfe Toggle Hotkey
         if (toggleKeyBinding == null) {
             return false;
         }
@@ -276,6 +536,12 @@ public class ItemViewerUtility {
         // Prüfe ob unser Keybind gedrückt wurde
         // Verwende matchesKey() um zu prüfen ob der Keybind passt
         if (toggleKeyBinding.matchesKey(keyCode, scanCode)) {
+            // Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
+            // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler "I" tippt
+            if (isTextFieldFocused(client)) {
+                return false; // Ignoriere Hotkey wenn Textfeld fokussiert ist
+            }
+            
             // Wenn Suchfeld fokussiert ist, nicht togglen (nur Fokus entfernen)
             if (searchFieldFocused) {
                 searchFieldFocused = false;
@@ -287,6 +553,153 @@ public class ItemViewerUtility {
         }
         
         return false;
+    }
+    
+    /**
+     * Prüft ob wir in einem Bauplan-Inventar sind
+     */
+    private static boolean isInBlueprintInventory(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen) {
+        try {
+            net.minecraft.text.Text titleText = screen.getTitle();
+            String title = titleText != null ? titleText.getString() : "";
+            String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "").trim();
+            
+            boolean isBlueprintInventory = cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Blueprints [Weapons]") ||
+                   cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Blueprints [Armor]") ||
+                   cleanTitle.contains("Baupläne [Werkzeuge]") || cleanTitle.contains("Blueprints [Tools]") ||
+                   cleanTitle.contains("Bauplan [Shop]") || cleanTitle.contains("Blueprint Store") ||
+                   cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorited [Armor Blueprints]") ||
+                   cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorited [Weapon Blueprints]") ||
+                   cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") || cleanTitle.contains("Favorited [Tools Blueprints]") ||
+                   cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
+            
+            return isBlueprintInventory;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Findet den gehoverten Slot in einem HandledScreen
+     */
+    private static net.minecraft.screen.slot.Slot getHoveredSlot(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, MinecraftClient client) {
+        try {
+            // Hole Mouse-Position (skaliert für Screen)
+            double mouseXUnscaled = client.mouse.getX();
+            double mouseYUnscaled = client.mouse.getY();
+            int mouseX = (int) (mouseXUnscaled * client.getWindow().getScaledWidth() / client.getWindow().getWidth());
+            int mouseY = (int) (mouseYUnscaled * client.getWindow().getScaledHeight() / client.getWindow().getHeight());
+            
+            // Hole Screen-Position (über Reflection, da @Shadow nicht immer funktioniert)
+            java.lang.reflect.Field xField = null;
+            java.lang.reflect.Field yField = null;
+            try {
+                xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
+                yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
+                xField.setAccessible(true);
+                yField.setAccessible(true);
+            } catch (NoSuchFieldException e) {
+                // Fallback: Versuche mit getter-Methoden
+                try {
+                    java.lang.reflect.Method getXMethod = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredMethod("getX");
+                    java.lang.reflect.Method getYMethod = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredMethod("getY");
+                    getXMethod.setAccessible(true);
+                    getYMethod.setAccessible(true);
+                    int screenX = (Integer) getXMethod.invoke(screen);
+                    int screenY = (Integer) getYMethod.invoke(screen);
+                    
+                    // Finde gehoverten Slot
+                    for (net.minecraft.screen.slot.Slot slot : screen.getScreenHandler().slots) {
+                        if (slot.x + screenX <= mouseX && mouseX < slot.x + screenX + 16 &&
+                            slot.y + screenY <= mouseY && mouseY < slot.y + screenY + 16) {
+                            return slot;
+                        }
+                    }
+                } catch (Exception ex) {
+                    // Ignoriere Fehler
+                }
+                return null;
+            }
+            
+            int screenX = xField != null ? xField.getInt(screen) : 0;
+            int screenY = yField != null ? yField.getInt(screen) : 0;
+            
+            // Finde gehoverten Slot
+            for (net.minecraft.screen.slot.Slot slot : screen.getScreenHandler().slots) {
+                if (slot.x + screenX <= mouseX && mouseX < slot.x + screenX + 16 &&
+                    slot.y + screenY <= mouseY && mouseY < slot.y + screenY + 16) {
+                    return slot;
+                }
+            }
+        } catch (Exception e) {
+            // Ignoriere Fehler
+        }
+        return null;
+    }
+    
+    /**
+     * Extrahiert den Item-Namen aus dem Tooltip (erste Zeile: "name - [Bauplan]")
+     */
+    private static String extractItemNameFromTooltip(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, MinecraftClient client, net.minecraft.item.ItemStack stack) {
+        try {
+            // Hole Tooltip über Reflection (ähnlich wie ClipboardPaperShredsCollector)
+            java.util.List<net.minecraft.text.Text> tooltip = null;
+            
+            try {
+                java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
+                for (java.lang.reflect.Method method : methods) {
+                    if (!"getTooltipFromItem".equals(method.getName())) {
+                        continue;
+                    }
+                    
+                    Class<?>[] params = method.getParameterTypes();
+                    method.setAccessible(true);
+                    
+                    try {
+                        // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
+                        if (params.length == 2 &&
+                            net.minecraft.client.MinecraftClient.class.isAssignableFrom(params[0]) &&
+                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[1])) {
+                            @SuppressWarnings("unchecked")
+                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, client, stack);
+                            tooltip = result;
+                            break;
+                        }
+                        
+                        // Signatur: getTooltipFromItem(ItemStack)
+                        if (params.length == 1 &&
+                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[0])) {
+                            @SuppressWarnings("unchecked")
+                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, stack);
+                            tooltip = result;
+                            break;
+                        }
+                    } catch (Exception e) {
+                        // Versuche nächste Signatur
+                        continue;
+                    }
+                }
+            } catch (Exception e) {
+                // Ignoriere Fehler
+            }
+            
+            if (tooltip != null && !tooltip.isEmpty()) {
+                // Nimm erste Zeile
+                String firstLine = tooltip.get(0).getString();
+                
+                // Entferne Formatierungscodes
+                firstLine = firstLine.replaceAll("§[0-9a-fk-or]", "").trim();
+                
+                // Entferne " - [Bauplan]" oder ähnliche Suffixe
+                // Pattern: "name - [Bauplan]" -> "name"
+                String itemName = firstLine.replaceAll("\\s*-\\s*\\[.*?\\]$", "").trim();
+                
+                return itemName;
+            }
+        } catch (Exception e) {
+            // Ignoriere Fehler
+        }
+        return null;
     }
     
     /**
