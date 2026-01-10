@@ -7,6 +7,7 @@ import net.felix.utilities.Factory.WaveUtility;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Overall.InformationenUtility;
+// import net.felix.utilities.Overall.BossBarDecodeUtility; // Temporarily disabled
 import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -81,6 +82,9 @@ public class BossBarMixin {
                 for (ClientBossBar bossBar : bossBars.values()) {
                     index++;
                     String name = bossBar.getName().getString();
+                    
+                    // Bossbar dekodieren und anzeigen (temporarily disabled)
+                    // BossBarDecodeUtility.processBossBar(name);
                     
                     // Fabrik-Wellen (2. Bossbar) verarbeiten
                     WaveUtility.processBossBarWave(name, index);

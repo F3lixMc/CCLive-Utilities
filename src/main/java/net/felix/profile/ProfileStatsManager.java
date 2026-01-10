@@ -244,11 +244,17 @@ public class ProfileStatsManager {
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
             tickCounter = 0;
-            collectAndSendStats();
+            // Führe collectAndSendStats asynchron aus, um Freezes zu vermeiden
+            CompletableFuture.runAsync(() -> {
+                collectAndSendStats();
+            });
         }
         
         // Prüfe ob Karten/Statuen-Menü geöffnet ist und ob sich Items geändert haben
-        checkCardsStatuesMenuForChanges(client);
+        // Nur alle 10 Ticks prüfen (0.5 Sekunden) um Performance zu verbessern
+        if (client.player.age % 10 == 0) {
+            checkCardsStatuesMenuForChanges(client);
+        }
     }
     
     /**
@@ -838,36 +844,43 @@ public class ProfileStatsManager {
     }
     
     /**
-     * Speichert Karten/Statuen-Level in die JSON-Datei
+     * Speichert Karten/Statuen-Level in die JSON-Datei (asynchron, um Freezes zu vermeiden)
      */
     private void saveCardsStatuesLevels() {
-        try {
-            // Erstelle Verzeichnis falls nicht vorhanden
-            saveFile.getParentFile().mkdirs();
-            
-            JsonObject json = new JsonObject();
-            
-            // Speichere Karten-Level
-            JsonObject cardsJson = new JsonObject();
-            for (Map.Entry<String, Integer> entry : cardsLevels.entrySet()) {
-                cardsJson.addProperty(entry.getKey(), entry.getValue());
+        // Erstelle Kopien der Maps für asynchrones Schreiben (Thread-sicher)
+        final Map<String, Integer> cardsCopy = new HashMap<>(cardsLevels);
+        final Map<String, Integer> statuesCopy = new HashMap<>(statuesLevels);
+        
+        // Führe File I/O asynchron aus, um Freezes zu vermeiden
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Erstelle Verzeichnis falls nicht vorhanden
+                saveFile.getParentFile().mkdirs();
+                
+                JsonObject json = new JsonObject();
+                
+                // Speichere Karten-Level
+                JsonObject cardsJson = new JsonObject();
+                for (Map.Entry<String, Integer> entry : cardsCopy.entrySet()) {
+                    cardsJson.addProperty(entry.getKey(), entry.getValue());
+                }
+                json.add("cards", cardsJson);
+                
+                // Speichere Statuen-Level
+                JsonObject statuesJson = new JsonObject();
+                for (Map.Entry<String, Integer> entry : statuesCopy.entrySet()) {
+                    statuesJson.addProperty(entry.getKey(), entry.getValue());
+                }
+                json.add("statues", statuesJson);
+                
+                // Schreibe in Datei
+                try (FileWriter writer = new FileWriter(saveFile)) {
+                    gson.toJson(json, writer);
+                }
+            } catch (IOException e) {
+                // Silent error handling("❌ [ProfileStats] Fehler beim Speichern von Karten/Statuen-Level: " + e.getMessage());
             }
-            json.add("cards", cardsJson);
-            
-            // Speichere Statuen-Level
-            JsonObject statuesJson = new JsonObject();
-            for (Map.Entry<String, Integer> entry : statuesLevels.entrySet()) {
-                statuesJson.addProperty(entry.getKey(), entry.getValue());
-            }
-            json.add("statues", statuesJson);
-            
-            // Schreibe in Datei
-            try (FileWriter writer = new FileWriter(saveFile)) {
-                gson.toJson(json, writer);
-            }
-        } catch (IOException e) {
-            // Silent error handling("❌ [ProfileStats] Fehler beim Speichern von Karten/Statuen-Level: " + e.getMessage());
-        }
+        });
     }
     
     

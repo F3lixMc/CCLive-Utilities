@@ -2095,11 +2095,13 @@ public class ItemViewerUtility {
         String closeText = "×";
         int closeTextWidth = client.textRenderer.getWidth(closeText);
         int closeTextHeight = client.textRenderer.fontHeight;
+        int closeTextX = closeButtonX + (closeButtonSize - closeTextWidth) / 2 + 1; // Horizontal zentriert (+1 für bessere visuelle Zentrierung)
+        int closeTextY = closeButtonY + (closeButtonSize - closeTextHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
         context.drawText(
             client.textRenderer,
             closeText,
-            closeButtonX + (closeButtonSize - closeTextWidth) / 2,
-            closeButtonY + (closeButtonSize - closeTextHeight) / 2,
+            closeTextX,
+            closeTextY,
             0xFFFFFFFF,
             true
         );

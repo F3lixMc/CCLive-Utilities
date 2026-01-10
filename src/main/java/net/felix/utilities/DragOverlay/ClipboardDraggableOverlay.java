@@ -2845,31 +2845,18 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
 
-        // Prüfe ob Tab gedrückt ist
-        boolean tabPressed = net.minecraft.client.util.InputUtil.isKeyPressed(
-            client.getWindow().getHandle(),
-            net.minecraft.client.util.InputUtil.GLFW_KEY_TAB
-        );
+        // Prüfe ob die Spielerliste-Taste gedrückt ist (respektiert benutzerdefinierte Key Bindings)
+        boolean playerListKeyPressed = KeyBindingUtility.isPlayerListKeyPressed();
 
         // Prüfe ob F1 aktiv ist (wie alle anderen GUIs - über hudHidden)
         boolean f1Active = client.options.hudHidden;
 
-        // Wenn Tab gedrückt ist oder F1 aktiv ist, dann ausblenden
-        if (tabPressed || f1Active) {
+        // Wenn Spielerliste-Taste gedrückt ist oder F1 aktiv ist, dann ausblenden
+        if (playerListKeyPressed || f1Active) {
             hideHover = true;
-            // Setze Timer nur für Tab (F1 wird direkt über hudHidden gesteuert)
-            if (tabPressed) {
-                hideHoverUntil = System.currentTimeMillis() + 200;
-            } else {
-                // Bei F1: Kein Timer, wird direkt gesteuert
-                hideHoverUntil = Long.MAX_VALUE; // Verhindere automatisches Zurücksetzen
-            }
         } else {
-            // Weder Tab noch F1 aktiv - prüfe ob Timer abgelaufen ist
-            if (hideHover && System.currentTimeMillis() >= hideHoverUntil) {
-                hideHover = false;
-                hideHoverUntil = 0;
-            }
+            // Weder Spielerliste-Taste noch F1 aktiv - zeige Overlay sofort wieder an (ohne Delay)
+            hideHover = false;
         }
     }
     

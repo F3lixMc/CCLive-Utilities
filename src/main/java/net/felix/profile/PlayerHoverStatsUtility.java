@@ -22,6 +22,47 @@ public class PlayerHoverStatsUtility {
     private static boolean isInitialized = false;
     private static HttpClient httpClient;
     
+    // Cache für Spieler-Stats (um wiederholte HTTP-Requests zu vermeiden)
+    private static final java.util.Map<String, CachedStats> statsCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long CACHE_DURATION_MS = 60000; // 1 Minute Cache-Dauer
+    
+    // Cache für Playtime-Werte (um wiederholte HTTP-Requests zu vermeiden)
+    private static final java.util.Map<String, CachedPlaytime> playtimeCache = new java.util.concurrent.ConcurrentHashMap<>();
+    
+    /**
+     * Gecachte Playtime für einen Spieler
+     */
+    private static class CachedPlaytime {
+        final String playtime;
+        final long timestamp;
+        
+        CachedPlaytime(String playtime) {
+            this.playtime = playtime;
+            this.timestamp = System.currentTimeMillis();
+        }
+        
+        boolean isExpired() {
+            return System.currentTimeMillis() - timestamp > CACHE_DURATION_MS;
+        }
+    }
+    
+    /**
+     * Gecachte Stats für einen Spieler
+     */
+    private static class CachedStats {
+        final JsonObject stats;
+        final long timestamp;
+        
+        CachedStats(JsonObject stats) {
+            this.stats = stats;
+            this.timestamp = System.currentTimeMillis();
+        }
+        
+        boolean isExpired() {
+            return System.currentTimeMillis() - timestamp > CACHE_DURATION_MS;
+        }
+    }
+    
     // Kein Pattern mehr nötig - wir durchsuchen die Text-Struktur rekursiv
     
     /**
@@ -89,13 +130,44 @@ public class PlayerHoverStatsUtility {
             // Silent error handling("[PlayerHoverStats] 🔍 Spielername extrahiert: " + playerName);
         }
         
-        // Hole Stats vom Server synchron (da wir die Nachricht sofort modifizieren müssen)
+        // Hole Stats vom Server (mit Cache, um wiederholte Requests zu vermeiden)
         try {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] 🔍 Hole Stats vom Server für: " + playerName);
             }
             
-            JsonObject stats = httpClient.get("/profile/" + playerName);
+            // Prüfe Cache zuerst
+            CachedStats cached = statsCache.get(playerName.toLowerCase());
+            JsonObject stats = null;
+            
+            if (cached != null && !cached.isExpired()) {
+                // Verwende gecachte Stats
+                stats = cached.stats;
+                if (debugging) {
+                    // Silent error handling("[PlayerHoverStats] ✅ Stats aus Cache für: " + playerName);
+                }
+            } else {
+                // Hole Stats vom Server (asynchron, um Freezes zu vermeiden)
+                // Da wir die Nachricht sofort modifizieren müssen, verwenden wir einen Timeout
+                try {
+                    // Versuche synchron mit kurzem Timeout (falls möglich)
+                    // Falls das zu lange dauert, verwende Cache oder null
+                    stats = httpClient.get("/profile/" + playerName);
+                    
+                    // Speichere im Cache
+                    if (stats != null) {
+                        statsCache.put(playerName.toLowerCase(), new CachedStats(stats));
+                    }
+                } catch (Exception e) {
+                    // Bei Fehler: Verwende gecachte Stats falls vorhanden (auch wenn abgelaufen)
+                    if (cached != null) {
+                        stats = cached.stats;
+                        if (debugging) {
+                            // Silent error handling("[PlayerHoverStats] ⚠️ Request fehlgeschlagen, verwende abgelaufenen Cache für: " + playerName);
+                        }
+                    }
+                }
+            }
             
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] 🔍 Stats-Response: " + (stats != null ? stats.toString() : "null"));
@@ -1187,8 +1259,18 @@ public class PlayerHoverStatsUtility {
                 // Silent error handling("[PlayerHoverStats] 🔍 Versuche Playtime für Spieler '" + searchPlayerName + "' zu holen...");
             }
             
+            // Prüfe Cache zuerst
+            CachedPlaytime cached = playtimeCache.get(searchPlayerName.toLowerCase());
+            if (cached != null && !cached.isExpired()) {
+                // Verwende gecachte Playtime
+                if (debugging) {
+                    // Silent error handling("[PlayerHoverStats] ✅ Playtime aus Cache für: " + searchPlayerName);
+                }
+                return cached.playtime;
+            }
+            
             // Hole Playtime direkt für den spezifischen Spieler vom Leaderboard
-            // Direkter HTTP-Request für den spezifischen Spieler (synchron)
+            // Direkter HTTP-Request für den spezifischen Spieler (synchron, aber mit Cache)
             String endpoint = "/leaderboard/playtime/" + searchPlayerName;
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] 🔍 HTTP GET Request: " + endpoint);
@@ -1198,6 +1280,10 @@ public class PlayerHoverStatsUtility {
             if (httpClient == null) {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ❌ HttpClient ist null - kann Playtime nicht abrufen");
+                }
+                // Verwende abgelaufenen Cache falls vorhanden
+                if (cached != null) {
+                    return cached.playtime;
                 }
                 return null;
             }
@@ -1313,7 +1399,12 @@ public class PlayerHoverStatsUtility {
                 // Silent error handling("[PlayerHoverStats] ✅ Playtime formatiert: " + playtimeStr.toString() + " (aus " + playtimeSeconds + " Sekunden)");
             }
             
-            return "§7⏱ §f" + playtimeStr.toString();
+            String playtimeValue = "§7⏱ §f" + playtimeStr.toString();
+            
+            // Speichere im Cache
+            playtimeCache.put(searchPlayerName.toLowerCase(), new CachedPlaytime(playtimeValue));
+            
+            return playtimeValue;
         } catch (Exception e) {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] ❌ Fehler beim Abrufen von Playtime: " + e.getMessage());
