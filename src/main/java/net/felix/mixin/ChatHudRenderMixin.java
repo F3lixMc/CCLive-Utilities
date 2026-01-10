@@ -54,6 +54,11 @@ public abstract class ChatHudRenderMixin {
                 return;
             }
             
+            // Prüfe ob Chat-Icon aktiviert ist
+            if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled) {
+                return;
+            }
+            
             // Don't render if world is not loaded (prevents issues during startup)
             if (client.world == null) {
                 return;

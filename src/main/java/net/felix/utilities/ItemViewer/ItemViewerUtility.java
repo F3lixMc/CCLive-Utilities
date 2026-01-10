@@ -45,6 +45,10 @@ public class ItemViewerUtility {
     private static String currentSearch = "";
     private static SortMode currentSortMode = SortMode.DEFAULT;
     
+    // Flag für asynchrones Laden
+    private static volatile boolean itemsLoaded = false;
+    private static Thread loadItemsThread = null;
+    
     // Selektion für Suchfeld
     private static int selectionStart = -1; // Start der Text-Selektion (-1 = keine Selektion)
     private static int selectionEnd = -1;   // Ende der Text-Selektion
@@ -59,6 +63,8 @@ public class ItemViewerUtility {
     
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final String ITEMS_CONFIG_FILE = "assets/cclive-utilities/items.json";
+    private static final String LOCAL_ITEMS_FILE = "items.json";
+    private static boolean serverCheckRegistered = false;
     
     public static void initialize() {
         if (isInitialized) {
@@ -69,8 +75,22 @@ public class ItemViewerUtility {
             // Initialisiere Favoriten-Manager
             FavoriteBlueprintsManager.initialize();
             
-            // Lade Items-Datei
-            loadItems();
+            // Registriere Server-Join-Event für Version-Check (nur einmal)
+            if (!serverCheckRegistered) {
+                net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+                    checkAndUpdateItemsConfig();
+                });
+                serverCheckRegistered = true;
+            }
+            
+            // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
+            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+            if (client != null && client.player != null && client.getNetworkHandler() != null) {
+                checkAndUpdateItemsConfig();
+            }
+            
+            // Lade Items-Datei asynchron (um Lag beim Start zu vermeiden)
+            loadItemsAsync();
             
             // Registriere Keybind
             registerKeybind();
@@ -90,160 +110,302 @@ public class ItemViewerUtility {
         }
     }
     
+    /**
+     * Lädt die Items-Datei asynchron im Hintergrund
+     */
+    private static void loadItemsAsync() {
+        if (loadItemsThread != null && loadItemsThread.isAlive()) {
+            return; // Bereits am Laden
+        }
+        
+        loadItemsThread = new Thread(() -> {
+            try {
+                loadItems();
+                itemsLoaded = true;
+                System.out.println("[ItemViewer] Items erfolgreich geladen (" + allItems.size() + " Items)");
+            } catch (Exception e) {
+                System.err.println("Fehler beim asynchronen Laden der Items: " + e.getMessage());
+                e.printStackTrace();
+                itemsLoaded = true; // Setze Flag trotzdem, um Endlosschleifen zu vermeiden
+            }
+        }, "CCLive-ItemViewer-Loader");
+        loadItemsThread.setDaemon(true); // Thread wird beendet, wenn Hauptthread beendet wird
+        loadItemsThread.start();
+    }
+    
+    /**
+     * Prüft ob die Items geladen sind
+     */
+    public static boolean areItemsLoaded() {
+        return itemsLoaded;
+    }
+    
     private static void loadItems() {
         try {
-            // Lade aus Mod-Ressourcen
+            // Versuche zuerst lokale Datei zu laden
+            java.nio.file.Path localFile = getLocalItemsPath();
+            if (localFile != null && java.nio.file.Files.exists(localFile)) {
+                try {
+                    loadFromFile(localFile);
+                    return;
+                } catch (Exception e) {
+                    System.err.println("⚠️ [ItemViewer] Fehler beim Laden der lokalen items.json: " + e.getMessage());
+                }
+            }
+            
+            // Fallback: Lade aus Mod-Ressourcen
             var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
                 .orElseThrow(() -> new RuntimeException("Mod container not found"))
                 .findPath(ITEMS_CONFIG_FILE)
                 .orElseThrow(() -> new RuntimeException("Items config file not found"));
             
-            try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
-                // Lese die gesamte Datei als String, um sie zweimal zu parsen
-                String jsonContent = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-                
-                // Parse als JsonObject für vollständige JSON-Objekte
-                JsonObject rootJson = JsonParser.parseString(jsonContent).getAsJsonObject();
-                
-                // Parse als ItemListData für ItemData-Objekte
-                try (var reader = new java.io.StringReader(jsonContent)) {
-                    Type type = new TypeToken<ItemListData>(){}.getType();
-                    ItemListData data = gson.fromJson(reader, type);
-                    
-                    if (data != null) {
-                        allItems = new ArrayList<>();
-                        
-                        // Unterstütze verschiedene Strukturen:
-                        // 1. Alte Struktur: {"items": [...]}
-                        if (data.items != null && !data.items.isEmpty()) {
-                            for (ItemData item : data.items) {
-                                item.category = "items";
-                            }
-                            allItems.addAll(data.items);
-                        }
-                        
-                        // 2. Neue Struktur (Deutsch): {"bauplan": [...], "fähigkeiten": [...], "module": [...]}
-                        if (data.bauplan != null && !data.bauplan.isEmpty()) {
-                            // Extrahiere JSON-Objekte für Baupläne
-                            if (rootJson.has("bauplan") && rootJson.get("bauplan").isJsonArray()) {
-                                var bauplanArray = rootJson.getAsJsonArray("bauplan");
-                                for (int i = 0; i < bauplanArray.size() && i < data.bauplan.size(); i++) {
-                                    JsonElement element = bauplanArray.get(i);
-                                    if (element.isJsonObject()) {
-                                        JsonObject jsonObj = element.getAsJsonObject();
-                                        ItemData item = data.bauplan.get(i);
-                                        item.jsonObject = jsonObj;
-                                        item.category = "blueprints"; // Normalisiere zu englisch
-                                        
-                                        // Speichere in Map für Favoriten
-                                        if (item.name != null && !item.name.isEmpty()) {
-                                            blueprintJsonMap.put(item.name, jsonObj);
-                                        }
-                                    }
-                                }
-                            } else {
-                                // Fallback: Keine JSON-Objekte verfügbar
-                                for (ItemData item : data.bauplan) {
-                                    item.category = "blueprints"; // Normalisiere zu englisch
-                                }
-                            }
-                            allItems.addAll(data.bauplan);
-                        }
-                        if (data.fähigkeiten != null && !data.fähigkeiten.isEmpty()) {
-                            for (ItemData item : data.fähigkeiten) {
-                                item.category = "abilities"; // Normalisiere zu englisch
-                            }
-                            allItems.addAll(data.fähigkeiten);
-                        }
-                        if (data.module != null && !data.module.isEmpty()) {
-                            for (ItemData item : data.module) {
-                                item.category = "modules"; // Normalisiere zu englisch
-                            }
-                            allItems.addAll(data.module);
-                        }
-                        
-                        // 3. Neue Struktur (Englisch): {"blueprints": [...], "abilities": [...], "modules": [...]}
-                        if (data.blueprints != null && !data.blueprints.isEmpty()) {
-                            // Extrahiere JSON-Objekte für Blueprints
-                            if (rootJson.has("blueprints") && rootJson.get("blueprints").isJsonArray()) {
-                                var blueprintsArray = rootJson.getAsJsonArray("blueprints");
-                                for (int i = 0; i < blueprintsArray.size() && i < data.blueprints.size(); i++) {
-                                    JsonElement element = blueprintsArray.get(i);
-                                    if (element.isJsonObject()) {
-                                        JsonObject jsonObj = element.getAsJsonObject();
-                                        ItemData item = data.blueprints.get(i);
-                                        item.jsonObject = jsonObj;
-                                        item.category = "blueprints";
-                                        
-                                        // Speichere in Map für Favoriten
-                                        if (item.name != null && !item.name.isEmpty()) {
-                                            blueprintJsonMap.put(item.name, jsonObj);
-                                        }
-                                    }
-                                }
-                            } else {
-                                // Fallback: Keine JSON-Objekte verfügbar
-                                for (ItemData item : data.blueprints) {
-                                    item.category = "blueprints";
-                                }
-                            }
-                            allItems.addAll(data.blueprints);
-                        }
-                        if (data.abilities != null && !data.abilities.isEmpty()) {
-                            for (ItemData item : data.abilities) {
-                                item.category = "abilities";
-                            }
-                            allItems.addAll(data.abilities);
-                        }
-                        if (data.modules != null && !data.modules.isEmpty()) {
-                            for (ItemData item : data.modules) {
-                                item.category = "modules";
-                            }
-                            allItems.addAll(data.modules);
-                        }
-                        if (data.runes != null && !data.runes.isEmpty()) {
-                            for (ItemData item : data.runes) {
-                                item.category = "runes";
-                            }
-                            allItems.addAll(data.runes);
-                        }
-                        if (data.power_crystals != null && !data.power_crystals.isEmpty()) {
-                            for (ItemData item : data.power_crystals) {
-                                item.category = "power_crystals";
-                            }
-                            allItems.addAll(data.power_crystals);
-                        }
-                        if (data.power_crystal_slots != null && !data.power_crystal_slots.isEmpty()) {
-                            for (ItemData item : data.power_crystal_slots) {
-                                item.category = "power_crystal_slots";
-                            }
-                            allItems.addAll(data.power_crystal_slots);
-                        }
-                        if (data.essences != null && !data.essences.isEmpty()) {
-                            for (ItemData item : data.essences) {
-                                item.category = "essences";
-                            }
-                            allItems.addAll(data.essences);
-                        }
-                        if (data.module_bags != null && !data.module_bags.isEmpty()) {
-                            for (ItemData item : data.module_bags) {
-                                item.category = "module_bags";
-                            }
-                            allItems.addAll(data.module_bags);
-                        }
-                        
-                        if (!allItems.isEmpty()) {
-                            filteredItems = new ArrayList<>(allItems);
-                            applySorting();
-                        }
-                    }
-                }
-            }
+            loadFromFile(resource);
         } catch (Exception e) {
             System.err.println("⚠️ [ItemViewer] Fehler beim Laden der Items-Datei: " + e.getMessage());
             // Erstelle leere Liste als Fallback
             allItems = new ArrayList<>();
             filteredItems = new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Lädt Items aus einer Datei (lokal oder Mod-Ressource)
+     */
+    private static void loadFromFile(java.nio.file.Path file) throws Exception {
+        try (var inputStream = java.nio.file.Files.newInputStream(file)) {
+            // Lese die gesamte Datei als String, um sie zweimal zu parsen
+            String jsonContent = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            
+            // Parse als JsonObject für vollständige JSON-Objekte
+            JsonObject rootJson = JsonParser.parseString(jsonContent).getAsJsonObject();
+            
+            // Parse als ItemListData für ItemData-Objekte
+            try (var reader = new java.io.StringReader(jsonContent)) {
+                Type type = new TypeToken<ItemListData>(){}.getType();
+                ItemListData data = gson.fromJson(reader, type);
+                
+                if (data != null) {
+                    allItems = new ArrayList<>();
+                    
+                    // Unterstütze verschiedene Strukturen:
+                    // 1. Alte Struktur: {"items": [...]}
+                    if (data.items != null && !data.items.isEmpty()) {
+                        for (ItemData item : data.items) {
+                            item.category = "items";
+                        }
+                        allItems.addAll(data.items);
+                    }
+                    
+                    // 2. Neue Struktur (Deutsch): {"bauplan": [...], "fähigkeiten": [...], "module": [...]}
+                    if (data.bauplan != null && !data.bauplan.isEmpty()) {
+                        // Extrahiere JSON-Objekte für Baupläne
+                        if (rootJson.has("bauplan") && rootJson.get("bauplan").isJsonArray()) {
+                            var bauplanArray = rootJson.getAsJsonArray("bauplan");
+                            for (int i = 0; i < bauplanArray.size() && i < data.bauplan.size(); i++) {
+                                JsonElement element = bauplanArray.get(i);
+                                if (element.isJsonObject()) {
+                                    JsonObject jsonObj = element.getAsJsonObject();
+                                    ItemData item = data.bauplan.get(i);
+                                    item.jsonObject = jsonObj;
+                                    item.category = "blueprints"; // Normalisiere zu englisch
+                                    
+                                    // Speichere in Map für Favoriten
+                                    if (item.name != null && !item.name.isEmpty()) {
+                                        blueprintJsonMap.put(item.name, jsonObj);
+                                    }
+                                }
+                            }
+                        } else {
+                            // Fallback: Keine JSON-Objekte verfügbar
+                            for (ItemData item : data.bauplan) {
+                                item.category = "blueprints"; // Normalisiere zu englisch
+                            }
+                        }
+                        allItems.addAll(data.bauplan);
+                    }
+                    if (data.fähigkeiten != null && !data.fähigkeiten.isEmpty()) {
+                        for (ItemData item : data.fähigkeiten) {
+                            item.category = "abilities"; // Normalisiere zu englisch
+                        }
+                        allItems.addAll(data.fähigkeiten);
+                    }
+                    if (data.module != null && !data.module.isEmpty()) {
+                        for (ItemData item : data.module) {
+                            item.category = "modules"; // Normalisiere zu englisch
+                        }
+                        allItems.addAll(data.module);
+                    }
+                    
+                    // 3. Neue Struktur (Englisch): {"blueprints": [...], "abilities": [...], "modules": [...]}
+                    if (data.blueprints != null && !data.blueprints.isEmpty()) {
+                        // Extrahiere JSON-Objekte für Blueprints
+                        if (rootJson.has("blueprints") && rootJson.get("blueprints").isJsonArray()) {
+                            var blueprintsArray = rootJson.getAsJsonArray("blueprints");
+                            for (int i = 0; i < blueprintsArray.size() && i < data.blueprints.size(); i++) {
+                                JsonElement element = blueprintsArray.get(i);
+                                if (element.isJsonObject()) {
+                                    JsonObject jsonObj = element.getAsJsonObject();
+                                    ItemData item = data.blueprints.get(i);
+                                    item.jsonObject = jsonObj;
+                                    item.category = "blueprints";
+                                    
+                                    // Speichere in Map für Favoriten
+                                    if (item.name != null && !item.name.isEmpty()) {
+                                        blueprintJsonMap.put(item.name, jsonObj);
+                                    }
+                                }
+                            }
+                        } else {
+                            // Fallback: Keine JSON-Objekte verfügbar
+                            for (ItemData item : data.blueprints) {
+                                item.category = "blueprints";
+                            }
+                        }
+                        allItems.addAll(data.blueprints);
+                    }
+                    if (data.abilities != null && !data.abilities.isEmpty()) {
+                        for (ItemData item : data.abilities) {
+                            item.category = "abilities";
+                        }
+                        allItems.addAll(data.abilities);
+                    }
+                    if (data.modules != null && !data.modules.isEmpty()) {
+                        for (ItemData item : data.modules) {
+                            item.category = "modules";
+                        }
+                        allItems.addAll(data.modules);
+                    }
+                    if (data.runes != null && !data.runes.isEmpty()) {
+                        for (ItemData item : data.runes) {
+                            item.category = "runes";
+                        }
+                        allItems.addAll(data.runes);
+                    }
+                    if (data.power_crystals != null && !data.power_crystals.isEmpty()) {
+                        for (ItemData item : data.power_crystals) {
+                            item.category = "power_crystals";
+                        }
+                        allItems.addAll(data.power_crystals);
+                    }
+                    if (data.power_crystal_slots != null && !data.power_crystal_slots.isEmpty()) {
+                        for (ItemData item : data.power_crystal_slots) {
+                            item.category = "power_crystal_slots";
+                        }
+                        allItems.addAll(data.power_crystal_slots);
+                    }
+                    if (data.essences != null && !data.essences.isEmpty()) {
+                        for (ItemData item : data.essences) {
+                            item.category = "essences";
+                        }
+                        allItems.addAll(data.essences);
+                    }
+                    if (data.module_bags != null && !data.module_bags.isEmpty()) {
+                        for (ItemData item : data.module_bags) {
+                            item.category = "module_bags";
+                        }
+                        allItems.addAll(data.module_bags);
+                    }
+                    
+                    if (!allItems.isEmpty()) {
+                        filteredItems = new ArrayList<>(allItems);
+                        applySorting();
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Prüft die Server-Version und lädt ggf. eine neue Datei
+     */
+    private static void checkAndUpdateItemsConfig() {
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                net.felix.leaderboards.LeaderboardManager manager = net.felix.leaderboards.LeaderboardManager.getInstance();
+                if (manager == null || !manager.isEnabled() || !manager.isRegistered()) {
+                    return; // Leaderboard-System nicht aktiv, kein Server-Check
+                }
+                
+                net.felix.leaderboards.config.LeaderboardConfig config = new net.felix.leaderboards.config.LeaderboardConfig();
+                String serverUrl = config.getServerUrl();
+                
+                // Prüfe Server-Version
+                java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+                java.net.http.HttpRequest versionRequest = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(serverUrl + "/items/version"))
+                    .timeout(java.time.Duration.ofSeconds(5))
+                    .header("User-Agent", "CCLive-Utilities/1.0")
+                    .GET()
+                    .build();
+                
+                java.net.http.HttpResponse<String> versionResponse = httpClient.send(versionRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+                
+                if (versionResponse.statusCode() == 200) {
+                    com.google.gson.JsonObject versionJson = com.google.gson.JsonParser.parseString(versionResponse.body()).getAsJsonObject();
+                    int serverVersion = versionJson.has("version") ? versionJson.get("version").getAsInt() : 0;
+                    int localVersion = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().itemsConfigVersion;
+                    
+                    if (serverVersion > localVersion) {
+                        // Neue Version verfügbar, lade Datei
+                        java.net.http.HttpRequest dataRequest = java.net.http.HttpRequest.newBuilder()
+                            .uri(java.net.URI.create(serverUrl + "/items/data"))
+                            .timeout(java.time.Duration.ofSeconds(30)) // Längeres Timeout für große Datei
+                            .header("User-Agent", "CCLive-Utilities/1.0")
+                            .GET()
+                            .build();
+                        
+                        java.net.http.HttpResponse<String> dataResponse = httpClient.send(dataRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
+                        
+                        if (dataResponse.statusCode() == 200) {
+                            com.google.gson.JsonObject dataJson = com.google.gson.JsonParser.parseString(dataResponse.body()).getAsJsonObject();
+                            String jsonData = dataJson.has("data") ? dataJson.get("data").getAsString() : null;
+                            
+                            if (jsonData != null) {
+                                // Validiere JSON
+                                com.google.gson.JsonParser.parseString(jsonData);
+                                
+                                // Speichere lokal
+                                java.nio.file.Path localFile = getLocalItemsPath();
+                                if (localFile != null) {
+                                    java.nio.file.Files.createDirectories(localFile.getParent());
+                                    try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
+                                            java.nio.file.Files.newOutputStream(localFile), java.nio.charset.StandardCharsets.UTF_8)) {
+                                        writer.write(jsonData);
+                                    }
+                                    
+                                    // Aktualisiere Version in Config
+                                    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().itemsConfigVersion = serverVersion;
+                                    net.felix.CCLiveUtilitiesConfig.HANDLER.save();
+                                    
+                                    // Lade die neue Datei
+                                    itemsLoaded = false;
+                                    allItems.clear();
+                                    filteredItems.clear();
+                                    loadItemsAsync();
+                                    
+                                    System.out.println("✅ [ItemViewer] Items-Config aktualisiert (Version " + serverVersion + ")");
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Fehler beim Server-Check sind nicht kritisch
+                System.err.println("⚠️ [ItemViewer] Fehler beim Prüfen der Items-Config-Version: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Gibt den Pfad zur lokalen items.json zurück
+     */
+    private static java.nio.file.Path getLocalItemsPath() {
+        try {
+            java.nio.file.Path configDir = net.felix.CCLiveUtilities.getConfigDir();
+            java.nio.file.Path modConfigDir = configDir.resolve("cclive-utilities");
+            return modConfigDir.resolve(LOCAL_ITEMS_FILE);
+        } catch (Exception e) {
+            return null;
         }
     }
     
@@ -338,7 +500,7 @@ public class ItemViewerUtility {
             }
             
             // Prüfe ob ItemViewer sichtbar ist und ein Item gehovered wird
-            if (isVisible) {
+            if (isVisible()) {
                 // Hole gehoveres Item aus dem Grid
                 ItemData hoveredItem = getHoveredItemFromGrid();
                 
@@ -398,11 +560,32 @@ public class ItemViewerUtility {
     }
     
     /**
+     * Prüft ob Items geladen sind und wartet ggf. kurz
+     */
+    private static void ensureItemsLoaded() {
+        if (!itemsLoaded) {
+            // Warte maximal 100ms (10 Checks à 10ms)
+            int maxWait = 10;
+            int waited = 0;
+            while (!itemsLoaded && waited < maxWait) {
+                try {
+                    Thread.sleep(10);
+                    waited++;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+    }
+    
+    /**
      * Findet ein Item nach Namen in der items.json
      * @param itemName Name des Items
      * @return ItemData oder null wenn nicht gefunden
      */
     public static ItemData findItemByName(String itemName) {
+        ensureItemsLoaded();
         if (itemName == null || itemName.isEmpty()) {
             return null;
         }
@@ -478,7 +661,7 @@ public class ItemViewerUtility {
             }
             
             // Prüfe ob ItemViewer sichtbar ist und ein Item gehovered wird
-            if (isVisible) {
+            if (isVisible()) {
                 // Hole gehoveres Item aus dem Grid
                 ItemData hoveredItem = getHoveredItemFromGrid();
                 
@@ -710,7 +893,7 @@ public class ItemViewerUtility {
      * @return true wenn der Input behandelt wurde, false sonst
      */
     public static boolean handleSearchFieldKeyPress(int keyCode, int scanCode, int modifiers) {
-        if (!isVisible) {
+        if (!isVisible()) {
             searchFieldFocused = false;
             return false;
         }
@@ -1187,7 +1370,7 @@ public class ItemViewerUtility {
      * Rendert den Item Viewer für einen Screen (nicht-HandledScreen)
      */
     private static void renderItemViewerForScreen(DrawContext context, MinecraftClient client, Screen screen) {
-        if (!isVisible) {
+        if (!isVisible()) {
             return;
         }
         
@@ -1264,9 +1447,14 @@ public class ItemViewerUtility {
     private static String lastRenderedScreenType = "";
     
     public static void renderItemViewerInScreen(DrawContext context, MinecraftClient client, HandledScreen<?> screen, int mouseX, int mouseY) {
-        // Prüfe ob sichtbar
-        if (!isVisible) {
+        // Prüfe ob sichtbar (inkl. Dimension-Prüfung)
+        if (!isVisible()) {
             return;
+        }
+        
+        // Prüfe ob Items geladen sind
+        if (!itemsLoaded) {
+            return; // Warte bis Items geladen sind
         }
         
         // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
@@ -2934,7 +3122,7 @@ public class ItemViewerUtility {
             return true;
         }
         
-        if (!isVisible) {
+        if (!isVisible()) {
             return false;
         }
         
@@ -3266,7 +3454,7 @@ public class ItemViewerUtility {
         
         // Wenn Item Viewer sichtbar ist und Suchfeld fokussiert ist,
         // aber Klick außerhalb des Suchfeldes -> Fokus entfernen
-        if (isVisible && searchFieldFocused) {
+        if (isVisible() && searchFieldFocused) {
             // Prüfe ob Klick außerhalb des Suchfeldes ist
             if (mouseX < searchX || mouseX >= searchX + pos.searchWidth ||
                 mouseY < searchY || mouseY >= searchY + SEARCH_HEIGHT) {
@@ -3304,6 +3492,12 @@ public class ItemViewerUtility {
     }
     
     private static void applyFilters() {
+        ensureItemsLoaded();
+        if (!itemsLoaded || allItems.isEmpty()) {
+            filteredItems = new ArrayList<>();
+            return;
+        }
+        
         List<ItemData> itemsToFilter = allItems;
         
         // Wenn Favoriten-Modus aktiv ist, filtere nur Favoriten-Blueprints
@@ -3376,6 +3570,19 @@ public class ItemViewerUtility {
     }
     
     public static boolean isVisible() {
+        // Deaktiviere in der general_lobby Dimension
+        try {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null && client.world != null) {
+                String dimensionId = client.world.getRegistryKey().getValue().toString();
+                if ("minecraft:general_lobby".equals(dimensionId)) {
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            // Silent error handling
+        }
+        
         return isVisible;
     }
     

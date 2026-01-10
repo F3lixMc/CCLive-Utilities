@@ -311,6 +311,14 @@ public class LeaderboardManager {
             System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
         }
         
+        // Prüfe ob Tracker-Aktivität aktiviert ist
+        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Tracker-Aktivität deaktiviert");
+            }
+            return;
+        }
+        
         if (!isEnabled || !isRegistered || playerToken == null) {
             if (config.isDebugMode()) {
                 System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Bedingungen nicht erfüllt");
@@ -421,6 +429,14 @@ public class LeaderboardManager {
             System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
         }
         
+        // Prüfe ob Tracker-Aktivität aktiviert ist
+        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Tracker-Aktivität deaktiviert");
+            }
+            return;
+        }
+        
         if (!isEnabled || !isRegistered || playerToken == null) {
             if (config.isDebugMode()) {
                 System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Bedingungen nicht erfüllt");
@@ -514,6 +530,14 @@ public class LeaderboardManager {
         if (config.isDebugMode()) {
             System.out.println("🔥 DEBUG: updateScoreAdditive aufgerufen - boardName=" + boardName + ", score=" + score);
             System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+        }
+        
+        // Prüfe ob Tracker-Aktivität aktiviert ist
+        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Tracker-Aktivität deaktiviert");
+            }
+            return;
         }
         
         if (!isEnabled || !isRegistered || playerToken == null) {

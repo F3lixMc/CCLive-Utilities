@@ -183899,6 +183899,1140 @@
         "#1"
       ]
     },
+    {	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #1",
+      "foundAt": [
+        {
+          "collection": "Kohle II"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "150.000"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "700"
+        },
+        "material2": {
+          "itemName": "Kaninchenpfote",
+          "amount": "340"
+        },
+        "material3": {
+          "itemName": "Rosa Schweineohr",
+          "amount": "150"
+        },
+        "material4": {
+          "itemName": "Hühnerflügel",
+          "amount": "30"
+        },
+        "material5": {
+          "itemName": "Kräftiger Schweinehuft",
+          "amount": "12"
+        },
+        "Ressource": {
+          "itemName": "Kohle",
+          "amount": "2.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +1 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #2",
+      "foundAt": [
+        {
+          "collection": "Kupfer II"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "240.000"
+        },
+        "material1": {
+          "itemName": "Eselhaar",
+          "amount": "1.400"
+        },
+        "material2": {
+          "itemName": "Schafshuf",
+          "amount": "560"
+        },
+        "material3": {
+          "itemName": "Kuhknochen",
+          "amount": "170"
+        },
+        "material4": {
+          "itemName": "Pferdeschwanz",
+          "amount": "50"
+        },
+        "material5": {
+          "itemName": "Magisches Kaninchenhaar",
+          "amount": "15"
+        },
+        "Ressource": {
+          "itemName": "Rohes Kupfer",
+          "amount": "4.200"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +2 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #3",
+      "foundAt": [
+        {
+          "collection": "Eisen IV"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "2.760.000"
+        },
+        "material1": {
+          "itemName": "Ocelothaar",
+          "amount": "2.500"
+        },
+        "material2": {
+          "itemName": "Eselhaut",
+          "amount": "1.000"
+        },
+        "material3": {
+          "itemName": "Plattenspieler",
+          "amount": "250"
+        },
+        "material4": {
+          "itemName": "Fuchspfoten",
+          "amount": "90"
+        },
+        "material5": {
+          "itemName": "Schildkrötenpanzer",
+          "amount": "27"
+        },
+        "Ressource": {
+          "itemName": "Rohes Eisen",
+          "amount": "5.700"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +3 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #4",
+      "foundAt": [
+        {
+          "collection": "Gold V"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "32.420.000"
+        },
+        "material1": {
+          "itemName": "Prachtvolles Pandahaar",
+          "amount": "5.000"
+        },
+        "material2": {
+          "itemName": "Verwelkte Blume",
+          "amount": "2.000"
+        },
+        "material3": {
+          "itemName": "Feuriger Rüstungsspliter",
+          "amount": "900"
+        },
+        "material4": {
+          "itemName": "Magische Felsspitze",
+          "amount": "300"
+        },
+        "material5": {
+          "itemName": "Kwoloks Zunge",
+          "amount": "100"
+        },
+        "Ressource": {
+          "itemName": "Rohes Gold",
+          "amount": "8.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +4 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #5",
+      "foundAt": [
+        {
+          "collection": "Diamanten VII"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "212.580.000"
+        },
+        "material1": {
+          "itemName": "Frostiger Knochensplitter",
+          "amount": "14.000"
+        },
+        "material2": {
+          "itemName": "Sprengpulver",
+          "amount": "6.000"
+        },
+        "material3": {
+          "itemName": "Dunkle Runenrolle",
+          "amount": "1.500"
+        },
+        "material4": {
+          "itemName": "Juwel des Osiris",
+          "amount": "800"
+        },
+        "material5": {
+          "itemName": "Phantomherz",
+          "amount": "300"
+        },
+        "Ressource": {
+          "itemName": "Diamanten",
+          "amount": "10.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +5 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #6",
+      "foundAt": [
+        {
+          "collection": "Schwefel VII"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "545.740.000"
+        },
+        "material1": {
+          "itemName": "Eisenklumpen",
+          "amount": "15.000"
+        },
+        "material2": {
+          "itemName": "Knochenlanze",
+          "amount": "7.000"
+        },
+        "material3": {
+          "itemName": "Sehnige Hufröhre",
+          "amount": "2.000"
+        },
+        "material4": {
+          "itemName": "Kriegshorn",
+          "amount": "900"
+        },
+        "material5": {
+          "itemName": "Creeperherz",
+          "amount": "350"
+        },
+        "Ressource": {
+          "itemName": "Schwefel",
+          "amount": "12.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +6 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #7",
+      "foundAt": [
+        {
+          "collection": "Quartz VII"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "956.430.000"
+        },
+        "material1": {
+          "itemName": "Fetziger Ravagerpelz",
+          "amount": "16.000"
+        },
+        "material2": {
+          "itemName": "Verstärkter Lederflicken",
+          "amount": "7.500"
+        },
+        "material3": {
+          "itemName": "Knochenschädel",
+          "amount": "2.500"
+        },
+        "material4": {
+          "itemName": "Magmakristallsplitter",
+          "amount": "1.000"
+        },
+        "material5": {
+          "itemName": "Antikerkern",
+          "amount": "370"
+        },
+        "Ressource": {
+          "itemName": "Quartz",
+          "amount": "15.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +7 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #8",
+      "foundAt": [
+        {
+          "collection": "Obsidian VIII"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.258.490.000"
+        },
+        "material1": {
+          "itemName": "Kräftiger Spinnenfaden",
+          "amount": "17.000"
+        },
+        "material2": {
+          "itemName": "Großes Zahnrad",
+          "amount": "8.000"
+        },
+        "material3": {
+          "itemName": "Zoglinknochen",
+          "amount": "3.200"
+        },
+        "material4": {
+          "itemName": "Goldstaub",
+          "amount": "1.200"
+        },
+        "material5": {
+          "itemName": "Eisenherz",
+          "amount": "400"
+        },
+        "Ressource": {
+          "itemName": "Obsidian",
+          "amount": "17.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +8 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 2120,
+      "name": "Erzbrecher #9",
+      "foundAt": [
+        {
+          "collection": "Netherrite IX"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "3.570.850.000"
+        },
+        "material1": {
+          "itemName": "Geladene Haut",
+          "amount": "22.000"
+        },
+        "material2": {
+          "itemName": "Enderman Arm",
+          "amount": "13.000"
+        },
+        "material3": {
+          "itemName": "Mächtiges Zündpulver",
+          "amount": "6.000"
+        },
+        "material4": {
+          "itemName": "Lohenauge",
+          "amount": "2.000"
+        },
+        "material5": {
+          "itemName": "Magmaherz",
+          "amount": "650"
+        },
+        "Ressource": {
+          "itemName": "Netherrite",
+          "amount": "20.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +9 weiteren Erzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "erzbrecher"
+      ]
+    },
+    {	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #1",
+      "foundAt": [
+        {
+          "collection": "Eichenholz I"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "120.000"
+        },
+        "material1": {
+          "itemName": "Wollfaden",
+          "amount": "700"
+        },
+        "material2": {
+          "itemName": "Schweinequaste",
+          "amount": "340"
+        },
+        "material3": {
+          "itemName": "Kuhknochen",
+          "amount": "150"
+        },
+        "material4": {
+          "itemName": "Kaninchenohr",
+          "amount": "30"
+        },
+        "material5": {
+          "itemName": "Schafsmähne",
+          "amount": "12"
+        },
+        "Ressource": {
+          "itemName": "Eichenholz",
+          "amount": "2.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +1 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #2",
+      "foundAt": [
+        {
+          "collection": "Dschungelholz V"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "570.000"
+        },
+        "material1": {
+          "itemName": "Pferdehaar",
+          "amount": "1.400"
+        },
+        "material2": {
+          "itemName": "Lamafell",
+          "amount": "560"
+        },
+        "material3": {
+          "itemName": "Eselknochen",
+          "amount": "170"
+        },
+        "material4": {
+          "itemName": "Schafsglocke",
+          "amount": "50"
+        },
+        "material5": {
+          "itemName": "Kamelhuf",
+          "amount": "15"
+        },
+        "Ressource": {
+          "itemName": "Dschungelholz",
+          "amount": "4.200"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +2 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #3",
+      "foundAt": [
+        {
+          "collection": "Fichtenholz V"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.440.000"
+        },
+        "material1": {
+          "itemName": "Ziegenhaar",
+          "amount": "2.000"
+        },
+        "material2": {
+          "itemName": "Ocelotfell",
+          "amount": "800"
+        },
+        "material3": {
+          "itemName": "Rosa Schweineohr",
+          "amount": "200"
+        },
+        "material4": {
+          "itemName": "Lamaknochen",
+          "amount": "70"
+        },
+        "material5": {
+          "itemName": "Hufeisen",
+          "amount": "27"
+        },
+        "Ressource": {
+          "itemName": "Fichtenholz",
+          "amount": "5.700"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +3 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #4",
+      "foundAt": [
+        {
+          "collection": "Fichtenholz V"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "2.270.000"
+        },
+        "material1": {
+          "itemName": "Panzerschuppen",
+          "amount": "3.000"
+        },
+        "material2": {
+          "itemName": "Pandafell",
+          "amount": "1200"
+        },
+        "material3": {
+          "itemName": "Ziegenknochen",
+          "amount": "220"
+        },
+        "material4": {
+          "itemName": "Eselhuf",
+          "amount": "90"
+        },
+        "material5": {
+          "itemName": "Kuhhorn",
+          "amount": "39"
+        },
+        "Ressource": {
+          "itemName": "Bambus",
+          "amount": "6.200"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +4 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #5",
+      "foundAt": [
+        {
+          "collection": "Pilzholz VI"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "4.730.000"
+        },
+        "material1": {
+          "itemName": "Rissiges Chitin",
+          "amount": "4.000"
+        },
+        "material2": {
+          "itemName": "Wolfspelz",
+          "amount": "1.400"
+        },
+        "material3": {
+          "itemName": "Fuchszahn",
+          "amount": "300"
+        },
+        "material4": {
+          "itemName": "Schildkrötenbiss",
+          "amount": "120"
+        },
+        "material5": {
+          "itemName": "Ziegenhorn",
+          "amount": "45"
+        },
+        "Ressource": {
+          "itemName": "Pilzholz",
+          "amount": "7.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +5 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #6",
+      "foundAt": [
+        {
+          "collection": "Dunkles Eichenholz VI"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "8.280.000"
+        },
+        "material1": {
+          "itemName": "Schweineknochen",
+          "amount": "5.000"
+        },
+        "material2": {
+          "itemName": "Fledermausklaue",
+          "amount": "1.700"
+        },
+        "material3": {
+          "itemName": "Axolottelschwanz",
+          "amount": "420"
+        },
+        "material4": {
+          "itemName": "Papageikralle",
+          "amount": "160"
+        },
+        "material5": {
+          "itemName": "Magischer Allay Überrest",
+          "amount": "60"
+        },
+        "Ressource": {
+          "itemName": "Dunkeleichenholz",
+          "amount": "8.400"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +6 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #7",
+      "foundAt": [
+        {
+          "collection": "Mangrovenholz VII"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "92.760.000"
+        },
+        "material1": {
+          "itemName": "Steinige Überreste",
+          "amount": "12.000"
+        },
+        "material2": {
+          "itemName": "Tentakel",
+          "amount": "6.700"
+        },
+        "material3": {
+          "itemName": "Schleimiges Juwel",
+          "amount": "2.600"
+        },
+        "material4": {
+          "itemName": "Magischer Dreizacksplitter",
+          "amount": "900"
+        },
+        "material5": {
+          "itemName": "Verkorkte Seele",
+          "amount": "300"
+        },
+        "Ressource": {
+          "itemName": "Mangrovenholz",
+          "amount": "10.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +7 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #8",
+      "foundAt": [
+        {
+          "collection": "Karmesinholz VIII"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.740.680.000"
+        },
+        "material1": {
+          "itemName": "Erloschene Rute",
+          "amount": "18.000"
+        },
+        "material2": {
+          "itemName": "Großer Zahn",
+          "amount": "8.000"
+        },
+        "material3": {
+          "itemName": "Striderhaar",
+          "amount": "3.500"
+        },
+        "material4": {
+          "itemName": "Spinnenzahn",
+          "amount": "1.200"
+        },
+        "material5": {
+          "itemName": "Strahlendes Pilzhorn",
+          "amount": "420"
+        },
+        "Ressource": {
+          "itemName": "Karmesinholz",
+          "amount": "12.400"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +8 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
+	{	
+	  "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Holzhacker #9",
+      "foundAt": [
+        {
+          "collection": "Wirrholz VIII"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "2.560.720.000"
+        },
+        "material1": {
+          "itemName": "Rostige Axtklinge",
+          "amount": "20.000"
+        },
+        "material2": {
+          "itemName": "Morscher Ast",
+          "amount": "12.000"
+        },
+        "material3": {
+          "itemName": "Eisenplatten",
+          "amount": "5.000"
+        },
+        "material4": {
+          "itemName": "Fauler Knochen",
+          "amount": "1.600"
+        },
+        "material5": {
+          "itemName": "Kristall der Finsternis",
+          "amount": "500"
+        },
+        "Ressource": {
+          "itemName": "Wirrholz",
+          "amount": "15.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Baut zusätzlich +9 weiteren Holzblock ab.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modul",
+        "holzhacker"
+      ]
+    },
     {
       "id": "minecraft:white_bundle",
       "name": "Modul-Tasche #2",
@@ -184210,7 +185344,734 @@
       ]
     }
   ],
-  "abilities": [],
+  "abilities": [
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 1951,
+      "name": "Wütender Hieb",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 1"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Ein wütender Angriff, der (1,5x Stärke) Schaden verursacht.",
+    "update_info": ["Wut: 10","Cooldown: 4sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1962,
+      "name": "Flüchtige Macht",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 3"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger generiert durch seinen Basisangriff 10% mehr Wut, \nallerdings wird diese auch 6 Sekunden, nachdem er sich \nnicht mehr im Kampf befindet, 10% schneller abgebaut.",
+    "update_info": ["Passiv"],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1954,
+      "name": "Schmerzende Wut",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 5"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger geht in einen wutentbrannten Zustand und fügt sich dabei \n(20% von Grundgesundheit) Schaden zu und generiert sofort 20 Wut, \nzusätzlich generiert er im Verlauf von 10 Sekunden weitere 30 Wut.",
+    "update_info": ["Cooldown: 60sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1963,
+      "name": "Schwachpunkt",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 7"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Es besteht beim Zufügen einer Wunde eine zusätzliche Chance von 20%, \ndass der Krieger eine große Wunde seinem Gegner zufügt, \ndie jeglichen Schaden auf das Ziel um 10% erhöht.",
+    "update_info": ["Passiv",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Passiver Fähigkeits Slot",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 10"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Ein weiterer Slot um eine Passive auszurüsten",
+    "update_info": ["",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1957,
+      "name": "Wirbelschlag",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 12"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger wirbelt seine Waffe einmal im Kreis um sich herum \nund richtet dabei bei allen Zielen im Umkreis von 2 Blöcken \n(1,5x Stärke) Schaden an.",
+    "update_info": ["Blockreichweite: 2","Wut: 20","Cooldown: 5sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1959,
+      "name": "Weitreichende Schnitte",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 15"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Nach dem Einsatz von Wirbelwind treffen 5 Sekunden lang alle \nEinzelziel Angriffe und normalen Angriffe vom Krieger 2 weitere Ziele, \ndie sich im Umkreis von 2 Blöcken befinden und richten 50% Schaden an.",
+    "update_info": ["Passiv",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1945,
+      "name": "Rüstung Zerfetzen",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 18"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger schlägt so hart zu, sodass er (1x Stärke) Schaden anrichtet \nund die Rüstung seines Gegners förmlich zerfetzt. \nDabei verringert sich die Rüstung des Gegners für die nächsten 15 Sekunden um 5%. \nDieser Effekt ist bis zu 3-mal stapelbar.",
+    "update_info": ["Wut: 20","Cooldown: 10sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1960,
+      "name": "Innere Wut",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 21"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Beim Einsatz von Wütender Hieb besteht eine 20% Chance, \ndass der Krieger Innere Wut auslöst, die 10 Sekunden lang hält, \nsie erhöht den Schaden beim nächsten Einsatz von Wütender Hieb \noder Wirbelschlag um 10% und heilt den Krieger um 10% des \nangerichteten Schadens.",
+    "update_info": ["Passiv",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1953,
+      "name": "Ins Gefecht",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 25"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger springt in einem Bogen 15 Blöcke weit und \n fügt beim Aufprall allen Gegnern im Umkreis von 3 Blöcken \n(1x Stärke) Schaden zu.",
+    "update_info": ["Reichweite: 15 Blöcke","Cooldown: 12sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Passiver Fähigkeits Slot",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 30"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Ein weiterer Slot um eine Passive Fähigkeit auszurüsten",
+    "update_info": ["",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1958,
+      "name": "Doppelter Sprung",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 33"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger verfügt nun über 2 Aufladung von Ins Gefecht \nund die Abklingzeit wird um 2 Sekunden reduziert.",
+    "update_info": ["Passiv",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1946,
+      "name": "Blutwirbel",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 36"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger wirbelt seine Waffe einmal im Kreis um sich herum \nund fügt dabei allen Gegnern im Umkreis von 2 Blöcken eine klaffende Wunde \nhinzu die (0,3x Stärke) Schaden sofort und im Verlauf von 20 Sekunden \n(1,5x Stärke) Schaden anrichtet.",
+    "update_info": ["Reichweite: 2 Blöcke","Wut: 20","Cooldown: 5sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1950,
+      "name": "Rasender Schlag",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 39"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger haut mit einem schnellen und kräftigen Schlag zu, \nder (1x Stärke) Schaden verursacht und ihn in einen Zustand der Raserei bringt, \ndabei wird seine Stärke für 15 Sekunden um 2% erhöht. \nDieser Effekt ist bis zu 5-mal stapelbar.",
+    "update_info": ["Wut: 20","Cooldown: 5sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1961,
+      "name": "Gnadenlos",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 42"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger richtet 20% mehr Schaden an Zielen an, \ndessen Leben sich auf 15% oder weniger befindet.",
+    "update_info": ["Passiv",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1949,
+      "name": "Endlose Stärke",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 45"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger geht in einen kraftvollen Zustand, \nder ihm im Verlauf von 10 Sekunden 20 Wut und 5% Stärke gibt.",
+    "update_info": ["Buff","Cooldown: 1min."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Passiver Fähigkeits Slot",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 50"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "",
+        "update_info": ["",""],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+   },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1952,
+      "name": "Klaffende Wunde",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 52"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Ein gezielter Schlag, der (0,5x Stärke) Schaden anrichtet \nund eine klaffende Wunde hinterlässt, die im Verlauf von 20 Sekunden \n(3x Stärke) Schaden verursacht.",
+    "update_info": ["Wut: 20","Cooldown: 15sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1947,
+      "name": "Knochenbrecher",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 54"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Ein gezielter Angriff, der den Gegner verlangsamt \nund schwächt für 5 Sekunden, zusätzlich richtet der Angriff \n(0,75x Stärke) Schaden an.",
+    "update_info": ["Wut: 20","Cooldown: 4sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1948,
+      "name": "Endlose Wut",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 56"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger begibt sich in einen Zustand der schier \nendlosen Wut und erzeugt dabei im Verlauf von 20 Sekunden 100 Wut.",
+    "update_info": ["Buff","Cooldown: 1min. 30sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1956,
+      "name": "Stärkenderwirbel",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 58"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger wirbelt seine Waffe einmal im Kreis um sich herum \nund für dabei allen Gegnern im Umkreis von 2 Blöcken (1,0x Stärke) Schaden zu. \nZusätzlich erhält er pro getroffenen Gegner eine Verstärkung für 10 Sekunden, \ndies den Schaden seines nächsten Wirbels um 2% erhöht. \nDieser Effekt ist bis zu 5-mal stapelbar.",
+    "update_info": ["Reichweite: 2 Blöcke","Wut: 20","Cooldown: 5sek."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    },
+	{
+      "id": "minecraft:name_tag",
+      "customModelData": 1955,
+      "name": "Einstecken",
+      "foundAt": [
+        {
+          "collection": "Charakter Level 60"
+        }
+      ],
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Der Krieger konzentriert sich voll darauf, seine Muskeln anzuspannen, \nsodass diese hart wie Stahl werden und er für die nächsten \n10 Sekunden 30% weniger Schaden erleidet.",
+    "update_info": ["Buff","Wut: 25","Cooldown: 1min."],
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": true,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "ability"
+      ]
+    }
+  ],
   "runes": [],
   "card_slots": [],
   "power_crystals": [

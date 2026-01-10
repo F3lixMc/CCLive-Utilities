@@ -27,16 +27,22 @@ public class ActionBarMixin {
         if (message != null) {
             String content = message.getString();
             
-            // Process material tracking with original text (including color codes)
-            ActionBarData.processActionBarMessage(message);
+            // Prüfe zuerst, ob wir auf einer Floor-Ebene sind
+            // Nur dann verarbeiten wir Material-Tracking aus der ActionBar
+            if (ActionBarData.isOnFloor()) {
+                // Process material tracking with original text (including color codes)
+                ActionBarData.processActionBarMessage(message);
+            }
             
             // Check for blueprint messages in action bar (combo chest rewards)
+            // (Diese Prüfung läuft unabhängig von der Dimension)
             BPViewerUtility instance = BPViewerUtility.getInstance();
             if (instance != null) {
                 instance.checkForBlueprint(message, content);
             }
             
             // Check for boss defeat
+            // (Diese Prüfung läuft unabhängig von der Dimension)
             if (content.contains("Seelen" )) {
                 BossHPUtility instance2 = BossHPUtility.getInstance();
                 if (instance2 != null) {

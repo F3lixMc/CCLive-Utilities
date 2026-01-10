@@ -10,7 +10,10 @@ public class ActionBarData {
     private static final Map<String, Integer> materials = new HashMap<>();
     private static final List<Object> filteredTexts = new ArrayList<>();
     private static final Map<String, net.minecraft.text.Text> materialTexts = new HashMap<>(); // Speichert originale Text-Objekte mit Farbcodes
-    private static final Pattern MATERIAL_PATTERN = Pattern.compile("(?:\\+\\d+|\\d+x)\\s+([^\\[]+)\\s*\\[(\\d+)\\]");
+    // Pattern für Materialien in der ActionBar: "zahlx material name [zahl]" oder "+zahl material name [zahl]"
+    // Format: (optional "+" oder "x" nach Zahl) + Materialname + [Zahl]
+    // Unterstützt formatierte Materialnamen und variable Leerzeichen
+    private static final Pattern MATERIAL_PATTERN = Pattern.compile("(?:\\+\\d+|\\d+x)\\s*([^\\[]+?)\\s*\\[(\\d+)\\]", Pattern.CASE_INSENSITIVE);
     private static String currentDimension = null; // Speichert die aktuelle Dimension
     private static Boolean cachedIsOnFloor = null; // Cache für Floor-Status
     
@@ -36,9 +39,14 @@ public class ActionBarData {
             return;
         }
         
-        Matcher matcher = MATERIAL_PATTERN.matcher(messageString);
+        // Entferne Formatierungscodes für Pattern-Matching
+        String cleanMessageString = messageString.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "");
+        
+        Matcher matcher = MATERIAL_PATTERN.matcher(cleanMessageString);
         if (matcher.find()) {
             String materialName = matcher.group(1).trim();
+            // Entferne Formatierungscodes auch vom Materialnamen
+            materialName = materialName.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "").trim();
             int count = Integer.parseInt(matcher.group(2));
             
             // Update material count and store original Text object with color codes
@@ -59,9 +67,13 @@ public class ActionBarData {
             return;
         }
         
-        Matcher matcher = MATERIAL_PATTERN.matcher(message);
+        // Entferne Formatierungscodes für Pattern-Matching
+        String cleanMessage = message.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "");
+        Matcher matcher = MATERIAL_PATTERN.matcher(cleanMessage);
         if (matcher.find()) {
             String materialName = matcher.group(1).trim();
+            // Entferne Formatierungscodes auch vom Materialnamen
+            materialName = materialName.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "").trim();
             int count = Integer.parseInt(matcher.group(2));
             
             // Update material count and store original message with color codes
@@ -71,17 +83,30 @@ public class ActionBarData {
         }
     }
     
-    private static boolean isOnFloor() {
-        // Verwende den gecachten Wert, falls verfügbar
-        if (cachedIsOnFloor != null) {
-            return cachedIsOnFloor;
-        }
-        
-        // Nur berechnen, wenn der Cache leer ist (beim ersten Aufruf)
+    /**
+     * Prüft, ob der Spieler sich auf einer Floor-Ebene befindet
+     * @return true wenn auf einem Floor, false sonst
+     */
+    public static boolean isOnFloor() {
         try {
             var client = net.minecraft.client.MinecraftClient.getInstance();
             if (client != null && client.world != null) {
                 String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
+                
+                // Prüfe ob sich die Dimension geändert hat
+                String currentDim = client.world.getRegistryKey().getValue().toString();
+                if (currentDimension == null || !currentDimension.equals(currentDim)) {
+                    // Dimension hat sich geändert - Cache zurücksetzen und neu berechnen
+                    currentDimension = currentDim;
+                    cachedIsOnFloor = null;
+                }
+                
+                // Verwende Cache nur wenn verfügbar und Dimension gleich geblieben
+                if (cachedIsOnFloor != null) {
+                    return cachedIsOnFloor;
+                }
+                
+                // Berechne neu
                 boolean isFloor = dimensionId.contains("floor");
                 cachedIsOnFloor = isFloor; // Cache den Wert
                 return isFloor;

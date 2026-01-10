@@ -68,6 +68,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     private static ButtonWidget confirmationJaButton = null;
     private static ButtonWidget confirmationNeinButton = null;
     
+    // Flag für Clipboard-Hover (wird bei Tab/F1 ausgeblendet)
+    private static boolean hideHover = false;
+    private static long hideHoverUntil = 0; // Zeitstempel bis wann das Hover ausgeblendet werden soll
+    
     private static void setCurrentPage(int page) {
         int totalPages = getTotalPages();
         // Clamp page to valid range
@@ -681,29 +685,47 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * Zeigt die tatsächlichen Clipboard-Daten an
      */
     public static void renderInGame(DrawContext context, int mouseX, int mouseY, float delta) {
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled || 
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled ||
             !CCLiveUtilitiesConfig.HANDLER.instance().showClipboard) {
             return;
         }
-        
+
+        // Deaktiviere in der general_lobby Dimension
+        try {
+            var client = net.minecraft.client.MinecraftClient.getInstance();
+            if (client != null && client.world != null) {
+                String dimensionId = client.world.getRegistryKey().getValue().toString();
+                if ("minecraft:general_lobby".equals(dimensionId)) {
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            // Silent error handling
+        }
+
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return;
+        if (client == null) {
+            return;
+        }
+        
+        // Aktualisiere hideHover Flag (prüft ob Zeit abgelaufen ist)
+        updateHideHover();
+        
+        // Prüfe ob Hover ausgeblendet werden soll (bei Tab/F1)
+        if (hideHover) {
+            return;
+        }
+        
+        // Throttling entfernt - verursacht Flackern
+        // Das Problem: Wenn das Rendering wegen Throttling übersprungen wird,
+        // wird das Overlay nicht gerendert, aber beim nächsten Frame wieder.
+        // Das führt zu ständigem Ein- und Ausblenden = Flackern.
+        // Lösung: Rendering immer erlauben, um konsistente Anzeige zu gewährleisten
         
         int x = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
         int y = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
         if (scale <= 0) scale = 1.0f;
-        
-        // Berechne Höhe ZUERST (ohne zu rendern), um Background vor dem Text zu rendern
-        int lineHeight = client.textRenderer.fontHeight + 2;
-        int padding = 5;
-        int estimatedLineCount = calculateEstimatedLineCount();
-        int estimatedHeight = padding + (estimatedLineCount * lineHeight) + padding;
-        
-        // Render background VOR dem Text, damit Text in voller Deckkraft angezeigt wird
-        int width = Math.round(calculateUnscaledWidth() * scale);
-        int height = Math.round(estimatedHeight * scale);
-        context.fill(x, y, x + width, y + height, 0x80000000);
         
         // Render content with scale using matrix transformation
         Matrix3x2fStack matrices = context.getMatrices();
@@ -711,9 +733,18 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         matrices.translate(x, y);
         matrices.scale(scale, scale);
         
+        // Berechne Höhe für Background (nach Matrix-Transformation, damit Background und Text in derselben Ebene sind)
+        int lineHeight = client.textRenderer.fontHeight + 2;
+        int padding = 5;
+        int estimatedLineCount = calculateEstimatedLineCount();
+        int estimatedHeight = padding + (estimatedLineCount * lineHeight) + padding;
+        
+        // Render background NACH der Matrix-Transformation, damit Background und Text in derselben Transformations-Ebene sind
+        int unscaledWidth = calculateUnscaledWidth();
+        context.fill(0, 0, unscaledWidth, estimatedHeight, 0x80000000);
+        
         // lineHeight und padding wurden bereits oben definiert
         int currentY = padding;
-        int unscaledWidth = calculateUnscaledWidth();
         
         // Zähle Zeilen für dynamische Höhenberechnung
         int lineCount = 0;
@@ -1026,15 +1057,18 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // Berechne tatsächliche Höhe basierend auf gerenderten Zeilen
         int actualHeight = padding + (lineCount * lineHeight) + padding;
         
+        // Falls die tatsächliche Höhe von der geschätzten Höhe abweicht, aktualisiere den Background
+        // (Background wird innerhalb der Matrix-Transformation gerendert, damit er mit dem Text in derselben Ebene ist)
+        if (actualHeight != estimatedHeight) {
+            // Aktualisiere Background mit korrekter Höhe (in transformierten Koordinaten)
+            context.fill(0, 0, unscaledWidth, actualHeight, 0x80000000);
+        }
+        
         matrices.popMatrix();
         
-        // Background wurde bereits VOR dem Text gerendert, damit Text in voller Deckkraft angezeigt wird
-        // Falls die tatsächliche Höhe von der geschätzten Höhe abweicht, aktualisiere den Background
+        // Berechne skalierte Dimensionen für Button-Positionierung (außerhalb der Matrix-Transformation)
+        int width = Math.round(unscaledWidth * scale);
         int actualScaledHeight = Math.round(actualHeight * scale);
-        if (actualScaledHeight != height) {
-            // Aktualisiere Background mit korrekter Höhe
-            context.fill(x, y, x + width, y + actualScaledHeight, 0x80000000);
-        }
         
         // Rendere Button zum Entfernen (mittig unterhalb des Overlays) - nur in Inventaren
         // WICHTIG: Button wird NACH dem Matrix-Pop gerendert, damit er nicht skaliert wird
@@ -1270,12 +1304,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             }
             
             // Bestimme Farbe basierend auf vorhandener vs. benötigter Menge
+            // WICHTIG: Die Farbe bleibt immer gleich, auch wenn das Item fertig ist und ausgeblendet werden soll
             int textColor;
             if (neededAmount == 0) {
                 // Benötigt = 0: immer grün
                 textColor = 0xFF00FF00; // Grün
             } else if (ownedAmount >= neededAmount) {
-                // Genug vorhanden: grün
+                // Genug vorhanden: grün (immer hell, nie dunkler)
                 textColor = 0xFF00FF00; // Grün
             } else {
                 // Nicht genug vorhanden: rot
@@ -1551,8 +1586,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (materialName == null) {
             return "";
         }
-        // Entferne Leerzeichen und konvertiere zu Kleinbuchstaben
-        return materialName.replaceAll("\\s+", "").toLowerCase();
+        // Entferne Formatierungscodes, Unicode-Zeichen, Leerzeichen und konvertiere zu Kleinbuchstaben
+        String cleaned = materialName.replaceAll("§[0-9a-fk-or]", "")
+                                     .replaceAll("[\\u3400-\\u4DBF]", "")
+                                     .replaceAll("\\s+", "")
+                                     .toLowerCase();
+        return cleaned;
     }
     
     /**
@@ -1654,20 +1693,48 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             // ActionBarData sammelt Materialien immer, unabhängig von Overlay-Einstellungen
             Map<String, Integer> materials = ActionBarData.getMaterials();
             if (materials == null || materials.isEmpty()) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
+                    System.out.println("[Clipboard] Keine Materialien in ActionBarData gefunden für: " + materialName);
+                }
                 return 0.0;
             }
             
             // Normalisiere den Materialnamen für den Vergleich
             String normalizedName = normalizeMaterialName(materialName);
             
+            // DEBUG: Logge Vergleich
+            if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
+                System.out.println("[Clipboard] Suche Material: '" + materialName + "' -> normalisiert: '" + normalizedName + "'");
+                System.out.println("[Clipboard] Verfügbare Materialien in ActionBarData: " + materials.size());
+            }
+            
             // Suche nach einem passenden Materialnamen (normalisiert)
             for (Map.Entry<String, Integer> entry : materials.entrySet()) {
                 String normalizedEntryName = normalizeMaterialName(entry.getKey());
+                
+                // DEBUG: Logge jeden Vergleich
+                if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
+                    System.out.println("[Clipboard] Vergleiche: '" + normalizedName + "' mit '" + normalizedEntryName + "' (Original: '" + entry.getKey() + "')");
+                }
+                
                 if (normalizedName.equals(normalizedEntryName)) {
+                    if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
+                        System.out.println("[Clipboard] ✅ Material gefunden: " + entry.getKey() + " = " + entry.getValue());
+                    }
                     return entry.getValue().doubleValue();
                 }
             }
+            
+            // DEBUG: Logge wenn nicht gefunden
+            if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
+                System.out.println("[Clipboard] ❌ Material nicht gefunden: " + materialName);
+            }
         } catch (Exception e) {
+            // DEBUG: Logge Fehler
+            if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
+                System.out.println("[Clipboard] ⚠️ Fehler beim Abrufen der Materialmenge: " + e.getMessage());
+                e.printStackTrace();
+            }
             // Fallback: Wenn etwas schiefgeht, gebe 0 zurück
             return 0.0;
         }
@@ -1973,6 +2040,19 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
+        // Deaktiviere in der general_lobby Dimension
+        try {
+            var client = net.minecraft.client.MinecraftClient.getInstance();
+            if (client != null && client.world != null) {
+                String dimensionId = client.world.getRegistryKey().getValue().toString();
+                if ("minecraft:general_lobby".equals(dimensionId)) {
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            // Silent error handling
+        }
+        
         return CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled && 
                CCLiveUtilitiesConfig.HANDLER.instance().showClipboard;
     }
@@ -2411,6 +2491,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         
+        
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return;
         
@@ -2722,6 +2803,53 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return quantityTextField.charTyped(chr, modifiers);
         }
         return false;
+    }
+    
+    
+    /**
+     * Blendet das Clipboard-Hover aus (wird bei Tab/F1 aufgerufen)
+     */
+    public static void hideHover() {
+        hideHover = true;
+        // Setze Zeitstempel für 200ms (damit es wieder angezeigt werden kann)
+        hideHoverUntil = System.currentTimeMillis() + 200;
+    }
+    
+    /**
+     * Prüft ob das Hover ausgeblendet werden soll (wird jeden Tick aufgerufen)
+     */
+    public static void updateHideHover() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) {
+            return;
+        }
+
+        // Prüfe ob Tab gedrückt ist
+        boolean tabPressed = net.minecraft.client.util.InputUtil.isKeyPressed(
+            client.getWindow().getHandle(),
+            net.minecraft.client.util.InputUtil.GLFW_KEY_TAB
+        );
+
+        // Prüfe ob F1 aktiv ist (wie alle anderen GUIs - über hudHidden)
+        boolean f1Active = client.options.hudHidden;
+
+        // Wenn Tab gedrückt ist oder F1 aktiv ist, dann ausblenden
+        if (tabPressed || f1Active) {
+            hideHover = true;
+            // Setze Timer nur für Tab (F1 wird direkt über hudHidden gesteuert)
+            if (tabPressed) {
+                hideHoverUntil = System.currentTimeMillis() + 200;
+            } else {
+                // Bei F1: Kein Timer, wird direkt gesteuert
+                hideHoverUntil = Long.MAX_VALUE; // Verhindere automatisches Zurücksetzen
+            }
+        } else {
+            // Weder Tab noch F1 aktiv - prüfe ob Timer abgelaufen ist
+            if (hideHover && System.currentTimeMillis() >= hideHoverUntil) {
+                hideHover = false;
+                hideHoverUntil = 0;
+            }
+        }
     }
     
     /**
