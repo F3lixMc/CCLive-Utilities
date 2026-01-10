@@ -19,6 +19,48 @@ import java.util.List;
  * Extrahiert Spielernamen aus Chat-Nachrichten und fügt Stats zum Hover-Event hinzu
  */
 public class PlayerHoverStatsUtility {
+    
+    /**
+     * Enum für die verschiedenen Hover-Stat-Typen
+     */
+    public enum HoverStatsType {
+        PLAYTIME("playtime", "Spielzeit"),
+        MAX_COINS("max_coins", "Max Coins"),
+        MESSAGES_SENT("messages_sent", "Gesendete Nachrichten"),
+        BLUEPRINTS_FOUND("blueprints_found", "Gefundene Baupläne"),
+        MAX_DAMAGE("max_damage", "Max Schaden");
+        
+        private final String value;
+        private final String displayName;
+        
+        HoverStatsType(String value, String displayName) {
+            this.value = value;
+            this.displayName = displayName;
+        }
+        
+        public String getValue() {
+            return value;
+        }
+        
+        public String getDisplayName() {
+            return displayName;
+        }
+        
+        /**
+         * Konvertiert einen String-Wert zu einem HoverStatsType Enum
+         */
+        public static HoverStatsType fromString(String value) {
+            if (value == null) {
+                return PLAYTIME;
+            }
+            for (HoverStatsType type : values()) {
+                if (type.value.equals(value)) {
+                    return type;
+                }
+            }
+            return PLAYTIME; // Standardwert
+        }
+    }
     private static boolean isInitialized = false;
     private static HttpClient httpClient;
     
@@ -1301,23 +1343,16 @@ public class PlayerHoverStatsUtility {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ❌ IOException beim HTTP GET: " + e.getMessage());
                     e.printStackTrace();
-                } else {
-                    // Auch ohne Debug-Modus sollten wir kritische Fehler loggen
-                    System.err.println("[PlayerHoverStats] ❌ IOException beim HTTP GET: " + e.getMessage());
                 }
             } catch (InterruptedException e) {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ❌ InterruptedException beim HTTP GET: " + e.getMessage());
                     e.printStackTrace();
-                } else {
-                    System.err.println("[PlayerHoverStats] ❌ InterruptedException beim HTTP GET: " + e.getMessage());
                 }
             } catch (Exception e) {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ❌ Unerwartete Exception beim HTTP GET: " + e.getClass().getSimpleName() + " - " + e.getMessage());
                     e.printStackTrace();
-                } else {
-                    System.err.println("[PlayerHoverStats] ❌ Unerwartete Exception beim HTTP GET: " + e.getClass().getSimpleName() + " - " + e.getMessage());
                 }
             }
             
@@ -1514,7 +1549,6 @@ public class PlayerHoverStatsUtility {
             return "§c🗡 §f" + formatted;
         } catch (Exception e) {
             // Bei Fehler: null zurückgeben, damit die Nachricht trotzdem angezeigt wird
-            System.err.println("[PlayerHoverStats] ❌ Fehler beim Formatieren von Max Damage: " + e.getMessage());
             return null;
         }
     }
@@ -1561,7 +1595,6 @@ public class PlayerHoverStatsUtility {
             return String.valueOf(number);
         } catch (Exception e) {
             // Bei Fehler: Einfache String-Darstellung zurückgeben
-            System.err.println("[PlayerHoverStats] ❌ Fehler beim Formatieren von Zahl " + number + ": " + e.getMessage());
             return String.valueOf(number);
         }
     }

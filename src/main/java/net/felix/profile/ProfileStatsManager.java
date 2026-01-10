@@ -663,7 +663,9 @@ public class ProfileStatsManager {
         }
         
         // Chosen Stat für Hover-Anzeige (immer senden, wenn gesetzt)
-        String chosenStat = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().hoverStatsChosenStat;
+        String chosenStat = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().hoverStatsChosenStat != null 
+            ? net.felix.CCLiveUtilitiesConfig.HANDLER.instance().hoverStatsChosenStat.getValue() 
+            : "playtime";
         if (chosenStat != null && !chosenStat.isEmpty()) {
             payload.addProperty("chosen_stat", chosenStat);
         }
