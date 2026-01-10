@@ -30,6 +30,7 @@ public class MaterialTrackerUtility {
 	private static boolean isInitialized = false;
 	private static boolean isTrackingMaterials = false;
 	private static boolean showOverlays = true; // Neue Variable für Overlay-Sichtbarkeit
+	private static String lastDimension = null; // Speichert die letzte Dimension für Dimensionswechsel-Erkennung
 	
 	// Test overlay variables
 	private static boolean showTestOverlay = false;
@@ -139,10 +140,36 @@ public class MaterialTrackerUtility {
 		// Check for dimension changes and reset if necessary
 		ActionBarData.checkDimensionChange();
 
-		// Check if we're on a floor and have materials
+		// Check if we're on a floor dimension
+		boolean isOnFloor = false;
+		String currentDimension = null;
+		try {
+			if (client.world != null) {
+				currentDimension = client.world.getRegistryKey().getValue().toString();
+				String dimensionId = currentDimension.toLowerCase();
+				isOnFloor = dimensionId.contains("floor");
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+
+		// Check if dimension changed - if so, reset materials
+		if (lastDimension != null && currentDimension != null && !lastDimension.equals(currentDimension)) {
+			// Dimension changed - reset materials for the overlay
+			ActionBarData.reset();
+			isTrackingMaterials = false;
+		}
+		
+		// Update last dimension
+		lastDimension = currentDimension;
+
+		// Only track materials if we're on a floor AND have materials
+		// This ensures the overlay disappears when changing dimensions
 		boolean hasMaterials = ActionBarData.hasMaterials();
-		if (hasMaterials != isTrackingMaterials) {
-			isTrackingMaterials = hasMaterials;
+		boolean shouldTrack = isOnFloor && hasMaterials;
+		
+		if (shouldTrack != isTrackingMaterials) {
+			isTrackingMaterials = shouldTrack;
 		}
 	}
 	

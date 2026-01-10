@@ -77,15 +77,15 @@ public class OverlayEditorScreen extends Screen {
         // Entferne alle TabInfo-Overlays aus der Liste
         overlays.removeIf(overlay -> overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay);
         
-        // Füge TabInfo-Overlays wieder hinzu (basierend auf aktuellen Config-Werten)
-        // Nicht in general_lobby und nicht in Inventaren anzeigen
+        // Prüfe ob wir in einem Inventar oder im Chat sind
         boolean isInAnyInventoryRefresh = isInAnyInventoryScreen();
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInGeneralLobby() && !isInAnyInventoryRefresh) {
-            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
-            TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
-            if (mainOverlay.isEnabled()) {
-                overlays.add(mainOverlay);
-            }
+        boolean isInChatScreenRefresh = isInChatScreen();
+        
+        // Füge TabInfo-Overlays wieder hinzu (basierend auf aktuellen Config-Werten)
+        // Nur außerhalb von Inventaren und außerhalb des Chats anzeigen
+        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInAnyInventoryRefresh && !isInChatScreenRefresh) {
+            // Haupt-Overlay - immer hinzufügen wenn Tab Info Utility aktiviert ist (wird nur gerendert wenn enabled)
+            overlays.add(new TabInfoMainDraggableOverlay());
             
             // Separate Overlays - immer hinzufügen (werden nur gerendert wenn enabled)
             overlays.add(new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
@@ -135,9 +135,6 @@ public class OverlayEditorScreen extends Screen {
         // Check if we're in a blueprint inventory screen (where Hide Uncraftable button and Aspect Overlay work)
         boolean isInBlueprintInventory = isInInventoryScreen();
         
-        // Check if ItemViewer is visible (where AspectOverlay is also used)
-        boolean isItemViewerVisible = net.felix.utilities.ItemViewer.ItemViewerUtility.isVisible();
-        
         // Check if we're in any inventory screen
         boolean isInAnyInventory = isInAnyInventoryScreen();
         
@@ -150,28 +147,26 @@ public class OverlayEditorScreen extends Screen {
         if (isInChatScreen) {
             // In chat screen, show chat-specific overlays
             overlays.add(new ChatAspectOverlayDraggableOverlay());
-        } else if (isInBlueprintInventory || isItemViewerVisible) {
-            // In blueprint inventory screens or when ItemViewer is visible, show overlays that are relevant
-            // AspectOverlay is used in both blueprint inventories and ItemViewer
+        } else if (isInBlueprintInventory) {
+            // In blueprint inventory screens, show overlays that are relevant
+            // AspectOverlay is only shown in blueprint inventories
             overlays.add(new AspectOverlayDraggableOverlay());
             
             // Hide Uncraftable and Hide Wrong Class buttons are only in blueprint inventories
-            if (isInBlueprintInventory) {
-                overlays.add(new HideUncraftableButtonDraggableOverlay());
-                overlays.add(new HideWrongClassButtonDraggableOverlay());
-                
-                // Check if we're in a Kit Filter relevant inventory
-                if (isInKitFilterInventory()) {
-                    overlays.add(new KitFilterButton1DraggableOverlay());
-                    overlays.add(new KitFilterButton2DraggableOverlay());
-                    overlays.add(new KitFilterButton3DraggableOverlay());
-                }
+            overlays.add(new HideUncraftableButtonDraggableOverlay());
+            overlays.add(new HideWrongClassButtonDraggableOverlay());
+            
+            // Check if we're in a Kit Filter relevant inventory
+            if (isInKitFilterInventory()) {
+                overlays.add(new KitFilterButton1DraggableOverlay());
+                overlays.add(new KitFilterButton2DraggableOverlay());
+                overlays.add(new KitFilterButton3DraggableOverlay());
             }
         }
         
-        // Star Aspect Overlay - available ONLY in inventories EXCEPT blueprint inventories
+        // Star Aspect Overlay - available ONLY in inventories EXCEPT blueprint inventories and "Machtkristalle Verbessern" inventory
         // This is for items with "⭐" in tooltip, different from the blueprint Aspect Overlay
-        if (isInAnyInventory && !isInBlueprintInventory) {
+        if (isInAnyInventory && !isInBlueprintInventory && !isInMKLevelInventory()) {
             overlays.add(new StarAspectOverlayDraggableOverlay());
         }
         
@@ -202,10 +197,10 @@ public class OverlayEditorScreen extends Screen {
                     overlays.add(new MiningLumberjackDraggableOverlay());
                 }
                 
-                // Collection overlay - only available in Overworld (Farmworld) when not in inventory
+                // Collection overlay - not available in player name dimension or in any inventory
+                // The actual overlay will only show in-game when not in player name dimension or floor dimension
                 // Only show if biome is detected in scoreboard
-                // Not available in player name dimension or in any inventory
-                if (isInOverworld() && !isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
+                if (!isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
                     overlays.add(new CollectionDraggableOverlay());
                 }
                 
@@ -222,9 +217,9 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        // Tab Info Overlays - immer verfügbar wenn aktiviert (außer in general_lobby und in Inventaren)
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInGeneralLobby() && !isInAnyInventory) {
-            // Haupt-Overlay - nur hinzufügen wenn Tab Info Utility aktiviert ist
+        // Tab Info Overlays - nur außerhalb von Inventaren und außerhalb des Chats anzeigen
+        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInAnyInventory && !isInChatScreen) {
+            // Haupt-Overlay - immer hinzufügen wenn Tab Info Utility aktiviert ist (wird nur gerendert wenn enabled)
             TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
             overlays.add(mainOverlay);
             
@@ -441,18 +436,25 @@ public class OverlayEditorScreen extends Screen {
         titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, 20);
         addDrawableChild(titleWidget);
         
+        // Buttons horizontal zentrieren
+        // 4 Buttons à 80 Pixel = 320 Pixel, 3 Abstände à 10 Pixel = 30 Pixel, Gesamt = 350 Pixel
+        int buttonWidth = 80;
+        int buttonSpacing = 10;
+        int totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing; // 350 Pixel
+        int startX = width / 2 - totalButtonsWidth / 2; // width / 2 - 175
+        
         // Done Button
         doneButton = ButtonWidget.builder(
             Text.literal("Done"),
             button -> close()
-        ).dimensions(width / 2 - 130, height - 30, 80, 20).build();
+        ).dimensions(startX, height - 30, buttonWidth, 20).build();
         addDrawableChild(doneButton);
         
         // Overlay Button
         overlayButton = ButtonWidget.builder(
             Text.literal("Overlay"),
             button -> overlaySettingsOpen = !overlaySettingsOpen
-        ).dimensions(width / 2 - 40, height - 30, 80, 20).build();
+        ).dimensions(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
         addDrawableChild(overlayButton);
         
         // Tab Info Button
@@ -464,14 +466,14 @@ public class OverlayEditorScreen extends Screen {
                     client.setScreen(new net.felix.utilities.Overall.TabInfo.TabInfoSettingsScreen(this));
                 }
             }
-        ).dimensions(width / 2 + 50, height - 30, 80, 20).build();
+        ).dimensions(startX + 2 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
         addDrawableChild(tabInfoButton);
         
         // Reset Button
         resetButton = ButtonWidget.builder(
             Text.literal("Reset All"),
             button -> resetAllOverlays()
-        ).dimensions(width / 2 + 140, height - 30, 80, 20).build();
+        ).dimensions(startX + 3 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
         addDrawableChild(resetButton);
     }
     

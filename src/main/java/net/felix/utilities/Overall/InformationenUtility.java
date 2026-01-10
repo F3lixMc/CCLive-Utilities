@@ -152,6 +152,7 @@ public class InformationenUtility {
 	private static boolean biomDetected = false; // Whether a biom was detected in the scoreboard
 	private static boolean lastShowCollectionOverlayState = true; // Track previous state of showCollectionOverlay
 	private static int pendingResets = 0; // Number of pending resets after biome change
+	private static int collectionTickCounter = 0; // Tick counter for collection overlay (runs every 20 ticks)
 	
 	// Collection hotkey
 	private static KeyBinding collectionResetKeyBinding;
@@ -341,23 +342,23 @@ public class InformationenUtility {
 				return;
 			}
 			
-		// Always process aspect information (even if informationenUtilityEnabled is off)
-		// Add aspect name to tooltip (always visible) - works in inventories
-		addAspectNameToTooltip(lines, client, stack);
-		
-		// Add floor number to blueprint names in inventories
-		addFloorNumberToBlueprintNames(lines, client);
-		
-		// Add floor numbers to cards and statues names in inventories
-		addFloorNumberToCardsStatuesNames(lines, client);
-		
-		// Add slot-specific text for "Aspekt [tranferieren]" inventory
-		addAspectTransferSlotText(lines, client, stack);
-		
-		// Add clipboard pin text input for forge inventories (before other processing)
-		addClipboardPinTextToTooltip(lines, client);
-		
-		// Only process other information if Informationen Utility is enabled in config
+			// Always process aspect information (even if informationenUtilityEnabled is off)
+			// Add aspect name to tooltip (always visible) - works in inventories
+			addAspectNameToTooltip(lines, client, stack);
+			
+			// Add floor number to blueprint names in inventories
+			addFloorNumberToBlueprintNames(lines, client);
+			
+			// Add floor numbers to cards and statues names in inventories
+			addFloorNumberToCardsStatuesNames(lines, client);
+			
+			// Add slot-specific text for "Aspekt [tranferieren]" inventory
+			addAspectTransferSlotText(lines, client, stack);
+			
+			// Add clipboard pin text input for forge inventories (before other processing)
+			addClipboardPinTextToTooltip(lines, client);
+			
+			// Only process other information if Informationen Utility is enabled in config
 			if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 				!CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled) {
 				return;
@@ -675,6 +676,11 @@ public class InformationenUtility {
 			return; // Don't show aspect information if aspect overlay is disabled
 		}
 		
+		// Performance-Optimierung: Prüfe Screen früher
+		if (client.currentScreen == null) {
+			return;
+		}
+		
 		// First, extract the item name from the tooltip (usually the first line)
 		String itemName = extractItemNameFromTooltip(lines, stack);
 		
@@ -710,11 +716,6 @@ public class InformationenUtility {
 		
 		// Note: The "⭐" check above works in ALL inventories, not just blueprint inventories
 		// The code below is only for blueprint items with "[Bauplan]" in the tooltip
-		
-		// Performance-Optimierung: Prüfe Screen früher
-		if (client.currentScreen == null) {
-			return;
-		}
 		
 		boolean isInBlueprintInventory = false;
 		
@@ -5261,9 +5262,12 @@ public class InformationenUtility {
 		updateOverlayVisibility(miningXP);
 		updateOverlayVisibility(lumberjackXP);
 		
-		// Collection tracking
+		// Collection tracking - runs every 20 ticks (1 second)
 		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
-			// Check if overlay was disabled/enabled and handle timer accordingly
+			// Increment tick counter
+			collectionTickCounter++;
+			
+			// Check if overlay was disabled/enabled and handle timer accordingly (every tick for responsiveness)
 			boolean currentShowCollectionOverlay = CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
 			if (currentShowCollectionOverlay != lastShowCollectionOverlayState) {
 				if (!currentShowCollectionOverlay) {
@@ -5278,10 +5282,10 @@ public class InformationenUtility {
 				lastShowCollectionOverlayState = currentShowCollectionOverlay;
 			}
 			
-			// Check for dimension changes and reset if necessary
+			// Check for dimension changes and reset if necessary (every tick for responsiveness)
 			checkCollectionDimensionChange(client);
 			
-			// Check if we should track collections (in farmworld dimension)
+			// Check if we should track collections (in farmworld dimension) (every tick for responsiveness)
 			boolean shouldTrack = isInFarmworldDimension(client);
 			if (shouldTrack != isTrackingCollections) {
 				isTrackingCollections = shouldTrack;
@@ -5307,39 +5311,42 @@ public class InformationenUtility {
 				}
 			}
 			
-			// Check for biom changes (always check when in farmworld, not just when tracking)
-			// This ensures biomDetected is up to date for the overlay editor
-			if (isTrackingCollections) {
-				checkCollectionBiomChange(client);
-				
-				// Handle pending resets (multiple resets in quick succession after biome change)
-				if (pendingResets > 0) {
-					resetCollectionTracking();
-					// Restart timer if overlay is enabled
-					if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+			// Collection-specific checks run every 20 ticks (1 second)
+			if (collectionTickCounter % 20 == 0) {
+				// Check for biom changes (always check when in farmworld, not just when tracking)
+				// This ensures biomDetected is up to date for the overlay editor
+				if (isTrackingCollections) {
+					checkCollectionBiomChange(client);
+					
+					// Handle pending resets (multiple resets in quick succession after biome change)
+					if (pendingResets > 0) {
+						resetCollectionTracking();
+						// Restart timer if overlay is enabled
+						if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+							sessionStartTime = System.currentTimeMillis();
+						} else {
+							sessionStartTime = 0;
+						}
+						pendingResets--;
+					}
+					
+					// Update timer based on biom detection
+					if (biomDetected && currentShowCollectionOverlay && sessionStartTime == 0) {
+						// Biom detected and overlay enabled, but timer not started - start it
 						sessionStartTime = System.currentTimeMillis();
-					} else {
+					} else if (!biomDetected && sessionStartTime > 0) {
+						// Biom no longer detected, stop timer
 						sessionStartTime = 0;
 					}
-					pendingResets--;
+				} else if (isInFarmworldDimension(client)) {
+					// Also check when in farmworld but not tracking yet (for overlay editor)
+					checkCollectionBiomChange(client);
 				}
 				
-				// Update timer based on biom detection
-				if (biomDetected && currentShowCollectionOverlay && sessionStartTime == 0) {
-					// Biom detected and overlay enabled, but timer not started - start it
-					sessionStartTime = System.currentTimeMillis();
-				} else if (!biomDetected && sessionStartTime > 0) {
-					// Biom no longer detected, stop timer
-					sessionStartTime = 0;
+				// Update blocks per minute calculation (only if overlay is enabled and tracking)
+				if (isTrackingCollections && currentShowCollectionOverlay) {
+					updateBlocksPerMinute();
 				}
-			} else if (isInFarmworldDimension(client)) {
-				// Also check when in farmworld but not tracking yet (for overlay editor)
-				checkCollectionBiomChange(client);
-			}
-			
-			// Update blocks per minute calculation (only if overlay is enabled and tracking)
-			if (isTrackingCollections && currentShowCollectionOverlay) {
-				updateBlocksPerMinute();
 			}
 		}
 		
@@ -5359,7 +5366,8 @@ public class InformationenUtility {
 				mkLevelSearchText = "";
 				mkLevelSearchFocused = false;
 				mkLevelSearchCursorPosition = 0;
-				setMKLevelScrollOffset(0);
+				// Scroll-Position NICHT zurücksetzen - wird beibehalten
+				// mkLevelScrollOffset = 0;
 			}
 			
 			if (isInMKLevelInventory) {

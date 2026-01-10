@@ -15,6 +15,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
@@ -37,6 +38,7 @@ public class ItemViewerUtility {
     
     private static boolean isInitialized = false;
     private static boolean isVisible = true; // Standard: sichtbar
+    private static boolean isMinimized = false; // Minimiert (rechts unten)
     private static KeyBinding toggleKeyBinding;
     private static KeyBinding clipboardPinKeyBinding;
     
@@ -105,8 +107,7 @@ public class ItemViewerUtility {
             
             isInitialized = true;
         } catch (Exception e) {
-            System.err.println("Fehler beim Initialisieren des Item-Viewers: " + e.getMessage());
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     
@@ -161,7 +162,6 @@ public class ItemViewerUtility {
             
             loadFromFile(resource);
         } catch (Exception e) {
-            System.err.println("⚠️ [ItemViewer] Fehler beim Laden der Items-Datei: " + e.getMessage());
             // Erstelle leere Liste als Fallback
             allItems = new ArrayList<>();
             filteredItems = new ArrayList<>();
@@ -448,6 +448,58 @@ public class ItemViewerUtility {
     }
     
     /**
+     * Gibt den formatierten Hotkey-Text für das Toggle des ItemViewers zurück
+     * @return Formatierter Hotkey-Text (z.B. "I")
+     * Verwendet getBoundKeyLocalizedText() um den aktuellen Hotkey zu bekommen (auch nach Config-Änderungen)
+     */
+    public static String getToggleHotkeyText() {
+        if (toggleKeyBinding == null) {
+            return "I"; // Fallback
+        }
+        
+        try {
+            // Verwende getBoundKeyLocalizedText() um den aktuellen Hotkey-Text zu bekommen
+            // Dies funktioniert auch nach Änderungen in der Config
+            java.lang.reflect.Method getBoundKeyLocalizedTextMethod = toggleKeyBinding.getClass().getMethod("getBoundKeyLocalizedText");
+            Object localizedText = getBoundKeyLocalizedTextMethod.invoke(toggleKeyBinding);
+            if (localizedText instanceof net.minecraft.text.Text) {
+                String hotkeyString = ((net.minecraft.text.Text) localizedText).getString();
+                // Entferne mögliche Formatierungs-Codes
+                hotkeyString = hotkeyString.replaceAll("§[0-9a-fk-or]", "");
+                return hotkeyString;
+            }
+        } catch (Exception e) {
+            // Fallback: Versuche über getBoundKey() und KeyCode
+            try {
+                java.lang.reflect.Method getBoundKeyMethod = toggleKeyBinding.getClass().getMethod("getBoundKey");
+                Object boundKey = getBoundKeyMethod.invoke(toggleKeyBinding);
+                
+                // Hole den KeyCode
+                java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getCode");
+                int keyCode = (Integer) getCodeMethod.invoke(boundKey);
+                
+                // Konvertiere GLFW Key Code zu lesbarem String
+                if (keyCode == GLFW.GLFW_KEY_I) {
+                    return "I";
+                } else if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
+                    // Buchstaben A-Z
+                    return String.valueOf((char) ('A' + (keyCode - GLFW.GLFW_KEY_A)));
+                } else if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
+                    // Zahlen 0-9
+                    return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
+                } else {
+                    return "Key " + keyCode;
+                }
+            } catch (Exception e2) {
+                // Fallback: Standard "I"
+                return "I";
+            }
+        }
+        
+        return "I"; // Fallback
+    }
+    
+    /**
      * Gibt den formatierten Hotkey-Text für das Clipboard-Anpinnen zurück
      * @return Formatierter Hotkey-Text (z.B. "P")
      * Verwendet getBoundKeyLocalizedText() um den aktuellen Hotkey zu bekommen (auch nach Config-Änderungen)
@@ -507,7 +559,15 @@ public class ItemViewerUtility {
                 return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
             }
             
-            isVisible = !isVisible;
+            // Gleiche Funktionalität wie die Buttons: minimieren/maximieren statt ausblenden
+            if (isVisible) {
+                // Wenn sichtbar, toggle minimiert-Status
+                isMinimized = !isMinimized;
+            } else {
+                // Wenn ausgeblendet, einblenden und ausklappen
+                isVisible = true;
+                isMinimized = false;
+            }
         }
         
         // Prüfe Clipboard-Pin Hotkey (immer prüfen, nicht nur wenn ItemViewer sichtbar ist)
@@ -751,12 +811,30 @@ public class ItemViewerUtility {
                 searchFieldFocused = false;
                 return true;
             }
-            // Toggle direkt, ohne wasPressed() zu prüfen (wird im ScreenMixin aufgerufen)
-            isVisible = !isVisible;
+            // Gleiche Funktionalität wie die Buttons: minimieren/maximieren statt ausblenden
+            if (isVisible) {
+                // Wenn sichtbar, toggle minimiert-Status
+                isMinimized = !isMinimized;
+            } else {
+                // Wenn ausgeblendet, einblenden und ausklappen
+                isVisible = true;
+                isMinimized = false;
+            }
             return true;
         }
         
         return false;
+    }
+    
+    /**
+     * Prüft ob ein Inventar geöffnet ist (HandledScreen oder InventoryScreen)
+     */
+    private static boolean isInventoryOpen(MinecraftClient client) {
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        return client.currentScreen instanceof HandledScreen<?> || 
+               client.currentScreen instanceof InventoryScreen;
     }
     
     /**
@@ -1380,11 +1458,30 @@ public class ItemViewerUtility {
     }
     
     private static void onHudRender(DrawContext context, net.minecraft.client.render.RenderTickCounter tickCounter) {
+        // Rendere minimierten Button (rechts unten), wenn minimiert und kein Screen offen ist
+        // (wenn ein Screen offen ist, wird der Button in den Mixins gerendert, damit er über dem dunklen Hintergrund liegt)
+        // Buttons werden nur in Inventaren angezeigt
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (isMinimized && isVisible && isInventoryOpen(client)) {
+            renderMinimizedButton(context, client);
+        }
         // Hilfe-Overlay wird jetzt in den Mixins gerendert (HelpOverlayMixin/HelpOverlayScreenMixin am RETURN-Punkt),
         // damit es wirklich über allen Items liegt (nicht hier im HudRenderCallback)
         // Rendere Item Viewer für Screens, die keine HandledScreen sind (z.B. Spielerinventar)
         // Wird über ScreenMixin.onRender behandelt, daher hier nicht mehr nötig
         // Diese Methode bleibt als Fallback, falls ScreenMixin nicht greift
+    }
+    
+    /**
+     * Rendert den minimierten Button (wird von Mixins aufgerufen, nach Screen-Rendering)
+     */
+    public static void renderMinimizedButtonIfNeeded(DrawContext context) {
+        if (isMinimized && isVisible) {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null && isInventoryOpen(client)) {
+                renderMinimizedButton(context, client);
+            }
+        }
     }
     
     /**
@@ -1473,6 +1570,11 @@ public class ItemViewerUtility {
             return;
         }
         
+        // Wenn minimiert, nicht rendern (Button wird in Mixins gerendert, damit er über dem dunklen Hintergrund liegt)
+        if (isMinimized) {
+            return;
+        }
+        
         // Prüfe ob Items geladen sind
         if (!itemsLoaded) {
             return; // Warte bis Items geladen sind
@@ -1521,6 +1623,7 @@ public class ItemViewerUtility {
     private static final int SORT_OPTION_HEIGHT = 16;
     private static final int SORT_DROPDOWN_PADDING = 6; // Padding links/rechts im Dropdown
     private static final int PAGINATION_HEIGHT = 20;
+    private static final int MINIMIZE_BUTTON_SIZE = 20; // Größe des Minimierungs-Buttons
     
     // Maus-Position für Hover-Detection
     private static int lastMouseX = 0;
@@ -1661,6 +1764,13 @@ public class ItemViewerUtility {
         // Rendere Pagination am unteren Rand (paginationY wurde bereits oben berechnet)
         renderPagination(context, pos.viewerX + VIEWER_PADDING, paginationY, pos.viewerWidth - VIEWER_PADDING * 2);
         
+        // Rendere Minimierungs-Button (außerhalb des Overlays, am linken Rand) - nur in Inventaren
+        if (isInventoryOpen(client)) {
+            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 5; // 5px Abstand links vom Viewer
+            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING; // Unten ausgerichtet
+            renderMinimizeButton(context, minimizeButtonX, minimizeButtonY);
+        }
+        
         // Rendere Button-Tooltips (am Ende, damit sie über allem liegen)
         renderButtonTooltips(context, pos);
         
@@ -1742,6 +1852,22 @@ public class ItemViewerUtility {
                 tooltip.add(Text.literal("Linksklick: Nach Kit Suchen"));
                 tooltip.add(Text.literal("Rechtsklick: Kit auswählen"));
             }
+            // Minecraft's drawTooltip passt automatisch die Position an
+            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+        }
+        
+        // Prüfe Hover über Minimierungs-Button (außerhalb des Overlays, am linken Rand)
+        int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 5; // 5px Abstand links vom Viewer
+        int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING; // Unten ausgerichtet
+        boolean minimizeHovered = lastMouseX >= minimizeButtonX && lastMouseX < minimizeButtonX + MINIMIZE_BUTTON_SIZE &&
+                                  lastMouseY >= minimizeButtonY && lastMouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE;
+        
+        // Rendere Tooltip für Minimierungs-Button
+        if (minimizeHovered) {
+            List<Text> tooltip = new ArrayList<>();
+            tooltip.add(Text.literal("ItemViewer einklappen"));
+            String hotkeyText = getToggleHotkeyText();
+            tooltip.add(Text.literal("(Hotkey: " + hotkeyText + ")"));
             // Minecraft's drawTooltip passt automatisch die Position an
             context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
         }
@@ -1992,11 +2118,13 @@ public class ItemViewerUtility {
         String closeText = "×";
         int closeTextWidth = client.textRenderer.getWidth(closeText);
         int closeTextHeight = client.textRenderer.fontHeight;
+        int closeTextX = closeButtonX + (closeButtonSize - closeTextWidth) / 2 + 1; // Horizontal zentriert (+1 für bessere visuelle Zentrierung)
+        int closeTextY = closeButtonY + (closeButtonSize - closeTextHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
         context.drawText(
             client.textRenderer,
             closeText,
-            closeButtonX + (closeButtonSize - closeTextWidth) / 2,
-            closeButtonY + (closeButtonSize - closeTextHeight) / 2,
+            closeTextX,
+            closeTextY,
             0xFFFFFFFF,
             true
         );
@@ -2126,28 +2254,34 @@ public class ItemViewerUtility {
         // buttonY wurde bereits oben berechnet
         int finalButtonY = buttonY;
         
-        // Zeige Buttons nur an, wenn bereits gescrollt wurde
-        if (helpScreenScrollOffset > 0) {
-            // Zeige "↓ X weitere (Scrollen)" nur wenn noch mehr Text vorhanden ist
-            if (helpScreenScrollOffset < maxScrollOffset) {
-                int remainingLines = allTextLines.size() - (startLineIndex + visibleLines);
-                if (remainingLines > 0) {
-                    String moreText = String.format("↓ %d weitere (Scrollen)", remainingLines);
-                    int moreTextWidth = client.textRenderer.getWidth(moreText);
-                    context.drawText(
-                        client.textRenderer,
-                        moreText,
-                        boxX + (boxWidth - moreTextWidth) / 2,
-                        buttonY - lineHeight - 2,
-                        0xFFFFFF00,
-                        true
-                    );
-                }
-            }
+        // Prüfe ob genug Platz vorhanden ist (maxScrollOffset == 0 bedeutet genug Platz)
+        boolean hasEnoughSpace = (maxScrollOffset == 0);
+        
+        if (hasEnoughSpace) {
+            // Bei genug Platz (z.B. GUI Scale 3): Buttons immer anzeigen, keine Scroll-Logik
             renderCategoryButtons(context, client.textRenderer, boxX, boxY, boxWidth, boxHeight, finalButtonY);
         } else {
-            // Zeige Hinweis zum Scrollen in der untersten Zeile (nur wenn noch mehr Text vorhanden ist)
-            if (maxScrollOffset > 0) {
+            // Bei wenig Platz (z.B. GUI Scale 4): Buttons nur anzeigen, wenn gescrollt wurde
+            if (helpScreenScrollOffset > 0) {
+                // Zeige "↓ X weitere (Scrollen)" nur wenn noch mehr Text vorhanden ist
+                if (helpScreenScrollOffset < maxScrollOffset) {
+                    int remainingLines = allTextLines.size() - (startLineIndex + visibleLines);
+                    if (remainingLines > 0) {
+                        String moreText = String.format("↓ %d weitere (Scrollen)", remainingLines);
+                        int moreTextWidth = client.textRenderer.getWidth(moreText);
+                        context.drawText(
+                            client.textRenderer,
+                            moreText,
+                            boxX + (boxWidth - moreTextWidth) / 2,
+                            buttonY - lineHeight - 2,
+                            0xFFFFFF00,
+                            true
+                        );
+                    }
+                }
+                renderCategoryButtons(context, client.textRenderer, boxX, boxY, boxWidth, boxHeight, finalButtonY);
+            } else {
+                // Zeige Hinweis zum Scrollen in der untersten Zeile (nur wenn noch mehr Text vorhanden ist)
                 String scrollHint = "↓ Scrollen für Kategorien mit Tags";
                 int scrollHintWidth = client.textRenderer.getWidth(scrollHint);
                 int scrollHintY = buttonY - lineHeight - 2 + 15; // 15px tiefer
@@ -2421,6 +2555,77 @@ public class ItemViewerUtility {
         int textX = x + (HELP_BUTTON_SIZE - textWidth) / 2;
         int textY = y + (HELP_BUTTON_SIZE - 9) / 2; // 9 ist die Text-Höhe, zentriert vertikal
         context.drawText(client.textRenderer, Text.literal(questionMark), textX, textY, 0xFFFFFFFF, false);
+    }
+    
+    /**
+     * Rendert den Minimierungs-Button (unten links am Viewer)
+     */
+    private static void renderMinimizeButton(DrawContext context, int x, int y) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        
+        // Prüfe ob Maus über Button ist
+        boolean isHovered = lastMouseX >= x && lastMouseX < x + MINIMIZE_BUTTON_SIZE &&
+                           lastMouseY >= y && lastMouseY < y + MINIMIZE_BUTTON_SIZE;
+        
+        // Button-Hintergrund
+        int bgColor = isHovered ? 0xFF404040 : 0x80000000;
+        context.fill(x, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, bgColor);
+        
+        // Button-Rahmen
+        int borderColor = isHovered ? 0xFFFFFFFF : 0xFF808080;
+        context.fill(x, y, x + MINIMIZE_BUTTON_SIZE, y + 1, borderColor); // Oben
+        context.fill(x, y + MINIMIZE_BUTTON_SIZE - 1, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor); // Unten
+        context.fill(x, y, x + 1, y + MINIMIZE_BUTTON_SIZE, borderColor); // Links
+        context.fill(x + MINIMIZE_BUTTON_SIZE - 1, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor); // Rechts
+        
+        // Minimierungs-Symbol (Pfeil nach rechts) - "▶" - mittig positioniert
+        String minimizeSymbol = "▶";
+        int textWidth = client.textRenderer.getWidth(minimizeSymbol);
+        int textX = x + (MINIMIZE_BUTTON_SIZE - textWidth) / 2; // Horizontal zentriert
+        int textY = y + (MINIMIZE_BUTTON_SIZE - client.textRenderer.fontHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
+        context.drawText(client.textRenderer, Text.literal(minimizeSymbol), textX, textY, 0xFFFFFFFF, false);
+    }
+    
+    /**
+     * Rendert den minimierten Button (rechts unten am Screen)
+     */
+    private static void renderMinimizedButton(DrawContext context, MinecraftClient client) {
+        int screenWidth = client.getWindow().getScaledWidth();
+        int screenHeight = client.getWindow().getScaledHeight();
+        int buttonX = screenWidth - MINIMIZE_BUTTON_SIZE - 10; // 10px vom rechten Rand
+        int buttonY = screenHeight - MINIMIZE_BUTTON_SIZE - 10; // 10px vom unteren Rand
+        
+        // Prüfe ob Maus über Button ist
+        boolean isHovered = lastMouseX >= buttonX && lastMouseX < buttonX + MINIMIZE_BUTTON_SIZE &&
+                           lastMouseY >= buttonY && lastMouseY < buttonY + MINIMIZE_BUTTON_SIZE;
+        
+        // Button-Hintergrund
+        int bgColor = isHovered ? 0xFF404040 : 0x80000000;
+        context.fill(buttonX, buttonY, buttonX + MINIMIZE_BUTTON_SIZE, buttonY + MINIMIZE_BUTTON_SIZE, bgColor);
+        
+        // Button-Rahmen
+        int borderColor = isHovered ? 0xFFFFFFFF : 0xFF808080;
+        context.fill(buttonX, buttonY, buttonX + MINIMIZE_BUTTON_SIZE, buttonY + 1, borderColor); // Oben
+        context.fill(buttonX, buttonY + MINIMIZE_BUTTON_SIZE - 1, buttonX + MINIMIZE_BUTTON_SIZE, buttonY + MINIMIZE_BUTTON_SIZE, borderColor); // Unten
+        context.fill(buttonX, buttonY, buttonX + 1, buttonY + MINIMIZE_BUTTON_SIZE, borderColor); // Links
+        context.fill(buttonX + MINIMIZE_BUTTON_SIZE - 1, buttonY, buttonX + MINIMIZE_BUTTON_SIZE, buttonY + MINIMIZE_BUTTON_SIZE, borderColor); // Rechts
+        
+        // Maximierungs-Symbol (Pfeil nach links) - "◀" - mittig positioniert
+        String maximizeSymbol = "◀";
+        int textWidth = client.textRenderer.getWidth(maximizeSymbol);
+        int textX = buttonX + (MINIMIZE_BUTTON_SIZE - textWidth) / 2; // Horizontal zentriert
+        int textY = buttonY + (MINIMIZE_BUTTON_SIZE - client.textRenderer.fontHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
+        context.drawText(client.textRenderer, Text.literal(maximizeSymbol), textX, textY, 0xFFFFFFFF, false);
+        
+        // Rendere Tooltip für minimierten Button (wenn gehovered)
+        if (isHovered) {
+            List<Text> tooltip = new ArrayList<>();
+            tooltip.add(Text.literal("ItemViewer ausklappen"));
+            String hotkeyText = getToggleHotkeyText();
+            tooltip.add(Text.literal("(Hotkey: " + hotkeyText + ")"));
+            // Minecraft's drawTooltip passt automatisch die Position an
+            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+        }
     }
     
     /**
@@ -3033,10 +3238,7 @@ public class ItemViewerUtility {
             }
         }
         
-        // Debug: Logge nur wenn Reflection fehlgeschlagen ist (um zu sehen, was auf dem Server passiert)
-        if (!reflectionSuccess && handledScreen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
-            System.out.println("[ItemViewer] WARNUNG: Reflection fehlgeschlagen für InventoryScreen - verwende Fallback: inventoryX=" + inventoryX + ", inventoryWidth=" + inventoryWidth);
-        }
+        // Reflection fehlgeschlagen - verwende Fallback-Werte
         
         // Berechne verfügbaren Platz
         int availableWidthRight = screen.width - (inventoryX + inventoryWidth) - 10;
@@ -3206,6 +3408,22 @@ public class ItemViewerUtility {
      */
     public static boolean handleMouseClick(double mouseX, double mouseY, int button) {
         MinecraftClient client = MinecraftClient.getInstance();
+        
+        // Prüfe Klick auf minimierten Button (rechts unten, wenn minimiert) - auch ohne Screen
+        if (isMinimized && isVisible && button == 0) {
+            int screenWidth = client.getWindow().getScaledWidth();
+            int screenHeight = client.getWindow().getScaledHeight();
+            int buttonX = screenWidth - MINIMIZE_BUTTON_SIZE - 10;
+            int buttonY = screenHeight - MINIMIZE_BUTTON_SIZE - 10;
+            
+            if (mouseX >= buttonX && mouseX < buttonX + MINIMIZE_BUTTON_SIZE &&
+                mouseY >= buttonY && mouseY < buttonY + MINIMIZE_BUTTON_SIZE) {
+                // Maximieren
+                isMinimized = false;
+                return true;
+            }
+        }
+        
         if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
             return false;
         }
@@ -3244,6 +3462,19 @@ public class ItemViewerUtility {
         
         // Berechne Viewer-Position (gleiche Logik wie beim Rendering)
         ViewerPosition pos = calculateViewerPosition(handledScreen, client.currentScreen);
+        
+        // Prüfe Klick auf Minimierungs-Button (außerhalb des Overlays, am linken Rand, wenn nicht minimiert)
+        if (!isMinimized && button == 0) {
+            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 5; // 5px Abstand links vom Viewer
+            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING; // Unten ausgerichtet
+            
+            if (mouseX >= minimizeButtonX && mouseX < minimizeButtonX + MINIMIZE_BUTTON_SIZE &&
+                mouseY >= minimizeButtonY && mouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE) {
+                // Minimieren
+                isMinimized = true;
+                return true;
+            }
+        }
         
         // Prüfe Klick auf Symbol-Menü (wenn geöffnet, VOR Suchleiste, nur Linksklick)
         // Priorisiere Symbol-Menü vor Suchleiste, damit Klicks auf Menü-Buttons funktionieren

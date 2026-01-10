@@ -51,7 +51,10 @@ public class ZeichenUtility {
     private static String uiCategoriesAincrad = "";
     private static String uiCategoriesFarmzone = "";
     private static String uiCategoriesHub = "";
+    private static String uiCategoriesClassSelection = "";
     private static String uiRessourceBag = "";
+    private static Map<Character, String> factoryFontFirstLine = new HashMap<>();
+    private static Map<Character, String> aincraftFontFirstLine = new HashMap<>();
     
     /**
      * Initialisiert die ZeichenUtility und lädt die Zeichen aus der JSON-Datei
@@ -326,6 +329,10 @@ public class ZeichenUtility {
             JsonObject hubObj = json.getAsJsonObject("ui_categories_hub");
             uiCategoriesHub = hubObj.get("character").getAsString();
         }
+        if (json.has("ui_categories_class_selection")) {
+            JsonObject classSelectionObj = json.getAsJsonObject("ui_categories_class_selection");
+            uiCategoriesClassSelection = classSelectionObj.get("character").getAsString();
+        }
         
         // Lade UI Ressource Bag
         if (json.has("ui_ressource_bag")) {
@@ -346,6 +353,40 @@ public class ZeichenUtility {
                     String charStr = numbers.get(key).getAsString();
                     if (charStr.length() > 0) {
                         factoryBottomFontNumbers.put(charStr.charAt(0), Integer.parseInt(key));
+                    }
+                }
+            }
+        }
+        
+        // Lade Factory Font First Line
+        if (json.has("factory_font_first_line")) {
+            JsonObject factoryFontObj = json.getAsJsonObject("factory_font_first_line");
+            
+            // Lade Mapping
+            if (factoryFontObj.has("mapping")) {
+                factoryFontFirstLine.clear();
+                JsonObject mapping = factoryFontObj.getAsJsonObject("mapping");
+                for (String key : mapping.keySet()) {
+                    String charStr = mapping.get(key).getAsString();
+                    if (charStr.length() > 0) {
+                        factoryFontFirstLine.put(charStr.charAt(0), key);
+                    }
+                }
+            }
+        }
+        
+        // Lade Aincraft Font First Line
+        if (json.has("aincraft_font_first_line")) {
+            JsonObject aincraftFontObj = json.getAsJsonObject("aincraft_font_first_line");
+            
+            // Lade Mapping
+            if (aincraftFontObj.has("mapping")) {
+                aincraftFontFirstLine.clear();
+                JsonObject mapping = aincraftFontObj.getAsJsonObject("mapping");
+                for (String key : mapping.keySet()) {
+                    String charStr = mapping.get(key).getAsString();
+                    if (charStr.length() > 0) {
+                        aincraftFontFirstLine.put(charStr.charAt(0), key);
                     }
                 }
             }
@@ -390,6 +431,7 @@ public class ZeichenUtility {
         uiCategoriesAincrad = "㮖";
         uiCategoriesFarmzone = "㮗";
         uiCategoriesHub = "㮘";
+        uiCategoriesClassSelection = "㬈";
         uiRessourceBag = "Ⳅ";
         
         factoryBottomFont = "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪";
@@ -403,6 +445,112 @@ public class ZeichenUtility {
         factoryBottomFontNumbers.put('㝨', 7);
         factoryBottomFontNumbers.put('㝩', 8);
         factoryBottomFontNumbers.put('㝪', 9);
+        
+        // Factory Font First Line Fallback
+        factoryFontFirstLine.put('㜌', "A");
+        factoryFontFirstLine.put('㜍', "B");
+        factoryFontFirstLine.put('㜎', "C");
+        factoryFontFirstLine.put('㜏', "D");
+        factoryFontFirstLine.put('㜐', "E");
+        factoryFontFirstLine.put('㜑', "F");
+        factoryFontFirstLine.put('㜒', "G");
+        factoryFontFirstLine.put('㜓', "H");
+        factoryFontFirstLine.put('㜔', "I");
+        factoryFontFirstLine.put('㜕', "J");
+        factoryFontFirstLine.put('㜖', "K");
+        factoryFontFirstLine.put('㜗', "L");
+        factoryFontFirstLine.put('㜘', "M");
+        factoryFontFirstLine.put('㜙', "N");
+        factoryFontFirstLine.put('㜚', "O");
+        factoryFontFirstLine.put('㜛', "P");
+        factoryFontFirstLine.put('㜜', "Q");
+        factoryFontFirstLine.put('㜝', "R");
+        factoryFontFirstLine.put('㜞', "S");
+        factoryFontFirstLine.put('㜟', "T");
+        factoryFontFirstLine.put('㜠', "U");
+        factoryFontFirstLine.put('㜡', "V");
+        factoryFontFirstLine.put('㜢', "W");
+        factoryFontFirstLine.put('㜣', "X");
+        factoryFontFirstLine.put('㜤', "Y");
+        factoryFontFirstLine.put('㜥', "Z");
+        factoryFontFirstLine.put('㜦', "+");
+        factoryFontFirstLine.put('㜧', ".");
+        factoryFontFirstLine.put('㜨', "[");
+        factoryFontFirstLine.put('㜩', "]");
+        factoryFontFirstLine.put('㜪', "Ä");
+        factoryFontFirstLine.put('㜫', "Ö");
+        factoryFontFirstLine.put('㜬', "Ü");
+        factoryFontFirstLine.put('㜭', "ß");
+        factoryFontFirstLine.put('㜮', "0");
+        factoryFontFirstLine.put('㜯', "1");
+        factoryFontFirstLine.put('㜰', "2");
+        factoryFontFirstLine.put('㜱', "3");
+        factoryFontFirstLine.put('㜲', "4");
+        factoryFontFirstLine.put('㜳', "5");
+        factoryFontFirstLine.put('㜴', "6");
+        factoryFontFirstLine.put('㜵', "7");
+        factoryFontFirstLine.put('㜶', "8");
+        factoryFontFirstLine.put('㜷', "9");
+        factoryFontFirstLine.put('㜸', ":");
+        factoryFontFirstLine.put('㜹', "-");
+        factoryFontFirstLine.put('㜺', "(");
+        factoryFontFirstLine.put('㜻', ")");
+        factoryFontFirstLine.put('㜼', ",");
+        factoryFontFirstLine.put('㜽', "!");
+        factoryFontFirstLine.put('㜾', "?");
+        
+        // Aincraft Font First Line Fallback
+        aincraftFontFirstLine.put('㘺', "A");
+        aincraftFontFirstLine.put('㘻', "B");
+        aincraftFontFirstLine.put('㘼', "C");
+        aincraftFontFirstLine.put('㘽', "D");
+        aincraftFontFirstLine.put('㘾', "E");
+        aincraftFontFirstLine.put('㘿', "F");
+        aincraftFontFirstLine.put('㙀', "G");
+        aincraftFontFirstLine.put('㙁', "H");
+        aincraftFontFirstLine.put('㙂', "I");
+        aincraftFontFirstLine.put('㙃', "J");
+        aincraftFontFirstLine.put('㙄', "K");
+        aincraftFontFirstLine.put('㙅', "L");
+        aincraftFontFirstLine.put('㙆', "M");
+        aincraftFontFirstLine.put('㙇', "N");
+        aincraftFontFirstLine.put('㙈', "O");
+        aincraftFontFirstLine.put('㙉', "P");
+        aincraftFontFirstLine.put('㙊', "Q");
+        aincraftFontFirstLine.put('㙋', "R");
+        aincraftFontFirstLine.put('㙌', "S");
+        aincraftFontFirstLine.put('㙍', "T");
+        aincraftFontFirstLine.put('㙎', "U");
+        aincraftFontFirstLine.put('㙏', "V");
+        aincraftFontFirstLine.put('㙐', "W");
+        aincraftFontFirstLine.put('㙑', "X");
+        aincraftFontFirstLine.put('㙒', "Y");
+        aincraftFontFirstLine.put('㙓', "Z");
+        aincraftFontFirstLine.put('㙔', "+");
+        aincraftFontFirstLine.put('㙕', ".");
+        aincraftFontFirstLine.put('㙖', "[");
+        aincraftFontFirstLine.put('㙗', "]");
+        aincraftFontFirstLine.put('㙘', "Ä");
+        aincraftFontFirstLine.put('㙙', "Ö");
+        aincraftFontFirstLine.put('㙚', "Ü");
+        aincraftFontFirstLine.put('㙛', "ß");
+        aincraftFontFirstLine.put('㙜', "0");
+        aincraftFontFirstLine.put('㙝', "1");
+        aincraftFontFirstLine.put('㙞', "2");
+        aincraftFontFirstLine.put('㙟', "3");
+        aincraftFontFirstLine.put('㙠', "4");
+        aincraftFontFirstLine.put('㙡', "5");
+        aincraftFontFirstLine.put('㙢', "6");
+        aincraftFontFirstLine.put('㙣', "7");
+        aincraftFontFirstLine.put('㙤', "8");
+        aincraftFontFirstLine.put('㙥', "9");
+        aincraftFontFirstLine.put('㙦', ":");
+        aincraftFontFirstLine.put('㙧', "-");
+        aincraftFontFirstLine.put('㙨', "(");
+        aincraftFontFirstLine.put('㙩', ")");
+        aincraftFontFirstLine.put('㙪', ",");
+        aincraftFontFirstLine.put('㙫', "!");
+        aincraftFontFirstLine.put('㙬', "?");
         
         isInitialized = true;
     }
@@ -611,7 +759,8 @@ public class ZeichenUtility {
         return (uiCategoriesFactory != null && !uiCategoriesFactory.isEmpty() && text.contains(uiCategoriesFactory)) ||
                (uiCategoriesAincrad != null && !uiCategoriesAincrad.isEmpty() && text.contains(uiCategoriesAincrad)) ||
                (uiCategoriesFarmzone != null && !uiCategoriesFarmzone.isEmpty() && text.contains(uiCategoriesFarmzone)) ||
-               (uiCategoriesHub != null && !uiCategoriesHub.isEmpty() && text.contains(uiCategoriesHub));
+               (uiCategoriesHub != null && !uiCategoriesHub.isEmpty() && text.contains(uiCategoriesHub)) ||
+               (uiCategoriesClassSelection != null && !uiCategoriesClassSelection.isEmpty() && text.contains(uiCategoriesClassSelection));
     }
     
     /**
@@ -644,6 +793,22 @@ public class ZeichenUtility {
     public static Map<Character, Integer> getFactoryBottomFontNumbers() {
         ensureInitialized();
         return new HashMap<>(factoryBottomFontNumbers);
+    }
+    
+    /**
+     * Gibt die Map der Factory Font First Line Zeichen zurück
+     */
+    public static Map<Character, String> getFactoryFontFirstLine() {
+        ensureInitialized();
+        return new HashMap<>(factoryFontFirstLine);
+    }
+    
+    /**
+     * Gibt die Map der Aincraft Font First Line Zeichen zurück
+     */
+    public static Map<Character, String> getAincraftFontFirstLine() {
+        ensureInitialized();
+        return new HashMap<>(aincraftFontFirstLine);
     }
     
     /**

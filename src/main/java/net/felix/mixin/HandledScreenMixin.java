@@ -36,12 +36,14 @@ public abstract class HandledScreenMixin {
             return;
         }
         
-        // DEBUG: Logge Inventar-Erkennung (Kiste) nur wenn sich der Screen ändert
         String currentScreen = screen.getClass().getSimpleName();
-        if (!currentScreen.equals(lastDetectedScreen)) {
-            System.out.println("[ItemViewer] Inventar erkannt: HandledScreen (Kiste) - " + currentScreen);
-            lastDetectedScreen = currentScreen;
-        }
+        lastDetectedScreen = currentScreen;
+        
+        // Store mouse position for use in tooltip callbacks
+        net.felix.utilities.Overall.InformationenUtility.setLastMousePosition(mouseX, mouseY);
+        
+        // Update mouse position for DebugUtility (Item Logger)
+        net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Store mouse position for use in tooltip callbacks
         net.felix.utilities.Overall.InformationenUtility.setLastMousePosition(mouseX, mouseY);
@@ -113,6 +115,9 @@ public abstract class HandledScreenMixin {
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
             net.felix.utilities.ItemViewer.ItemViewerUtility.renderHelpOverlay(context);
         }
+        
+        // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
+        net.felix.utilities.ItemViewer.ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
     }
     
     /**

@@ -26,10 +26,6 @@ public abstract class HelpOverlayMixin {
      */
     @Inject(method = "render", at = @At(value = "RETURN"))
     private void renderHelpOverlayAtReturn(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        // DEBUG: Logge wenn Mixin aufgerufen wird
-        if (ItemViewerUtility.isHelpOverlayOpen()) {
-            System.out.println("[DEBUG HelpOverlayMixin] renderHelpOverlayAtReturn aufgerufen (HandledScreen RETURN) - helpScreenOpen=" + ItemViewerUtility.isHelpOverlayOpen());
-        }
         // Rendere Help-Overlay ganz am Ende, damit es über allem liegt
         ItemViewerUtility.renderHelpOverlay(context);
     }

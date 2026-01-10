@@ -186568,7 +186568,7 @@
       "info": {
         "aspect": false,
         "rarity": "",
-        "description": "Chance von 6.67%, das die Forschungszeit \nbeim Besiegen von Gegnern reduziert wird.",
+        "description": "Chance von 6.67%, das die Forschungszeit, beim Besiegen von Gegnern reduziert wird.",
         "level_info": [
           "Jedes Level: ≈ 1 + (Level - 1) / 3"
         ],

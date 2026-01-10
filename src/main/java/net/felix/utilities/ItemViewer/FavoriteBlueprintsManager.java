@@ -39,7 +39,7 @@ public class FavoriteBlueprintsManager {
             // Lade bestehende Favoriten
             loadFavorites();
         } catch (Exception e) {
-            System.err.println("⚠️ [FavoriteBlueprintsManager] Fehler beim Initialisieren: " + e.getMessage());
+            // Silent error handling
         }
     }
     
@@ -74,7 +74,6 @@ public class FavoriteBlueprintsManager {
                 }
             }
         } catch (Exception e) {
-            System.err.println("⚠️ [FavoriteBlueprintsManager] Fehler beim Laden der Favoriten: " + e.getMessage());
             favoriteBlueprints = new ArrayList<>();
             favoriteBlueprintNames = new HashSet<>();
         }
@@ -92,7 +91,7 @@ public class FavoriteBlueprintsManager {
                 gson.toJson(favoriteBlueprints, writer);
             }
         } catch (IOException e) {
-            System.err.println("⚠️ [FavoriteBlueprintsManager] Fehler beim Speichern der Favoriten: " + e.getMessage());
+            // Silent error handling
         }
     }
     

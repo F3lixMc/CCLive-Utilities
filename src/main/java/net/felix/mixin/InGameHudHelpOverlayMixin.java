@@ -25,7 +25,6 @@ public abstract class InGameHudHelpOverlayMixin {
         // Rendere Help-Overlay nur wenn ein Screen offen ist und das Overlay geöffnet ist
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
         if (client != null && client.currentScreen != null && ItemViewerUtility.isHelpOverlayOpen()) {
-            System.out.println("[DEBUG InGameHudHelpOverlayMixin] renderHelpOverlayAtReturn aufgerufen (InGameHud RETURN) - helpScreenOpen=" + ItemViewerUtility.isHelpOverlayOpen());
             ItemViewerUtility.renderHelpOverlay(context);
         }
     }

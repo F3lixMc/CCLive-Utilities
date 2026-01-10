@@ -37,10 +37,9 @@ public class CCLiveUtilitiesConfig {
             // Verschiebe alte Datei falls vorhanden und neue noch nicht existiert
             if (java.nio.file.Files.exists(oldConfigPath) && !java.nio.file.Files.exists(newConfigPath)) {
                 java.nio.file.Files.move(oldConfigPath, newConfigPath);
-                System.out.println("✅ [Config] Migriert cclive-utilities.json nach config/cclive-utilities/");
             }
         } catch (Exception e) {
-            System.err.println("[Config] Fehler beim Migrieren der Config-Datei: " + e.getMessage());
+            // Silent error handling
         }
     }
     
@@ -593,7 +592,7 @@ public class CCLiveUtilitiesConfig {
     public int mkLevelX = -1; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
     
     @SerialEntry
-    public int mkLevelY = 115; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
+    public int mkLevelY = -1; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
     
     // Cards/Statues Settings
     @SerialEntry

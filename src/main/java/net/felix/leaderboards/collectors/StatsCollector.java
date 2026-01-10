@@ -4,7 +4,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.ScoreboardObjective;
-import net.minecraft.text.Text;
 import net.felix.leaderboards.LeaderboardManager;
 
 import java.util.HashMap;
@@ -40,7 +39,10 @@ public class StatsCollector implements DataCollector {
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
             tickCounter = 0;
-            updateStats(client);
+            // Führe updateStats asynchron aus, um Freezes zu vermeiden
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                updateStats(client);
+            });
         }
     }
     

@@ -606,7 +606,7 @@ public class BPViewerUtility {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+            // Silent error handling
         }
         
         // Reset debug flag for next frame
@@ -1345,12 +1345,10 @@ public class BPViewerUtility {
             try {
                 int floorNum = Integer.parseInt(floorNumber);
                 if (floorNum < 1 || floorNum > 100) {
-                    System.out.println("⚠️ [BPViewerUtility] Ungültiger manueller Floor-Name: " + floor);
                     manualFloor = null;
                     return;
                 }
             } catch (NumberFormatException e) {
-                System.out.println("⚠️ [BPViewerUtility] Ungültiger manueller Floor-Name: " + floor);
                 manualFloor = null;
                 return;
             }
@@ -1377,7 +1375,6 @@ public class BPViewerUtility {
                     } catch (NumberFormatException e) {
                         // floorNumber ist keine Zahl (z.B. "all", "legendary", "none")
                         // Ignoriere diese ungültigen Floor-Namen
-                        System.out.println("⚠️ [BPViewerUtility] Ungültige Dimension erkannt: " + dimensionId);
                     }
                 }
             }
@@ -1395,9 +1392,8 @@ public class BPViewerUtility {
                 // Verschiebe Datei
                 java.nio.file.Files.move(oldSaveFile.toPath(), saveFile.toPath(), 
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("✅ [BPViewer] Migriert " + SAVE_FILE_NAME + " nach config/cclive-utilities/");
             } catch (IOException e) {
-                System.err.println("⚠️ [BPViewer] Fehler beim Migrieren von " + SAVE_FILE_NAME + ": " + e.getMessage());
+                // Silent error handling
             }
         }
         
@@ -1419,7 +1415,7 @@ public class BPViewerUtility {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                // Silent error handling
             }
         }
     }
@@ -1431,7 +1427,7 @@ public class BPViewerUtility {
                 gson.toJson(foundBlueprints, writer);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     
@@ -1445,9 +1441,8 @@ public class BPViewerUtility {
                 // Verschiebe Datei
                 java.nio.file.Files.move(oldProgressFile.toPath(), progressFile.toPath(), 
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("✅ [BPViewer] Migriert " + PROGRESS_FILE_NAME + " nach config/cclive-utilities/");
             } catch (IOException e) {
-                System.err.println("⚠️ [BPViewer] Fehler beim Migrieren von " + PROGRESS_FILE_NAME + ": " + e.getMessage());
+                // Silent error handling
             }
         }
         
@@ -1463,7 +1458,7 @@ public class BPViewerUtility {
                     floorProgress.put(floor, floorBlueprints);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                // Silent error handling
             }
         }
     }
@@ -1493,7 +1488,7 @@ public class BPViewerUtility {
                 gson.toJson(json, writer);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            // Silent error handling
         }
     }
     
@@ -1640,8 +1635,6 @@ public class BPViewerUtility {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to load blueprint config: " + e.getMessage());
-            e.printStackTrace();
             // Fallback to hardcoded config
             initializeFallbackFloors();
         }

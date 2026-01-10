@@ -80,11 +80,7 @@ public class ScreenMixin {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
             
-            // DEBUG: Logge nur wenn sich der Screen ändert
-            if (!screenClassName.equals(lastRenderedScreen)) {
-                System.out.println("[ItemViewer] Inventar erkannt: Spielerinventar - " + screenClassName);
-                lastRenderedScreen = screenClassName;
-            }
+            lastRenderedScreen = screenClassName;
             
             MinecraftClient client = MinecraftClient.getInstance();
             // Update mouse position
@@ -106,6 +102,9 @@ public class ScreenMixin {
             if (ItemViewerUtility.isHelpOverlayOpen()) {
                 ItemViewerUtility.renderHelpOverlay(context);
             }
+            
+            // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
+            ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
             return;
         }
         

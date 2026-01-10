@@ -68,6 +68,7 @@ public class CCLiveUtilities implements ModInitializer {
 		TabInfoUtility.initialize();
 		net.felix.utilities.DebugUtility.initializeItemLogger();
 		net.felix.utilities.DragOverlay.ClipboardUtility.initialize();
+		// net.felix.utilities.Overall.BossBarDecodeUtility.initialize(); // Temporarily disabled
 		
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
@@ -75,28 +76,22 @@ public class CCLiveUtilities implements ModInitializer {
 		// Initialisiere Chat-System
 		try {
 			ChatManager.getInstance().initialize();
-			System.out.println("✅ ChatManager initialisiert");
 		} catch (Exception e) {
-			System.err.println("[CCLive-Utilities] Error initializing ChatManager: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 		
 		// Initialisiere Profile-Stats-System
 		try {
 			ProfileStatsManager.getInstance().initialize();
-			System.out.println("✅ ProfileStatsManager initialisiert");
 		} catch (Exception e) {
-			System.err.println("[CCLive-Utilities] Error initializing ProfileStatsManager: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 		
 		// Initialisiere Player Hover Stats Utility
 		try {
 			PlayerHoverStatsUtility.initialize();
-			System.out.println("✅ PlayerHoverStatsUtility initialisiert");
 		} catch (Exception e) {
-			System.err.println("[CCLive-Utilities] Error initializing PlayerHoverStatsUtility: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 		
 		// Registriere alle CCLive-Commands (Blueprint + Leaderboard)
@@ -106,10 +101,8 @@ public class CCLiveUtilities implements ModInitializer {
 		try {
 			net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.initialize();
 			net.felix.utilities.Other.PlayericonUtility.PlayerIconNetworking.initialize();
-			System.out.println("✅ Player Icon System initialisiert");
 		} catch (Exception e) {
-			System.err.println("[CCLive-Utilities] Error initializing Player Icon System: " + e.getMessage());
-			e.printStackTrace();
+			// Silent error handling
 		}
 
 	}

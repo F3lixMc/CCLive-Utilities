@@ -4,6 +4,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.ItemViewer.CostItem;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ActionBarData;
+import net.felix.utilities.Overall.KeyBindingUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -721,6 +722,16 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // wird das Overlay nicht gerendert, aber beim nächsten Frame wieder.
         // Das führt zu ständigem Ein- und Ausblenden = Flackern.
         // Lösung: Rendering immer erlauben, um konsistente Anzeige zu gewährleisten
+        
+        // Hide overlay if F1 menu (debug screen) is open
+        if (client.options.hudHidden) {
+            return;
+        }
+        
+        // Hide overlay if Tab list is open (like other overlays)
+        if (KeyBindingUtility.isPlayerListKeyPressed()) {
+            return;
+        }
         
         int x = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
         int y = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
@@ -2495,6 +2506,16 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return;
         
+        // Hide tooltips if F1 menu (debug screen) is open
+        if (client.options.hudHidden) {
+            return;
+        }
+        
+        // Hide tooltips if Tab list is open (like other overlays)
+        if (KeyBindingUtility.isPlayerListKeyPressed()) {
+            return;
+        }
+        
         int x = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
         int y = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
@@ -2824,37 +2845,18 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
 
-        // Prüfe ob Tab gedrückt ist
-        boolean tabPressed = net.minecraft.client.util.InputUtil.isKeyPressed(
-            client.getWindow().getHandle(),
-            net.minecraft.client.util.InputUtil.GLFW_KEY_TAB
-        );
+        // Prüfe ob die Spielerliste-Taste gedrückt ist (respektiert benutzerdefinierte Key Bindings)
+        boolean playerListKeyPressed = KeyBindingUtility.isPlayerListKeyPressed();
 
         // Prüfe ob F1 aktiv ist (wie alle anderen GUIs - über hudHidden)
         boolean f1Active = client.options.hudHidden;
 
-        // Wenn Tab gedrückt ist oder F1 aktiv ist, dann ausblenden
-        if (tabPressed || f1Active) {
+        // Wenn Spielerliste-Taste gedrückt ist oder F1 aktiv ist, dann ausblenden
+        if (playerListKeyPressed || f1Active) {
             hideHover = true;
-            // Setze Timer nur für Tab (F1 wird direkt über hudHidden gesteuert)
-            if (tabPressed) {
-                hideHoverUntil = System.currentTimeMillis() + 200;
-            } else {
-                // Bei F1: Kein Timer, wird direkt gesteuert
-                hideHoverUntil = Long.MAX_VALUE; // Verhindere automatisches Zurücksetzen
-            }
         } else {
-            // Weder Tab noch F1 aktiv - sofort wieder anzeigen
-            // (außer wenn Tab-Timer noch läuft)
-            if (hideHoverUntil == Long.MAX_VALUE) {
-                // F1 wurde deaktiviert - sofort wieder anzeigen
-                hideHover = false;
-                hideHoverUntil = 0;
-            } else if (hideHover && System.currentTimeMillis() >= hideHoverUntil) {
-                // Tab-Timer ist abgelaufen - wieder anzeigen
-                hideHover = false;
-                hideHoverUntil = 0;
-            }
+            // Weder Spielerliste-Taste noch F1 aktiv - zeige Overlay sofort wieder an (ohne Delay)
+            hideHover = false;
         }
     }
     

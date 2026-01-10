@@ -121,9 +121,11 @@ public class PlayerIconNetworking {
                 return;
             }
             
-            // Every 5 seconds (100 ticks), fetch player list from API
+            // Every 5 seconds (100 ticks), fetch player list from API (asynchron, um Freezes zu vermeiden)
             if (client.player.age > 0 && client.player.age % 100 == 0) {
-                updatePlayersWithModFromAPI(client);
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    updatePlayersWithModFromAPI(client);
+                });
             }
         });
     }
