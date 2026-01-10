@@ -1974,7 +1974,7 @@ public class SearchBarUtility {
 	}
 	
 	/**
-	 * Rendert rote Rahmen um Items die mit dem Suchfilter übereinstimmen
+	 * Rendert Rahmen oder Hintergrund um Items die mit dem Suchfilter übereinstimmen
 	 */
 	public static void renderSearchFrames(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
 		if (!isSearchBarVisible || searchText.isEmpty() || matchingSlots.isEmpty()) {
@@ -1982,8 +1982,9 @@ public class SearchBarUtility {
 		}
 
 		int frameColor = CCLiveUtilitiesConfig.HANDLER.instance().searchBarFrameColor.getRGB();
+		net.felix.ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().searchBarItemDisplayMode;
 		
-		// Zeichne rote Rahmen um die passenden Items
+		// Zeichne Rahmen oder Hintergrund um die passenden Items
 		for (Integer slotIndex : matchingSlots) {
 			if (slotIndex < screen.getScreenHandler().slots.size()) {
 				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
@@ -1992,11 +1993,18 @@ public class SearchBarUtility {
 				int slotX = screenX + slot.x;
 				int slotY = screenY + slot.y;
 				
-				// Zeichne 1 Pixel dicken roten Rahmen
-				context.fill(slotX - 1, slotY - 1, slotX + SLOT_SIZE + 1, slotY, frameColor); // Oben
-				context.fill(slotX - 1, slotY + SLOT_SIZE, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Unten
-				context.fill(slotX - 1, slotY - 1, slotX, slotY + SLOT_SIZE + 1, frameColor); // Links
-				context.fill(slotX + SLOT_SIZE, slotY - 1, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Rechts
+				if (displayMode == net.felix.ItemDisplayMode.BACKGROUND) {
+					// Zeichne halbtransparenten Hintergrund
+					// Verwende die Rahmenfarbe, aber mit reduzierter Transparenz
+					int backgroundColor = (frameColor & 0x00FFFFFF) | 0x80000000; // 50% Transparenz für bessere Sichtbarkeit
+					context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, backgroundColor);
+				} else {
+					// Zeichne 1 Pixel dicken Rahmen (Standard)
+					context.fill(slotX - 1, slotY - 1, slotX + SLOT_SIZE + 1, slotY, frameColor); // Oben
+					context.fill(slotX - 1, slotY + SLOT_SIZE, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Unten
+					context.fill(slotX - 1, slotY - 1, slotX, slotY + SLOT_SIZE + 1, frameColor); // Links
+					context.fill(slotX + SLOT_SIZE, slotY - 1, slotX + SLOT_SIZE + 1, slotY + SLOT_SIZE + 1, frameColor); // Rechts
+				}
 			}
 		}
 	}

@@ -92,6 +92,13 @@ public class CCLiveUtilitiesConfig {
             }
         }
         // statueShowBackground wird für Abwärtskompatibilität beibehalten
+        
+        // Migration für hoverStatsChosenStat von String zu Enum
+        if (config.hoverStatsChosenStatString != null && !config.hoverStatsChosenStatString.isEmpty()) {
+            config.hoverStatsChosenStat = net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.fromString(config.hoverStatsChosenStatString);
+            config.hoverStatsChosenStatString = null;
+            HANDLER.save();
+        }
     }
 
     // General Settings
@@ -137,7 +144,11 @@ public class CCLiveUtilitiesConfig {
     
     // Player Hover Stats Settings
     @SerialEntry
-    public String hoverStatsChosenStat = "playtime"; // "playtime", "max_coins", "messages_sent", "blueprints_found", "max_damage"
+    public net.felix.profile.PlayerHoverStatsUtility.HoverStatsType hoverStatsChosenStat = net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME; // Stat die in Chat-Hover-Events angezeigt wird
+    
+    // Migration für hoverStatsChosenStat von String zu Enum
+    @SerialEntry
+    public String hoverStatsChosenStatString = null; // Für Migration (veraltet)
 
     // Equipment Display Settings
     @SerialEntry
@@ -555,6 +566,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean searchBarShowBackground = true; // Schwarzer Hintergrund für Search Bar
+    
+    @SerialEntry
+    public ItemDisplayMode searchBarItemDisplayMode = ItemDisplayMode.BORDER; // Anzeigemodus für gefilterte Items (Rahmen oder Hintergrund)
     
     // Boss HP Settings
     @SerialEntry
@@ -1204,17 +1218,26 @@ public class CCLiveUtilitiesConfig {
                                         .binding(new Color(0xFFFF0000), () -> HANDLER.instance().searchBarFrameColor, newVal -> HANDLER.instance().searchBarFrameColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hintergrund anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter der Suchleiste anzeigen oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().searchBarShowBackground, newVal -> HANDLER.instance().searchBarShowBackground = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
+                                .option(Option.<ItemDisplayMode>createBuilder()
+                                        .name(Text.literal("Item-Anzeigemodus"))
+                                        .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für gefilterte Items")))
+                                        .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().searchBarItemDisplayMode, newVal -> HANDLER.instance().searchBarItemDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(ItemDisplayMode.class)
+                                                .valueFormatter(mode -> {
+                                                    if (mode == ItemDisplayMode.BORDER) {
+                                                        return Text.literal("Rahmen");
+                                                    } else {
+                                                        return Text.literal("Hintergrund");
+                                                    }
+                                                }))
                                         .build())
+
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Animation Blocker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Animation Blocker aktivieren"))
+                                        .name(Text.literal("Animation Blocker ein/aus"))
                                         .description(OptionDescription.of(Text.literal("Animation Blocker aktivieren oder deaktivieren")))
                                         .binding(true, () -> HANDLER.instance().animationBlockerEnabled, newVal -> HANDLER.instance().animationBlockerEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
@@ -1262,41 +1285,6 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("Monster Todesanimationen Ein/Aus"))
                                         .description(OptionDescription.of(Text.literal("Monster Todesanimationen aktivieren oder deaktivieren")))
                                         .binding(false, () -> HANDLER.instance().killAnimationUtilityEnabled, newVal -> HANDLER.instance().killAnimationUtilityEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Spieler Icon"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Mod-Icon über Spielernamen"))
-                                        .description(OptionDescription.of(Text.literal("Zeigt das Mod-Icon über dem Namen von Spielern an, die die Mod installiert haben")))
-                                        .binding(true, () -> HANDLER.instance().showPlayerNametagIcon, newVal -> HANDLER.instance().showPlayerNametagIcon = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .build())
-                        .build())
-                .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Chat"))
-                        .tooltip(Text.literal("Einstellungen für Chat-Funktionen"))
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Chat Icon"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Chat Icon"))
-                                        .description(OptionDescription.of(Text.literal("Chat-Icon hinter Spielernamen im Chat anzeigen oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().chatIconEnabled, newVal -> HANDLER.instance().chatIconEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .build())
-                        .build())
-                .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Leaderboards"))
-                        .tooltip(Text.literal("Einstellungen für Leaderboards und Tracker"))
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Tracker Aktivität"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Tracker Aktivität"))
-                                        .description(OptionDescription.of(Text.literal("Tracker-Updates an den Server senden und Trackings von anderen Spielern anzeigen")))
-                                        .binding(true, () -> HANDLER.instance().trackerActivityEnabled, newVal -> HANDLER.instance().trackerActivityEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
@@ -1384,6 +1372,20 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Schmied Tracker aktivieren oder deaktivieren")))
                                         .binding(true, () -> HANDLER.instance().schmiedTrackerEnabled, newVal -> HANDLER.instance().schmiedTrackerEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<ItemDisplayMode>createBuilder()
+                                        .name(Text.literal("Item-Anzeigemodus"))
+                                        .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für Schmiedezustand Items")))
+                                        .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().schmiedTrackerItemDisplayMode, newVal -> HANDLER.instance().schmiedTrackerItemDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(ItemDisplayMode.class)
+                                                .valueFormatter(mode -> {
+                                                    if (mode == ItemDisplayMode.BORDER) {
+                                                        return Text.literal("Rahmen");
+                                                    } else {
+                                                        return Text.literal("Hintergrund");
+                                                    }
+                                                }))
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Text.literal("Hide Uncraftable Button"))
@@ -1694,14 +1696,54 @@ public class CCLiveUtilitiesConfig {
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Debug"))
-                        .tooltip(Text.literal("Debug-Einstellungen für Entwickler und fortgeschrittene Benutzer"))
-                        .option(Option.<Boolean>createBuilder()
+                        .name(Text.literal("Verschiedenes"))
+                        .tooltip(Text.literal("Verschiedene Einstellungen"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Leaderboards"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Tracker Aktivität"))
+                                        .description(OptionDescription.of(Text.literal("Tracker-Updates an den Server senden und Trackings von anderen Spielern anzeigen")))
+                                        .binding(true, () -> HANDLER.instance().trackerActivityEnabled, newVal -> HANDLER.instance().trackerActivityEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build()) 
+                                .option(Option.<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
+                                        .name(Text.literal("Hover Stats: Chosen Stat"))
+                                        .description(OptionDescription.of(Text.literal("Welche Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?")))
+                                        .binding(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, () -> HANDLER.instance().hoverStatsChosenStat != null ? HANDLER.instance().hoverStatsChosenStat : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)
+                                                .valueFormatter(value -> value != null ? Text.literal(value.getDisplayName()) : Text.literal("Spielzeit")))
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Icon"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Mod-Icon im Chat"))
+                                        .description(OptionDescription.of(Text.literal("Mod-Icon hinter Spielernamen im Chat anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().chatIconEnabled, newVal -> HANDLER.instance().chatIconEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Mod-Icon über Spielernamen"))
+                                        .description(OptionDescription.of(Text.literal("Zeigt das Mod-Icon über dem Namen von Spielern an, die die Mod installiert haben")))
+                                        .binding(true, () -> HANDLER.instance().showPlayerNametagIcon, newVal -> HANDLER.instance().showPlayerNametagIcon = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Update Checker"))
+                                .option(Option.<Boolean>createBuilder()
                                 .name(Text.literal("Update Checker aktivieren"))
                                 .description(OptionDescription.of(Text.literal("Automatische Update-Prüfung beim Server-Beitritt aktivieren oder deaktivieren")))
                                 .binding(true, () -> HANDLER.instance().updateCheckerEnabled, newVal -> HANDLER.instance().updateCheckerEnabled = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.literal("Debug"))
+                        .tooltip(Text.literal("Debug-Einstellungen für Entwickler und fortgeschrittene Benutzer"))
+                        
                         .option(Option.<Boolean>createBuilder()
                                 .name(Text.literal("Blueprint Debugging"))
                                 .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten und -Commands für das Blueprint-System")))
@@ -1720,23 +1762,7 @@ public class CCLiveUtilitiesConfig {
                                 .binding(false, () -> HANDLER.instance().playerStatsDebugging, newVal -> HANDLER.instance().playerStatsDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
-                        .option(Option.<String>createBuilder()
-                                .name(Text.literal("Hover Stats: Chosen Stat"))
-                                .description(OptionDescription.of(Text.literal("Welche Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?\n• playtime: Spielzeit\n• max_coins: Max Coins\n• messages_sent: Gesendete Nachrichten\n• blueprints_found: Gefundene Baupläne\n• max_damage: Max Schaden")))
-                                .binding("playtime", () -> HANDLER.instance().hoverStatsChosenStat, newVal -> {
-                                    // Validiere den Wert
-                                    String[] validValues = {"playtime", "max_coins", "messages_sent", "blueprints_found", "max_damage"};
-                                    boolean isValid = false;
-                                    for (String valid : validValues) {
-                                        if (valid.equals(newVal)) {
-                                            isValid = true;
-                                            break;
-                                        }
-                                    }
-                                    HANDLER.instance().hoverStatsChosenStat = isValid ? newVal : "playtime";
-                                })
-                                .controller(StringControllerBuilder::create)
-                                .build())
+
                         .option(Option.<Boolean>createBuilder()
                                 .name(Text.literal("Debug Funktionen"))
                                 .description(OptionDescription.of(Text.literal("Debug Funktionen\n-ItemHoverLogger (F8)\n-InventoryNameLogger (F9)\n-ScoreboardLogger (F10)\n-BossBarLogger (F12)")))
