@@ -73,9 +73,20 @@ public class ItemViewerGrid {
             // Rendere Slot-Hintergrund
             renderSlot(context, slotX, slotY, isHovered);
             
-            // Prüfe ob es ein "Passiver Fähigkeits Slot" ist
-            if (isPassiveSkillSlot(item)) {
-                // Rendere spezielle Textur für Passiven Fähigkeits Slot
+            // Prüfe zuerst ob eine benutzerdefinierte Textur angegeben ist
+            if (item.texture != null && !item.texture.isEmpty()) {
+                // Rendere benutzerdefinierte Textur
+                Identifier textureId = Identifier.of("cclive-utilities", "textures/" + item.texture);
+                context.drawTexture(
+                    RenderPipelines.GUI_TEXTURED,
+                    textureId,
+                    slotX + 1, slotY + 1,
+                    0, 0,
+                    16, 16,
+                    16, 16
+                );
+            } else if (isPassiveSkillSlot(item)) {
+                // Rendere spezielle Textur für Passiven Fähigkeits Slot (Rückwärtskompatibilität)
                 context.drawTexture(
                     RenderPipelines.GUI_TEXTURED,
                     PASSIVE_SKILL_SLOT_TEXTURE,
@@ -85,7 +96,7 @@ public class ItemViewerGrid {
                     16, 16
                 );
             } else if (isCardSlot(item)) {
-                // Rendere spezielle Textur für Karten Slot
+                // Rendere spezielle Textur für Karten Slot (Rückwärtskompatibilität)
                 context.drawTexture(
                     RenderPipelines.GUI_TEXTURED,
                     CARD_SLOT_TEXTURE,
@@ -229,6 +240,7 @@ public class ItemViewerGrid {
                             addCostItem(tooltipLines, hoveredItem.price.material2);
                             addCostItem(tooltipLines, hoveredItem.price.Amboss);
                             addCostItem(tooltipLines, hoveredItem.price.Ressource);
+                            addLevelCostItem(tooltipLines, hoveredItem.price.Level); // Level in gelb
                         }
                         
                         // Forschungs Zeit separat anzeigen (gelb Header, dann grün)
@@ -475,6 +487,7 @@ public class ItemViewerGrid {
                         addCostItem(tooltipLines, hoveredItem.price.material2);
                         addCostItem(tooltipLines, hoveredItem.price.Amboss);
                         addCostItem(tooltipLines, hoveredItem.price.Ressource);
+                        addLevelCostItem(tooltipLines, hoveredItem.price.Level); // Level in gelb
                     }
                     
                     // Bauplan-Shop (yellow Header, dann green Preise)
@@ -750,6 +763,26 @@ public class ItemViewerGrid {
                 tooltipLines.add(Text.literal(materialLine)
                     .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false)));
             }
+        }
+    }
+    
+    /**
+     * Fügt eine Level-Kosten-Zeile zum Tooltip hinzu (Zahl in gelb)
+     */
+    private void addLevelCostItem(java.util.List<Text> tooltipLines, CostItem costItem) {
+        if (costItem != null && costItem.itemName != null && costItem.amount != null) {
+            String amountStr = formatAmount(costItem.amount);
+            
+            // Erstelle Text mit Zahl in gelb und Item-Name in grün
+            String amountPart = amountStr + " ";
+            String namePart = costItem.itemName;
+            
+            MutableText levelText = Text.literal(amountPart)
+                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)) // Gelb für Zahl
+                .append(Text.literal(namePart)
+                    .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false))); // Grün für Name
+            
+            tooltipLines.add(levelText);
         }
     }
     

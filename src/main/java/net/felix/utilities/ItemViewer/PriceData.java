@@ -15,6 +15,8 @@ public class PriceData {
     public CostItem Amboss;      // Amboss Item
     @SerializedName("ressource")
     public CostItem Ressource;   // Ressourcen Item
+    @SerializedName("Level")
+    public CostItem Level;       // Farmzone Level (für Lizenzen)
     public CostItem paper_shreds; // Pergamentfetzen (für blueprint_shop)
     public CostItem time;        // Zeit (für Power Crystal Slots)
 }

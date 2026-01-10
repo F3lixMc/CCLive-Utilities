@@ -2,12 +2,10 @@ package net.felix.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
 import net.minecraft.util.Formatting;
 import net.felix.utilities.MobTimerUtility;
 

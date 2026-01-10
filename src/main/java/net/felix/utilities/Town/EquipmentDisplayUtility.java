@@ -10,7 +10,6 @@ import net.minecraft.text.Text;
 import net.minecraft.item.ItemStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.util.InputUtil;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;

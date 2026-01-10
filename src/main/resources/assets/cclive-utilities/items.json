@@ -186073,6 +186073,987 @@
     }
   ],
   "runes": [],
+  "licence": [
+    {
+      "id": "minecraft:paper",
+      "name": "Eichenholz Lizenz",
+      "texture": "icons/licens_oak.png",
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Startgebiet der Farmzone. Standardmäßig Freigeschaltet.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "eiche"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Kohlemine Lizenz",
+      "texture": "icons/licens_coal.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "30.000"
+        },
+        "material1": {
+          "itemName": "Schweinborsten",
+          "amount": "200"
+        },
+        "ressource": {
+          "itemName": "Eichenholz",
+          "amount": "200"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "2"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Kohlemine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "kohle"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Kupfermine Lizenz",
+      "foundAt": [
+        {
+          "collection": "Kohlemine III"
+        }
+      ],
+      "texture": "icons/licens_copper.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "200.000"
+        },
+        "material1": {
+          "itemName": "Lamahaar",
+          "amount": "300"
+        },
+        "ressource": {
+          "itemName": "Kohle",
+          "amount": "300"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "3"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Kupfermine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "kupfer"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Dschungelholzstrand Lizenz",
+      "foundAt": [
+        {
+          "collection": "Kupfermine III"
+        }
+      ],
+      "texture": "icons/licens_jungle.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "400.000"
+        },
+        "material1": {
+          "itemName": "Ozelot Haar",
+          "amount": "500"
+        },
+        "ressource": {
+          "itemName": "Eichenholz",
+          "amount": "300"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "4"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet den Dschungelholzstrand Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "dschungelholz"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Fichtenwald Lizenz",
+      "foundAt": [
+        {
+          "collection": "Dschungelholz IV"
+        }
+      ],
+      "texture": "icons/licens_spruce.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.200.000"
+        },
+        "material1": {
+          "itemName": "Wolfshaar",
+          "amount": "1.200"
+        },
+        "ressource": {
+          "itemName": "Dschungelholz",
+          "amount": "500"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "5"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet den Fichtenholzwald Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "fichte"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Bambuswald Lizenz",
+      "foundAt": [
+        {
+          "collection": "Fichtenholz IV"
+        }
+      ],
+      "texture": "icons/licens_bamboo.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.500.000"
+        },
+        "material1": {
+          "itemName": "Pandahaar",
+          "amount": "2.000"
+        },
+        "ressource": {
+          "itemName": "Fichtenholz",
+          "amount": "700"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "6"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schalter den Bambuswald Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "bambus"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Eisenmine Lizenz",
+      "foundAt": [
+        {
+          "collection": "Bambus V"
+        }
+      ],
+      "texture": "icons/licens_iron.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "3.000.000"
+        },
+        "material1": {
+          "itemName": "Fledermausfell",
+          "amount": "2.200"
+        },
+        "ressource": {
+          "itemName": "Kupferbarren",
+          "amount": "500"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "7"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Eisenmine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "eisen"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Pilzholzwald Lizenz",
+      "foundAt": [
+        {
+          "collection": "Eisen V"
+        }
+      ],
+      "texture": "icons/licens_mushroom.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "5.000.000"
+        },
+        "material1": {
+          "itemName": "Kaninchenfellfaden",
+          "amount": "2.500"
+        },
+        "ressource": {
+          "itemName": "Bambus",
+          "amount": "1.000"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "8"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet den Pilzholzwald Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "pilzholz"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Dunkles Eichenholz Lizenz",
+      "foundAt": [
+        {
+          "collection": "Pilzholz V"
+        }
+      ],
+      "texture": "icons/licens_dark_oak.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "10.000.000"
+        },
+        "material1": {
+          "itemName": "Schafsflaum",
+          "amount": "3.500"
+        },
+        "ressource": {
+          "itemName": "Pilzholz",
+          "amount": "1.200"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "9"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet den Dunkles Eichenholzwald Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "dunkel eiche"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Goldmine Lizenz",
+      "foundAt": [
+        {
+          "collection": "Dunkles Eichenholz V"
+        }
+      ],
+      "texture": "icons/licens_gold.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "40.000.000"
+        },
+        "material1": {
+          "itemName": "Leinenstoff",
+          "amount": "7.000"
+        },
+        "ressource": {
+          "itemName": "Eisenbarren",
+          "amount": "1.200"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "10"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Goldmine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "gold"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Mangrovensumpf Lizenz",
+      "foundAt": [
+        {
+          "collection": "Goldmine VI"
+        }
+      ],
+      "texture": "icons/licens_mangrove.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "80.000.000"
+        },
+        "material1": {
+          "itemName": "Schleimball",
+          "amount": "10.000"
+        },
+        "ressource": {
+          "itemName": "Dunkles Eichenholz",
+          "amount": "1.500"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "11"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet den Mangrovensumpf Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "mangrove"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Diamantmine Lizenz",
+      "foundAt": [
+        {
+          "collection": "Mangrovenholz VI"
+        }
+      ],
+      "texture": "icons/licens_diamond.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "250.000.000"
+        },
+        "material1": {
+          "itemName": "Brüchige Schuppe",
+          "amount": "12.000"
+        },
+        "ressource": {
+          "itemName": "Goldbarren",
+          "amount": "2.000"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "12"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Diamantmine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "diamant"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Schwefelfelder Lizenz",
+      "foundAt": [
+        {
+          "collection": "Diamantmine VI"
+        }
+      ],
+      "texture": "icons/licens_schwefel.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "700.000.000"
+        },
+        "material1": {
+          "itemName": "Moosiger Pelz",
+          "amount": "15.000"
+        },
+        "ressource": {
+          "itemName": "Diamanten",
+          "amount": "2.500"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "13"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet das Schwefelfelder Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "schwefel"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Quartzmine Lizenz",
+      "foundAt": [
+        {
+          "collection": "Schwefelfelder VI"
+        }
+      ],
+      "texture": "icons/licens_quartz.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.000.000.000"
+        },
+        "material1": {
+          "itemName": "Piglinleder",
+          "amount": "18.000"
+        },
+        "ressource": {
+          "itemName": "Schwefel",
+          "amount": "3.200"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "14"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Quartzmine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "quartz"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Obsidianmine Lizenz",
+      "foundAt": [
+        {
+          "collection": "Quartzmine VII"
+        }
+      ],
+      "texture": "icons/licens_obsidian.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.500.000.000"
+        },
+        "material1": {
+          "itemName": "Striderhaut",
+          "amount": "20.000"
+        },
+        "ressource": {
+          "itemName": "Quartz",
+          "amount": "4.000"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "15"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Obsidianmine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "obsidian"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karmesinholzwald Lizenz",
+      "foundAt": [
+        {
+          "collection": "Obsidianmine VII"
+        }
+      ],
+      "texture": "icons/licens_crimson.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "2.200.000.000"
+        },
+        "material1": {
+          "itemName": "Hoglinhaut",
+          "amount": "24.000"
+        },
+        "ressource": {
+          "itemName": "Mangrovenholz",
+          "amount": "5.200"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "16"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet den Karmesinholzwald Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "karmesinholz"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Wirrholzwald Lizenz",
+      "foundAt": [
+        {
+          "collection": "Karmesinholz VII"
+        }
+      ],
+      "texture": "icons/licens_warped.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "3.000.000.000"
+        },
+        "material1": {
+          "itemName": "Enderman Haut",
+          "amount": "27.000"
+        },
+        "ressource": {
+          "itemName": "Karmesinholz",
+          "amount": "6.000"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "17"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet den Karmesinholzwald Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "wirrholz"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Netheritemine Lizenz",
+      "foundAt": [
+        {
+          "collection": "Wirrholz VII"
+        }
+      ],
+      "texture": "icons/licens_netherite.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "4.200.000.000"
+        },
+        "material1": {
+          "itemName": "Dunkles Knochenfragment",
+          "amount": "30.000"
+        },
+        "ressource": {
+          "itemName": "Obsidian",
+          "amount": "7.200"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "18"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Netheritemine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "netherite"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Echokristallminen Lizenz",
+      "foundAt": [
+        {
+          "collection": "Netherite VII"
+        }
+      ],
+      "texture": "icons/licens_echo.png",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "6.000.000.000"
+        },
+        "material1": {
+          "itemName": "Wardenpanzer",
+          "amount": "35.000"
+        },
+        "ressource": {
+          "itemName": "Netherite Barren",
+          "amount": "5.000"
+        },
+        "Level": {
+          "itemName": "Farmzone Level",
+          "amount": "19"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Schaltet die Echokristallmine Frei.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": false,
+	      "licence": true
+      },
+      "tags": [
+        "lizenz",
+        "echo"
+      ]
+    }
+  ],
   "card_slots": [
     {
       "id": "minecraft:paper",

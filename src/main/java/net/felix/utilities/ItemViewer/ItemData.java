@@ -17,6 +17,7 @@ public class ItemData {
     public ItemInfo info;               // Zusatzinfos (Aspekt, Rarity, etc.)
     public List<String> tags;           // Tags für Suche/Kategorisierung
     public String category;              // Kategorie aus JSON (z.B. "blueprints", "abilities", "modules", etc.)
+    public String texture;               // Optional: Pfad zur benutzerdefinierten Textur (z.B. "icons/my_texture.png")
     public JsonObject jsonObject;        // Vollständiges JSON-Objekt (für Favoriten)
 }
 

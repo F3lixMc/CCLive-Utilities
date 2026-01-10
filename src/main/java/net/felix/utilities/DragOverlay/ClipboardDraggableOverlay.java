@@ -71,7 +71,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     // Flag für Clipboard-Hover (wird bei Tab/F1 ausgeblendet)
     private static boolean hideHover = false;
-    private static long hideHoverUntil = 0; // Zeitstempel bis wann das Hover ausgeblendet werden soll
     
     private static void setCurrentPage(int page) {
         int totalPages = getTotalPages();
@@ -2832,8 +2831,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      */
     public static void hideHover() {
         hideHover = true;
-        // Setze Zeitstempel für 200ms (damit es wieder angezeigt werden kann)
-        hideHoverUntil = System.currentTimeMillis() + 200;
     }
     
     /**

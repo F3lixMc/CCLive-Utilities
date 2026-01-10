@@ -14,8 +14,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Formatting;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.ZeichenUtility;
 import org.joml.Matrix3x2fStack;

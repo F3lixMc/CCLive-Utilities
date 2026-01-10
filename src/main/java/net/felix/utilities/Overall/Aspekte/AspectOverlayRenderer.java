@@ -1,9 +1,5 @@
 package net.felix.utilities.Overall.Aspekte;
 
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-
 public class AspectOverlayRenderer {
     
     public static void initialize() {

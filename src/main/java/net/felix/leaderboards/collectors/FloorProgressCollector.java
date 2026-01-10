@@ -3,7 +3,6 @@ package net.felix.leaderboards.collectors;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.MinecraftClient;
-import net.felix.leaderboards.LeaderboardManager;
 
 import java.time.Instant;
 import java.util.HashMap;

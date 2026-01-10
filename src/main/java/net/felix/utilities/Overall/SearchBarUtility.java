@@ -9,7 +9,6 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.component.DataComponentTypes;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.ZeichenUtility;
 
 import java.util.List;
 import java.util.ArrayList;

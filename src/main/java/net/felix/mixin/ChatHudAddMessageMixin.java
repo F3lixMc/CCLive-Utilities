@@ -1,12 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.gui.hud.ChatHud;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Mixin to modify chat messages before they are added to the chat.

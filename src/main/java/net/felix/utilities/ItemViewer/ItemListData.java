@@ -28,5 +28,6 @@ public class ItemListData {
     public List<ItemData> essences;
     public List<ItemData> module_bags;
     public List<ItemData> card_slots;
+    public List<ItemData> licence;      // Lizenzen (Farmzone)
 }
 

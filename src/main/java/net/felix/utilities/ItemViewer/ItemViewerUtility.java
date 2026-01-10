@@ -326,6 +326,27 @@ public class ItemViewerUtility {
                         }
                         allItems.addAll(data.card_slots);
                     }
+                    if (data.licence != null && !data.licence.isEmpty()) {
+                        // Extrahiere JSON-Objekte für Lizenzen
+                        if (rootJson.has("licence") && rootJson.get("licence").isJsonArray()) {
+                            var licenceArray = rootJson.getAsJsonArray("licence");
+                            for (int i = 0; i < licenceArray.size() && i < data.licence.size(); i++) {
+                                JsonElement element = licenceArray.get(i);
+                                if (element.isJsonObject()) {
+                                    JsonObject jsonObj = element.getAsJsonObject();
+                                    ItemData item = data.licence.get(i);
+                                    item.jsonObject = jsonObj;
+                                    item.category = "licence";
+                                }
+                            }
+                        } else {
+                            // Fallback: Keine JSON-Objekte verfügbar
+                            for (ItemData item : data.licence) {
+                                item.category = "licence";
+                            }
+                        }
+                        allItems.addAll(data.licence);
+                    }
                     
                     if (!allItems.isEmpty()) {
                         filteredItems = new ArrayList<>(allItems);
@@ -1668,7 +1689,8 @@ public class ItemViewerUtility {
             new CategoryButton("Machtkristall", java.util.List.of("machtkristall")),
             new CategoryButton("MK-Slots", java.util.List.of("slot")),
             new CategoryButton("Fähigkeiten", java.util.List.of("ability")),
-            new CategoryButton("Karten Slots", java.util.List.of("card"))
+            new CategoryButton("Karten Slots", java.util.List.of("card")),
+            new CategoryButton("Lizenzen", java.util.List.of("lizenz"))
     );
     private static CategoryButton activeCategoryOverlay = null;
     
@@ -2150,7 +2172,6 @@ public class ItemViewerUtility {
         // Berechne verfügbare Höhe für Text (oberhalb der Buttons)
         int numRows = (int) Math.ceil((double) CATEGORY_BUTTON_DEFS.size() / maxButtonsPerRow);
         // headerHeight und spacing wurden bereits oben definiert
-        int buttonAreaHeightForText = headerHeight + spacing + (numRows * buttonHeight) + ((numRows - 1) * buttonSpacingY);
         int buttonY = boxY + boxHeight - 8 - ((numRows - 1) * buttonSpacingY) - buttonHeight;
         int minButtonYForText = textStartY + 15; // Mindestens 15px nach dem letzten Text
         if (buttonY < minButtonYForText) {
@@ -2475,6 +2496,9 @@ public class ItemViewerUtility {
                 break;
             case "Karten Slots":
                 categoryKey = "card_slots";
+                break;
+            case "Lizenzen":
+                categoryKey = "licence";
                 break;
         }
         
