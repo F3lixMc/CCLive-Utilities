@@ -10,6 +10,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.client.gl.RenderPipelines;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 public class ItemViewerGrid {
     
     private static final int SLOT_SIZE = 18; // 16x16 Item + 1px Padding auf jeder Seite
+    private static final Identifier PASSIVE_SKILL_SLOT_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/passive_skill_slot.png");
     private static final int DEFAULT_GRID_ROWS = 8; // Standard: 8 Zeilen (für Fallback)
     private static final int DEFAULT_GRID_COLUMNS = 6; // Standard: 6 Spalten (für Fallback)
     
@@ -70,10 +72,23 @@ public class ItemViewerGrid {
             // Rendere Slot-Hintergrund
             renderSlot(context, slotX, slotY, isHovered);
             
-            // Rendere Item
-            ItemStack itemStack = createItemStack(item);
-            if (!itemStack.isEmpty()) {
-                context.drawItem(itemStack, slotX + 1, slotY + 1, 0);
+            // Prüfe ob es ein "Passiver Fähigkeits Slot" ist
+            if (isPassiveSkillSlot(item)) {
+                // Rendere spezielle Textur für Passiven Fähigkeits Slot
+                context.drawTexture(
+                    RenderPipelines.GUI_TEXTURED,
+                    PASSIVE_SKILL_SLOT_TEXTURE,
+                    slotX + 1, slotY + 1,
+                    0, 0,
+                    16, 16,
+                    16, 16
+                );
+            } else {
+                // Rendere normales Item
+                ItemStack itemStack = createItemStack(item);
+                if (!itemStack.isEmpty()) {
+                    context.drawItem(itemStack, slotX + 1, slotY + 1, 0);
+                }
             }
         }
     }
@@ -123,38 +138,50 @@ public class ItemViewerGrid {
                         // 3. level_info Zeilen (aqua)
                         // 4. first_upgrade (dark_aqua)
                         
-                        // Description (weiß, nicht kursiv) - mit Zeilenumbruch bei "Spieler," oder "Owyn,"
+                        // Description (weiß, nicht kursiv) - mit Zeilenumbruch bei "Spieler," oder "Owyn," und \n Unterstützung
                         if (info.description != null && !info.description.isEmpty()) {
                             String description = info.description;
-                            // Prüfe ob "Spieler," oder "Owyn," vorhanden ist und teile dort
-                            String splitMarker = null;
-                            if (description.contains("Spieler,")) {
-                                splitMarker = "Spieler,";
-                            } else if (description.contains("Owyn,")) {
-                                splitMarker = "Owyn,";
-                            }
                             
-                            if (splitMarker != null) {
-                                String[] parts = description.split(splitMarker, 2);
-                                if (parts.length == 2) {
-                                    // Erste Zeile: Teil vor Split-Marker + Split-Marker
-                                    tooltipLines.add(Text.literal(parts[0] + splitMarker)
-                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                    // Zweite Zeile: Teil nach Split-Marker (trim, um führende Leerzeichen zu entfernen)
-                                    String secondPart = parts[1].trim();
-                                    if (!secondPart.isEmpty()) {
-                                        tooltipLines.add(Text.literal(secondPart)
-                                            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                    }
-                                } else {
-                                    // Fallback: normale Anzeige
-                                    tooltipLines.add(Text.literal(description)
+                            // Unterstütze \n Zeilenumbrüche
+                            if (description.contains("\n")) {
+                                // Teile bei \n und rendere jede Zeile separat
+                                String[] lines = description.split("\n");
+                                for (String line : lines) {
+                                    // Auch leere Zeilen rendern (für Absätze)
+                                    tooltipLines.add(Text.literal(line)
                                         .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
                                 }
                             } else {
-                                // Kein Split-Marker gefunden - normale Anzeige
-                                tooltipLines.add(Text.literal(description)
-                                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+                                // Kein \n vorhanden - prüfe ob "Spieler," oder "Owyn," vorhanden ist und teile dort
+                                String splitMarker = null;
+                                if (description.contains("Spieler,")) {
+                                    splitMarker = "Spieler,";
+                                } else if (description.contains("Owyn,")) {
+                                    splitMarker = "Owyn,";
+                                }
+                                
+                                if (splitMarker != null) {
+                                    String[] parts = description.split(splitMarker, 2);
+                                    if (parts.length == 2) {
+                                        // Erste Zeile: Teil vor Split-Marker + Split-Marker
+                                        tooltipLines.add(Text.literal(parts[0] + splitMarker)
+                                            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+                                        // Zweite Zeile: Teil nach Split-Marker (trim, um führende Leerzeichen zu entfernen)
+                                        String secondPart = parts[1].trim();
+                                        if (!secondPart.isEmpty()) {
+                                            tooltipLines.add(Text.literal(secondPart)
+                                                .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+                                        }
+                                    } else {
+                                        // Fallback: normale Anzeige
+                                        tooltipLines.add(Text.literal(description)
+                                            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+                                    }
+                                } else {
+                                    // Kein Split-Marker gefunden - normale Anzeige
+                                    tooltipLines.add(Text.literal(description)
+                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+                                }
                             }
                         }
                         
@@ -214,37 +241,68 @@ public class ItemViewerGrid {
                         // Normales Format für Blueprints/Module/etc.
                         
                         // Description (weiß, nicht kursiv) - mit Zeilenumbrüchen unterstützen
-                        // Wird für Module/Modulbags angezeigt, nicht für Power Crystals (die haben ihr eigenes Format)
+                        // Wird für Module/Modulbags/Abilities angezeigt, nicht für Power Crystals (die haben ihr eigenes Format)
                         boolean hasDescOrUpdateInfo = false;
                         if (info.description != null && !info.description.isEmpty()) {
                             String description = info.description;
                             // Unterstütze Zeilenumbrüche (\n)
                             String[] lines = description.split("\n");
                             for (String line : lines) {
-                                if (!line.isEmpty()) {
-                                    tooltipLines.add(Text.literal(line)
-                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                }
+                                // Auch leere Zeilen rendern (für Absätze bei \n\n)
+                                tooltipLines.add(Text.literal(line)
+                                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
                             }
                             hasDescOrUpdateInfo = true;
                         }
                         
                         // Leere Zeile zwischen Description und Update-Info
                         if (info.description != null && !info.description.isEmpty() && 
-                            info.update_info != null && !info.update_info.isEmpty()) {
-                            tooltipLines.add(Text.empty());
+                            info.update_info != null) {
+                            // Prüfe ob update_info nicht leer ist
+                            boolean hasUpdateInfo = false;
+                            if (info.update_info instanceof String) {
+                                hasUpdateInfo = !((String) info.update_info).isEmpty();
+                            } else if (info.update_info instanceof List) {
+                                hasUpdateInfo = !((List<?>) info.update_info).isEmpty();
+                            }
+                            if (hasUpdateInfo) {
+                                tooltipLines.add(Text.empty());
+                            }
                         }
                         
                         // Update-Info (z.B. für Autoschmelzer) direkt unter der Description, Farbe #55FFFF
-                        if (info.update_info != null && !info.update_info.isEmpty()) {
-                            String[] lines = info.update_info.split("\n");
-                            for (String line : lines) {
-                                if (!line.isEmpty()) {
+                        if (info.update_info != null) {
+                            List<String> updateLines = new java.util.ArrayList<>();
+                            
+                            // Unterstütze sowohl String (mit \n getrennt) als auch List<String>
+                            if (info.update_info instanceof String) {
+                                String updateInfoStr = (String) info.update_info;
+                                if (!updateInfoStr.isEmpty()) {
+                                    String[] lines = updateInfoStr.split("\n");
+                                    for (String line : lines) {
+                                        if (!line.isEmpty()) {
+                                            updateLines.add(line);
+                                        }
+                                    }
+                                }
+                            } else if (info.update_info instanceof List) {
+                                @SuppressWarnings("unchecked")
+                                List<String> updateInfoList = (List<String>) info.update_info;
+                                for (String line : updateInfoList) {
+                                    if (line != null && !line.isEmpty()) {
+                                        updateLines.add(line);
+                                    }
+                                }
+                            }
+                            
+                            // Rendere alle Zeilen in Aqua-Farbe
+                            if (!updateLines.isEmpty()) {
+                                for (String line : updateLines) {
                                     tooltipLines.add(Text.literal(line)
                                         .setStyle(Style.EMPTY.withColor(0xFF55FFFF).withItalic(false)));
                                 }
+                                hasDescOrUpdateInfo = true;
                             }
-                            hasDescOrUpdateInfo = true;
                         }
                         
                         // Leere Zeile nach Description/Update-Info Block
@@ -568,6 +626,16 @@ public class ItemViewerGrid {
             // Falls Fehler beim Erstellen des ItemStacks
             return ItemStack.EMPTY;
         }
+    }
+    
+    /**
+     * Prüft ob es sich um einen "Passiver Fähigkeits Slot" handelt
+     */
+    private boolean isPassiveSkillSlot(ItemData itemData) {
+        if (itemData == null || itemData.name == null) {
+            return false;
+        }
+        return itemData.name.equals("Passiver Fähigkeits Slot");
     }
     
     /**

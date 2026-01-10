@@ -93,6 +93,10 @@ public class ClipboardUtility {
                 // Prüfe ob Maus geklickt wurde (wird in einem Mixin behandelt)
                 // Für jetzt: Button-Clicks werden in HandledScreenMixin und ScreenMixin behandelt
             }
+            
+            // Aktualisiere hideHover Flag jeden Tick (nicht nur beim Rendering)
+            // Dies stellt sicher, dass F1/Tab sofort erkannt werden, auch wenn Rendering gedrosselt ist
+            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.updateHideHover();
         });
     }
     

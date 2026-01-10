@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,14 +80,15 @@ public class ClipboardAmbossRessourceCollector {
         boolean inventoryChanged = !screenTitle.equals(lastScreenTitle) || currentSlotCount != lastSlotCount;
         
         if (inventoryChanged) {
-            // Inventar hat sich geändert - lösche Cache und sammle neu
-            ambossItems.clear();
-            ressourceItems.clear();
+            // Inventar hat sich geändert - aktualisiere Cache, aber lösche NICHT die Werte
+            // Die Werte bleiben erhalten, auch wenn wir die Seite wechseln
             lastScreenTitle = screenTitle;
             lastSlotCount = currentSlotCount;
         }
         
         // Sammle Items aus allen Slots
+        // WICHTIG: Wir überschreiben nur die Werte, die wir auf der aktuellen Seite sehen
+        // Werte, die nicht auf der aktuellen Seite sind, bleiben erhalten
         try {
             List<Slot> slots = handledScreen.getScreenHandler().slots;
             for (Slot slot : slots) {
@@ -95,7 +97,7 @@ public class ClipboardAmbossRessourceCollector {
                     continue;
                 }
                 
-                // Hole Tooltip über Reflection (wie in ClipboardPaperShredsCollector)
+                // Hole Tooltip über Data Component API (wie in ItemInfoUtility)
                 List<Text> tooltip = getTooltip(handledScreen, client, stack);
                 if (tooltip == null || tooltip.isEmpty()) {
                     continue;
@@ -109,15 +111,19 @@ public class ClipboardAmbossRessourceCollector {
                 // Durchsuche alle Tooltip-Zeilen
                 for (int i = 0; i < tooltip.size(); i++) {
                     String lineText = tooltip.get(i).getString();
+                    // Entferne Formatierungs-Codes und Unicode-Zeichen für bessere Erkennung
+                    String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "")
+                                                   .replaceAll("[\\u3400-\\u4DBF]", "")
+                                                   .trim();
                     
                     // Erste Zeile ist der Name
                     if (i == 0) {
-                        itemName = lineText.trim();
+                        itemName = cleanLineText;
                         continue;
                     }
                     
                     // Suche nach "Anzahl" + Zahl in jeder Zeile
-                    Matcher matcher = AMOUNT_PATTERN.matcher(lineText);
+                    Matcher matcher = AMOUNT_PATTERN.matcher(cleanLineText);
                     if (matcher.find()) {
                         try {
                             // Entferne Tausendertrennzeichen (Kommas)
@@ -125,19 +131,27 @@ public class ClipboardAmbossRessourceCollector {
                             amount = Long.parseLong(amountStr);
                             break; // Gefunden, keine weiteren Zeilen prüfen
                         } catch (NumberFormatException e) {
-                            // Fehler beim Parsen - ignoriere und suche weiter
+                            // Silent error handling
                         }
                     }
                 }
                 
                 // Wenn wir Name und Anzahl haben, speichere es
                 if (itemName != null && !itemName.isEmpty() && amount > 0) {
+                    // Entferne Formatierungs-Codes und Unicode-Zeichen vom Item-Namen für Vergleich
+                    String cleanItemName = itemName.replaceAll("§[0-9a-fk-or]", "")
+                                                   .replaceAll("[\\u3400-\\u4DBF]", "")
+                                                   .trim();
+                    
                     // Prüfe ob es ein Amboss- oder Ressource-Item ist
                     // Wir müssen prüfen, ob dieses Item in den Clipboard-Einträgen als Amboss oder Ressource verwendet wird
-                    if (isAmbossItem(itemName)) {
-                        ambossItems.put(itemName, amount);
-                    } else if (isRessourceItem(itemName)) {
-                        ressourceItems.put(itemName, amount);
+                    boolean isAmboss = isAmbossItem(cleanItemName);
+                    boolean isRessource = isRessourceItem(cleanItemName);
+                    
+                    if (isAmboss) {
+                        ambossItems.put(cleanItemName, amount);
+                    } else if (isRessource) {
+                        ressourceItems.put(cleanItemName, amount);
                     }
                 }
             }
@@ -147,45 +161,23 @@ public class ClipboardAmbossRessourceCollector {
     }
     
     /**
-     * Holt den Tooltip eines Items über Reflection
+     * Holt den Tooltip eines Items über Data Component API (wie in ItemInfoUtility)
      */
     private static List<Text> getTooltip(HandledScreen<?> handledScreen, MinecraftClient client, ItemStack stack) {
+        List<Text> tooltip = new ArrayList<>();
         try {
-            java.lang.reflect.Method[] methods = HandledScreen.class.getDeclaredMethods();
-            for (java.lang.reflect.Method method : methods) {
-                if (!"getTooltipFromItem".equals(method.getName())) {
-                    continue;
-                }
-                
-                Class<?>[] params = method.getParameterTypes();
-                method.setAccessible(true);
-                
-                try {
-                    // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
-                    if (params.length == 2 &&
-                        net.minecraft.client.MinecraftClient.class.isAssignableFrom(params[0]) &&
-                        ItemStack.class.isAssignableFrom(params[1])) {
-                        @SuppressWarnings("unchecked")
-                        List<Text> result = (List<Text>) method.invoke(handledScreen, client, stack);
-                        return result;
-                    }
-                    
-                    // Signatur: getTooltipFromItem(ItemStack)
-                    if (params.length == 1 &&
-                        ItemStack.class.isAssignableFrom(params[0])) {
-                        @SuppressWarnings("unchecked")
-                        List<Text> result = (List<Text>) method.invoke(handledScreen, stack);
-                        return result;
-                    }
-                } catch (Exception e) {
-                    // Versuche nächste Signatur
-                    continue;
-                }
+            // Add item name
+            tooltip.add(stack.getName());
+            
+            // Read lore from Data Component API (1.21.7) - wie in ItemInfoUtility
+            var loreComponent = stack.get(net.minecraft.component.DataComponentTypes.LORE);
+            if (loreComponent != null) {
+                tooltip.addAll(loreComponent.lines());
             }
         } catch (Exception e) {
-            // Fehler beim Suchen der Methode - ignoriere
+            // Silent error handling
         }
-        return null;
+        return tooltip.isEmpty() ? null : tooltip;
     }
     
     /**

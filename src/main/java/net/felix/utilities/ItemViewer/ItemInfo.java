@@ -15,7 +15,7 @@ public class ItemInfo {
     public List<String> modifier; // ["modifier1", "modifier2", "modifier3", "modifier4"] - kann auch weniger sein
     public List<String> level_info;  // Für Power Crystals: ["Jedes Level: +X +40 Schaden", "(X=Bonusschaden des Letzten Levels)"]
     public String first_upgrade;    // Für Power Crystals: "Erstes Upgrade gibt +100 Schaden"
-    public String update_info;    // Zusätzliche Infos (z.B. für Autoschmelzer), wird unter der Description angezeigt
+    public Object update_info;    // Zusätzliche Infos (z.B. für Autoschmelzer), wird unter der Description angezeigt. Kann String ("Zeile 1\nZeile 2") oder List<String> (["Zeile 1","Zeile 2"]) sein
     public Boolean blueprint;    // true wenn es ein Bauplan ist
     public Boolean module;       // true wenn es ein Modul ist
     public Boolean ability;      // true wenn es eine Fähigkeit ist

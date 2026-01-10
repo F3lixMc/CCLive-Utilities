@@ -50,6 +50,12 @@ public class ScreenMixin {
                 cir.setReturnValue(true);
             }
         }
+        
+        // Clipboard-Hover bei Tab oder F1 ausblenden
+        if (keyCode == GLFW.GLFW_KEY_TAB || keyCode == GLFW.GLFW_KEY_F1) {
+            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.hideHover();
+        }
+        
     }
     
     /**

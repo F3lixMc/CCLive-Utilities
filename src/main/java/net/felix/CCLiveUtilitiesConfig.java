@@ -104,12 +104,23 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showPlayerNametagIcon = true; // Mod-Icon über Spielernamen anzeigen
     
+    // Chat Settings
+    @SerialEntry
+    public boolean chatIconEnabled = true; // Chat-Icon hinter Spielernamen im Chat anzeigen
+    
+    // Leaderboard Settings
+    @SerialEntry
+    public boolean trackerActivityEnabled = true; // Tracker-Aktivität aktivieren (Updates senden und Trackings anzeigen)
+    
     // Debug Settings
     @SerialEntry
     public boolean updateCheckerEnabled = true;
     
     @SerialEntry
     public int zeichenConfigVersion = 0; // Version der geladenen zeichen.json vom Server
+    
+    @SerialEntry
+    public int itemsConfigVersion = 0; // Version der geladenen items.json vom Server
     
     @SerialEntry
     public boolean blueprintDebugging = false;
@@ -1260,6 +1271,32 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("Mod-Icon über Spielernamen"))
                                         .description(OptionDescription.of(Text.literal("Zeigt das Mod-Icon über dem Namen von Spielern an, die die Mod installiert haben")))
                                         .binding(true, () -> HANDLER.instance().showPlayerNametagIcon, newVal -> HANDLER.instance().showPlayerNametagIcon = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.literal("Chat"))
+                        .tooltip(Text.literal("Einstellungen für Chat-Funktionen"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Chat Icon"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Chat Icon"))
+                                        .description(OptionDescription.of(Text.literal("Chat-Icon hinter Spielernamen im Chat anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().chatIconEnabled, newVal -> HANDLER.instance().chatIconEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.literal("Leaderboards"))
+                        .tooltip(Text.literal("Einstellungen für Leaderboards und Tracker"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Tracker Aktivität"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Tracker Aktivität"))
+                                        .description(OptionDescription.of(Text.literal("Tracker-Updates an den Server senden und Trackings von anderen Spielern anzeigen")))
+                                        .binding(true, () -> HANDLER.instance().trackerActivityEnabled, newVal -> HANDLER.instance().trackerActivityEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())

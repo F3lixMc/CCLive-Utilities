@@ -45,8 +45,14 @@ public abstract class HandledScreenMixin {
         // Update mouse position for DebugUtility (Item Logger)
         net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
         
+        // Store mouse position for use in tooltip callbacks
+        net.felix.utilities.Overall.InformationenUtility.setLastMousePosition(mouseX, mouseY);
+        
         // Update mouse position for Item Viewer
         net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+        
+        // Update mouse position for DebugUtility (Item Logger)
+        net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Render Clipboard Overlay (wenn aktiviert)
         net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);

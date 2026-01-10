@@ -7,6 +7,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,8 +19,10 @@ import java.util.regex.Pattern;
 public class ClipboardPaperShredsCollector {
     private static long currentPaperShreds = 0;
     
-    // Pattern für die Pergamentfetzen-Zeile im Tooltip: "100 / 186 Pergamentfetzen" oder "1,000 / 1,260,636 Pergamentfetzen"
+    // Pattern für die Pergamentfetzen-Zeile im Tooltip: "780,080 / 186 Pergamentfetzen"
+    // Format: "vorhandene Anzahl / benötigte Anzahl Pergamentfetzen"
     // Unterstützt Kommas als Tausendertrennzeichen (z.B. 1,000, 1,000,000)
+    // Extrahiert die erste Zahl (vorhandene Anzahl) vor dem "/"
     private static final Pattern PAPER_SHREDS_PATTERN = Pattern.compile("(\\d{1,3}(?:,\\d{3})*|\\d+)\\s*/\\s*\\d+(?:[.,]\\d+)*\\s+Pergamentfetzen", Pattern.CASE_INSENSITIVE);
     
     /**
@@ -73,63 +76,47 @@ public class ClipboardPaperShredsCollector {
                 return;
             }
             
-            // Hole Tooltip über Reflection (wie in MenuHoverCollector - probiere verschiedene Signaturen)
-            List<Text> tooltip = null;
+            // Hole Tooltip über Data Component API (wie in ItemInfoUtility)
+            List<Text> tooltip = new ArrayList<>();
             try {
-                java.lang.reflect.Method[] methods = HandledScreen.class.getDeclaredMethods();
-                for (java.lang.reflect.Method method : methods) {
-                    if (!"getTooltipFromItem".equals(method.getName())) {
-                        continue;
-                    }
-                    
-                    Class<?>[] params = method.getParameterTypes();
-                    method.setAccessible(true);
-                    
-                    try {
-                        // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
-                        if (params.length == 2 &&
-                            net.minecraft.client.MinecraftClient.class.isAssignableFrom(params[0]) &&
-                            ItemStack.class.isAssignableFrom(params[1])) {
-                            @SuppressWarnings("unchecked")
-                            List<Text> result = (List<Text>) method.invoke(handledScreen, client, stack);
-                            tooltip = result;
-                            break;
-                        }
-                        
-                        // Signatur: getTooltipFromItem(ItemStack)
-                        if (params.length == 1 &&
-                            ItemStack.class.isAssignableFrom(params[0])) {
-                            @SuppressWarnings("unchecked")
-                            List<Text> result = (List<Text>) method.invoke(handledScreen, stack);
-                            tooltip = result;
-                            break;
-                        }
-                    } catch (Exception e) {
-                        // Versuche nächste Signatur
-                        continue;
-                    }
-                }
+                // Add item name
+                tooltip.add(stack.getName());
                 
+                // Read lore from Data Component API (1.21.7) - wie in ItemInfoUtility
+                var loreComponent = stack.get(net.minecraft.component.DataComponentTypes.LORE);
+                if (loreComponent != null) {
+                    tooltip.addAll(loreComponent.lines());
+                }
             } catch (Exception e) {
-                // Fehler beim Suchen der Methode - ignoriere
+                // Silent error handling
             }
             
-            if (tooltip != null && !tooltip.isEmpty()) {
-                // Parse Tooltip nach Pergamentfetzen-Anzahl
-                for (Text line : tooltip) {
-                    String lineText = line.getString();
-                    Matcher matcher = PAPER_SHREDS_PATTERN.matcher(lineText);
-                    if (matcher.find()) {
-                        try {
-                            // Entferne Tausendertrennzeichen (Kommas - Tooltip verwendet Kommas, nicht Punkte)
-                            // Format: "1,000" oder "1,000,000" -> entferne alle Kommas
-                            String amountStr = matcher.group(1).replace(",", "");
-                            long amount = Long.parseLong(amountStr);
-                            currentPaperShreds = amount;
-                            break; // Gefunden, keine weiteren Zeilen prüfen
-                        } catch (NumberFormatException e) {
-                            // Fehler beim Parsen - ignoriere
-                        }
+            if (tooltip == null || tooltip.isEmpty()) {
+                return;
+            }
+            
+            // Parse Tooltip nach Pergamentfetzen-Anzahl
+            // Durchsuche ALLE Zeilen des Tooltips (nicht nur die erste)
+            for (int i = 0; i < tooltip.size(); i++) {
+                Text line = tooltip.get(i);
+                String lineText = line.getString();
+                // Entferne Formatierungs-Codes und Unicode-Zeichen für bessere Erkennung
+                String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "")
+                                               .replaceAll("[\\u3400-\\u4DBF]", "")
+                                               .trim();
+                
+                Matcher matcher = PAPER_SHREDS_PATTERN.matcher(cleanLineText);
+                if (matcher.find()) {
+                    try {
+                        // Entferne Tausendertrennzeichen (Kommas - Tooltip verwendet Kommas, nicht Punkte)
+                        // Format: "1,000" oder "1,000,000" -> entferne alle Kommas
+                        String amountStr = matcher.group(1).replace(",", "");
+                        long amount = Long.parseLong(amountStr);
+                        
+                        currentPaperShreds = amount;
+                        break; // Gefunden, keine weiteren Zeilen prüfen
+                    } catch (NumberFormatException e) {
+                        // Silent error handling
                     }
                 }
             }

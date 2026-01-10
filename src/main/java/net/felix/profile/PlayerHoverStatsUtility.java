@@ -59,6 +59,11 @@ public class PlayerHoverStatsUtility {
             return null;
         }
         
+        // Prüfe ob Tracker-Aktivität aktiviert ist
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+            return null; // Keine Hover-Info-Texte anzeigen wenn Tracker deaktiviert
+        }
+        
         // Prüfe ob Player Stats Debugging aktiviert ist
         boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
         
