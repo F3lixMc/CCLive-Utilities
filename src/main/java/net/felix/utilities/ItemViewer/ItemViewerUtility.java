@@ -1788,8 +1788,8 @@ public class ItemViewerUtility {
         
         // Rendere Minimierungs-Button (außerhalb des Overlays, am linken Rand) - nur in Inventaren
         if (isInventoryOpen(client)) {
-            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 5; // 5px Abstand links vom Viewer
-            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING; // Unten ausgerichtet
+            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 3; // 3px Abstand links vom Viewer (2px nach rechts verschoben)
+            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING + 5; // Unten ausgerichtet, 5px tiefer
             renderMinimizeButton(context, minimizeButtonX, minimizeButtonY);
         }
         
@@ -3489,8 +3489,8 @@ public class ItemViewerUtility {
         
         // Prüfe Klick auf Minimierungs-Button (außerhalb des Overlays, am linken Rand, wenn nicht minimiert)
         if (!isMinimized && button == 0) {
-            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 5; // 5px Abstand links vom Viewer
-            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING; // Unten ausgerichtet
+            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 3; // 3px Abstand links vom Viewer (2px nach rechts verschoben)
+            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING + 5; // Unten ausgerichtet, 5px tiefer
             
             if (mouseX >= minimizeButtonX && mouseX < minimizeButtonX + MINIMIZE_BUTTON_SIZE &&
                 mouseY >= minimizeButtonY && mouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE) {
@@ -3871,6 +3871,14 @@ public class ItemViewerUtility {
         }
         
         return isVisible;
+    }
+    
+    /**
+     * Prüft, ob der Item Viewer minimiert (eingeklappt) ist
+     * @return true wenn minimiert, false wenn ausgeklappt
+     */
+    public static boolean isMinimized() {
+        return isMinimized;
     }
     
     /**

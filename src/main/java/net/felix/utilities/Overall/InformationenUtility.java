@@ -7070,7 +7070,10 @@ public class InformationenUtility {
 		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
 			Text titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
-			inMKLevelInventory = title.contains("Machtkristalle Verbessern");
+			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
+			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
+			inMKLevelInventory = title.contains("Machtkristalle Verbessern") || 
+			                     net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode);
 		}
 		
 		if (!inMKLevelInventory) {
@@ -7438,7 +7441,10 @@ public class InformationenUtility {
 		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
 			Text titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
-			inMKLevelInventory = title.contains("Machtkristalle Verbessern");
+			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
+			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
+			inMKLevelInventory = title.contains("Machtkristalle Verbessern") || 
+			                     net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode);
 		}
 		
 		if (!inMKLevelInventory) {

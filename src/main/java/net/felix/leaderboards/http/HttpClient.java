@@ -55,6 +55,10 @@ public class HttpClient {
                 return null;
             }
         } else {
+            // 404 für Profil-Stats ist normal (Spieler hat keine Stats) - nicht loggen
+            if (response.statusCode() == 404 && endpoint.contains("/profile/")) {
+                return null;
+            }
             System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
             return null;
         }

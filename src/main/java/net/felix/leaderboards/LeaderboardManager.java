@@ -256,9 +256,8 @@ public class LeaderboardManager {
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("player", playerName);
                 
-                System.out.println("🔍 [LeaderboardManager] Sende Registrierungs-Request: " + requestData.toString());
+                // Registrierungs-Logs entfernt (nur bei Debug)
                 JsonObject response = httpClient.post("/register", requestData);
-                System.out.println("🔍 [LeaderboardManager] Registrierungs-Response erhalten: " + (response != null ? response.toString() : "null"));
                 
                 if (response != null && response.has("token")) {
                     playerToken = response.get("token").getAsString();

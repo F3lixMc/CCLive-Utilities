@@ -88,7 +88,7 @@ public class FloorKillsCollector implements DataCollector {
             if (currentFloor.equals(lastFloor)) {
                 int currentKills = KillsUtility.getTotalKills();
                 cachedKillsForCurrentFloor = currentKills;
-                System.out.println("💾 [FloorKillsCollector] Cache-Update für '" + currentFloor + "': " + cachedKillsForCurrentFloor + " kills");
+                // Cache-Update Logging entfernt (zu häufig)
             }
         } catch (Exception e) {
             // Silent error handling
@@ -225,16 +225,11 @@ public class FloorKillsCollector implements DataCollector {
         // Nur updaten wenn sich der Wert geändert hat
         if (newTotal != currentTotal) {
             floorKills.put(floor, newTotal);
-            System.out.println("🗡️ [FloorKillsCollector] Rufe updateScore auf für " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
-            LeaderboardManager.getInstance().updateScore(floor, newTotal);
-            
-            if (kills < currentTotal) {
-                System.out.println("🗡️ Floor-Kills Update (neu betreten): " + floor + " = " + newTotal + " kills (vorher: " + currentTotal + ")");
-            } else {
-                System.out.println("🗡️ Floor-Kills Update: " + floor + " = " + newTotal + " kills (absolut)");
+            // Nur bei signifikanten Änderungen loggen (>100 kills Unterschied)
+            if (Math.abs(newTotal - currentTotal) > 100) {
+                System.out.println("🗡️ [FloorKillsCollector] Update für " + floor + ": " + currentTotal + " -> " + newTotal + " kills");
             }
-        } else {
-            System.out.println("🗡️ [FloorKillsCollector] updateFloorScore - Keine Änderung für " + floor + " (aktuell: " + currentTotal + ", neu: " + newTotal + ")");
+            LeaderboardManager.getInstance().updateScore(floor, newTotal);
         }
     }
     

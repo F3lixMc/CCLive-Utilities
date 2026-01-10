@@ -26,6 +26,7 @@ public class SearchBarUtility {
 	private static int searchBarX = 0;
 	private static int searchBarY = 0;
 	private static int searchBarWidth = 200;
+	private static final int DEFAULT_SEARCH_BAR_WIDTH = 200; // Standard-Breite für Wiederherstellung
 	private static int searchBarHeight = 20;
 	private static long cursorBlinkTime = 0;
 	private static boolean cursorVisible = true;
@@ -226,16 +227,39 @@ public class SearchBarUtility {
 			return;
 		}
 
-		searchBarX = screenX + (176 - searchBarWidth) / 2;
+		// Prüfe ob Item Viewer ausgeklappt ist
+		boolean isItemViewerExpanded = net.felix.utilities.ItemViewer.ItemViewerUtility.isVisible() && 
+		                               !net.felix.utilities.ItemViewer.ItemViewerUtility.isMinimized();
+		
+		// Berechne Standard-Position der Suchleiste (mit Standard-Breite)
+		int standardSearchBarX = screenX + (176 - DEFAULT_SEARCH_BAR_WIDTH) / 2;
+		
+		// Passe Suchleisten-Breite an: Wenn Item Viewer ausgeklappt, 10 Pixel schmaler (5 links, 5 rechts)
+		if (isItemViewerExpanded) {
+			searchBarWidth = DEFAULT_SEARCH_BAR_WIDTH - 10; // 190 Pixel statt 200
+			// Position bleibt mittig: Verschiebe um 5 Pixel nach rechts, damit die Mitte gleich bleibt
+			searchBarX = standardSearchBarX + 5;
+		} else {
+			searchBarWidth = DEFAULT_SEARCH_BAR_WIDTH; // Standard: 200 Pixel
+			searchBarX = standardSearchBarX;
+		}
+		
 		searchBarY = screenY + 166 + 65;
 		
 		// Hilfe-Button Position (links neben der Suchleiste)
 		helpButtonX = searchBarX - helpButtonSize - 5;
 		helpButtonY = searchBarY + 2;
 		
-		// Symbol-Button Position (rechts neben der Suchleiste)
-		symbolButtonX = searchBarX + searchBarWidth + 5;
-		symbolButtonY = searchBarY + 2;
+		// Symbol-Button Position: Wenn Item Viewer ausgeklappt, unter dem Hilfe-Button, sonst rechts neben der Suchleiste
+		if (isItemViewerExpanded) {
+			// Unter dem Hilfe-Button
+			symbolButtonX = helpButtonX;
+			symbolButtonY = helpButtonY + helpButtonSize + 2; // 2 Pixel Abstand
+		} else {
+			// Rechts neben der Suchleiste (Standard-Position)
+			symbolButtonX = searchBarX + searchBarWidth + 5;
+			symbolButtonY = searchBarY + 2;
+		}
 
 		// Prüfe Hover über Symbol-Button
 		if (client.getWindow() != null) {

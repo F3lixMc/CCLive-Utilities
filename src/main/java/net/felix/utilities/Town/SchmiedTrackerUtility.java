@@ -1221,7 +1221,8 @@ public class SchmiedTrackerUtility {
 	 * Rendert den Hide Wrong Class Button (wird vom Mixin aufgerufen)
 	 */
 	public static void renderHideWrongClassButton(DrawContext context, HandledScreen<?> screen) {
-		if (!isInBlueprintInventory || !CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled) {
+		if (!isInBlueprintInventory || !CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled || 
+		    !CCLiveUtilitiesConfig.HANDLER.instance().showHideWrongClassButton) {
 			return;
 		}
 		
