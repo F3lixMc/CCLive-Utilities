@@ -2844,8 +2844,14 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 hideHoverUntil = Long.MAX_VALUE; // Verhindere automatisches Zurücksetzen
             }
         } else {
-            // Weder Tab noch F1 aktiv - prüfe ob Timer abgelaufen ist
-            if (hideHover && System.currentTimeMillis() >= hideHoverUntil) {
+            // Weder Tab noch F1 aktiv - sofort wieder anzeigen
+            // (außer wenn Tab-Timer noch läuft)
+            if (hideHoverUntil == Long.MAX_VALUE) {
+                // F1 wurde deaktiviert - sofort wieder anzeigen
+                hideHover = false;
+                hideHoverUntil = 0;
+            } else if (hideHover && System.currentTimeMillis() >= hideHoverUntil) {
+                // Tab-Timer ist abgelaufen - wieder anzeigen
                 hideHover = false;
                 hideHoverUntil = 0;
             }

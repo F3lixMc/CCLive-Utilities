@@ -305,6 +305,27 @@ public class ItemViewerUtility {
                         }
                         allItems.addAll(data.module_bags);
                     }
+                    if (data.card_slots != null && !data.card_slots.isEmpty()) {
+                        // Extrahiere JSON-Objekte für Card Slots
+                        if (rootJson.has("card_slots") && rootJson.get("card_slots").isJsonArray()) {
+                            var cardSlotArray = rootJson.getAsJsonArray("card_slots");
+                            for (int i = 0; i < cardSlotArray.size() && i < data.card_slots.size(); i++) {
+                                JsonElement element = cardSlotArray.get(i);
+                                if (element.isJsonObject()) {
+                                    JsonObject jsonObj = element.getAsJsonObject();
+                                    ItemData item = data.card_slots.get(i);
+                                    item.jsonObject = jsonObj;
+                                    item.category = "card_slots";
+                                }
+                            }
+                        } else {
+                            // Fallback: Keine JSON-Objekte verfügbar
+                            for (ItemData item : data.card_slots) {
+                                item.category = "card_slots";
+                            }
+                        }
+                        allItems.addAll(data.card_slots);
+                    }
                     
                     if (!allItems.isEmpty()) {
                         filteredItems = new ArrayList<>(allItems);
@@ -1542,7 +1563,9 @@ public class ItemViewerUtility {
             new CategoryButton("Module", java.util.List.of("modul")),
             new CategoryButton("Modul-Taschen", java.util.List.of("modultasche")),
             new CategoryButton("Machtkristall", java.util.List.of("machtkristall")),
-            new CategoryButton("MK-Slots", java.util.List.of("slot"))
+            new CategoryButton("MK-Slots", java.util.List.of("slot")),
+            new CategoryButton("Fähigkeiten", java.util.List.of("ability")),
+            new CategoryButton("Karten Slots", java.util.List.of("card"))
     );
     private static CategoryButton activeCategoryOverlay = null;
     
@@ -2313,6 +2336,12 @@ public class ItemViewerUtility {
             case "MK-Slots":
                 categoryKey = "power_crystal_slots";
                 break;
+            case "Fähigkeiten":
+                categoryKey = "abilities";
+                break;
+            case "Karten Slots":
+                categoryKey = "card_slots";
+                break;
         }
         
         if (categoryKey != null) {
@@ -2340,6 +2369,9 @@ public class ItemViewerUtility {
                     }
                 }
             }
+        } else {
+            // Debug: Kategorie nicht gefunden
+            System.out.println("[ItemViewer] Kategorie '" + categoryName + "' nicht in switch-case gefunden!");
         }
         
         // Sortiere Tags alphabetisch

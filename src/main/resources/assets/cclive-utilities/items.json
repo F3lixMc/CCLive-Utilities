@@ -183834,70 +183834,6 @@
         "modul",
         "verteilungskern"
       ]
-    }
-  ],
-  "module_bags": [
-    {
-      "id": "minecraft:brown_bundle",
-      "name": "Modul-Tasche #1",
-      "foundAt": [
-        {
-          "collection": "Eichenholz I"
-        }
-      ],
-      "price": {
-        "coin": {
-          "itemName": "Coins",
-          "amount": "20.000"
-        },
-        "material1": {
-          "itemName": "Weicher Kaninchenpelz",
-          "amount": "300"
-        },
-        "material2": {
-          "itemName": "Hühnerfuß",
-          "amount": "70"
-        },
-        "material3": {
-          "itemName": "Kaninchenschwanz",
-          "amount": "30"
-        },
-        "material4": {
-          "itemName": "Hühnerflügel",
-          "amount": "9"
-        },
-        "material5": {
-          "itemName": "Regenbogen-Eierschale",
-          "amount": "2"
-        },
-        "Ressource": {
-          "itemName": "Eichenholz",
-          "amount": "500"
-        }
-      },
-      "info": {
-        "aspect": false,
-        "rarity": "",
-        "description": "",
-        "type": "",
-        "piece": "",
-        "stats": [
-          ""
-        ],
-        "modifier": [
-          ""
-        ],
-        "blueprint": false,
-        "module": true,
-        "ability": false,
-        "rune": false,
-        "power_crystal": false,
-        "essence": false
-      },
-      "tags": [
-        "modultasche",
-        "#1"
-      ]
     },
     {	
 	  "id": "minecraft:name_tag",
@@ -185032,6 +184968,70 @@
         "modul",
         "holzhacker"
       ]
+    }
+  ],
+  "module_bags": [
+    {
+      "id": "minecraft:brown_bundle",
+      "name": "Modul-Tasche #1",
+      "foundAt": [
+        {
+          "collection": "Eichenholz I"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "20.000"
+        },
+        "material1": {
+          "itemName": "Weicher Kaninchenpelz",
+          "amount": "300"
+        },
+        "material2": {
+          "itemName": "Hühnerfuß",
+          "amount": "70"
+        },
+        "material3": {
+          "itemName": "Kaninchenschwanz",
+          "amount": "30"
+        },
+        "material4": {
+          "itemName": "Hühnerflügel",
+          "amount": "9"
+        },
+        "material5": {
+          "itemName": "Regenbogen-Eierschale",
+          "amount": "2"
+        },
+        "Ressource": {
+          "itemName": "Eichenholz",
+          "amount": "500"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": true,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "modultasche",
+        "#1"
+      ]
     },
     {
       "id": "minecraft:white_bundle",
@@ -185375,7 +185375,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185408,7 +185408,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185441,7 +185441,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185474,7 +185474,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185507,7 +185507,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185540,7 +185540,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185573,7 +185573,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185606,7 +185606,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185639,7 +185639,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185672,7 +185672,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185705,7 +185705,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185738,7 +185738,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185771,7 +185771,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185804,7 +185804,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185837,7 +185837,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185870,7 +185870,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185903,7 +185903,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
    },
 	{
@@ -185936,7 +185936,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -185969,7 +185969,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -186002,7 +186002,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -186035,7 +186035,7 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     },
 	{
@@ -186068,12 +186068,349 @@
         "essence": false
       },
       "tags": [
-        "ability"
+        "fähigkeit"
       ]
     }
   ],
   "runes": [],
-  "card_slots": [],
+  "card_slots": [
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #1",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "100"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "ressource": {
+          "itemName": "Eichenholz",
+          "amount": "100"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den ersten Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#1"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #2",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "2.000"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000t"
+        },
+        "ressource": {
+          "itemName": "Eichenholz",
+          "amount": "800"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den zweiten Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#2"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #3",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "10.000"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000af"
+        },
+        "ressource": {
+          "itemName": "Kohle",
+          "amount": "1.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den dritten Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#3"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #4",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "50.000"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000ap"
+        },
+        "ressource": {
+          "itemName": "Kupferbarren",
+          "amount": "1.200"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den vierten Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#4"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #5",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "100.000"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "10.000bc"
+        },
+        "ressource": {
+          "itemName": "Dschungelholz",
+          "amount": "1.400"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den fünften Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#5"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #6",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "400.000"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000bt"
+        },
+        "ressource": {
+          "itemName": "Fichtenholz",
+          "amount": "3.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den sechsten Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#6"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #7",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "1.000.000"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "100.000cj"
+        },
+        "ressource": {
+          "itemName": "Bambus",
+          "amount": "4.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den siebten Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#7"
+      ]
+    },
+    {
+      "id": "minecraft:paper",
+      "name": "Karten Slot #8",
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "10.000.000"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000dr"
+        },
+        "ressource": {
+          "itemName": "Eisenbarren",
+          "amount": "5.000"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "",
+        "description": "Fügt den letzten Kartenslot hinzu.",
+        "type": "",
+        "piece": "",
+        "stats": [
+          ""
+        ],
+        "modifier": [
+          ""
+        ],
+        "blueprint": false,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false,
+        "card_slot": true
+      },
+      "tags": [
+        "kartenslot",
+        "#8"
+      ]
+    }
+  ],
   "power_crystals": [
     {
       "id": "minecraft:diamond",

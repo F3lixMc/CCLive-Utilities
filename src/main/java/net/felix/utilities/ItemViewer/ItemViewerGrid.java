@@ -21,6 +21,7 @@ public class ItemViewerGrid {
     
     private static final int SLOT_SIZE = 18; // 16x16 Item + 1px Padding auf jeder Seite
     private static final Identifier PASSIVE_SKILL_SLOT_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/passive_skill_slot.png");
+    private static final Identifier CARD_SLOT_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/card_slot.png");
     private static final int DEFAULT_GRID_ROWS = 8; // Standard: 8 Zeilen (für Fallback)
     private static final int DEFAULT_GRID_COLUMNS = 6; // Standard: 6 Spalten (für Fallback)
     
@@ -78,6 +79,16 @@ public class ItemViewerGrid {
                 context.drawTexture(
                     RenderPipelines.GUI_TEXTURED,
                     PASSIVE_SKILL_SLOT_TEXTURE,
+                    slotX + 1, slotY + 1,
+                    0, 0,
+                    16, 16,
+                    16, 16
+                );
+            } else if (isCardSlot(item)) {
+                // Rendere spezielle Textur für Karten Slot
+                context.drawTexture(
+                    RenderPipelines.GUI_TEXTURED,
+                    CARD_SLOT_TEXTURE,
                     slotX + 1, slotY + 1,
                     0, 0,
                     16, 16,
@@ -636,6 +647,16 @@ public class ItemViewerGrid {
             return false;
         }
         return itemData.name.equals("Passiver Fähigkeits Slot");
+    }
+    
+    /**
+     * Prüft ob es sich um einen Karten Slot handelt (basierend auf category)
+     */
+    private boolean isCardSlot(ItemData itemData) {
+        if (itemData == null) {
+            return false;
+        }
+        return "card_slots".equals(itemData.category);
     }
     
     /**
