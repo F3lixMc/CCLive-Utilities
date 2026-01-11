@@ -770,6 +770,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showTabInfoRecyclerPercent = true; // Prozente für Recycler anzeigen (gilt für alle 3 Slots)
     
+    @SerialEntry
+    public boolean showTabInfoMachtkristallePercent = true; // Prozente für Machtkristalle anzeigen (gilt für alle 3 Slots)
+    
     // Tab Info Separate Overlay Settings
     @SerialEntry
     public boolean tabInfoForschungSeparateOverlay = false;
@@ -800,6 +803,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean tabInfoMachtkristalleSlot3Separate = false;
+    
+    @SerialEntry
+    public boolean tabInfoMachtkristalleOption = false; // Machtkristall-spezifische Option
     
     @SerialEntry
     public boolean tabInfoRecyclerSlot1SeparateOverlay = false;
@@ -1053,6 +1059,15 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean showTabInfoMachtkristalle = true;
+    
+    @SerialEntry
+    public boolean showTabInfoMachtkristalleSlot1 = true;
+    
+    @SerialEntry
+    public boolean showTabInfoMachtkristalleSlot2 = true;
+    
+    @SerialEntry
+    public boolean showTabInfoMachtkristalleSlot3 = true;
     
     // Tab Info Position Settings
     @SerialEntry

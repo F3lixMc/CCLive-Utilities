@@ -247,6 +247,28 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             
             int maxWidth = 0;
             for (int i = 0; i < 3; i++) {
+                // Prüfe ob dieser Slot aktiviert ist
+                boolean slotEnabled;
+                switch (i) {
+                    case 0:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        break;
+                    case 1:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        break;
+                    case 2:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        break;
+                    default:
+                        slotEnabled = true;
+                        break;
+                }
+                
+                // Überspringe diesen Slot, wenn er deaktiviert ist
+                if (!slotEnabled) {
+                    continue;
+                }
+                
                 boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
                 boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
                 // Überspringe Slots, die nicht aktiv sind oder einzeln gerendert werden
@@ -293,6 +315,29 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         // Für einzelne MK Slots: berechne Breite basierend auf tatsächlichem Text
         if ("machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || "machtkristalleSlot3".equals(configKey)) {
             int slotIndex = configKey.equals("machtkristalleSlot1") ? 0 : (configKey.equals("machtkristalleSlot2") ? 1 : 2);
+            
+            // Prüfe ob dieser Slot aktiviert ist
+            boolean slotEnabled;
+            switch (slotIndex) {
+                case 0:
+                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                    break;
+                case 1:
+                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                    break;
+                case 2:
+                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                    break;
+                default:
+                    slotEnabled = true;
+                    break;
+            }
+            
+            // Wenn Slot deaktiviert ist, gib 0 zurück (Overlay wird nicht gerendert)
+            if (!slotEnabled) {
+                return 0;
+            }
+            
             TabInfoUtility.MachtkristallSlot slot = TabInfoUtility.machtkristallSlots[slotIndex];
             boolean showIcon = getShowIcon();
             String percentText = slot.getPercentText();
@@ -378,9 +423,31 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate;
             boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
             
-            // Zähle nur die Slots, die im Multi-Line-Overlay sind
+            // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
             int lineCount = 0;
             for (int i = 0; i < 3; i++) {
+                // Prüfe ob dieser Slot aktiviert ist
+                boolean slotEnabled;
+                switch (i) {
+                    case 0:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                        break;
+                    case 1:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                        break;
+                    case 2:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                        break;
+                    default:
+                        slotEnabled = true;
+                        break;
+                }
+                
+                // Überspringe diesen Slot, wenn er deaktiviert ist
+                if (!slotEnabled) {
+                    continue;
+                }
+                
                 boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
                 if (!slotSeparate) {
                     lineCount++;
@@ -410,9 +477,31 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
             boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
             
-            // Zähle nur die Slots, die im Multi-Line-Overlay sind
+            // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
             int lineCount = 0;
             for (int i = 0; i < 3; i++) {
+                // Prüfe ob dieser Slot aktiviert ist
+                boolean slotEnabled;
+                switch (i) {
+                    case 0:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        break;
+                    case 1:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        break;
+                    case 2:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        break;
+                    default:
+                        slotEnabled = true;
+                        break;
+                }
+                
+                // Überspringe diesen Slot, wenn er deaktiviert ist
+                if (!slotEnabled) {
+                    continue;
+                }
+                
                 boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
                 boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
                 if (slotActive && !slotSeparate) {
@@ -443,9 +532,31 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
             boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
             
-            // Zähle nur die Slots, die im Multi-Line-Overlay sind
+            // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
             int lineCount = 0;
             for (int i = 0; i < 3; i++) {
+                // Prüfe ob dieser Slot aktiviert ist
+                boolean slotEnabled;
+                switch (i) {
+                    case 0:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        break;
+                    case 1:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        break;
+                    case 2:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        break;
+                    default:
+                        slotEnabled = true;
+                        break;
+                }
+                
+                // Überspringe diesen Slot, wenn er deaktiviert ist
+                if (!slotEnabled) {
+                    continue;
+                }
+                
                 boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
                 boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
                 if (slotActive && !slotSeparate) {
@@ -679,6 +790,28 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             int iconSize = showIcon ? (int)(client.textRenderer.fontHeight * 1.5) : 0;
             
             for (int i = 0; i < 3; i++) {
+                // Prüfe ob dieser Slot aktiviert ist
+                boolean slotEnabled;
+                switch (i) {
+                    case 0:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                        break;
+                    case 1:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                        break;
+                    case 2:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                        break;
+                    default:
+                        slotEnabled = true;
+                        break;
+                }
+                
+                // Überspringe diesen Slot, wenn er deaktiviert ist
+                if (!slotEnabled) {
+                    continue;
+                }
+                
                 boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
                 // Überspringe Slots, die einzeln gerendert werden
                 if (slotSeparate) {
@@ -780,6 +913,28 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             int iconSize = showIcon ? (int)(client.textRenderer.fontHeight * 1.5) : 0;
             
             for (int i = 0; i < 3; i++) {
+                // Prüfe ob dieser Slot aktiviert ist
+                boolean slotEnabled;
+                switch (i) {
+                    case 0:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        break;
+                    case 1:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        break;
+                    case 2:
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        break;
+                    default:
+                        slotEnabled = true;
+                        break;
+                }
+                
+                // Überspringe diesen Slot, wenn er deaktiviert ist
+                if (!slotEnabled) {
+                    continue;
+                }
+                
                 boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
                 boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
                 // Überspringe Slots, die nicht aktiv sind oder einzeln gerendert werden
@@ -952,9 +1107,14 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             case "machtkristalle":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle;
             case "machtkristalleSlot1":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
             case "machtkristalleSlot2":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
             case "machtkristalleSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
             case "recycler":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 || 
                        CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 || 
@@ -1031,22 +1191,28 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return !allRecyclerSlotsSeparate;
             case "machtkristalleSlot1":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate;
+                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
             case "machtkristalleSlot2":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate;
+                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
             case "machtkristalleSlot3":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
+                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
             case "recyclerSlot1":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
+                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
             case "recyclerSlot2":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
+                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
             case "recyclerSlot3":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
             default:
                 return false;
         }
@@ -1588,7 +1754,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     double currentPercent = ((double)TabInfoUtility.recyclerSlot1.current / 
                         (double)TabInfoUtility.recyclerSlot1.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-                    return warnPercent >= 0 && currentPercent >= warnPercent;
+                    // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+                    return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "recyclerSlot2":
@@ -1596,7 +1763,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     double currentPercent = ((double)TabInfoUtility.recyclerSlot2.current / 
                         (double)TabInfoUtility.recyclerSlot2.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-                    return warnPercent >= 0 && currentPercent >= warnPercent;
+                    // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+                    return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "recyclerSlot3":
@@ -1604,7 +1772,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     double currentPercent = ((double)TabInfoUtility.recyclerSlot3.current / 
                         (double)TabInfoUtility.recyclerSlot3.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-                    return warnPercent >= 0 && currentPercent >= warnPercent;
+                    // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+                    return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "machtkristalleSlot1":

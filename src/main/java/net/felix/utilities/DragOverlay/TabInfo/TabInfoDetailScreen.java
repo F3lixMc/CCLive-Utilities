@@ -93,12 +93,42 @@ public class TabInfoDetailScreen extends Screen {
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
         boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
-        int boxHeight = hasIconOption ? 250 : 210;
+        int baseBoxHeight = hasIconOption ? 250 : 210;
+        // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
+        if (isMachtkristalle) {
+            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+        }
+        // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
+        if (isRecycler || isRecyclerSlot) {
+            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+        }
+        int boxHeight = baseBoxHeight;
+        int heightIncrease = 0;
         if (hasSeparateOverlay) {
-            boxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+            if (isMachtkristalle) {
+                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
+                boxHeight += heightIncrease;
+                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
+                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            } else if (isRecycler || isRecyclerSlot) {
+                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
+                boxHeight += heightIncrease;
+                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
+                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            } else {
+                heightIncrease = 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+                boxHeight += heightIncrease;
+            }
+        } else if (isMachtkristalle) {
+            // Reduziere die Höhe für Machtkristalle, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
+            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+        } else if (isRecycler || isRecyclerSlot) {
+            // Reduziere die Höhe für Recycler, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
+            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
         }
         int boxX = width / 2 - boxWidth / 2;
-        int boxY = getSettingsScreenBoxY(); // Oben bündig mit Settings-Screen
+        // Zentriere das Overlay vertikal (gleicher Abstand oben und unten)
+        int boxY = (height - boxHeight) / 2;
         
         // Hintergrund
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
@@ -308,16 +338,62 @@ public class TabInfoDetailScreen extends Screen {
         int textY = buttonY + (buttonHeight - textRenderer.fontHeight) / 2 + 1;
         context.drawText(textRenderer, buttonText, textX, textY, 0xFFFFFFFF, false);
         
-        // Machtkristall Slot-Checkboxen (nur wenn "Separates Overlay" aktiviert ist)
-        if (configKey.equals("machtkristalle") && hasSeparateOverlay) {
+        // Machtkristall Slot-Checkboxen
+        if (configKey.equals("machtkristalle")) {
+            boolean hasSeparateOverlayForMk = getSeparateOverlay();
+            
+            // Machtkristall Slot-Checkboxen (immer angezeigt für Machtkristalle)
             int mkCheckboxStartY = buttonY + buttonHeight + 10;
             int mkCheckboxSize = 10;
             int mkCheckboxX = boxX + 10;
             int mkCheckboxSpacing = 20;
             
+            // MK Slot-Checkboxen (MK 1, MK 2, MK 3) - immer angezeigt
             for (int i = 0; i < 3; i++) {
-                int mkCheckboxY = mkCheckboxStartY + (i * mkCheckboxSpacing);
-                boolean mkSlotSeparate = getMachtkristallSlotSeparate(i);
+                int mkSlotY = mkCheckboxStartY + (i * mkCheckboxSpacing);
+                boolean mkSlotEnabled = getMachtkristalleSlotEnabled(i);
+                
+                // Checkbox-Hintergrund
+                context.fill(mkCheckboxX, mkSlotY, mkCheckboxX + mkCheckboxSize, mkSlotY + mkCheckboxSize, 0xFF808080);
+                context.drawBorder(mkCheckboxX, mkSlotY, mkCheckboxSize, mkCheckboxSize, 0xFFFFFFFF);
+                
+                // Checkmark wenn aktiviert
+                if (mkSlotEnabled) {
+                    // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+                    int checkX = mkCheckboxX + 2;
+                    int checkY = mkSlotY + 2;
+                    int checkSize = mkCheckboxSize - 4;
+                    // Zeichne Häkchen als zwei Linien
+                    // Linke Linie (von oben-links nach mitte)
+                    for (int j = 0; j < checkSize / 2; j++) {
+                        int px = checkX + j;
+                        int py = checkY + checkSize / 2 + j;
+                        if (px < mkCheckboxX + mkCheckboxSize - 2 && py < mkSlotY + mkCheckboxSize - 2) {
+                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                        }
+                    }
+                    // Rechte Linie (von mitte nach unten-rechts)
+                    for (int j = 0; j < checkSize / 2; j++) {
+                        int px = checkX + checkSize / 2 + j;
+                        int py = checkY + checkSize - 2 - j;
+                        if (px < mkCheckboxX + mkCheckboxSize - 2 && py >= mkSlotY + 2) {
+                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                        }
+                    }
+                }
+                
+                // Text
+                String mkSlotText = "MK Slot " + (i + 1) + " ein/aus";
+                int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
+                context.drawText(textRenderer, mkSlotText, mkSlotTextX, mkSlotY + 1, 
+                    mkSlotEnabled ? 0xFFFFFFFF : 0xFF808080, false);
+            }
+            
+            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
+            if (hasSeparateOverlayForMk) {
+                for (int i = 0; i < 3; i++) {
+                    int mkCheckboxY = mkCheckboxStartY + (3 * mkCheckboxSpacing) + (i * mkCheckboxSpacing); // +60 für 3 Slots
+                    boolean mkSlotSeparate = getMachtkristallSlotSeparate(i);
                 
                 // Checkbox-Hintergrund
                 context.fill(mkCheckboxX, mkCheckboxY, mkCheckboxX + mkCheckboxSize, mkCheckboxY + mkCheckboxSize, 0xFF808080);
@@ -353,36 +429,41 @@ public class TabInfoDetailScreen extends Screen {
                 int mkTextX = mkCheckboxX + mkCheckboxSize + 5;
                 context.drawText(textRenderer, mkCheckboxText, mkTextX, mkCheckboxY + 1, 
                     mkSlotSeparate ? 0xFFFFFFFF : 0xFF808080, false);
+                }
             }
         }
         
-        // Recycler Slot-Checkboxen (nur wenn "Separates Overlay" aktiviert ist)
-        if ((isRecycler || isRecyclerSlot) && hasSeparateOverlay) {
+        // Recycler Slot-Checkboxen
+        if (configKey.equals("recycler") || configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3")) {
+            boolean hasSeparateOverlayForRecycler = getSeparateOverlay();
+            
+            // Recycler Slot-Checkboxen (immer angezeigt für Recycler)
             int recyclerCheckboxStartY = buttonY + buttonHeight + 10;
             int recyclerCheckboxSize = 10;
             int recyclerCheckboxX = boxX + 10;
             int recyclerCheckboxSpacing = 20;
             
+            // Recycler Slot-Checkboxen (Recycler Slot 1, 2, 3 ein/aus) - immer angezeigt
             for (int i = 0; i < 3; i++) {
-                int recyclerCheckboxY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
-                boolean recyclerSlotSeparate = getRecyclerSlotSeparate(i);
+                int recyclerSlotY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
+                boolean recyclerSlotEnabled = getRecyclerSlotEnabled(i);
                 
                 // Checkbox-Hintergrund
-                context.fill(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxX + recyclerCheckboxSize, recyclerCheckboxY + recyclerCheckboxSize, 0xFF808080);
-                context.drawBorder(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
+                context.fill(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxX + recyclerCheckboxSize, recyclerSlotY + recyclerCheckboxSize, 0xFF808080);
+                context.drawBorder(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
                 
                 // Checkmark wenn aktiviert
-                if (recyclerSlotSeparate) {
+                if (recyclerSlotEnabled) {
                     // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
                     int checkX = recyclerCheckboxX + 2;
-                    int checkY = recyclerCheckboxY + 2;
+                    int checkY = recyclerSlotY + 2;
                     int checkSize = recyclerCheckboxSize - 4;
                     // Zeichne Häkchen als zwei Linien
                     // Linke Linie (von oben-links nach mitte)
                     for (int j = 0; j < checkSize / 2; j++) {
                         int px = checkX + j;
                         int py = checkY + checkSize / 2 + j;
-                        if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py < recyclerCheckboxY + recyclerCheckboxSize - 2) {
+                        if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py < recyclerSlotY + recyclerCheckboxSize - 2) {
                             context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
                         }
                     }
@@ -390,17 +471,60 @@ public class TabInfoDetailScreen extends Screen {
                     for (int j = 0; j < checkSize / 2; j++) {
                         int px = checkX + checkSize / 2 + j;
                         int py = checkY + checkSize - 2 - j;
-                        if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py >= recyclerCheckboxY + 2) {
+                        if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py >= recyclerSlotY + 2) {
                             context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
                         }
                     }
                 }
                 
                 // Text
-                String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
-                int recyclerTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
-                context.drawText(textRenderer, recyclerCheckboxText, recyclerTextX, recyclerCheckboxY + 1, 
-                    recyclerSlotSeparate ? 0xFFFFFFFF : 0xFF808080, false);
+                String recyclerSlotText = "Recycler Slot " + (i + 1) + " ein/aus";
+                int recyclerSlotTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
+                context.drawText(textRenderer, recyclerSlotText, recyclerSlotTextX, recyclerSlotY + 1, 
+                    recyclerSlotEnabled ? 0xFFFFFFFF : 0xFF808080, false);
+            }
+            
+            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
+            if (hasSeparateOverlayForRecycler) {
+                for (int i = 0; i < 3; i++) {
+                    int recyclerCheckboxY = recyclerCheckboxStartY + (3 * recyclerCheckboxSpacing) + (i * recyclerCheckboxSpacing); // +60 für 3 Slots
+                    boolean recyclerSlotSeparate = getRecyclerSlotSeparate(i);
+                
+                    // Checkbox-Hintergrund
+                    context.fill(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxX + recyclerCheckboxSize, recyclerCheckboxY + recyclerCheckboxSize, 0xFF808080);
+                    context.drawBorder(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
+                    
+                    // Checkmark wenn aktiviert
+                    if (recyclerSlotSeparate) {
+                        // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+                        int checkX = recyclerCheckboxX + 2;
+                        int checkY = recyclerCheckboxY + 2;
+                        int checkSize = recyclerCheckboxSize - 4;
+                        // Zeichne Häkchen als zwei Linien
+                        // Linke Linie (von oben-links nach mitte)
+                        for (int j = 0; j < checkSize / 2; j++) {
+                            int px = checkX + j;
+                            int py = checkY + checkSize / 2 + j;
+                            if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py < recyclerCheckboxY + recyclerCheckboxSize - 2) {
+                                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                            }
+                        }
+                        // Rechte Linie (von mitte nach unten-rechts)
+                        for (int j = 0; j < checkSize / 2; j++) {
+                            int px = checkX + checkSize / 2 + j;
+                            int py = checkY + checkSize - 2 - j;
+                            if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py >= recyclerCheckboxY + 2) {
+                                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                            }
+                        }
+                    }
+                    
+                    // Text
+                    String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
+                    int recyclerTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
+                    context.drawText(textRenderer, recyclerCheckboxText, recyclerTextX, recyclerCheckboxY + 1, 
+                        recyclerSlotSeparate ? 0xFFFFFFFF : 0xFF808080, false);
+                }
             }
         }
         
@@ -458,56 +582,102 @@ public class TabInfoDetailScreen extends Screen {
             context.fill(buttonX - 1, buttonY - 1, buttonX + buttonWidth + 1, buttonY + buttonHeight + 1, 0x40FFFFFF);
         }
         
-        // Machtkristall Slot-Checkboxen Hover (nur wenn "Separates Overlay" aktiviert ist)
-        if (configKey.equals("machtkristalle") && hasSeparateOverlay) {
+        // Machtkristall Slot-Checkboxen Hover
+        if (configKey.equals("machtkristalle")) {
             int mkCheckboxStartY = buttonY + buttonHeight + 10;
             int mkCheckboxSize = 10;
             int mkCheckboxX = boxX + 10;
             int mkCheckboxSpacing = 20;
             
+            // MK Slot-Checkboxen Hover (MK Slot 1, 2, 3 ein/aus) - immer angezeigt
             for (int i = 0; i < 3; i++) {
-                int mkCheckboxY = mkCheckboxStartY + (i * mkCheckboxSpacing);
-                String mkCheckboxText = "MK " + (i + 1) + " Einzeln";
-                int mkTextX = mkCheckboxX + mkCheckboxSize + 5;
-                int mkTextWidth = textRenderer.getWidth(mkCheckboxText);
-                int mkTextHeight = textRenderer.fontHeight;
+                int mkSlotY = mkCheckboxStartY + (i * mkCheckboxSpacing);
+                String mkSlotText = "MK Slot " + (i + 1) + " ein/aus";
+                int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
+                int mkSlotTextWidth = textRenderer.getWidth(mkSlotText);
+                int mkSlotTextHeight = textRenderer.fontHeight;
                 
-                boolean isHoveringMkCheckbox = mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
-                                              mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkCheckboxSize;
-                boolean isHoveringMkText = mouseX >= mkTextX && mouseX <= mkTextX + mkTextWidth &&
-                                         mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkTextHeight;
+                boolean isHoveringMkSlotCheckbox = mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
+                                                  mouseY >= mkSlotY && mouseY <= mkSlotY + mkCheckboxSize;
+                boolean isHoveringMkSlotText = mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
+                                             mouseY >= mkSlotY && mouseY <= mkSlotY + mkSlotTextHeight;
                 
-                if (isHoveringMkCheckbox || isHoveringMkText) {
+                if (isHoveringMkSlotCheckbox || isHoveringMkSlotText) {
                     int hoverStartX = mkCheckboxX - 2;
-                    int hoverEndX = mkTextX + mkTextWidth + 2;
-                    context.fill(hoverStartX, mkCheckboxY - 1, hoverEndX, mkCheckboxY + mkCheckboxSize + 1, 0x40FFFFFF);
+                    int hoverEndX = mkSlotTextX + mkSlotTextWidth + 2;
+                    context.fill(hoverStartX, mkSlotY - 1, hoverEndX, mkSlotY + mkCheckboxSize + 1, 0x40FFFFFF);
+                }
+            }
+            
+            // Slot-Checkboxen "Einzeln" Hover (nur wenn "Separates Overlay" aktiviert ist)
+            if (getSeparateOverlay()) {
+                for (int i = 0; i < 3; i++) {
+                    int mkCheckboxY = mkCheckboxStartY + (3 * mkCheckboxSpacing) + (i * mkCheckboxSpacing);
+                    String mkSlotCheckboxText = "MK " + (i + 1) + " Einzeln";
+                    int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
+                    int mkSlotTextWidth = textRenderer.getWidth(mkSlotCheckboxText);
+                    int mkSlotTextHeight = textRenderer.fontHeight;
+                    
+                    boolean isHoveringMkSlotCheckbox = mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
+                                                      mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkCheckboxSize;
+                    boolean isHoveringMkSlotText = mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
+                                                 mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkSlotTextHeight;
+                    
+                    if (isHoveringMkSlotCheckbox || isHoveringMkSlotText) {
+                        int hoverStartX = mkCheckboxX - 2;
+                        int hoverEndX = mkSlotTextX + mkSlotTextWidth + 2;
+                        context.fill(hoverStartX, mkCheckboxY - 1, hoverEndX, mkCheckboxY + mkCheckboxSize + 1, 0x40FFFFFF);
+                    }
                 }
             }
         }
         
-        // Recycler Slot-Checkboxen Hover (nur wenn "Separates Overlay" aktiviert ist)
-        if ((isRecycler || isRecyclerSlot) && hasSeparateOverlay) {
-            int recyclerCheckboxStartY = buttonY + buttonHeight + 10;
-            int recyclerCheckboxSize = 10;
-            int recyclerCheckboxX = boxX + 10;
-            int recyclerCheckboxSpacing = 20;
+        // Recycler Slot-Checkboxen Hover
+        boolean isRecyclerHover = configKey.equals("recycler");
+        boolean isRecyclerSlotHover = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
+        if (isRecyclerHover || isRecyclerSlotHover) {
+            int recyclerHoverCheckboxStartY = buttonY + buttonHeight + 10;
+            int recyclerHoverCheckboxSize = 10;
+            int recyclerHoverCheckboxX = boxX + 10;
+            int recyclerHoverCheckboxSpacing = 20;
             
+            // Recycler Slot-Checkboxen Hover (Recycler Slot 1, 2, 3 ein/aus) - immer angezeigt
             for (int i = 0; i < 3; i++) {
-                int recyclerCheckboxY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
-                String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
-                int recyclerTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
-                int recyclerTextWidth = textRenderer.getWidth(recyclerCheckboxText);
-                int recyclerTextHeight = textRenderer.fontHeight;
+                int recyclerSlotY = recyclerHoverCheckboxStartY + (i * recyclerHoverCheckboxSpacing);
+                String recyclerSlotText = "Recycler Slot " + (i + 1) + " ein/aus";
+                int recyclerSlotTextX = recyclerHoverCheckboxX + recyclerHoverCheckboxSize + 5;
+                int recyclerSlotTextWidth = textRenderer.getWidth(recyclerSlotText);
+                int recyclerSlotTextHeight = textRenderer.fontHeight;
                 
-                boolean isHoveringRecyclerCheckbox = mouseX >= recyclerCheckboxX && mouseX <= recyclerCheckboxX + recyclerCheckboxSize &&
-                                                    mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerCheckboxSize;
-                boolean isHoveringRecyclerText = mouseX >= recyclerTextX && mouseX <= recyclerTextX + recyclerTextWidth &&
-                                                mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerTextHeight;
+                boolean hoverOnRecyclerSlotCheckbox = (mouseX >= recyclerHoverCheckboxX && mouseX <= recyclerHoverCheckboxX + recyclerHoverCheckboxSize &&
+                                                      mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerHoverCheckboxSize);
+                boolean hoverOnRecyclerSlotText = (mouseX >= recyclerSlotTextX && mouseX <= recyclerSlotTextX + recyclerSlotTextWidth &&
+                                                 mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerSlotTextHeight);
                 
-                if (isHoveringRecyclerCheckbox || isHoveringRecyclerText) {
-                    int hoverStartX = recyclerCheckboxX - 2;
-                    int hoverEndX = recyclerTextX + recyclerTextWidth + 2;
-                    context.fill(hoverStartX, recyclerCheckboxY - 1, hoverEndX, recyclerCheckboxY + recyclerCheckboxSize + 1, 0x40FFFFFF);
+                if (hoverOnRecyclerSlotCheckbox || hoverOnRecyclerSlotText) {
+                    context.fill(recyclerHoverCheckboxX - 1, recyclerSlotY - 1, recyclerHoverCheckboxX + recyclerHoverCheckboxSize + 1, recyclerSlotY + recyclerHoverCheckboxSize + 1, 0x40FFFFFF);
+                }
+            }
+            
+            // Slot-Checkboxen "Einzeln" Hover (nur wenn "Separates Overlay" aktiviert ist)
+            if (getSeparateOverlay()) {
+                for (int i = 0; i < 3; i++) {
+                    int recyclerCheckboxY = recyclerHoverCheckboxStartY + (3 * recyclerHoverCheckboxSpacing) + (i * recyclerHoverCheckboxSpacing);
+                    String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
+                    int recyclerTextX = recyclerHoverCheckboxX + recyclerHoverCheckboxSize + 5;
+                    int recyclerTextWidth = textRenderer.getWidth(recyclerCheckboxText);
+                    int recyclerTextHeight = textRenderer.fontHeight;
+                    
+                    boolean isHoveringRecyclerCheckbox = mouseX >= recyclerHoverCheckboxX && mouseX <= recyclerHoverCheckboxX + recyclerHoverCheckboxSize &&
+                                                        mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerHoverCheckboxSize;
+                    boolean isHoveringRecyclerText = mouseX >= recyclerTextX && mouseX <= recyclerTextX + recyclerTextWidth &&
+                                                    mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerTextHeight;
+                    
+                    if (isHoveringRecyclerCheckbox || isHoveringRecyclerText) {
+                        int hoverStartX = recyclerHoverCheckboxX - 2;
+                        int hoverEndX = recyclerTextX + recyclerTextWidth + 2;
+                        context.fill(hoverStartX, recyclerCheckboxY - 1, hoverEndX, recyclerCheckboxY + recyclerHoverCheckboxSize + 1, 0x40FFFFFF);
+                    }
                 }
             }
         }
@@ -527,6 +697,8 @@ public class TabInfoDetailScreen extends Screen {
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
             case "essenzen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent;
+            case "machtkristalle":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristallePercent;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
@@ -557,6 +729,9 @@ public class TabInfoDetailScreen extends Screen {
             case "essenzen":
                 CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent = value;
                 break;
+            case "machtkristalle":
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristallePercent = value;
+                break;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
@@ -572,8 +747,47 @@ public class TabInfoDetailScreen extends Screen {
             // Prüfe ob auf das Schließen-Kreuz geklickt wurde
             // Verwende exakt die gleiche Berechnung wie im Rendering
             int boxWidth = 300;
+            // Berechne Höhe und Y-Position wie im Rendering
+            boolean hasIconOptionClose = configKey.equals("forschung") || configKey.equals("amboss") || 
+                                       configKey.equals("schmelzofen") || configKey.equals("seelen") || 
+                                       configKey.equals("essenzen") || configKey.equals("jaeger") || 
+                                       configKey.equals("machtkristalle") ||
+                                       configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
+                                       configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
+            boolean isMachtkristalleClose = configKey.equals("machtkristalle");
+            boolean isRecyclerClose = configKey.equals("recycler");
+            boolean isRecyclerSlotClose = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
+            boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay();
+            int baseBoxHeightClose = hasIconOptionClose ? 250 : 210;
+            if (isMachtkristalleClose) {
+                baseBoxHeightClose += 60;
+            }
+            if (isRecyclerClose || isRecyclerSlotClose) {
+                baseBoxHeightClose += 60;
+            }
+            int boxHeightClose = baseBoxHeightClose;
+            int heightIncreaseClose = 0;
+            if (hasSeparateOverlayClose) {
+                if (isMachtkristalleClose) {
+                    heightIncreaseClose = 60;
+                    boxHeightClose += heightIncreaseClose;
+                    boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+                } else if (isRecyclerClose || isRecyclerSlotClose) {
+                    heightIncreaseClose = 60;
+                    boxHeightClose += heightIncreaseClose;
+                    boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+                } else {
+                    heightIncreaseClose = 60;
+                    boxHeightClose += heightIncreaseClose;
+                }
+            } else if (isMachtkristalleClose) {
+                boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            } else if (isRecyclerClose || isRecyclerSlotClose) {
+                boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            }
             int boxX = width / 2 - boxWidth / 2;
-            int boxY = getSettingsScreenBoxY(); // Oben bündig mit Settings-Screen
+            // Zentriere das Overlay vertikal (gleicher Abstand oben und unten)
+            int boxY = (height - boxHeightClose) / 2;
             
             int closeButtonSize = 12;
             int closeButtonX = boxX + boxWidth - closeButtonSize - 5;
@@ -611,12 +825,42 @@ public class TabInfoDetailScreen extends Screen {
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
         boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
-        int boxHeight = hasIconOption ? 250 : 210;
+        int baseBoxHeight = hasIconOption ? 250 : 210;
+        // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
+        if (isMachtkristalle) {
+            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+        }
+        // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
+        if (isRecycler || isRecyclerSlot) {
+            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+        }
+        int boxHeight = baseBoxHeight;
+        int heightIncrease = 0;
         if (hasSeparateOverlay) {
-            boxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+            if (isMachtkristalle) {
+                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
+                boxHeight += heightIncrease;
+                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
+                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            } else if (isRecycler || isRecyclerSlot) {
+                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
+                boxHeight += heightIncrease;
+                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
+                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            } else {
+                heightIncrease = 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+                boxHeight += heightIncrease;
+            }
+        } else if (isMachtkristalle) {
+            // Reduziere die Höhe für Machtkristalle, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
+            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+        } else if (isRecycler || isRecyclerSlot) {
+            // Reduziere die Höhe für Recycler, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
+            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
         }
         int boxX = width / 2 - boxWidth / 2;
-        int boxY = getSettingsScreenBoxY(); // Oben bündig mit Settings-Screen
+        // Zentriere das Overlay vertikal (gleicher Abstand oben und unten)
+        int boxY = (height - boxHeight) / 2;
         
         // Prüfe ob Klick innerhalb des Overlays ist
         if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
@@ -760,62 +1004,110 @@ public class TabInfoDetailScreen extends Screen {
             return true;
         }
         
-        // Machtkristall Slot-Checkboxen (nur wenn "Separates Overlay" aktiviert ist)
-        if (configKey.equals("machtkristalle") && getSeparateOverlay()) {
+        // Machtkristall Slot-Checkboxen
+        if (configKey.equals("machtkristalle")) {
             int mkCheckboxStartY = buttonY + buttonHeight + 10;
             int mkCheckboxSize = 10;
             int mkCheckboxX = boxX + 10;
             int mkCheckboxSpacing = 20;
             
+            // MK Slot-Checkboxen (MK Slot 1, 2, 3 ein/aus) - immer angezeigt
             for (int i = 0; i < 3; i++) {
-                int mkCheckboxY = mkCheckboxStartY + (i * mkCheckboxSpacing);
-                String mkCheckboxText = "MK " + (i + 1) + " Einzeln";
-                int mkTextX = mkCheckboxX + mkCheckboxSize + 5;
-                int mkTextWidth = textRenderer.getWidth(mkCheckboxText);
-                int mkTextHeight = textRenderer.fontHeight;
+                int mkSlotY = mkCheckboxStartY + (i * mkCheckboxSpacing);
+                String mkSlotText = "MK Slot " + (i + 1) + " ein/aus";
+                int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
+                int mkSlotTextWidth = textRenderer.getWidth(mkSlotText);
+                int mkSlotTextHeight = textRenderer.fontHeight;
                 
-                boolean clickedOnMkCheckbox = (mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
-                                              mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkCheckboxSize);
-                boolean clickedOnMkText = (mouseX >= mkTextX && mouseX <= mkTextX + mkTextWidth &&
-                                         mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkTextHeight);
+                boolean clickedOnMkSlotCheckbox = (mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
+                                                  mouseY >= mkSlotY && mouseY <= mkSlotY + mkCheckboxSize);
+                boolean clickedOnMkSlotText = (mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
+                                             mouseY >= mkSlotY && mouseY <= mkSlotY + mkSlotTextHeight);
                 
-                if (clickedOnMkCheckbox || clickedOnMkText) {
-                    // Toggle MK Slot Separate
-                    boolean newValue = !getMachtkristallSlotSeparate(i);
-                    setMachtkristallSlotSeparate(i, newValue);
+                if (clickedOnMkSlotCheckbox || clickedOnMkSlotText) {
+                    // Toggle MK Slot Enabled
+                    boolean newValue = !getMachtkristalleSlotEnabled(i);
+                    setMachtkristalleSlotEnabled(i, newValue);
                     CCLiveUtilitiesConfig.HANDLER.save();
                     return true;
                 }
             }
+            
+            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
+            if (getSeparateOverlay()) {
+                for (int i = 0; i < 3; i++) {
+                    int mkCheckboxY = mkCheckboxStartY + (3 * mkCheckboxSpacing) + (i * mkCheckboxSpacing);
+                    String mkSlotCheckboxText = "MK " + (i + 1) + " Einzeln";
+                    int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
+                    int mkSlotTextWidth = textRenderer.getWidth(mkSlotCheckboxText);
+                    int mkSlotTextHeight = textRenderer.fontHeight;
+                    
+                    boolean clickedOnMkSlotCheckbox = (mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
+                                                      mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkCheckboxSize);
+                    boolean clickedOnMkSlotText = (mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
+                                                 mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkSlotTextHeight);
+                    
+                    if (clickedOnMkSlotCheckbox || clickedOnMkSlotText) {
+                        // Toggle MK Slot Separate
+                        boolean newValue = !getMachtkristallSlotSeparate(i);
+                        setMachtkristallSlotSeparate(i, newValue);
+                        CCLiveUtilitiesConfig.HANDLER.save();
+                        return true;
+                    }
+                }
+            }
         }
         
-        // Recycler Slot-Checkboxen (nur wenn "Separates Overlay" aktiviert ist)
-        if ((isRecycler || isRecyclerSlot) && getSeparateOverlay()) {
-            // Verwende exakt die gleichen Berechnungen wie beim Rendering
+        // Recycler Slot-Checkboxen
+        if (configKey.equals("recycler") || configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3")) {
             int recyclerCheckboxStartY = buttonY + buttonHeight + 10;
             int recyclerCheckboxSize = 10;
             int recyclerCheckboxX = boxX + 10;
             int recyclerCheckboxSpacing = 20;
             
+            // Recycler Slot-Checkboxen (Recycler Slot 1, 2, 3 ein/aus) - immer angezeigt
             for (int i = 0; i < 3; i++) {
-                int recyclerCheckboxY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
-                String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
-                int recyclerTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
-                int recyclerTextWidth = textRenderer.getWidth(recyclerCheckboxText);
-                int recyclerTextHeight = textRenderer.fontHeight;
+                int recyclerSlotY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
+                String recyclerSlotText = "Recycler Slot " + (i + 1) + " ein/aus";
+                int recyclerSlotTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
+                int recyclerSlotTextWidth = textRenderer.getWidth(recyclerSlotText);
+                int recyclerSlotTextHeight = textRenderer.fontHeight;
                 
-                // Verwende exakt die gleichen Berechnungen wie beim Rendering
-                boolean clickedOnRecyclerCheckbox = (mouseX >= recyclerCheckboxX && mouseX <= recyclerCheckboxX + recyclerCheckboxSize &&
-                                                    mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerCheckboxSize);
-                boolean clickedOnRecyclerText = (mouseX >= recyclerTextX && mouseX <= recyclerTextX + recyclerTextWidth &&
-                                                mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerTextHeight);
+                boolean clickedOnRecyclerSlotCheckbox = (mouseX >= recyclerCheckboxX && mouseX <= recyclerCheckboxX + recyclerCheckboxSize &&
+                                                      mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerCheckboxSize);
+                boolean clickedOnRecyclerSlotText = (mouseX >= recyclerSlotTextX && mouseX <= recyclerSlotTextX + recyclerSlotTextWidth &&
+                                                   mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerSlotTextHeight);
                 
-                if (clickedOnRecyclerCheckbox || clickedOnRecyclerText) {
-                    // Toggle Recycler Slot Separate
-                    boolean newValue = !getRecyclerSlotSeparate(i);
-                    setRecyclerSlotSeparate(i, newValue);
+                if (clickedOnRecyclerSlotCheckbox || clickedOnRecyclerSlotText) {
+                    // Toggle Recycler Slot Enabled
+                    boolean newValue = !getRecyclerSlotEnabled(i);
+                    setRecyclerSlotEnabled(i, newValue);
                     CCLiveUtilitiesConfig.HANDLER.save();
                     return true;
+                }
+            }
+            
+            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
+            if (getSeparateOverlay()) {
+                for (int i = 0; i < 3; i++) {
+                    int recyclerCheckboxY = recyclerCheckboxStartY + (3 * recyclerCheckboxSpacing) + (i * recyclerCheckboxSpacing);
+                    String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
+                    int recyclerTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
+                    int recyclerTextWidth = textRenderer.getWidth(recyclerCheckboxText);
+                    int recyclerTextHeight = textRenderer.fontHeight;
+                    
+                    boolean clickedOnRecyclerCheckbox = (mouseX >= recyclerCheckboxX && mouseX <= recyclerCheckboxX + recyclerCheckboxSize &&
+                                                        mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerCheckboxSize);
+                    boolean clickedOnRecyclerText = (mouseX >= recyclerTextX && mouseX <= recyclerTextX + recyclerTextWidth &&
+                                                    mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerTextHeight);
+                    
+                    if (clickedOnRecyclerCheckbox || clickedOnRecyclerText) {
+                        // Toggle Recycler Slot Separate
+                        boolean newValue = !getRecyclerSlotSeparate(i);
+                        setRecyclerSlotSeparate(i, newValue);
+                        CCLiveUtilitiesConfig.HANDLER.save();
+                        return true;
+                    }
                 }
             }
         }
@@ -957,6 +1249,54 @@ public class TabInfoDetailScreen extends Screen {
             case 2:
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate = value;
                 break;
+        }
+    }
+    
+    /**
+     * Gibt zurück, ob ein bestimmter Recycler-Slot aktiviert ist
+     */
+    private boolean getRecyclerSlotEnabled(int slotIndex) {
+        boolean isRecycler = configKey.equals("recycler");
+        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
+        if (!isRecycler && !isRecyclerSlot) {
+            return false;
+        }
+        switch (slotIndex) {
+            case 0:
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+            case 1:
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+            case 2:
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Setzt, ob ein bestimmter Recycler-Slot aktiviert ist
+     */
+    private void setRecyclerSlotEnabled(int slotIndex, boolean value) {
+        boolean isRecycler = configKey.equals("recycler");
+        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
+        if (!isRecycler && !isRecyclerSlot) {
+            return;
+        }
+        switch (slotIndex) {
+            case 0:
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 = value;
+                break;
+            case 1:
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 = value;
+                break;
+            case 2:
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 = value;
+                break;
+        }
+        
+        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
+        if (parent instanceof OverlayEditorScreen) {
+            ((OverlayEditorScreen) parent).refreshOverlays();
         }
     }
     
@@ -1251,6 +1591,70 @@ public class TabInfoDetailScreen extends Screen {
             case "recyclerSlot3":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground = value;
                 break;
+        }
+    }
+    
+    /**
+     * Gibt zurück, ob die Machtkristall-spezifische Option aktiviert ist
+     */
+    private boolean getMachtkristalleOption() {
+        if (!configKey.equals("machtkristalle")) {
+            return false;
+        }
+        return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleOption;
+    }
+    
+    /**
+     * Setzt, ob die Machtkristall-spezifische Option aktiviert ist
+     */
+    private void setMachtkristalleOption(boolean value) {
+        if (!configKey.equals("machtkristalle")) {
+            return;
+        }
+        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleOption = value;
+    }
+    
+    /**
+     * Gibt zurück, ob ein bestimmter Machtkristall-Slot aktiviert ist
+     */
+    private boolean getMachtkristalleSlotEnabled(int slotIndex) {
+        if (!configKey.equals("machtkristalle")) {
+            return false;
+        }
+        switch (slotIndex) {
+            case 0:
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+            case 1:
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+            case 2:
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Setzt, ob ein bestimmter Machtkristall-Slot aktiviert ist
+     */
+    private void setMachtkristalleSlotEnabled(int slotIndex, boolean value) {
+        if (!configKey.equals("machtkristalle")) {
+            return;
+        }
+        switch (slotIndex) {
+            case 0:
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1 = value;
+                break;
+            case 1:
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2 = value;
+                break;
+            case 2:
+                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3 = value;
+                break;
+        }
+        
+        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
+        if (parent instanceof OverlayEditorScreen) {
+            ((OverlayEditorScreen) parent).refreshOverlays();
         }
     }
     

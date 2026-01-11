@@ -97,31 +97,37 @@ public class OverlayEditorScreen extends Screen {
             overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
             overlays.add(new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
             
-            // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
+            // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
             if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
                     overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
                     overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
                     overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3"));
                 }
             }
             
-            // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
+            // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate) {
                 overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate) {
                 overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate) {
                 overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
             }
@@ -233,31 +239,37 @@ public class OverlayEditorScreen extends Screen {
             overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
             overlays.add(new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
             
-            // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
+            // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
             if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
                     overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
                     overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
                     overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3"));
                 }
             }
             
-            // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay" und "Einzeln" aktiviert sind)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
+            // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate) {
                 overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate) {
                 overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate) {
                 overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
             }

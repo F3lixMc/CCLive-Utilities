@@ -918,6 +918,28 @@ public class TabInfoUtility {
 			// Zeige alle 3 Slots mit Beispielwerten im Edit-Modus
 			// Im Edit-Modus zeigen wir immer "0.0%" als Beispiel, um zu zeigen wie es aussehen würde
 			for (int i = 0; i < 3; i++) {
+				// Prüfe ob dieser Slot aktiviert ist
+				boolean slotEnabled;
+				switch (i) {
+					case 0:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						break;
+					case 1:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						break;
+					case 2:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						break;
+					default:
+						slotEnabled = true;
+						break;
+				}
+				
+				// Überspringe diesen Slot, wenn er deaktiviert ist
+				if (!slotEnabled) {
+					continue;
+				}
+				
 				String displayText = showIcon ? "? / ?" : "MK " + (i + 1) + ": ? / ?";
 				// Prüfe ob Prozente in echten Daten verfügbar wären (für Anzeige im Edit-Modus)
 				MachtkristallSlot slot = machtkristallSlots[i];
@@ -1096,6 +1118,28 @@ public class TabInfoUtility {
 		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
 			for (int i = 0; i < 3; i++) {
+				// Prüfe ob dieser Slot aktiviert ist
+				boolean slotEnabled;
+				switch (i) {
+					case 0:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						break;
+					case 1:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						break;
+					case 2:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						break;
+					default:
+						slotEnabled = true;
+						break;
+				}
+				
+				// Überspringe diesen Slot, wenn er deaktiviert ist
+				if (!slotEnabled) {
+					continue;
+				}
+				
 				MachtkristallSlot slot = machtkristallSlots[i];
 				// Prüfe zuerst ob Slot nicht gefunden wurde (keine Machtkristall-Einträge in Tab-Liste)
 				// Dies muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
@@ -1136,7 +1180,8 @@ public class TabInfoUtility {
 			double currentPercent = recyclerSlot1.isValid() ? 
 				((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-			boolean showWarning = recyclerSlot1.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
+			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+			boolean showWarning = recyclerSlot1.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
 			String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, showWarning, "recyclerSlot1", showIcon));
@@ -1150,7 +1195,8 @@ public class TabInfoUtility {
 			double currentPercent = recyclerSlot2.isValid() ? 
 				((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-			boolean showWarning = recyclerSlot2.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
+			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+			boolean showWarning = recyclerSlot2.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
 			String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, showWarning, "recyclerSlot2", showIcon));
@@ -1164,7 +1210,8 @@ public class TabInfoUtility {
 			double currentPercent = recyclerSlot3.isValid() ? 
 				((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-			boolean showWarning = recyclerSlot3.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
+			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+			boolean showWarning = recyclerSlot3.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
 			String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, showWarning, "recyclerSlot3", showIcon));
@@ -1320,6 +1367,28 @@ public class TabInfoUtility {
 		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
 			for (int i = 0; i < 3; i++) {
+				// Prüfe ob dieser Slot aktiviert ist
+				boolean slotEnabled;
+				switch (i) {
+					case 0:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						break;
+					case 1:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						break;
+					case 2:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						break;
+					default:
+						slotEnabled = true;
+						break;
+				}
+				
+				// Überspringe diesen Slot, wenn er deaktiviert ist
+				if (!slotEnabled) {
+					continue;
+				}
+				
 				MachtkristallSlot slot = machtkristallSlots[i];
 				// Prüfe zuerst ob Slot nicht gefunden wurde (keine Machtkristall-Einträge in Tab-Liste)
 				// Dies muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
@@ -1361,7 +1430,8 @@ public class TabInfoUtility {
 			double currentPercent = recyclerSlot1.isValid() ? 
 				((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-			boolean showWarning = recyclerSlot1.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
+			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+			boolean showWarning = recyclerSlot1.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
 			String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent2 && percent != null, showWarning, "recyclerSlot1", showIcon));
@@ -1376,7 +1446,8 @@ public class TabInfoUtility {
 			double currentPercent = recyclerSlot2.isValid() ? 
 				((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-			boolean showWarning = recyclerSlot2.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
+			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+			boolean showWarning = recyclerSlot2.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
 			String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent2 && percent != null, showWarning, "recyclerSlot2", showIcon));
@@ -1391,7 +1462,8 @@ public class TabInfoUtility {
 			double currentPercent = recyclerSlot3.isValid() ? 
 				((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
 			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-			boolean showWarning = recyclerSlot3.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
+			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+			boolean showWarning = recyclerSlot3.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
 			String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent2 && percent != null, showWarning, "recyclerSlot3", showIcon));
@@ -1900,6 +1972,28 @@ public class TabInfoUtility {
 			int mkLineHeight = client.textRenderer.fontHeight + 2;
 			
 			for (int i = 0; i < 3; i++) {
+				// Prüfe ob dieser Slot aktiviert ist
+				boolean slotEnabled;
+				switch (i) {
+					case 0:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						break;
+					case 1:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						break;
+					case 2:
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						break;
+					default:
+						slotEnabled = true;
+						break;
+				}
+				
+				// Überspringe diesen Slot, wenn er deaktiviert ist
+				if (!slotEnabled) {
+					continue;
+				}
+				
 				MachtkristallSlot slot = machtkristallSlots[i];
 				boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
 				
@@ -2025,7 +2119,8 @@ public class TabInfoUtility {
 				double currentPercent = recyclerSlot1.isValid() ? 
 					((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
 				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
+				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
 				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
 				// Wenn Icon aktiviert ist, zeige nur die Werte (oder "Nicht im Widget" wenn nicht gültig)
 				// Das Icon wird dann automatisch vor dem Text angezeigt
@@ -2055,7 +2150,8 @@ public class TabInfoUtility {
 				double currentPercent = recyclerSlot2.isValid() ? 
 					((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
 				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
+				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
 				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
 				String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
 				
@@ -2083,7 +2179,8 @@ public class TabInfoUtility {
 				double currentPercent = recyclerSlot3.isValid() ? 
 					((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
 				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
-				boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
+				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
 				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
 				String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
 				
