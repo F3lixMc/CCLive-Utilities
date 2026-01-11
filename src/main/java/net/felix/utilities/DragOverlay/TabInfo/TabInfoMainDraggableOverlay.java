@@ -287,7 +287,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         // Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der Text-Höhe
         int overlayCenterY = unscaledHeight / 2;
         int currentY = overlayCenterY - totalTextHeight / 2;
-        int textColor = 0xFFFFFFFF;
+        int warningColor = 0xFFFF0000; // Rot für Warnungen
         
         int xPosition = 0; // Relativ zu (x, y) nach Matrix-Transformation
         
@@ -298,8 +298,24 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                 continue;
             }
             
+            // Hole konfigurierte Farben für diese Zeile
+            int textColor = TabInfoUtility.getTextColorForConfigKey(line.configKey);
+            int percentColor = TabInfoUtility.getPercentColorForConfigKey(line.configKey);
+            
             try {
                 int currentX = xPosition + PADDING;
+                
+                // Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
+                int currentTextColor = textColor;
+                if (line.showWarning) {
+                    // Blink-Animation: alle 300ms wechseln
+                    boolean isVisible = (System.currentTimeMillis() / 300) % 2 == 0;
+                    if (isVisible) {
+                        currentTextColor = warningColor;
+                    } else {
+                        currentTextColor = textColor;
+                    }
+                }
                 
                 // Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
                 if (line.showIcon && (line.configKey != null)) {
@@ -364,7 +380,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                                     Text.literal(fallbackText),
                                     currentX,
                                     currentY,
-                                    textColor,
+                                    currentTextColor,
                                     true
                                 );
                                 currentX += client.textRenderer.getWidth(fallbackText);
@@ -377,7 +393,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                                 Text.literal(": "),
                                 currentX,
                                 textYForIcon,
-                                textColor,
+                                currentTextColor,
                                 true
                             );
                             currentX += client.textRenderer.getWidth(": ");
@@ -388,7 +404,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                             Text.literal(line.text),
                             currentX,
                             textYForIcon,
-                            textColor,
+                            currentTextColor,
                             true
                         );
                         currentX += client.textRenderer.getWidth(line.text);
@@ -399,7 +415,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                             Text.literal(line.text),
                             currentX,
                             currentY,
-                            textColor,
+                            currentTextColor,
                             true
                         );
                         currentX += client.textRenderer.getWidth(line.text);
@@ -411,7 +427,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                         Text.literal(line.text),
                         currentX,
                         currentY,
-                        textColor,
+                        currentTextColor,
                         true
                     );
                     currentX += client.textRenderer.getWidth(line.text);

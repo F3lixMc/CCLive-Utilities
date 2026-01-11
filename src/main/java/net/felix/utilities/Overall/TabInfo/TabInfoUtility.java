@@ -242,6 +242,16 @@ public class TabInfoUtility {
 	}
 	
 	/**
+	 * Setzt ein CapacityData-Objekt auf "nicht gefunden" zurück
+	 */
+	private static void resetCapacityData(CapacityData data) {
+		data.current = -1;
+		data.max = -1;
+		data.currentFormatted = null;
+		data.maxFormatted = null;
+	}
+	
+	/**
 	 * Aktualisiert alle Informationen aus der Tab-Liste
 	 */
 	private static void updateTabInfo(MinecraftClient client) {
@@ -293,6 +303,17 @@ public class TabInfoUtility {
 			return null;
 		};
 		
+		// Track welche Werte im Tab-Widget gefunden wurden
+		boolean foundForschung = false;
+		boolean foundAmboss = false;
+		boolean foundSchmelzofen = false;
+		boolean foundJaeger = false;
+		boolean foundSeelen = false;
+		boolean foundEssenzen = false;
+		boolean foundRecyclerSlot1 = false;
+		boolean foundRecyclerSlot2 = false;
+		boolean foundRecyclerSlot3 = false;
+		
 		// Durchsuche alle Einträge
 		for (int i = 0; i < entries.size(); i++) {
 			String entryText = getEntryText.apply(i);
@@ -304,31 +325,37 @@ public class TabInfoUtility {
 			
 			// [Forschung]
 			if (cleanEntryText.contains("[Forschung]")) {
+				foundForschung = true;
 				parseCapacityData(entries, i, getEntryText, removeFormatting, forschung, "Forschung");
 			}
 			
 			// [Amboss Kapazität]
 			if (cleanEntryText.contains("[Amboss Kapazität]")) {
+				foundAmboss = true;
 				parseCapacityData(entries, i, getEntryText, removeFormatting, ambossKapazitaet, "Amboss");
 			}
 			
 			// [Schmelzofen Kapazität]
 			if (cleanEntryText.contains("[Schmelzofen Kapazität]")) {
+				foundSchmelzofen = true;
 				parseCapacityData(entries, i, getEntryText, removeFormatting, schmelzofenKapazitaet, "Schmelzofen");
 			}
 			
 			// [Jäger Kapazität]
 			if (cleanEntryText.contains("[Jäger Kapazität]")) {
+				foundJaeger = true;
 				parseCapacityData(entries, i, getEntryText, removeFormatting, jaegerKapazitaet, "Jäger");
 			}
 			
 			// [Seelen Kapazität]
 			if (cleanEntryText.contains("[Seelen Kapazität]")) {
+				foundSeelen = true;
 				parseCapacityData(entries, i, getEntryText, removeFormatting, seelenKapazitaet, "Seelen");
 			}
 			
 			// [Essenzen Kapazität]
 			if (cleanEntryText.contains("[Essenzen Kapazität]")) {
+				foundEssenzen = true;
 				parseCapacityData(entries, i, getEntryText, removeFormatting, essenzenKapazitaet, "Essenzen");
 			}
 			
@@ -336,18 +363,56 @@ public class TabInfoUtility {
 			
 			// [Recycler Slot 1]
 			if (cleanEntryText.contains("[Recycler Slot 1]")) {
+				foundRecyclerSlot1 = true;
+				System.out.println("[Recycler-DEBUG] ✅ Header '[Recycler Slot 1]' gefunden bei Index " + i + ", Text: '" + entryText + "'");
 				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot1, "Recycler Slot 1");
+				System.out.println("[Recycler-DEBUG] Nach Parsing - Slot 1: current=" + recyclerSlot1.current + ", max=" + recyclerSlot1.max + ", isValid=" + recyclerSlot1.isValid());
 			}
 			
 			// [Recycler Slot 2]
 			if (cleanEntryText.contains("[Recycler Slot 2]")) {
+				foundRecyclerSlot2 = true;
+				System.out.println("[Recycler-DEBUG] ✅ Header '[Recycler Slot 2]' gefunden bei Index " + i + ", Text: '" + entryText + "'");
 				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot2, "Recycler Slot 2");
+				System.out.println("[Recycler-DEBUG] Nach Parsing - Slot 2: current=" + recyclerSlot2.current + ", max=" + recyclerSlot2.max + ", isValid=" + recyclerSlot2.isValid());
 			}
 			
 			// [Recycler Slot 3]
 			if (cleanEntryText.contains("[Recycler Slot 3]")) {
+				foundRecyclerSlot3 = true;
+				System.out.println("[Recycler-DEBUG] ✅ Header '[Recycler Slot 3]' gefunden bei Index " + i + ", Text: '" + entryText + "'");
 				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot3, "Recycler Slot 3");
+				System.out.println("[Recycler-DEBUG] Nach Parsing - Slot 3: current=" + recyclerSlot3.current + ", max=" + recyclerSlot3.max + ", isValid=" + recyclerSlot3.isValid());
 			}
+		}
+		
+		// Setze nur die Werte zurück, die nicht im Tab-Widget gefunden wurden
+		if (!foundForschung) {
+			resetCapacityData(forschung);
+		}
+		if (!foundAmboss) {
+			resetCapacityData(ambossKapazitaet);
+		}
+		if (!foundSchmelzofen) {
+			resetCapacityData(schmelzofenKapazitaet);
+		}
+		if (!foundJaeger) {
+			resetCapacityData(jaegerKapazitaet);
+		}
+		if (!foundSeelen) {
+			resetCapacityData(seelenKapazitaet);
+		}
+		if (!foundEssenzen) {
+			resetCapacityData(essenzenKapazitaet);
+		}
+		if (!foundRecyclerSlot1) {
+			resetCapacityData(recyclerSlot1);
+		}
+		if (!foundRecyclerSlot2) {
+			resetCapacityData(recyclerSlot2);
+		}
+		if (!foundRecyclerSlot3) {
+			resetCapacityData(recyclerSlot3);
 		}
 		
 		// Verarbeite Machtkristalle separat (müssen in Reihenfolge geparst werden)
@@ -467,17 +532,33 @@ public class TabInfoUtility {
 		CapacityData data,
 		String debugName
 	) {
+		// Debug: Nur für Recycler-Slots
+		boolean isRecycler = debugName != null && debugName.startsWith("Recycler Slot");
+		if (isRecycler) {
+			System.out.println("[Recycler-DEBUG] 🔍 Suche Datenzeile für " + debugName + " ab Index " + (headerIndex + 1));
+		}
+		
 		// Suche nach der Datenzeile nach dem Header
 		// Es kann sein, dass ein Spielername dazwischen steht, also suchen wir in den nächsten 10 Einträgen
 		for (int j = headerIndex + 1; j < Math.min(headerIndex + 11, entries.size()); j++) {
 			String dataText = getEntryText.apply(j);
 			if (dataText == null) {
+				if (isRecycler) {
+					System.out.println("[Recycler-DEBUG] ⚠️ Index " + j + ": dataText ist null");
+				}
 				continue;
 			}
 			
 			String cleanDataText = removeFormatting.apply(dataText);
 			if (cleanDataText == null || cleanDataText.trim().isEmpty()) {
+				if (isRecycler) {
+					System.out.println("[Recycler-DEBUG] ⚠️ Index " + j + ": cleanDataText ist leer, Original: '" + dataText + "'");
+				}
 				continue;
+			}
+			
+			if (isRecycler) {
+				System.out.println("[Recycler-DEBUG] 📝 Index " + j + ": '" + cleanDataText + "' (Original: '" + dataText + "')");
 			}
 			
 			// Überspringe Spielernamen (wenn der Text wie ein Spielername aussieht)
@@ -485,10 +566,16 @@ public class TabInfoUtility {
 			if (!cleanDataText.contains("/") && !cleanDataText.matches(".*\\d+.*")) {
 				// Möglicherweise ein Spielername, aber wir prüfen trotzdem weiter
 				// da manche Einträge auch ohne "/" sein könnten
+				if (isRecycler) {
+					System.out.println("[Recycler-DEBUG] ⏭️ Index " + j + ": Überspringe (kein '/' und keine Zahl)");
+				}
 			}
 			
 			// Prüfe, ob dies eine Kapazitätszeile ist (enthält "/")
 			if (cleanDataText.contains("/")) {
+				if (isRecycler) {
+					System.out.println("[Recycler-DEBUG] ✅ Index " + j + ": Potenzielle Datenzeile gefunden: '" + cleanDataText + "'");
+				}
 				// Versuche, die formatierten Strings zu extrahieren
 				// Format: "AKTUELL / MAXIMAL" oder "AKTUELL/MAXIMAL"
 				// Beispiel: "35,241K / 100K" oder "123 / 500"
@@ -521,34 +608,73 @@ public class TabInfoUtility {
 							maxNumbersOnly = convertSuffixToNumber(maxPart, maxNumbersOnlyRaw);
 						} else {
 							// Für alle anderen: normale Konvertierung
-							currentNumbersOnly = currentPart.replaceAll("[^0-9.,]", "").replaceAll("[.,]", "");
-							maxNumbersOnly = maxPart.replaceAll("[^0-9.,]", "").replaceAll("[.,]", "");
-							currentNumbersOnly = convertSuffixToNumber(currentPart, currentNumbersOnly);
-							maxNumbersOnly = convertSuffixToNumber(maxPart, maxNumbersOnly);
+							// Entferne Wörter wie "materials" vor der Konvertierung, damit sie nicht als Suffixe interpretiert werden
+							String currentPartClean = currentPart.replaceAll("(?i)\\s*(materials?|materialien?)\\s*", "").trim();
+							String maxPartClean = maxPart.replaceAll("(?i)\\s*(materials?|materialien?)\\s*", "").trim();
+							
+							currentNumbersOnly = currentPartClean.replaceAll("[^0-9.,]", "").replaceAll("[.,]", "");
+							maxNumbersOnly = maxPartClean.replaceAll("[^0-9.,]", "").replaceAll("[.,]", "");
+							currentNumbersOnly = convertSuffixToNumber(currentPartClean, currentNumbersOnly);
+							maxNumbersOnly = convertSuffixToNumber(maxPartClean, maxNumbersOnly);
 						}
 						
 						if (!currentNumbersOnly.isEmpty() && !maxNumbersOnly.isEmpty()) {
 							try {
-								data.current = Integer.parseInt(currentNumbersOnly);
-								data.max = Integer.parseInt(maxNumbersOnly);
+								// Verwende long für große Zahlen (z.B. 2,700,000,000 würde Integer.MAX_VALUE überschreiten)
+								long currentLong = Long.parseLong(currentNumbersOnly);
+								long maxLong = Long.parseLong(maxNumbersOnly);
+								
+								// Prüfe ob die Werte in int-Bereich passen
+								if (currentLong > Integer.MAX_VALUE || maxLong > Integer.MAX_VALUE) {
+									if (isRecycler) {
+										System.out.println("[Recycler-DEBUG] ⚠️ Werte zu groß für int: current=" + currentLong + ", max=" + maxLong);
+									}
+									// Verwende -1 wenn zu groß (wird als ungültig angezeigt)
+									data.current = -1;
+									data.max = -1;
+									return;
+								}
+								
+								data.current = (int) currentLong;
+								data.max = (int) maxLong;
+								if (isRecycler) {
+									System.out.println("[Recycler-DEBUG] ✅✅✅ Erfolgreich geparst für " + debugName + ": current=" + data.current + ", max=" + data.max);
+								}
 								return; // Erfolgreich geparst
 							} catch (NumberFormatException e) {
 								// Wenn Parsing fehlschlägt, setze trotzdem die formatierten Strings
 								// und verwende -1 für isValid() Prüfung (wird dann als ungültig angezeigt)
 								data.current = -1;
 								data.max = -1;
+								if (isRecycler) {
+									System.out.println("[Recycler-DEBUG] ❌ NumberFormatException beim Parsing: currentNumbersOnly='" + currentNumbersOnly + "', maxNumbersOnly='" + maxNumbersOnly + "', Exception: " + e.getMessage());
+								}
 								return;
 							}
+						} else {
+							if (isRecycler) {
+								System.out.println("[Recycler-DEBUG] ⚠️ Leere Zahlen: currentNumbersOnly='" + currentNumbersOnly + "', maxNumbersOnly='" + maxNumbersOnly + "'");
+							}
+						}
+					} else {
+						if (isRecycler) {
+							System.out.println("[Recycler-DEBUG] ⚠️ Split ergab nicht 2 Teile: parts.length=" + (parts != null ? parts.length : 0));
 						}
 					}
 				} catch (Exception e) {
 					// Weiter suchen
+					if (isRecycler) {
+						System.out.println("[Recycler-DEBUG] ❌ Exception beim Parsing: " + e.getMessage());
+					}
 					continue;
 				}
 			}
 		}
 		
 		// Nicht gefunden - setze auf ungültig
+		if (isRecycler) {
+			System.out.println("[Recycler-DEBUG] ❌❌❌ Keine Datenzeile gefunden für " + debugName + " in den nächsten 10 Einträgen!");
+		}
 		data.current = -1;
 		data.max = -1;
 		data.currentFormatted = null;
@@ -2377,10 +2503,6 @@ public class TabInfoUtility {
 		matrices.translate(posX, posY);
 		matrices.scale(scale, scale);
 		
-		// Hole konfigurierte Farben
-		int textColor = getTextColorForConfigKey(configKey);
-		int percentColor = getPercentColorForConfigKey(configKey);
-		
 		// Zeichne alle Zeilen
 		int currentY = PADDING;
 		int warningColor = 0xFFFF0000; // Rot für Warnungen
@@ -2389,6 +2511,12 @@ public class TabInfoUtility {
 				currentY += actualLineHeight;
 				continue;
 			}
+			
+			// Hole konfigurierte Farben für diese Zeile (basierend auf line.configKey, nicht configKey)
+			// Wenn line.configKey null ist, verwende den übergebenen configKey als Fallback
+			String colorConfigKey = (line.configKey != null && !line.configKey.isEmpty()) ? line.configKey : configKey;
+			int textColor = getTextColorForConfigKey(colorConfigKey);
+			int percentColor = getPercentColorForConfigKey(colorConfigKey);
 			
 			// Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
 			int currentTextColor = textColor;
@@ -2479,7 +2607,7 @@ public class TabInfoUtility {
 					currentX += client.textRenderer.getWidth(line.text);
 				} else {
 					// Fallback: Zeichne normalen Text
-					context.drawText(client.textRenderer, Text.literal(line.text), currentX, currentY, textColor, true);
+					context.drawText(client.textRenderer, Text.literal(line.text), currentX, currentY, currentTextColor, true);
 					currentX += client.textRenderer.getWidth(line.text);
 				}
 			} else {
@@ -2563,7 +2691,7 @@ public class TabInfoUtility {
 	/**
 	 * Gibt die konfigurierte Textfarbe für einen Tab-Info-Eintrag zurück
 	 */
-	private static int getTextColorForConfigKey(String configKey) {
+	public static int getTextColorForConfigKey(String configKey) {
 		if (configKey == null) return 0xFFFFFFFF;
 		java.awt.Color color;
 		switch (configKey) {
@@ -2606,7 +2734,7 @@ public class TabInfoUtility {
 	/**
 	 * Gibt die konfigurierte Prozentfarbe für einen Tab-Info-Eintrag zurück
 	 */
-	private static int getPercentColorForConfigKey(String configKey) {
+	public static int getPercentColorForConfigKey(String configKey) {
 		if (configKey == null) return 0xFFFFFF00;
 		java.awt.Color color;
 		switch (configKey) {

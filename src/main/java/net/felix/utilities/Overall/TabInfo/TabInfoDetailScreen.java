@@ -1691,6 +1691,9 @@ public class TabInfoDetailScreen extends Screen {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenTextColor;
             case "machtkristalle":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleTextColor;
+            case "recycler":
+                // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
             case "recyclerSlot1":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
             case "recyclerSlot2":
@@ -1718,6 +1721,9 @@ public class TabInfoDetailScreen extends Screen {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenPercentColor;
             case "machtkristalle":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristallePercentColor;
+            case "recycler":
+                // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
             case "recyclerSlot1":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
             case "recyclerSlot2":
@@ -1791,6 +1797,16 @@ public class TabInfoDetailScreen extends Screen {
                     getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleTextColor;
                     setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleTextColor = val;
                     break;
+                case "recycler":
+                    // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
+                    setter = (val) -> {
+                        // Setze alle drei Slots gleichzeitig
+                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor = val;
+                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor = val;
+                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor = val;
+                    };
+                    break;
                 case "recyclerSlot1":
                     getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
                     setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor = val;
@@ -1836,6 +1852,16 @@ public class TabInfoDetailScreen extends Screen {
                 case "machtkristalle":
                     getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristallePercentColor;
                     setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristallePercentColor = val;
+                    break;
+                case "recycler":
+                    // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
+                    setter = (val) -> {
+                        // Setze alle drei Slots gleichzeitig
+                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor = val;
+                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor = val;
+                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor = val;
+                    };
                     break;
                 case "recyclerSlot1":
                     getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;

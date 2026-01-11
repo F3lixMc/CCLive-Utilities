@@ -703,8 +703,28 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         // Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der fontHeight (da Text-Baseline unten ist)
         int overlayCenterY = unscaledHeight / 2;
         int currentY = overlayCenterY - client.textRenderer.fontHeight / 2;
+        
+        // Lade Farben aus Config (für Recycler-Slots)
         int textColor = 0xFFFFFFFF;
         int percentColor = 0xFFFFFF00;
+        if (configKey != null) {
+            if ("recyclerSlot1".equals(configKey)) {
+                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
+                textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
+                percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
+            } else if ("recyclerSlot2".equals(configKey)) {
+                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor;
+                textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor;
+                percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
+            } else if ("recyclerSlot3".equals(configKey)) {
+                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor;
+                textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor;
+                percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
+            }
+        }
         int warningColor = 0xFFFF0000;
         
         // Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
@@ -909,10 +929,34 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             
             // Für Multi-Line-Overlay: Starte oben mit PADDING, nicht zentriert
             int lineY = 5; // PADDING
-            int recyclerPercentColor = 0xFFFFFF00; // Gelb für Prozente
             int iconSize = showIcon ? (int)(client.textRenderer.fontHeight * 1.5) : 0;
             
             for (int i = 0; i < 3; i++) {
+                // Lade Farben für diesen Slot aus Config
+                int recyclerTextColor = 0xFFFFFFFF;
+                int recyclerPercentColor = 0xFFFFFF00;
+                switch (i) {
+                    case 0:
+                        java.awt.Color color1 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
+                        recyclerTextColor = (color1.getAlpha() << 24) | (color1.getRed() << 16) | (color1.getGreen() << 8) | color1.getBlue();
+                        java.awt.Color percentColor1 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
+                        recyclerPercentColor = (percentColor1.getAlpha() << 24) | (percentColor1.getRed() << 16) | (percentColor1.getGreen() << 8) | percentColor1.getBlue();
+                        break;
+                    case 1:
+                        java.awt.Color color2 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor;
+                        recyclerTextColor = (color2.getAlpha() << 24) | (color2.getRed() << 16) | (color2.getGreen() << 8) | color2.getBlue();
+                        java.awt.Color percentColor2 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor;
+                        recyclerPercentColor = (percentColor2.getAlpha() << 24) | (percentColor2.getRed() << 16) | (percentColor2.getGreen() << 8) | percentColor2.getBlue();
+                        break;
+                    case 2:
+                        java.awt.Color color3 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor;
+                        recyclerTextColor = (color3.getAlpha() << 24) | (color3.getRed() << 16) | (color3.getGreen() << 8) | color3.getBlue();
+                        java.awt.Color percentColor3 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor;
+                        recyclerPercentColor = (percentColor3.getAlpha() << 24) | (percentColor3.getRed() << 16) | (percentColor3.getGreen() << 8) | percentColor3.getBlue();
+                        break;
+                }
+                
+                int recyclerCurrentTextColor = recyclerTextColor;
                 // Prüfe ob dieser Slot aktiviert ist
                 boolean slotEnabled;
                 switch (i) {
@@ -986,7 +1030,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                         client.textRenderer,
                         ": ",
                         lineX, textYForIcon,
-                        currentTextColor,
+                        recyclerCurrentTextColor,
                         true
                     );
                     lineX += client.textRenderer.getWidth(": ");
@@ -997,12 +1041,12 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     client.textRenderer,
                     displayText,
                     lineX, textYForIcon,
-                    currentTextColor,
+                    recyclerCurrentTextColor,
                     true
                 );
                 lineX += client.textRenderer.getWidth(displayText);
                 
-                // Zeichne Prozentwert in gelb, falls vorhanden (vertikal zentriert zum Icon)
+                // Zeichne Prozentwert mit konfigurierter Farbe, falls vorhanden (vertikal zentriert zum Icon)
                 if (slotPercentText != null) {
                     context.drawText(
                         client.textRenderer,

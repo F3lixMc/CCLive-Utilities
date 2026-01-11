@@ -280,6 +280,33 @@ public class TabInfoSettingsScreen extends Screen {
                 return true;
             }
             
+            // Prüfe ob Klick auf einen Button im Parent-Screen (OverlayEditorScreen) ist
+            // Buttons sind bei: height - 30, Höhe 20, Breite 80, Abstand 10
+            int buttonY = height - 30;
+            int buttonHeight = 20;
+            int buttonWidth = 80;
+            int buttonSpacing = 10;
+            int totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing; // 350
+            int startX = width / 2 - totalButtonsWidth / 2;
+            
+            // Prüfe ob Klick im Button-Bereich ist (alle 4 Buttons zusammen)
+            if (mouseY >= buttonY && mouseY <= buttonY + buttonHeight &&
+                mouseX >= startX && mouseX <= startX + totalButtonsWidth) {
+                // Prüfe welcher Button geklickt wurde
+                int button2X = startX + buttonWidth + buttonSpacing; // Tab Info
+                
+                // Wenn es nicht der "Tab Info" Button ist, schließe diesen Screen
+                if (mouseX < button2X || mouseX > button2X + buttonWidth) {
+                    // Schließe den TabInfoSettingsScreen, bevor der Klick weitergeleitet wird
+                    close();
+                }
+                
+                // Klick ist auf einen Button im Parent-Screen - leite an Parent weiter
+                if (parent != null && parent instanceof OverlayEditorScreen) {
+                    return parent.mouseClicked(mouseX, mouseY, button);
+                }
+            }
+            
             if (handleSettingsClick(mouseX, mouseY, button)) {
                 return true;
             }

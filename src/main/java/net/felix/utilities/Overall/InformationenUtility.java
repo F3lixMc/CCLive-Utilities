@@ -4299,7 +4299,14 @@ public class InformationenUtility {
 									if (gadgetData.has("aliases")) {
 										String aliases = gadgetData.get("aliases").getAsString();
 										if (!aliases.isEmpty()) {
-											gadgetsDatabase.computeIfAbsent(aliases, k -> new HashMap<>()).put(level, location);
+											// Split aliases by "||" and store each one separately
+											String[] aliasParts = aliases.split("\\|\\|");
+											for (String alias : aliasParts) {
+												alias = alias.trim();
+												if (!alias.isEmpty()) {
+													gadgetsDatabase.computeIfAbsent(alias, k -> new HashMap<>()).put(level, location);
+												}
+											}
 										}
 									}
 								}
@@ -4344,7 +4351,14 @@ public class InformationenUtility {
 							if (licenseData.has("aliases")) {
 								String aliases = licenseData.get("aliases").getAsString();
 								if (!aliases.isEmpty()) {
-									licensesDatabase.put(aliases, licenseInfo);
+									// Split aliases by "||" and store each one separately
+									String[] aliasParts = aliases.split("\\|\\|");
+									for (String alias : aliasParts) {
+										alias = alias.trim();
+										if (!alias.isEmpty()) {
+											licensesDatabase.put(alias, licenseInfo);
+										}
+									}
 								}
 							}
 						}

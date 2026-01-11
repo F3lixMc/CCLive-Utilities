@@ -46,11 +46,6 @@
             "location": "Netherite Collection VII"
         },
         {
-            "name": "[Goldmine]",
-            "aliases": "Goldmine [Lizenz]",
-            "location": "Wirrholz Collection VII"
-        },
-        {
             "name": "[Fichtenwald]",
             "aliases": "Fichtenwald [Lizenz]",
             "location": "Dschungelholz Collection IV"
@@ -77,7 +72,7 @@
         },
         {
             "name": "[Mangrovensumpf]",
-            "aliases": "Mangrovensumpf [Lizenz]",
+            "aliases": "Mangrovensumpf [Lizenz] || CACTUS_CLICKER.farmzone.license.crimson_forest",
             "location": "Gold Collection VI"
         },
         {
@@ -87,7 +82,7 @@
         },
         {
             "name": "[Wirrwald]",
-            "aliases": "Wirrwald [Lizenz]",
+            "aliases": "Wirrwald [Lizenz] || CACTUS_CLICKER.farmzone.license.warped_forest",
             "location": "Karmesinholz Collection VII"
         }
     ],
