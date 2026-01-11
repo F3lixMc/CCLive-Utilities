@@ -619,62 +619,25 @@ public class ItemViewerUtility {
             }
         }
         
-        // Prüfe Clipboard-Pin Hotkey (immer prüfen, nicht nur wenn ItemViewer sichtbar ist)
-        // WICHTIG: wasPressed() funktioniert nur einmal pro Tick, daher müssen wir es hier prüfen
-        // handleKeyPress wird nur aufgerufen, wenn ein Screen geöffnet ist
-        // Wenn der ItemViewer im HUD (ohne Screen) geöffnet ist, müssen wir den Hotkey hier prüfen
+        // Prüfe Clipboard-Pin Hotkey (nur wenn kein Screen geöffnet ist)
+        // Wenn ein Screen geöffnet ist, wird handleKeyPress verwendet (vom ScreenMixin aufgerufen)
         if (clipboardPinKeyBinding != null && clipboardPinKeyBinding.wasPressed()) {
-            // Prüfe ob ein Textfeld fokussiert ist
-            if (isTextFieldFocused(client)) {
-                return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
-            }
-            
-            // Prüfe ob ItemViewer sichtbar ist und ein Item gehovered wird
-            if (isVisible()) {
-                // Hole gehoveres Item aus dem Grid
-                ItemData hoveredItem = getHoveredItemFromGrid();
-                
-                if (hoveredItem != null && hoveredItem.info != null && 
-                    Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
-                    // Füge Bauplan zum Clipboard hinzu
-                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
+            // Nur verarbeiten, wenn kein Screen geöffnet ist (sonst wird handleKeyPress verwendet)
+            if (client.currentScreen == null) {
+                // Prüfe ob ein Textfeld fokussiert ist
+                if (isTextFieldFocused(client)) {
+                    return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
                 }
-            }
-            
-            // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
-            {
-                // Prüfe ob wir in einem Bauplan-Inventar sind
-                if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-                    // Prüfe ob wir in einem Bauplan-Inventar sind
-                    if (isInBlueprintInventory(handledScreen)) {
-                        // Hole gehoverten Slot
-                        net.minecraft.screen.slot.Slot hoveredSlot = getHoveredSlot(handledScreen, client);
-                        if (hoveredSlot != null && hoveredSlot.hasStack()) {
-                            net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
-                            if (stack != null && !stack.isEmpty()) {
-                                // Extrahiere Item-Namen aus Tooltip (erste Zeile: "name - [Bauplan]")
-                                String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
-                                if (itemName == null || itemName.isEmpty()) {
-                                    // Fallback: Verwende ItemStack-Name
-                                    itemName = stack.getName().getString();
-                                    // Entferne Formatierungscodes
-                                    itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
-                                }
-                                
-                                // Entferne " - [Bauplan]" oder ähnliche Suffixe (immer, auch wenn extractItemNameFromTooltip erfolgreich war)
-                                // Pattern: "name - [Bauplan]" -> "name"
-                                // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
-                                itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\](\\s*\\[.*?\\])?$", "").trim();
-                                
-                                // Suche Item in items.json
-                                ItemData itemData = findItemByName(itemName);
-                                if (itemData != null && itemData.info != null && 
-                                    Boolean.TRUE.equals(itemData.info.blueprint)) {
-                                    // Füge Bauplan zum Clipboard hinzu
-                                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
-                                }
-                            }
-                        }
+                
+                // Prüfe ob ItemViewer sichtbar ist und ein Item gehovered wird
+                if (isVisible()) {
+                    // Hole gehoveres Item aus dem Grid
+                    ItemData hoveredItem = getHoveredItemFromGrid();
+                    
+                    if (hoveredItem != null && hoveredItem.info != null && 
+                        Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
+                        // Füge Bauplan zum Clipboard hinzu
+                        net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
                     }
                 }
             }
@@ -793,7 +756,8 @@ public class ItemViewerUtility {
                 return false; // Ignoriere Hotkey wenn Textfeld fokussiert ist
             }
             
-            // Prüfe ob ItemViewer sichtbar ist und ein Item gehovered wird
+            // Prüfe zuerst, ob ItemViewer sichtbar ist und ein Item gehovered wird
+            // Wenn ja, hat ItemViewer Priorität
             if (isVisible()) {
                 // Hole gehoveres Item aus dem Grid
                 ItemData hoveredItem = getHoveredItemFromGrid();
@@ -807,39 +771,45 @@ public class ItemViewerUtility {
             }
             
             // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
-            {
+            // Dies funktioniert auch, wenn der ItemViewer sichtbar ist, aber kein Item gehovered wird
+            if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
                 // Prüfe ob wir in einem Bauplan-Inventar sind
-                if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-                    // Prüfe ob wir in einem Bauplan-Inventar sind
-                    if (isInBlueprintInventory(handledScreen)) {
-                        // Hole gehoverten Slot
-                        net.minecraft.screen.slot.Slot hoveredSlot = getHoveredSlot(handledScreen, client);
-                        if (hoveredSlot != null && hoveredSlot.hasStack()) {
-                            net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
-                            if (stack != null && !stack.isEmpty()) {
-                                // Extrahiere Item-Namen aus Tooltip (erste Zeile: "name - [Bauplan]")
-                                String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
-                                if (itemName == null || itemName.isEmpty()) {
-                                    // Fallback: Verwende ItemStack-Name
-                                    itemName = stack.getName().getString();
-                                    // Entferne Formatierungscodes
-                                    itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
-                                }
-                                
-                                // Entferne " - [Bauplan]" oder ähnliche Suffixe (immer, auch wenn extractItemNameFromTooltip erfolgreich war)
-                                // Pattern: "name - [Bauplan]" -> "name"
-                                // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
-                                itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\](\\s*\\[.*?\\])?$", "").trim();
-                                
-                                // Suche Item in items.json
-                                ItemData itemData = findItemByName(itemName);
-                                if (itemData != null && 
-                                    itemData.info != null && 
-                                    Boolean.TRUE.equals(itemData.info.blueprint)) {
-                                    // Füge Bauplan zum Clipboard hinzu
-                                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
-                                    return true;
-                                }
+                boolean isBlueprintInv = isInBlueprintInventory(handledScreen);
+                
+                if (isBlueprintInv) {
+                    // Hole gehoverten Slot - verwende zuerst getrackten Slot, dann berechne
+                    net.minecraft.screen.slot.Slot hoveredSlot = null;
+                    if (lastHoveredScreen == handledScreen && lastHoveredSlot != null && lastHoveredSlot.hasStack()) {
+                        // Verwende getrackten Slot wenn verfügbar
+                        hoveredSlot = lastHoveredSlot;
+                    } else {
+                        // Fallback: Berechne Slot aus Mausposition
+                        hoveredSlot = getHoveredSlot(handledScreen, client);
+                    }
+                    
+                    if (hoveredSlot != null && hoveredSlot.hasStack()) {
+                        net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
+                        if (stack != null && !stack.isEmpty()) {
+                            // Extrahiere Item-Namen aus Tooltip (erste Zeile: "name - [Bauplan]")
+                            String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
+                            
+                            if (itemName == null || itemName.isEmpty()) {
+                                // Fallback: Verwende ItemStack-Name
+                                itemName = stack.getName().getString();
+                            }
+                            
+                            // Bereinige Item-Name: Entferne Formatierungszeichen, chinesische Zeichen und "- [Bauplan]"
+                            itemName = cleanItemNameForLookup(itemName);
+                            
+                            // Suche Item in items.json
+                            ItemData itemData = findItemByName(itemName);
+                            
+                            if (itemData != null && 
+                                itemData.info != null && 
+                                Boolean.TRUE.equals(itemData.info.blueprint)) {
+                                // Füge Bauplan zum Clipboard hinzu
+                                net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
+                                return true;
                             }
                         }
                     }
@@ -918,23 +888,35 @@ public class ItemViewerUtility {
     
     /**
      * Findet den gehoverten Slot in einem HandledScreen
+     * Verwendet die gespeicherte Mausposition (lastMouseX, lastMouseY) wenn verfügbar
+     * Oder berechnet die Mausposition direkt aus client.mouse
      */
     private static net.minecraft.screen.slot.Slot getHoveredSlot(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, MinecraftClient client) {
         try {
-            // Hole Mouse-Position (skaliert für Screen)
-            double mouseXUnscaled = client.mouse.getX();
-            double mouseYUnscaled = client.mouse.getY();
-            int mouseX = (int) (mouseXUnscaled * client.getWindow().getScaledWidth() / client.getWindow().getWidth());
-            int mouseY = (int) (mouseYUnscaled * client.getWindow().getScaledHeight() / client.getWindow().getHeight());
+            // Hole Mouse-Position - verwende gespeicherte Position wenn verfügbar, sonst berechne direkt
+            double mouseX;
+            double mouseY;
+            if (lastMouseX >= 0 && lastMouseY >= 0) {
+                // Verwende gespeicherte Mausposition (wird im Render-Update gesetzt)
+                mouseX = lastMouseX;
+                mouseY = lastMouseY;
+            } else {
+                // Fallback: Berechne Mausposition direkt aus client.mouse
+                // Verwende die gleiche Methode wie in HandledScreenMixin
+                mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
+                mouseY = client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) client.getWindow().getHeight();
+            }
             
             // Hole Screen-Position (über Reflection, da @Shadow nicht immer funktioniert)
-            java.lang.reflect.Field xField = null;
-            java.lang.reflect.Field yField = null;
+            int screenX = 0;
+            int screenY = 0;
             try {
-                xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
-                yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
+                java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
+                java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
                 xField.setAccessible(true);
                 yField.setAccessible(true);
+                screenX = xField.getInt(screen);
+                screenY = yField.getInt(screen);
             } catch (NoSuchFieldException e) {
                 // Fallback: Versuche mit getter-Methoden
                 try {
@@ -942,26 +924,16 @@ public class ItemViewerUtility {
                     java.lang.reflect.Method getYMethod = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredMethod("getY");
                     getXMethod.setAccessible(true);
                     getYMethod.setAccessible(true);
-                    int screenX = (Integer) getXMethod.invoke(screen);
-                    int screenY = (Integer) getYMethod.invoke(screen);
-                    
-                    // Finde gehoverten Slot
-                    for (net.minecraft.screen.slot.Slot slot : screen.getScreenHandler().slots) {
-                        if (slot.x + screenX <= mouseX && mouseX < slot.x + screenX + 16 &&
-                            slot.y + screenY <= mouseY && mouseY < slot.y + screenY + 16) {
-                            return slot;
-                        }
-                    }
+                    screenX = (Integer) getXMethod.invoke(screen);
+                    screenY = (Integer) getYMethod.invoke(screen);
                 } catch (Exception ex) {
-                    // Ignoriere Fehler
+                    // Ignoriere Fehler, verwende 0,0 als Fallback
                 }
-                return null;
+            } catch (Exception e) {
+                // Ignoriere Fehler, verwende 0,0 als Fallback
             }
             
-            int screenX = xField != null ? xField.getInt(screen) : 0;
-            int screenY = yField != null ? yField.getInt(screen) : 0;
-            
-            // Finde gehoverten Slot
+            // Finde gehoverten Slot (gleiche Logik wie in HandledScreenMixin)
             for (net.minecraft.screen.slot.Slot slot : screen.getScreenHandler().slots) {
                 if (slot.x + screenX <= mouseX && mouseX < slot.x + screenX + 16 &&
                     slot.y + screenY <= mouseY && mouseY < slot.y + screenY + 16) {
@@ -1038,6 +1010,53 @@ public class ItemViewerUtility {
             // Ignoriere Fehler
         }
         return null;
+    }
+    
+    /**
+     * Bereinigt einen Item-Namen für die Suche in items.json
+     * Entfernt Formatierungszeichen, chinesische Zeichen und "- [Bauplan]" Suffixe
+     */
+    private static String cleanItemNameForLookup(String itemName) {
+        if (itemName == null || itemName.isEmpty()) {
+            return itemName;
+        }
+        
+        // 1. Entferne alle Minecraft-Formatierungscodes (§[0-9a-fk-or])
+        itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
+        
+        // 2. Entferne " - [Bauplan]" oder ähnliche Suffixe komplett (inkl. Bindestrich)
+        // Pattern: "name - [Bauplan]" -> "name"
+        // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
+        // Entferne zuerst alles ab " - [" bis zum Ende (inkl. mehrerer eckiger Klammern)
+        itemName = itemName.replaceAll("\\s*-\\s*\\[.*$", "");
+        
+        // 3. Entferne chinesische Formatierungszeichen (㔚㔘 etc.) am Anfang und Ende
+        // Diese Zeichen sind typischerweise am Anfang und Ende des Namens
+        // Entferne alle Zeichen, die nicht zu den erlaubten Zeichen gehören
+        // Erlaubt: Lateinische Buchstaben (inkl. Umlaute), Zahlen, Leerzeichen, Bindestriche
+        // Entfernt: Chinesische Zeichen und andere Sonderzeichen
+        StringBuilder cleaned = new StringBuilder();
+        for (char c : itemName.toCharArray()) {
+            // Erlaube nur: ASCII-Buchstaben, Umlaute (ä, ö, ü, ß), Zahlen, Leerzeichen, Bindestriche
+            // Chinesische Zeichen haben Unicode-Bereiche außerhalb des lateinischen Alphabets
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
+                (c >= '0' && c <= '9') || 
+                c == ' ' || c == '-' ||
+                c == 'ä' || c == 'ö' || c == 'ü' || c == 'Ä' || c == 'Ö' || c == 'Ü' || c == 'ß' ||
+                // Erlaube auch andere europäische Sonderzeichen (é, è, ê, etc.)
+                (c >= 0x00C0 && c <= 0x024F)) { // Lateinische erweiterte Zeichen
+                cleaned.append(c);
+            }
+        }
+        itemName = cleaned.toString();
+        
+        // 4. Entferne mehrfache Leerzeichen
+        itemName = itemName.replaceAll("\\s+", " ");
+        
+        // 5. Trimme Leerzeichen
+        itemName = itemName.trim();
+        
+        return itemName;
     }
     
     /**
@@ -1516,9 +1535,9 @@ public class ItemViewerUtility {
     private static void onHudRender(DrawContext context, net.minecraft.client.render.RenderTickCounter tickCounter) {
         // Rendere minimierten Button (rechts unten), wenn minimiert und kein Screen offen ist
         // (wenn ein Screen offen ist, wird der Button in den Mixins gerendert, damit er über dem dunklen Hintergrund liegt)
-        // Buttons werden nur in Inventaren angezeigt
+        // Buttons werden nur angezeigt, wenn der Item Viewer auch angezeigt werden würde
         MinecraftClient client = MinecraftClient.getInstance();
-        if (isMinimized && isVisible && isInventoryOpen(client)) {
+        if (isMinimized && isVisible && shouldShowItemViewerButtons(client)) {
             renderMinimizedButton(context, client);
         }
         // Hilfe-Overlay wird jetzt in den Mixins gerendert (HelpOverlayMixin/HelpOverlayScreenMixin am RETURN-Punkt),
@@ -1534,7 +1553,7 @@ public class ItemViewerUtility {
     public static void renderMinimizedButtonIfNeeded(DrawContext context) {
         if (isMinimized && isVisible) {
             MinecraftClient client = MinecraftClient.getInstance();
-            if (client != null && isInventoryOpen(client)) {
+            if (client != null && shouldShowItemViewerButtons(client)) {
                 renderMinimizedButton(context, client);
             }
         }
@@ -1685,6 +1704,10 @@ public class ItemViewerUtility {
     private static int lastMouseX = 0;
     private static int lastMouseY = 0;
     
+    // Tracke letzten gehoverten Slot für Clipboard-Pin-Funktion
+    private static net.minecraft.screen.slot.Slot lastHoveredSlot = null;
+    private static net.minecraft.client.gui.screen.ingame.HandledScreen<?> lastHoveredScreen = null;
+    
     // Dropdown-State
     private static boolean sortDropdownOpen = false;
     private static boolean helpScreenOpen = false;
@@ -1821,8 +1844,8 @@ public class ItemViewerUtility {
         // Rendere Pagination am unteren Rand (paginationY wurde bereits oben berechnet)
         renderPagination(context, pos.viewerX + VIEWER_PADDING, paginationY, pos.viewerWidth - VIEWER_PADDING * 2);
         
-        // Rendere Minimierungs-Button (außerhalb des Overlays, am linken Rand) - nur in Inventaren
-        if (isInventoryOpen(client)) {
+        // Rendere Minimierungs-Button (außerhalb des Overlays, am linken Rand) - nur wenn Item Viewer angezeigt wird
+        if (shouldShowItemViewerButtons(client)) {
             int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 3; // 3px Abstand links vom Viewer (2px nach rechts verschoben)
             int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING + 5; // Unten ausgerichtet, 5px tiefer
             renderMinimizeButton(context, minimizeButtonX, minimizeButtonY);
@@ -3241,6 +3264,22 @@ public class ItemViewerUtility {
     }
     
     /**
+     * Aktualisiert den gehoverten Slot (wird vom Mixin aufgerufen)
+     */
+    public static void updateHoveredSlot(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, net.minecraft.screen.slot.Slot slot) {
+        lastHoveredScreen = screen;
+        lastHoveredSlot = slot;
+        
+        // Debug: Zeige nur wenn sich der Slot ändert (reduziere Ausgabe)
+        if (slot != null && slot.hasStack()) {
+            net.minecraft.item.ItemStack stack = slot.getStack();
+            if (stack != null && !stack.isEmpty()) {
+                // Slot wird getrackt
+            }
+        }
+    }
+    
+    /**
      * Berechnet die Viewer-Position und Dimensionen (wird für Rendering und Klick-Handling verwendet)
      */
     private static ViewerPosition calculateViewerPosition(HandledScreen<?> handledScreen, Screen screen) {
@@ -3481,6 +3520,12 @@ public class ItemViewerUtility {
                 isMinimized = false;
                 return true;
             }
+        }
+        
+        // Wenn minimiert, keine weiteren Klicks abfangen (außer Minimize-Button oben)
+        // Dies ermöglicht es den Buttons darunter, Klicks zu verarbeiten
+        if (isMinimized && isVisible) {
+            return false;
         }
         
         if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
@@ -3913,6 +3958,44 @@ public class ItemViewerUtility {
      */
     public static boolean isMinimized() {
         return isMinimized;
+    }
+    
+    /**
+     * Prüft, ob die Item Viewer Buttons angezeigt werden sollen
+     * Verwendet die gleichen Bedingungen wie renderItemViewerInScreen
+     * @param client MinecraftClient Instanz
+     * @return true wenn Buttons angezeigt werden sollen, false sonst
+     */
+    private static boolean shouldShowItemViewerButtons(MinecraftClient client) {
+        if (client == null) {
+            return false;
+        }
+        
+        // Prüfe ob sichtbar (inkl. Dimension-Prüfung)
+        if (!isVisible()) {
+            return false;
+        }
+        
+        // Prüfe ob Items geladen sind
+        if (!itemsLoaded) {
+            return false;
+        }
+        
+        // Prüfe ob in einem Inventar
+        if (!isInventoryOpen(client)) {
+            return false;
+        }
+        
+        // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
+        if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+            net.minecraft.text.Text titleText = handledScreen.getTitle();
+            String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
+            if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+                return false; // KEINE Buttons in diesen speziellen Menüs
+            }
+        }
+        
+        return true;
     }
     
     /**

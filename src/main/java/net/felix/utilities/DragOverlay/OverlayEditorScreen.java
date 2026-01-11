@@ -462,13 +462,6 @@ public class OverlayEditorScreen extends Screen {
         ).dimensions(startX, height - 30, buttonWidth, 20).build();
         addDrawableChild(doneButton);
         
-        // Overlay Button
-        overlayButton = ButtonWidget.builder(
-            Text.literal("Overlay"),
-            button -> overlaySettingsOpen = !overlaySettingsOpen
-        ).dimensions(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
-        addDrawableChild(overlayButton);
-        
         // Tab Info Button
         ButtonWidget tabInfoButton = ButtonWidget.builder(
             Text.literal("Tab Info"),
@@ -478,8 +471,15 @@ public class OverlayEditorScreen extends Screen {
                     client.setScreen(new net.felix.utilities.Overall.TabInfo.TabInfoSettingsScreen(this));
                 }
             }
-        ).dimensions(startX + 2 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
+        ).dimensions(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
         addDrawableChild(tabInfoButton);
+        
+        // Overlay Button
+        overlayButton = ButtonWidget.builder(
+            Text.literal("Overlay"),
+            button -> overlaySettingsOpen = !overlaySettingsOpen
+        ).dimensions(startX + 2 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
+        addDrawableChild(overlayButton);
         
         // Reset Button
         resetButton = ButtonWidget.builder(
@@ -1187,44 +1187,84 @@ public class OverlayEditorScreen extends Screen {
     
     /**
      * Schaltet ein Overlay ein/aus
+     * Synchronisiert sowohl die *Enabled als auch die show* Optionen
      */
     private void toggleOverlayEnabled(DraggableOverlay overlay) {
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        
         if (overlay instanceof BossHPDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showBossHP = !CCLiveUtilitiesConfig.HANDLER.instance().showBossHP;
+            boolean newValue = !config.showBossHP;
+            config.showBossHP = newValue;
+            config.bossHPEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof CardsDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showCard = !CCLiveUtilitiesConfig.HANDLER.instance().showCard;
+            boolean newValue = !config.showCard;
+            config.showCard = newValue;
+            config.cardEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof StatuesDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showStatue = !CCLiveUtilitiesConfig.HANDLER.instance().showStatue;
+            boolean newValue = !config.showStatue;
+            config.showStatue = newValue;
+            config.statueEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof BlueprintViewerDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerEnabled;
+            // Nur showBlueprintViewer togglen (gleichgestellt mit "Blueprint Tracker anzeigen" in Config)
+            // blueprintViewerEnabled bleibt unabhängig (wird nicht synchronisiert)
+            config.showBlueprintViewer = !config.showBlueprintViewer;
         } else if (overlay instanceof MaterialTrackerDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled;
+            boolean newValue = !config.materialTrackerEnabled;
+            config.materialTrackerEnabled = newValue;
+            config.showMaterialTracker = newValue; // Synchronisiere mit *Enabled Option
         } else if (overlay instanceof KillsUtilityDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled;
+            boolean newValue = !config.killsUtilityEnabled;
+            config.killsUtilityEnabled = newValue;
+            config.showKillsUtility = newValue; // Synchronisiere mit *Enabled Option
         } else if (overlay instanceof EquipmentDisplayDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay = !CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay;
+            boolean newValue = !config.showEquipmentDisplay;
+            config.showEquipmentDisplay = newValue;
+            config.equipmentDisplayEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled;
+            boolean newValue = !config.miningLumberjackOverlayEnabled;
+            config.miningLumberjackOverlayEnabled = newValue;
+            // Mining/Lumberjack hat separate show* Optionen, aber keine gemeinsame show* Option
+            // Beide show* Optionen synchronisieren
+            config.showMiningOverlay = newValue;
+            config.showLumberjackOverlay = newValue;
         } else if (overlay instanceof CollectionDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
+            boolean newValue = !config.showCollectionOverlay;
+            config.showCollectionOverlay = newValue;
+            // Collection hat keine separate *Enabled Option, nur show* Option
         } else if (overlay instanceof AspectOverlayDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
+            boolean newValue = !config.showAspectOverlay;
+            config.showAspectOverlay = newValue;
+            config.aspectOverlayEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof StarAspectOverlayDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay = !CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
+            boolean newValue = !config.showAspectOverlay;
+            config.showAspectOverlay = newValue;
+            config.aspectOverlayEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof ChatAspectOverlayDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled;
+            boolean newValue = !config.chatAspectOverlayEnabled;
+            config.chatAspectOverlayEnabled = newValue;
+            // ChatAspectOverlay hat keine separate show* Option, nur *Enabled Option
         } else if (overlay instanceof HideUncraftableButtonDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled;
+            boolean newValue = !config.hideUncraftableEnabled;
+            config.hideUncraftableEnabled = newValue;
+            // HideUncraftableButton hat keine separate show* Option, nur *Enabled Option
         } else if (overlay instanceof HideWrongClassButtonDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled;
+            boolean newValue = !config.hideWrongClassEnabled;
+            config.hideWrongClassEnabled = newValue;
+            config.showHideWrongClassButton = newValue; // Synchronisiere mit *Enabled Option
         } else if (overlay instanceof KitFilterButton1DraggableOverlay || 
                    overlay instanceof KitFilterButton2DraggableOverlay || 
                    overlay instanceof KitFilterButton3DraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
+            boolean newValue = !config.kitFilterButtonsEnabled;
+            config.kitFilterButtonsEnabled = newValue;
+            // Kit Filter Buttons haben keine separate show* Option, nur *Enabled Option
         } else if (overlay instanceof MKLevelDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled;
+            boolean newValue = !config.mkLevelEnabled;
+            config.mkLevelEnabled = newValue;
+            // MKLevel hat keine separate show* Option, nur *Enabled Option
         } else if (overlay instanceof ClipboardDraggableOverlay) {
-            CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled = !CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled;
+            boolean newValue = !config.clipboardEnabled;
+            config.clipboardEnabled = newValue;
+            config.showClipboard = newValue; // Synchronisiere mit *Enabled Option
         }
     }
     

@@ -201,7 +201,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 // Text-Breite (gleiche Logik wie in renderSeparateOverlays)
                 String displayText;
                 if (slot.isNotFound()) {
-                    displayText = showIcon ? "Nicht im Widget" : "MK " + (i + 1) + ": Nicht im Widget";
+                    displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
                 } else if (slot.isEmpty()) {
                     displayText = showIcon ? "-" : "MK " + (i + 1) + ": -";
                 } else {
@@ -291,7 +291,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 // Text-Breite
                 String displayText;
                 if (!recyclerSlot.isValid()) {
-                    displayText = showIcon ? "Nicht im Widget" : "Recycler Slot " + (i + 1) + ": Nicht im Widget";
+                    displayText = showIcon ? "Nicht im Tab-Widget" : "Recycler Slot " + (i + 1) + ": Nicht im Tab-Widget";
                 } else {
                     displayText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
                 }
@@ -354,7 +354,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             // Text-Breite (gleiche Logik wie in renderSeparateOverlays)
             String displayText;
             if (slot.isNotFound()) {
-                displayText = showIcon ? "Nicht im Widget" : "MK " + (slotIndex + 1) + ": Nicht im Widget";
+                displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (slotIndex + 1) + ": Nicht im Tab-Widget";
             } else if (slot.isEmpty()) {
                 displayText = showIcon ? "-" : "MK " + (slotIndex + 1) + ": -";
             } else {
@@ -826,7 +826,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 String displayText;
                 String slotPercentText = null;
                 if (slot.isNotFound()) {
-                    displayText = showIcon ? "Nicht im Widget" : "MK " + (i + 1) + ": Nicht im Widget";
+                    displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
                 } else if (slot.isEmpty()) {
                     displayText = showIcon ? "-" : "MK " + (i + 1) + ": -";
                 } else {
@@ -952,7 +952,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 String displayText;
                 String slotPercentText = null;
                 if (!recyclerSlot.isValid()) {
-                    displayText = showIcon ? "Nicht im Widget" : "Recycler Slot " + (i + 1) + ": Nicht im Widget";
+                    displayText = showIcon ? "Nicht im Tab-Widget" : "Recycler Slot " + (i + 1) + ": Nicht im Tab-Widget";
                 } else {
                     displayText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
                     if (showPercent && recyclerSlot.isValid()) {

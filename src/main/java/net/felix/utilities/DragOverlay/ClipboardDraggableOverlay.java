@@ -72,6 +72,86 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     // Flag für Clipboard-Hover (wird bei Tab/F1 ausgeblendet)
     private static boolean hideHover = false;
     
+    // Separate Speicherung für Clipboard-Materialien (bleibt beim Dimensionswechsel erhalten)
+    private static final Map<String, Integer> clipboardMaterials = new HashMap<>();
+    
+    /**
+     * Aktualisiert die Clipboard-Materialien mit den aktuellen Materialien aus ActionBarData
+     * Diese Methode sollte regelmäßig aufgerufen werden, um die Materialien zu aktualisieren
+     */
+    public static void updateClipboardMaterials() {
+        Map<String, Integer> currentMaterials = ActionBarData.getMaterials();
+        if (currentMaterials != null) {
+            // Aktualisiere oder füge neue Materialien hinzu
+            for (Map.Entry<String, Integer> entry : currentMaterials.entrySet()) {
+                String materialName = entry.getKey();
+                Integer count = entry.getValue();
+                // Aktualisiere nur, wenn der neue Wert höher ist (um alte Werte zu behalten)
+                clipboardMaterials.put(materialName, Math.max(
+                    clipboardMaterials.getOrDefault(materialName, 0),
+                    count
+                ));
+            }
+        }
+    }
+    
+    /**
+     * Entfernt Materialien aus der Clipboard-Speicherung, die nicht mehr benötigt werden
+     * Wird aufgerufen, wenn ein Bauplan aus dem Clipboard entfernt wird
+     */
+    public static void cleanupUnusedMaterials() {
+        // Hole alle Materialien, die von Bauplänen im Clipboard benötigt werden
+        Set<String> requiredMaterials = new HashSet<>();
+        List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
+        
+        for (ClipboardUtility.ClipboardEntry entry : entries) {
+            if (entry.price != null) {
+                // Prüfe alle CostItems im Price
+                if (entry.price.coin != null && entry.price.coin.itemName != null && 
+                    !"Coins".equalsIgnoreCase(entry.price.coin.itemName) &&
+                    !"Pergamentfetzen".equalsIgnoreCase(entry.price.coin.itemName)) {
+                    requiredMaterials.add(normalizeMaterialName(entry.price.coin.itemName));
+                }
+                if (entry.price.cactus != null && entry.price.cactus.itemName != null) {
+                    requiredMaterials.add(normalizeMaterialName(entry.price.cactus.itemName));
+                }
+                if (entry.price.soul != null && entry.price.soul.itemName != null) {
+                    requiredMaterials.add(normalizeMaterialName(entry.price.soul.itemName));
+                }
+                if (entry.price.material1 != null && entry.price.material1.itemName != null) {
+                    requiredMaterials.add(normalizeMaterialName(entry.price.material1.itemName));
+                }
+                if (entry.price.material2 != null && entry.price.material2.itemName != null) {
+                    requiredMaterials.add(normalizeMaterialName(entry.price.material2.itemName));
+                }
+                if (entry.price.Amboss != null && entry.price.Amboss.itemName != null) {
+                    requiredMaterials.add(normalizeMaterialName(entry.price.Amboss.itemName));
+                }
+                if (entry.price.Ressource != null && entry.price.Ressource.itemName != null) {
+                    requiredMaterials.add(normalizeMaterialName(entry.price.Ressource.itemName));
+                }
+            }
+            if (entry.blueprintShop != null && entry.blueprintShop.price != null) {
+                if (entry.blueprintShop.price.coin != null && entry.blueprintShop.price.coin.itemName != null &&
+                    !"Coins".equalsIgnoreCase(entry.blueprintShop.price.coin.itemName) &&
+                    !"Pergamentfetzen".equalsIgnoreCase(entry.blueprintShop.price.coin.itemName)) {
+                    requiredMaterials.add(normalizeMaterialName(entry.blueprintShop.price.coin.itemName));
+                }
+                if (entry.blueprintShop.price.paper_shreds != null && entry.blueprintShop.price.paper_shreds.itemName != null &&
+                    !"Coins".equalsIgnoreCase(entry.blueprintShop.price.paper_shreds.itemName) &&
+                    !"Pergamentfetzen".equalsIgnoreCase(entry.blueprintShop.price.paper_shreds.itemName)) {
+                    requiredMaterials.add(normalizeMaterialName(entry.blueprintShop.price.paper_shreds.itemName));
+                }
+            }
+        }
+        
+        // Entferne Materialien, die nicht mehr benötigt werden
+        clipboardMaterials.entrySet().removeIf(entry -> {
+            String normalizedName = normalizeMaterialName(entry.getKey());
+            return !requiredMaterials.contains(normalizedName);
+        });
+    }
+    
     private static void setCurrentPage(int page) {
         int totalPages = getTotalPages();
         // Clamp page to valid range
@@ -1749,12 +1829,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         try {
-            // Hole Materialien aus ActionBarData
-            // ActionBarData sammelt Materialien immer, unabhängig von Overlay-Einstellungen
-            Map<String, Integer> materials = ActionBarData.getMaterials();
-            if (materials == null || materials.isEmpty()) {
+            // Aktualisiere Clipboard-Materialien mit aktuellen Materialien aus ActionBarData
+            updateClipboardMaterials();
+            
+            // Verwende Clipboard-Materialien (bleiben beim Dimensionswechsel erhalten)
+            if (clipboardMaterials == null || clipboardMaterials.isEmpty()) {
                 if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
-                    System.out.println("[Clipboard] Keine Materialien in ActionBarData gefunden für: " + materialName);
+                    System.out.println("[Clipboard] Keine Materialien in Clipboard-Speicherung gefunden für: " + materialName);
                 }
                 return 0.0;
             }
@@ -1765,11 +1846,11 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             // DEBUG: Logge Vergleich
             if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
                 System.out.println("[Clipboard] Suche Material: '" + materialName + "' -> normalisiert: '" + normalizedName + "'");
-                System.out.println("[Clipboard] Verfügbare Materialien in ActionBarData: " + materials.size());
+                System.out.println("[Clipboard] Verfügbare Materialien in Clipboard-Speicherung: " + clipboardMaterials.size());
             }
             
             // Suche nach einem passenden Materialnamen (normalisiert)
-            for (Map.Entry<String, Integer> entry : materials.entrySet()) {
+            for (Map.Entry<String, Integer> entry : clipboardMaterials.entrySet()) {
                 String normalizedEntryName = normalizeMaterialName(entry.getKey());
                 
                 // DEBUG: Logge jeden Vergleich

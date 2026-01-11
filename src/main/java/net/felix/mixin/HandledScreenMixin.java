@@ -51,6 +51,9 @@ public abstract class HandledScreenMixin {
         // Update mouse position for Item Viewer
         net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
         
+        // Update hovered slot for Item Viewer (für Clipboard-Pin-Funktion)
+        updateHoveredSlotForItemViewer(screen, mouseX, mouseY);
+        
         // Update mouse position for DebugUtility (Item Logger)
         net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
         
@@ -214,9 +217,31 @@ public abstract class HandledScreenMixin {
             return;
         }
         
-        // Handle clicks on Item Viewer buttons
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
-            cir.setReturnValue(true);
+        // Priorität basierend auf Item Viewer Status:
+        // - Wenn ausgeklappt (nicht minimiert): Item Viewer hat Priorität
+        // - Wenn eingeklappt (minimiert): Buttons haben Priorität
+        boolean isItemViewerMinimized = net.felix.utilities.ItemViewer.ItemViewerUtility.isMinimized();
+        
+        if (isItemViewerMinimized) {
+            // Item Viewer ist eingeklappt: Buttons haben Priorität
+            if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+                return;
+            }
+            // Handle clicks on Item Viewer buttons (nur Minimize-Button wenn minimiert)
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+            }
+        } else {
+            // Item Viewer ist ausgeklappt: Item Viewer hat Priorität
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+                return;
+            }
+            // Handle clicks on Kit Filter buttons (nur wenn Item Viewer den Klick nicht verarbeitet hat)
+            if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+            }
         }
         
         // Handle clicks on the Hide Uncraftable button ONLY in blueprint inventories
@@ -408,6 +433,33 @@ public abstract class HandledScreenMixin {
                     }
                 }
             }
+        } catch (Exception e) {
+            // Ignore errors
+        }
+    }
+    
+    /**
+     * Updates the hovered slot for Item Viewer (für Clipboard-Pin-Funktion)
+     */
+    private void updateHoveredSlotForItemViewer(HandledScreen<?> screen, int mouseX, int mouseY) {
+        try {
+            // Get the hovered slot by checking all slots manually (gleiche Logik wie updateAspectOverlay)
+            Slot hoveredSlot = null;
+            for (Slot slot : screen.getScreenHandler().slots) {
+                if (slot.x + x <= mouseX && mouseX < slot.x + x + 16 &&
+                    slot.y + y <= mouseY && mouseY < slot.y + y + 16) {
+                    hoveredSlot = slot;
+                    break;
+                }
+            }
+            
+            // Debug: Nur wenn in Bauplan-Inventar und Slot gefunden
+            if (hoveredSlot != null && hoveredSlot.hasStack() && isBlueprintInventory()) {
+                // System.out.println("[ClipboardPin-DEBUG] 📍 Slot-Tracking: Slot gefunden (Index: " + hoveredSlot.id + ", Maus: " + mouseX + "," + mouseY + ", Screen: " + x + "," + y + ")");
+            }
+            
+            // Update hovered slot in ItemViewerUtility
+            net.felix.utilities.ItemViewer.ItemViewerUtility.updateHoveredSlot(screen, hoveredSlot);
         } catch (Exception e) {
             // Ignore errors
         }

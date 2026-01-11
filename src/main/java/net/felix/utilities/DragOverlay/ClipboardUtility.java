@@ -152,6 +152,8 @@ public class ClipboardUtility {
             // Speichere in Config
             saveClipboardEntries();
             updateTotalPages();
+            // Entferne nicht mehr benötigte Materialien aus der Clipboard-Speicherung
+            ClipboardDraggableOverlay.cleanupUnusedMaterials();
         }
         return removed;
     }
@@ -164,6 +166,8 @@ public class ClipboardUtility {
         // Speichere in Config
         saveClipboardEntries();
         updateTotalPages();
+        // Entferne alle Materialien aus der Clipboard-Speicherung
+        ClipboardDraggableOverlay.cleanupUnusedMaterials();
     }
     
     /**

@@ -51,7 +51,7 @@ public class TabInfoUtility {
 		}
 		
 		public String getDisplayString() {
-			if (!isValid()) return "Nicht im Widget";
+			if (!isValid()) return "Nicht im Tab-Widget";
 			// Verwende formatierte Strings wenn verfügbar, sonst rohe Zahlen
 			if (currentFormatted != null && maxFormatted != null) {
 				return currentFormatted + " / " + maxFormatted;
@@ -64,7 +64,7 @@ public class TabInfoUtility {
 		 * (für Jäger, wo "1,513k" zu "1,513" werden soll)
 		 */
 		public String getDisplayStringWithoutCurrentSuffix() {
-			if (!isValid()) return "Nicht im Widget";
+			if (!isValid()) return "Nicht im Tab-Widget";
 			// Verwende formatierte Strings wenn verfügbar, sonst rohe Zahlen
 			if (currentFormatted != null && maxFormatted != null) {
 				// Entferne "k", "K", "m", "M" etc. vom Ende des current-Werts
@@ -76,14 +76,14 @@ public class TabInfoUtility {
 	}
 	
 	public static class XPData {
-		public int current = -1;
-		public int required = -1;
+		public java.math.BigInteger current = java.math.BigInteger.valueOf(-1);
+		public java.math.BigInteger required = java.math.BigInteger.valueOf(-1);
 		public String currentFormatted = null; // Formatierter String (z.B. "1,234")
 		public String requiredFormatted = null; // Formatierter String (z.B. "5,000")
 		public String percentFormatted = null; // Formatierter Prozentwert (z.B. "10%")
 		
 		public boolean isValid() {
-			return current >= 0 && required >= 0;
+			return current.compareTo(java.math.BigInteger.ZERO) >= 0 && required.compareTo(java.math.BigInteger.ZERO) >= 0;
 		}
 		
 		public String getDisplayString() {
@@ -92,7 +92,7 @@ public class TabInfoUtility {
 			if (currentFormatted != null && requiredFormatted != null) {
 				return currentFormatted + " / " + requiredFormatted;
 			}
-			return current + " / " + required;
+			return current.toString() + " / " + required.toString();
 		}
 	}
 	
@@ -133,7 +133,7 @@ public class TabInfoUtility {
 			// Prüfe ob Daten nicht gefunden wurden (nicht valid)
 			// Wenn name gesetzt ist, aber xpData nicht valid, dann wurden die Daten nicht gefunden
 			if (name != null && !name.isEmpty() && !xpData.isValid()) {
-				return "MK " + name + ": Nicht im Widget";
+				return "MK " + name + ": Nicht im Tab-Widget";
 			}
 			// Nur der Text ohne Prozent (Prozent wird separat angezeigt)
 			if (name != null && !name.isEmpty()) {
@@ -170,7 +170,7 @@ public class TabInfoUtility {
 		 * Gibt den Display-Text zurück, wenn der Slot nicht gefunden wurde
 		 */
 		public String getDisplayTextForNotFoundSlot(int slotNumber) {
-			return "MK " + slotNumber + ": Nicht im Widget";
+			return "MK " + slotNumber + ": Nicht im Tab-Widget";
 		}
 		
 		/**
@@ -557,6 +557,7 @@ public class TabInfoUtility {
 	
 	/**
 	 * Konvertiert Suffixe wie "K" (Tausend), "M" (Million) zu Zahlen
+	 * Gibt einen String zurück, der für BigInteger-Parsing verwendet werden kann
 	 */
 	private static String convertSuffixToNumber(String original, String numbersOnly) {
 		if (original == null || original.isEmpty()) {
@@ -567,16 +568,16 @@ public class TabInfoUtility {
 		if (upper.contains("K")) {
 			// Tausend
 			try {
-				double value = Double.parseDouble(numbersOnly);
-				return String.valueOf((int)(value * 1000));
+				java.math.BigInteger value = new java.math.BigInteger(numbersOnly);
+				return value.multiply(java.math.BigInteger.valueOf(1000)).toString();
 			} catch (NumberFormatException e) {
 				return numbersOnly;
 			}
 		} else if (upper.contains("M")) {
 			// Million
 			try {
-				double value = Double.parseDouble(numbersOnly);
-				return String.valueOf((int)(value * 1000000));
+				java.math.BigInteger value = new java.math.BigInteger(numbersOnly);
+				return value.multiply(java.math.BigInteger.valueOf(1000000)).toString();
 			} catch (NumberFormatException e) {
 				return numbersOnly;
 			}
@@ -661,14 +662,14 @@ public class TabInfoUtility {
 						
 						if (!currentNumbersOnly.isEmpty() && !requiredNumbersOnly.isEmpty()) {
 							try {
-								data.current = Integer.parseInt(currentNumbersOnly);
-								data.required = Integer.parseInt(requiredNumbersOnly);
+								data.current = new java.math.BigInteger(currentNumbersOnly);
+								data.required = new java.math.BigInteger(requiredNumbersOnly);
 								return; // Erfolgreich geparst
 							} catch (NumberFormatException e) {
 								// Wenn Parsing fehlschlägt, setze trotzdem die formatierten Strings
 								// und verwende -1 für isValid() Prüfung (wird dann als ungültig angezeigt)
-								data.current = -1;
-								data.required = -1;
+								data.current = java.math.BigInteger.valueOf(-1);
+								data.required = java.math.BigInteger.valueOf(-1);
 								return;
 							}
 						}
@@ -681,8 +682,8 @@ public class TabInfoUtility {
 		}
 		
 		// Nicht gefunden - setze auf ungültig
-		data.current = -1;
-		data.required = -1;
+		data.current = java.math.BigInteger.valueOf(-1);
+		data.required = java.math.BigInteger.valueOf(-1);
 		data.currentFormatted = null;
 		data.requiredFormatted = null;
 		data.percentFormatted = null;
@@ -760,6 +761,22 @@ public class TabInfoUtility {
 		double percent = ((double)current / (double)max) * 100.0;
 		// Runde auf 1 Dezimalstelle
 		return String.format("%.1f%%", percent);
+	}
+	
+	/**
+	 * Berechnet den Prozentsatz (aktuell / maximal * 100) für BigInteger
+	 */
+	public static String calculatePercent(java.math.BigInteger current, java.math.BigInteger max) {
+		if (max.compareTo(java.math.BigInteger.ZERO) <= 0) {
+			return "?%";
+		}
+		// Konvertiere zu BigDecimal für präzise Division
+		java.math.BigDecimal currentBD = new java.math.BigDecimal(current);
+		java.math.BigDecimal maxBD = new java.math.BigDecimal(max);
+		java.math.BigDecimal percent = currentBD.divide(maxBD, 4, java.math.RoundingMode.HALF_UP)
+			.multiply(java.math.BigDecimal.valueOf(100));
+		// Runde auf 1 Dezimalstelle
+		return String.format("%.1f%%", percent.doubleValue());
 	}
 	
 	/**
@@ -1006,10 +1023,10 @@ public class TabInfoUtility {
 					// Prozent = (current / max) * 100
 					percent = calculatePercent(forschung.current, forschung.max);
 				} else {
-					// Prüfe ob "Nicht im Widget" angezeigt wird
+					// Prüfe ob "Nicht im Tab-Widget" angezeigt wird
 					String displayString = forschung.getDisplayString();
-					if (displayString != null && displayString.contains("Nicht im Widget")) {
-						// Keine Prozentanzeige wenn "Nicht im Widget"
+					if (displayString != null && displayString.contains("Nicht im Tab-Widget")) {
+						// Keine Prozentanzeige wenn "Nicht im Tab-Widget"
 						showPercent = false;
 						percent = null;
 					} else {
@@ -1145,7 +1162,7 @@ public class TabInfoUtility {
 				// Dies muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
 				if (slot.isNotFound()) {
 					// Slot nicht gefunden (keine Machtkristall-Einträge in Tab-Liste)
-					String displayText = showIcon ? "Nicht im Widget" : "MK " + (i + 1) + ": Nicht im Widget";
+						String displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
 					lines.add(new LineWithPercent(displayText, null, false, false, "machtkristalle", showIcon));
 				} else if (slot.isEmpty()) {
 					// Slot ist leer (durch "[Kein Machtkristall ausgewählt]" markiert)
@@ -1250,10 +1267,10 @@ public class TabInfoUtility {
 					// Prozent = (current / max) * 100
 					percent = calculatePercent(forschung.current, forschung.max);
 				} else {
-					// Prüfe ob "Nicht im Widget" angezeigt wird
+					// Prüfe ob "Nicht im Tab-Widget" angezeigt wird
 					String displayString = forschung.getDisplayString();
-					if (displayString != null && displayString.contains("Nicht im Widget")) {
-						// Keine Prozentanzeige wenn "Nicht im Widget"
+					if (displayString != null && displayString.contains("Nicht im Tab-Widget")) {
+						// Keine Prozentanzeige wenn "Nicht im Tab-Widget"
 						showPercent = false;
 						percent = null;
 					} else {
@@ -1394,7 +1411,7 @@ public class TabInfoUtility {
 				// Dies muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
 				if (slot.isNotFound()) {
 					// Slot nicht gefunden (keine Machtkristall-Einträge in Tab-Liste)
-					String displayText = showIcon ? "Nicht im Widget" : "MK " + (i + 1) + ": Nicht im Widget";
+					String displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
 					lines.add(new LineWithPercent(displayText, null, false, false, "machtkristalle", showIcon));
 				} else if (slot.isEmpty()) {
 					// Slot ist leer (durch "[Kein Machtkristall ausgewählt]" markiert)
@@ -1826,10 +1843,10 @@ public class TabInfoUtility {
 					// Prozent = (current / max) * 100
 					percent = calculatePercent(forschung.current, forschung.max);
 				} else {
-					// Prüfe ob "Nicht im Widget" angezeigt wird
+					// Prüfe ob "Nicht im Tab-Widget" angezeigt wird
 					String displayString = forschung.getDisplayString();
-					if (displayString != null && displayString.contains("Nicht im Widget")) {
-						// Keine Prozentanzeige wenn "Nicht im Widget"
+					if (displayString != null && displayString.contains("Nicht im Tab-Widget")) {
+						// Keine Prozentanzeige wenn "Nicht im Tab-Widget"
 						showPercent = false;
 						percent = null;
 					} else {
@@ -2004,7 +2021,7 @@ public class TabInfoUtility {
 				// Dies muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
 				if (slot.isNotFound()) {
 					// Slot nicht gefunden (keine Machtkristall-Einträge in Tab-Liste)
-					displayText = showIcon ? "Nicht im Widget" : "MK " + (i + 1) + ": Nicht im Widget";
+					displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
 				} else if (slot.isEmpty()) {
 					// Slot ist leer (durch "[Kein Machtkristall ausgewählt]" markiert)
 					displayText = showIcon ? "-" : "MK " + (i + 1) + ": -";
@@ -2122,7 +2139,7 @@ public class TabInfoUtility {
 				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
 				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
-				// Wenn Icon aktiviert ist, zeige nur die Werte (oder "Nicht im Widget" wenn nicht gültig)
+				// Wenn Icon aktiviert ist, zeige nur die Werte (oder "Nicht im Tab-Widget" wenn nicht gültig)
 				// Das Icon wird dann automatisch vor dem Text angezeigt
 				String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
 				

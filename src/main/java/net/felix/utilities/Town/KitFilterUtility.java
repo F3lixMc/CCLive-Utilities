@@ -1326,11 +1326,12 @@ public class KitFilterUtility {
 		// Entferne Formatierungs-Codes für Vergleich
 		String cleanItemName = itemName.replaceAll("§[0-9a-fk-or]", "");
 		
-		// Prüfe ob der Item-Name mit einem der erwarteten Namen übereinstimmt (exakt)
+		// Prüfe ob der Item-Name mit einem der erwarteten Namen übereinstimmt
 		for (String expectedName : expectedNames) {
 			String cleanExpectedName = expectedName.replaceAll("§[0-9a-fk-or]", "");
-			// Nur exakte Matches, keine Teilstring-Matches
-			if (cleanItemName.equalsIgnoreCase(cleanExpectedName)) {
+			if (cleanItemName.equalsIgnoreCase(cleanExpectedName) || 
+				cleanItemName.contains(cleanExpectedName) ||
+				cleanExpectedName.contains(cleanItemName)) {
 				return true;
 			}
 		}
