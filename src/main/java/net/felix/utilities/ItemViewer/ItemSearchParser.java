@@ -10,7 +10,8 @@ import java.util.regex.Pattern;
 public class ItemSearchParser {
     // Tag-Pattern: #<tag> - unterstützt auch Teilstrings für Live-Suche
     // #Schuhe, #Schuh, #Schu, #Sch, #Sc, #S werden alle erkannt
-    private static final Pattern TAG_PATTERN = Pattern.compile("#([\\w]*)");
+    // Unterstützt auch Umlaute (ü, ä, ö) und andere Unicode-Buchstaben
+    private static final Pattern TAG_PATTERN = Pattern.compile("#([\\p{L}\\p{N}_]*)", Pattern.UNICODE_CASE);
     // Stat-Pattern: @StatName>Wert, @StatName<Wert, @StatName>=Wert, @StatName<=Wert, @StatName=Wert
     // Floor-Vergleichs-Pattern: @Ebene>50, @Ebene<50, @Ebene>=50, @Ebene<=50, etc. (MUSS VOR STAT_PATTERN geparst werden)
     private static final Pattern FLOOR_COMPARISON_PATTERN = Pattern.compile("@(?:ebene|floor)\\s*(>=|<=|>|<|=)\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
@@ -90,6 +91,26 @@ public class ItemSearchParser {
         
         // Normale Suche ohne Komma
         String remaining = searchText.trim();
+        
+        // Floor-Vergleichs-Filter: @Ebene>50, @Ebene<50, etc. (MUSS VOR STAT_PATTERN geparst werden)
+        Matcher floorComparisonMatcher = FLOOR_COMPARISON_PATTERN.matcher(remaining);
+        while (floorComparisonMatcher.find()) {
+            String operator = floorComparisonMatcher.group(1).trim();
+            String valueStr = floorComparisonMatcher.group(2).trim();
+            
+            try {
+                int value = Integer.parseInt(valueStr);
+                
+                FloorFilter filter = new FloorFilter();
+                filter.operator = operator;
+                filter.value = value;
+                
+                query.floorFilters.add(filter);
+                remaining = remaining.replace(floorComparisonMatcher.group(0), "").trim();
+            } catch (NumberFormatException e) {
+                // Ignoriere ungültige Werte
+            }
+        }
         
         // Aspekt-Suche: @Aspekt Name oder direkter Aspekt-Name (MUSS VOR STAT_PATTERN geparst werden)
         Matcher aspectAtMatcher = ASPECT_AT_PATTERN.matcher(remaining);

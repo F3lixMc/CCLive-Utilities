@@ -452,6 +452,7 @@ public class InformationenUtility {
 				// Skip Essenz items that should not show level information (but allow essence improvement inventory)
 				if (screenTitle.contains("Essenz [Auswahl]") || screenTitle.contains("Essenz-Tasche") ||
 					screenTitle.contains("Essenzernter") ||screenTitle.contains("Legend+ Menü") ||
+					screenTitle.contains("Machtkristalle Verbessern") ||
 					 ZeichenUtility.containsHunterUiBackground(screenTitle)){ //Hunter ui_background
 					
 					continue;
