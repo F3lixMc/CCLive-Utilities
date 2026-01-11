@@ -114,7 +114,7 @@ public class ClipboardUtility {
         }
         
         // Prüfe ob es ein Bauplan ist
-        if (itemData.info == null || itemData.info.blueprint == null || !itemData.info.blueprint) {
+        if (itemData.info == null || !Boolean.TRUE.equals(itemData.info.blueprint)) {
             return false; // Kein Bauplan
         }
         

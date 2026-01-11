@@ -11,10 +11,13 @@ public class PriceData {
     public CostItem soul;        // Seelen
     public CostItem material1;   // Ebenen Material 1
     public CostItem material2;   // Ebenen Material 2
-    @SerializedName("amboss")
-    public CostItem Amboss;      // Amboss Item
-    @SerializedName("ressource")
-    public CostItem Ressource;   // Ressourcen Item
+    public CostItem material3;   // Ebenen Material 3
+    public CostItem material4;   // Ebenen Material 4
+    public CostItem material5;   // Ebenen Material 5
+    public CostItem Amboss;     // Amboss Item (großgeschrieben in JSON)
+    public CostItem amboss;     // Amboss Item (kleingeschrieben in JSON)
+    public CostItem Ressource;  // Ressourcen Item (großgeschrieben in JSON)
+    public CostItem ressource;  // Ressourcen Item (kleingeschrieben in JSON)
     @SerializedName("Level")
     public CostItem Level;       // Farmzone Level (für Lizenzen)
     public CostItem paper_shreds; // Pergamentfetzen (für blueprint_shop)

@@ -531,42 +531,70 @@ public class ItemViewerUtility {
         }
         
         try {
-            // Verwende getBoundKeyLocalizedText() um den aktuellen Hotkey-Text zu bekommen
+            // Verwende getBoundKeyLocalizedText() direkt um den aktuellen Hotkey-Text zu bekommen
             // Dies funktioniert auch nach Änderungen in der Config
-            java.lang.reflect.Method getBoundKeyLocalizedTextMethod = clipboardPinKeyBinding.getClass().getMethod("getBoundKeyLocalizedText");
-            Object localizedText = getBoundKeyLocalizedTextMethod.invoke(clipboardPinKeyBinding);
-            if (localizedText instanceof net.minecraft.text.Text) {
-                String hotkeyString = ((net.minecraft.text.Text) localizedText).getString();
+            net.minecraft.text.Text localizedText = clipboardPinKeyBinding.getBoundKeyLocalizedText();
+            if (localizedText != null) {
+                String hotkeyString = localizedText.getString();
                 // Entferne mögliche Formatierungs-Codes
                 hotkeyString = hotkeyString.replaceAll("§[0-9a-fk-or]", "");
-                return hotkeyString;
+                if (!hotkeyString.isEmpty()) {
+                    return hotkeyString;
+                }
             }
         } catch (Exception e) {
-            // Fallback: Versuche über getBoundKey() und KeyCode
-            try {
-                java.lang.reflect.Method getBoundKeyMethod = clipboardPinKeyBinding.getClass().getMethod("getBoundKey");
-                Object boundKey = getBoundKeyMethod.invoke(clipboardPinKeyBinding);
-                
+            // Fallback: Versuche über getBoundKey() und KeyCode via Reflection
+        }
+        
+        // Fallback: Versuche über getBoundKey() und KeyCode via Reflection
+        try {
+            java.lang.reflect.Method getBoundKeyMethod = clipboardPinKeyBinding.getClass().getMethod("getBoundKey");
+            Object boundKeyObj = getBoundKeyMethod.invoke(clipboardPinKeyBinding);
+            if (boundKeyObj != null) {
                 // Hole den KeyCode
-                java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getCode");
-                int keyCode = (Integer) getCodeMethod.invoke(boundKey);
+                java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getCode");
+                int keyCode = (Integer) getCodeMethod.invoke(boundKeyObj);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                if (keyCode == GLFW.GLFW_KEY_P) {
-                    return "P";
-                } else if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
+                if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
                     // Buchstaben A-Z
                     return String.valueOf((char) ('A' + (keyCode - GLFW.GLFW_KEY_A)));
                 } else if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
                     // Zahlen 0-9
                     return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
+                } else if (keyCode == GLFW.GLFW_KEY_SPACE) {
+                    return "SPACE";
+                } else if (keyCode == GLFW.GLFW_KEY_LEFT_SHIFT || keyCode == GLFW.GLFW_KEY_RIGHT_SHIFT) {
+                    return "SHIFT";
+                } else if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL || keyCode == GLFW.GLFW_KEY_RIGHT_CONTROL) {
+                    return "CTRL";
+                } else if (keyCode == GLFW.GLFW_KEY_LEFT_ALT || keyCode == GLFW.GLFW_KEY_RIGHT_ALT) {
+                    return "ALT";
                 } else {
+                    // Versuche über getTranslationKey() einen lesbaren Namen zu bekommen
+                    try {
+                        java.lang.reflect.Method getTranslationKeyMethod = boundKeyObj.getClass().getMethod("getTranslationKey");
+                        String translationKey = (String) getTranslationKeyMethod.invoke(boundKeyObj);
+                        if (translationKey != null && !translationKey.isEmpty()) {
+                            // Extrahiere den Key-Namen aus dem Translation-Key
+                            String[] parts = translationKey.split("\\.");
+                            if (parts.length > 0) {
+                                String keyName = parts[parts.length - 1];
+                                // Konvertiere key.keyboard.x zu "X"
+                                if (keyName.length() == 1) {
+                                    return keyName.toUpperCase();
+                                }
+                                return keyName.toUpperCase();
+                            }
+                        }
+                    } catch (Exception e2) {
+                        // Ignoriere
+                    }
                     return "Key " + keyCode;
                 }
-            } catch (Exception e2) {
-                // Fallback: Standard "P"
-                return "P";
             }
+        } catch (Exception e) {
+            // Fallback: Standard "P"
         }
         
         return "P"; // Fallback
@@ -607,7 +635,7 @@ public class ItemViewerUtility {
                 ItemData hoveredItem = getHoveredItemFromGrid();
                 
                 if (hoveredItem != null && hoveredItem.info != null && 
-                    hoveredItem.info.blueprint != null && hoveredItem.info.blueprint) {
+                    Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
                     // Füge Bauplan zum Clipboard hinzu
                     net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
                 }
@@ -631,14 +659,17 @@ public class ItemViewerUtility {
                                     itemName = stack.getName().getString();
                                     // Entferne Formatierungscodes
                                     itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
-                                    // Entferne " - [Bauplan]" oder ähnliche Suffixe
-                                    itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\]$", "").trim();
                                 }
+                                
+                                // Entferne " - [Bauplan]" oder ähnliche Suffixe (immer, auch wenn extractItemNameFromTooltip erfolgreich war)
+                                // Pattern: "name - [Bauplan]" -> "name"
+                                // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
+                                itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\](\\s*\\[.*?\\])?$", "").trim();
                                 
                                 // Suche Item in items.json
                                 ItemData itemData = findItemByName(itemName);
                                 if (itemData != null && itemData.info != null && 
-                                    itemData.info.blueprint != null && itemData.info.blueprint) {
+                                    Boolean.TRUE.equals(itemData.info.blueprint)) {
                                     // Füge Bauplan zum Clipboard hinzu
                                     net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
                                 }
@@ -768,7 +799,7 @@ public class ItemViewerUtility {
                 ItemData hoveredItem = getHoveredItemFromGrid();
                 
                 if (hoveredItem != null && hoveredItem.info != null && 
-                    hoveredItem.info.blueprint != null && hoveredItem.info.blueprint) {
+                    Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
                     // Füge Bauplan zum Clipboard hinzu
                     net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
                     return true;
@@ -793,15 +824,18 @@ public class ItemViewerUtility {
                                     itemName = stack.getName().getString();
                                     // Entferne Formatierungscodes
                                     itemName = itemName.replaceAll("§[0-9a-fk-or]", "").trim();
-                                    // Entferne " - [Bauplan]" oder ähnliche Suffixe
-                                    itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\]$", "").trim();
                                 }
+                                
+                                // Entferne " - [Bauplan]" oder ähnliche Suffixe (immer, auch wenn extractItemNameFromTooltip erfolgreich war)
+                                // Pattern: "name - [Bauplan]" -> "name"
+                                // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
+                                itemName = itemName.replaceAll("\\s*-\\s*\\[.*?\\](\\s*\\[.*?\\])?$", "").trim();
                                 
                                 // Suche Item in items.json
                                 ItemData itemData = findItemByName(itemName);
                                 if (itemData != null && 
                                     itemData.info != null && 
-                                    itemData.info.blueprint != null && itemData.info.blueprint) {
+                                    Boolean.TRUE.equals(itemData.info.blueprint)) {
                                     // Füge Bauplan zum Clipboard hinzu
                                     net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
                                     return true;
@@ -995,7 +1029,8 @@ public class ItemViewerUtility {
                 
                 // Entferne " - [Bauplan]" oder ähnliche Suffixe
                 // Pattern: "name - [Bauplan]" -> "name"
-                String itemName = firstLine.replaceAll("\\s*-\\s*\\[.*?\\]$", "").trim();
+                // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
+                String itemName = firstLine.replaceAll("\\s*-\\s*\\[.*?\\](\\s*\\[.*?\\])?$", "").trim();
                 
                 return itemName;
             }
@@ -3816,12 +3851,11 @@ public class ItemViewerUtility {
                             }
                             // Entferne Formatierungs-Codes für Vergleich
                             String cleanItemName = item.name.replaceAll("§[0-9a-fk-or]", "");
-                            // Prüfe ob der Item-Name mit einem der Kit-Item-Namen übereinstimmt
+                            // Prüfe ob der Item-Name mit einem der Kit-Item-Namen übereinstimmt (exakt)
                             for (String kitItemName : kitItemNames) {
                                 String cleanKitItemName = kitItemName.replaceAll("§[0-9a-fk-or]", "");
-                                if (cleanItemName.equalsIgnoreCase(cleanKitItemName) || 
-                                    cleanItemName.contains(cleanKitItemName) ||
-                                    cleanKitItemName.contains(cleanItemName)) {
+                                // Nur exakte Matches, keine Teilstring-Matches
+                                if (cleanItemName.equalsIgnoreCase(cleanKitItemName)) {
                                     return true;
                                 }
                             }

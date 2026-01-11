@@ -759,6 +759,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // Zähle Zeilen für dynamische Höhenberechnung
         int lineCount = 0;
         
+        // Liste für fertige Items, die nach Background-Update gerendert werden sollen (nur für Seite 2+ in Mode 2)
+        List<CostItemWithCategory> completeItemsToRenderLater = new ArrayList<>();
+        
         // Hole aktuelle Seite und Daten
         int currentPage = ClipboardUtility.getCurrentPage();
         ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(currentPage);
@@ -1020,8 +1023,31 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 }
             }
             
-            // Rendere gefilterte/sortierte Liste
-            for (CostItemWithCategory itemWithCategory : costItemsWithCategory) {
+            // Trenne fertige und nicht-fertige Items für Mode 2 (damit fertige Items nach Background-Update gerendert werden)
+            List<CostItemWithCategory> itemsToRenderNow = new ArrayList<>();
+            completeItemsToRenderLater.clear(); // Leere die Liste für diese Seite
+            
+            // Verwende bereits deklarierte costDisplayEnabled Variable
+            int costDisplayMode = costDisplayEnabled ? CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode : 0;
+            
+            if (costDisplayMode == 2) {
+                // Mode 2: Trenne fertige Items, um sie später zu rendern
+                for (CostItemWithCategory itemWithCategory : costItemsWithCategory) {
+                    if (itemWithCategory.category == 0 || !isCostItemComplete(itemWithCategory.costItem, quantity)) {
+                        // Coins oder nicht-fertige Items: jetzt rendern
+                        itemsToRenderNow.add(itemWithCategory);
+                    } else {
+                        // Fertige Items: später rendern (nach Background-Update)
+                        completeItemsToRenderLater.add(itemWithCategory);
+                    }
+                }
+            } else {
+                // Mode 0 oder 1: Alle Items jetzt rendern
+                itemsToRenderNow.addAll(costItemsWithCategory);
+            }
+            
+            // Rendere nicht-fertige Items (und Coins) jetzt
+            for (CostItemWithCategory itemWithCategory : itemsToRenderNow) {
                 if (renderCostItem(context, client, itemWithCategory.costItem, currentY, quantity)) {
                     currentY += lineHeight;
                     lineCount++;
@@ -1072,6 +1098,30 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (actualHeight != estimatedHeight) {
             // Aktualisiere Background mit korrekter Höhe (in transformierten Koordinaten)
             context.fill(0, 0, unscaledWidth, actualHeight, 0x80000000);
+        }
+        
+        // Rendere fertige Items NACH dem Background-Update (nur für Seite 2+ in Mode 2)
+        // Damit der Text nicht dunkler wirkt, weil er vor dem Background gerendert wurde
+        if (currentPage != 1 && entry != null && entry.price != null) {
+            boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
+            int costDisplayMode = costDisplayEnabled ? CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode : 0;
+            
+            if (costDisplayMode == 2 && !completeItemsToRenderLater.isEmpty()) {
+                // Rendere fertige Items nach dem Background-Update
+                for (CostItemWithCategory itemWithCategory : completeItemsToRenderLater) {
+                    if (renderCostItem(context, client, itemWithCategory.costItem, currentY, quantity)) {
+                        currentY += lineHeight;
+                        lineCount++;
+                    }
+                }
+                
+                // Aktualisiere Background erneut, falls Höhe sich geändert hat
+                int newActualHeight = padding + (lineCount * lineHeight) + padding;
+                if (newActualHeight != actualHeight) {
+                    context.fill(0, 0, unscaledWidth, newActualHeight, 0x80000000);
+                    actualHeight = newActualHeight;
+                }
+            }
         }
         
         matrices.popMatrix();
@@ -2205,6 +2255,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 ClipboardUtility.clearClipboard();
                 showDeleteConfirmation = false;
                 confirmationButtonsVisible = false;
+                // Setze Textfeld zurück
+                resetQuantityTextField();
                 // Gehe zurück zu Seite 1
                 ClipboardUtility.setCurrentPage(1);
                 return true;
@@ -2232,6 +2284,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 ClipboardUtility.ClipboardEntry currentEntry = ClipboardUtility.getEntryForPage(buttonPage);
                 if (currentEntry != null && currentEntry.blueprintName != null) {
                     ClipboardUtility.removeBlueprint(currentEntry.blueprintName);
+                    // Setze Textfeld zurück, damit der nachrückende Bauplan sein eigenes Textfeld bekommt
+                    resetQuantityTextField();
                 }
             }
             return true;
@@ -2348,6 +2402,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 ClipboardUtility.clearClipboard();
                 showDeleteConfirmation = false;
                 confirmationButtonsVisible = false;
+                // Setze Textfeld zurück
+                resetQuantityTextField();
                 // Gehe zurück zu Seite 1
                 ClipboardUtility.setCurrentPage(1);
                 return true;
@@ -2388,6 +2444,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 if (deleteEntry != null) {
                     String blueprintNameToRemove = deleteEntry.blueprintName;
                     ClipboardUtility.removeBlueprint(blueprintNameToRemove);
+                    // Setze Textfeld zurück, damit der nachrückende Bauplan sein eigenes Textfeld bekommt
+                    resetQuantityTextField();
                     // Gehe zur vorherigen Seite, wenn möglich
                     int totalPages = ClipboardUtility.getTotalPages();
                     if (deletePage > totalPages) {
@@ -2568,6 +2626,15 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 context.drawTooltip(client.textRenderer, java.util.List.of(tooltip), tooltipX, tooltipY);
             }
         }
+    }
+    
+    /**
+     * Setzt das Textfeld zurück, damit es beim nächsten Rendern mit dem korrekten Wert neu erstellt wird
+     * Wird aufgerufen, wenn ein Bauplan entfernt wird, damit der nachrückende Bauplan sein eigenes Textfeld bekommt
+     */
+    private static void resetQuantityTextField() {
+        quantityTextField = null;
+        quantityTextFieldPage = -1;
     }
     
     /**

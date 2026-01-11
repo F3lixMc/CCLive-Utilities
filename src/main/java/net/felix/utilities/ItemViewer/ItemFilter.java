@@ -12,18 +12,44 @@ public class ItemFilter {
         // Tags: Alle müssen matchen (AND)
         // Unterstützt Live-Suche: @Schuhe, @Schuh, @Schu, @Sch, @Sc, @S werden alle erkannt
         if (!query.tags.isEmpty()) {
-            if (item.tags == null) {
+            // Erstelle eine kombinierte Liste aller Tags (aus item.tags, info.type, info.piece, info.rarity)
+            java.util.List<String> allItemTags = new java.util.ArrayList<>();
+            
+            // Füge Tags aus item.tags hinzu
+            if (item.tags != null) {
+                for (String tag : item.tags) {
+                    if (tag != null && !tag.isEmpty()) {
+                        allItemTags.add(tag.toLowerCase());
+                    }
+                }
+            }
+            
+            // Füge info.type, info.piece, info.rarity als Tags hinzu (wie in getAllTagsForCategory)
+            if (item.info != null) {
+                if (item.info.type != null && !item.info.type.isEmpty()) {
+                    allItemTags.add(item.info.type.toLowerCase());
+                }
+                if (item.info.piece != null && !item.info.piece.isEmpty()) {
+                    allItemTags.add(item.info.piece.toLowerCase());
+                }
+                if (item.info.rarity != null && !item.info.rarity.isEmpty()) {
+                    allItemTags.add(item.info.rarity.toLowerCase());
+                }
+            }
+            
+            // Wenn keine Tags vorhanden sind, kann der gesuchte Tag nicht matchen
+            if (allItemTags.isEmpty()) {
                 return false;
             }
+            
             // Für jeden gesuchten Tag prüfen, ob mindestens ein Item-Tag den gesuchten Tag enthält (case-insensitive)
-            // Unterstützt Live-Suche: #gürtel, #gürt, #gür, #gü, #g werden alle erkannt
+            // Unterstützt Live-Suche: #waffe, #waff, #waf, #wa, #w werden alle erkannt
             for (String searchTag : query.tags) {
                 boolean tagMatches = false;
                 String searchTagLower = searchTag.toLowerCase();
-                for (String itemTag : item.tags) {
-                    String itemTagLower = itemTag.toLowerCase();
+                for (String itemTag : allItemTags) {
                     // Prüfe ob Item-Tag den gesuchten Tag enthält (case-insensitive)
-                    if (itemTagLower.contains(searchTagLower)) {
+                    if (itemTag.contains(searchTagLower)) {
                         tagMatches = true;
                         break;
                     }

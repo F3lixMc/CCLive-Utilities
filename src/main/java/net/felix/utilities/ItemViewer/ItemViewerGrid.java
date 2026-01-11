@@ -238,8 +238,13 @@ public class ItemViewerGrid {
                             addCostItem(tooltipLines, hoveredItem.price.soul);
                             addCostItem(tooltipLines, hoveredItem.price.material1);
                             addCostItem(tooltipLines, hoveredItem.price.material2);
-                            addCostItem(tooltipLines, hoveredItem.price.Amboss);
-                            addCostItem(tooltipLines, hoveredItem.price.Ressource);
+                            addCostItem(tooltipLines, hoveredItem.price.material3);
+                            addCostItem(tooltipLines, hoveredItem.price.material4);
+                            addCostItem(tooltipLines, hoveredItem.price.material5);
+                            // Amboss: Prüfe beide Varianten (groß- und kleingeschrieben)
+                            addCostItem(tooltipLines, hoveredItem.price.Amboss != null ? hoveredItem.price.Amboss : hoveredItem.price.amboss);
+                            // Ressource: Prüfe beide Varianten (groß- und kleingeschrieben)
+                            addCostItem(tooltipLines, hoveredItem.price.Ressource != null ? hoveredItem.price.Ressource : hoveredItem.price.ressource);
                             addLevelCostItem(tooltipLines, hoveredItem.price.Level); // Level in gelb
                         }
                         
@@ -485,8 +490,13 @@ public class ItemViewerGrid {
                         addCostItem(tooltipLines, hoveredItem.price.soul);
                         addCostItem(tooltipLines, hoveredItem.price.material1);
                         addCostItem(tooltipLines, hoveredItem.price.material2);
-                        addCostItem(tooltipLines, hoveredItem.price.Amboss);
-                        addCostItem(tooltipLines, hoveredItem.price.Ressource);
+                        addCostItem(tooltipLines, hoveredItem.price.material3);
+                        addCostItem(tooltipLines, hoveredItem.price.material4);
+                        addCostItem(tooltipLines, hoveredItem.price.material5);
+                        // Amboss: Prüfe beide Varianten (groß- und kleingeschrieben)
+                        addCostItem(tooltipLines, hoveredItem.price.Amboss != null ? hoveredItem.price.Amboss : hoveredItem.price.amboss);
+                        // Ressource: Prüfe beide Varianten (groß- und kleingeschrieben)
+                        addCostItem(tooltipLines, hoveredItem.price.Ressource != null ? hoveredItem.price.Ressource : hoveredItem.price.ressource);
                         addLevelCostItem(tooltipLines, hoveredItem.price.Level); // Level in gelb
                     }
                     
@@ -502,8 +512,13 @@ public class ItemViewerGrid {
                         addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.soul);
                         addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material1);
                         addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material2);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.Amboss);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.Ressource);
+                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material3);
+                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material4);
+                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material5);
+                        // Amboss: Prüfe beide Varianten (groß- und kleingeschrieben)
+                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.Amboss != null ? hoveredItem.blueprint_shop.price.Amboss : hoveredItem.blueprint_shop.price.amboss);
+                        // Ressource: Prüfe beide Varianten (groß- und kleingeschrieben)
+                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.Ressource != null ? hoveredItem.blueprint_shop.price.Ressource : hoveredItem.blueprint_shop.price.ressource);
                         addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.paper_shreds);
                     }
                     
@@ -594,6 +609,9 @@ public class ItemViewerGrid {
                 // Power Crystals haben immer aqua als Name-Farbe
                 if (itemData.info != null && itemData.info.power_crystal != null && itemData.info.power_crystal) {
                     nameColor = 0xFF00FFFF; // aqua
+                } else if (itemData.info != null && itemData.info.ability != null && itemData.info.ability) {
+                    // Abilities haben immer Minecraft-Rot als Name-Farbe
+                    nameColor = 0xFFFF5555; // Minecraft-Rot (FF5555)
                 } else {
                     // Bestimme die Farbe basierend auf der Rarity
                     nameColor = getRarityColor(itemData.info != null ? itemData.info.rarity : null);
