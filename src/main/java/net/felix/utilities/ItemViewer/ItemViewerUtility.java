@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.loader.api.FabricLoader;
+import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -3936,6 +3937,11 @@ public class ItemViewerUtility {
     }
     
     public static boolean isVisible() {
+        // Prüfe Config-Option
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().showItemViewer) {
+            return false;
+        }
+        
         // Deaktiviere in der general_lobby Dimension
         try {
             MinecraftClient client = MinecraftClient.getInstance();

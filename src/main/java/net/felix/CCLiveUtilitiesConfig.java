@@ -254,6 +254,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showBlueprintFloorNumber = true; // Ebenen-Nummer bei Bauplänen anzeigen
     
+    @SerialEntry
+    public boolean showItemViewer = true; // Item Viewer anzeigen
+    
     // Farmwelt Settings
     @SerialEntry
     public boolean showModuleInformation = true; // Informationen für Module anzeigen
@@ -1195,6 +1198,12 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("Bauplan Ebene"))
                                         .description(OptionDescription.of(Text.literal("Ebenen-Nummer bei Bauplänen anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showBlueprintFloorNumber, newVal -> HANDLER.instance().showBlueprintFloorNumber = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Item Viewer"))
+                                        .description(OptionDescription.of(Text.literal("Item Viewer in Inventaren anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().showItemViewer, newVal -> HANDLER.instance().showItemViewer = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
