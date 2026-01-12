@@ -94,6 +94,12 @@ public abstract class SearchBarInputMixin {
             return;
         }
         
+        // Handle Clipboard toggle hotkey (works in inventories)
+        if (net.felix.utilities.DragOverlay.ClipboardUtility.handleKeyPress(keyCode)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        
         // Handle ItemInfo auto-click hotkey (works in inventories)
         // Get screen position using reflection (same pattern as MKLevel)
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();

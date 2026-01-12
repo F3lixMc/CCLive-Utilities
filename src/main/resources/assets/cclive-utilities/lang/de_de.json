@@ -8,7 +8,6 @@
     "key.cclive-utilities.wellen-debug": "Monster Tracker Debug Info",
     "key.cclive-utilities.overlay-editor": "Overlay Editor öffnen",
     "key.cclive-utilities.toggle-schmied-frames": "Schmiedezustände Rahmen umschalten",
-    "key.cclive-utilities.itemviewer.toggle": "Item-Viewer ein/aus",
     "key.categories.cclive-utilities.blueprints": "CCLive Utilities - Baupläne",
     "key.categories.cclive-utilities.wellen": "CCLive Utilities - Monster Tracker",
     "key.categories.cclive-utilities.overlay": "CCLive Utilities - Overlay Editor",
@@ -21,5 +20,9 @@
     "key.cclive-utilities.log-bossbars": "Bossbars loggen",
     "key.cclive-utilities.log-scoreboard": "Scoreboard loggen",
     "category.cclive-utilities.item-info": "CCLive Utilities - Item Info",
-      "key.categories.cclive-utilities": "CCLive Utilities"
+      "key.categories.cclive-utilities": "CCLive Utilities",
+      "categories.cclive-utilities.itemviewer": "CCLive Utilities - Item Viewer",
+      "key.cclive-utilities.toggle-clipboard": "Clipboard ein/aus",
+      "key.cclive-utilities.clipboard.pin": "Bauplan an Clipboard anpinnen",
+      "key.cclive-utilities.itemviewer.toggle": "Item-Viewer ein/aus"
   } 

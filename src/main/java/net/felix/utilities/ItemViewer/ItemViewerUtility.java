@@ -457,7 +457,7 @@ public class ItemViewerUtility {
             "key.cclive-utilities.itemviewer.toggle",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_I,
-            "category.cclive-utilities"
+            "categories.cclive-utilities.itemviewer"
         ));
         
         // Registriere KeyBinding für Bauplan Anpinnen (Clipboard)
@@ -465,7 +465,7 @@ public class ItemViewerUtility {
             "key.cclive-utilities.clipboard.pin",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_P,
-            "category.cclive-utilities"
+            "categories.cclive-utilities.itemviewer"
         ));
     }
     
