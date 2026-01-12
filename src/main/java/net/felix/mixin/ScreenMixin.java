@@ -105,6 +105,12 @@ public class ScreenMixin {
             
             // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
             ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
+            
+            // Render F6 button (bottom left corner)
+            if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.shouldShowButton(handledScreen)) {
+                net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.renderButton(context, handledScreen, mouseX, mouseY);
+            }
+            
             return;
         }
         

@@ -960,11 +960,8 @@ public class SearchBarUtility {
 				return false;
 			}
 			
-			// Normale Suche: Suche im Item-Namen
-			String itemNameLower = itemName.toLowerCase();
-			if (itemName.contains(searchExact) || itemNameLower.contains(searchLower)) {
-				return true;
-			}
+			// Bei @-Suche: NICHT im Item-Namen suchen, nur in Tooltips
+			// (Item-Name-Suche wird übersprungen)
 			
 			// Suche in Lore-Komponente
 			var loreComponent = itemStack.get(DataComponentTypes.LORE);

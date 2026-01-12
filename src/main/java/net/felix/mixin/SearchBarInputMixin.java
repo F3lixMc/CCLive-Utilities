@@ -40,6 +40,11 @@ public abstract class SearchBarInputMixin {
             cir.setReturnValue(true);
         }
         
+        // Handle F6 button clicks
+        if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+        }
+        
         // Handle MKLevel search bar clicks - need to get position from screen
         // We can't use @Shadow here, so we'll use reflection as fallback
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
