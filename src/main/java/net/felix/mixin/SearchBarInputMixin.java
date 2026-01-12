@@ -40,6 +40,11 @@ public abstract class SearchBarInputMixin {
             cir.setReturnValue(true);
         }
         
+        // Handle F6 button clicks
+        if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+        }
+        
         // Handle MKLevel search bar clicks - need to get position from screen
         // We can't use @Shadow here, so we'll use reflection as fallback
         net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
@@ -85,6 +90,12 @@ public abstract class SearchBarInputMixin {
         
         // Handle Item Logger hotkey (works in inventories)
         if (net.felix.utilities.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        
+        // Handle Clipboard toggle hotkey (works in inventories)
+        if (net.felix.utilities.DragOverlay.ClipboardUtility.handleKeyPress(keyCode)) {
             cir.setReturnValue(true);
             return;
         }

@@ -680,6 +680,18 @@ public class InformationenUtility {
 		// First, extract the item name from the tooltip (usually the first line)
 		String itemName = extractItemNameFromTooltip(lines, stack);
 		
+		// Check if "(transferiert)" is in the tooltip - if so, skip aspect search and Shift info
+		boolean hasTransferiert = false;
+		for (Text line : lines) {
+			if (line != null) {
+				String lineText = line.getString();
+				if (lineText != null && lineText.contains("(transferiert)")) {
+					hasTransferiert = true;
+					break;
+				}
+			}
+		}
+		
 		// Check for lines containing "⭐" (star symbol) - this is for items with aspect info in tooltip
 		for (int i = 0; i < lines.size(); i++) {
 			Text line = lines.get(i);
@@ -692,6 +704,11 @@ public class InformationenUtility {
 			
 			// Check if this line contains "⭐"
 			if (lineText.contains("⭐")) {
+				// Skip if "(transferiert)" is in the tooltip
+				if (hasTransferiert) {
+					continue;
+				}
+				
 				// If we have an item name, look it up directly in the aspects database
 				if (itemName != null && !itemName.isEmpty()) {
 					// Get aspect info for this item directly from the database

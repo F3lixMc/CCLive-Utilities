@@ -5,6 +5,10 @@ import net.felix.utilities.ItemViewer.ItemData;
 import net.felix.utilities.ItemViewer.PriceData;
 import net.felix.utilities.ItemViewer.BlueprintShopData;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +37,9 @@ public class ClipboardUtility {
     
     // Liste der Clipboard-Einträge
     private static final List<ClipboardEntry> clipboardEntries = new ArrayList<>();
+    
+    // KeyBinding für das Togglen des Clipboards
+    private static KeyBinding toggleClipboardKeyBinding;
     
     /**
      * Initialisiert das Clipboard-System
@@ -97,7 +104,60 @@ public class ClipboardUtility {
             // Aktualisiere hideHover Flag jeden Tick (nicht nur beim Rendering)
             // Dies stellt sicher, dass F1/Tab sofort erkannt werden, auch wenn Rendering gedrosselt ist
             net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.updateHideHover();
+            
+            // Prüfe Clipboard-Toggle Hotkey
+            if (toggleClipboardKeyBinding != null && toggleClipboardKeyBinding.wasPressed()) {
+                toggleClipboard();
+            }
         });
+        
+        // Registriere KeyBinding
+        registerKeyBinding();
+    }
+    
+    /**
+     * Registriert den KeyBinding für das Togglen des Clipboards
+     */
+    private static void registerKeyBinding() {
+        toggleClipboardKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key.cclive-utilities.toggle-clipboard",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN, // Kein Standard-Key (unbelegt)
+            "categories.cclive-utilities.itemviewer"
+        ));
+    }
+    
+    /**
+     * Togglet die Sichtbarkeit des Clipboards
+     * Synchronisiert sowohl clipboardEnabled als auch showClipboard (wie im Overlay Picker)
+     */
+    public static void toggleClipboard() {
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        boolean newValue = !config.clipboardEnabled;
+        config.clipboardEnabled = newValue;
+        config.showClipboard = newValue; // Synchronisiere mit clipboardEnabled Option
+        CCLiveUtilitiesConfig.HANDLER.save();
+    }
+    
+    /**
+     * Behandelt Key-Press direkt (für Verwendung in Mixins, wenn Screens geöffnet sind)
+     * @param keyCode Der Key-Code (z.B. GLFW.GLFW_KEY_F8)
+     * @return true wenn der Key behandelt wurde
+     */
+    public static boolean handleKeyPress(int keyCode) {
+        try {
+            // Prüfe ob der gedrückte Key dem konfigurierten KeyBinding entspricht
+            if (toggleClipboardKeyBinding != null) {
+                // Verwende matchesKey um zu prüfen, ob der gedrückte Key dem konfigurierten KeyBinding entspricht
+                if (toggleClipboardKeyBinding.matchesKey(keyCode, -1)) {
+                    toggleClipboard();
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // Silent error handling
+        }
+        return false;
     }
     
     /**

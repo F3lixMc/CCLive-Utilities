@@ -80,6 +80,9 @@ public abstract class HandledScreenMixin {
         // Render Kit Filter buttons in relevant inventories
         renderKitFilterButtons(context, mouseX, mouseY);
         
+        // Render F6 button (bottom left corner)
+        renderF6Button(context, mouseX, mouseY);
+        
         // Show aspect overlay in blueprint inventories OR when hovering over items with "⭐" in tooltip
         // Render AFTER all buttons to ensure it appears on top
         if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
@@ -256,6 +259,11 @@ public abstract class HandledScreenMixin {
         
         // Handle clicks on MKLevel search bar and scrollbar - pass screen position directly from mixin (@Shadow fields)
         if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, x, y, backgroundHeight)) {
+            cir.setReturnValue(true);
+        }
+        
+        // Handle clicks on F6 button
+        if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
     }
@@ -572,6 +580,24 @@ public abstract class HandledScreenMixin {
             
             // Call the KitFilterUtility to render the buttons
             net.felix.utilities.Town.KitFilterUtility.renderKitFilterButtons(context, screen, mouseX, mouseY);
+            
+        } catch (Exception e) {
+            // Ignore rendering errors
+        }
+    }
+    
+    /**
+     * Renders the F6 button (bottom left corner)
+     */
+    private void renderF6Button(DrawContext context, int mouseX, int mouseY) {
+        try {
+            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            
+            // Prüfe ob Button angezeigt werden soll
+            if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.shouldShowButton(screen)) {
+                // Call the OverlayEditorButtonUtility to render the button
+                net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.renderButton(context, screen, mouseX, mouseY);
+            }
             
         } catch (Exception e) {
             // Ignore rendering errors
