@@ -3268,11 +3268,11 @@ public class InformationenUtility {
 	 */
 	private static void loadMaterialsDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(MATERIALS_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Materials config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("Aincraft.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -3334,11 +3334,11 @@ public class InformationenUtility {
 	 */
 	private static void loadEssencesDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(ESSENCES_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Essences config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("Essenz.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -3367,11 +3367,11 @@ public class InformationenUtility {
 	 */
 	private static void loadCardsStatuesDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(CARDS_STATUES_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Cards/Statues config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("CardsStatues.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -4326,11 +4326,11 @@ public class InformationenUtility {
 	 */
 	private static void loadLicensesDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(LICENSES_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Licenses config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("Farmworld.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -4376,11 +4376,11 @@ public class InformationenUtility {
 	 */
 	private static void loadAspectsDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(ASPECTS_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Aspects config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("Aspekte.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -4409,11 +4409,11 @@ public class InformationenUtility {
 	 */
 	private static void loadMKLevelDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(MKLEVEL_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("MKLevel config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("MKLevel.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -4487,11 +4487,11 @@ public class InformationenUtility {
 	 */
 	private static void loadBlueprintsDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(BLUEPRINTS_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Blueprints config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("blueprints.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -7785,11 +7785,11 @@ public class InformationenUtility {
 	 */
 	private static void loadCollectionsDatabase() {
 		try {
-			// Load from mod resources
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(COLLECTIONS_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Collections config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getConfigFilePath("Collections.json");
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream)) {
@@ -8664,6 +8664,109 @@ public class InformationenUtility {
 	public static int getCurrentCollectionOverlayHeight() {
 		int padding = 5;
 		return 6 * 11 + padding * 2; // 6 lines with 11px line height
+	}
+	
+	/**
+	 * Versucht eine Datei von einem lokalen Pfad zu laden, falls vorhanden, sonst von Mod-Ressourcen
+	 */
+	private static java.nio.file.Path getConfigFilePath(String fileName) {
+		try {
+			java.nio.file.Path configDir = net.felix.CCLiveUtilities.getConfigDir();
+			java.nio.file.Path modConfigDir = configDir.resolve("cclive-utilities");
+			java.nio.file.Path localFile = modConfigDir.resolve(fileName);
+			
+			// Prüfe ob lokale Datei existiert
+			if (java.nio.file.Files.exists(localFile)) {
+				return localFile;
+			}
+		} catch (Exception e) {
+			// Ignoriere Fehler
+		}
+		
+		// Fallback zu Mod-Ressourcen
+		try {
+			String resourcePath;
+			if (fileName.equals("MKLevel.json")) {
+				resourcePath = "assets/MKLevel.json";
+			} else {
+				resourcePath = "assets/cclive-utilities/" + fileName;
+			}
+			
+			return FabricLoader.getInstance().getModContainer("cclive-utilities")
+				.orElseThrow(() -> new RuntimeException("Mod container not found"))
+				.findPath(resourcePath)
+				.orElseThrow(() -> new RuntimeException("Config file not found: " + fileName));
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	/**
+	 * Lädt die Materials-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadMaterialsDatabase() {
+		materialsDatabase.clear();
+		loadMaterialsDatabase();
+	}
+	
+	/**
+	 * Lädt die Essences-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadEssencesDatabase() {
+		essencesDatabase.clear();
+		loadEssencesDatabase();
+	}
+	
+	/**
+	 * Lädt die Cards/Statues-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadCardsStatuesDatabase() {
+		cardsEffects.clear();
+		statuesEffects.clear();
+		cardsFloors.clear();
+		statuesFloors.clear();
+		loadCardsStatuesDatabase();
+	}
+	
+	/**
+	 * Lädt die Aspects-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadAspectsDatabase() {
+		aspectsDatabase.clear();
+		loadAspectsDatabase();
+	}
+	
+	/**
+	 * Lädt die Licenses-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadLicensesDatabase() {
+		licensesDatabase.clear();
+		loadLicensesDatabase();
+	}
+	
+	/**
+	 * Lädt die Blueprints-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadBlueprintsDatabase() {
+		blueprintFloorMap.clear();
+		loadBlueprintsDatabase();
+	}
+	
+	/**
+	 * Lädt die Collections-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadCollectionsDatabase() {
+		collectionsDatabase.clear();
+		loadCollectionsDatabase();
+	}
+	
+	/**
+	 * Lädt die MKLevel-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadMKLevelDatabase() {
+		mkLevelDatabase.clear();
+		mkLevelCombinedWavesDatabase.clear();
+		loadMKLevelDatabase();
 	}
 }
 

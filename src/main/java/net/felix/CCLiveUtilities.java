@@ -49,6 +49,9 @@ public class CCLiveUtilities implements ModInitializer {
 
 		// Initialisiere ZeichenUtility zuerst (wird von anderen Utilities benötigt)
 		net.felix.utilities.Overall.ZeichenUtility.initialize();
+		
+		// Initialisiere JSON-Config-Update-Utility (für automatische Updates vom Server)
+		net.felix.utilities.Overall.JsonConfigUpdateUtility.initialize();
 
 		// Initialisiere alle Utility-Klassen
 		EquipmentDisplayUtility.initialize();

@@ -386,11 +386,11 @@ public class KitFilterUtility {
 	 */
 	private static void loadKitItemNames() {
 		try {
-			// Lade aus Mod-Ressourcen
-			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
-				.orElseThrow(() -> new RuntimeException("Mod container not found"))
-				.findPath(KITS_CONFIG_FILE)
-				.orElseThrow(() -> new RuntimeException("Kits config file not found"));
+			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
+			java.nio.file.Path resource = getKitsConfigFilePath();
+			if (resource == null) {
+				return;
+			}
 			
 			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
 				try (var reader = new java.io.InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
@@ -1381,6 +1381,42 @@ public class KitFilterUtility {
 	 */
 	public static void closeKitSelectionScreen() {
 		currentButtonIndex = -1;
+	}
+	
+	/**
+	 * Versucht eine Kits-Datei von einem lokalen Pfad zu laden, falls vorhanden, sonst von Mod-Ressourcen
+	 */
+	private static java.nio.file.Path getKitsConfigFilePath() {
+		try {
+			java.nio.file.Path configDir = net.felix.CCLiveUtilities.getConfigDir();
+			java.nio.file.Path modConfigDir = configDir.resolve("cclive-utilities");
+			java.nio.file.Path localFile = modConfigDir.resolve("Kits.json");
+			
+			// Prüfe ob lokale Datei existiert
+			if (java.nio.file.Files.exists(localFile)) {
+				return localFile;
+			}
+		} catch (Exception e) {
+			// Ignoriere Fehler
+		}
+		
+		// Fallback zu Mod-Ressourcen
+		try {
+			return FabricLoader.getInstance().getModContainer("cclive-utilities")
+				.orElseThrow(() -> new RuntimeException("Mod container not found"))
+				.findPath(KITS_CONFIG_FILE)
+				.orElseThrow(() -> new RuntimeException("Kits config file not found"));
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	/**
+	 * Lädt die Kits-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadKitsDatabase() {
+		kitItemInfos.clear();
+		loadKitItemNames();
 	}
 }
 

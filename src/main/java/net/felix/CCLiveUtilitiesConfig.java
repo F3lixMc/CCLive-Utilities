@@ -130,6 +130,33 @@ public class CCLiveUtilitiesConfig {
     public int itemsConfigVersion = 0; // Version der geladenen items.json vom Server
     
     @SerialEntry
+    public int aincraftConfigVersion = 0; // Version der geladenen Aincraft.json vom Server
+    
+    @SerialEntry
+    public int aspekteConfigVersion = 0; // Version der geladenen Aspekte.json vom Server
+    
+    @SerialEntry
+    public int blueprintsConfigVersion = 0; // Version der geladenen blueprints.json vom Server
+    
+    @SerialEntry
+    public int cardsstatuesConfigVersion = 0; // Version der geladenen CardsStatues.json vom Server
+    
+    @SerialEntry
+    public int collectionsConfigVersion = 0; // Version der geladenen Collections.json vom Server
+    
+    @SerialEntry
+    public int essenzConfigVersion = 0; // Version der geladenen Essenz.json vom Server
+    
+    @SerialEntry
+    public int farmworldConfigVersion = 0; // Version der geladenen Farmworld.json vom Server
+    
+    @SerialEntry
+    public int kitsConfigVersion = 0; // Version der geladenen Kits.json vom Server
+    
+    @SerialEntry
+    public int mklevelConfigVersion = 0; // Version der geladenen MKLevel.json vom Server
+    
+    @SerialEntry
     public boolean blueprintDebugging = false;
     
     @SerialEntry
