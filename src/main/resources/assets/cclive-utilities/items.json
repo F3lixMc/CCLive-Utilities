@@ -184047,7 +184047,7 @@
           "amount": "2.000"
         },
         "material3": {
-          "itemName": "Feuriger Rüstungsspliter",
+          "itemName": "Feuriger Rüstungssplitter",
           "amount": "900"
         },
         "material4": {
@@ -186949,7 +186949,7 @@
     },
     {
       "id": "minecraft:paper",
-      "name": "Netheritemine Lizenz",
+      "name": "Antike Mine Lizenz",
       "foundAt": [
         {
           "collection": "Wirrholz VII"
@@ -186977,7 +186977,7 @@
       "info": {
         "aspect": false,
         "rarity": "",
-        "description": "Schaltet die Netheritemine Frei.",
+        "description": "Schaltet die Antike Mine Frei.",
         "type": "",
         "piece": "",
         "stats": [
