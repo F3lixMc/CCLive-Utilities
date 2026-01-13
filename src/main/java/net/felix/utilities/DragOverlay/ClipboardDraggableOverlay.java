@@ -2364,7 +2364,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 // Entferne aktuellen Bauplan
                 ClipboardUtility.ClipboardEntry currentEntry = ClipboardUtility.getEntryForPage(buttonPage);
                 if (currentEntry != null && currentEntry.blueprintName != null) {
-                    ClipboardUtility.removeBlueprint(currentEntry.blueprintName);
+                    // Verwende clipboardId falls vorhanden, um den richtigen Bauplan zu entfernen
+                    ClipboardUtility.removeBlueprint(currentEntry.blueprintName, currentEntry.clipboardId);
                     // Setze Textfeld zurück, damit der nachrückende Bauplan sein eigenes Textfeld bekommt
                     resetQuantityTextField();
                 }
@@ -2524,7 +2525,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 // Seite 2+: Entferne direkt den Bauplan
                 if (deleteEntry != null) {
                     String blueprintNameToRemove = deleteEntry.blueprintName;
-                    ClipboardUtility.removeBlueprint(blueprintNameToRemove);
+                    // Verwende clipboardId falls vorhanden, um den richtigen Bauplan zu entfernen
+                    ClipboardUtility.removeBlueprint(blueprintNameToRemove, deleteEntry.clipboardId);
                     // Setze Textfeld zurück, damit der nachrückende Bauplan sein eigenes Textfeld bekommt
                     resetQuantityTextField();
                     // Gehe zur vorherigen Seite, wenn möglich

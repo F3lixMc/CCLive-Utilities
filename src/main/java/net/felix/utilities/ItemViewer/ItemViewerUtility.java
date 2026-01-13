@@ -637,8 +637,8 @@ public class ItemViewerUtility {
                     
                     if (hoveredItem != null && hoveredItem.info != null && 
                         Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
-                        // Füge Bauplan zum Clipboard hinzu
-                        net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
+                        // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id Support)
+                        net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem);
                     }
                 }
             }
@@ -694,6 +694,79 @@ public class ItemViewerUtility {
         for (ItemData item : allItems) {
             if (item.name != null && item.name.equals(itemName)) {
                 return item;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Findet ein Item nach Namen und clipboard_id in der items.json
+     * @param itemName Name des Items
+     * @param clipboardId Interne clipboard_id (optional)
+     * @return ItemData oder null wenn nicht gefunden
+     */
+    public static ItemData findItemByNameAndClipboardId(String itemName, Integer clipboardId) {
+        ensureItemsLoaded();
+        if (itemName == null || itemName.isEmpty()) {
+            return null;
+        }
+        
+        if (allItems == null) {
+            return null;
+        }
+        
+        for (ItemData item : allItems) {
+            if (item.name != null && item.name.equals(itemName)) {
+                // Wenn clipboardId angegeben ist, muss sie übereinstimmen
+                if (clipboardId != null) {
+                    if (item.clipboard_id != null && item.clipboard_id.equals(clipboardId)) {
+                        return item;
+                    }
+                } else {
+                    // Wenn keine clipboardId angegeben, nimm das erste ohne clipboard_id
+                    if (item.clipboard_id == null) {
+                        return item;
+                    }
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Findet ein Item nach Namen und foundAt (Floor) in der items.json
+     * @param itemName Name des Items
+     * @param foundAtFloor Floor-Information aus foundAt (optional)
+     * @return ItemData oder null wenn nicht gefunden
+     */
+    public static ItemData findItemByNameAndFoundAt(String itemName, String foundAtFloor) {
+        ensureItemsLoaded();
+        if (itemName == null || itemName.isEmpty()) {
+            return null;
+        }
+        
+        if (allItems == null) {
+            return null;
+        }
+        
+        // Wenn foundAtFloor nicht angegeben ist, verwende normale Suche
+        if (foundAtFloor == null || foundAtFloor.isEmpty()) {
+            return findItemByName(itemName);
+        }
+        
+        // Suche nach Name + foundAt
+        for (ItemData item : allItems) {
+            if (item.name != null && item.name.equals(itemName)) {
+                // Prüfe ob foundAt übereinstimmt
+                if (item.foundAt != null && !item.foundAt.isEmpty()) {
+                    for (LocationData location : item.foundAt) {
+                        if (location.floor != null && location.floor.equals(foundAtFloor)) {
+                            return item;
+                        }
+                    }
+                }
             }
         }
         
@@ -765,8 +838,8 @@ public class ItemViewerUtility {
                 
                 if (hoveredItem != null && hoveredItem.info != null && 
                     Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
-                    // Füge Bauplan zum Clipboard hinzu
-                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem.name);
+                    // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id und foundAt Support)
+                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem);
                     return true;
                 }
             }
@@ -802,15 +875,31 @@ public class ItemViewerUtility {
                             // Bereinige Item-Name: Entferne Formatierungszeichen, chinesische Zeichen und "- [Bauplan]"
                             itemName = cleanItemNameForLookup(itemName);
                             
-                            // Suche Item in items.json
-                            ItemData itemData = findItemByName(itemName);
+                            // Extrahiere "found at" Information aus Tooltip (für Baupläne mit doppelten Namen)
+                            String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
+                            
+                            // Suche Item in items.json (mit foundAt falls vorhanden)
+                            ItemData itemData = findItemByNameAndFoundAt(itemName, foundAtFloor);
                             
                             if (itemData != null && 
                                 itemData.info != null && 
                                 Boolean.TRUE.equals(itemData.info.blueprint)) {
-                                // Füge Bauplan zum Clipboard hinzu
-                                net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData.name);
+                                // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id Support)
+                                net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData);
                                 return true;
+                            }
+                            
+                            // Fallback: Suche nur nach Name (wenn foundAt nicht gefunden wurde)
+                            if (itemData == null) {
+                                itemData = findItemByName(itemName);
+                                
+                                if (itemData != null && 
+                                    itemData.info != null && 
+                                    Boolean.TRUE.equals(itemData.info.blueprint)) {
+                                    // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id Support)
+                                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData);
+                                    return true;
+                                }
                             }
                         }
                     }
@@ -1006,6 +1095,88 @@ public class ItemViewerUtility {
                 String itemName = firstLine.replaceAll("\\s*-\\s*\\[.*?\\](\\s*\\[.*?\\])?$", "").trim();
                 
                 return itemName;
+            }
+        } catch (Exception e) {
+            // Ignoriere Fehler
+        }
+        return null;
+    }
+    
+    /**
+     * Extrahiert "found at" (Floor) Information aus Tooltip
+     * Sucht nach purple/magenta Zeilen, die Floor-Informationen enthalten
+     * @param screen Der Screen
+     * @param client Der Minecraft Client
+     * @param stack Der ItemStack
+     * @return Floor-Information oder null wenn nicht gefunden
+     */
+    private static String extractFoundAtFromTooltip(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, MinecraftClient client, net.minecraft.item.ItemStack stack) {
+        try {
+            // Hole Tooltip über Reflection (ähnlich wie extractItemNameFromTooltip)
+            java.util.List<net.minecraft.text.Text> tooltip = null;
+            
+            try {
+                java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
+                for (java.lang.reflect.Method method : methods) {
+                    if (!"getTooltipFromItem".equals(method.getName())) {
+                        continue;
+                    }
+                    
+                    Class<?>[] params = method.getParameterTypes();
+                    method.setAccessible(true);
+                    
+                    try {
+                        // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
+                        if (params.length == 2 &&
+                            net.minecraft.client.MinecraftClient.class.isAssignableFrom(params[0]) &&
+                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[1])) {
+                            @SuppressWarnings("unchecked")
+                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, client, stack);
+                            tooltip = result;
+                            break;
+                        }
+                        
+                        // Signatur: getTooltipFromItem(ItemStack)
+                        if (params.length == 1 &&
+                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[0])) {
+                            @SuppressWarnings("unchecked")
+                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, stack);
+                            tooltip = result;
+                            break;
+                        }
+                    } catch (Exception e) {
+                        // Versuche nächste Signatur
+                        continue;
+                    }
+                }
+            } catch (Exception e) {
+                // Ignoriere Fehler
+            }
+            
+            if (tooltip != null && !tooltip.isEmpty()) {
+                // Durchsuche alle Tooltip-Zeilen nach Floor-Information
+                // Floor-Informationen sind typischerweise in purple/magenta (0xFFFF00FF)
+                for (net.minecraft.text.Text line : tooltip) {
+                    if (line != null) {
+                        String lineText = line.getString();
+                        if (lineText != null && !lineText.isEmpty()) {
+                            // Prüfe ob die Zeile purple/magenta ist (foundAt Information)
+                            // Die Farbe wird in ItemViewerGrid als 0xFFFF00FF gesetzt
+                            net.minecraft.text.Style style = line.getStyle();
+                            if (style != null && style.getColor() != null) {
+                                int color = style.getColor().getRgb();
+                                // Prüfe ob es purple/magenta ist (0xFFFF00FF oder ähnlich)
+                                if (color == 0xFFFF00FF || (color >= 0xFF8000FF && color <= 0xFFFF00FF)) {
+                                    // Entferne Formatierungscodes
+                                    String cleanLine = lineText.replaceAll("§[0-9a-fk-or]", "").trim();
+                                    if (!cleanLine.isEmpty()) {
+                                        return cleanLine;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         } catch (Exception e) {
             // Ignoriere Fehler

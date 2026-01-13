@@ -100,6 +100,96 @@ public class CCLiveUtilitiesConfig {
             HANDLER.save();
         }
     }
+    
+    /**
+     * Migriert Config-Felder: Fügt fehlende Felder mit Default-Werten hinzu
+     * Dies stellt sicher, dass bei Updates neue Felder automatisch zur Config hinzugefügt werden
+     */
+    public static void migrateConfigFields() {
+        try {
+            CCLiveUtilitiesConfig loadedConfig = HANDLER.instance();
+            CCLiveUtilitiesConfig defaultConfig = new CCLiveUtilitiesConfig(); // Neue Instanz = alle Default-Werte
+            boolean configChanged = false;
+            
+            // Durchlaufe alle Felder der Config-Klasse
+            java.lang.reflect.Field[] fields = CCLiveUtilitiesConfig.class.getDeclaredFields();
+            for (java.lang.reflect.Field field : fields) {
+                // Prüfe ob das Feld mit @SerialEntry annotiert ist
+                if (field.isAnnotationPresent(SerialEntry.class)) {
+                    field.setAccessible(true);
+                    
+                    try {
+                        Object loadedValue = field.get(loadedConfig);
+                        Object defaultValue = field.get(defaultConfig);
+                        
+                        // Prüfe ob das Feld fehlt oder null ist
+                        boolean needsMigration = false;
+                        
+                        if (loadedValue == null && defaultValue != null) {
+                            // Feld ist null -> fehlt in der Config
+                            needsMigration = true;
+                        } else if (field.getType().isPrimitive()) {
+                            // Für primitive Typen: Prüfe ob es der Standardwert ist
+                            // Nur migrieren wenn:
+                            // 1. Geladener Wert = Standard-Primitive-Wert (0, false, etc.)
+                            // 2. UND Default-Wert != Standard-Primitive-Wert
+                            // Das bedeutet: Feld fehlt in der Config und sollte einen anderen Default haben
+                            Object defaultPrimitive = getDefaultPrimitiveValue(field.getType());
+                            if (loadedValue.equals(defaultPrimitive) && !defaultValue.equals(defaultPrimitive)) {
+                                needsMigration = true;
+                            }
+                        } else if (loadedValue instanceof java.util.List) {
+                            // Für Listen: Prüfe ob leer UND Default-Liste nicht leer ist
+                            java.util.List<?> loadedList = (java.util.List<?>) loadedValue;
+                            if (defaultValue instanceof java.util.List) {
+                                java.util.List<?> defaultList = (java.util.List<?>) defaultValue;
+                                if (loadedList.isEmpty() && !defaultList.isEmpty()) {
+                                    needsMigration = true;
+                                }
+                            }
+                        } else if (loadedValue instanceof java.awt.Color && defaultValue instanceof java.awt.Color) {
+                            // Für Color: Prüfe ob es der Standardwert ist (schwarz = 0x000000)
+                            java.awt.Color loadedColor = (java.awt.Color) loadedValue;
+                            java.awt.Color defaultColor = (java.awt.Color) defaultValue;
+                            if (loadedColor.getRGB() == 0 && defaultColor.getRGB() != 0) {
+                                needsMigration = true;
+                            }
+                        }
+                        
+                        // Migriere das Feld wenn nötig
+                        if (needsMigration && defaultValue != null) {
+                            field.set(loadedConfig, defaultValue);
+                            configChanged = true;
+                        }
+                    } catch (IllegalAccessException e) {
+                        // Feld konnte nicht gelesen/geschrieben werden, überspringe
+                    }
+                }
+            }
+            
+            // Speichere Config nur wenn Änderungen vorgenommen wurden
+            if (configChanged) {
+                HANDLER.save();
+            }
+        } catch (Exception e) {
+            // Silent error handling - Migration schlägt fehl, aber Mod funktioniert weiter
+        }
+    }
+    
+    /**
+     * Gibt den Standardwert für primitive Typen zurück
+     */
+    private static Object getDefaultPrimitiveValue(Class<?> type) {
+        if (type == boolean.class) return false;
+        if (type == byte.class) return (byte) 0;
+        if (type == short.class) return (short) 0;
+        if (type == int.class) return 0;
+        if (type == long.class) return 0L;
+        if (type == float.class) return 0.0f;
+        if (type == double.class) return 0.0;
+        if (type == char.class) return '\u0000';
+        return null;
+    }
 
     // General Settings
     @SerialEntry
@@ -577,6 +667,9 @@ public class CCLiveUtilitiesConfig {
         @SerialEntry
         public int quantity;
         
+        @SerialEntry
+        public Integer clipboardId; // Optional: Interne ID für Baupläne mit doppelten Namen
+        
         public ClipboardEntryData() {
             // Für Deserialisierung benötigt
         }
@@ -584,6 +677,13 @@ public class CCLiveUtilitiesConfig {
         public ClipboardEntryData(String blueprintName, int quantity) {
             this.blueprintName = blueprintName;
             this.quantity = quantity;
+            this.clipboardId = null;
+        }
+        
+        public ClipboardEntryData(String blueprintName, int quantity, Integer clipboardId) {
+            this.blueprintName = blueprintName;
+            this.quantity = quantity;
+            this.clipboardId = clipboardId;
         }
     }
 

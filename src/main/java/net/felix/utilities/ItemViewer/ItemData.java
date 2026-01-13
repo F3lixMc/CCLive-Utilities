@@ -19,5 +19,6 @@ public class ItemData {
     public String category;              // Kategorie aus JSON (z.B. "blueprints", "abilities", "modules", etc.)
     public String texture;               // Optional: Pfad zur benutzerdefinierten Textur (z.B. "icons/my_texture.png")
     public JsonObject jsonObject;        // Vollständiges JSON-Objekt (für Favoriten)
+    public Integer clipboard_id;         // Optional: Interne ID für Clipboard (nur für Baupläne mit doppelten Namen)
 }
 

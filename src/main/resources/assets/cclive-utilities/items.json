@@ -31820,6 +31820,7 @@
       "id": "minecraft:diamond_sword",
       "customModelData": 140,
       "name": "Drachenzahn",
+      "clipboard_id": 1,
       "foundAt": [
         {
           "floor": "Ebene 1"
@@ -31891,6 +31892,7 @@
       "id": "minecraft:diamond_sword",
       "customModelData": 18,
       "name": "Drachenzahn",
+      "clipboard_id": 2,
       "foundAt": [
         {
           "floor": "Ebene 85"
@@ -62900,6 +62902,7 @@
       "id": "minecraft:diamond",
       "customModelData": 0,
       "name": "Göttliches Amulett",
+      "clipboard_id": 3,
       "foundAt": [
         {
           "floor": "Ebene 96"
@@ -62981,6 +62984,7 @@
       "id": "minecraft:name_tag",
       "customModelData": 1537,
       "name": "Göttliches Amulett",
+      "clipboard_id": 4,
       "foundAt": [
         {
           "floor": "Ebene 59"

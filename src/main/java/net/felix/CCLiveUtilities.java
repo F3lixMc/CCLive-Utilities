@@ -46,6 +46,9 @@ public class CCLiveUtilities implements ModInitializer {
 		
 		// Migriere Overlay-Typ von String zu Enum
 		CCLiveUtilitiesConfig.migrateOverlayType();
+		
+		// Migriere Config-Felder: Füge fehlende Felder mit Default-Werten hinzu
+		CCLiveUtilitiesConfig.migrateConfigFields();
 
 		// Initialisiere ZeichenUtility zuerst (wird von anderen Utilities benötigt)
 		net.felix.utilities.Overall.ZeichenUtility.initialize();

@@ -43,6 +43,12 @@ public class ScreenMixin {
             return;
         }
         
+        // Handle Clipboard toggle hotkey (works in screens)
+        if (net.felix.utilities.DragOverlay.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        
         // Handle keyboard input for Clipboard quantity text field (nur in HandledScreens)
         Screen screen = (Screen) (Object) this;
         if (screen instanceof HandledScreen) {

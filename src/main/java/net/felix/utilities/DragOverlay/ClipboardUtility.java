@@ -12,6 +12,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility-Klasse für das Clipboard (Bauplan-Kosten)
@@ -26,12 +27,14 @@ public class ClipboardUtility {
         public PriceData price;
         public BlueprintShopData blueprintShop;
         public int quantity; // Anzahl (Standard: 1)
+        public Integer clipboardId; // Optional: Interne ID für Baupläne mit doppelten Namen (nicht sichtbar)
         
-        public ClipboardEntry(String blueprintName, PriceData price, BlueprintShopData blueprintShop) {
+        public ClipboardEntry(String blueprintName, PriceData price, BlueprintShopData blueprintShop, Integer clipboardId) {
             this.blueprintName = blueprintName;
             this.price = price;
             this.blueprintShop = blueprintShop;
             this.quantity = 1;
+            this.clipboardId = clipboardId; // null wenn nicht vorhanden
         }
     }
     
@@ -41,14 +44,27 @@ public class ClipboardUtility {
     // KeyBinding für das Togglen des Clipboards
     private static KeyBinding toggleClipboardKeyBinding;
     
+    // Flag für asynchrones Laden
+    private static volatile boolean clipboardEntriesLoaded = false;
+    private static Thread loadClipboardThread = null;
+    
+    // Flag für asynchrones Speichern (verhindert mehrfaches gleichzeitiges Speichern)
+    private static final AtomicBoolean saveScheduled = new AtomicBoolean(false);
+    private static Thread saveClipboardThread = null;
+    
     /**
      * Initialisiert das Clipboard-System
      */
     public static void initialize() {
-        // Lade gespeicherte Clipboard-Einträge aus der Config
-        loadClipboardEntries();
+        // WICHTIG: KeyBinding ZUERST registrieren (wie bei KillsUtility und BPViewerUtility)
+        // Muss VOR ClientTickEvents.END_CLIENT_TICK.register() passieren!
+        registerKeyBinding();
+        
+        // Lade gespeicherte Clipboard-Einträge aus der Config asynchron (um Lag beim Start zu vermeiden)
+        loadClipboardEntriesAsync();
         
         // Initialisiere Seitenanzahl (wichtig: muss vor dem ersten Rendering passieren)
+        // Wird nach dem Laden aktualisiert
         updateTotalPages();
         
         // Initialisiere ClipboardCoinCollector
@@ -105,14 +121,18 @@ public class ClipboardUtility {
             // Dies stellt sicher, dass F1/Tab sofort erkannt werden, auch wenn Rendering gedrosselt ist
             net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.updateHideHover();
             
-            // Prüfe Clipboard-Toggle Hotkey
+            // Prüfe Clipboard-Toggle Hotkey (funktioniert sowohl im HUD als auch in Screens)
+            // Im HUD: wasPressed() funktioniert direkt (wie bei KillsUtility und BPViewerUtility)
+            // In Screens: wird über ScreenMixin.handleKeyPress behandelt
             if (toggleClipboardKeyBinding != null && toggleClipboardKeyBinding.wasPressed()) {
+                // Prüfe ob ein Textfeld fokussiert ist (Chat, etc.) - ignoriere dann den Hotkey
+                if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
+                    return; // Ignoriere Hotkey wenn Chat offen ist
+                }
+                
                 toggleClipboard();
             }
         });
-        
-        // Registriere KeyBinding
-        registerKeyBinding();
     }
     
     /**
@@ -133,7 +153,8 @@ public class ClipboardUtility {
      */
     public static void toggleClipboard() {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-        boolean newValue = !config.clipboardEnabled;
+        boolean oldValue = config.clipboardEnabled;
+        boolean newValue = !oldValue;
         config.clipboardEnabled = newValue;
         config.showClipboard = newValue; // Synchronisiere mit clipboardEnabled Option
         CCLiveUtilitiesConfig.HANDLER.save();
@@ -142,14 +163,22 @@ public class ClipboardUtility {
     /**
      * Behandelt Key-Press direkt (für Verwendung in Mixins, wenn Screens geöffnet sind)
      * @param keyCode Der Key-Code (z.B. GLFW.GLFW_KEY_F8)
+     * @param scanCode Der Scan-Code (für bessere Key-Erkennung)
      * @return true wenn der Key behandelt wurde
      */
-    public static boolean handleKeyPress(int keyCode) {
+    public static boolean handleKeyPress(int keyCode, int scanCode) {
         try {
             // Prüfe ob der gedrückte Key dem konfigurierten KeyBinding entspricht
             if (toggleClipboardKeyBinding != null) {
                 // Verwende matchesKey um zu prüfen, ob der gedrückte Key dem konfigurierten KeyBinding entspricht
-                if (toggleClipboardKeyBinding.matchesKey(keyCode, -1)) {
+                if (toggleClipboardKeyBinding.matchesKey(keyCode, scanCode)) {
+                    // Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
+                    // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler tippt
+                    net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+                    if (client != null && isTextFieldFocused(client)) {
+                        return false; // Ignoriere Hotkey wenn Textfeld fokussiert ist
+                    }
+                    
                     toggleClipboard();
                     return true;
                 }
@@ -161,7 +190,90 @@ public class ClipboardUtility {
     }
     
     /**
-     * Fügt einen Bauplan zum Clipboard hinzu
+     * Prüft ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
+     * Verhindert, dass Hotkeys aktiviert werden, wenn der Spieler tippt
+     */
+    private static boolean isTextFieldFocused(net.minecraft.client.MinecraftClient client) {
+        if (client == null || client.currentScreen == null) {
+            return false;
+        }
+        
+        // Prüfe ob ChatScreen offen ist
+        if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
+            return true;
+        }
+        
+        // Prüfe ob ein TextFieldWidget fokussiert ist (z.B. in Inventaren)
+        // Verwende Reflection um auf fokussierte Widgets zuzugreifen
+        try {
+            // Prüfe ob Screen ein fokussiertes Widget hat
+            java.lang.reflect.Method getFocusedMethod = client.currentScreen.getClass().getMethod("getFocused");
+            if (getFocusedMethod != null) {
+                Object focused = getFocusedMethod.invoke(client.currentScreen);
+                if (focused instanceof net.minecraft.client.gui.widget.TextFieldWidget) {
+                    net.minecraft.client.gui.widget.TextFieldWidget textField = (net.minecraft.client.gui.widget.TextFieldWidget) focused;
+                    if (textField.isFocused()) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Silent error handling - Reflection kann fehlschlagen
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Fügt einen Bauplan zum Clipboard hinzu (überladene Methode mit ItemData)
+     * @param itemData ItemData des Bauplans
+     * @return true wenn erfolgreich hinzugefügt, false wenn nicht gefunden
+     */
+    public static boolean addBlueprint(ItemData itemData) {
+        if (itemData == null) {
+            return false;
+        }
+        
+        // Prüfe ob es ein Bauplan ist
+        if (itemData.info == null || !Boolean.TRUE.equals(itemData.info.blueprint)) {
+            return false; // Kein Bauplan
+        }
+        
+        // Verwende clipboard_id falls vorhanden
+        Integer clipboardId = itemData.clipboard_id;
+        
+        // Prüfe ob bereits vorhanden (nach Name + clipboard_id)
+        // Thread-sicher: Synchronisiere Zugriff auf clipboardEntries
+        synchronized (clipboardEntries) {
+            for (ClipboardEntry entry : clipboardEntries) {
+                boolean nameMatches = entry.blueprintName.equals(itemData.name);
+                boolean idMatches = (entry.clipboardId == null && clipboardId == null) || 
+                                   (entry.clipboardId != null && entry.clipboardId.equals(clipboardId));
+                
+                if (nameMatches && idMatches) {
+                    // Bereits vorhanden, erhöhe Anzahl
+                    entry.quantity++;
+                    // Speichere in Config asynchron
+                    saveClipboardEntries();
+                    updateTotalPages();
+                    return true;
+                }
+            }
+            
+            // Neuer Eintrag
+            ClipboardEntry entry = new ClipboardEntry(itemData.name, itemData.price, itemData.blueprint_shop, clipboardId);
+            clipboardEntries.add(entry);
+        }
+        
+        // Speichere in Config asynchron
+        saveClipboardEntries();
+        updateTotalPages();
+        
+        return true;
+    }
+    
+    /**
+     * Fügt einen Bauplan zum Clipboard hinzu (Legacy-Methode für Rückwärtskompatibilität)
      * @param blueprintName Name des Bauplans
      * @return true wenn erfolgreich hinzugefügt, false wenn nicht gefunden
      */
@@ -173,43 +285,28 @@ public class ClipboardUtility {
             return false; // Bauplan nicht gefunden
         }
         
-        // Prüfe ob es ein Bauplan ist
-        if (itemData.info == null || !Boolean.TRUE.equals(itemData.info.blueprint)) {
-            return false; // Kein Bauplan
-        }
-        
-        // Prüfe ob bereits vorhanden
-        for (ClipboardEntry entry : clipboardEntries) {
-            if (entry.blueprintName.equals(blueprintName)) {
-                // Bereits vorhanden, erhöhe Anzahl
-                entry.quantity++;
-                // Speichere in Config
-                saveClipboardEntries();
-                updateTotalPages();
-                return true;
-            }
-        }
-        
-        // Neuer Eintrag
-        ClipboardEntry entry = new ClipboardEntry(blueprintName, itemData.price, itemData.blueprint_shop);
-        clipboardEntries.add(entry);
-        
-        // Speichere in Config
-        saveClipboardEntries();
-        updateTotalPages();
-        
-        return true;
+        // Verwende die neue Methode mit ItemData
+        return addBlueprint(itemData);
     }
     
     /**
      * Entfernt einen Bauplan aus dem Clipboard
      * @param blueprintName Name des Bauplans
+     * @param clipboardId Optional: clipboard_id für Baupläne mit doppelten Namen
      * @return true wenn erfolgreich entfernt
      */
-    public static boolean removeBlueprint(String blueprintName) {
-        boolean removed = clipboardEntries.removeIf(entry -> entry.blueprintName.equals(blueprintName));
+    public static boolean removeBlueprint(String blueprintName, Integer clipboardId) {
+        boolean removed;
+        synchronized (clipboardEntries) {
+            removed = clipboardEntries.removeIf(entry -> {
+                boolean nameMatches = entry.blueprintName.equals(blueprintName);
+                boolean idMatches = (entry.clipboardId == null && clipboardId == null) || 
+                                   (entry.clipboardId != null && entry.clipboardId.equals(clipboardId));
+                return nameMatches && idMatches;
+            });
+        }
         if (removed) {
-            // Speichere in Config
+            // Speichere in Config asynchron
             saveClipboardEntries();
             updateTotalPages();
             // Entferne nicht mehr benötigte Materialien aus der Clipboard-Speicherung
@@ -219,11 +316,23 @@ public class ClipboardUtility {
     }
     
     /**
+     * Entfernt einen Bauplan aus dem Clipboard (Legacy-Methode für Rückwärtskompatibilität)
+     * @param blueprintName Name des Bauplans
+     * @return true wenn erfolgreich entfernt
+     */
+    public static boolean removeBlueprint(String blueprintName) {
+        // Entferne alle Einträge mit diesem Namen (falls mehrere vorhanden)
+        return removeBlueprint(blueprintName, null);
+    }
+    
+    /**
      * Entfernt alle Baupläne aus dem Clipboard
      */
     public static void clearClipboard() {
-        clipboardEntries.clear();
-        // Speichere in Config
+        synchronized (clipboardEntries) {
+            clipboardEntries.clear();
+        }
+        // Speichere in Config asynchron
         saveClipboardEntries();
         updateTotalPages();
         // Entferne alle Materialien aus der Clipboard-Speicherung
@@ -231,7 +340,36 @@ public class ClipboardUtility {
     }
     
     /**
-     * Lädt Clipboard-Einträge aus der Config
+     * Lädt Clipboard-Einträge aus der Config asynchron im Hintergrund
+     */
+    private static void loadClipboardEntriesAsync() {
+        if (loadClipboardThread != null && loadClipboardThread.isAlive()) {
+            return; // Bereits am Laden
+        }
+        
+        clipboardEntriesLoaded = false;
+        
+        loadClipboardThread = new Thread(() -> {
+            try {
+                loadClipboardEntries();
+                clipboardEntriesLoaded = true;
+                
+                // Aktualisiere Seitenanzahl nach dem Laden (auf dem Hauptthread)
+                net.minecraft.client.MinecraftClient.getInstance().execute(() -> {
+                    updateTotalPages();
+                });
+            } catch (Exception e) {
+                System.err.println("Fehler beim asynchronen Laden der Clipboard-Einträge: " + e.getMessage());
+                e.printStackTrace();
+                clipboardEntriesLoaded = true; // Setze Flag trotzdem, um Endlosschleifen zu vermeiden
+            }
+        }, "CCLive-Clipboard-Loader");
+        loadClipboardThread.setDaemon(true); // Thread wird beendet, wenn Hauptthread beendet wird
+        loadClipboardThread.start();
+    }
+    
+    /**
+     * Lädt Clipboard-Einträge aus der Config (synchron, für asynchronen Aufruf)
      */
     private static void loadClipboardEntries() {
         clipboardEntries.clear();
@@ -248,8 +386,26 @@ public class ClipboardUtility {
                 continue;
             }
             
-            // Suche den Bauplan in items.json
-            ItemData itemData = ItemViewerUtility.findItemByName(savedEntry.blueprintName);
+            // Warte bis items.json geladen ist
+            int maxWait = 100; // Maximal 1 Sekunde warten (10 Checks à 100ms)
+            int waited = 0;
+            while (!ItemViewerUtility.areItemsLoaded() && waited < maxWait) {
+                try {
+                    Thread.sleep(100);
+                    waited++;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            
+            // Suche den Bauplan in items.json (mit clipboard_id falls vorhanden)
+            ItemData itemData;
+            if (savedEntry.clipboardId != null) {
+                itemData = ItemViewerUtility.findItemByNameAndClipboardId(savedEntry.blueprintName, savedEntry.clipboardId);
+            } else {
+                itemData = ItemViewerUtility.findItemByName(savedEntry.blueprintName);
+            }
             
             if (itemData == null) {
                 continue; // Bauplan nicht gefunden, überspringe
@@ -260,35 +416,93 @@ public class ClipboardUtility {
                 continue; // Kein Bauplan, überspringe
             }
             
-            // Erstelle ClipboardEntry
-            ClipboardEntry entry = new ClipboardEntry(savedEntry.blueprintName, itemData.price, itemData.blueprint_shop);
+            // Erstelle ClipboardEntry (verwende clipboardId aus savedEntry oder itemData)
+            Integer clipboardId = savedEntry.clipboardId != null ? savedEntry.clipboardId : itemData.clipboard_id;
+            ClipboardEntry entry = new ClipboardEntry(savedEntry.blueprintName, itemData.price, itemData.blueprint_shop, clipboardId);
             entry.quantity = Math.max(1, savedEntry.quantity); // Mindestens 1
             clipboardEntries.add(entry);
         }
     }
     
     /**
-     * Speichert Clipboard-Einträge in der Config
+     * Prüft ob Clipboard-Einträge geladen sind
      */
-    public static void saveClipboardEntries() {
-        List<CCLiveUtilitiesConfig.ClipboardEntryData> savedEntries = new ArrayList<>();
-        
-        for (ClipboardEntry entry : clipboardEntries) {
-            savedEntries.add(new CCLiveUtilitiesConfig.ClipboardEntryData(
-                entry.blueprintName,
-                entry.quantity
-            ));
-        }
-        
-        CCLiveUtilitiesConfig.HANDLER.instance().clipboardEntries = savedEntries;
-        CCLiveUtilitiesConfig.HANDLER.save();
+    public static boolean areClipboardEntriesLoaded() {
+        return clipboardEntriesLoaded;
     }
     
     /**
-     * Gibt alle Clipboard-Einträge zurück
+     * Speichert Clipboard-Einträge in der Config asynchron (um Lag zu vermeiden)
+     */
+    public static void saveClipboardEntries() {
+        // Verwende AtomicBoolean um sicherzustellen, dass nur ein Save-Thread läuft
+        if (!saveScheduled.compareAndSet(false, true)) {
+            return; // Speichern bereits geplant
+        }
+        
+        // Beende vorherigen Save-Thread falls noch aktiv
+        if (saveClipboardThread != null && saveClipboardThread.isAlive()) {
+            try {
+                saveClipboardThread.interrupt();
+            } catch (Exception e) {
+                // Ignoriere Fehler
+            }
+        }
+        
+        saveClipboardThread = new Thread(() -> {
+            try {
+                // Warte kurz, um mehrere aufeinanderfolgende Speichervorgänge zu bündeln
+                Thread.sleep(200); // 200ms Debounce
+                
+                // Erstelle Kopie der Einträge (Thread-sicher)
+                List<CCLiveUtilitiesConfig.ClipboardEntryData> savedEntries = new ArrayList<>();
+                synchronized (clipboardEntries) {
+                    for (ClipboardEntry entry : clipboardEntries) {
+                        savedEntries.add(new CCLiveUtilitiesConfig.ClipboardEntryData(
+                            entry.blueprintName,
+                            entry.quantity,
+                            entry.clipboardId // Speichere clipboardId (kann null sein)
+                        ));
+                    }
+                }
+                
+                // Speichere auf dem Hauptthread (Config-Handler muss auf dem Hauptthread laufen)
+                net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+                if (client != null) {
+                    client.execute(() -> {
+                        try {
+                            CCLiveUtilitiesConfig.HANDLER.instance().clipboardEntries = savedEntries;
+                            CCLiveUtilitiesConfig.HANDLER.save();
+                        } catch (Exception e) {
+                            System.err.println("Fehler beim Speichern der Clipboard-Einträge: " + e.getMessage());
+                            e.printStackTrace();
+                        } finally {
+                            saveScheduled.set(false);
+                        }
+                    });
+                } else {
+                    saveScheduled.set(false);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                saveScheduled.set(false);
+            } catch (Exception e) {
+                System.err.println("Fehler beim asynchronen Speichern der Clipboard-Einträge: " + e.getMessage());
+                e.printStackTrace();
+                saveScheduled.set(false);
+            }
+        }, "CCLive-Clipboard-Saver");
+        saveClipboardThread.setDaemon(true);
+        saveClipboardThread.start();
+    }
+    
+    /**
+     * Gibt alle Clipboard-Einträge zurück (Thread-sicher)
      */
     public static List<ClipboardEntry> getEntries() {
-        return new ArrayList<>(clipboardEntries);
+        synchronized (clipboardEntries) {
+            return new ArrayList<>(clipboardEntries);
+        }
     }
     
     /**
@@ -303,8 +517,10 @@ public class ClipboardUtility {
         }
         
         int index = page - 2; // Seite 2 = Index 0, Seite 3 = Index 1, etc.
-        if (index >= 0 && index < clipboardEntries.size()) {
-            return clipboardEntries.get(index);
+        synchronized (clipboardEntries) {
+            if (index >= 0 && index < clipboardEntries.size()) {
+                return clipboardEntries.get(index);
+            }
         }
         
         return null;
@@ -316,7 +532,11 @@ public class ClipboardUtility {
      */
     private static void updateTotalPages() {
         // Seite 1 (Gesamtliste) + Anzahl der Baupläne
-        int totalPages = 1 + clipboardEntries.size();
+        int size;
+        synchronized (clipboardEntries) {
+            size = clipboardEntries.size();
+        }
+        int totalPages = 1 + size;
         CCLiveUtilitiesConfig.HANDLER.instance().clipboardTotalPages = totalPages;
         CCLiveUtilitiesConfig.HANDLER.save();
         
