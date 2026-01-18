@@ -70,15 +70,6 @@ public class TabInfoDetailScreen extends Screen {
         super.render(context, mouseX, mouseY, delta);
     }
     
-    /**
-     * Berechnet die boxY Position des TabInfoSettingsScreen Overlays
-     * (9 Einträge: 1 "Haupt Overlay Hintergrund" + 8 normale Einträge * 25 + 40 = 265, max 500)
-     */
-    private int getSettingsScreenBoxY() {
-        int settingsBoxHeight = Math.min(500, 9 * 25 + 40); // 9 Einträge im Settings-Screen (1 "Haupt Overlay Hintergrund" + 8 normale)
-        return height / 2 - settingsBoxHeight / 2;
-    }
-    
     private void renderSettingsBox(DrawContext context, int mouseX, int mouseY) {
         int boxWidth = 300;
         // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
@@ -1595,26 +1586,6 @@ public class TabInfoDetailScreen extends Screen {
     }
     
     /**
-     * Gibt zurück, ob die Machtkristall-spezifische Option aktiviert ist
-     */
-    private boolean getMachtkristalleOption() {
-        if (!configKey.equals("machtkristalle")) {
-            return false;
-        }
-        return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleOption;
-    }
-    
-    /**
-     * Setzt, ob die Machtkristall-spezifische Option aktiviert ist
-     */
-    private void setMachtkristalleOption(boolean value) {
-        if (!configKey.equals("machtkristalle")) {
-            return;
-        }
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleOption = value;
-    }
-    
-    /**
      * Gibt zurück, ob ein bestimmter Machtkristall-Slot aktiviert ist
      */
     private boolean getMachtkristalleSlotEnabled(int slotIndex) {
@@ -1655,60 +1626,6 @@ public class TabInfoDetailScreen extends Screen {
         // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
         if (parent instanceof OverlayEditorScreen) {
             ((OverlayEditorScreen) parent).refreshOverlays();
-        }
-    }
-    
-    private Color getTextColor() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungTextColor;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossTextColor;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenTextColor;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerTextColor;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenTextColor;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenTextColor;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleTextColor;
-            case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
-            case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor;
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor;
-            default:
-                return new Color(0xFFFFFFFF);
-        }
-    }
-    
-    private Color getPercentColor() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungPercentColor;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossPercentColor;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenPercentColor;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerPercentColor;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenPercentColor;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenPercentColor;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristallePercentColor;
-            case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
-            case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor;
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor;
-            default:
-                return new Color(0xFFFFFF00);
         }
     }
     

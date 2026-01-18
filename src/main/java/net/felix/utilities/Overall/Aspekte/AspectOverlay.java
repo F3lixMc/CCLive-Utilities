@@ -1,7 +1,5 @@
 package net.felix.utilities.Overall.Aspekte;
 
-import net.felix.utilities.Overall.InformationenUtility;
-import net.felix.utilities.Overall.InformationenUtility.AspectInfo;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.InputUtil;
@@ -14,7 +12,6 @@ import java.util.Map;
 
 public class AspectOverlay {
     
-    private static boolean shouldShow = false;
     private static boolean isCurrentlyHovering = false; // Track if currently hovering over a valid blueprint item
     private static String currentAspectName = "";
     private static String currentAspectDescription = "";
@@ -42,7 +39,6 @@ public class AspectOverlay {
     
     public static void updateAspectInfo(ItemStack itemStack) {
         if (itemStack == null || itemStack.isEmpty()) {
-            shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
@@ -53,7 +49,6 @@ public class AspectOverlay {
         // Check if the item name contains Epic colors - if so, don't show overlay
         net.minecraft.text.Text itemNameText = itemStack.getName();
         if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
-            shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
@@ -64,7 +59,6 @@ public class AspectOverlay {
         // Get the item name
         String itemName = getItemName(itemStack);
         if (itemName == null || !itemName.contains("[Bauplan]")) {
-            shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
@@ -98,9 +92,7 @@ public class AspectOverlay {
             currentItemName = cleanItemName;
             isCurrentlyHovering = true; // Set to true when hovering over a valid blueprint item
             lastTooltipUpdateTime = -1; // Use -1 to distinguish blueprint items from chat items (0) and star items (>0)
-            // Don't set shouldShow to true here - it will be controlled by Shift key in render method
         } else {
-            shouldShow = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
@@ -113,7 +105,6 @@ public class AspectOverlay {
      * Hides the overlay
      */
     public static void hideOverlay() {
-        shouldShow = false;
         isCurrentlyHovering = false;
         currentAspectName = "";
         currentAspectDescription = "";
@@ -128,7 +119,6 @@ public class AspectOverlay {
      */
     public static void updateAspectInfoFromName(String cleanItemName, net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
         if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
-            shouldShow = false;
             isChatHovering = false;
             isCurrentlyHovering = false;
             currentAspectName = "";
@@ -160,7 +150,6 @@ public class AspectOverlay {
      */
     public static void updateAspectInfoFromNameForChat(String cleanItemName, net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
         if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
-            shouldShow = false;
             isChatHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
@@ -374,7 +363,6 @@ public class AspectOverlay {
         }
         
         // Position on the left side of the screen
-        int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
         
         // Calculate overlay dimensions and position
@@ -821,7 +809,6 @@ public class AspectOverlay {
                 try (var reader = new java.io.InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8)) {
                     com.google.gson.JsonObject json = com.google.gson.JsonParser.parseReader(reader).getAsJsonObject();
                     
-                    int loadedCount = 0;
                     for (String itemName : json.keySet()) {
                         try {
                             com.google.gson.JsonObject itemData = json.getAsJsonObject(itemName);
@@ -831,7 +818,6 @@ public class AspectOverlay {
                             // Only store items that have both aspect name and description
                             if (!aspectName.isEmpty() && !aspectDescription.isEmpty()) {
                                 aspectsDatabase.put(itemName, new AspectInfo(aspectName, aspectDescription));
-                                loadedCount++;
                             }
                         } catch (Exception e) {
                             // Ignore parse errors

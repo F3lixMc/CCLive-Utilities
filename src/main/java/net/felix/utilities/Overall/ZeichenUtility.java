@@ -53,6 +53,7 @@ public class ZeichenUtility {
     private static String uiCategoriesHub = "";
     private static String uiCategoriesClassSelection = "";
     private static String uiRessourceBag = "";
+    private static String uiMaterialBag = "";
     private static Map<Character, String> factoryFontFirstLine = new HashMap<>();
     private static Map<Character, String> aincraftFontFirstLine = new HashMap<>();
     
@@ -340,6 +341,12 @@ public class ZeichenUtility {
             uiRessourceBag = ressourceBagObj.get("character").getAsString();
         }
         
+        // Lade UI Material Bag
+        if (json.has("ui_material_bag")) {
+            JsonObject materialBagObj = json.getAsJsonObject("ui_material_bag");
+            uiMaterialBag = materialBagObj.get("character").getAsString();
+        }
+        
         // Lade Factory Bottom Font
         if (json.has("factory_bottom_font")) {
             JsonObject factoryObj = json.getAsJsonObject("factory_bottom_font");
@@ -433,6 +440,7 @@ public class ZeichenUtility {
         uiCategoriesHub = "㮘";
         uiCategoriesClassSelection = "㬈";
         uiRessourceBag = "Ⳅ";
+        uiMaterialBag = "ⳅ";
         
         factoryBottomFont = "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪";
         factoryBottomFontNumbers.put('㝡', 0);
@@ -777,6 +785,22 @@ public class ZeichenUtility {
     public static boolean containsUiRessourceBag(String text) {
         ensureInitialized();
         return text != null && text.contains(uiRessourceBag);
+    }
+    
+    /**
+     * Gibt das UI Material Bag Zeichen zurück
+     */
+    public static String getUiMaterialBag() {
+        ensureInitialized();
+        return uiMaterialBag;
+    }
+    
+    /**
+     * Prüft ob ein String das UI Material Bag Zeichen enthält
+     */
+    public static boolean containsUiMaterialBag(String text) {
+        ensureInitialized();
+        return text != null && text.contains(uiMaterialBag);
     }
     
     /**

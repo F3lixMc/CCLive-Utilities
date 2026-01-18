@@ -848,8 +848,18 @@ public class OverlayEditorScreen extends Screen {
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isEnabled()) {
                 overlay.resetToDefault();
+                clampOverlayToScreen(overlay);
+                overlay.savePosition();
             }
         }
+    }
+
+    private void clampOverlayToScreen(DraggableOverlay overlay) {
+        int maxX = Math.max(0, width - overlay.getWidth());
+        int maxY = Math.max(0, height - overlay.getHeight());
+        int clampedX = Math.max(0, Math.min(overlay.getX(), maxX));
+        int clampedY = Math.max(0, Math.min(overlay.getY(), maxY));
+        overlay.setPosition(clampedX, clampedY);
     }
     
     @Override
@@ -906,19 +916,6 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if the dimension is the Overworld
         return client.world.getRegistryKey() == net.minecraft.world.World.OVERWORLD;
-    }
-    
-    /**
-     * Check if the player is currently in the "general_lobby" dimension
-     */
-    private boolean isInGeneralLobby() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.world == null) {
-            return false;
-        }
-        
-        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
-        return dimensionPath.equals("general_lobby");
     }
     
     /**

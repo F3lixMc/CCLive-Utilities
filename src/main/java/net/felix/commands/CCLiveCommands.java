@@ -12,6 +12,9 @@ import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.chat.ChatManager;
 import net.felix.utilities.Other.ItemDisplayDebugUtility;
+import net.felix.utilities.DragOverlay.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.DragOverlay.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.DragOverlay.ClipboardDraggableOverlay;
 import net.minecraft.text.Text;
 
 import java.util.concurrent.CompletableFuture;
@@ -136,6 +139,11 @@ public class CCLiveCommands {
                         .suggests(chatTypeSuggestions())
                         .executes(context -> toggleChat(context, StringArgumentType.getString(context, "type"))))))
             
+            // Materials/Resources Commands
+            .then(literal("materials_resources")
+                .then(literal("reset")
+                    .executes(CCLiveCommands::resetMaterialsResources)))
+            
             // Debug Commands
             .then(literal("debug")
                 .then(literal("coin_collector")
@@ -212,6 +220,21 @@ public class CCLiveCommands {
             return 1;
         } catch (Exception e) {
             context.getSource().sendError(Text.literal("§cFehler beim Abrufen des Blueprint-Status: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    // =================== MATERIALS/RESOURCES COMMANDS ===================
+    
+    private static int resetMaterialsResources(CommandContext<FabricClientCommandSource> context) {
+        try {
+            CollectedMaterialsResourcesStorage.resetAll();
+            ClipboardDraggableOverlay.resetCollectedMaterials();
+            ClipboardAmbossRessourceCollector.resetCollectedResources();
+            context.getSource().sendFeedback(Text.literal("§aMaterialien und Ressourcen erfolgreich gelöscht"));
+            return 1;
+        } catch (Exception e) {
+            context.getSource().sendError(Text.literal("§cFehler beim Zurücksetzen: " + e.getMessage()));
             return 0;
         }
     }

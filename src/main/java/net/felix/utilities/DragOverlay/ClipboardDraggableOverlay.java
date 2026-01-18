@@ -2,8 +2,8 @@ package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.ItemViewer.CostItem;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ActionBarData;
+import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -73,26 +73,37 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     private static boolean hideHover = false;
     
     // Separate Speicherung für Clipboard-Materialien (bleibt beim Dimensionswechsel erhalten)
-    private static final Map<String, Integer> clipboardMaterials = new HashMap<>();
+    private static final Map<String, Long> clipboardMaterials = new HashMap<>();
     
     /**
-     * Aktualisiert die Clipboard-Materialien mit den aktuellen Materialien aus ActionBarData
-     * Diese Methode sollte regelmäßig aufgerufen werden, um die Materialien zu aktualisieren
+     * Aktualisiert die Clipboard-Materialien mit den persistierten Materialien
+     * und synchronisiert ActionBar-Materialien in die persistente Datei.
      */
     public static void updateClipboardMaterials() {
-        Map<String, Integer> currentMaterials = ActionBarData.getMaterials();
-        if (currentMaterials != null) {
-            // Aktualisiere oder füge neue Materialien hinzu
-            for (Map.Entry<String, Integer> entry : currentMaterials.entrySet()) {
-                String materialName = entry.getKey();
-                Integer count = entry.getValue();
-                // Aktualisiere nur, wenn der neue Wert höher ist (um alte Werte zu behalten)
-                clipboardMaterials.put(materialName, Math.max(
-                    clipboardMaterials.getOrDefault(materialName, 0),
-                    count
-                ));
+        Map<String, Integer> actionBarMaterials = ActionBarData.getMaterials();
+        if (actionBarMaterials != null && !actionBarMaterials.isEmpty()) {
+            Map<String, Long> updates = new HashMap<>();
+            for (Map.Entry<String, Integer> entry : actionBarMaterials.entrySet()) {
+                String name = entry.getKey();
+                Integer value = entry.getValue();
+                if (name == null || name.isEmpty() || value == null) {
+                    continue;
+                }
+                updates.put(name, value.longValue());
             }
+            CollectedMaterialsResourcesStorage.updateMaterials(updates);
         }
+        
+        Map<String, Long> storedMaterials = CollectedMaterialsResourcesStorage.getAllMaterials();
+        if (storedMaterials == null || storedMaterials.isEmpty()) {
+            return;
+        }
+        clipboardMaterials.clear();
+        clipboardMaterials.putAll(storedMaterials);
+    }
+    
+    public static void resetCollectedMaterials() {
+        clipboardMaterials.clear();
     }
     
     /**
@@ -307,8 +318,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                     if (costItem != null && costItem.itemName != null && costItem.amount != null) {
                         boolean isCoins = "Coins".equalsIgnoreCase(costItem.itemName);
                         
-                        // Verwende das neue Format: "0 / 15 Materialname"
-                        double neededAmount = parseAmountToDouble(costItem.amount);
                         double ownedAmount = 0.0;
                         if (isCoins) {
                             ownedAmount = ClipboardCoinCollector.getCurrentCoins();
@@ -350,8 +359,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                     if (costItem != null && costItem.itemName != null && costItem.amount != null) {
                         boolean isCoins = "Coins".equalsIgnoreCase(costItem.itemName);
                         
-                        // Verwende das neue Format: "0 / 15 Materialname"
-                        double neededAmount = parseAmountToDouble(costItem.amount);
                         double ownedAmount = 0.0;
                         if (isCoins) {
                             ownedAmount = ClipboardCoinCollector.getCurrentCoins();
@@ -873,7 +880,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int spaceAfterLeftX = buttonPositions[2];
         int separatorX = buttonPositions[3];
         int spaceAfterSeparatorX = buttonPositions[4];
-        int spaceAfterRightX = buttonPositions[5];
         int countX = buttonPositions[6];
         
         String leftArrow = "«";
@@ -1175,9 +1181,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         // Falls die tatsächliche Höhe von der geschätzten Höhe abweicht, aktualisiere den Background
         // (Background wird innerhalb der Matrix-Transformation gerendert, damit er mit dem Text in derselben Ebene ist)
-        if (actualHeight != estimatedHeight) {
-            // Aktualisiere Background mit korrekter Höhe (in transformierten Koordinaten)
-            context.fill(0, 0, unscaledWidth, actualHeight, 0x80000000);
+        if (actualHeight > estimatedHeight) {
+            // Zeichne nur den fehlenden Hintergrund unterhalb der bisherigen Fläche,
+            // damit bereits gerenderter Text nicht abgedunkelt wird.
+            context.fill(0, estimatedHeight, unscaledWidth, actualHeight, 0x80000000);
         }
         
         // Rendere fertige Items NACH dem Background-Update (nur für Seite 2+ in Mode 2)
@@ -1197,8 +1204,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 
                 // Aktualisiere Background erneut, falls Höhe sich geändert hat
                 int newActualHeight = padding + (lineCount * lineHeight) + padding;
-                if (newActualHeight != actualHeight) {
-                    context.fill(0, 0, unscaledWidth, newActualHeight, 0x80000000);
+                if (newActualHeight > actualHeight) {
+                    context.fill(0, actualHeight, unscaledWidth, newActualHeight, 0x80000000);
                     actualHeight = newActualHeight;
                 }
             }
@@ -1402,18 +1409,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         return multiplied;
-    }
-    
-    /**
-     * Rendert eine Kosten-Zeile
-     * @param context DrawContext
-     * @param client MinecraftClient
-     * @param costItem CostItem (kann null sein)
-     * @param y Y-Position
-     * @return true wenn eine Zeile gerendert wurde, false wenn nicht
-     */
-    private static boolean renderCostItem(DrawContext context, MinecraftClient client, CostItem costItem, int y) {
-        return renderCostItem(context, client, costItem, y, 1);
     }
     
     /**
@@ -1684,13 +1679,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
     
     /**
-     * Formatiert einen Amount-Wert (Standard, nicht für Coins)
-     */
-    private static String formatAmount(Object amount) {
-        return formatAmount(amount, false);
-    }
-    
-    /**
      * Entfernt Tausendertrennzeichen aus einem String (z.B. "1.577.697" -> "1577697")
      */
     private static String removeThousandSeparators(String str) {
@@ -1735,43 +1723,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
     
     /**
-     * Ruft die vorhandene Menge eines Materials aus dem Material-Tracker ab
-     * Funktioniert unabhängig davon, ob der Material-Tracker-Overlay aktiviert ist,
-     * da ActionBarData die Materialien immer sammelt (via ActionBarMixin)
-     */
-    /**
      * Gibt die vorhandene Menge eines Materials zurück
-     * Für Pergamentfetzen wird der ClipboardPaperShredsCollector verwendet
-     * Für andere Materialien wird ActionBarData verwendet
+     * Für Pergamentfetzen wird der ClipboardPaperShredsCollector verwendet,
+     * für Materialien/Ressourcen werden die persistierten Dateien genutzt.
      */
-    /**
-     * Bestimmt die Kategorie eines CostItems für die Sortierung
-     * @param costItem Das CostItem
-     * @return 0 = Coins, 1 = Materialien, 2 = Amboss, 3 = Ressource
-     */
-    private static int getCostItemCategory(CostItem costItem) {
-        if (costItem == null || costItem.itemName == null) {
-            return 1; // Default: Materialien
-        }
-        String itemName = costItem.itemName;
-        if ("Coins".equalsIgnoreCase(itemName)) {
-            return 0; // Coins
-        }
-        // Prüfe ob es Amboss oder Ressource ist (basierend auf entry.price)
-        List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
-        for (ClipboardUtility.ClipboardEntry entry : entries) {
-            if (entry.price != null) {
-                if (entry.price.Amboss != null && itemName.equals(entry.price.Amboss.itemName)) {
-                    return 2; // Amboss
-                }
-                if (entry.price.Ressource != null && itemName.equals(entry.price.Ressource.itemName)) {
-                    return 3; // Ressource
-                }
-            }
-        }
-        return 1; // Materialien
-    }
-    
     /**
      * Prüft ob ein CostItem "fertig" ist (owned >= needed)
      * @param costItem Das CostItem zu prüfen
@@ -1816,20 +1771,24 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return 0.0;
         }
         
-        // Prüfe ob es ein Amboss-Item ist
+        // Prüfe persistierte Ressourcen (Amboss + Ressource)
+        long storedResourceAmount = getStoredResourceAmount(materialName);
+        if (storedResourceAmount > 0) {
+            return storedResourceAmount;
+        }
+        
+        // Fallback: Prüfe aktuelle Amboss/Ressource-Collector-Werte
         long ambossAmount = ClipboardAmbossRessourceCollector.getAmbossAmount(materialName);
         if (ambossAmount > 0) {
             return ambossAmount;
         }
-        
-        // Prüfe ob es ein Ressource-Item ist
         long ressourceAmount = ClipboardAmbossRessourceCollector.getRessourceAmount(materialName);
         if (ressourceAmount > 0) {
             return ressourceAmount;
         }
         
         try {
-            // Aktualisiere Clipboard-Materialien mit aktuellen Materialien aus ActionBarData
+            // Aktualisiere Clipboard-Materialien mit persistierten Materialien
             updateClipboardMaterials();
             
             // Verwende Clipboard-Materialien (bleiben beim Dimensionswechsel erhalten)
@@ -1850,7 +1809,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             }
             
             // Suche nach einem passenden Materialnamen (normalisiert)
-            for (Map.Entry<String, Integer> entry : clipboardMaterials.entrySet()) {
+            for (Map.Entry<String, Long> entry : clipboardMaterials.entrySet()) {
                 String normalizedEntryName = normalizeMaterialName(entry.getKey());
                 
                 // DEBUG: Logge jeden Vergleich
@@ -1881,6 +1840,25 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         return 0.0;
+    }
+    
+    private static long getStoredResourceAmount(String materialName) {
+        try {
+            Map<String, Long> storedResources = CollectedMaterialsResourcesStorage.getAllResources();
+            if (storedResources == null || storedResources.isEmpty()) {
+                return 0L;
+            }
+            String normalizedName = normalizeMaterialName(materialName);
+            for (Map.Entry<String, Long> entry : storedResources.entrySet()) {
+                String normalizedEntryName = normalizeMaterialName(entry.getKey());
+                if (normalizedName.equals(normalizedEntryName)) {
+                    return entry.getValue() != null ? entry.getValue() : 0L;
+                }
+            }
+        } catch (Exception e) {
+            // Silent error handling
+        }
+        return 0L;
     }
     
     /**
@@ -2541,65 +2519,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         return false;
-    }
-    
-    /**
-     * Berechnet die Anzahl der Zeilen für das Overlay
-     */
-    private static int calculateLineCount(int currentPage, ClipboardUtility.ClipboardEntry entry) {
-        int lineCount = 0;
-        
-        // Titel "Pinnwand" + Trennlinie
-        lineCount += 2;
-        
-        // "Bauplanname [Anzahl]" Zeile
-        lineCount += 1;
-        
-        // Kosten-Zeilen
-        if (currentPage == 1) {
-            // Seite 1: Gesamtliste
-            List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
-            if (!entries.isEmpty()) {
-                List<CostItem> totalCosts = calculateTotalCosts(false);
-                if (!totalCosts.isEmpty()) {
-                    lineCount += 1; // "Kosten:" Zeile
-                    lineCount += totalCosts.size(); // Kosten-Items
-                }
-                
-                // Optional: Bauplan Shop Kosten
-                if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts) {
-                    List<CostItem> totalShopCosts = calculateTotalCosts(true);
-                    if (!totalShopCosts.isEmpty()) {
-                        lineCount += 1; // "Bauplan Shop Kosten:" Zeile
-                        lineCount += totalShopCosts.size(); // Shop-Kosten-Items
-                    }
-                }
-            } else {
-                lineCount += 2; // "Kosten:" + "Keine Baupläne im Clipboard"
-            }
-        } else if (entry != null && entry.price != null) {
-            // Seite 2+: Einzelner Bauplan
-            lineCount += 1; // "Kosten:" Zeile
-            
-            // Zähle vorhandene Kosten-Items
-            if (entry.price.coin != null) lineCount++;
-            if (entry.price.material1 != null) lineCount++;
-            if (entry.price.material2 != null) lineCount++;
-            if (entry.price.Amboss != null) lineCount++;
-            if (entry.price.Ressource != null) lineCount++;
-            
-            // Optional: Bauplan Shop Kosten
-            if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts && 
-                entry.blueprintShop != null && entry.blueprintShop.price != null) {
-                lineCount += 1; // "Bauplan Shop Kosten:" Zeile
-                if (entry.blueprintShop.price.coin != null) lineCount++;
-                if (entry.blueprintShop.price.paper_shreds != null) lineCount++;
-            }
-        } else {
-            lineCount += 1; // "Keine Baupläne im Clipboard"
-        }
-        
-        return lineCount;
     }
     
     /**

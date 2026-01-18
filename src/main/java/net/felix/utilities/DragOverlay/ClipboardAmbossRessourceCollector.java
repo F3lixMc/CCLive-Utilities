@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.felix.utilities.Overall.InformationenUtility;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +27,8 @@ public class ClipboardAmbossRessourceCollector {
     // Format: "Anzahl" (gold) + " " + Zahl (white)
     // Matcht: eine oder mehrere Ziffern, gefolgt von optionalen Komma-Gruppen (jeweils 3 Ziffern)
     private static final Pattern AMOUNT_PATTERN = Pattern.compile("Anzahl\\s+(\\d+(?:,\\d{3})*)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SCHMIED_PATTERN =
+        Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s*/\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s+(.+)", Pattern.CASE_INSENSITIVE);
     
     // Cache für den letzten Screen-Titel, um zu erkennen wenn sich das Inventar ändert
     private static String lastScreenTitle = "";
@@ -67,9 +70,11 @@ public class ClipboardAmbossRessourceCollector {
         // Prüfe ob wir im Ressourcen-Bag Inventar sind (Symbol Ⳅ im Titel)
         net.minecraft.text.Text titleText = handledScreen.getTitle();
         String screenTitle = titleText != null ? titleText.getString() : "";
+        boolean isRessourceBag = net.felix.utilities.Overall.ZeichenUtility.containsUiRessourceBag(screenTitle);
+        boolean isSchmiedInventory = isSchmiedInventory(handledScreen);
         
-        if (!net.felix.utilities.Overall.ZeichenUtility.containsUiRessourceBag(screenTitle)) {
-            // Nicht im Ressourcen-Bag - Cache zurücksetzen
+        if (!isRessourceBag && !isSchmiedInventory) {
+            // Nicht im Ressourcen-Bag oder Schmied - Cache zurücksetzen
             lastScreenTitle = "";
             lastSlotCount = 0;
             return;
@@ -91,7 +96,9 @@ public class ClipboardAmbossRessourceCollector {
         // Werte, die nicht auf der aktuellen Seite sind, bleiben erhalten
         try {
             List<Slot> slots = handledScreen.getScreenHandler().slots;
-            for (Slot slot : slots) {
+            int maxIndex = Math.min(53, slots.size() - 1);
+            for (int i = 0; i <= maxIndex; i++) {
+                Slot slot = slots.get(i);
                 ItemStack stack = slot.getStack();
                 if (stack.isEmpty()) {
                     continue;
@@ -103,55 +110,50 @@ public class ClipboardAmbossRessourceCollector {
                     continue;
                 }
                 
-                // Parse Tooltip nach Format: "Name\nAnzahl 10000\n\nFür Details klicken"
-                // Format: Zeile 0 = Name, Zeile 1 = "Anzahl" + " " + Zahl, Zeile 2 = leer, Zeile 3 = "Für Details klicken"
-                String itemName = null;
-                long amount = 0;
-                
-                // Durchsuche alle Tooltip-Zeilen
-                for (int i = 0; i < tooltip.size(); i++) {
-                    String lineText = tooltip.get(i).getString();
-                    // Entferne Formatierungs-Codes und Unicode-Zeichen für bessere Erkennung
-                    String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "")
-                                                   .replaceAll("[\\u3400-\\u4DBF]", "")
-                                                   .trim();
+                if (isRessourceBag) {
+                    // Parse Tooltip nach Format: "Name\nAnzahl 10000\n\nFür Details klicken"
+                    String itemName = null;
+                    long amount = 0;
+                    boolean amountFound = false;
                     
-                    // Erste Zeile ist der Name
-                    if (i == 0) {
-                        itemName = cleanLineText;
-                        continue;
-                    }
-                    
-                    // Suche nach "Anzahl" + Zahl in jeder Zeile
-                    Matcher matcher = AMOUNT_PATTERN.matcher(cleanLineText);
-                    if (matcher.find()) {
-                        try {
-                            // Entferne Tausendertrennzeichen (Kommas)
-                            String amountStr = matcher.group(1).replace(",", "");
-                            amount = Long.parseLong(amountStr);
+                    // Durchsuche alle Tooltip-Zeilen
+                    for (int j = 0; j < tooltip.size(); j++) {
+                        String lineText = tooltip.get(j).getString();
+                        String cleanLineText = cleanTooltipLine(lineText);
+                        
+                        // Erste Zeile ist der Name
+                        if (j == 0) {
+                            itemName = cleanLineText;
+                            continue;
+                        }
+                        
+                        // Suche nach "Anzahl" + Zahl in jeder Zeile
+                        Matcher matcher = AMOUNT_PATTERN.matcher(cleanLineText);
+                        if (matcher.find()) {
+                            amount = parseAmount(matcher.group(1));
+                            amountFound = true;
                             break; // Gefunden, keine weiteren Zeilen prüfen
-                        } catch (NumberFormatException e) {
-                            // Silent error handling
                         }
                     }
-                }
-                
-                // Wenn wir Name und Anzahl haben, speichere es
-                if (itemName != null && !itemName.isEmpty() && amount > 0) {
-                    // Entferne Formatierungs-Codes und Unicode-Zeichen vom Item-Namen für Vergleich
-                    String cleanItemName = itemName.replaceAll("§[0-9a-fk-or]", "")
-                                                   .replaceAll("[\\u3400-\\u4DBF]", "")
-                                                   .trim();
                     
-                    // Prüfe ob es ein Amboss- oder Ressource-Item ist
-                    // Wir müssen prüfen, ob dieses Item in den Clipboard-Einträgen als Amboss oder Ressource verwendet wird
-                    boolean isAmboss = isAmbossItem(cleanItemName);
-                    boolean isRessource = isRessourceItem(cleanItemName);
-                    
-                    if (isAmboss) {
-                        ambossItems.put(cleanItemName, amount);
-                    } else if (isRessource) {
-                        ressourceItems.put(cleanItemName, amount);
+                    // Wenn wir Name und Anzahl haben, speichere es
+                    if (itemName != null && !itemName.isEmpty() && amountFound) {
+                        String cleanItemName = cleanTooltipLine(itemName);
+                        if (!isCoinsName(cleanItemName)) {
+                            updateResourceFromBag(cleanItemName, amount);
+                        }
+                    }
+                } else if (isSchmiedInventory) {
+                    for (Text line : tooltip) {
+                        String cleanLineText = cleanTooltipLine(line.getString());
+                        Matcher matcher = SCHMIED_PATTERN.matcher(cleanLineText);
+                        if (matcher.find()) {
+                            String name = cleanTooltipLine(matcher.group(3));
+                            long amount = parseAmount(matcher.group(1));
+                            if (!isAincraftMaterial(name) && !isCoinsName(name)) {
+                                updateResourceAmounts(name, amount);
+                            }
+                        }
                     }
                 }
             }
@@ -178,6 +180,70 @@ public class ClipboardAmbossRessourceCollector {
             // Silent error handling
         }
         return tooltip.isEmpty() ? null : tooltip;
+    }
+    
+    private static void updateResourceAmounts(String itemName, long amount) {
+        if (itemName == null || itemName.isEmpty()) {
+            return;
+        }
+        String cleanItemName = cleanTooltipLine(itemName);
+        if (cleanItemName.isEmpty()) {
+            return;
+        }
+        boolean isAmboss = isAmbossItem(cleanItemName);
+        boolean isRessource = isRessourceItem(cleanItemName);
+        
+        if (!isAmboss && !isRessource) {
+            return;
+        }
+        
+        if (isAmboss) {
+            ambossItems.put(cleanItemName, amount);
+        }
+        if (isRessource) {
+            ressourceItems.put(cleanItemName, amount);
+        }
+        
+        Map<String, Long> updates = new HashMap<>();
+        updates.put(cleanItemName, amount);
+        CollectedMaterialsResourcesStorage.updateResources(updates);
+    }
+    
+    private static void updateResourceFromBag(String itemName, long amount) {
+        if (itemName == null || itemName.isEmpty()) {
+            return;
+        }
+        String cleanItemName = cleanTooltipLine(itemName);
+        if (cleanItemName.isEmpty()) {
+            return;
+        }
+        // Ressourcen-Bag enthält Ressourcen; speichere direkt ohne Clipboard-Filter
+        ressourceItems.put(cleanItemName, amount);
+        CollectedMaterialsResourcesStorage.updateResource(cleanItemName, amount);
+    }
+    
+    private static String cleanTooltipLine(String lineText) {
+        if (lineText == null) {
+            return "";
+        }
+        return lineText.replaceAll("§[0-9a-fk-or]", "")
+                       .replaceAll("[\\u3400-\\u4DBF]", "")
+                       .trim();
+    }
+    
+    private static long parseAmount(String amountText) {
+        if (amountText == null) {
+            return 0L;
+        }
+        String cleaned = amountText.replaceAll("[^0-9]", "");
+        if (cleaned.isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(cleaned);
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
     }
     
     /**
@@ -216,6 +282,32 @@ public class ClipboardAmbossRessourceCollector {
         return false;
     }
     
+    private static boolean isAincraftMaterial(String itemName) {
+        if (itemName == null || itemName.isEmpty()) {
+            return false;
+        }
+        return InformationenUtility.getMaterialFloorInfo(itemName) != null;
+    }
+    
+    private static boolean isCoinsName(String name) {
+        return name != null && "coins".equalsIgnoreCase(name.trim());
+    }
+    
+    private static boolean isSchmiedInventory(HandledScreen<?> handledScreen) {
+        String title = handledScreen.getTitle() != null ? handledScreen.getTitle().getString() : "";
+        String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+                                 .replaceAll("[\\u3400-\\u4DBF]", "");
+        
+        return cleanTitle.contains("Baupläne [Waffen]") ||
+               cleanTitle.contains("Baupläne [Rüstung]") ||
+               cleanTitle.contains("Baupläne [Werkzeuge]") ||
+               cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
+               cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
+               cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
+               cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") ||
+               cleanTitle.contains("Bauplan [Shop]");
+    }
+    
     /**
      * Prüft ob Amboss/Ressource gesammelt werden sollen
      * Nur wenn Clipboard aktiviert ist und Baupläne vorhanden sind
@@ -246,5 +338,10 @@ public class ClipboardAmbossRessourceCollector {
      */
     public static long getRessourceAmount(String itemName) {
         return ressourceItems.getOrDefault(itemName, 0L);
+    }
+    
+    public static void resetCollectedResources() {
+        ambossItems.clear();
+        ressourceItems.clear();
     }
 }

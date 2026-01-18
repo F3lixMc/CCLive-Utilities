@@ -300,8 +300,6 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
             
             // Hole konfigurierte Farben für diese Zeile
             int textColor = TabInfoUtility.getTextColorForConfigKey(line.configKey);
-            int percentColor = TabInfoUtility.getPercentColorForConfigKey(line.configKey);
-            
             try {
                 int currentX = xPosition + PADDING;
                 

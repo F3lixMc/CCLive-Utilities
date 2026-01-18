@@ -24,5 +24,6 @@
       "categories.cclive-utilities.itemviewer": "CCLive Utilities - Item Viewer",
       "key.cclive-utilities.toggle-clipboard": "Clipboard ein/aus",
       "key.cclive-utilities.clipboard.pin": "Bauplan an Clipboard anpinnen",
-      "key.cclive-utilities.itemviewer.toggle": "Item-Viewer ein/aus"
+      "key.cclive-utilities.itemviewer.toggle": "Item-Viewer ein/aus",
+      "key.cclive-utilities.toggle-blueprint-missing-mode": "Bauplan-Fehlender Modus ein/aus"
   } 

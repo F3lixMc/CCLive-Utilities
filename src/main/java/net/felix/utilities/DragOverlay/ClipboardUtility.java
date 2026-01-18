@@ -76,6 +76,12 @@ public class ClipboardUtility {
         // Initialisiere ClipboardAmbossRessourceCollector
         ClipboardAmbossRessourceCollector.initialize();
         
+        // Initialisiere persistente Materialien/Ressourcen
+        CollectedMaterialsResourcesStorage.initialize();
+        
+        // Initialisiere ClipboardMaterialCollector
+        ClipboardMaterialCollector.initialize();
+        
         // Registriere Chat-Event für Coin-Updates
         net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> {
             String messageText = message.getString();

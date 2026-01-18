@@ -9,6 +9,8 @@ import net.minecraft.client.gui.screen.Screen;
 
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
@@ -109,6 +111,10 @@ public class CCLiveUtilitiesConfig {
         try {
             CCLiveUtilitiesConfig loadedConfig = HANDLER.instance();
             CCLiveUtilitiesConfig defaultConfig = new CCLiveUtilitiesConfig(); // Neue Instanz = alle Default-Werte
+            JsonObject rawConfig = readRawConfigJson();
+            if (rawConfig == null) {
+                return;
+            }
             boolean configChanged = false;
             
             // Durchlaufe alle Felder der Config-Klasse
@@ -119,45 +125,12 @@ public class CCLiveUtilitiesConfig {
                     field.setAccessible(true);
                     
                     try {
-                        Object loadedValue = field.get(loadedConfig);
                         Object defaultValue = field.get(defaultConfig);
+                        String fieldName = field.getName();
                         
-                        // Prüfe ob das Feld fehlt oder null ist
-                        boolean needsMigration = false;
-                        
-                        if (loadedValue == null && defaultValue != null) {
-                            // Feld ist null -> fehlt in der Config
-                            needsMigration = true;
-                        } else if (field.getType().isPrimitive()) {
-                            // Für primitive Typen: Prüfe ob es der Standardwert ist
-                            // Nur migrieren wenn:
-                            // 1. Geladener Wert = Standard-Primitive-Wert (0, false, etc.)
-                            // 2. UND Default-Wert != Standard-Primitive-Wert
-                            // Das bedeutet: Feld fehlt in der Config und sollte einen anderen Default haben
-                            Object defaultPrimitive = getDefaultPrimitiveValue(field.getType());
-                            if (loadedValue.equals(defaultPrimitive) && !defaultValue.equals(defaultPrimitive)) {
-                                needsMigration = true;
-                            }
-                        } else if (loadedValue instanceof java.util.List) {
-                            // Für Listen: Prüfe ob leer UND Default-Liste nicht leer ist
-                            java.util.List<?> loadedList = (java.util.List<?>) loadedValue;
-                            if (defaultValue instanceof java.util.List) {
-                                java.util.List<?> defaultList = (java.util.List<?>) defaultValue;
-                                if (loadedList.isEmpty() && !defaultList.isEmpty()) {
-                                    needsMigration = true;
-                                }
-                            }
-                        } else if (loadedValue instanceof java.awt.Color && defaultValue instanceof java.awt.Color) {
-                            // Für Color: Prüfe ob es der Standardwert ist (schwarz = 0x000000)
-                            java.awt.Color loadedColor = (java.awt.Color) loadedValue;
-                            java.awt.Color defaultColor = (java.awt.Color) defaultValue;
-                            if (loadedColor.getRGB() == 0 && defaultColor.getRGB() != 0) {
-                                needsMigration = true;
-                            }
-                        }
-                        
-                        // Migriere das Feld wenn nötig
-                        if (needsMigration && defaultValue != null) {
+                        // Nur migrieren, wenn das Feld in der Datei fehlt oder null ist
+                        boolean missingInFile = !rawConfig.has(fieldName) || rawConfig.get(fieldName).isJsonNull();
+                        if (missingInFile && defaultValue != null) {
                             field.set(loadedConfig, defaultValue);
                             configChanged = true;
                         }
@@ -175,22 +148,25 @@ public class CCLiveUtilitiesConfig {
             // Silent error handling - Migration schlägt fehl, aber Mod funktioniert weiter
         }
     }
-    
-    /**
-     * Gibt den Standardwert für primitive Typen zurück
-     */
-    private static Object getDefaultPrimitiveValue(Class<?> type) {
-        if (type == boolean.class) return false;
-        if (type == byte.class) return (byte) 0;
-        if (type == short.class) return (short) 0;
-        if (type == int.class) return 0;
-        if (type == long.class) return 0L;
-        if (type == float.class) return 0.0f;
-        if (type == double.class) return 0.0;
-        if (type == char.class) return '\u0000';
-        return null;
-    }
 
+    /**
+     * Liest die aktuelle Config-Datei als JsonObject, um fehlende Felder zu erkennen
+     */
+    private static JsonObject readRawConfigJson() {
+        try {
+            java.nio.file.Path configPath = CCLiveUtilities.getConfigDir()
+                    .resolve("cclive-utilities")
+                    .resolve("cclive-utilities.json");
+            if (!java.nio.file.Files.exists(configPath)) {
+                return null;
+            }
+            String content = java.nio.file.Files.readString(configPath);
+            return JsonParser.parseString(content).getAsJsonObject();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
     // General Settings
     @SerialEntry
     public boolean enableMod = true;
@@ -787,7 +763,7 @@ public class CCLiveUtilitiesConfig {
 
     // Animation Blocker Settings
     @SerialEntry
-    public boolean animationBlockerEnabled = false;
+    public boolean animationBlockerEnabled = true;
     
     // Kill Animation Utility Settings
     @SerialEntry
@@ -797,22 +773,22 @@ public class CCLiveUtilitiesConfig {
     
     // Individual Animation Blocker Settings
     @SerialEntry
-    public boolean epicDropsBlockingEnabled = true;
+    public boolean epicDropsBlockingEnabled = false;
     
     @SerialEntry
-    public boolean legendaryDropsBlockingEnabled = true;
+    public boolean legendaryDropsBlockingEnabled = false;
     
     @SerialEntry
-    public boolean loggingLevelUpBlockingEnabled = true;
+    public boolean loggingLevelUpBlockingEnabled = false;
         
     @SerialEntry
-    public boolean miningLevelUpBlockingEnabled = true;
+    public boolean miningLevelUpBlockingEnabled = false;
     
     @SerialEntry
-    public boolean moblexiconBlockingEnabled = true;
+    public boolean moblexiconBlockingEnabled = false;
     
     @SerialEntry
-    public boolean airshipBlockingEnabled = true;
+    public boolean airshipBlockingEnabled = false;
     
 
     // Blueprint Viewer Settings
@@ -1391,12 +1367,6 @@ public class CCLiveUtilitiesConfig {
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Animation Blocker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Animation Blocker ein/aus"))
-                                        .description(OptionDescription.of(Text.literal("Animation Blocker aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().animationBlockerEnabled, newVal -> HANDLER.instance().animationBlockerEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Boolean>createBuilder()
                                         .name(Text.literal("Epic Drops blockieren"))
                                         .description(OptionDescription.of(Text.literal("Epic Drops Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().epicDropsBlockingEnabled, newVal -> HANDLER.instance().epicDropsBlockingEnabled = newVal)
@@ -1431,10 +1401,7 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Luftschiff Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().airshipBlockingEnabled, newVal -> HANDLER.instance().airshipBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Monster Todesanimationen"))
+                                        .build())  
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Text.literal("Monster Todesanimationen Ein/Aus"))
                                         .description(OptionDescription.of(Text.literal("Monster Todesanimationen aktivieren oder deaktivieren")))
@@ -1904,7 +1871,7 @@ public class CCLiveUtilitiesConfig {
                                         .build()) 
                                 .option(Option.<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
                                         .name(Text.literal("Hover Stats: Chosen Stat"))
-                                        .description(OptionDescription.of(Text.literal("Welche Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?")))
+                                        .description(OptionDescription.of(Text.literal("Welcher Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?\n\n-Spielzeit\n-Max Coins\n-Gesendete Nachrichten\n-Gefundene Baupläne\n-Max Schaden")))
                                         .binding(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, () -> HANDLER.instance().hoverStatsChosenStat != null ? HANDLER.instance().hoverStatsChosenStat : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)

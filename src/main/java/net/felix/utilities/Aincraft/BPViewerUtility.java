@@ -64,9 +64,6 @@ public class BPViewerUtility {
     // Constants
     private static final String[] RARITY_ORDER = {"common", "uncommon", "rare", "epic", "legendary"};
     private static final int HUD_WIDTH = 200;
-    private static final int HUD_HEIGHT = 100; // Base height, will be adjusted dynamically
-    private static final int RIGHT_MARGIN_PERCENT = 1;
-    private static final int TOP_MARGIN_PERCENT = 2; // Original small top margin
     // Background texture for blueprint display
     private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/blueprint_background.png");
     
@@ -100,6 +97,7 @@ public class BPViewerUtility {
     private static KeyBinding toggleKeyBinding;
     private static KeyBinding nextRarityKeyBinding;
     private static KeyBinding previousRarityKeyBinding;
+    private static KeyBinding toggleMissingModeKeyBinding;
     
     // Blueprint configuration
     private final BlueprintConfig config = new BlueprintConfig();
@@ -167,10 +165,6 @@ public class BPViewerUtility {
                        // Register client tick events
                ClientTickEvents.END_CLIENT_TICK.register(client -> {
                    if (client.world != null) {
-                       String dimensionId = client.world.getRegistryKey().getValue().toString();
-                       String previousFloor = getCurrentFloor();
-                       String newFloor = getCurrentFloor();
-
                        // Handle key bindings
                        if (toggleKeyBinding.wasPressed()) {
                            toggleVisibility();
@@ -182,6 +176,10 @@ public class BPViewerUtility {
 
                        if (previousRarityKeyBinding.wasPressed()) {
                            instance.previousRarity();
+                       }
+                       
+                       if (toggleMissingModeKeyBinding.wasPressed()) {
+                           toggleMissingMode();
                        }
                        
                        // Check for blueprint shop inventory
@@ -449,10 +447,34 @@ public class BPViewerUtility {
             "key.categories.cclive-utilities.blueprints"
         );
         
+        toggleMissingModeKeyBinding = new KeyBinding(
+            "key.cclive-utilities.toggle-blueprint-missing-mode",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN,
+            "key.categories.cclive-utilities.blueprints"
+        );
+        
         // Register key bindings
         KeyBindingHelper.registerKeyBinding(toggleKeyBinding);
         KeyBindingHelper.registerKeyBinding(nextRarityKeyBinding);
         KeyBindingHelper.registerKeyBinding(previousRarityKeyBinding);
+        KeyBindingHelper.registerKeyBinding(toggleMissingModeKeyBinding);
+    }
+    
+    private static void toggleMissingMode() {
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        config.blueprintViewerMissingMode = !config.blueprintViewerMissingMode;
+        CCLiveUtilitiesConfig.HANDLER.save();
+        showMissingModeActionBar(config.blueprintViewerMissingMode);
+    }
+    
+    private static void showMissingModeActionBar(boolean enabled) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.inGameHud == null) {
+            return;
+        }
+        String stateText = enabled ? "§aEin" : "§cAus";
+        client.inGameHud.setOverlayMessage(Text.literal("§fMissing Mode: " + stateText), false);
     }
            
            private static void registerCommands() {
@@ -473,7 +495,7 @@ public class BPViewerUtility {
                                        String floorNumber = StringArgumentType.getString(context, "floorNumber");
                                        BPViewerUtility instance = getInstance();
                                        instance.setManualFloor(floorNumber);
-                                       instance.setVisibility(true, floorNumber);
+                                       BPViewerUtility.setVisibility(true, floorNumber);
                                        context.getSource().sendFeedback(Text.literal("§aBauplan-Anzeige für Ebene " + floorNumber + " aktiviert!"));
                                        return 1;
                                    })
@@ -639,33 +661,6 @@ public class BPViewerUtility {
     }
     
     /**
-     * Rendert den Titel (Rarity) ohne Skalierung
-     */
-    private void renderTitle(DrawContext context, int x, int y, String rarityColor, int overlayWidth) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return;
-        
-        // Render rarity title with bright color for visibility (unskaliert)
-        String rarityDisplay = currentRarity.toUpperCase();
-        
-        // Zentriere die Überschrift in der Mitte des Overlays
-        // x ist bereits dynamicX + 10, also müssen wir das berücksichtigen
-        int titleX = (x - 10) + (overlayWidth - client.textRenderer.getWidth(rarityDisplay)) / 2;
-        
-        // Get the appropriate color for the rarity - using bright colors
-        int titleColor;
-        switch (currentRarity.toLowerCase()) {
-            case "common": titleColor = 0xFFFFFFFF; break;      // Bright white
-            case "uncommon": titleColor = 0xFF00FF00; break;    // Bright green
-            case "rare": titleColor = 0xFF0000FF; break;        // Bright blue
-            case "epic": titleColor = 0xFFFF00FF; break;        // Bright magenta
-            case "legendary": titleColor = 0xFFFFFF00; break;   // Bright yellow
-            default: titleColor = 0xFFFFFFFF; break;            // Bright white as default
-        }
-        context.drawText(client.textRenderer, rarityDisplay, titleX, y + 5, titleColor, true);
-    }
-    
-    /**
      * Rendert den Titel und die Bauplan-Liste zusammen im skalierten Bereich
      */
     private void renderTitleAndBlueprintList(DrawContext context, int x, int y, List<String> blueprints, String rarityColor, int overlayWidth) {
@@ -757,112 +752,13 @@ public class BPViewerUtility {
         
         // Im Missing Mode: Wenn alle Baupläne gefunden wurden, zeige "Alle gefunden"
         if (missingMode && missingCount == 0 && totalCount > 0) {
-            context.drawText(client.textRenderer, "Alle gefunden", 5, blueprintY, 0xFF888888, true);
+            context.drawText(client.textRenderer, "Alle gefunden", 5, blueprintY, 0xFFFFFFFF, true);
         }
         
         // Matrix-Transformationen wiederherstellen
         matrices.popMatrix();
     }
     
-    private void renderBlueprintList(DrawContext context, int x, int y, List<String> blueprints, String rarityColor) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return;
-        
-        // Verwende Matrix-Transformationen für Skalierung
-        Matrix3x2fStack matrices = context.getMatrices();
-        matrices.pushMatrix();
-        
-        // Skaliere basierend auf der Config
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
-        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-        
-        // Übersetze zur Position und skaliere von dort aus
-        matrices.translate(x, y);
-        matrices.scale(scale, scale);
-        
-        // Debug: Show that we're in renderBlueprintList (only once per frame)
-        if (!debugPrinted) {
-        
-        }
-        
-        // Render blueprint list - start from the beginning since title is rendered separately (moved 3 pixels up)src/main/resources/assets/cclive-utilities/textures/font.png
-        int blueprintY = -3; // Start from the beginning of the scalable area
-        
-        // Prüfe ob Missing Mode aktiv ist
-        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
-        
-        // Zähle fehlende Baupläne (für "Alle gefunden" Anzeige im Missing Mode)
-        int missingCount = 0;
-        int totalCount = blueprints.size();
-        
-        for (String blueprint : blueprints) {
-            String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            // Check both with and without rarity suffix (for epic/legendary duplicates)
-            // BUT: For Drachenzahn, only check the CURRENT rarity being displayed to avoid false positives
-            boolean isFound;
-            if (displayText.equals("Drachenzahn")) {
-                // For Drachenzahn, only check the specific rarity that's currently being displayed
-                String currentRarityLower = currentRarity.toLowerCase();
-                if (currentRarityLower.equals("epic") || currentRarityLower.equals("legendary")) {
-                    isFound = foundBlueprints.containsKey(displayText + ":" + currentRarityLower) ||
-                            isBlueprintFound(getActiveFloor(), displayText + ":" + currentRarityLower);
-                } else {
-                    // If not epic or legendary, don't mark as found (shouldn't happen for Drachenzahn)
-                    isFound = false;
-                }
-            } else {
-                // For other blueprints, check both with and without rarity suffix
-                isFound = foundBlueprints.containsKey(displayText) || 
-                        foundBlueprints.containsKey(displayText + ":epic") ||
-                        foundBlueprints.containsKey(displayText + ":legendary") ||
-                        isBlueprintFound(getActiveFloor(), displayText) ||
-                        isBlueprintFound(getActiveFloor(), displayText + ":epic") ||
-                        isBlueprintFound(getActiveFloor(), displayText + ":legendary");
-            }
-            
-            // Im Missing Mode: Überspringe gefundene Baupläne
-            if (missingMode && isFound) {
-                continue; // Überspringe gefundene Baupläne
-            }
-            
-            // Zähle fehlende Baupläne
-            if (!isFound) {
-                missingCount++;
-            }
-            
-            // Use normal colors for blueprints
-            int color;
-            if (isFound) {
-                color = getColorFromString(rarityColor); // Use rarity color for found
- 
-            } else {
-                color = 0x888888; // Gray for unfound
- 
-            }
-            
-            // Get the actual text width for this blueprint
-            int textWidth = client.textRenderer.getWidth(displayText);
-            
-
-            
-            // Draw the text with appropriate color based on found status (skaliert)
-            int textColor = isFound ? 0xFFFFFFFF : 0xFF888888; // White if found, gray if not found
-            context.drawText(client.textRenderer, displayText, 5, blueprintY, textColor, true);
-            if (!debugPrinted) {
-        
-            }
-            
-            			blueprintY += 12; // Increased spacing for better readability (skaliert)
-        }
-        
-        // Im Missing Mode: Wenn alle Baupläne gefunden wurden, zeige "Alle gefunden"
-        if (missingMode && missingCount == 0 && totalCount > 0) {
-            context.drawText(client.textRenderer, "Alle gefunden", 5, blueprintY, 0xFF888888, true);
-        }
-        
-        // Matrix-Transformationen wiederherstellen
-        matrices.popMatrix();
-    }
     
                	private static void checkTabKey() {
 		// Check if player list key is pressed (respects custom key bindings)
@@ -1143,14 +1039,12 @@ public class BPViewerUtility {
                
 
                
-               int itemsFound = 0;
                for (int slotIndex : BLUEPRINT_SHOP_SLOTS) {
                    if (slotIndex < screen.getScreenHandler().slots.size()) {
                        Slot slot = screen.getScreenHandler().slots.get(slotIndex);
                        ItemStack itemStack = slot.getStack();
                        
                        if (!itemStack.isEmpty()) {
-                           itemsFound++;
                            // Get the item name and check if it's a blueprint
                            String itemName = itemStack.getName().getString();
 
@@ -1251,27 +1145,11 @@ public class BPViewerUtility {
 
            }
     
-    private void markBlueprintAsFound(String blueprintName, String rarity) {
-        markBlueprintAsFound(blueprintName, rarity, null);
-    }
-    
     private void markBlueprintAsFound(String blueprintName, String rarity, String floor) {
         // Create a key that includes rarity if it's epic or legendary (to distinguish duplicates)
         String blueprintKey = blueprintName;
         if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
             blueprintKey = blueprintName + ":" + rarity;
-        }
-        
-        // Get stack trace to see where this is called from
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        String caller = stackTrace.length > 3 ? stackTrace[3].getMethodName() + ":" + stackTrace[3].getLineNumber() : "unknown";
-        
-        // Special check for Drachenzahn
-        if (blueprintName.equals("Drachenzahn")) {
-            if (rarity != null && rarity.equals("epic")) {
-            } else if (rarity != null && rarity.equals("legendary")) {
-            } else {
-            }
         }
         
         if (!foundBlueprints.containsKey(blueprintKey)) {
@@ -1281,7 +1159,6 @@ public class BPViewerUtility {
                 markBlueprintFound(floorToUse, blueprintKey);
             }
             saveFoundBlueprints();
-        } else {
         }
     }
     
@@ -1567,17 +1444,6 @@ public class BPViewerUtility {
 
     }
     
-    private int getColorFromString(String colorString) {
-        switch (colorString.toUpperCase()) {
-            case "WHITE": return 0xFFFFFF;
-            case "GREEN": return 0x55FF55;
-            case "BLUE": return 0x5555FF;
-            case "PURPLE": return 0xAA00AA;
-            case "GOLD": return 0xFFAA00;
-            default: return 0xFFFFFF;
-        }
-    }
-    
     private void loadBlueprintConfig() {
         try {
             // Load from mod resources
@@ -1620,15 +1486,6 @@ public class BPViewerUtility {
                     
              
                     
-                    // Debug: Show first few floors
-                    int count = 0;
-                    for (String floorKey : config.floors.keySet()) {
-                        if (count < 3) {
-                            BlueprintConfig.FloorData floor = config.floors.get(floorKey);
-                            
-                            count++;
-                        }
-                    }
                 }
             }
         } catch (Exception e) {
