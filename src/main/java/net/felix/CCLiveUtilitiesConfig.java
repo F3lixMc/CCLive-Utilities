@@ -899,6 +899,9 @@ public class CCLiveUtilitiesConfig {
     public boolean tabInfoEssenzenSeparateOverlay = false;
     
     @SerialEntry
+    public boolean tabInfoKomboKisteSeparateOverlay = false;
+    
+    @SerialEntry
     public boolean tabInfoMachtkristalleSeparateOverlay = false;
     
     @SerialEntry
@@ -950,6 +953,10 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public double tabInfoEssenzenWarnPercent = -1.0;
     
+    /** Rechter Wert in „X / Y“; Warnung wenn Kombowert (links) diesen Wert erreicht oder überschreitet */
+    @SerialEntry
+    public int tabInfoKomboKisteZielwert = 1000;
+    
     @SerialEntry
     public double tabInfoRecyclerWarnPercent = -1.0;
     
@@ -971,6 +978,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean tabInfoEssenzenShowIcon = false;
+    
+    @SerialEntry
+    public boolean tabInfoKomboKisteShowIcon = false;
     
     @SerialEntry
     public boolean tabInfoJaegerShowIcon = false;
@@ -1007,6 +1017,9 @@ public class CCLiveUtilitiesConfig {
     public boolean tabInfoEssenzenShowBackground = true;
     
     @SerialEntry
+    public boolean tabInfoKomboKisteShowBackground = true;
+    
+    @SerialEntry
     public boolean tabInfoMachtkristalleShowBackground = true;
     
     @SerialEntry
@@ -1030,6 +1043,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public Color tabInfoEssenzenTextColor = new Color(0xFFFFFFFF);
+    
+    @SerialEntry
+    public Color tabInfoKomboKisteTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
     public Color tabInfoMachtkristalleTextColor = new Color(0xFFFFFFFF);
@@ -1111,6 +1127,9 @@ public class CCLiveUtilitiesConfig {
     public float tabInfoEssenzenScale = 1.0f;
     
     @SerialEntry
+    public float tabInfoKomboKisteScale = 1.0f;
+    
+    @SerialEntry
     public float tabInfoMachtkristalleScale = 1.0f;
     
     @SerialEntry
@@ -1164,6 +1183,9 @@ public class CCLiveUtilitiesConfig {
     public boolean showTabInfoEssenzen = true;
     
     @SerialEntry
+    public boolean showTabInfoKomboKiste = true;
+    
+    @SerialEntry
     public boolean showTabInfoMachtkristalle = true;
     
     @SerialEntry
@@ -1211,6 +1233,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public int tabInfoEssenzenY = 210;
+    
+    @SerialEntry
+    public int tabInfoKomboKisteX = 10;
+    
+    @SerialEntry
+    public int tabInfoKomboKisteY = 230;
     
     @SerialEntry
     public int tabInfoMachtkristalleX = 10;

@@ -39,14 +39,8 @@ public abstract class HandledScreenMixin {
         String currentScreen = screen.getClass().getSimpleName();
         lastDetectedScreen = currentScreen;
         
-        // Store mouse position for use in tooltip callbacks
-        net.felix.utilities.Overall.InformationenUtility.setLastMousePosition(mouseX, mouseY);
-        
         // Update mouse position for DebugUtility (Item Logger)
         net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
-        
-        // Store mouse position for use in tooltip callbacks
-        net.felix.utilities.Overall.InformationenUtility.setLastMousePosition(mouseX, mouseY);
         
         // Update mouse position for Item Viewer
         net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);

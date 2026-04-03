@@ -19,7 +19,7 @@ public class TabInfoDetailScreen extends Screen {
     private final String infoName;
     private final String configKey;
     private TextWidget titleWidget;
-    private String warnPercentInput = ""; // Eingabefeld für Warn-Prozentwert
+    private String warnPercentInput = ""; // Warn-Prozent oder Kombo-Zielwert
     private boolean isEditingWarnPercent = false;
     
     public TabInfoDetailScreen(Screen parent, String infoName, String configKey) {
@@ -41,12 +41,19 @@ public class TabInfoDetailScreen extends Screen {
         titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, 20);
         addDrawableChild(titleWidget);
         
-        // Initialisiere Warn-Prozentwert Eingabefeld
-        double currentWarnPercent = getWarnPercent();
-        if (currentWarnPercent >= 0) {
-            warnPercentInput = String.format("%.1f", currentWarnPercent);
+        if ("komboKiste".equals(configKey)) {
+            int z = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert;
+            if (z < 1) {
+                z = 1;
+            }
+            warnPercentInput = String.valueOf(z);
         } else {
-            warnPercentInput = "";
+            double currentWarnPercent = getWarnPercent();
+            if (currentWarnPercent >= 0) {
+                warnPercentInput = String.format("%.1f", currentWarnPercent);
+            } else {
+                warnPercentInput = "";
+            }
         }
     }
     
@@ -75,7 +82,7 @@ public class TabInfoDetailScreen extends Screen {
         // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
         boolean hasIconOption = configKey.equals("forschung") || configKey.equals("amboss") || 
                                configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                               configKey.equals("essenzen") || configKey.equals("jaeger") || 
+                               configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
                                configKey.equals("machtkristalle") ||
                                configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
                                configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
@@ -239,31 +246,41 @@ public class TabInfoDetailScreen extends Screen {
             context.drawText(textRenderer, "Prozente anzeigen", checkboxX + checkboxSize + 5, checkboxY + 1, 
                 showPercent ? 0xFFFFFFFF : 0xFF808080, false);
             
-            // Warn-Prozentwert Eingabe
+            // Warn-Eingabe
             int inputY = boxY + 85;
             int inputX = boxX + 10;
             int inputWidth = 100;
             int inputHeight = 16;
-            
-            // Label
             context.drawText(textRenderer, "Warn bei %:", inputX, inputY + 3, 0xFFFFFFFF, false);
-            
-            // Eingabefeld Hintergrund
             int fieldX = inputX + 80;
-            context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight, 
+            context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
                 isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
-            context.drawBorder(fieldX, inputY, inputWidth, inputHeight, 
+            context.drawBorder(fieldX, inputY, inputWidth, inputHeight,
                 isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
-            
-            // Eingabefeld Text
             String displayText = warnPercentInput.isEmpty() ? "-1 (deaktiviert)" : warnPercentInput + "%";
             if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
-                displayText += "_"; // Blinkender Cursor
+                displayText += "_";
             }
             context.drawText(textRenderer, displayText, fieldX + 3, inputY + 4, 0xFFFFFFFF, false);
-            
-            // Hinweis
-            context.drawText(textRenderer, "(Leer lassen oder -1 = deaktiviert)", 
+            context.drawText(textRenderer, "(Leer lassen oder -1 = deaktiviert)",
+                inputX, inputY + inputHeight + 5, 0xFF808080, false);
+        } else if ("komboKiste".equals(configKey)) {
+            int inputY = boxY + 60;
+            int inputX = boxX + 10;
+            int inputWidth = 100;
+            int inputHeight = 16;
+            int fieldX = inputX + 125;
+            context.drawText(textRenderer, "Zielwert (rechts):", inputX, inputY + 3, 0xFFFFFFFF, false);
+            context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
+                isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
+            context.drawBorder(fieldX, inputY, inputWidth, inputHeight,
+                isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
+            String zText = warnPercentInput.isEmpty() ? "1" : warnPercentInput;
+            if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
+                zText += "_";
+            }
+            context.drawText(textRenderer, zText, fieldX + 3, inputY + 4, 0xFFFFFFFF, false);
+            context.drawText(textRenderer, "Warnung bei Erreichen oder darüber (min. 1)",
                 inputX, inputY + inputHeight + 5, 0xFF808080, false);
         } else {
             // Diese Information unterstützt keine Prozente
@@ -272,7 +289,7 @@ public class TabInfoDetailScreen extends Screen {
         }
         
         // Variablen für Icon Button (außerhalb if-Block für Hover-Feedback)
-        int iconButtonY = boxY + (supportsPercent ? 135 : 85);
+        int iconButtonY = boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85));
         int iconButtonX = boxX + 10;
         int iconButtonWidth = 280;
         int iconButtonHeight = 20;
@@ -295,7 +312,7 @@ public class TabInfoDetailScreen extends Screen {
         }
         
         // Farben Button (für alle Informationen)
-        int colorButtonY = hasIconOption ? (iconButtonY + iconButtonHeight + 10) : (boxY + (supportsPercent ? 135 : 85));
+        int colorButtonY = hasIconOption ? (iconButtonY + iconButtonHeight + 10) : (boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85)));
         int colorButtonX = boxX + 10;
         int colorButtonWidth = 280;
         int colorButtonHeight = 20;
@@ -741,7 +758,7 @@ public class TabInfoDetailScreen extends Screen {
             // Berechne Höhe und Y-Position wie im Rendering
             boolean hasIconOptionClose = configKey.equals("forschung") || configKey.equals("amboss") || 
                                        configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                                       configKey.equals("essenzen") || configKey.equals("jaeger") || 
+                                       configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
                                        configKey.equals("machtkristalle") ||
                                        configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
                                        configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
@@ -786,7 +803,6 @@ public class TabInfoDetailScreen extends Screen {
             
             if (mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonSize &&
                 mouseY >= closeButtonY && mouseY <= closeButtonY + closeButtonSize) {
-                // Speichere Warn-Prozentwert beim Schließen
                 saveWarnPercent();
                 close();
                 return true;
@@ -807,7 +823,7 @@ public class TabInfoDetailScreen extends Screen {
         // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
         boolean hasIconOption = configKey.equals("forschung") || configKey.equals("amboss") || 
                                configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                               configKey.equals("essenzen") || configKey.equals("jaeger") || 
+                               configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
                                configKey.equals("machtkristalle") ||
                                configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
                                configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
@@ -915,7 +931,7 @@ public class TabInfoDetailScreen extends Screen {
                 return true;
             }
             
-            // Warn-Prozentwert Eingabefeld
+            // Warn-Eingabefeld
             int inputY = boxY + 85;
             int fieldX = boxX + 90;
             int inputWidth = 100;
@@ -927,22 +943,33 @@ public class TabInfoDetailScreen extends Screen {
             if (clickedOnInput) {
                 isEditingWarnPercent = true;
                 return true;
-            } else {
-                isEditingWarnPercent = false;
             }
+            isEditingWarnPercent = false;
+        } else if ("komboKiste".equals(configKey)) {
+            int inputY = boxY + 60;
+            int fieldX = boxX + 135;
+            int inputWidth = 100;
+            int inputHeight = 16;
+            boolean clickedZiel = (mouseX >= fieldX && mouseX <= fieldX + inputWidth &&
+                mouseY >= inputY && mouseY <= inputY + inputHeight);
+            if (clickedZiel) {
+                isEditingWarnPercent = true;
+                return true;
+            }
+            isEditingWarnPercent = false;
         }
         
         // Berechne hasIconOption für Click-Handler (gleiche Logik wie in renderSettingsBox)
         boolean hasIconOptionClick = configKey.equals("forschung") || configKey.equals("amboss") || 
                                     configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                                    configKey.equals("essenzen") || configKey.equals("jaeger") || 
+                                    configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
                                     configKey.equals("machtkristalle") ||
                                     configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
                                     configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
         
         // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
         if (hasIconOptionClick) {
-            int iconButtonY = boxY + (supportsPercent ? 135 : 85);
+            int iconButtonY = boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85));
             int iconButtonX = boxX + 10;
             int iconButtonWidth = 280;
             int iconButtonHeight = 20;
@@ -961,9 +988,9 @@ public class TabInfoDetailScreen extends Screen {
         
         // Farben Button (für alle Informationen)
         // Variablen für Icon Button (außerhalb if-Block für Click-Handler)
-        int iconButtonYClick = boxY + (supportsPercent ? 135 : 85);
+        int iconButtonYClick = boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85));
         int iconButtonHeightClick = 20;
-        int colorButtonY = hasIconOptionClick ? (iconButtonYClick + iconButtonHeightClick + 10) : (boxY + (supportsPercent ? 135 : 85));
+        int colorButtonY = hasIconOptionClick ? (iconButtonYClick + iconButtonHeightClick + 10) : (boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85)));
         int colorButtonX = boxX + 10;
         int colorButtonWidth = 280;
         int colorButtonHeight = 20;
@@ -1136,6 +1163,8 @@ public class TabInfoDetailScreen extends Screen {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay;
             case "essenzen":
@@ -1171,6 +1200,9 @@ public class TabInfoDetailScreen extends Screen {
                 break;
             case "jaeger":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay = value;
+                break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay = value;
                 break;
             case "seelen":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay = value;
@@ -1337,6 +1369,13 @@ public class TabInfoDetailScreen extends Screen {
     @Override
     public boolean charTyped(char chr, int modifiers) {
         if (isEditingWarnPercent) {
+            if ("komboKiste".equals(configKey)) {
+                if (chr >= '0' && chr <= '9' && warnPercentInput.length() < 12) {
+                    warnPercentInput += chr;
+                    saveWarnPercent();
+                }
+                return true;
+            }
             // Erlaube nur Zahlen, Punkt und Komma
             if ((chr >= '0' && chr <= '9') || chr == '.' || chr == ',') {
                 if (warnPercentInput.length() < 10) { // Maximale Länge
@@ -1379,6 +1418,23 @@ public class TabInfoDetailScreen extends Screen {
     }
     
     private void saveWarnPercent() {
+        if ("komboKiste".equals(configKey)) {
+            try {
+                int z = 1000;
+                if (!warnPercentInput.trim().isEmpty()) {
+                    z = Integer.parseInt(warnPercentInput.trim());
+                }
+                if (z < 1) {
+                    z = 1;
+                }
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert = z;
+                CCLiveUtilitiesConfig.HANDLER.save();
+            } catch (NumberFormatException e) {
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert = 1000;
+                CCLiveUtilitiesConfig.HANDLER.save();
+            }
+            return;
+        }
         try {
             double value = -1.0;
             if (!warnPercentInput.trim().isEmpty()) {
@@ -1468,6 +1524,8 @@ public class TabInfoDetailScreen extends Screen {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
             case "machtkristalle":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
             case "recycler":
@@ -1506,6 +1564,9 @@ public class TabInfoDetailScreen extends Screen {
             case "jaeger":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon = value;
                 break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon = value;
+                break;
             case "machtkristalle":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon = value;
                 break;
@@ -1537,6 +1598,8 @@ public class TabInfoDetailScreen extends Screen {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground;
             case "essenzen":
@@ -1566,6 +1629,9 @@ public class TabInfoDetailScreen extends Screen {
                 break;
             case "jaeger":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground = value;
+                break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground = value;
                 break;
             case "seelen":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground = value;
@@ -1633,16 +1699,22 @@ public class TabInfoDetailScreen extends Screen {
      * Erstellt einen YACL-Screen für die Farboptionen eines Tab-Info-Eintrags
      * Enthält sowohl Textfarbe als auch Prozentfarbe
      */
+    private static OptionGroup buildColorOptionGroup(String configKey) {
+        var b = OptionGroup.createBuilder()
+                .name(Text.literal("Farben"))
+                .option(createColorOption(configKey, true, "Textfarbe", "Farbe für den Text"));
+        if (!"komboKiste".equals(configKey)) {
+            b.option(createColorOption(configKey, false, "Prozentfarbe", "Farbe für die Prozentwerte"));
+        }
+        return b.build();
+    }
+    
     private static Screen createColorConfigScreen(Screen parent, String configKey) {
         return YetAnotherConfigLib.createBuilder()
                 .title(Text.literal("Tab Info Farben"))
                 .category(ConfigCategory.createBuilder()
                         .name(Text.literal("Farben"))
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Farben"))
-                                .option(createColorOption(configKey, true, "Textfarbe", "Farbe für den Text"))
-                                .option(createColorOption(configKey, false, "Prozentfarbe", "Farbe für die Prozentwerte"))
-                                .build())
+                        .group(buildColorOptionGroup(configKey))
                         .build())
                 .save(() -> {
                     CCLiveUtilitiesConfig.HANDLER.save();
@@ -1678,6 +1750,10 @@ public class TabInfoDetailScreen extends Screen {
                 case "jaeger":
                     getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerTextColor;
                     setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerTextColor = val;
+                    break;
+                case "komboKiste":
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteTextColor = val;
                     break;
                 case "seelen":
                     getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenTextColor;
@@ -1765,6 +1841,7 @@ public class TabInfoDetailScreen extends Screen {
     
     @Override
     public void close() {
+        saveWarnPercent();
         // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
         // Gehe durch die Parent-Hierarchie, um das OverlayEditorScreen zu finden
         Screen currentParent = parent;

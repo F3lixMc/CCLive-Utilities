@@ -94,6 +94,7 @@ public class OverlayEditorScreen extends Screen {
             overlays.add(new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
             overlays.add(new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
             overlays.add(new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
+            overlays.add(new TabInfoSeparateDraggableOverlay("komboKiste", "komboKiste", "Kombo Kiste"));
             overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
             overlays.add(new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
             
@@ -236,6 +237,7 @@ public class OverlayEditorScreen extends Screen {
             overlays.add(new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
             overlays.add(new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
             overlays.add(new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
+            overlays.add(new TabInfoSeparateDraggableOverlay("komboKiste", "komboKiste", "Kombo Kiste"));
             overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
             overlays.add(new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
             

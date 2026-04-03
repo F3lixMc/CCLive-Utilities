@@ -34,18 +34,6 @@ public class InformationenUtility {
 	
 	private static boolean isInitialized = false;
 	
-	// Store last mouse position from HandledScreen render method
-	private static int lastMouseX = -1;
-	private static int lastMouseY = -1;
-	
-	/**
-	 * Sets the last mouse position (called from HandledScreenMixin)
-	 */
-	public static void setLastMousePosition(int mouseX, int mouseY) {
-		lastMouseX = mouseX;
-		lastMouseY = mouseY;
-	}
-	
 	// Materials tracking
 	private static Map<String, MaterialInfo> materialsDatabase = new HashMap<>();
 	
@@ -335,9 +323,6 @@ public class InformationenUtility {
 			
 			// Add floor numbers to cards and statues names in inventories
 			addFloorNumberToCardsStatuesNames(lines, client);
-			
-			// Add slot-specific text for "Aspekt [tranferieren]" inventory
-			addAspectTransferSlotText(lines, client, stack);
 			
 			// Add clipboard pin text input for forge inventories (before other processing)
 			addClipboardPinTextToTooltip(lines, client);
@@ -2993,382 +2978,6 @@ public class InformationenUtility {
 	
 	// License slots that should be checked
 	private static final int[] LICENSE_SLOTS = {1, 2, 3, 10, 11, 12, 19, 20, 21};
-	
-	/**
-	 * Finds the slot index by comparing the item stack
-	 * If multiple slots have the same item, finds the one closest to mouse position
-	 * @param client The Minecraft client
-	 * @param stack The item stack to find
-	 * @return The slot index, or -1 if not found
-	 */
-	private static int findSlotByItemStack(MinecraftClient client, ItemStack stack) {
-		if (client.currentScreen == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
-			return -1;
-		}
-		
-		net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
-		net.minecraft.screen.ScreenHandler handler = screen.getScreenHandler();
-		
-		// Mouse X for selecting between slot 11 and 13
-		double mouseX = (lastMouseX >= 0)
-			? lastMouseX
-			: client.mouse.getX() * client.getWindow().getScaledWidth() / client.getWindow().getWidth();
-		
-		// Screen X offset for slot positions (best-effort reflection, default 0)
-		int screenX = 0;
-		try {
-			String[] possibleXNames = {"x", "field_2776", "field_2777"};
-			for (String name : possibleXNames) {
-				try {
-					java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(name);
-					field.setAccessible(true);
-					if (field.getType() == int.class) {
-						screenX = field.getInt(screen);
-						break;
-					}
-				} catch (Exception e) {
-					// Try next name
-				}
-			}
-		} catch (Exception e) {
-			// Keep screenX at 0 if reflection fails
-		}
-		
-		// Find all slots with matching item
-		java.util.List<Integer> matchingSlots = new java.util.ArrayList<>();
-		for (int slotIndex = 0; slotIndex < handler.slots.size(); slotIndex++) {
-			net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
-			if (slot.hasStack()) {
-				ItemStack slotStack = slot.getStack();
-				// First try reference comparison (faster and more accurate)
-				if (slotStack == stack) {
-					matchingSlots.add(slotIndex);
-					continue;
-				}
-				// Then try content comparison (in case of reference mismatch)
-				if (ItemStack.areEqual(stack, slotStack)) {
-					matchingSlots.add(slotIndex);
-				}
-			}
-		}
-		
-		if (matchingSlots.isEmpty()) {
-			return -1;
-		}
-		
-		// If only one match, return it
-		if (matchingSlots.size() == 1) {
-			return matchingSlots.get(0);
-		}
-		
-		// If multiple matches (like slot 11 and 13), use X position to determine which one
-		java.util.List<Integer> targetSlots = new java.util.ArrayList<>();
-		for (int slotIndex : matchingSlots) {
-			if (slotIndex == 11 || slotIndex == 13) {
-				targetSlots.add(slotIndex);
-			}
-		}
-		
-		if (targetSlots.size() == 2) {
-			// Both slot 11 and 13 have the same item - use X position to determine which one
-			net.minecraft.screen.slot.Slot slot11 = handler.slots.get(11);
-			net.minecraft.screen.slot.Slot slot13 = handler.slots.get(13);
-			
-			int slot11Left = slot11.x + screenX;
-			int slot11Right = slot11Left + 18;
-			int slot11Center = (slot11Left + slot11Right) / 2;
-			int slot13Left = slot13.x + screenX;
-			int slot13Right = slot13Left + 18;
-			int slot13Center = (slot13Left + slot13Right) / 2;
-			
-			// Check which slot the mouse X is closer to (using center of slot)
-			double distToSlot11 = Math.abs(mouseX - slot11Center);
-			double distToSlot13 = Math.abs(mouseX - slot13Center);
-			
-			int selectedSlot = distToSlot11 < distToSlot13 ? 11 : 13;
-			return selectedSlot;
-		} else if (targetSlots.size() == 1) {
-			// Only one target slot found
-			return targetSlots.get(0);
-		}
-		
-		// If no slot 11 or 13 found, return first match
-		return matchingSlots.get(0);
-	}
-	
-	/**
-	 * Gets the slot index of the currently hovered item using mouse position
-	 * @param client The Minecraft client
-	 * @return The slot index, or -1 if not found
-	 */
-	private static int getHoveredSlotIndex(MinecraftClient client) {
-		if (client.currentScreen == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
-			return -1;
-		}
-		
-		net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
-		net.minecraft.screen.ScreenHandler handler = screen.getScreenHandler();
-		
-		// Get mouse position - use stored position from mixin if available, otherwise calculate
-		double mouseX;
-		double mouseY;
-		if (lastMouseX >= 0 && lastMouseY >= 0) {
-			mouseX = lastMouseX;
-			mouseY = lastMouseY;
-		} else {
-			mouseX = client.mouse.getX() * client.getWindow().getScaledWidth() / client.getWindow().getWidth();
-			mouseY = client.mouse.getY() * client.getWindow().getScaledHeight() / client.getWindow().getHeight();
-		}
-		
-		// Get screen position using reflection - try multiple field names
-		int screenX = 0;
-		int screenY = 0;
-		
-		try {
-			// Try common field names (deobfuscated and obfuscated)
-			String[] possibleXNames = {"x", "field_2776", "field_2777"};
-			String[] possibleYNames = {"y", "field_2777", "field_2776"};
-			
-			java.lang.reflect.Field xField = null;
-			java.lang.reflect.Field yField = null;
-			
-			// Try to find x field
-			for (String name : possibleXNames) {
-				try {
-					java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(name);
-					field.setAccessible(true);
-					if (field.getType() == int.class) {
-						if (xField == null) {
-							xField = field;
-						} else if (yField == null) {
-							yField = field;
-							break;
-						}
-					}
-				} catch (Exception e) {
-					// Try next name
-				}
-			}
-			
-			// If we didn't find y, try the y names
-			if (yField == null) {
-				for (String name : possibleYNames) {
-					try {
-						java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(name);
-						field.setAccessible(true);
-						if (field.getType() == int.class && field != xField) {
-							yField = field;
-							break;
-						}
-					} catch (Exception e) {
-						// Try next name
-					}
-				}
-			}
-			
-			// If still not found, search all int fields
-			if (xField == null || yField == null) {
-				java.lang.reflect.Field[] fields = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredFields();
-				for (java.lang.reflect.Field field : fields) {
-					if (field.getType() == int.class) {
-						field.setAccessible(true);
-						int value = field.getInt(screen);
-						// Heuristic: x and y are usually small positive values (0-1000)
-						if (value >= 0 && value < 1000) {
-							if (xField == null) {
-								xField = field;
-							} else if (yField == null && field != xField) {
-								yField = field;
-								break;
-							}
-						}
-					}
-				}
-			}
-			
-			if (xField != null && yField != null) {
-				screenX = xField.getInt(screen);
-				screenY = yField.getInt(screen);
-			}
-		} catch (Exception e) {
-			// Continue with screenX=0, screenY=0 as fallback
-		}
-		
-		// Find the hovered slot by checking mouse position
-		// Minecraft slots are 18x18 pixels
-		try {
-			// Debug: Check slots 11 and 13 specifically
-			for (int slotIndex = 0; slotIndex < handler.slots.size(); slotIndex++) {
-				net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
-				
-				// Only check slots 11 and 13 to reduce noise
-				if (slotIndex != 11 && slotIndex != 13) {
-					continue;
-				}
-				
-				// Check if mouse is over this slot (Minecraft slots are 18x18)
-				int slotLeft = slot.x + screenX;
-				int slotRight = slotLeft + 18;
-				int slotTop = slot.y + screenY;
-				int slotBottom = slotTop + 18;
-				
-				if (slotLeft <= mouseX && mouseX < slotRight &&
-					slotTop <= mouseY && mouseY < slotBottom) {
-					return slotIndex;
-				}
-			}
-			
-			// If not found in slots 11/13, check all slots
-			for (int slotIndex = 0; slotIndex < handler.slots.size(); slotIndex++) {
-				net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
-				
-				// Skip slots 11 and 13 (already checked)
-				if (slotIndex == 11 || slotIndex == 13) {
-					continue;
-				}
-				
-				int slotLeft = slot.x + screenX;
-				int slotRight = slotLeft + 18;
-				int slotTop = slot.y + screenY;
-				int slotBottom = slotTop + 18;
-				
-				if (slotLeft <= mouseX && mouseX < slotRight &&
-					slotTop <= mouseY && mouseY < slotBottom) {
-					// Don't return this, we only want 11 or 13
-				}
-			}
-		} catch (Exception e) {
-			// Ignore
-		}
-		
-		return -1;
-	}
-	
-	/**
-	 * Extracts all text recursively from a Text object, including all siblings
-	 * This ensures we get all text even if it's split across multiple Text components
-	 */
-	private static String extractAllTextRecursively(Text text) {
-		if (text == null) {
-			return "";
-		}
-		
-		StringBuilder result = new StringBuilder();
-		
-		// Add the main text
-		String mainText = text.getString();
-		if (mainText != null && !mainText.isEmpty()) {
-			result.append(mainText);
-		}
-		
-		// Recursively process all siblings
-		for (Text sibling : text.getSiblings()) {
-			String siblingText = extractAllTextRecursively(sibling);
-			if (!siblingText.isEmpty()) {
-				result.append(siblingText);
-			}
-		}
-		
-		return result.toString();
-	}
-	
-	/**
-	 * Adds slot-specific text to item names in "Aspekt [tranferieren]" inventory
-	 * Slot 11: "(Wird zerstört)" in red
-	 * Slot 13: "(Bleibt erhalten)" in green
-	 */
-	private static void addAspectTransferSlotText(List<Text> lines, MinecraftClient client, ItemStack stack) {
-		if (lines == null || lines.isEmpty() || stack == null || stack.isEmpty()) {
-			return;
-		}
-		
-		// Check if we're in the "Aspekt [tranferieren]" inventory
-		if (client.currentScreen == null) {
-			return;
-		}
-		
-		// Get the title Text object and extract all text recursively
-		Text titleText = client.currentScreen.getTitle();
-		if (titleText == null) {
-			return;
-		}
-		
-		// Extract all text recursively (handles nested Text components with colors)
-		String screenTitle = extractAllTextRecursively(titleText);
-		
-		if (screenTitle == null || screenTitle.isEmpty()) {
-			return;
-		}
-		
-		// Remove Minecraft formatting codes (like §f, §r, §b, etc.)
-		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-orxA-FK-ORX]", "");
-		cleanScreenTitle = cleanScreenTitle.replaceAll("§#[0-9a-fA-F]{6}", "");
-		cleanScreenTitle = cleanScreenTitle.replaceAll("§x(§[0-9a-fA-F]){6}", "");
-		
-		// Remove Unicode formatting characters (like 㔅㓩㔉㔇㔆㓾㔘)
-		cleanScreenTitle = cleanScreenTitle.replaceAll("[\\u3400-\\u4DBF]", "");
-		
-		// Check for "Aspekt" and "[transferieren]" or "[tranferieren]" (both spellings)
-		boolean hasAspekt = cleanScreenTitle.contains("Aspekt");
-		boolean hasTransfer = cleanScreenTitle.contains("[transferieren]") || cleanScreenTitle.contains("[tranferieren]");
-		
-		if (!hasAspekt || !hasTransfer) {
-			return;
-		}
-		
-		// Get the slot index of the currently hovered item
-		// First try mouse position (more accurate for hover detection)
-		int slotIndex = getHoveredSlotIndex(client);
-		
-		// If mouse position failed OR found a slot that's not 11 or 13, try item stack comparison as fallback
-		if (slotIndex == -1 || (slotIndex != 11 && slotIndex != 13)) {
-			int foundSlot = findSlotByItemStack(client, stack);
-			// Only use itemStack result if it's one of our target slots
-			if (foundSlot == 11 || foundSlot == 13) {
-				slotIndex = foundSlot;
-			}
-		}
-		
-		if (slotIndex == -1) {
-			return;
-		}
-		
-		// Only modify if the slot is exactly 11 or 13
-		if (slotIndex != 11 && slotIndex != 13) {
-			return;
-		}
-		
-		// Check if modification was already added to avoid duplicates
-		Text firstLine = lines.get(0);
-		if (firstLine == null) {
-			return;
-		}
-		
-		String firstLineText = firstLine.getString();
-		boolean alreadyHasWirdZerstoert = firstLineText != null && firstLineText.contains("(Wird zerstört)");
-		boolean alreadyHasBleibtErhalten = firstLineText != null && firstLineText.contains("(Bleibt erhalten)");
-		
-		if (alreadyHasWirdZerstoert || alreadyHasBleibtErhalten) {
-			return;
-		}
-		
-		// Modify the first line (item name) based on slot
-		if (slotIndex == 11) {
-			// Slot 11: Add "(Wird zerstört)" in red
-			MutableText modifiedLine = firstLine.copy().append(
-				Text.literal(" (Wird zerstört)")
-					.styled(style -> style.withColor(0xFFFF5555)) // Red color
-			);
-			lines.set(0, modifiedLine);
-		} else if (slotIndex == 13) {
-			// Slot 13: Add "(Bleibt erhalten)" in green
-			MutableText modifiedLine = firstLine.copy().append(
-				Text.literal(" (Bleibt erhalten)")
-					.styled(style -> style.withColor(0xFF55FF55)) // Green color
-			);
-			lines.set(0, modifiedLine);
-		}
-	}
 	
 	/**
 	 * Checks if the hovered item is in one of the license slots
@@ -7621,6 +7230,27 @@ public class InformationenUtility {
 		}
 		
 		return lines;
+	}
+	
+	/**
+	 * Sidebar-Zeilen wie im HUD (ohne §-Codes), für andere Utilities (z. B. TabInfo Kombo-Kiste).
+	 */
+	public static List<String> readCleanSidebarLines(MinecraftClient client) {
+		List<String> out = new ArrayList<>();
+		if (client == null || client.world == null) {
+			return out;
+		}
+		try {
+			net.minecraft.scoreboard.Scoreboard scoreboard = client.world.getScoreboard();
+			net.minecraft.scoreboard.ScoreboardObjective sidebarObjective =
+				scoreboard.getObjectiveForSlot(net.minecraft.scoreboard.ScoreboardDisplaySlot.SIDEBAR);
+			if (sidebarObjective == null) {
+				return out;
+			}
+			return readScoreboardLines(scoreboard, sidebarObjective);
+		} catch (Exception e) {
+			return out;
+		}
 	}
 	
 	/**

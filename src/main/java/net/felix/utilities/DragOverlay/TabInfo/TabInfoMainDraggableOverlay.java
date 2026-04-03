@@ -24,6 +24,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     private static final Identifier SEELEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
     private static final Identifier ESSENZEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
     private static final Identifier JAEGER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+    private static final Identifier KOMBO_KISTE_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
     private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
     private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
     
@@ -99,6 +100,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
             if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
                                                                "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
                                                                "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || 
+                                                               "komboKiste".equals(line.configKey) ||
                                                                "machtkristalle".equals(line.configKey) ||
                                                                "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
                                                                "recyclerSlot3".equals(line.configKey)))) {
@@ -341,6 +343,9 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
                     } else if ("jaeger".equals(line.configKey)) {
                         iconToUse = JAEGER_ICON;
                         fallbackText = "Jäger: ";
+                    } else if ("komboKiste".equals(line.configKey)) {
+                        iconToUse = KOMBO_KISTE_ICON;
+                        fallbackText = "Kombo Kiste: ";
                     } else if ("machtkristalle".equals(line.configKey)) {
                         iconToUse = MACHTKRISTALL_ICON;
                         fallbackText = "MK: ";

@@ -14,6 +14,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -56,6 +57,8 @@ public class ZeichenUtility {
     private static String uiMaterialBag = "";
     private static Map<Character, String> factoryFontFirstLine = new HashMap<>();
     private static Map<Character, String> aincraftFontFirstLine = new HashMap<>();
+    /** Codepoint → Ziffer 0–9 für Tab-Info Kombo-Kiste-Bossbar */
+    private static Map<Integer, Integer> tabInfoKomboKisteBossBarDigitCodePoints = new HashMap<>();
     
     /**
      * Initialisiert die ZeichenUtility und lädt die Zeichen aus der JSON-Datei
@@ -398,6 +401,36 @@ public class ZeichenUtility {
                 }
             }
         }
+        
+        // Tab Info Kombo Kiste – Bossbar-Ziffern
+        if (json.has("tab_info_kombo_kiste_bossbar_digits")) {
+            JsonObject komboDigitsObj = json.getAsJsonObject("tab_info_kombo_kiste_bossbar_digits");
+            tabInfoKomboKisteBossBarDigitCodePoints.clear();
+            if (komboDigitsObj.has("numbers")) {
+                JsonObject numbers = komboDigitsObj.getAsJsonObject("numbers");
+                for (String key : numbers.keySet()) {
+                    String charStr = numbers.get(key).getAsString();
+                    if (!charStr.isEmpty()) {
+                        int cp = charStr.codePointAt(0);
+                        tabInfoKomboKisteBossBarDigitCodePoints.put(cp, Integer.parseInt(key));
+                    }
+                }
+            }
+        }
+        if (tabInfoKomboKisteBossBarDigitCodePoints.isEmpty()) {
+            fillDefaultTabInfoKomboKisteBossBarDigits();
+        }
+    }
+    
+    private static void fillDefaultTabInfoKomboKisteBossBarDigits() {
+        tabInfoKomboKisteBossBarDigitCodePoints.clear();
+        String chars = "㟮㟯㟰㟱㟲㟳㟴㟵㟶㟷";
+        int idx = 0;
+        for (int d = 0; d < 10 && idx < chars.length(); d++) {
+            int cp = chars.codePointAt(idx);
+            tabInfoKomboKisteBossBarDigitCodePoints.put(cp, d);
+            idx += Character.charCount(cp);
+        }
     }
     
     /**
@@ -559,6 +592,8 @@ public class ZeichenUtility {
         aincraftFontFirstLine.put('㙪', ",");
         aincraftFontFirstLine.put('㙫', "!");
         aincraftFontFirstLine.put('㙬', "?");
+        
+        fillDefaultTabInfoKomboKisteBossBarDigits();
         
         isInitialized = true;
     }
@@ -833,6 +868,17 @@ public class ZeichenUtility {
     public static Map<Character, String> getAincraftFontFirstLine() {
         ensureInitialized();
         return new HashMap<>(aincraftFontFirstLine);
+    }
+    
+    /**
+     * Codepoints der Sonderziffern in der Kombo-Kiste-Bossbar (Tab Info) → arabische Ziffer 0–9.
+     */
+    public static Map<Integer, Integer> getTabInfoKomboKisteBossBarDigitCodePoints() {
+        ensureInitialized();
+        if (tabInfoKomboKisteBossBarDigitCodePoints.isEmpty()) {
+            fillDefaultTabInfoKomboKisteBossBarDigits();
+        }
+        return Collections.unmodifiableMap(tabInfoKomboKisteBossBarDigitCodePoints);
     }
     
     /**

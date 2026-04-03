@@ -9,10 +9,14 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.felix.CCLiveUtilities;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
 import org.joml.Matrix3x2fStack;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -37,6 +41,7 @@ public class TabInfoUtility {
 	private static final Identifier SEELEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
 	private static final Identifier ESSENZEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
 	private static final Identifier JAEGER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+	private static final Identifier KOMBO_KISTE_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
 	private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
 	
 	// Datenstrukturen für die verschiedenen Informationen
@@ -105,6 +110,133 @@ public class TabInfoUtility {
 	public static final CapacityData jaegerKapazitaet = new CapacityData();
 	public static final CapacityData seelenKapazitaet = new CapacityData();
 	public static final CapacityData essenzenKapazitaet = new CapacityData();
+	public static final CapacityData komboKiste = new CapacityData();
+	
+	
+	/** 1-basiert: nur diese Bossbar (typisch die dritte von unten/oben) liefert die Kombo-Ziffern */
+	public static final int KOMBO_KISTE_BOSS_BAR_INDEX = 3;
+	
+	private static int komboKisteBossBarScanBest = -1;
+	
+	/**
+	 * Pro Bossbar-Render: vor der Schleife aufrufen.
+	 */
+	public static void beginKomboKisteBossBarScan() {
+		komboKisteBossBarScanBest = -1;
+	}
+	
+	/**
+	 * @param bossBarIndexOneBased wie in {@link net.felix.mixin.BossBarMixin} (erste Bar = 1)
+	 */
+	public static void observeKomboKisteBossBarTitle(String title, int bossBarIndexOneBased) {
+		if (bossBarIndexOneBased != KOMBO_KISTE_BOSS_BAR_INDEX) {
+			return;
+		}
+		int v = decodeKomboKisteBossBarDigits(title);
+		komboKisteBossBarScanBest = v;
+	}
+	
+	/**
+	 * Liest die gesamte Bossbar: Sonderziffern aus {@code zeichen.json} ({@code tab_info_kombo_kiste_bossbar_digits})
+	 * in Lesereihenfolge zu einer Zahl verbunden; andere Codepoints werden übersprungen.
+	 *
+	 * @return -1 wenn keine solche Ziffer vorkommt
+	 */
+	public static int decodeKomboKisteBossBarDigits(String text) {
+		if (text == null || text.isEmpty()) {
+			return -1;
+		}
+		Map<Integer, Integer> digitMap = ZeichenUtility.getTabInfoKomboKisteBossBarDigitCodePoints();
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < text.length(); ) {
+			int cp = text.codePointAt(i);
+			i += Character.charCount(cp);
+			Integer d = digitMap.get(cp);
+			if (d != null) {
+				sb.append((char) ('0' + d));
+			}
+		}
+		if (sb.isEmpty()) {
+			return -1;
+		}
+		try {
+			return Integer.parseInt(sb.toString());
+		} catch (NumberFormatException e) {
+			return -1;
+		}
+	}
+	
+	private static final String KOMBO_SCOREBOARD_STAR = "🌟";
+	
+	/**
+	 * Sucht in den Sidebar-Zeilen nach dem Stern-Emoji (🌟) und liest die <strong>erste</strong> Zahl
+	 * direkt danach (Rest der Zeile wird ignoriert).
+	 */
+	private static int parseKomboScoreFromSidebarLines(List<String> lines) {
+		if (lines == null || lines.isEmpty()) {
+			return -1;
+		}
+		Pattern firstNumber = Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})+|\\d+)");
+		for (String line : lines) {
+			if (line == null) {
+				continue;
+			}
+			int starAt = line.indexOf(KOMBO_SCOREBOARD_STAR);
+			if (starAt < 0) {
+				continue;
+			}
+			String afterStar = line.substring(starAt + KOMBO_SCOREBOARD_STAR.length());
+			Matcher m = firstNumber.matcher(afterStar);
+			if (m.find()) {
+				try {
+					String raw = m.group(1).replace(".", "").replace(",", "");
+					long v = Long.parseLong(raw);
+					if (v >= 0 && v <= Integer.MAX_VALUE) {
+						return (int) v;
+					}
+				} catch (NumberFormatException ignored) {
+				}
+			}
+		}
+		return -1;
+	}
+	
+	/**
+	 * Kombo-Kiste-Daten nur in Dimensionen, deren ID „floor“ enthält (Groß-/Kleinschreibung egal), z. B. {@code mymod:floor_5}.
+	 */
+	public static boolean isKomboKisteReadingDimension(MinecraftClient client) {
+		if (client == null || client.world == null) {
+			return false;
+		}
+		String id = client.world.getRegistryKey().getValue().toString();
+		return id.toLowerCase(Locale.ROOT).contains("floor");
+	}
+	
+	private static void refreshKomboKisteFromBossbarAndScoreboard(MinecraftClient client) {
+		if (!isKomboKisteReadingDimension(client)) {
+			clearKomboKisteProgress();
+			return;
+		}
+		int fromBar = komboKisteBossBarScanBest;
+		List<String> sidebar = InformationenUtility.readCleanSidebarLines(client);
+		int fromBoard = parseKomboScoreFromSidebarLines(sidebar);
+		if (fromBar >= 0 && fromBoard >= 0) {
+			int sum = fromBar + fromBoard;
+			if (sum < 0) {
+				sum = Integer.MAX_VALUE;
+			}
+			int goal = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert;
+			if (goal < 1) {
+				goal = 1;
+			}
+			komboKiste.current = sum;
+			komboKiste.max = goal;
+			komboKiste.currentFormatted = null;
+			komboKiste.maxFormatted = null;
+		} else {
+			clearKomboKisteProgress();
+		}
+	}
 	
 	// Machtkristalle (3 Slots, in Reihenfolge)
 	public static class MachtkristallSlot {
@@ -417,6 +549,8 @@ public class TabInfoUtility {
 		
 		// Verarbeite Machtkristalle separat (müssen in Reihenfolge geparst werden)
 		parseMachtkristalle(entries, getEntryText, removeFormatting);
+		
+		refreshKomboKisteFromBossbarAndScoreboard(client);
 	}
 	
 	/**
@@ -950,6 +1084,10 @@ public class TabInfoUtility {
 		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
 			count++;
 		}
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+			count++;
+		}
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
 		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
 			count += 3; // Immer 3 Slots (auch wenn leer)
@@ -1052,6 +1190,14 @@ public class TabInfoUtility {
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
 			String displayText = showIcon ? "? / ?" : "Essenzen: ? / ?";
 			lines.add(new LineWithPercent(displayText, showPercent ? "0.0%" : null, showPercent, false, "essenzen", showIcon));
+		}
+		
+		// Kombo Kiste
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+			String displayText = showIcon ? "? / ?" : "Kombo Kiste: ? / ?";
+			lines.add(new LineWithPercent(displayText, null, false, false, "komboKiste", showIcon));
 		}
 		
 		// Machtkristalle
@@ -1254,6 +1400,16 @@ public class TabInfoUtility {
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
 			String displayText = showIcon ? essenzenKapazitaet.getDisplayString() : "Essenzen: " + essenzenKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "essenzen", showIcon));
+		}
+		
+		// Kombo Kiste (Werte später z. B. aus Bossbar/Leaderboard)
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+			boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+			String fraction = getKomboKisteFractionDisplay();
+			String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
+			lines.add(new LineWithPercent(displayText, null, false, showWarning, "komboKiste", showIcon));
 		}
 		
 		// Machtkristalle
@@ -1505,6 +1661,16 @@ public class TabInfoUtility {
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "essenzen", showIcon));
 		}
 		
+		// Kombo Kiste (Werte später z. B. aus Bossbar/Leaderboard)
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+			boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+			String fraction = getKomboKisteFractionDisplay();
+			String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
+			lines.add(new LineWithPercent(displayText, null, false, showWarning, "komboKiste", showIcon));
+		}
+		
 		// Machtkristalle
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
 		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
@@ -1622,7 +1788,7 @@ public class TabInfoUtility {
 			// Wenn Icon aktiviert ist, füge Icon-Breite hinzu
 			if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
 			                                                   "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
-			                                                   "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || 
+			                                                   "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || "komboKiste".equals(line.configKey) || 
 			                                                   "machtkristalle".equals(line.configKey) ||
 			                                                   "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
 			                                                   "recyclerSlot3".equals(line.configKey)))) {
@@ -1783,6 +1949,9 @@ public class TabInfoUtility {
 					} else if ("jaeger".equals(line.configKey)) {
 						iconToUse = JAEGER_ICON;
 						fallbackText = "Jäger: ";
+					} else if ("komboKiste".equals(line.configKey)) {
+						iconToUse = KOMBO_KISTE_ICON;
+						fallbackText = "Kombo Kiste: ";
 					} else if ("recyclerSlot1".equals(line.configKey)) {
 						iconToUse = RECYCLER_ICON;
 						fallbackText = "Recycler Slot 1: ";
@@ -2100,6 +2269,20 @@ public class TabInfoUtility {
 				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground);
 		}
 		
+		// Kombo Kiste
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+			boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+			String fraction = getKomboKisteFractionDisplay();
+			String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
+			renderSingleInfoOverlay(context, client, displayText, 
+				null, false, showWarning, "komboKiste", showIcon,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground);
+		}
+		
 		// Machtkristalle - prüfe ob einzeln oder zusammen gerendert werden soll
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
 		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
@@ -2388,6 +2571,9 @@ public class TabInfoUtility {
 				case "jaeger":
 					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground;
 					break;
+				case "komboKiste":
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground;
+					break;
 				case "seelen":
 					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground;
 					break;
@@ -2430,7 +2616,7 @@ public class TabInfoUtility {
 			// Wenn Icon aktiviert ist, füge Icon-Breite hinzu
 			if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
 			                                                   "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
-			                                                   "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || 
+			                                                   "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || "komboKiste".equals(line.configKey) || 
 			                                                   "machtkristalle".equals(line.configKey) ||
 			                                                   "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
 			                                                   "recyclerSlot3".equals(line.configKey)))) {
@@ -2535,7 +2721,7 @@ public class TabInfoUtility {
 			// Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
 			if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
 			                                        "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
-			                                        "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || 
+			                                        "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || "komboKiste".equals(line.configKey) || 
 			                                        "machtkristalle".equals(line.configKey) ||
 			                                        "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
 			                                        "recyclerSlot3".equals(line.configKey)))) {
@@ -2564,6 +2750,9 @@ public class TabInfoUtility {
 				} else if ("jaeger".equals(line.configKey)) {
 					iconToUse = JAEGER_ICON;
 					fallbackText = "Jäger: ";
+				} else if ("komboKiste".equals(line.configKey)) {
+					iconToUse = KOMBO_KISTE_ICON;
+					fallbackText = "Kombo Kiste: ";
 				} else if ("recyclerSlot1".equals(line.configKey)) {
 					iconToUse = RECYCLER_ICON;
 					fallbackText = "Recycler Slot 1: ";
@@ -2663,6 +2852,8 @@ public class TabInfoUtility {
 				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenScale;
 			case "jaeger":
 				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerScale;
+			case "komboKiste":
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteScale;
 			case "seelen":
 				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenScale;
 			case "essenzen":
@@ -2706,6 +2897,9 @@ public class TabInfoUtility {
 				break;
 			case "jaeger":
 				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerTextColor;
+				break;
+			case "komboKiste":
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteTextColor;
 				break;
 			case "seelen":
 				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenTextColor;
@@ -2790,7 +2984,7 @@ public class TabInfoUtility {
 		int width;
 		if (showIcon && (configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
 		                                        "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
-		                                        "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
+		                                        "essenzen".equals(configKey) || "jaeger".equals(configKey) || "komboKiste".equals(configKey) || 
 		                                        "machtkristalle".equals(configKey) ||
 		                                        "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
 		                                        "machtkristalleSlot3".equals(configKey) ||
@@ -2883,7 +3077,7 @@ public class TabInfoUtility {
 			// Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
 			if (showIcon && (configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
 			                                        "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
-			                                        "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
+			                                        "essenzen".equals(configKey) || "jaeger".equals(configKey) || "komboKiste".equals(configKey) || 
 			                                        "machtkristalle".equals(configKey) ||
 			                                        "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
 			                                        "machtkristalleSlot3".equals(configKey) ||
@@ -2913,6 +3107,9 @@ public class TabInfoUtility {
 				} else if ("jaeger".equals(configKey)) {
 					iconToUse = JAEGER_ICON;
 					fallbackText = "Jäger: ";
+				} else if ("komboKiste".equals(configKey)) {
+					iconToUse = KOMBO_KISTE_ICON;
+					fallbackText = "Kombo Kiste: ";
 				} else if ("recyclerSlot1".equals(configKey)) {
 					iconToUse = RECYCLER_ICON;
 					fallbackText = "Recycler Slot 1: ";
@@ -3006,6 +3203,9 @@ public class TabInfoUtility {
 					} else if ("jaeger".equals(configKey)) {
 						iconToUse = JAEGER_ICON;
 						fallbackText = "Jäger: ";
+					} else if ("komboKiste".equals(configKey)) {
+						iconToUse = KOMBO_KISTE_ICON;
+						fallbackText = "Kombo Kiste: ";
 					} else if ("recyclerSlot1".equals(configKey)) {
 						iconToUse = RECYCLER_ICON;
 						fallbackText = "Recycler Slot 1: ";
@@ -3068,6 +3268,29 @@ public class TabInfoUtility {
 		}
 		
 		matrices.popMatrix();
+	}
+	
+	/**
+	 * Bruchteil für die Anzeige (z. B. "245 / 1000"), ohne "Kombo Kiste:"-Präfix.
+	 * Links: Bossbar (Bar 3, 㟮…㟷) + erste Zahl nach 🌟 im Scoreboard; rechts Zielwert aus Config.
+	 */
+	public static String getKomboKisteFractionDisplay() {
+		if (komboKiste.isValid()) {
+			return komboKiste.getDisplayString();
+		}
+		return "? / ?";
+	}
+	
+	public static void setKomboKisteProgress(int current, int max) {
+		komboKiste.current = current;
+		komboKiste.max = max;
+	}
+	
+	public static void clearKomboKisteProgress() {
+		komboKiste.current = -1;
+		komboKiste.max = -1;
+		komboKiste.currentFormatted = null;
+		komboKiste.maxFormatted = null;
 	}
 }
 

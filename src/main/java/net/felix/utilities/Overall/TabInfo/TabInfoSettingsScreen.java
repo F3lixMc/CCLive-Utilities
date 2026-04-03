@@ -57,6 +57,8 @@ public class TabInfoSettingsScreen extends Screen {
             val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen = val));
         entries.add(new TabInfoEntry("Essenzen Kapazität", "essenzen", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen, 
             val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen = val));
+        entries.add(new TabInfoEntry("Kombo Kiste", "komboKiste", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste, 
+            val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste = val));
         entries.add(new TabInfoEntry("Machtkristalle", "machtkristalle", () -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle, 
             val -> CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle = val));
         entries.add(new TabInfoEntry("Recycler", "recycler", 

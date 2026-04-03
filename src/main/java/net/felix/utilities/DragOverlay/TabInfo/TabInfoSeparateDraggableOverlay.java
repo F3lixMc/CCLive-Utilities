@@ -26,6 +26,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private static final Identifier SEELEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
     private static final Identifier ESSENZEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
     private static final Identifier JAEGER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+    private static final Identifier KOMBO_KISTE_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
     private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
     private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
     
@@ -89,6 +90,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenScale;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerScale;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteScale;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenScale;
             case "essenzen":
@@ -130,6 +133,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 break;
             case "jaeger":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerScale = scale;
+                break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteScale = scale;
                 break;
             case "seelen":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenScale = scale;
@@ -388,6 +394,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         if (showIcon && (configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
                                                 "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
                                                 "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
+                                                "komboKiste".equals(configKey) ||
                                                 "machtkristalle".equals(configKey) ||
                                                 "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
                                                 "machtkristalleSlot3".equals(configKey) ||
@@ -580,6 +587,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         if (showIcon && configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
                                                "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
                                                "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
+                                               "komboKiste".equals(configKey) ||
                                                "machtkristalle".equals(configKey) ||
                                                "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
                                                "machtkristalleSlot3".equals(configKey) ||
@@ -743,6 +751,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         if (showIcon && (configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
                                                 "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
                                                 "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
+                                                "komboKiste".equals(configKey) ||
                                                 "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
                                                 "machtkristalleSlot3".equals(configKey) ||
                                                 "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
@@ -764,6 +773,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 iconToUse = ESSENZEN_ICON;
             } else if ("jaeger".equals(configKey)) {
                 iconToUse = JAEGER_ICON;
+            } else if ("komboKiste".equals(configKey)) {
+                iconToUse = KOMBO_KISTE_ICON;
             } else if ("machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
                        "machtkristalleSlot3".equals(configKey)) {
                 iconToUse = MACHTKRISTALL_ICON;
@@ -1144,6 +1155,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen;
             case "essenzen":
@@ -1203,6 +1216,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay;
             case "essenzen":
@@ -1272,6 +1287,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenX;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerX;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteX;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenX;
             case "essenzen":
@@ -1307,6 +1324,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenY;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerY;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteY;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenY;
             case "essenzen":
@@ -1345,6 +1364,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 break;
             case "jaeger":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerX = x;
+                break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteX = x;
                 break;
             case "seelen":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenX = x;
@@ -1393,6 +1415,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             case "jaeger":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerY = y;
                 break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteY = y;
+                break;
             case "seelen":
                 CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenY = y;
                 break;
@@ -1436,6 +1461,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return 90;
             case "jaeger":
                 return 130;
+            case "komboKiste":
+                return 230;
             case "seelen":
                 return 170;
             case "essenzen":
@@ -1466,6 +1493,10 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return showIcon ? TabInfoUtility.schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + TabInfoUtility.schmelzofenKapazitaet.getDisplayString();
             case "jaeger":
                 return showIcon ? TabInfoUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + TabInfoUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix();
+            case "komboKiste": {
+                String fraction = TabInfoUtility.getKomboKisteFractionDisplay();
+                return showIcon ? fraction : "Kombo Kiste: " + fraction;
+            }
             case "seelen":
                 return showIcon ? TabInfoUtility.seelenKapazitaet.getDisplayString() : "Seelen: " + TabInfoUtility.seelenKapazitaet.getDisplayString();
             case "essenzen":
@@ -1575,6 +1606,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
             case "machtkristalle":
             case "machtkristalleSlot1":
             case "machtkristalleSlot2":
@@ -1607,15 +1640,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                             TabInfoUtility.forschung.max
                         );
                     } else {
-                        // Prüfe ob "Nicht im Widget" angezeigt wird
-                        String displayString = TabInfoUtility.forschung.getDisplayString();
-                        if (displayString != null && displayString.contains("Nicht im Widget")) {
-                            // Keine Prozentanzeige wenn "Nicht im Widget"
-                            return null;
-                        } else {
-                            // Zeige "?%" wenn Daten noch nicht verfügbar sind
-                            return "?%";
-                        }
+                        // Kein Prozent, solange keine gültigen Werte (Anzeige: "Nicht im Tab-Widget")
+                        return null;
                     }
                 }
                 break;
@@ -1729,6 +1755,8 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent;
             case "jaeger":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent;
+            case "komboKiste":
+                return false;
             case "seelen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
             case "essenzen":
@@ -1775,6 +1803,11 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                         (double)TabInfoUtility.jaegerKapazitaet.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
+                }
+                break;
+            case "komboKiste":
+                if (TabInfoUtility.komboKiste.isValid()) {
+                    return TabInfoUtility.komboKiste.current >= TabInfoUtility.komboKiste.max;
                 }
                 break;
             case "seelen":

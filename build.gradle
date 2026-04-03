@@ -45,6 +45,7 @@ dependencies {
 	
 	modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
 	modImplementation "com.terraformersmc:modmenu:15.0.0-beta.3"
+	compileOnly "com.mojang:brigadier:1.3.10"
 }
 
 processResources {

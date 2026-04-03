@@ -30,6 +30,22 @@
       "8": "㝩",
       "9": "㝪"
     }
+ },
+  "tab_info_kombo_kiste_bossbar_digits": {
+    "description": "Tab Info Kombo Kiste – Bossbar-Ziffern 0–9 (Lesereihenfolge, Bar 3)",
+    "characters": "㟮㟯㟰㟱㟲㟳㟴㟵㟶㟷",
+    "numbers": {
+      "0": "㟮",
+      "1": "㟯",
+      "2": "㟰",
+      "3": "㟱",
+      "4": "㟲",
+      "5": "㟳",
+      "6": "㟴",
+      "7": "㟵",
+      "8": "㟶",
+      "9": "㟷"
+    }
   },
   "equipment_display": {
     "description": "Equipment Display",
@@ -231,6 +247,7 @@
       "!": "㙫",
       "?": "㙬"
     }
+
   }
 }
 
