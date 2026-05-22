@@ -12,7 +12,7 @@ import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.felix.utilities.Overall.KillAnimationUtility;
 import net.felix.utilities.Overall.DamageTrackingUtility;
-import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
+import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
@@ -71,7 +71,7 @@ public class CCLiveUtilities implements ModInitializer {
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
-		TabInfoUtility.initialize();
+		NpcAlertsUtility.initialize();
 		net.felix.utilities.DebugUtility.initializeItemLogger();
 		net.felix.utilities.DragOverlay.ClipboardUtility.initialize();
 		// net.felix.utilities.Overall.BossBarDecodeUtility.initialize(); // Temporarily disabled

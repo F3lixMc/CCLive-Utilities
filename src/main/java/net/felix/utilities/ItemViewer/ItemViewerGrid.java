@@ -1,5 +1,6 @@
 package net.felix.utilities.ItemViewer;
 
+import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.component.DataComponentTypes;
@@ -12,18 +13,31 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * Rendert Items in einem Grid-Layout (ähnlich JEI)
  */
 public class ItemViewerGrid {
     
+    private static final Map<ItemData, ItemStack> ITEM_STACK_CACHE = new WeakHashMap<>();
+    private static final Map<String, Identifier> TEXTURE_ID_CACHE = new HashMap<>();
+    private static java.lang.reflect.Constructor<?> customModelDataConstructor;
+    
+    private static ItemData lastTooltipItem = null;
+    private static List<Text> cachedTooltipLines = null;
+    
     private static final int SLOT_SIZE = 18; // 16x16 Item + 1px Padding auf jeder Seite
     private static final Identifier PASSIVE_SKILL_SLOT_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/passive_skill_slot.png");
     private static final Identifier CARD_SLOT_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/card_slot.png");
     private static final int DEFAULT_GRID_ROWS = 8; // Standard: 8 Zeilen (für Fallback)
     private static final int DEFAULT_GRID_COLUMNS = 6; // Standard: 6 Spalten (für Fallback)
+    public static int getMaxGridSlots() {
+        return CCLiveUtilitiesConfig.getItemViewerMaxSlots();
+    }
     
     private final List<ItemData> items;
     private final int startX;
@@ -41,78 +55,166 @@ public class ItemViewerGrid {
         this.startY = startY;
         this.mouseX = mouseX;
         this.mouseY = mouseY;
-        // Berechne Spaltenanzahl basierend auf verfügbarer Breite
-        this.gridColumns = Math.max(1, availableWidth / SLOT_SIZE);
-        // Berechne Zeilenanzahl basierend auf verfügbarer Höhe
-        this.gridRows = Math.max(1, availableHeight / SLOT_SIZE);
+        int[] dims = computeGridDimensions(availableWidth, availableHeight);
+        this.gridColumns = dims[0];
+        this.gridRows = dims[1];
+    }
+
+    /**
+     * Spalten/Zeilen aus verfügbarem Platz und Config-Maximum ({@link #getMaxGridSlots()}).
+     * Spalten nutzen die volle verfügbare Breite (kein Limit bei 18).
+     */
+    public static int[] computeGridDimensions(int availableWidth, int availableHeight) {
+        int maxSlots = getMaxGridSlots();
+        int maxColsFit = Math.max(1, availableWidth / SLOT_SIZE);
+        int maxRowsFit = Math.max(1, availableHeight / SLOT_SIZE);
+
+        int cols = Math.min(maxColsFit, maxSlots);
+        int rows = (maxSlots + cols - 1) / cols;
+
+        if (rows > maxRowsFit) {
+            rows = maxRowsFit;
+            cols = Math.min(maxColsFit, (maxSlots + rows - 1) / rows);
+            if (cols < 1) {
+                cols = 1;
+            }
+            rows = Math.min(maxRowsFit, (maxSlots + cols - 1) / cols);
+        }
+
+        if (cols * rows > maxSlots) {
+            rows = maxSlots / cols;
+            if (rows < 1) {
+                rows = 1;
+                cols = Math.min(cols, maxSlots);
+            }
+        }
+        return new int[] { cols, rows };
     }
     
     /**
      * Rendert das Grid mit allen Items
      */
     public void render(DrawContext context) {
-        int itemsPerPage = gridColumns * gridRows;
-        // Rendere alle Slots
-        for (int i = 0; i < Math.min(items.size(), itemsPerPage); i++) {
+        int itemsPerPage = getItemsPerPage();
+        int count = Math.min(items.size(), itemsPerPage);
+        if (count <= 0) {
+            hoveredItem = null;
+            return;
+        }
+        
+        int usedRows = (count + gridColumns - 1) / gridColumns;
+        
+        hoveredItem = null;
+        int hoverIndex = resolveHoverIndex(count);
+        
+        for (int i = 0; i < count; i++) {
             int row = i / gridColumns;
             int col = i % gridColumns;
-            
             int slotX = startX + col * SLOT_SIZE;
             int slotY = startY + row * SLOT_SIZE;
-            
-            ItemData item = items.get(i);
-            
-            // Prüfe ob Maus über diesem Slot ist
-            boolean isHovered = mouseX >= slotX && mouseX < slotX + SLOT_SIZE &&
-                               mouseY >= slotY && mouseY < slotY + SLOT_SIZE;
-            
+            boolean isHovered = i == hoverIndex;
             if (isHovered) {
-                hoveredItem = item;
+                hoveredItem = items.get(i);
             }
+            renderSlotBackground(context, slotX, slotY, isHovered);
+        }
+        
+        renderSlotGridBorders(context, count, usedRows);
+        
+        for (int i = 0; i < count; i++) {
+            int row = i / gridColumns;
+            int col = i % gridColumns;
+            renderItemIcon(context, items.get(i), startX + col * SLOT_SIZE, startY + row * SLOT_SIZE);
+        }
+        
+        if (hoverIndex >= 0) {
+            int row = hoverIndex / gridColumns;
+            int col = hoverIndex % gridColumns;
+            renderSlotHighlightBorder(context, startX + col * SLOT_SIZE, startY + row * SLOT_SIZE);
+        }
+    }
+    
+    /** Ein Fill pro Slot – günstiger als Hintergrund + 4 Rahmenlinien pro Slot. */
+    private void renderSlotBackground(DrawContext context, int x, int y, boolean isHovered) {
+        int color = isHovered ? 0x80FFFFFF : 0x40000000;
+        context.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, color);
+    }
+    
+    /** Slot-Raster pro Zeile – nur so breit wie Items in der Zeile (keine leeren Slots am Zeilenende). */
+    private void renderSlotGridBorders(DrawContext context, int count, int usedRows) {
+        int borderColor = 0xFF808080;
+        for (int r = 0; r < usedRows; r++) {
+            int itemsInRow = Math.min(gridColumns, count - r * gridColumns);
+            if (itemsInRow <= 0) {
+                continue;
+            }
+            int rowX = startX;
+            int rowY = startY + r * SLOT_SIZE;
+            int rowWidth = itemsInRow * SLOT_SIZE;
             
-            // Rendere Slot-Hintergrund
-            renderSlot(context, slotX, slotY, isHovered);
+            context.fill(rowX, rowY, rowX + rowWidth, rowY + 1, borderColor);
+            context.fill(rowX, rowY + SLOT_SIZE - 1, rowX + rowWidth, rowY + SLOT_SIZE, borderColor);
             
-            // Prüfe zuerst ob eine benutzerdefinierte Textur angegeben ist
-            if (item.texture != null && !item.texture.isEmpty()) {
-                // Rendere benutzerdefinierte Textur
-                Identifier textureId = Identifier.of("cclive-utilities", "textures/" + item.texture);
-                context.drawTexture(
-                    RenderPipelines.GUI_TEXTURED,
-                    textureId,
-                    slotX + 1, slotY + 1,
-                    0, 0,
-                    16, 16,
-                    16, 16
-                );
-            } else if (isPassiveSkillSlot(item)) {
-                // Rendere spezielle Textur für Passiven Fähigkeits Slot (Rückwärtskompatibilität)
-                context.drawTexture(
-                    RenderPipelines.GUI_TEXTURED,
-                    PASSIVE_SKILL_SLOT_TEXTURE,
-                    slotX + 1, slotY + 1,
-                    0, 0,
-                    16, 16,
-                    16, 16
-                );
-            } else if (isCardSlot(item)) {
-                // Rendere spezielle Textur für Karten Slot (Rückwärtskompatibilität)
-                context.drawTexture(
-                    RenderPipelines.GUI_TEXTURED,
-                    CARD_SLOT_TEXTURE,
-                    slotX + 1, slotY + 1,
-                    0, 0,
-                    16, 16,
-                    16, 16
-                );
-            } else {
-                // Rendere normales Item
-                ItemStack itemStack = createItemStack(item);
-                if (!itemStack.isEmpty()) {
-                    context.drawItem(itemStack, slotX + 1, slotY + 1, 0);
-                }
+            for (int c = 0; c <= itemsInRow; c++) {
+                int x = startX + c * SLOT_SIZE;
+                context.fill(x, rowY, x + 1, rowY + SLOT_SIZE, borderColor);
             }
         }
+    }
+    
+    /** Weißer Hover-Rahmen über Items und Gitterlinien. */
+    private void renderSlotHighlightBorder(DrawContext context, int x, int y) {
+        int borderColor = 0xFFFFFFFF;
+        context.fill(x, y, x + SLOT_SIZE, y + 1, borderColor);
+        context.fill(x, y + SLOT_SIZE - 1, x + SLOT_SIZE, y + SLOT_SIZE, borderColor);
+        context.fill(x, y, x + 1, y + SLOT_SIZE, borderColor);
+        context.fill(x + SLOT_SIZE - 1, y, x + SLOT_SIZE, y + SLOT_SIZE, borderColor);
+    }
+    
+    private int resolveHoverIndex(int count) {
+        if (mouseX < startX || mouseY < startY) {
+            return -1;
+        }
+        int col = (mouseX - startX) / SLOT_SIZE;
+        int row = (mouseY - startY) / SLOT_SIZE;
+        if (col < 0 || col >= gridColumns || row < 0 || row >= gridRows) {
+            return -1;
+        }
+        int index = row * gridColumns + col;
+        return index < count ? index : -1;
+    }
+    
+    private void renderItemIcon(DrawContext context, ItemData item, int slotX, int slotY) {
+        int iconX = slotX + 1;
+        int iconY = slotY + 1;
+        if (item.texture != null && !item.texture.isEmpty()) {
+            context.drawTexture(
+                RenderPipelines.GUI_TEXTURED,
+                getTextureId(item.texture),
+                iconX, iconY,
+                0, 0,
+                16, 16,
+                16, 16
+            );
+            return;
+        }
+        if (isPassiveSkillSlot(item)) {
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, PASSIVE_SKILL_SLOT_TEXTURE, iconX, iconY, 0, 0, 16, 16, 16, 16);
+            return;
+        }
+        if (isCardSlot(item)) {
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, CARD_SLOT_TEXTURE, iconX, iconY, 0, 0, 16, 16, 16, 16);
+            return;
+        }
+        ItemStack itemStack = getCachedItemStack(item);
+        if (!itemStack.isEmpty()) {
+            context.drawItem(itemStack, iconX, iconY, 0);
+        }
+    }
+    
+    private static Identifier getTextureId(String texturePath) {
+        return TEXTURE_ID_CACHE.computeIfAbsent(texturePath,
+            path -> Identifier.of("cclive-utilities", "textures/" + path));
     }
     
     /**
@@ -120,19 +222,32 @@ public class ItemViewerGrid {
      */
     public void renderTooltip(DrawContext context) {
         if (hoveredItem != null) {
-            // Verstecke AspectOverlay wenn kein Item gehovered wird (wird später wieder aktiviert wenn Aspekt vorhanden)
             net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
             MinecraftClient client = MinecraftClient.getInstance();
-            ItemStack itemStack = createItemStack(hoveredItem);
+            ItemStack itemStack = getCachedItemStack(hoveredItem);
             if (!itemStack.isEmpty()) {
-                // Erstelle Tooltip-Liste mit zusätzlichen Informationen
+                if (hoveredItem != lastTooltipItem) {
+                    lastTooltipItem = hoveredItem;
+                    cachedTooltipLines = buildTooltipLines(hoveredItem, itemStack, client);
+                }
+                java.util.List<Text> tooltipLines = cachedTooltipLines;
+                if (tooltipLines == null || tooltipLines.isEmpty()) {
+                    return;
+                }
+                context.drawTooltip(client.textRenderer, tooltipLines, mouseX, mouseY);
+            } else {
+                net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+            }
+        } else {
+            lastTooltipItem = null;
+            cachedTooltipLines = null;
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+        }
+    }
+    
+    private List<Text> buildTooltipLines(ItemData hoveredItem, ItemStack itemStack, MinecraftClient client) {
                 java.util.List<Text> tooltipLines = new java.util.ArrayList<>();
-                
-                // Standard Item Tooltip (Name, etc.) - verwende Reflection für getTooltipFromItem
                 try {
-                    // Versuche, getTooltipFromItem über HandledScreen zu bekommen
-                    // Da wir nicht in einem HandledScreen sind, verwenden wir einen einfacheren Ansatz
-                    // Füge den Item-Namen hinzu
                     tooltipLines.add(itemStack.getName());
                     
                     // Wenn Advanced Tooltips aktiv sind, füge Item-ID hinzu
@@ -550,39 +665,55 @@ public class ItemViewerGrid {
                     }
                     }
                 }
-                
-                // Rendere Custom Tooltip
-                context.drawTooltip(client.textRenderer, tooltipLines, mouseX, mouseY);
-            } else {
-                // Kein Item gehovered - verstecke AspectOverlay
-                net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
-            }
-        } else {
-            // Kein Item gehovered - verstecke AspectOverlay
-            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
-        }
+                return tooltipLines;
     }
     
-    /**
-     * Rendert einen einzelnen Slot
-     */
-    private void renderSlot(DrawContext context, int x, int y, boolean isHovered) {
-        // Slot-Hintergrund
-        int backgroundColor = isHovered ? 0x80FFFFFF : 0x40000000;
-        context.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, backgroundColor);
-        
-        // Slot-Rahmen
-        int borderColor = isHovered ? 0xFFFFFFFF : 0xFF808080;
-        context.fill(x, y, x + SLOT_SIZE, y + 1, borderColor); // Oben
-        context.fill(x, y + SLOT_SIZE - 1, x + SLOT_SIZE, y + SLOT_SIZE, borderColor); // Unten
-        context.fill(x, y, x + 1, y + SLOT_SIZE, borderColor); // Links
-        context.fill(x + SLOT_SIZE - 1, y, x + SLOT_SIZE, y + SLOT_SIZE, borderColor); // Rechts
+    public static void clearItemStackCache() {
+        ITEM_STACK_CACHE.clear();
+        TEXTURE_ID_CACHE.clear();
+        lastTooltipItem = null;
+        cachedTooltipLines = null;
+    }
+    
+    public static void invalidateTooltipCache() {
+        lastTooltipItem = null;
+        cachedTooltipLines = null;
+    }
+    
+    private static ItemStack getCachedItemStack(ItemData itemData) {
+        if (itemData == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack cached = ITEM_STACK_CACHE.get(itemData);
+        if (cached != null) {
+            return cached;
+        }
+        ItemStack stack = createItemStack(itemData);
+        if (!stack.isEmpty()) {
+            ITEM_STACK_CACHE.put(itemData, stack);
+        }
+        return stack;
+    }
+    
+    private static java.lang.reflect.Constructor<?> getCustomModelDataConstructor() {
+        if (customModelDataConstructor != null) {
+            return customModelDataConstructor;
+        }
+        for (java.lang.reflect.Constructor<?> constructor :
+                net.minecraft.component.type.CustomModelDataComponent.class.getDeclaredConstructors()) {
+            if (constructor.getParameterCount() == 4) {
+                constructor.setAccessible(true);
+                customModelDataConstructor = constructor;
+                return constructor;
+            }
+        }
+        return null;
     }
     
     /**
      * Erstellt einen ItemStack aus ItemData
      */
-    private ItemStack createItemStack(ItemData itemData) {
+    private static ItemStack createItemStack(ItemData itemData) {
         if (itemData == null || itemData.id == null) {
             return ItemStack.EMPTY;
         }
@@ -632,29 +763,13 @@ public class ItemViewerGrid {
             // Liste 3: List<Integer>
             if (itemData.customModelData != null) {
                 try {
-                    java.lang.reflect.Constructor<?>[] constructors = 
-                        net.minecraft.component.type.CustomModelDataComponent.class.getDeclaredConstructors();
-                    
-                    // Finde den 4-Listen-Konstruktor
-                    java.lang.reflect.Constructor<?> listConstructor = null;
-                    for (java.lang.reflect.Constructor<?> c : constructors) {
-                        if (c.getParameterCount() == 4) {
-                            listConstructor = c;
-                            break;
-                        }
-                    }
-                    
+                    java.lang.reflect.Constructor<?> listConstructor = getCustomModelDataConstructor();
                     if (listConstructor != null) {
-                        listConstructor.setAccessible(true);
                         java.util.List<?> emptyList = java.util.Collections.emptyList();
-                        
-                        // CustomModelData-Wert als Float in die erste Liste (Liste 0)
                         java.util.List<Float> floatList = new java.util.ArrayList<>();
                         floatList.add(itemData.customModelData.floatValue());
-                        
-                        var customModelData = (net.minecraft.component.type.CustomModelDataComponent) 
+                        var customModelData = (net.minecraft.component.type.CustomModelDataComponent)
                             listConstructor.newInstance(floatList, emptyList, emptyList, emptyList);
-                        
                         stack.set(DataComponentTypes.CUSTOM_MODEL_DATA, customModelData);
                     }
                 } catch (Exception e) {
@@ -693,7 +808,7 @@ public class ItemViewerGrid {
     /**
      * Gibt die Farbe für eine Rarity zurück
      */
-    private int getRarityColor(String rarity) {
+    private static int getRarityColor(String rarity) {
         if (rarity == null) {
             return 0xFFFFFFFF; // Weiß als Standard
         }
@@ -927,7 +1042,12 @@ public class ItemViewerGrid {
      * Gibt die Anzahl der Items pro Seite zurück (für diese Instanz)
      */
     public int getItemsPerPage() {
-        return gridColumns * gridRows;
+        return Math.min(gridColumns * gridRows, getMaxGridSlots());
+    }
+    
+    public static int computeItemsPerPage(int availableWidth, int availableHeight) {
+        int[] dims = computeGridDimensions(availableWidth, availableHeight);
+        return Math.min(dims[0] * dims[1], getMaxGridSlots());
     }
     
     /**

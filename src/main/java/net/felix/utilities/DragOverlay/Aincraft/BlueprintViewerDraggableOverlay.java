@@ -251,7 +251,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        // Nur showBlueprintViewer prüfen (gleichgestellt mit "Blueprint Tracker anzeigen" in Config)
+        // Nur showBlueprintViewer prüfen (gleichgestellt mit "Blueprint Tracker Overlay anzeigen" in Config)
         return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
     }
     

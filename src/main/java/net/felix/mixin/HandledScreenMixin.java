@@ -604,29 +604,10 @@ public abstract class HandledScreenMixin {
     private boolean isSmithingInventory() {
         try {
             HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
-            String title = screen.getTitle().getString();
-            
-            // IMPORTANT: Check for Equipment Display BEFORE cleaning, as cleaning removes the characters
-            boolean isEquipmentDisplay = ZeichenUtility.containsEquipmentDisplay(title);
-            
-            // Remove Minecraft formatting codes and Unicode characters for comparison (same as in SchmiedTrackerUtility)
-            String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
-                                     .replaceAll("[\\u3400-\\u4DBF]", "");
-            
-            // Check if the clean title contains any smithing-related keywords
-            return cleanTitle.contains("Zerlegen")  ||
-                   cleanTitle.contains("Umschmieden")  ||
-                   (cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen")) || 
-                   cleanTitle.contains("Aufwerten")  ||
-                   cleanTitle.contains("Rüstungs Sammlung")  ||
-                   cleanTitle.contains("Waffen Sammlung")  ||
-                   cleanTitle.contains("Werkzeug Sammlung")  ||
-                   cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
-                   cleanTitle.contains("Geschützte Items")  ||
-                   isEquipmentDisplay; //Equipment Display - checked BEFORE cleaning
-                   
+            return net.felix.utilities.Town.SchmiedTrackerUtility.isSmithingRelatedInventoryTitle(
+                    screen.getTitle().getString());
         } catch (Exception e) {
-            return false; // Default to false if there's an error
+            return false;
         }
     }
 } 

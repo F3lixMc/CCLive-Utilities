@@ -145,9 +145,8 @@ public class ProfileStatsManager {
                 String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
                 
                 // Prüfe ob es das Karten-Menü (㭆) oder Statuen-Menü (㭂) ist
-                String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
-                boolean isCardsMenu = cleanTitle.contains(cardsStatuesChars[0]); // 㭆
-                boolean isStatuesMenu = cleanTitle.contains(cardsStatuesChars[1]); // 㭂
+                boolean isCardsMenu = ZeichenUtility.isCardsMenuTitle(cleanTitle);
+                boolean isStatuesMenu = ZeichenUtility.isStatuesMenuTitle(cleanTitle);
                 
                 if (isCardsMenu) {
                     // Warte kurz bis Inventar geladen ist, dann scanne
@@ -1259,9 +1258,8 @@ public class ProfileStatsManager {
         String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
         
         // Prüfe ob es das Karten-Menü (㭆) oder Statuen-Menü (㭂) ist
-        String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
-        boolean isCardsMenu = cleanTitle.contains(cardsStatuesChars[0]); // 㭆
-        boolean isStatuesMenu = cleanTitle.contains(cardsStatuesChars[1]); // 㭂
+        boolean isCardsMenu = ZeichenUtility.isCardsMenuTitle(cleanTitle);
+        boolean isStatuesMenu = ZeichenUtility.isStatuesMenuTitle(cleanTitle);
         
         if (isCardsMenu) {
             // Prüfe ob sich Items geändert haben (Seitenwechsel)

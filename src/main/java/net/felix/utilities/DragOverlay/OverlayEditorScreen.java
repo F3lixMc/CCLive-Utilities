@@ -17,10 +17,10 @@ import net.felix.utilities.DragOverlay.Schmied.HideWrongClassButtonDraggableOver
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButton1DraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButton2DraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButton3DraggableOverlay;
-import net.felix.utilities.DragOverlay.TabInfo.AspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.TabInfo.StarAspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.TabInfo.TabInfoMainDraggableOverlay;
-import net.felix.utilities.DragOverlay.TabInfo.TabInfoSeparateDraggableOverlay;
+import net.felix.utilities.DragOverlay.NpcAlerts.AspectOverlayDraggableOverlay;
+import net.felix.utilities.DragOverlay.NpcAlerts.StarAspectOverlayDraggableOverlay;
+import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsMainDraggableOverlay;
+import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsSeparateDraggableOverlay;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -74,63 +74,63 @@ public class OverlayEditorScreen extends Screen {
     }
     
     public void refreshOverlays() {
-        // Entferne alle TabInfo-Overlays aus der Liste
-        overlays.removeIf(overlay -> overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay);
+        // Entferne alle npcAlerts-Overlays aus der Liste
+        overlays.removeIf(overlay -> overlay instanceof NpcAlertsMainDraggableOverlay || overlay instanceof NpcAlertsSeparateDraggableOverlay);
         
         // Prüfe ob wir in einem Inventar oder im Chat sind
         boolean isInAnyInventoryRefresh = isInAnyInventoryScreen();
         boolean isInChatScreenRefresh = isInChatScreen();
         
-        // Füge TabInfo-Overlays wieder hinzu (basierend auf aktuellen Config-Werten)
+        // Füge npcAlerts-Overlays wieder hinzu (basierend auf aktuellen Config-Werten)
         // Nur außerhalb von Inventaren und außerhalb des Chats anzeigen
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInAnyInventoryRefresh && !isInChatScreenRefresh) {
-            // Haupt-Overlay - immer hinzufügen wenn Tab Info Utility aktiviert ist (wird nur gerendert wenn enabled)
-            overlays.add(new TabInfoMainDraggableOverlay());
+        if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled && !isInAnyInventoryRefresh && !isInChatScreenRefresh) {
+            // Haupt-Overlay - immer hinzufügen wenn NPC Alerts Utility aktiviert ist (wird nur gerendert wenn enabled)
+            overlays.add(new NpcAlertsMainDraggableOverlay());
             
             // Separate Overlays - immer hinzufügen (werden nur gerendert wenn enabled)
-            overlays.add(new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("komboKiste", "komboKiste", "Kombo Kiste"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("komboKiste", "komboKiste", "Kombo Kiste"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
             
             // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1 && 
-                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
-                    overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate) {
+                    overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2 && 
-                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
-                    overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2"));
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate) {
+                    overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3 && 
-                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
-                    overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3"));
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate) {
+                    overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3"));
                 }
             }
             
             // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
             }
         }
     }
@@ -224,56 +224,56 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        // Tab Info Overlays - nur außerhalb von Inventaren und außerhalb des Chats anzeigen
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled && !isInAnyInventory && !isInChatScreen) {
-            // Haupt-Overlay - immer hinzufügen wenn Tab Info Utility aktiviert ist (wird nur gerendert wenn enabled)
-            TabInfoMainDraggableOverlay mainOverlay = new TabInfoMainDraggableOverlay();
+        // NPC Alerts Overlays - nur außerhalb von Inventaren und außerhalb des Chats anzeigen
+        if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled && !isInAnyInventory && !isInChatScreen) {
+            // Haupt-Overlay - immer hinzufügen wenn NPC Alerts Utility aktiviert ist (wird nur gerendert wenn enabled)
+            NpcAlertsMainDraggableOverlay mainOverlay = new NpcAlertsMainDraggableOverlay();
             overlays.add(mainOverlay);
             
             // Separate Overlays - immer hinzufügen (werden nur gerendert wenn enabled)
-            overlays.add(new TabInfoSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("komboKiste", "komboKiste", "Kombo Kiste"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
-            overlays.add(new TabInfoSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("essenzen", "essenzen", "Essenzen"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("komboKiste", "komboKiste", "Kombo Kiste"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalle", "machtkristalle", "Machtkristalle"));
+            overlays.add(new NpcAlertsSeparateDraggableOverlay("recycler", "recycler", "Recycler"));
             
             // Einzelne MK-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1 && 
-                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate) {
-                    overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate) {
+                    overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalleSlot1", "machtkristalleSlot1", "MK Slot 1"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2 && 
-                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate) {
-                    overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2"));
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate) {
+                    overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalleSlot2", "machtkristalleSlot2", "MK Slot 2"));
                 }
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3 && 
-                    CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate) {
-                    overlays.add(new TabInfoSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3"));
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3 && 
+                    CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate) {
+                    overlays.add(new NpcAlertsSeparateDraggableOverlay("machtkristalleSlot3", "machtkristalleSlot3", "MK Slot 3"));
                 }
             }
             
             // Einzelne Recycler-Slot Overlays (nur wenn "Separates Overlay", "Einzeln" aktiviert sind UND Slot aktiviert ist)
-            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("recyclerSlot1", "recyclerSlot1", "Recycler Slot 1"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("recyclerSlot2", "recyclerSlot2", "Recycler Slot 2"));
             }
             
-            if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate) {
-                overlays.add(new TabInfoSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
+            if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay && 
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("recyclerSlot3", "recyclerSlot3", "Recycler Slot 3"));
             }
         }
         
@@ -464,17 +464,17 @@ public class OverlayEditorScreen extends Screen {
         ).dimensions(startX, height - 30, buttonWidth, 20).build();
         addDrawableChild(doneButton);
         
-        // Tab Info Button
-        ButtonWidget tabInfoButton = ButtonWidget.builder(
-            Text.literal("Tab Info"),
+        // NPC Alerts Button
+        ButtonWidget npcAlertsButton = ButtonWidget.builder(
+            Text.literal("NPC Alerts"),
             button -> {
                 MinecraftClient client = MinecraftClient.getInstance();
                 if (client != null) {
-                    client.setScreen(new net.felix.utilities.Overall.TabInfo.TabInfoSettingsScreen(this));
+                    client.setScreen(new net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen(this));
                 }
             }
         ).dimensions(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
-        addDrawableChild(tabInfoButton);
+        addDrawableChild(npcAlertsButton);
         
         // Overlay Button
         overlayButton = ButtonWidget.builder(
@@ -1012,7 +1012,7 @@ public class OverlayEditorScreen extends Screen {
             int textHeight = textRenderer.fontHeight;
             context.drawText(textRenderer, overlayName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
             
-            // Settings-Button für Clipboard (rechts in der Zeile, wie TabInfo)
+            // Settings-Button für Clipboard (rechts in der Zeile, wie npcAlerts)
             if (entry.overlay instanceof ClipboardDraggableOverlay) {
                 int gearSize = 12;
                 int gearX = boxX + boxWidth - gearSize - 10;
@@ -1077,8 +1077,8 @@ public class OverlayEditorScreen extends Screen {
         boolean kitFilterEnabled = false;
         
         for (DraggableOverlay overlay : overlays) {
-            // Überspringe Tab Info Overlays - diese sollen nicht im Overlay Picker erscheinen
-            if (overlay instanceof TabInfoMainDraggableOverlay || overlay instanceof TabInfoSeparateDraggableOverlay) {
+            // Überspringe NPC Alerts Overlays - diese sollen nicht im Overlay Picker erscheinen
+            if (overlay instanceof NpcAlertsMainDraggableOverlay || overlay instanceof NpcAlertsSeparateDraggableOverlay) {
                 continue;
             }
             
@@ -1204,7 +1204,7 @@ public class OverlayEditorScreen extends Screen {
             config.showStatue = newValue;
             config.statueEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof BlueprintViewerDraggableOverlay) {
-            // Nur showBlueprintViewer togglen (gleichgestellt mit "Blueprint Tracker anzeigen" in Config)
+            // Nur showBlueprintViewer togglen (gleichgestellt mit "Blueprint Tracker Overlay anzeigen" in Config)
             // blueprintViewerEnabled bleibt unabhängig (wird nicht synchronisiert)
             config.showBlueprintViewer = !config.showBlueprintViewer;
         } else if (overlay instanceof MaterialTrackerDraggableOverlay) {
@@ -1268,7 +1268,7 @@ public class OverlayEditorScreen extends Screen {
     }
     
     /**
-     * Zeichnet das Zahnrad-Icon (Settings-Icon) wie in TabInfoSettingsScreen
+     * Zeichnet das Zahnrad-Icon (Settings-Icon) wie in NpcAlertsSettingsScreen
      */
     private void drawGearIcon(DrawContext context, int x, int y, int size) {
         try {

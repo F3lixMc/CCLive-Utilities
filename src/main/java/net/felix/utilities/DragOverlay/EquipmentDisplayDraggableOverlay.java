@@ -194,19 +194,15 @@ public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
      * Format number like in EquipmentDisplayUtility
      */
     private String formatNumber(double value) {
-        // Erstelle DecimalFormat mit Komma als Tausendertrenner und Punkt als Dezimaltrenner
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
         symbols.setGroupingSeparator(',');
         symbols.setDecimalSeparator('.');
-        
-        if (value == (int) value) {
-            // Glatte Zahl ohne Nachkommastellen
+
+        if (Math.abs(value - Math.rint(value)) < 1e-9) {
             DecimalFormat df = new DecimalFormat("#,###", symbols);
-            return df.format((int) value);
-        } else {
-            // Zahl mit Nachkommastellen (maximal 1 Nachkommastelle)
-            DecimalFormat df = new DecimalFormat("#,###.0", symbols);
-            return df.format(value);
+            return df.format(Math.rint(value));
         }
+        DecimalFormat df = new DecimalFormat("#,##0.##", symbols);
+        return df.format(value);
     }
 }

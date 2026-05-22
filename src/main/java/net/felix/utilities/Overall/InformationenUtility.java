@@ -336,7 +336,7 @@ public class InformationenUtility {
 			// Check if we're in the special inventory (Moblexicon)
 			boolean isSpecialInventory = false;
 			boolean isLicenseInventory = false;
-			boolean isEssenceHarvesterUi = false;
+			boolean hideFloorNumbersInEssenceMenu = false;
 			String screenTitle = "";
 			if (client.currentScreen != null) {
 				screenTitle = client.currentScreen.getTitle().getString();
@@ -347,14 +347,11 @@ public class InformationenUtility {
 				if (ZeichenUtility.containsFriendsRequestAcceptDeny(screenTitle)) {
 					isLicenseInventory = true;
 				}
-				// Check for essence harvester UI - don't add floor numbers here
-				if (ZeichenUtility.containsEssenceHarvesterUi(screenTitle)) {
-					isEssenceHarvesterUi = true;
-				}
+				// Essence-Bag, -Auswahl, Harvester: keine Ebenen-Nummern
+				hideFloorNumbersInEssenceMenu = ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle);
 			}
 			
-			// If we're in essence harvester UI, don't add floor numbers
-			if (isEssenceHarvesterUi) {
+			if (hideFloorNumbersInEssenceMenu) {
 				return;
 			}
 			
@@ -405,13 +402,11 @@ public class InformationenUtility {
 					// The textBeforeColon already contains the full essence name including [Essenz] and Tier
 					String essenceNameToSearch = textBeforeColon;
 					
-					// Look for essence in database
-					EssenceInfo essenceInfo = essencesDatabase.get(essenceNameToSearch);
-					if (essenceInfo != null && CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay) {
-						// Add essence information as a new line with mixed colors
+					if (CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay) {
+						String waveText = getWaveDisplayForEssenceName(essenceNameToSearch);
 						Text essenceInfoText = Text.literal(" -> Welle: ")
 							.styled(style -> style.withColor(0xC0C0C0)) // Light gray
-							.append(Text.literal(String.valueOf(essenceInfo.wave))
+							.append(Text.literal(waveText)
 								.styled(style -> style.withColor(0x55FF55))); // Light green
 						
 						// Add the essence info line after the current line
@@ -1008,6 +1003,76 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Gets floor numbers for a card or statue from CardsStatues.json
+	 * @param stack The item stack (name/lore may contain [Karte] or [Statue])
+	 * @return Floor numbers, or null if not found
+	 */
+	public static List<Integer> getFloorsForCardOrStatue(ItemStack stack) {
+		if (stack == null || stack.isEmpty()) {
+			return null;
+		}
+		
+		String cardStatueName = extractCardOrStatueNameFromStack(stack);
+		if (cardStatueName == null || cardStatueName.isEmpty()) {
+			return null;
+		}
+		
+		List<Integer> floors = cardsFloors.get(cardStatueName);
+		if (floors == null) {
+			for (Map.Entry<String, List<Integer>> entry : cardsFloors.entrySet()) {
+				if (entry.getKey().equalsIgnoreCase(cardStatueName)) {
+					floors = entry.getValue();
+					break;
+				}
+			}
+		}
+		if (floors == null) {
+			floors = statuesFloors.get(cardStatueName);
+			if (floors == null) {
+				for (Map.Entry<String, List<Integer>> entry : statuesFloors.entrySet()) {
+					if (entry.getKey().equalsIgnoreCase(cardStatueName)) {
+						floors = entry.getValue();
+						break;
+					}
+				}
+			}
+		}
+		
+		return floors != null && !floors.isEmpty() ? new ArrayList<>(floors) : null;
+	}
+	
+	private static String extractCardOrStatueNameFromStack(ItemStack stack) {
+		StringBuilder textBuilder = new StringBuilder(stack.getName().getString());
+		var loreComponent = stack.get(net.minecraft.component.DataComponentTypes.LORE);
+		if (loreComponent != null) {
+			for (Text line : loreComponent.lines()) {
+				textBuilder.append(' ').append(line.getString());
+			}
+		}
+		
+		String text = textBuilder.toString().replaceAll("§[0-9a-fk-or]", "");
+		
+		for (String tag : new String[]{"[Karte]", "[Statue]"}) {
+			if (text.contains(tag)) {
+				int index = text.indexOf(tag);
+				if (index > 0) {
+					String itemName = text.substring(0, index).trim();
+					itemName = itemName.replaceAll("^[-\\s]+", "").trim();
+					itemName = itemName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "").trim();
+					itemName = itemName.replaceAll("\\s*-\\s*$", "").trim();
+					if (!itemName.isEmpty()) {
+						return itemName;
+					}
+				}
+			}
+		}
+		
+		String name = stack.getName().getString().replaceAll("§[0-9a-fk-or]", "").trim();
+		name = name.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "").trim();
+		return name.isEmpty() ? null : name;
+	}
+	
+	/**
 	 * Modifies chat messages to add aspect information to hover events
 	 * Called from ClientPlayNetworkHandlerTestMixin
 	 * Adds aspect info and "Shift für Info" to blueprint hover events
@@ -1303,7 +1368,8 @@ public class InformationenUtility {
 	 */
 	public static class BlueprintNameAndColor {
 		public final String name;
-		public final String rarity; // "epic" or "legendary" based on color
+		/** One of: common, uncommon, rare, epic, legendary (from item name color), or null if unknown */
+		public final String rarity;
 		
 		public BlueprintNameAndColor(String name, String rarity) {
 			this.name = name;
@@ -1425,27 +1491,29 @@ public class InformationenUtility {
 	}
 	
 	/**
-	 * Extracts blueprint name and color from item name text (for inventory)
-	 * Returns the name and rarity (epic or legendary) based on color
-	 * Epic: #A134EB or #A335EE, Legendary: #FC7E00 or #FF8000
-	 * Only considers the color of the blueprint name itself (before "-" and "[Bauplan]")
+	 * Extracts blueprint name and color from item name text (for inventory).
+	 * Rarity follows the blueprint name color: common (white/default), uncommon (#1EFF00),
+	 * rare (#0070DD), epic (#A134EB / #A335EE), legendary (#FC7E00 / #FF8000).
+	 * Only considers the blueprint name (before " - " and "[Bauplan]").
 	 */
 	public static BlueprintNameAndColor extractBlueprintNameAndColorFromItemName(Text itemNameText) {
 		if (itemNameText == null) {
 			return null;
 		}
 		
-		// Target colors: 
-		// Epic: #A134EB (RGB: 161, 52, 235) OR #A335EE (RGB: 163, 53, 238) - both are used in game
-		// Legendary: #FC7E00 (RGB: 252, 126, 0) OR #FF8000 (RGB: 255, 128, 0) - both are used in game
-		int epicColor1 = 0xFFA134EB; // Original epic color
-		int epicColor2 = 0xFFA335EE; // Actual epic color used in game
-		int legendaryColor1 = 0xFFFC7E00; // Original legendary color
-		int legendaryColor2 = 0xFFFF8000; // Actual legendary color used in game
+		// Epic: #A134EB or #A335EE; Legendary: #FC7E00 or #FF8000
+		int epicColor1 = 0xFFA134EB;
+		int epicColor2 = 0xFFA335EE;
+		int legendaryColor1 = 0xFFFC7E00;
+		int legendaryColor2 = 0xFFFF8000;
 		int epicColor1RGB = epicColor1 & 0x00FFFFFF;
 		int epicColor2RGB = epicColor2 & 0x00FFFFFF;
 		int legendaryColor1RGB = legendaryColor1 & 0x00FFFFFF;
 		int legendaryColor2RGB = legendaryColor2 & 0x00FFFFFF;
+		// Uncommon / rare (Cactus Clicker style blueprint rows)
+		int uncommonColorRGB = 0x001EFF00;
+		int rareColorRGB = 0x000070DD;
+		int commonWhiteRGB = 0x00FFFFFF;
 		
 		// First, collect all text with their styles to find the blueprint name section
 		final java.util.List<net.minecraft.text.Style> styles = new java.util.ArrayList<>();
@@ -1465,20 +1533,24 @@ public class InformationenUtility {
 		int dashIndex = -1;
 		int bauplanIndex = -1;
 		
-		// Find the dash before [Bauplan]
 		int bauplanStart = fullTextStr.indexOf("[Bauplan]");
 		if (bauplanStart > 0) {
-			// Look for dash before [Bauplan]
-			for (int i = bauplanStart - 1; i >= 0; i--) {
-				char ch = fullTextStr.charAt(i);
-				if (ch == '-' || ch == '—' || ch == '–') {
-					dashIndex = i;
-					break;
-				} else if (ch != ' ') {
-					break; // Stop if we hit non-space, non-dash character
+			bauplanIndex = bauplanStart;
+			// Prefer " - " so names with inner hyphens still work; also handles " - §3[Bauplan]" in plain strings
+			int sep = fullTextStr.lastIndexOf(" - ", bauplanStart);
+			if (sep >= 0) {
+				dashIndex = sep + 1; // index of '-' in " - "
+			} else {
+				for (int i = bauplanStart - 1; i >= 0; i--) {
+					char ch = fullTextStr.charAt(i);
+					if (ch == '-' || ch == '—' || ch == '–') {
+						dashIndex = i;
+						break;
+					} else if (ch != ' ') {
+						break;
+					}
 				}
 			}
-			bauplanIndex = bauplanStart;
 		}
 		
 		if (dashIndex < 0 || bauplanIndex < 0) {
@@ -1503,14 +1575,20 @@ public class InformationenUtility {
 			if (stringPos < dashIndex) {
 				blueprintName.appendCodePoint(codePoint);
 				
-				// Check the color only for the blueprint name section
-				if (style != null && style.getColor() != null) {
+				// First matching tier wins (prefix glyphs before the colored name are skipped if still null)
+				if (detectedRarity[0] == null && style != null && style.getColor() != null) {
 					int styleColor = style.getColor().getRgb();
-					int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
-					if ((styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) && detectedRarity[0] == null) {
+					int styleColorRGB = styleColor & 0x00FFFFFF;
+					if (styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) {
 						detectedRarity[0] = "epic";
-					} else if ((styleColorRGB == legendaryColor1RGB || styleColorRGB == legendaryColor2RGB) && detectedRarity[0] == null) {
+					} else if (styleColorRGB == legendaryColor1RGB || styleColorRGB == legendaryColor2RGB) {
 						detectedRarity[0] = "legendary";
+					} else if (styleColorRGB == rareColorRGB) {
+						detectedRarity[0] = "rare";
+					} else if (styleColorRGB == uncommonColorRGB) {
+						detectedRarity[0] = "uncommon";
+					} else if (styleColorRGB == commonWhiteRGB) {
+						detectedRarity[0] = "common";
 					}
 				}
 			} else {
@@ -1539,12 +1617,12 @@ public class InformationenUtility {
 		// Remove trailing spaces, dashes, and other common suffixes
 		result = result.replaceAll("\\s*-\\s*$", "").trim();
 		
-		// Return the result if we found a name with a target color
-		if (!result.isEmpty() && detectedRarity[0] != null) {
-			return new BlueprintNameAndColor(result, detectedRarity[0]);
+		if (result.isEmpty()) {
+			return null;
 		}
-		
-		return null;
+		// Default white / unstyled names to common so tooltip + shop scan match chat-stored keys
+		String rarity = detectedRarity[0] != null ? detectedRarity[0] : "common";
+		return new BlueprintNameAndColor(result, rarity);
 	}
 	
 	/**
@@ -2831,12 +2909,25 @@ public class InformationenUtility {
 					for (var element : essencesArray) {
 						JsonObject essenceData = element.getAsJsonObject();
 						String name = essenceData.get("name").getAsString();
-						int wave = essenceData.get("wave").getAsInt();
-						
-						// Store the full essence name including Tier information
-						if (!name.isEmpty()) {
-							essencesDatabase.put(name, new EssenceInfo(wave));
+						if (name.isEmpty() || !essenceData.has("wave")) {
+							continue;
 						}
+						var waveElement = essenceData.get("wave");
+						if (!waveElement.isJsonPrimitive()) {
+							continue;
+						}
+						Integer wave = null;
+						var wavePrimitive = waveElement.getAsJsonPrimitive();
+						if (wavePrimitive.isNumber()) {
+							wave = wavePrimitive.getAsInt();
+						} else if (wavePrimitive.isString() && !"?".equals(wavePrimitive.getAsString().trim())) {
+							try {
+								wave = Integer.parseInt(wavePrimitive.getAsString().trim());
+							} catch (NumberFormatException ignored) {
+								continue;
+							}
+						}
+						essencesDatabase.put(name, new EssenceInfo(wave));
 					}
 				}
 			}
@@ -3656,8 +3747,7 @@ public class InformationenUtility {
 		// Check if we're in a blueprint inventory
 		String screenTitle = client.currentScreen.getTitle().getString();
 		
-		// Check if we're in essence harvester UI - don't add floor numbers here
-		if (ZeichenUtility.containsEssenceHarvesterUi(screenTitle)) {
+		if (ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle)) {
 			return;
 		}
 		
@@ -3773,9 +3863,8 @@ public class InformationenUtility {
 		}
 		
 		// Check if the inventory contains one of the cards/statues characters
-		String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
-		boolean isCardsInventory = screenTitle.contains(cardsStatuesChars[0]); // 㭆
-		boolean isStatuesInventory = screenTitle.contains(cardsStatuesChars[1]); // 㭂
+		boolean isCardsInventory = ZeichenUtility.isCardsMenuTitle(screenTitle);
+		boolean isStatuesInventory = ZeichenUtility.isStatuesMenuTitle(screenTitle);
 		
 		if (!isCardsInventory && !isStatuesInventory) {
 			return;
@@ -4131,9 +4220,10 @@ public class InformationenUtility {
 	 * Data class to store essence information
 	 */
 	private static class EssenceInfo {
-		public final int wave;
+		/** {@code null} = unknown wave, display {@code "?"}. */
+		public final Integer wave;
 		
-		public EssenceInfo(int wave) {
+		public EssenceInfo(Integer wave) {
 			this.wave = wave;
 		}
 	}
@@ -4549,9 +4639,7 @@ public class InformationenUtility {
 							// Base height: Level (1 line) + Essenz (1 line) = 2 lines
 							int height = 2 * lineHeight;
 							// Add 1 line if wave is present
-							if (findWaveForEssence(levelInfo.essence) != null) {
-								height += lineHeight;
-							}
+							height += lineHeight; // Wave line (number or "?")
 							// Add 1 line for spacing after each entry
 							height += lineHeight;
 							totalHeight += height;
@@ -4568,8 +4656,7 @@ public class InformationenUtility {
 							// Add 1 line for "Ohne:" header if "without" is present
 							// Then add 1 line for each essence in "without" list
 							if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
-								height += lineHeight; // "Ohne:" header
-								height += waveInfo.without.size() * lineHeight; // One line per essence
+								height += waveInfo.without.size() * lineHeight; // "Ohne:" + first essence share one line
 							}
 							// Add 1 line for spacing after each entry
 							height += lineHeight;
@@ -4593,9 +4680,7 @@ public class InformationenUtility {
 						// Calculate actual heights for all entries (including spacing)
 						for (MKLevelInfo levelInfo : filteredEntries) {
 							int height = 2 * lineHeight;
-							if (findWaveForEssence(levelInfo.essence) != null) {
-								height += lineHeight;
-							}
+							height += lineHeight; // Wave line (number or "?")
 							height += lineHeight; // Spacing
 							totalHeight += height;
 							lastEntryHeight = height;
@@ -4607,8 +4692,7 @@ public class InformationenUtility {
 						for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
 							int height = 2 * lineHeight;
 							if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
-								height += lineHeight; // "Ohne:" header
-								height += waveInfo.without.size() * lineHeight; // One line per essence
+								height += waveInfo.without.size() * lineHeight;
 							}
 							height += lineHeight; // Spacing
 							totalHeight += height;
@@ -4633,9 +4717,7 @@ public class InformationenUtility {
 					// Calculate actual heights for all entries (including spacing)
 					for (MKLevelInfo levelInfo : filteredEntries) {
 						int height = 2 * lineHeight;
-						if (findWaveForEssence(levelInfo.essence) != null) {
-							height += lineHeight;
-						}
+						height += lineHeight; // Wave line (number or "?")
 						height += lineHeight; // Spacing
 						totalHeight += height;
 						lastEntryHeight = height;
@@ -4647,8 +4729,7 @@ public class InformationenUtility {
 					for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
 						int height = 2 * lineHeight;
 						if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
-							height += lineHeight; // "Ohne:" header
-							height += waveInfo.without.size() * lineHeight; // One line per essence
+							height += waveInfo.without.size() * lineHeight;
 						}
 						height += lineHeight; // Spacing
 						totalHeight += height;
@@ -5436,12 +5517,10 @@ public class InformationenUtility {
 				// Essence and amount (white)
 				allLines.add(new RenderLine(" " + levelInfo.essence + ", " + formatNumberWithSeparator(levelInfo.amount), 0xFFFFFFFF));
 				
-				// Wave if present
-				Integer wave = findWaveForEssence(levelInfo.essence);
-				if (wave != null) {
+				String waveDisplay = getWaveDisplayForMKLevelEssence(levelInfo.essence);
+				if (waveDisplay != null) {
 					String wavePrefix = "-> Welle: ";
-					String waveNumber = String.valueOf(wave);
-					allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveNumber, 0xFF55FF55, client.textRenderer.getWidth(wavePrefix)));
+					allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.textRenderer.getWidth(wavePrefix)));
 				}
 				
 				// Empty line for spacing
@@ -5484,21 +5563,21 @@ public class InformationenUtility {
 			boolean mightHaveMoreLines = startLine + (availableHeight / lineHeight) < allLines.size();
 			int maxRenderY = mightHaveMoreLines ? maxY - lineHeight : maxY;
 			
-			for (int i = startLine; i < allLines.size() && textY < maxRenderY; i++) {
-				// Only render if the line is below the minimum render position
-				if (textY >= minRenderY) {
+			// Zeilen nur überspringen wenn sie komplett oberhalb minRenderY liegen; bei pixelOffset > 0 darf
+			// die erste sichtbare Zeile teilweise in den Bereich ragen (vorher: i lief weiter ohne Zeichnen → Lücken).
+			for (int i = startLine; i < allLines.size(); i++) {
+				if (textY >= maxRenderY) {
+					break;
+				}
+				if (textY + lineHeight > minRenderY) {
 					RenderLine line = allLines.get(i);
 					
 					if (line.hasSecondPart) {
-						// Draw first part
 						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
-						// Draw second part
 						context.drawText(client.textRenderer, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
 					} else {
-						// Draw single line
 						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
 					}
-					
 				}
 				
 				textY += lineHeight;
@@ -5534,18 +5613,13 @@ public class InformationenUtility {
 					// First essence on same line as "Ohne:"
 					if (waveInfo.without.size() > 0) {
 						String firstEssence = waveInfo.without.get(0).trim();
-						Integer essenceWave = findWaveForEssence(firstEssence);
-						
-						if (essenceWave != null) {
+						String essenceWaveDisplay = getWaveDisplayForMKLevelEssence(firstEssence);
+						if (essenceWaveDisplay != null) {
 							String wavePrefixText = " -> Welle: ";
 							int essenceNameWidth = client.textRenderer.getWidth(firstEssence);
-							String waveNumStr = String.valueOf(essenceWave);
 							int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
 							int waveNumX = wavePrefixX + client.textRenderer.getWidth(wavePrefixText);
-							// First part: "Ohne: " + essence name (red)
-							// Second part: " -> Welle: " (gray)
-							// Third part: wave number (green)
-							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555, 0, wavePrefixText, 0xFFC0C0C0, wavePrefixX, waveNumStr, 0xFF55FF55, waveNumX));
+							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555, 0, wavePrefixText, 0xFFC0C0C0, wavePrefixX, essenceWaveDisplay, 0xFF55FF55, waveNumX));
 						} else {
 							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555));
 						}
@@ -5554,18 +5628,13 @@ public class InformationenUtility {
 					// Remaining essences
 					for (int i = 1; i < waveInfo.without.size(); i++) {
 						String essenceName = waveInfo.without.get(i).trim();
-						Integer essenceWave = findWaveForEssence(essenceName);
-						
-						if (essenceWave != null) {
+						String essenceWaveDisplay = getWaveDisplayForMKLevelEssence(essenceName);
+						if (essenceWaveDisplay != null) {
 							String wavePrefixText = " -> Welle: ";
 							int essenceNameWidth = client.textRenderer.getWidth(essenceName);
-							String waveNumStr = String.valueOf(essenceWave);
 							int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
 							int waveNumX = wavePrefixX + client.textRenderer.getWidth(wavePrefixText);
-							// First part: essence name (red)
-							// Second part: " -> Welle: " (gray)
-							// Third part: wave number (green)
-							allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, wavePrefixText, 0xFFC0C0C0, wavePrefixX, waveNumStr, 0xFF55FF55, waveNumX));
+							allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, wavePrefixText, 0xFFC0C0C0, wavePrefixX, essenceWaveDisplay, 0xFF55FF55, waveNumX));
 						} else {
 							allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, "", 0, 0));
 						}
@@ -5612,34 +5681,29 @@ public class InformationenUtility {
 			boolean mightHaveMoreLines = startLine + (availableHeight / lineHeight) < allLines.size();
 			int maxRenderY = mightHaveMoreLines ? maxY - lineHeight : maxY;
 			
-			for (int i = startLine; i < allLines.size() && textY < maxRenderY; i++) {
-				// Only render if the line is below the minimum render position
-				if (textY >= minRenderY) {
+			for (int i = startLine; i < allLines.size(); i++) {
+				if (textY >= maxRenderY) {
+					break;
+				}
+				if (textY + lineHeight > minRenderY) {
 					RenderLine line = allLines.get(i);
 					
 					if (line.hasThirdPart) {
-						// Draw first part
 						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
-						// Draw second part
 						if (line.secondPartText != null && !line.secondPartText.isEmpty()) {
 							context.drawText(client.textRenderer, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
 						}
-						// Draw third part
 						if (line.thirdPartText != null && !line.thirdPartText.isEmpty()) {
 							context.drawText(client.textRenderer, line.thirdPartText, textX + line.thirdPartXOffset, textY, line.thirdPartColor, true);
 						}
 					} else if (line.hasSecondPart) {
-						// Draw first part
 						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
-						// Draw second part
 						if (line.secondPartText != null && !line.secondPartText.isEmpty()) {
 							context.drawText(client.textRenderer, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
 						}
 					} else {
-						// Draw single line
 						context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
 					}
-					
 				}
 				
 				textY += lineHeight;
@@ -5673,9 +5737,7 @@ public class InformationenUtility {
 				for (MKLevelInfo levelInfo : filteredEntries) {
 					totalContentHeight += lineHeight; // Level line
 					totalContentHeight += lineHeight; // Essence line
-					if (findWaveForEssence(levelInfo.essence) != null) {
-						totalContentHeight += lineHeight; // Wave line
-					}
+					totalContentHeight += lineHeight; // Wave line (number or "?")
 					totalContentHeight += lineHeight; // Spacing line
 				}
 			} else {
@@ -5733,55 +5795,301 @@ public class InformationenUtility {
 	}
 	
 	/**
-	 * Finds the wave for an essence from MKLevel format (e.g., "Pferd T1") by converting it to Essenz.json format
-	 * @param mkLevelEssenceName The essence name from MKLevel.json (e.g., "Pferd T1")
-	 * @return The wave number if found, null otherwise
+	 * MKLevel mob name (without trailing {@code T<n>}) to the mob base string used in Essenz.json names, when they differ.
 	 */
-	private static Integer findWaveForEssence(String mkLevelEssenceName) {
+	private static String mkLevelMobNameToEssenzMobBase(String mkMobName) {
+		if (mkMobName == null) {
+			return null;
+		}
+		switch (mkMobName) {
+			case "Zombiepiglin":
+				return "Zombifizierter Piglin";
+			case "Piglin Brute":
+				return "Piglin Grobian";
+			case "Ozelot":
+				return "Ocelot";
+			default:
+				return null;
+		}
+	}
+	
+	private static String getWaveDisplayForEssenceName(String essenceJsonName) {
+		EssenceInfo info = essencesDatabase.get(essenceJsonName);
+		if (info == null || info.wave == null) {
+			return "?";
+		}
+		return String.valueOf(info.wave);
+	}
+	
+	/**
+	 * Wave display for MKLevel essence names (e.g. "Pferd T1"). Returns {@code null} if the name format is invalid.
+	 */
+	private static boolean isValidMKLevelEssenceName(String mkLevelEssenceName) {
+		if (mkLevelEssenceName == null || mkLevelEssenceName.isEmpty()) {
+			return false;
+		}
+		String[] parts = mkLevelEssenceName.trim().split("\\s+");
+		return parts.length >= 2 && parts[parts.length - 1].matches("(?i)T\\d+");
+	}
+	
+	private static String getWaveDisplayForMKLevelEssence(String mkLevelEssenceName) {
+		if (!isValidMKLevelEssenceName(mkLevelEssenceName)) {
+			return null;
+		}
+		EssenceInfo info = findEssenceInfoForMKLevelName(mkLevelEssenceName);
+		if (info == null || info.wave == null) {
+			return "?";
+		}
+		return String.valueOf(info.wave);
+	}
+	
+	/**
+	 * Finds essence data from MKLevel format (e.g., "Pferd T1", "Piglin Brute T9", "Pferde T8") via Essenz.json keys.
+	 */
+	private static EssenceInfo findEssenceInfoForMKLevelName(String mkLevelEssenceName) {
 		if (mkLevelEssenceName == null || mkLevelEssenceName.isEmpty()) {
 			return null;
 		}
 		
-		// Parse the MKLevel format: "Pferd T1" -> name="Pferd", tier="1"
-		String[] parts = mkLevelEssenceName.split("\\s+");
+		String[] parts = mkLevelEssenceName.trim().split("\\s+");
 		if (parts.length < 2) {
 			return null;
 		}
 		
-		String name = parts[0];
-		String tierStr = parts[1].replace("T", "").trim();
-		
-		// Convert name to plural form (matching Essenz.json format)
-		String pluralName = convertToPlural(name);
-		
-		// Build the Essenz.json format: "Pferde [Essenz] Tier 1"
-		String essenceJsonName = pluralName + " [Essenz] Tier " + tierStr;
-		
-		// Look up in database
-		EssenceInfo essenceInfo = essencesDatabase.get(essenceJsonName);
-		if (essenceInfo != null) {
-			return essenceInfo.wave;
+		String last = parts[parts.length - 1];
+		if (!last.matches("(?i)T\\d+")) {
+			return null;
+		}
+		String tierStr = last.replaceFirst("(?i)T", "").trim();
+		String mobName = String.join(" ", java.util.Arrays.copyOfRange(parts, 0, parts.length - 1));
+		if (mobName.isEmpty()) {
+			return null;
 		}
 		
-		// If not found, try alternative formats (e.g., "Piglin" vs "Pigling")
-		// Try with "Pigling" if it was "Piglin"
-		if (name.equals("Piglin")) {
-			String alternativeName = "Pigling [Essenz] Tier " + tierStr;
-			EssenceInfo altInfo = essencesDatabase.get(alternativeName);
-			if (altInfo != null) {
-				return altInfo.wave;
+		java.util.LinkedHashSet<String> candidateKeys = new java.util.LinkedHashSet<>();
+		String aliasBase = mkLevelMobNameToEssenzMobBase(mobName);
+		if (aliasBase != null) {
+			candidateKeys.add(aliasBase + " [Essenz] Tier " + tierStr);
+		}
+		candidateKeys.add(mobName + " [Essenz] Tier " + tierStr);
+		candidateKeys.add(convertToPlural(mobName) + " [Essenz] Tier " + tierStr);
+		
+		for (String key : candidateKeys) {
+			EssenceInfo essenceInfo = essencesDatabase.get(key);
+			if (essenceInfo != null) {
+				return essenceInfo;
 			}
 		}
-		// Also try "Piglin" if it was "Pigling" (though this shouldn't happen in MKLevel.json)
-		if (name.equals("Pigling")) {
-			String alternativeName = "Piglin [Essenz] Tier " + tierStr;
-			EssenceInfo altInfo = essencesDatabase.get(alternativeName);
+		
+		if (mobName.equals("Piglin") || mobName.equals("Pigling")) {
+			String swap = mobName.equals("Piglin") ? "Pigling" : "Piglin";
+			EssenceInfo altInfo = essencesDatabase.get(swap + " [Essenz] Tier " + tierStr);
 			if (altInfo != null) {
-				return altInfo.wave;
+				return altInfo;
 			}
 		}
 		
 		return null;
+	}
+	
+	/** {@code [lo, hi]} inclusive, or {@code null}. Supports {@code "1-13"}, {@code "25+30"} (treated as range), or a single level {@code "14"}. */
+	private static int[] mkLevelParseCombinedLevelBounds(String spec) {
+		if (spec == null || spec.isEmpty()) {
+			return null;
+		}
+		String s = spec.trim();
+		try {
+			if (s.contains("-")) {
+				int d = s.indexOf('-');
+				int lo = Integer.parseInt(s.substring(0, d).trim());
+				int hi = Integer.parseInt(s.substring(d + 1).trim());
+				return new int[] { lo, hi };
+			}
+			if (s.contains("+")) {
+				int p = s.indexOf('+');
+				int lo = Integer.parseInt(s.substring(0, p).trim());
+				int hi = Integer.parseInt(s.substring(p + 1).trim());
+				return new int[] { lo, hi };
+			}
+			int n = Integer.parseInt(s);
+			return new int[] { n, n };
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
+	private static boolean mkLevelCombinedLevelSpecContains(String spec, int mkLevel) {
+		int[] b = mkLevelParseCombinedLevelBounds(spec);
+		return b != null && mkLevel >= b[0] && mkLevel <= b[1];
+	}
+	
+	/** Span {@code hi - lo} for picking the tightest matching combined-waves band. */
+	private static int mkLevelCombinedLevelSpecSpan(String spec) {
+		int[] b = mkLevelParseCombinedLevelBounds(spec);
+		if (b == null) {
+			return Integer.MAX_VALUE;
+		}
+		return b[1] - b[0];
+	}
+	
+	private static boolean mkLevelWithoutListExcludesEssence(java.util.List<String> without, String essence) {
+		if (without == null || without.isEmpty() || essence == null) {
+			return false;
+		}
+		String e = essence.trim();
+		for (String w : without) {
+			if (w != null && w.trim().equals(e)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Strict match: level lies in a band and essence is not in {@code without}. Narrowest band wins.
+	 */
+	private static Integer findWaveFromMKLevelCombinedBandsStrict(int mkLevel, String essence) {
+		Integer bestWave = null;
+		int bestSpan = Integer.MAX_VALUE;
+		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
+			if (!mkLevelCombinedLevelSpecContains(cw.level, mkLevel)) {
+				continue;
+			}
+			if (mkLevelWithoutListExcludesEssence(cw.without, essence)) {
+				continue;
+			}
+			int span = mkLevelCombinedLevelSpecSpan(cw.level);
+			if (span < bestSpan) {
+				bestSpan = span;
+				bestWave = cw.wave;
+			}
+		}
+		return bestWave;
+	}
+	
+	/**
+	 * When {@code mkLevel} is above every band's hi, use the wave from the highest-ending band that does not exclude this essence
+	 * (narrowest among those with maximal hi).
+	 */
+	private static Integer findWaveFromMKLevelCombinedBandsExtrapolateHigh(int mkLevel, String essence) {
+		int globalMaxHi = Integer.MIN_VALUE;
+		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
+			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
+			if (b != null) {
+				globalMaxHi = Math.max(globalMaxHi, b[1]);
+			}
+		}
+		if (globalMaxHi == Integer.MIN_VALUE || mkLevel <= globalMaxHi) {
+			return null;
+		}
+		Integer bestWave = null;
+		int bestSpan = Integer.MAX_VALUE;
+		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
+			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
+			if (b == null || b[1] != globalMaxHi) {
+				continue;
+			}
+			if (mkLevelWithoutListExcludesEssence(cw.without, essence)) {
+				continue;
+			}
+			int span = b[1] - b[0];
+			if (span < bestSpan) {
+				bestSpan = span;
+				bestWave = cw.wave;
+			}
+		}
+		return bestWave;
+	}
+	
+	/**
+	 * Gaps (e.g. level 14 between 1–13 and 15–20) or excluded in-band essences (e.g. Piglin T1 in 15–20): pick the closest band
+	 * that does not exclude this essence. Tie at same distance: prefer continuing from the band ending nearest below the level,
+	 * else the next band above with smallest span.
+	 */
+	private static Integer findWaveFromMKLevelCombinedBandsNearest(int mkLevel, String essence) {
+		int bestDist = Integer.MAX_VALUE;
+		java.util.ArrayList<CombinedWaveInfo> atBest = new java.util.ArrayList<>();
+		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
+			if (mkLevelWithoutListExcludesEssence(cw.without, essence)) {
+				continue;
+			}
+			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
+			if (b == null) {
+				continue;
+			}
+			int lo = b[0];
+			int hi = b[1];
+			int dist = mkLevel < lo ? lo - mkLevel : (mkLevel > hi ? mkLevel - hi : 0);
+			if (dist < bestDist) {
+				bestDist = dist;
+				atBest.clear();
+				atBest.add(cw);
+			} else if (dist == bestDist) {
+				atBest.add(cw);
+			}
+		}
+		if (atBest.isEmpty() || bestDist == Integer.MAX_VALUE) {
+			return null;
+		}
+		if (atBest.size() == 1) {
+			return atBest.get(0).wave;
+		}
+		int bestHiBelow = Integer.MIN_VALUE;
+		for (CombinedWaveInfo cw : atBest) {
+			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
+			if (b[1] <= mkLevel) {
+				bestHiBelow = Math.max(bestHiBelow, b[1]);
+			}
+		}
+		if (bestHiBelow != Integer.MIN_VALUE) {
+			Integer wave = null;
+			int bestSpan = Integer.MAX_VALUE;
+			for (CombinedWaveInfo cw : atBest) {
+				int[] b = mkLevelParseCombinedLevelBounds(cw.level);
+				if (b[1] != bestHiBelow) {
+					continue;
+				}
+				int span = b[1] - b[0];
+				if (span < bestSpan) {
+					bestSpan = span;
+					wave = cw.wave;
+				}
+			}
+			return wave;
+		}
+		int bestLo = Integer.MAX_VALUE;
+		int bestSpanAbove = Integer.MAX_VALUE;
+		Integer waveAbove = null;
+		for (CombinedWaveInfo cw : atBest) {
+			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
+			if (b[0] < mkLevel) {
+				continue;
+			}
+			if (b[0] < bestLo || (b[0] == bestLo && (b[1] - b[0]) < bestSpanAbove)) {
+				bestLo = b[0];
+				bestSpanAbove = b[1] - b[0];
+				waveAbove = cw.wave;
+			}
+		}
+		return waveAbove;
+	}
+	
+	/**
+	 * Wave from {@code combined_waves}: strict containment, then extrapolation above data, then nearest band.
+	 */
+	private static Integer findWaveFromMKLevelCombinedBands(int mkLevel, String essence) {
+		if (mkLevelCombinedWavesDatabase.isEmpty()) {
+			return null;
+		}
+		Integer strict = findWaveFromMKLevelCombinedBandsStrict(mkLevel, essence);
+		if (strict != null) {
+			return strict;
+		}
+		Integer high = findWaveFromMKLevelCombinedBandsExtrapolateHigh(mkLevel, essence);
+		if (high != null) {
+			return high;
+		}
+		return findWaveFromMKLevelCombinedBandsNearest(mkLevel, essence);
 	}
 	
 	/**
@@ -5799,15 +6107,20 @@ public class InformationenUtility {
 		if (singular.equals("Hühner")) {
 			return "Hühner";
 		}
+		if (singular.equals("Pferde")) {
+			return "Pferde";
+		}
 		
 		// Mapping for special cases
 		switch (singular) {
+			case "Polarbär": return "Polarbär";
 			case "Pferd": return "Pferde";
 			case "Lohe": return "Lohen";
 			case "Ziege": return "Ziegen";
 			case "Biene": return "Bienen";
 			case "Huhn": return "Hühner";
 			case "Piglin": return "Piglin"; // Can be "Piglin" or "Pigling" in Essenz.json
+			case "Piglin Brute": return "Piglin Grobian";
 			case "Schneemann": return "Schneemann"; // Stays the same
 			case "Wächter": return "Wächter"; // Stays the same
 			case "Fuchs": return "Fuchs"; // Stays the same
@@ -5907,13 +6220,10 @@ public class InformationenUtility {
 			}
 			// Search for "Welle X" pattern - search for waves containing the number as substring
 			else if (waveFromSearch != null) {
-				Integer entryWave = findWaveForEssence(entry.essence);
-				if (entryWave != null) {
-					// Check if the wave number contains the searched number as substring
-					// e.g., "welle 8" should match "welle 800", "welle 581", etc.
-					String waveStr = String.valueOf(entryWave);
+				String waveDisplay = getWaveDisplayForMKLevelEssence(entry.essence);
+				if (waveDisplay != null && !"?".equals(waveDisplay)) {
 					String searchWaveStr = String.valueOf(waveFromSearch);
-					if (waveStr.contains(searchWaveStr)) {
+					if (waveDisplay.contains(searchWaveStr)) {
 						matches = true;
 					}
 				}
@@ -5948,10 +6258,10 @@ public class InformationenUtility {
 					}
 				}
 				
-				// Search in Wave (as number) - only if not already matched
+				// Search in Wave display (number or "?")
 				if (!matches) {
-					Integer entryWave = findWaveForEssence(entry.essence);
-					if (entryWave != null && String.valueOf(entryWave).contains(searchLower)) {
+					String waveDisplay = getWaveDisplayForMKLevelEssence(entry.essence);
+					if (waveDisplay != null && waveDisplay.toLowerCase().contains(searchLower)) {
 						matches = true;
 					}
 				}
@@ -6218,9 +6528,7 @@ public class InformationenUtility {
 					List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
 					for (MKLevelInfo levelInfo : filteredEntries) {
 						totalContentHeight += 2 * lineHeight;
-						if (findWaveForEssence(levelInfo.essence) != null) {
-							totalContentHeight += lineHeight;
-						}
+						totalContentHeight += lineHeight; // Wave line (number or "?")
 						totalContentHeight += lineHeight;
 					}
 				} else {
@@ -6228,7 +6536,6 @@ public class InformationenUtility {
 					for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
 						totalContentHeight += 2 * lineHeight;
 						if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
-							totalContentHeight += lineHeight;
 							totalContentHeight += waveInfo.without.size() * lineHeight;
 						}
 						totalContentHeight += lineHeight;
@@ -6303,9 +6610,7 @@ public class InformationenUtility {
 			List<MKLevelInfo> filteredEntries = filterMKLevelEntries(mkLevelSearchText);
 			for (MKLevelInfo levelInfo : filteredEntries) {
 				totalContentHeight += 2 * lineHeight;
-				if (findWaveForEssence(levelInfo.essence) != null) {
-					totalContentHeight += lineHeight;
-				}
+				totalContentHeight += lineHeight; // Wave line (number or "?")
 				totalContentHeight += lineHeight;
 			}
 		} else {
@@ -6313,7 +6618,6 @@ public class InformationenUtility {
 			for (CombinedWaveInfo waveInfo : filteredCombinedWaves) {
 				totalContentHeight += 2 * lineHeight;
 				if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
-					totalContentHeight += lineHeight;
 					totalContentHeight += waveInfo.without.size() * lineHeight;
 				}
 				totalContentHeight += lineHeight;
@@ -6924,6 +7228,23 @@ public class InformationenUtility {
 	}
 	
 	/**
+	 * Farmzone = Farmwelt ({@code minecraft:overworld}) + Cactus-Clicker-Scoreboard mit erkanntem Biom.
+	 * Gleiche Logik wie beim Collection-Overlay.
+	 */
+	public static boolean isInFarmzone(MinecraftClient client) {
+		return isInFarmworldDimension(client) && biomDetected;
+	}
+
+	/**
+	 * Aktualisiert den Biom-Cache vom Scoreboard (rate-limited, wie {@link #checkCollectionBiomChange}).
+	 */
+	public static void refreshFarmzoneScoreboardCache(MinecraftClient client) {
+		if (client != null && isInFarmworldDimension(client)) {
+			checkCollectionBiomChange(client);
+		}
+	}
+
+	/**
 	 * Checks if player is in farmworld dimension
 	 */
 	private static boolean isInFarmworldDimension(MinecraftClient client) {
@@ -7233,7 +7554,7 @@ public class InformationenUtility {
 	}
 	
 	/**
-	 * Sidebar-Zeilen wie im HUD (ohne §-Codes), für andere Utilities (z. B. TabInfo Kombo-Kiste).
+	 * Sidebar-Zeilen wie im HUD (ohne §-Codes), für andere Utilities (z. B. npcAlerts Kombo-Kiste).
 	 */
 	public static List<String> readCleanSidebarLines(MinecraftClient client) {
 		List<String> out = new ArrayList<>();

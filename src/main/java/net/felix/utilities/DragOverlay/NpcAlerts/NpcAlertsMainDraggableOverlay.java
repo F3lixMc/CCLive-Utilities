@@ -1,9 +1,9 @@
-package net.felix.utilities.DragOverlay.TabInfo;
+package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
+import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -13,9 +13,9 @@ import org.joml.Matrix3x2fStack;
 import java.util.List;
 
 /**
- * Draggable Overlay für das große Tab-Info Overlay
+ * Draggable Overlay für das große NPC Alerts Overlay
  */
-public class TabInfoMainDraggableOverlay implements DraggableOverlay {
+public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
     
     // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler
     private static final Identifier FORSCHUNG_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
@@ -30,7 +30,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String getOverlayName() {
-        return "Tab Info (Haupt)";
+        return "NPC Alerts (Haupt)";
     }
     
     @Override
@@ -39,11 +39,11 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         // baseX is the left edge position (like Mining overlays)
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.getWindow() == null) {
-            return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
+            return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX;
         }
         
         int screenWidth = client.getWindow().getScaledWidth();
-        int baseX = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
+        int baseX = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX;
         int overlayWidth = getWidth(); // Use scaled width for positioning
         
         // Determine if overlay is on left or right side of screen
@@ -67,7 +67,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getY() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY;
+        return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY;
     }
     
     /**
@@ -80,21 +80,21 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         if (client == null) return 200; // Fallback width
         
         // Verwende die tatsächlichen Zeilen aus dem originalen Overlay für genaue Breitenberechnung
-        List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLines();
+        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLines();
         if (lines.isEmpty()) {
             // Fallback: Verwende Edit-Mode Zeilen wenn keine echten Daten verfügbar
-            lines = TabInfoUtility.getMainOverlayLinesForEditMode();
+            lines = NpcAlertsUtility.getMainOverlayLinesForEditMode();
         }
         // Wenn leer, verwende minimale Breite (aber nur wenn Hintergrund aktiviert ist)
         if (lines.isEmpty()) {
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+            if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
                 return 50; // Minimale Breite
             }
             return 200; // Fallback width
         }
         
         int maxWidth = 0;
-        for (TabInfoUtility.LineWithPercent line : lines) {
+        for (NpcAlertsUtility.LineWithPercent line : lines) {
             int width = 0;
             // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
             if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
@@ -131,10 +131,10 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return 100;
         
-        List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLinesForEditMode();
+        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLinesForEditMode();
         // Wenn leer, verwende minimale Höhe (aber nur wenn Hintergrund aktiviert ist)
         if (lines.isEmpty()) {
-            if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+            if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
                 return 20; // Minimale Höhe
             }
             return 100; // Fallback
@@ -146,7 +146,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
         int actualLineHeight = LINE_HEIGHT;
         int iconLineCount = 0;
-        for (TabInfoUtility.LineWithPercent line : lines) {
+        for (NpcAlertsUtility.LineWithPercent line : lines) {
             if (line.showIcon && line.configKey != null) {
                 int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
                 actualLineHeight = Math.max(actualLineHeight, iconSize);
@@ -161,7 +161,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     @Override
     public int getWidth() {
         // Return scaled width
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale;
         if (scale <= 0) scale = 1.0f; // Safety check
         return Math.round(calculateUnscaledWidth() * scale);
     }
@@ -169,7 +169,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     @Override
     public int getHeight() {
         // Return scaled height
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale;
         if (scale <= 0) scale = 1.0f; // Safety check
         return Math.round(calculateUnscaledHeight() * scale);
     }
@@ -180,8 +180,8 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         // We need to reverse the calculation: from the actual x position, calculate baseX
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.getWindow() == null) {
-            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX = x;
-            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY = y;
+            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX = x;
+            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY = y;
             return;
         }
         
@@ -202,8 +202,8 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
             baseX = x + overlayWidth;
         }
         
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX = baseX;
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY = y;
+        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX = baseX;
+        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY = y;
     }
     
     @Override
@@ -218,7 +218,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         float scale = (scaleX + scaleY) / 2.0f;
         
         // Keine Grenzen für Scale
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale = scale;
+        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale = scale;
     }
     
     @Override
@@ -232,21 +232,21 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         int height = getHeight();
         
         // Get scale
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale;
         if (scale <= 0) scale = 1.0f;
         
         // Render border for edit mode (scaled)
         context.drawBorder(x, y, width, height, 0xFFFF0000);
         
         // Render background (scaled)
-        if (CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+        if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
             context.fill(x, y, x + width, y + height, 0x80000000);
         }
         
         // Hole die Zeilen für das Overlay
-        List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLinesForEditMode();
+        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLinesForEditMode();
         // Rendere auch wenn leer, wenn Hintergrund aktiviert ist
-        if (lines.isEmpty() && !CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+        if (lines.isEmpty() && !CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
             return;
         }
         
@@ -267,7 +267,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         
         // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
         int actualLineHeight = LINE_HEIGHT;
-        for (TabInfoUtility.LineWithPercent line : lines) {
+        for (NpcAlertsUtility.LineWithPercent line : lines) {
             if (line.showIcon && line.configKey != null) {
                 int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
                 actualLineHeight = Math.max(actualLineHeight, iconSize);
@@ -276,7 +276,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         
         // Berechne die tatsächliche Text-Höhe (inkl. zusätzlicher Abstände für Icon-Zeilen)
         int totalTextHeight = 0;
-        for (TabInfoUtility.LineWithPercent line : lines) {
+        for (NpcAlertsUtility.LineWithPercent line : lines) {
             totalTextHeight += actualLineHeight;
             if (line.showIcon && line.configKey != null) {
                 totalTextHeight += 2; // Zusätzlicher Abstand für Icon-Zeilen
@@ -294,14 +294,14 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         int xPosition = 0; // Relativ zu (x, y) nach Matrix-Transformation
         
         // Rendere alle Zeilen (gleiche Logik wie im Original)
-        for (TabInfoUtility.LineWithPercent line : lines) {
+        for (NpcAlertsUtility.LineWithPercent line : lines) {
             if (line.text == null || line.text.trim().isEmpty()) {
                 currentY += actualLineHeight;
                 continue;
             }
             
             // Hole konfigurierte Farben für diese Zeile
-            int textColor = TabInfoUtility.getTextColorForConfigKey(line.configKey);
+            int textColor = NpcAlertsUtility.getTextColorForConfigKey(line.configKey);
             try {
                 int currentX = xPosition + PADDING;
                 
@@ -460,7 +460,10 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
+            return false;
+        }
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible) {
             return false;
         }
         
@@ -470,7 +473,7 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
         }
         
         // Prüfe ob es Zeilen gibt, die im Haupt-Overlay angezeigt werden sollen
-        List<TabInfoUtility.LineWithPercent> lines = TabInfoUtility.getMainOverlayLines();
+        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLines();
         return !lines.isEmpty();
     }
     
@@ -489,17 +492,17 @@ public class TabInfoMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public Text getTooltip() {
-        return Text.literal("Tab Info Haupt-Overlay - Zeigt alle Tab-Informationen");
+        return Text.literal("NPC Alerts Haupt-Overlay - Zeigt alle NPC Alertsrmationen");
     }
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX = 5;
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY = 5;
+        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX = 5;
+        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY = 5;
     }
     
     @Override
     public void resetSizeToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale = 1.0f;
+        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale = 1.0f;
     }
 }

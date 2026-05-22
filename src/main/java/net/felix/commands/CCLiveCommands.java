@@ -6,6 +6,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.utilities.Aincraft.BPViewerUtility;
@@ -27,11 +30,44 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
  * Vereint Blueprint- und Leaderboard-Commands unter einem Hauptcommand
  */
 public class CCLiveCommands {
-    
+
+    private static boolean wasInClassSelectionInventory = false;
+
     public static void register() {
+        registerClassSelectionInventoryReset();
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             registerCCLiveCommands(dispatcher);
         });
+    }
+
+    private static void registerClassSelectionInventoryReset() {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+                String title = handledScreen.getTitle().getString();
+                boolean inClassSelection = ZeichenUtility.containsClassSelectionUi(title);
+                if (inClassSelection && !wasInClassSelectionInventory) {
+                    resetBlueprintsAndMaterialsProgress();
+                }
+                wasInClassSelectionInventory = inClassSelection;
+            } else {
+                wasInClassSelectionInventory = false;
+            }
+        });
+    }
+
+    public static void resetFoundBlueprintsProgress() {
+        BPViewerUtility.getInstance().resetFoundBlueprints();
+    }
+
+    public static void resetMaterialsAndResourcesProgress() {
+        CollectedMaterialsResourcesStorage.resetAll();
+        ClipboardDraggableOverlay.resetCollectedMaterials();
+        ClipboardAmbossRessourceCollector.resetCollectedResources();
+    }
+
+    public static void resetBlueprintsAndMaterialsProgress() {
+        resetFoundBlueprintsProgress();
+        resetMaterialsAndResourcesProgress();
     }
     
     private static void registerCCLiveCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
@@ -173,8 +209,7 @@ public class CCLiveCommands {
      */
     private static int resetBlueprints(CommandContext<FabricClientCommandSource> context) {
         try {
-            BPViewerUtility instance = BPViewerUtility.getInstance();
-            instance.resetFoundBlueprints();
+            resetFoundBlueprintsProgress();
             context.getSource().sendFeedback(Text.literal("§aAlle gefundenen Baupläne wurden zurückgesetzt!"));
             return 1;
         } catch (Exception e) {
@@ -228,9 +263,7 @@ public class CCLiveCommands {
     
     private static int resetMaterialsResources(CommandContext<FabricClientCommandSource> context) {
         try {
-            CollectedMaterialsResourcesStorage.resetAll();
-            ClipboardDraggableOverlay.resetCollectedMaterials();
-            ClipboardAmbossRessourceCollector.resetCollectedResources();
+            resetMaterialsAndResourcesProgress();
             context.getSource().sendFeedback(Text.literal("§aMaterialien und Ressourcen erfolgreich gelöscht"));
             return 1;
         } catch (Exception e) {

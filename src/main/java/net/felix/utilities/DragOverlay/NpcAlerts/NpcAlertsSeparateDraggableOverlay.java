@@ -1,9 +1,9 @@
-package net.felix.utilities.DragOverlay.TabInfo;
+package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
+import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -12,9 +12,9 @@ import net.minecraft.util.Identifier;
 import org.joml.Matrix3x2fStack;
 
 /**
- * Draggable Overlay für einzelne Tab-Info Overlays
+ * Draggable Overlay für einzelne NPC Alerts Overlays
  */
-public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
+public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     
     private final String configKey;
     private final String displayName;
@@ -30,14 +30,14 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
     private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
     
-    public TabInfoSeparateDraggableOverlay(String infoName, String configKey, String displayName) {
+    public NpcAlertsSeparateDraggableOverlay(String infoName, String configKey, String displayName) {
         this.configKey = configKey;
         this.displayName = displayName;
     }
     
     @Override
     public String getOverlayName() {
-        return "Tab Info: " + displayName;
+        return "NPC Alerts: " + displayName;
     }
     
     @Override
@@ -83,35 +83,35 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private float getScale() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScale;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScale;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScale;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScale;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScale;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScale;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScale;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScale;
             case "machtkristalleSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Scale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Scale;
             case "machtkristalleSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Scale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Scale;
             case "machtkristalleSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Scale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Scale;
             case "recycler":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerScale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScale;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Scale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Scale;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Scale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Scale;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Scale;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Scale;
             default:
                 return 1.0f;
         }
@@ -123,49 +123,49 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private void setScale(float scale) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScale = scale;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScale = scale;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScale = scale;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScale = scale;
                 break;
             case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScale = scale;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScale = scale;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScale = scale;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScale = scale;
                 break;
             case "machtkristalleSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Scale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Scale = scale;
                 break;
             case "machtkristalleSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Scale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Scale = scale;
                 break;
             case "machtkristalleSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Scale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Scale = scale;
                 break;
             case "recycler":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerScale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScale = scale;
                 break;
             case "recyclerSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Scale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Scale = scale;
                 break;
             case "recyclerSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Scale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Scale = scale;
                 break;
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Scale = scale;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Scale = scale;
                 break;
         }
     }
@@ -182,9 +182,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         if ("machtkristalle".equals(configKey)) {
             boolean showIcon = getShowIcon();
             // Prüfe welche Slots einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate;
-            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate;
-            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
+            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
+            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
+            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
             
             int maxWidth = 0;
             for (int i = 0; i < 3; i++) {
@@ -194,7 +194,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                TabInfoUtility.MachtkristallSlot slot = TabInfoUtility.machtkristallSlots[i];
+                NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[i];
                 int width = 0;
                 
                 // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
@@ -241,15 +241,15 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             boolean showIcon = getShowIcon();
             boolean showPercent = getShowPercent();
             // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
+            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
+            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
+            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
+            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
+            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
             
             int maxWidth = 0;
             for (int i = 0; i < 3; i++) {
@@ -257,13 +257,13 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 boolean slotEnabled;
                 switch (i) {
                     case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
                         break;
                     case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
                         break;
                     case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
                         break;
                     default:
                         slotEnabled = true;
@@ -282,9 +282,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                TabInfoUtility.CapacityData recyclerSlot = (i == 0) ? TabInfoUtility.recyclerSlot1 : 
-                                                          (i == 1) ? TabInfoUtility.recyclerSlot2 : 
-                                                          TabInfoUtility.recyclerSlot3;
+                NpcAlertsUtility.CapacityData recyclerSlot = (i == 0) ? NpcAlertsUtility.recyclerSlot1 : 
+                                                          (i == 1) ? NpcAlertsUtility.recyclerSlot2 : 
+                                                          NpcAlertsUtility.recyclerSlot3;
                 int width = 0;
                 
                 // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
@@ -305,7 +305,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 
                 // Prozent-Breite
                 if (showPercent && recyclerSlot.isValid()) {
-                    String percentText = TabInfoUtility.calculatePercent(recyclerSlot.current, recyclerSlot.max);
+                    String percentText = NpcAlertsUtility.calculatePercent(recyclerSlot.current, recyclerSlot.max);
                     width += client.textRenderer.getWidth(" " + percentText);
                 }
                 
@@ -326,13 +326,13 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             boolean slotEnabled;
             switch (slotIndex) {
                 case 0:
-                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
                     break;
                 case 1:
-                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
                     break;
                 case 2:
-                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
                     break;
                 default:
                     slotEnabled = true;
@@ -344,7 +344,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return 0;
             }
             
-            TabInfoUtility.MachtkristallSlot slot = TabInfoUtility.machtkristallSlots[slotIndex];
+            NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[slotIndex];
             boolean showIcon = getShowIcon();
             String percentText = slot.getPercentText();
             boolean showPercent = percentText != null;
@@ -426,9 +426,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         // Für Machtkristalle: mehrere Zeilen möglich
         if ("machtkristalle".equals(configKey)) {
             // Prüfe welche Slots einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate;
-            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate;
-            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
+            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
+            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
+            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
             
             // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
             int lineCount = 0;
@@ -437,13 +437,13 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 boolean slotEnabled;
                 switch (i) {
                     case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
                         break;
                     case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
                         break;
                     case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
                         break;
                     default:
                         slotEnabled = true;
@@ -474,15 +474,15 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         // Für Recycler: mehrere Zeilen möglich
         if ("recycler".equals(configKey)) {
             // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
+            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
+            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
+            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
+            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
+            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
             
             // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
             int lineCount = 0;
@@ -491,13 +491,13 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 boolean slotEnabled;
                 switch (i) {
                     case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
                         break;
                     case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
                         break;
                     case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
                         break;
                     default:
                         slotEnabled = true;
@@ -529,15 +529,15 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         // Für Recycler: mehrere Zeilen möglich
         if ("recycler".equals(configKey)) {
             // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
+            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
+            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
+            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
+            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
+            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
             
             // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
             int lineCount = 0;
@@ -546,13 +546,13 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 boolean slotEnabled;
                 switch (i) {
                     case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
                         break;
                     case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
                         break;
                     case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
                         break;
                     default:
                         slotEnabled = true;
@@ -717,19 +717,19 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         int percentColor = 0xFFFFFF00;
         if (configKey != null) {
             if ("recyclerSlot1".equals(configKey)) {
-                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
+                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
                 textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
+                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
                 percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
             } else if ("recyclerSlot2".equals(configKey)) {
-                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor;
+                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
                 textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor;
+                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
                 percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
             } else if ("recyclerSlot3".equals(configKey)) {
-                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor;
+                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
                 textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor;
+                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
                 percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
             }
         }
@@ -811,9 +811,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         // Render main text (mehrzeilig für Machtkristalle)
         if ("machtkristalle".equals(configKey)) {
             // Prüfe welche Slots einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate;
-            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate;
-            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
+            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
+            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
+            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
             
             // Für Multi-Line-Overlay: Starte oben mit PADDING, nicht zentriert
             int lineY = 5; // PADDING
@@ -825,13 +825,13 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 boolean slotEnabled;
                 switch (i) {
                     case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
                         break;
                     case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
                         break;
                     case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
                         break;
                     default:
                         slotEnabled = true;
@@ -849,7 +849,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                TabInfoUtility.MachtkristallSlot slot = TabInfoUtility.machtkristallSlots[i];
+                NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[i];
                 int lineX = currentX;
                 int lineCenterY = lineY + actualLineHeight / 2;
                 
@@ -928,15 +928,15 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             }
         } else if ("recycler".equals(configKey)) {
             // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
+            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
+            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
+            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
+            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
+            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
             
             // Für Multi-Line-Overlay: Starte oben mit PADDING, nicht zentriert
             int lineY = 5; // PADDING
@@ -948,21 +948,21 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 int recyclerPercentColor = 0xFFFFFF00;
                 switch (i) {
                     case 0:
-                        java.awt.Color color1 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
+                        java.awt.Color color1 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
                         recyclerTextColor = (color1.getAlpha() << 24) | (color1.getRed() << 16) | (color1.getGreen() << 8) | color1.getBlue();
-                        java.awt.Color percentColor1 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
+                        java.awt.Color percentColor1 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
                         recyclerPercentColor = (percentColor1.getAlpha() << 24) | (percentColor1.getRed() << 16) | (percentColor1.getGreen() << 8) | percentColor1.getBlue();
                         break;
                     case 1:
-                        java.awt.Color color2 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor;
+                        java.awt.Color color2 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
                         recyclerTextColor = (color2.getAlpha() << 24) | (color2.getRed() << 16) | (color2.getGreen() << 8) | color2.getBlue();
-                        java.awt.Color percentColor2 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor;
+                        java.awt.Color percentColor2 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
                         recyclerPercentColor = (percentColor2.getAlpha() << 24) | (percentColor2.getRed() << 16) | (percentColor2.getGreen() << 8) | percentColor2.getBlue();
                         break;
                     case 2:
-                        java.awt.Color color3 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor;
+                        java.awt.Color color3 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
                         recyclerTextColor = (color3.getAlpha() << 24) | (color3.getRed() << 16) | (color3.getGreen() << 8) | color3.getBlue();
-                        java.awt.Color percentColor3 = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor;
+                        java.awt.Color percentColor3 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
                         recyclerPercentColor = (percentColor3.getAlpha() << 24) | (percentColor3.getRed() << 16) | (percentColor3.getGreen() << 8) | percentColor3.getBlue();
                         break;
                 }
@@ -972,13 +972,13 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 boolean slotEnabled;
                 switch (i) {
                     case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
                         break;
                     case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
                         break;
                     case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
                         break;
                     default:
                         slotEnabled = true;
@@ -997,9 +997,9 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                TabInfoUtility.CapacityData recyclerSlot = (i == 0) ? TabInfoUtility.recyclerSlot1 : 
-                                                          (i == 1) ? TabInfoUtility.recyclerSlot2 : 
-                                                          TabInfoUtility.recyclerSlot3;
+                NpcAlertsUtility.CapacityData recyclerSlot = (i == 0) ? NpcAlertsUtility.recyclerSlot1 : 
+                                                          (i == 1) ? NpcAlertsUtility.recyclerSlot2 : 
+                                                          NpcAlertsUtility.recyclerSlot3;
                 int lineX = currentX;
                 int lineCenterY = lineY + actualLineHeight / 2;
                 
@@ -1011,7 +1011,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 } else {
                     displayText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
                     if (showPercent && recyclerSlot.isValid()) {
-                        slotPercentText = TabInfoUtility.calculatePercent(recyclerSlot.current, recyclerSlot.max);
+                        slotPercentText = NpcAlertsUtility.calculatePercent(recyclerSlot.current, recyclerSlot.max);
                     }
                 }
                 
@@ -1114,7 +1114,10 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
+            return false;
+        }
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible) {
             return false;
         }
         
@@ -1148,40 +1151,40 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private boolean isInfoEnabled() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmboss;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaeger;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsKomboKiste;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelen;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzen;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle;
             case "machtkristalleSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
             case "machtkristalleSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
             case "machtkristalleSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
             case "recycler":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 || 
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 || 
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 || 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 || 
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
             default:
                 return false;
         }
@@ -1189,7 +1192,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     
     @Override
     public Text getTooltip() {
-        return Text.literal("Tab Info: " + displayName + " - Separates Overlay");
+        return Text.literal("NPC Alerts: " + displayName + " - Separates Overlay");
     }
     
     @Override
@@ -1209,69 +1212,69 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private boolean getSeparateOverlayEnabled() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay;
             case "machtkristalle":
                 // Prüfe ob separate Overlay aktiviert ist UND ob nicht alle Slots einzeln sind
-                if (!CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
+                if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
                     return false;
                 }
                 // Wenn alle 3 Slots einzeln sind, gibt es kein Multi-Line-Overlay mehr
-                boolean allSlotsSeparate = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate &&
-                                          CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate &&
-                                          CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
+                boolean allSlotsSeparate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate &&
+                                          CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate &&
+                                          CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
                 return !allSlotsSeparate;
             case "recycler":
                 // Prüfe ob mindestens ein Recycler-Slot "Separates Overlay" aktiviert hat
-                boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                                            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
-                boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                                            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
-                boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                                            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
+                boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                                            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
+                boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                                            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
+                boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                                            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
                 if (!recyclerSlot1Active && !recyclerSlot2Active && !recyclerSlot3Active) {
                     return false;
                 }
                 // Wenn alle 3 Slots einzeln sind, gibt es kein Multi-Line-Overlay mehr
-                boolean allRecyclerSlotsSeparate = (recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate) &&
-                                                   (recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate) &&
-                                                   (recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate);
+                boolean allRecyclerSlotsSeparate = (recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate) &&
+                                                   (recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate) &&
+                                                   (recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate);
                 return !allRecyclerSlotsSeparate;
             case "machtkristalleSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate &&
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
             case "machtkristalleSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate &&
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
             case "machtkristalleSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate &&
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate &&
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate &&
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay && 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate &&
-                       CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay && 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate &&
+                       CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
             default:
                 return false;
         }
@@ -1280,35 +1283,35 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private int getXFromConfig() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungX;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossX;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenX;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerX;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteX;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenX;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenX;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleX;
             case "machtkristalleSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1X;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1X;
             case "machtkristalleSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2X;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2X;
             case "machtkristalleSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3X;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3X;
             case "recycler":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerX;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerX;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1X;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1X;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2X;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2X;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3X;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3X;
             default:
                 return 10;
         }
@@ -1317,35 +1320,35 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private int getYFromConfig() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungY;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossY;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenY;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerY;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteY;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenY;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenY;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleY;
             case "machtkristalleSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Y;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Y;
             case "machtkristalleSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Y;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Y;
             case "machtkristalleSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Y;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Y;
             case "recycler":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerY;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerY;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Y;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Y;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Y;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Y;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Y;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Y;
             default:
                 return 10;
         }
@@ -1354,49 +1357,49 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private void setXInConfig(int x) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungX = x;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossX = x;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenX = x;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerX = x;
                 break;
             case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteX = x;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenX = x;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenX = x;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleX = x;
                 break;
             case "machtkristalleSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1X = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1X = x;
                 break;
             case "machtkristalleSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2X = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2X = x;
                 break;
             case "machtkristalleSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3X = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3X = x;
                 break;
             case "recycler":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerX = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerX = x;
                 break;
             case "recyclerSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1X = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1X = x;
                 break;
             case "recyclerSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2X = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2X = x;
                 break;
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3X = x;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3X = x;
                 break;
         }
     }
@@ -1404,49 +1407,49 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private void setYInConfig(int y) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungY = y;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossY = y;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenY = y;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerY = y;
                 break;
             case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteY = y;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenY = y;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenY = y;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleY = y;
                 break;
             case "machtkristalleSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Y = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Y = y;
                 break;
             case "machtkristalleSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Y = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Y = y;
                 break;
             case "machtkristalleSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Y = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Y = y;
                 break;
             case "recycler":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerY = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerY = y;
                 break;
             case "recyclerSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Y = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Y = y;
                 break;
             case "recyclerSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Y = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Y = y;
                 break;
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Y = y;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Y = y;
                 break;
         }
     }
@@ -1486,27 +1489,27 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
         boolean showIcon = getShowIcon();
         switch (configKey) {
             case "forschung":
-                return showIcon ? TabInfoUtility.forschung.getDisplayString() : "Forschung: " + TabInfoUtility.forschung.getDisplayString();
+                return showIcon ? NpcAlertsUtility.forschung.getDisplayString() : "Forschung: " + NpcAlertsUtility.forschung.getDisplayString();
             case "amboss":
-                return showIcon ? TabInfoUtility.ambossKapazitaet.getDisplayString() : "Amboss: " + TabInfoUtility.ambossKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertsUtility.ambossKapazitaet.getDisplayString() : "Amboss: " + NpcAlertsUtility.ambossKapazitaet.getDisplayString();
             case "schmelzofen":
-                return showIcon ? TabInfoUtility.schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + TabInfoUtility.schmelzofenKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertsUtility.schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + NpcAlertsUtility.schmelzofenKapazitaet.getDisplayString();
             case "jaeger":
-                return showIcon ? TabInfoUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + TabInfoUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix();
+                return showIcon ? NpcAlertsUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + NpcAlertsUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix();
             case "komboKiste": {
-                String fraction = TabInfoUtility.getKomboKisteFractionDisplay();
+                String fraction = NpcAlertsUtility.getKomboKisteFractionDisplay();
                 return showIcon ? fraction : "Kombo Kiste: " + fraction;
             }
             case "seelen":
-                return showIcon ? TabInfoUtility.seelenKapazitaet.getDisplayString() : "Seelen: " + TabInfoUtility.seelenKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertsUtility.seelenKapazitaet.getDisplayString() : "Seelen: " + NpcAlertsUtility.seelenKapazitaet.getDisplayString();
             case "essenzen":
-                return showIcon ? TabInfoUtility.essenzenKapazitaet.getDisplayString() : "Essenzen: " + TabInfoUtility.essenzenKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertsUtility.essenzenKapazitaet.getDisplayString() : "Essenzen: " + NpcAlertsUtility.essenzenKapazitaet.getDisplayString();
             case "machtkristalle":
                 // Für Machtkristalle: zeige alle 3 Slots
                 // Hinweis: Prozentwerte werden separat gerendert (in gelb)
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < 3; i++) {
-                    TabInfoUtility.MachtkristallSlot slot = TabInfoUtility.machtkristallSlots[i];
+                    NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[i];
                     if (i > 0) sb.append("\n");
                     if (slot.isEmpty()) {
                         sb.append(slot.getDisplayTextForEmptySlot(i + 1));
@@ -1520,7 +1523,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 return sb.toString();
             case "machtkristalleSlot1":
                 // Für einzelnen MK-Slot 1
-                TabInfoUtility.MachtkristallSlot slot1 = TabInfoUtility.machtkristallSlots[0];
+                NpcAlertsUtility.MachtkristallSlot slot1 = NpcAlertsUtility.machtkristallSlots[0];
                 if (slot1.isNotFound()) {
                     return "MK 1: Nicht im Widget";
                 } else if (slot1.isEmpty()) {
@@ -1531,7 +1534,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 }
             case "machtkristalleSlot2":
                 // Für einzelnen MK-Slot 2
-                TabInfoUtility.MachtkristallSlot slot2 = TabInfoUtility.machtkristallSlots[1];
+                NpcAlertsUtility.MachtkristallSlot slot2 = NpcAlertsUtility.machtkristallSlots[1];
                 if (slot2.isNotFound()) {
                     return "MK 2: Nicht im Widget";
                 } else if (slot2.isEmpty()) {
@@ -1542,7 +1545,7 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 }
             case "machtkristalleSlot3":
                 // Für einzelnen MK-Slot 3
-                TabInfoUtility.MachtkristallSlot slot3 = TabInfoUtility.machtkristallSlots[2];
+                NpcAlertsUtility.MachtkristallSlot slot3 = NpcAlertsUtility.machtkristallSlots[2];
                 if (slot3.isNotFound()) {
                     return "MK 3: Nicht im Widget";
                 } else if (slot3.isEmpty()) {
@@ -1554,15 +1557,15 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
             case "recycler":
                 // Für Recycler: zeige alle 3 Slots, die im Multi-Line-Overlay sind
                 // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-                boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-                                            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
-                boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-                                            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
-                boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-                                            CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
-                boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
-                boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
-                boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+                boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+                                            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
+                boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+                                            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
+                boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+                                            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
+                boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
+                boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
+                boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
                 
                 StringBuilder recyclerSb = new StringBuilder();
                 for (int i = 0; i < 3; i++) {
@@ -1573,20 +1576,20 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                         continue;
                     }
                     
-                    TabInfoUtility.CapacityData recyclerSlot = (i == 0) ? TabInfoUtility.recyclerSlot1 : 
-                                                              (i == 1) ? TabInfoUtility.recyclerSlot2 : 
-                                                              TabInfoUtility.recyclerSlot3;
+                    NpcAlertsUtility.CapacityData recyclerSlot = (i == 0) ? NpcAlertsUtility.recyclerSlot1 : 
+                                                              (i == 1) ? NpcAlertsUtility.recyclerSlot2 : 
+                                                              NpcAlertsUtility.recyclerSlot3;
                     if (recyclerSb.length() > 0) recyclerSb.append("\n");
                     String slotText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
                     recyclerSb.append(slotText);
                 }
                 return recyclerSb.toString();
             case "recyclerSlot1":
-                return showIcon ? TabInfoUtility.recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + TabInfoUtility.recyclerSlot1.getDisplayString();
+                return showIcon ? NpcAlertsUtility.recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + NpcAlertsUtility.recyclerSlot1.getDisplayString();
             case "recyclerSlot2":
-                return showIcon ? TabInfoUtility.recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + TabInfoUtility.recyclerSlot2.getDisplayString();
+                return showIcon ? NpcAlertsUtility.recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + NpcAlertsUtility.recyclerSlot2.getDisplayString();
             case "recyclerSlot3":
-                return showIcon ? TabInfoUtility.recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + TabInfoUtility.recyclerSlot3.getDisplayString();
+                return showIcon ? NpcAlertsUtility.recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + NpcAlertsUtility.recyclerSlot3.getDisplayString();
             default:
                 return displayName + ": X / Y";
         }
@@ -1595,35 +1598,35 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private boolean getShowIcon() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
             case "machtkristalle":
             case "machtkristalleSlot1":
             case "machtkristalleSlot2":
             case "machtkristalleSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
             case "recycler":
                 // Prüfe ob mindestens ein Recycler-Slot das Icon aktiviert hat
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon || 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon || 
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon || 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon || 
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
             default:
                 return false;
         }
@@ -1632,12 +1635,12 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private String getPercentText() {
         switch (configKey) {
             case "forschung":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent) {
-                    if (TabInfoUtility.forschung.isValid()) {
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent) {
+                    if (NpcAlertsUtility.forschung.isValid()) {
                         // Forschung zählt runter: wenn current näher an max ist, ist der Prozent höher
-                        return TabInfoUtility.calculatePercent(
-                            TabInfoUtility.forschung.current, 
-                            TabInfoUtility.forschung.max
+                        return NpcAlertsUtility.calculatePercent(
+                            NpcAlertsUtility.forschung.current, 
+                            NpcAlertsUtility.forschung.max
                         );
                     } else {
                         // Kein Prozent, solange keine gültigen Werte (Anzeige: "Nicht im Tab-Widget")
@@ -1646,67 +1649,67 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 }
                 break;
             case "amboss":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent && 
-                    TabInfoUtility.ambossKapazitaet.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.ambossKapazitaet.current, 
-                        TabInfoUtility.ambossKapazitaet.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent && 
+                    NpcAlertsUtility.ambossKapazitaet.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.ambossKapazitaet.current, 
+                        NpcAlertsUtility.ambossKapazitaet.max
                     );
                 }
                 break;
             case "schmelzofen":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent && 
-                    TabInfoUtility.schmelzofenKapazitaet.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.schmelzofenKapazitaet.current, 
-                        TabInfoUtility.schmelzofenKapazitaet.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent && 
+                    NpcAlertsUtility.schmelzofenKapazitaet.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.schmelzofenKapazitaet.current, 
+                        NpcAlertsUtility.schmelzofenKapazitaet.max
                     );
                 }
                 break;
             case "jaeger":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent && 
-                    TabInfoUtility.jaegerKapazitaet.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.jaegerKapazitaet.current, 
-                        TabInfoUtility.jaegerKapazitaet.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent && 
+                    NpcAlertsUtility.jaegerKapazitaet.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.jaegerKapazitaet.current, 
+                        NpcAlertsUtility.jaegerKapazitaet.max
                     );
                 }
                 break;
             case "seelen":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent && 
-                    TabInfoUtility.seelenKapazitaet.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.seelenKapazitaet.current, 
-                        TabInfoUtility.seelenKapazitaet.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent && 
+                    NpcAlertsUtility.seelenKapazitaet.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.seelenKapazitaet.current, 
+                        NpcAlertsUtility.seelenKapazitaet.max
                     );
                 }
                 break;
             case "essenzen":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent && 
-                    TabInfoUtility.essenzenKapazitaet.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.essenzenKapazitaet.current, 
-                        TabInfoUtility.essenzenKapazitaet.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent && 
+                    NpcAlertsUtility.essenzenKapazitaet.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.essenzenKapazitaet.current, 
+                        NpcAlertsUtility.essenzenKapazitaet.max
                     );
                 }
                 break;
             case "machtkristalleSlot1":
                 // Für einzelnen MK-Slot 1
-                TabInfoUtility.MachtkristallSlot slot1 = TabInfoUtility.machtkristallSlots[0];
+                NpcAlertsUtility.MachtkristallSlot slot1 = NpcAlertsUtility.machtkristallSlots[0];
                 if (!slot1.isEmpty() && !slot1.isNotFound()) {
                     return slot1.getPercentText();
                 }
                 break;
             case "machtkristalleSlot2":
                 // Für einzelnen MK-Slot 2
-                TabInfoUtility.MachtkristallSlot slot2 = TabInfoUtility.machtkristallSlots[1];
+                NpcAlertsUtility.MachtkristallSlot slot2 = NpcAlertsUtility.machtkristallSlots[1];
                 if (!slot2.isEmpty() && !slot2.isNotFound()) {
                     return slot2.getPercentText();
                 }
                 break;
             case "machtkristalleSlot3":
                 // Für einzelnen MK-Slot 3
-                TabInfoUtility.MachtkristallSlot slot3 = TabInfoUtility.machtkristallSlots[2];
+                NpcAlertsUtility.MachtkristallSlot slot3 = NpcAlertsUtility.machtkristallSlots[2];
                 if (!slot3.isEmpty() && !slot3.isNotFound()) {
                     return slot3.getPercentText();
                 }
@@ -1715,29 +1718,29 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
                 // Für Multi-Line-Overlay: Prozente werden separat für jede Zeile gerendert
                 return null;
             case "recyclerSlot1":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent && 
-                    TabInfoUtility.recyclerSlot1.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.recyclerSlot1.current, 
-                        TabInfoUtility.recyclerSlot1.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent && 
+                    NpcAlertsUtility.recyclerSlot1.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.recyclerSlot1.current, 
+                        NpcAlertsUtility.recyclerSlot1.max
                     );
                 }
                 break;
             case "recyclerSlot2":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent && 
-                    TabInfoUtility.recyclerSlot2.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.recyclerSlot2.current, 
-                        TabInfoUtility.recyclerSlot2.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent && 
+                    NpcAlertsUtility.recyclerSlot2.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.recyclerSlot2.current, 
+                        NpcAlertsUtility.recyclerSlot2.max
                     );
                 }
                 break;
             case "recyclerSlot3":
-                if (CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent && 
-                    TabInfoUtility.recyclerSlot3.isValid()) {
-                    return TabInfoUtility.calculatePercent(
-                        TabInfoUtility.recyclerSlot3.current, 
-                        TabInfoUtility.recyclerSlot3.max
+                if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent && 
+                    NpcAlertsUtility.recyclerSlot3.isValid()) {
+                    return NpcAlertsUtility.calculatePercent(
+                        NpcAlertsUtility.recyclerSlot3.current, 
+                        NpcAlertsUtility.recyclerSlot3.max
                     );
                 }
                 break;
@@ -1748,24 +1751,24 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private boolean getShowPercent() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
             case "komboKiste":
                 return false;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
             default:
                 return false;
         }
@@ -1774,114 +1777,114 @@ public class TabInfoSeparateDraggableOverlay implements DraggableOverlay {
     private boolean getShowWarning() {
         switch (configKey) {
             case "forschung":
-                if (TabInfoUtility.forschung.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.forschung.current / (double)TabInfoUtility.forschung.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
+                if (NpcAlertsUtility.forschung.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.forschung.current / (double)NpcAlertsUtility.forschung.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
                     // Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
                     return warnPercent >= 0 && currentPercent < warnPercent;
                 }
                 break;
             case "amboss":
-                if (TabInfoUtility.ambossKapazitaet.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.ambossKapazitaet.current / 
-                        (double)TabInfoUtility.ambossKapazitaet.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent;
+                if (NpcAlertsUtility.ambossKapazitaet.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.ambossKapazitaet.current / 
+                        (double)NpcAlertsUtility.ambossKapazitaet.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "schmelzofen":
-                if (TabInfoUtility.schmelzofenKapazitaet.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.schmelzofenKapazitaet.current / 
-                        (double)TabInfoUtility.schmelzofenKapazitaet.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent;
+                if (NpcAlertsUtility.schmelzofenKapazitaet.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.schmelzofenKapazitaet.current / 
+                        (double)NpcAlertsUtility.schmelzofenKapazitaet.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "jaeger":
-                if (TabInfoUtility.jaegerKapazitaet.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.jaegerKapazitaet.current / 
-                        (double)TabInfoUtility.jaegerKapazitaet.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent;
+                if (NpcAlertsUtility.jaegerKapazitaet.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.jaegerKapazitaet.current / 
+                        (double)NpcAlertsUtility.jaegerKapazitaet.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "komboKiste":
-                if (TabInfoUtility.komboKiste.isValid()) {
-                    return TabInfoUtility.komboKiste.current >= TabInfoUtility.komboKiste.max;
+                if (NpcAlertsUtility.komboKiste.isValid()) {
+                    return NpcAlertsUtility.komboKiste.current >= NpcAlertsUtility.komboKiste.max;
                 }
                 break;
             case "seelen":
-                if (TabInfoUtility.seelenKapazitaet.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.seelenKapazitaet.current / 
-                        (double)TabInfoUtility.seelenKapazitaet.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenWarnPercent;
+                if (NpcAlertsUtility.seelenKapazitaet.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.seelenKapazitaet.current / 
+                        (double)NpcAlertsUtility.seelenKapazitaet.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "essenzen":
-                if (TabInfoUtility.essenzenKapazitaet.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.essenzenKapazitaet.current / 
-                        (double)TabInfoUtility.essenzenKapazitaet.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenWarnPercent;
+                if (NpcAlertsUtility.essenzenKapazitaet.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.essenzenKapazitaet.current / 
+                        (double)NpcAlertsUtility.essenzenKapazitaet.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "recyclerSlot1":
-                if (TabInfoUtility.recyclerSlot1.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.recyclerSlot1.current / 
-                        (double)TabInfoUtility.recyclerSlot1.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+                if (NpcAlertsUtility.recyclerSlot1.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.recyclerSlot1.current / 
+                        (double)NpcAlertsUtility.recyclerSlot1.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
                     // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
                     return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "recyclerSlot2":
-                if (TabInfoUtility.recyclerSlot2.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.recyclerSlot2.current / 
-                        (double)TabInfoUtility.recyclerSlot2.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+                if (NpcAlertsUtility.recyclerSlot2.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.recyclerSlot2.current / 
+                        (double)NpcAlertsUtility.recyclerSlot2.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
                     // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
                     return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "recyclerSlot3":
-                if (TabInfoUtility.recyclerSlot3.isValid()) {
-                    double currentPercent = ((double)TabInfoUtility.recyclerSlot3.current / 
-                        (double)TabInfoUtility.recyclerSlot3.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+                if (NpcAlertsUtility.recyclerSlot3.isValid()) {
+                    double currentPercent = ((double)NpcAlertsUtility.recyclerSlot3.current / 
+                        (double)NpcAlertsUtility.recyclerSlot3.max) * 100.0;
+                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
                     // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
                     return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "machtkristalleSlot1":
-                TabInfoUtility.MachtkristallSlot slot1 = TabInfoUtility.machtkristallSlots[0];
+                NpcAlertsUtility.MachtkristallSlot slot1 = NpcAlertsUtility.machtkristallSlots[0];
                 if (!slot1.isNotFound() && !slot1.isEmpty() && slot1.xpData.isValid()) {
                     String percentText = slot1.getPercentText();
                     if (percentText != null) {
                         double currentPercent = parsePercentValue(percentText);
-                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleWarnPercent;
+                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
                         return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
                     }
                 }
                 break;
             case "machtkristalleSlot2":
-                TabInfoUtility.MachtkristallSlot slot2 = TabInfoUtility.machtkristallSlots[1];
+                NpcAlertsUtility.MachtkristallSlot slot2 = NpcAlertsUtility.machtkristallSlots[1];
                 if (!slot2.isNotFound() && !slot2.isEmpty() && slot2.xpData.isValid()) {
                     String percentText = slot2.getPercentText();
                     if (percentText != null) {
                         double currentPercent = parsePercentValue(percentText);
-                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleWarnPercent;
+                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
                         return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
                     }
                 }
                 break;
             case "machtkristalleSlot3":
-                TabInfoUtility.MachtkristallSlot slot3 = TabInfoUtility.machtkristallSlots[2];
+                NpcAlertsUtility.MachtkristallSlot slot3 = NpcAlertsUtility.machtkristallSlots[2];
                 if (!slot3.isNotFound() && !slot3.isEmpty() && slot3.xpData.isValid()) {
                     String percentText = slot3.getPercentText();
                     if (percentText != null) {
                         double currentPercent = parsePercentValue(percentText);
-                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleWarnPercent;
+                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
                         return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
                     }
                 }

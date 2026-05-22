@@ -95,31 +95,13 @@ public class ItemFilter {
             }
         }
         
-        // Floor-Suche (explizit: "Ebene 49", "floor_1", etc.)
+        // Floor-Suche (explizit: "Ebene 49", "e4", "[e4]", etc.)
         if (query.floor != null) {
             boolean floorMatches = false;
-            if (item.foundAt != null && !item.foundAt.isEmpty()) {
-                for (LocationData location : item.foundAt) {
-                    if (location.floor != null) {
-                        String floorStr = location.floor.toLowerCase();
-                        // Prüfe ob Floor-String die gesuchte Nummer enthält
-                        // Unterstützt "Ebene 49", "floor_49", "49", etc.
-                        if (floorStr.contains(String.valueOf(query.floor))) {
-                            // Extrahiere Zahl aus Floor-String
-                            String floorNumStr = floorStr.replaceAll("[^0-9]", "");
-                            if (!floorNumStr.isEmpty()) {
-                                try {
-                                    int floorNum = Integer.parseInt(floorNumStr);
-                                    if (floorNum == query.floor) {
-                                        floorMatches = true;
-                                        break;
-                                    }
-                                } catch (NumberFormatException e) {
-                                    // Ignoriere
-                                }
-                            }
-                        }
-                    }
+            for (int floorNum : FloorNumberExtractor.extractFromItem(item)) {
+                if (floorNum == query.floor) {
+                    floorMatches = true;
+                    break;
                 }
             }
             if (!floorMatches) {
@@ -146,6 +128,26 @@ public class ItemFilter {
                 nameMatches = true;
             }
             
+            // Prüfe Modifier (z.B. "Fähigkeit" findet "Fähigkeiten")
+            if (!nameMatches && item.info != null && item.info.modifier != null) {
+                for (String modifier : item.info.modifier) {
+                    if (modifier != null && !modifier.isEmpty() &&
+                        modifier.toLowerCase().contains(searchLower)) {
+                        nameMatches = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Prüfe Fähigkeiten-Items (Kategorie abilities / info.ability)
+            if (!nameMatches && item.info != null &&
+                (searchLower.contains("fähigkeit") || searchLower.contains("faehigkeit") || searchLower.contains("ability"))) {
+                if (Boolean.TRUE.equals(item.info.ability) ||
+                    "abilities".equals(item.category)) {
+                    nameMatches = true;
+                }
+            }
+            
             // Prüfe Aspekt (ähnlich wie im Blueprint Shop) - nur wenn Name nicht matched
             if (!nameMatches && item.info != null && Boolean.TRUE.equals(item.info.blueprint) && item.name != null) {
                 // Entferne Formatierungscodes für Vergleich
@@ -160,11 +162,11 @@ public class ItemFilter {
                 }
             }
             
-            // Prüfe Floor (Ebene) - nur wenn Name nicht matched
-            if (!nameMatches && item.foundAt != null && !item.foundAt.isEmpty()) {
-                for (LocationData location : item.foundAt) {
-                    if (location.floor != null &&
-                        location.floor.toLowerCase().contains(searchLower)) {
+            // Prüfe Floor (Ebene) in foundAt und [eX] im Namen
+            if (!nameMatches) {
+                for (int floorNum : FloorNumberExtractor.extractFromItem(item)) {
+                    String floorStr = String.valueOf(floorNum);
+                    if (floorStr.contains(searchExact) || floorStr.toLowerCase().contains(searchLower)) {
                         nameMatches = true;
                         break;
                     }
@@ -479,23 +481,7 @@ public class ItemFilter {
         if (itemValue == null || filterValue == null) {
             return false;
         }
-        
-        switch (operator) {
-            case ">":
-                return itemValue > filterValue;
-            case "<":
-                return itemValue < filterValue;
-            case ">=":
-                return itemValue >= filterValue;
-            case "<=":
-                return itemValue <= filterValue;
-            case "=":
-            case "==":
-                // Verwende eine kleine Toleranz für Gleitkomma-Vergleiche
-                return Math.abs(itemValue - filterValue) < 0.0001;
-            default:
-                return false;
-        }
+        return ComparisonUtils.compareDouble(itemValue, filterValue, operator);
     }
     
     /**
@@ -505,60 +491,22 @@ public class ItemFilter {
      * @return true wenn das Item dem Filter entspricht
      */
     private static boolean matchesFloorFilter(ItemData item, FloorFilter filter) {
-        if (item.foundAt == null || item.foundAt.isEmpty()) {
+        if (filter.value == null || filter.operator == null) {
             return false;
         }
         
-        // Durchsuche alle foundAt-Locations nach Floor-Werten
-        for (LocationData location : item.foundAt) {
-            if (location.floor != null) {
-                String floorStr = location.floor.toLowerCase();
-                // Extrahiere Zahl aus Floor-String (unterstützt "Ebene 49", "floor_49", "49", etc.)
-                String floorNumStr = floorStr.replaceAll("[^0-9]", "");
-                if (!floorNumStr.isEmpty()) {
-                    try {
-                        int floorNum = Integer.parseInt(floorNumStr);
-                        // Vergleiche mit dem Filter-Wert
-                        if (compareFloorValue(floorNum, filter.value, filter.operator)) {
-                            return true; // Mindestens eine Location matched
-                        }
-                    } catch (NumberFormatException e) {
-                        // Ignoriere ungültige Floor-Werte
-                    }
-                }
+        java.util.List<Integer> itemFloors = FloorNumberExtractor.extractFromItem(item);
+        if (itemFloors.isEmpty()) {
+            return false;
+        }
+        
+        for (int floorNum : itemFloors) {
+            if (ComparisonUtils.compareInt(floorNum, filter.value, filter.operator)) {
+                return true;
             }
         }
         
-        return false; // Keine Location matched
-    }
-    
-    /**
-     * Vergleicht zwei Floor-Werte basierend auf dem Operator
-     * @param itemValue Der Floor-Wert des Items
-     * @param filterValue Der Vergleichswert aus dem Filter
-     * @param operator Der Vergleichsoperator (">", "<", ">=", "<=", "=")
-     * @return true wenn der Vergleich erfolgreich ist
-     */
-    private static boolean compareFloorValue(Integer itemValue, Integer filterValue, String operator) {
-        if (itemValue == null || filterValue == null) {
-            return false;
-        }
-        
-        switch (operator) {
-            case ">":
-                return itemValue > filterValue;
-            case "<":
-                return itemValue < filterValue;
-            case ">=":
-                return itemValue >= filterValue;
-            case "<=":
-                return itemValue <= filterValue;
-            case "=":
-            case "==":
-                return itemValue.equals(filterValue);
-            default:
-                return false;
-        }
+        return false;
     }
 }
 

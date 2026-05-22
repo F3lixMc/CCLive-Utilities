@@ -107,7 +107,46 @@ public class CCLiveUtilitiesConfig {
      * Migriert Config-Felder: Fügt fehlende Felder mit Default-Werten hinzu
      * Dies stellt sicher, dass bei Updates neue Felder automatisch zur Config hinzugefügt werden
      */
+    /**
+     * Benennt gespeicherte Config-Keys von tabInfo/showTabInfo zu npcAlerts/showNpcAlerts um.
+     */
+    public static void migrateTabInfoToNpcAlerts() {
+        try {
+            JsonObject raw = readRawConfigJson();
+            if (raw == null) {
+                return;
+            }
+            boolean changed = false;
+            java.util.List<String> keys = new java.util.ArrayList<>(raw.keySet());
+            for (String key : keys) {
+                String newKey = null;
+                if (key.startsWith("showTabInfo")) {
+                    newKey = "showNpcAlerts" + key.substring("showTabInfo".length());
+                } else if (key.startsWith("tabInfo")) {
+                    newKey = "npcAlerts" + key.substring("tabInfo".length());
+                }
+                if (newKey != null) {
+                    if (!raw.has(newKey)) {
+                        raw.add(newKey, raw.get(key));
+                    }
+                    raw.remove(key);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                java.nio.file.Path configPath = CCLiveUtilities.getConfigDir()
+                        .resolve("cclive-utilities")
+                        .resolve("cclive-utilities.json");
+                com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+                java.nio.file.Files.writeString(configPath, gson.toJson(raw));
+                HANDLER.load();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     public static void migrateConfigFields() {
+        migrateTabInfoToNpcAlerts();
         try {
             CCLiveUtilitiesConfig loadedConfig = HANDLER.instance();
             CCLiveUtilitiesConfig defaultConfig = new CCLiveUtilitiesConfig(); // Neue Instanz = alle Default-Werte
@@ -349,6 +388,21 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean showItemViewer = true; // Item Viewer anzeigen
+
+    @SerialEntry
+    public String itemViewerMaxSlots = "360"; // Maximale Slot-Anzahl im Item Viewer (Textfeld)
+
+    /** Standard und Fallback für {@link #itemViewerMaxSlots}. */
+    public static final int DEFAULT_ITEM_VIEWER_MAX_SLOTS = 360;
+
+    public static int getItemViewerMaxSlots() {
+        try {
+            int value = Integer.parseInt(HANDLER.instance().itemViewerMaxSlots.trim());
+            return Math.max(1, value);
+        } catch (NumberFormatException ignored) {
+            return DEFAULT_ITEM_VIEWER_MAX_SLOTS;
+        }
+    }
     
     // Farmwelt Settings
     @SerialEntry
@@ -704,6 +758,12 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean bossHPShowDPM = true; // DPM (Damage Per Minute) Anzeige im Boss HP Overlay
     
+    @SerialEntry
+    public boolean bossHPShowLastDmg = true; // Last-Dmg-Zeile im Boss-HP-Overlay
+    
+    @SerialEntry
+    public boolean bossHPShowOverallDmg = true; // Gesamtschaden-Zeile (Overall DMG) im Boss-HP-Overlay
+    
     // MKLevel Settings
     @SerialEntry
     public boolean mkLevelEnabled = true; // MKLevel Overlay aktiviert
@@ -783,6 +843,9 @@ public class CCLiveUtilitiesConfig {
         
     @SerialEntry
     public boolean miningLevelUpBlockingEnabled = false;
+
+    @SerialEntry
+    public boolean fishingLevelUpBlockingEnabled = false;
     
     @SerialEntry
     public boolean moblexiconBlockingEnabled = false;
@@ -815,6 +878,10 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean blueprintViewerMissingMode = false; // Missing Mode: Zeige nur fehlende Baupläne (gefundene werden ausgeblendet)
+
+    /** Nur Moblexicon: grüner Haken / rotes Kreuz bei gefundenen bzw. fehlenden Bauplänen in den Tooltips. */
+    @SerialEntry
+    public boolean moblexiconBlueprintCheckmarksEnabled = false;
 
     // Aspect Overlay Settings
     @SerialEntry
@@ -854,439 +921,443 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean showOverlayEditor = true; // Overlay Editor anzeigen
 
-    // Tab Info Prozent-Einstellungen
+    // NPC Alerts Prozent-Einstellungen
     @SerialEntry
-    public boolean showTabInfoForschungPercent = true; // Prozente für Forschung anzeigen
+    public boolean showNpcAlertsForschungPercent = true; // Prozente für Forschung anzeigen
     
     @SerialEntry
-    public boolean showTabInfoAmbossPercent = true; // Prozente für Amboss anzeigen
+    public boolean showNpcAlertsAmbossPercent = true; // Prozente für Amboss anzeigen
     
     @SerialEntry
-    public boolean showTabInfoSchmelzofenPercent = true; // Prozente für Schmelzofen anzeigen
+    public boolean showNpcAlertsSchmelzofenPercent = true; // Prozente für Schmelzofen anzeigen
     
     @SerialEntry
-    public boolean showTabInfoJaegerPercent = true; // Prozente für Jäger anzeigen
+    public boolean showNpcAlertsJaegerPercent = true; // Prozente für Jäger anzeigen
     
     @SerialEntry
-    public boolean showTabInfoSeelenPercent = true; // Prozente für Seelen anzeigen
+    public boolean showNpcAlertsSeelenPercent = true; // Prozente für Seelen anzeigen
     
     @SerialEntry
-    public boolean showTabInfoEssenzenPercent = true; // Prozente für Essenzen anzeigen
+    public boolean showNpcAlertsEssenzenPercent = true; // Prozente für Essenzen anzeigen
     
     @SerialEntry
-    public boolean showTabInfoRecyclerPercent = true; // Prozente für Recycler anzeigen (gilt für alle 3 Slots)
+    public boolean showNpcAlertsRecyclerPercent = true; // Prozente für Recycler anzeigen (gilt für alle 3 Slots)
     
     @SerialEntry
-    public boolean showTabInfoMachtkristallePercent = true; // Prozente für Machtkristalle anzeigen (gilt für alle 3 Slots)
+    public boolean showNpcAlertsMachtkristallePercent = true; // Prozente für Machtkristalle anzeigen (gilt für alle 3 Slots)
     
-    // Tab Info Separate Overlay Settings
+    // NPC Alerts Separate Overlay Settings
     @SerialEntry
-    public boolean tabInfoForschungSeparateOverlay = false;
-    
-    @SerialEntry
-    public boolean tabInfoAmbossSeparateOverlay = false;
+    public boolean npcAlertsForschungSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoSchmelzofenSeparateOverlay = false;
+    public boolean npcAlertsAmbossSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoJaegerSeparateOverlay = false;
+    public boolean npcAlertsSchmelzofenSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoSeelenSeparateOverlay = false;
+    public boolean npcAlertsJaegerSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoEssenzenSeparateOverlay = false;
+    public boolean npcAlertsSeelenSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoKomboKisteSeparateOverlay = false;
+    public boolean npcAlertsEssenzenSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleSeparateOverlay = false;
+    public boolean npcAlertsKomboKisteSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleSlot1Separate = false;
+    public boolean npcAlertsMachtkristalleSeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleSlot2Separate = false;
+    public boolean npcAlertsMachtkristalleSlot1Separate = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleSlot3Separate = false;
+    public boolean npcAlertsMachtkristalleSlot2Separate = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleOption = false; // Machtkristall-spezifische Option
+    public boolean npcAlertsMachtkristalleSlot3Separate = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot1SeparateOverlay = false;
+    public boolean npcAlertsMachtkristalleOption = false; // Machtkristall-spezifische Option
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot1Separate = false;
+    public boolean npcAlertsRecyclerSlot1SeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot2SeparateOverlay = false;
+    public boolean npcAlertsRecyclerSlot1Separate = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot2Separate = false;
+    public boolean npcAlertsRecyclerSlot2SeparateOverlay = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot3SeparateOverlay = false;
+    public boolean npcAlertsRecyclerSlot2Separate = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot3Separate = false;
-    
-    // Tab Info Warn-Prozentwerte
-    @SerialEntry
-    public double tabInfoForschungWarnPercent = -1.0;
+    public boolean npcAlertsRecyclerSlot3SeparateOverlay = false;
     
     @SerialEntry
-    public double tabInfoAmbossWarnPercent = -1.0;
+    public boolean npcAlertsRecyclerSlot3Separate = false;
+    
+    // NPC Alerts Warn-Prozentwerte
+    @SerialEntry
+    public double npcAlertsForschungWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoSchmelzofenWarnPercent = -1.0;
+    public double npcAlertsAmbossWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoJaegerWarnPercent = -1.0;
+    public double npcAlertsSchmelzofenWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoSeelenWarnPercent = -1.0;
+    public double npcAlertsJaegerWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoEssenzenWarnPercent = -1.0;
+    public double npcAlertsSeelenWarnPercent = -1.0;
+    
+    @SerialEntry
+    public double npcAlertsEssenzenWarnPercent = -1.0;
     
     /** Rechter Wert in „X / Y“; Warnung wenn Kombowert (links) diesen Wert erreicht oder überschreitet */
     @SerialEntry
-    public int tabInfoKomboKisteZielwert = 1000;
+    public int npcAlertsKomboKisteZielwert = 1000;
     
     @SerialEntry
-    public double tabInfoRecyclerWarnPercent = -1.0;
+    public double npcAlertsRecyclerWarnPercent = -1.0;
     
     @SerialEntry
-    public double tabInfoMachtkristalleWarnPercent = -1.0;
+    public double npcAlertsMachtkristalleWarnPercent = -1.0;
     
-    // Tab Info Show Icon Settings
+    // NPC Alerts Show Icon Settings
     @SerialEntry
-    public boolean tabInfoForschungShowIcon = false;
+    public boolean npcAlertsForschungShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoAmbossShowIcon = false;
+    public boolean npcAlertsAmbossShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoSchmelzofenShowIcon = false;
+    public boolean npcAlertsSchmelzofenShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoSeelenShowIcon = false;
+    public boolean npcAlertsSeelenShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoEssenzenShowIcon = false;
+    public boolean npcAlertsEssenzenShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoKomboKisteShowIcon = false;
+    public boolean npcAlertsKomboKisteShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoJaegerShowIcon = false;
+    public boolean npcAlertsJaegerShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleShowIcon = false;
+    public boolean npcAlertsMachtkristalleShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot1ShowIcon = false;
+    public boolean npcAlertsRecyclerSlot1ShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot2ShowIcon = false;
+    public boolean npcAlertsRecyclerSlot2ShowIcon = false;
     
     @SerialEntry
-    public boolean tabInfoRecyclerSlot3ShowIcon = false;
+    public boolean npcAlertsRecyclerSlot3ShowIcon = false;
     
-    // Tab Info Show Background Settings
+    // NPC Alerts Show Background Settings
     @SerialEntry
-    public boolean tabInfoForschungShowBackground = true;
+    public boolean npcAlertsForschungShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoAmbossShowBackground = true;
+    public boolean npcAlertsAmbossShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoSchmelzofenShowBackground = true;
+    public boolean npcAlertsSchmelzofenShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoJaegerShowBackground = true;
+    public boolean npcAlertsJaegerShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoSeelenShowBackground = true;
+    public boolean npcAlertsSeelenShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoEssenzenShowBackground = true;
+    public boolean npcAlertsEssenzenShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoKomboKisteShowBackground = true;
+    public boolean npcAlertsKomboKisteShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoMachtkristalleShowBackground = true;
+    public boolean npcAlertsMachtkristalleShowBackground = true;
     
     @SerialEntry
-    public boolean tabInfoRecyclerShowBackground = true;
+    public boolean npcAlertsRecyclerShowBackground = true;
     
-    // Tab Info Text Colors
+    // NPC Alerts Text Colors
     @SerialEntry
-    public Color tabInfoForschungTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsForschungTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoAmbossTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsAmbossTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoSchmelzofenTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsSchmelzofenTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoJaegerTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsJaegerTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoSeelenTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsSeelenTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoEssenzenTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsEssenzenTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoKomboKisteTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsKomboKisteTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoMachtkristalleTextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsMachtkristalleTextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoRecyclerSlot1TextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsRecyclerSlot1TextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoRecyclerSlot2TextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsRecyclerSlot2TextColor = new Color(0xFFFFFFFF);
     
     @SerialEntry
-    public Color tabInfoRecyclerSlot3TextColor = new Color(0xFFFFFFFF);
+    public Color npcAlertsRecyclerSlot3TextColor = new Color(0xFFFFFFFF);
     
-    // Tab Info Percent Colors
+    // NPC Alerts Percent Colors
     @SerialEntry
-    public Color tabInfoForschungPercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsForschungPercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoAmbossPercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsAmbossPercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoSchmelzofenPercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsSchmelzofenPercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoJaegerPercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsJaegerPercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoSeelenPercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsSeelenPercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoEssenzenPercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsEssenzenPercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoMachtkristallePercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsMachtkristallePercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoRecyclerSlot1PercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsRecyclerSlot1PercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoRecyclerSlot2PercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsRecyclerSlot2PercentColor = new Color(0xFFFFFF00);
     
     @SerialEntry
-    public Color tabInfoRecyclerSlot3PercentColor = new Color(0xFFFFFF00);
+    public Color npcAlertsRecyclerSlot3PercentColor = new Color(0xFFFFFF00);
     
-    // Tab Info Main Overlay Settings
+    // NPC Alerts Main Overlay Settings
+    /** Alle NPC Alerts-Overlays sichtbar; nur Sichtbarkeit, ändert keine einzelnen showNpcAlerts-Schalter. */
     @SerialEntry
-    public int tabInfoMainOverlayX = 5;
+    public boolean npcAlertsOverlaysVisible = true;
     
     @SerialEntry
-    public int tabInfoMainOverlayY = 5;
+    public int npcAlertsMainOverlayX = 5;
     
     @SerialEntry
-    public float tabInfoMainOverlayScale = 1.0f;
+    public int npcAlertsMainOverlayY = 5;
     
     @SerialEntry
-    public boolean tabInfoMainOverlayShowBackground = true;
+    public float npcAlertsMainOverlayScale = 1.0f;
     
-    // Tab Info Utility Enabled
     @SerialEntry
-    public boolean tabInfoUtilityEnabled = true;
+    public boolean npcAlertsMainOverlayShowBackground = true;
     
-    // Tab Info Scales
+    // NPC Alerts Utility Enabled
     @SerialEntry
-    public float tabInfoForschungScale = 1.0f;
+    public boolean npcAlertsUtilityEnabled = true;
     
+    // NPC Alerts Scales
     @SerialEntry
-    public float tabInfoAmbossScale = 1.0f;
+    public float npcAlertsForschungScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoSchmelzofenScale = 1.0f;
+    public float npcAlertsAmbossScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoJaegerScale = 1.0f;
+    public float npcAlertsSchmelzofenScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoSeelenScale = 1.0f;
+    public float npcAlertsJaegerScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoEssenzenScale = 1.0f;
+    public float npcAlertsSeelenScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoKomboKisteScale = 1.0f;
+    public float npcAlertsEssenzenScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoMachtkristalleScale = 1.0f;
+    public float npcAlertsKomboKisteScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoMachtkristalleSlot1Scale = 1.0f;
+    public float npcAlertsMachtkristalleScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoMachtkristalleSlot2Scale = 1.0f;
+    public float npcAlertsMachtkristalleSlot1Scale = 1.0f;
     
     @SerialEntry
-    public float tabInfoMachtkristalleSlot3Scale = 1.0f;
+    public float npcAlertsMachtkristalleSlot2Scale = 1.0f;
     
     @SerialEntry
-    public float tabInfoRecyclerScale = 1.0f;
+    public float npcAlertsMachtkristalleSlot3Scale = 1.0f;
     
     @SerialEntry
-    public float tabInfoRecyclerSlot1Scale = 1.0f;
+    public float npcAlertsRecyclerScale = 1.0f;
     
     @SerialEntry
-    public float tabInfoRecyclerSlot2Scale = 1.0f;
+    public float npcAlertsRecyclerSlot1Scale = 1.0f;
     
     @SerialEntry
-    public float tabInfoRecyclerSlot3Scale = 1.0f;
+    public float npcAlertsRecyclerSlot2Scale = 1.0f;
     
-    // Tab Info Show Settings
     @SerialEntry
-    public boolean showTabInfoRecyclerSlot1 = true;
+    public float npcAlertsRecyclerSlot3Scale = 1.0f;
     
+    // NPC Alerts Show Settings
     @SerialEntry
-    public boolean showTabInfoRecyclerSlot2 = true;
+    public boolean showNpcAlertsRecyclerSlot1 = true;
     
     @SerialEntry
-    public boolean showTabInfoRecyclerSlot3 = true;
+    public boolean showNpcAlertsRecyclerSlot2 = true;
     
-    // Tab Info Show Settings
     @SerialEntry
-    public boolean showTabInfoForschung = true;
+    public boolean showNpcAlertsRecyclerSlot3 = true;
     
+    // NPC Alerts Show Settings
     @SerialEntry
-    public boolean showTabInfoAmboss = true;
+    public boolean showNpcAlertsForschung = true;
     
     @SerialEntry
-    public boolean showTabInfoSchmelzofen = true;
+    public boolean showNpcAlertsAmboss = true;
     
     @SerialEntry
-    public boolean showTabInfoJaeger = true;
+    public boolean showNpcAlertsSchmelzofen = true;
     
     @SerialEntry
-    public boolean showTabInfoSeelen = true;
+    public boolean showNpcAlertsJaeger = true;
     
     @SerialEntry
-    public boolean showTabInfoEssenzen = true;
+    public boolean showNpcAlertsSeelen = true;
     
     @SerialEntry
-    public boolean showTabInfoKomboKiste = true;
+    public boolean showNpcAlertsEssenzen = true;
     
     @SerialEntry
-    public boolean showTabInfoMachtkristalle = true;
+    public boolean showNpcAlertsKomboKiste = true;
     
     @SerialEntry
-    public boolean showTabInfoMachtkristalleSlot1 = true;
+    public boolean showNpcAlertsMachtkristalle = true;
     
     @SerialEntry
-    public boolean showTabInfoMachtkristalleSlot2 = true;
+    public boolean showNpcAlertsMachtkristalleSlot1 = true;
     
     @SerialEntry
-    public boolean showTabInfoMachtkristalleSlot3 = true;
+    public boolean showNpcAlertsMachtkristalleSlot2 = true;
     
-    // Tab Info Position Settings
     @SerialEntry
-    public int tabInfoForschungX = 10;
+    public boolean showNpcAlertsMachtkristalleSlot3 = true;
     
+    // NPC Alerts Position Settings
     @SerialEntry
-    public int tabInfoForschungY = 10;
+    public int npcAlertsForschungX = 10;
     
     @SerialEntry
-    public int tabInfoAmbossX = 10;
+    public int npcAlertsForschungY = 10;
     
     @SerialEntry
-    public int tabInfoAmbossY = 50;
+    public int npcAlertsAmbossX = 10;
     
     @SerialEntry
-    public int tabInfoSchmelzofenX = 10;
+    public int npcAlertsAmbossY = 50;
     
     @SerialEntry
-    public int tabInfoSchmelzofenY = 90;
+    public int npcAlertsSchmelzofenX = 10;
     
     @SerialEntry
-    public int tabInfoJaegerX = 10;
+    public int npcAlertsSchmelzofenY = 90;
     
     @SerialEntry
-    public int tabInfoJaegerY = 130;
+    public int npcAlertsJaegerX = 10;
     
     @SerialEntry
-    public int tabInfoSeelenX = 10;
+    public int npcAlertsJaegerY = 130;
     
     @SerialEntry
-    public int tabInfoSeelenY = 170;
+    public int npcAlertsSeelenX = 10;
     
     @SerialEntry
-    public int tabInfoEssenzenX = 10;
+    public int npcAlertsSeelenY = 170;
     
     @SerialEntry
-    public int tabInfoEssenzenY = 210;
+    public int npcAlertsEssenzenX = 10;
     
     @SerialEntry
-    public int tabInfoKomboKisteX = 10;
+    public int npcAlertsEssenzenY = 210;
     
     @SerialEntry
-    public int tabInfoKomboKisteY = 230;
+    public int npcAlertsKomboKisteX = 10;
     
     @SerialEntry
-    public int tabInfoMachtkristalleX = 10;
+    public int npcAlertsKomboKisteY = 230;
     
     @SerialEntry
-    public int tabInfoMachtkristalleY = 250;
+    public int npcAlertsMachtkristalleX = 10;
     
     @SerialEntry
-    public int tabInfoMachtkristalleSlot1X = 10;
+    public int npcAlertsMachtkristalleY = 250;
     
     @SerialEntry
-    public int tabInfoMachtkristalleSlot1Y = 250;
+    public int npcAlertsMachtkristalleSlot1X = 10;
     
     @SerialEntry
-    public int tabInfoMachtkristalleSlot2X = 10;
+    public int npcAlertsMachtkristalleSlot1Y = 250;
     
     @SerialEntry
-    public int tabInfoMachtkristalleSlot2Y = 280;
+    public int npcAlertsMachtkristalleSlot2X = 10;
     
     @SerialEntry
-    public int tabInfoMachtkristalleSlot3X = 10;
+    public int npcAlertsMachtkristalleSlot2Y = 280;
     
     @SerialEntry
-    public int tabInfoMachtkristalleSlot3Y = 310;
+    public int npcAlertsMachtkristalleSlot3X = 10;
     
     @SerialEntry
-    public int tabInfoRecyclerX = 10;
+    public int npcAlertsMachtkristalleSlot3Y = 310;
     
     @SerialEntry
-    public int tabInfoRecyclerY = 290;
+    public int npcAlertsRecyclerX = 10;
     
     @SerialEntry
-    public int tabInfoRecyclerSlot1X = 10;
+    public int npcAlertsRecyclerY = 290;
     
     @SerialEntry
-    public int tabInfoRecyclerSlot1Y = 290;
+    public int npcAlertsRecyclerSlot1X = 10;
     
     @SerialEntry
-    public int tabInfoRecyclerSlot2X = 10;
+    public int npcAlertsRecyclerSlot1Y = 290;
     
     @SerialEntry
-    public int tabInfoRecyclerSlot2Y = 330;
+    public int npcAlertsRecyclerSlot2X = 10;
     
     @SerialEntry
-    public int tabInfoRecyclerSlot3X = 10;
+    public int npcAlertsRecyclerSlot2Y = 330;
     
     @SerialEntry
-    public int tabInfoRecyclerSlot3Y = 370;
+    public int npcAlertsRecyclerSlot3X = 10;
+    
+    @SerialEntry
+    public int npcAlertsRecyclerSlot3Y = 370;
     
     // Boss HP Settings (fehlende Variablen)
     @SerialEntry
@@ -1331,11 +1402,26 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().showBlueprintFloorNumber, newVal -> HANDLER.instance().showBlueprintFloorNumber = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("ItemViewer"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Item Viewer"))
+                                        .name(Text.literal("Item Viewer anzeigen"))
                                         .description(OptionDescription.of(Text.literal("Item Viewer in Inventaren anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showItemViewer, newVal -> HANDLER.instance().showItemViewer = newVal)
                                         .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<String>createBuilder()
+                                        .name(Text.literal("Maximale Slot-Anzahl"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Maximale Anzahl an Slots pro Seite (Standard: 360). Spalten und Zeilen passen sich an verfügbaren Platz an.")))
+                                        .binding("360",
+                                                () -> HANDLER.instance().itemViewerMaxSlots,
+                                                newVal -> {
+                                                    HANDLER.instance().itemViewerMaxSlots = newVal;
+                                                    net.felix.utilities.ItemViewer.ItemViewerUtility.onMaxSlotsConfigChanged();
+                                                })
+                                        .controller(StringControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
@@ -1419,6 +1505,12 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Angeln Level Up blockieren"))
+                                        .description(OptionDescription.of(Text.literal("Angeln Level Up Animationen blockieren")))
+                                        .binding(false, () -> HANDLER.instance().fishingLevelUpBlockingEnabled, newVal -> HANDLER.instance().fishingLevelUpBlockingEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
                                         .name(Text.literal("Moblexicon blockieren"))
                                         .description(OptionDescription.of(Text.literal("Moblexicon Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().moblexiconBlockingEnabled, newVal -> HANDLER.instance().moblexiconBlockingEnabled = newVal)
@@ -1465,6 +1557,18 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("DPM anzeigen"))
                                         .description(OptionDescription.of(Text.literal("DPM (Damage Per Minute) Anzeige im Boss HP Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowDPM, newVal -> HANDLER.instance().bossHPShowDPM = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Last Dmg anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Zeile „Last Dmg“ (Schaden im letzten Messfenster) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowLastDmg, newVal -> HANDLER.instance().bossHPShowLastDmg = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Gesamtschaden anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Zeile „Overall DMG“ (kumulativer Schaden und Prozent) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowOverallDmg, newVal -> HANDLER.instance().bossHPShowOverallDmg = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
@@ -1797,7 +1901,7 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Blueprint Tracker anzeigen"))
+                                        .name(Text.literal("Blueprint Tracker Overlay anzeigen"))
                                         .description(OptionDescription.of(Text.literal("Blueprint Tracker Overlay anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showBlueprintViewer, newVal -> HANDLER.instance().showBlueprintViewer = newVal)
                                         .controller(TickBoxControllerBuilder::create)
@@ -1821,6 +1925,12 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("Missing Mode"))
                                         .description(OptionDescription.of(Text.literal("Im Missing Mode werden nur fehlende Baupläne angezeigt. Gefundene Baupläne werden ausgeblendet.")))
                                         .binding(false, () -> HANDLER.instance().blueprintViewerMissingMode, newVal -> HANDLER.instance().blueprintViewerMissingMode = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Haken im Moblexicon"))
+                                        .description(OptionDescription.of(Text.literal("Zeigt im Moblexicon grüne Haken bzw. rote Kreuze bei Bauplan-Tooltips (nur dort, keine anderen Menüs).")))
+                                        .binding(false, () -> HANDLER.instance().moblexiconBlueprintCheckmarksEnabled, newVal -> HANDLER.instance().moblexiconBlueprintCheckmarksEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())

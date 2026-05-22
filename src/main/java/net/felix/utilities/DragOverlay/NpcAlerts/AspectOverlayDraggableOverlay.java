@@ -1,4 +1,4 @@
-package net.felix.utilities.DragOverlay.TabInfo;
+package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;

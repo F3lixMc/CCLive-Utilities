@@ -157,7 +157,7 @@
         "item_type":"Schuhe",
         "rarity":"Legendary",
         "floor": "e30",
-        "modifier":"[Andere], [Andere], [FähigkeitenSchaden], [Attribute]"
+        "modifier":"[Andere], [Andere], [Schaden], [Attribute]"
       },
       "Zeitlose Schulterpanzer",
       {
@@ -1944,7 +1944,7 @@
         "floor": "e24",
         "modifier":"[Verteidigung], [Verteidigung], [Schaden], [Attribute]"
       },
-      "Gultgewebte Treter",
+      "Glutgewebte Treter",
       {
         "item_type":"Schuhe",
         "rarity":"Legendary",

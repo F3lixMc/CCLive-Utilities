@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.TabInfo;
+package net.felix.utilities.Overall.NpcAlerts;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -27,7 +27,7 @@ import java.util.List;
  * Utility zum Auslesen von Informationen aus der Tab-Liste
  * Liest verschiedene Kapazitäten und Fortschrittsinformationen aus
  */
-public class TabInfoUtility {
+public class NpcAlertsUtility {
 	
 	private static boolean isInitialized = false;
 	private static long lastTabListCheck = 0; // Cache für Tab-Liste Checks (jede 1 Sekunde)
@@ -137,7 +137,7 @@ public class TabInfoUtility {
 	}
 	
 	/**
-	 * Liest die gesamte Bossbar: Sonderziffern aus {@code zeichen.json} ({@code tab_info_kombo_kiste_bossbar_digits})
+	 * Liest die gesamte Bossbar: Sonderziffern aus {@code zeichen.json} ({@code npc_alerts_kombo_kiste_bossbar_digits})
 	 * in Lesereihenfolge zu einer Zahl verbunden; andere Codepoints werden übersprungen.
 	 *
 	 * @return -1 wenn keine solche Ziffer vorkommt
@@ -146,7 +146,7 @@ public class TabInfoUtility {
 		if (text == null || text.isEmpty()) {
 			return -1;
 		}
-		Map<Integer, Integer> digitMap = ZeichenUtility.getTabInfoKomboKisteBossBarDigitCodePoints();
+		Map<Integer, Integer> digitMap = ZeichenUtility.getNpcAlertsKomboKisteBossBarDigitCodePoints();
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < text.length(); ) {
 			int cp = text.codePointAt(i);
@@ -225,7 +225,7 @@ public class TabInfoUtility {
 			if (sum < 0) {
 				sum = Integer.MAX_VALUE;
 			}
-			int goal = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert;
+			int goal = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteZielwert;
 			if (goal < 1) {
 				goal = 1;
 			}
@@ -338,7 +338,7 @@ public class TabInfoUtility {
 		
 		try {
 			// Client-seitige Events registrieren
-			ClientTickEvents.END_CLIENT_TICK.register(TabInfoUtility::onClientTick);
+			ClientTickEvents.END_CLIENT_TICK.register(NpcAlertsUtility::onClientTick);
 			
 			// Registriere HUD-Rendering
 			HudRenderCallback.EVENT.register((drawContext, tickDelta) -> onHudRender(drawContext, tickDelta));
@@ -358,7 +358,7 @@ public class TabInfoUtility {
 		}
 		
 		try {
-			updateTabInfo(client);
+			updateNpcAlerts(client);
 		} catch (Exception e) {
 			// Silent error handling
 		}
@@ -386,7 +386,7 @@ public class TabInfoUtility {
 	/**
 	 * Aktualisiert alle Informationen aus der Tab-Liste
 	 */
-	private static void updateTabInfo(MinecraftClient client) {
+	private static void updateNpcAlerts(MinecraftClient client) {
 		// Nur alle 1 Sekunde prüfen, um Performance-Probleme zu vermeiden
 		long currentTime = System.currentTimeMillis();
 		long timeSinceLastCheck = currentTime - lastTabListCheck;
@@ -977,7 +977,7 @@ public class TabInfoUtility {
 	}
 	
 	/**
-	 * HUD Render callback für das Tab-Info Overlay
+	 * HUD Render callback für das NPC Alerts Overlay
 	 */
 	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
 		MinecraftClient client = MinecraftClient.getInstance();
@@ -1000,7 +1000,7 @@ public class TabInfoUtility {
 			return;
 		}
 		
-		renderTabInfoDisplay(context, client);
+		renderNpcAlertsDisplay(context, client);
 	}
 	
 	/**
@@ -1060,48 +1060,48 @@ public class TabInfoUtility {
 	 */
 	public static int getMainOverlayLineCount() {
 		int count = 0;
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmboss && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaeger && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
 			count += 3; // Immer 3 Slots (auch wenn leer)
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay) {
 			count++;
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay) {
 			count++;
 		}
 		return Math.max(1, count); // Mindestens 1 Zeile
@@ -1139,71 +1139,71 @@ public class TabInfoUtility {
 		List<LineWithPercent> lines = new ArrayList<>();
 		
 		// Forschung
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
 			String displayText = showIcon ? "? / ?" : "Forschung: ? / ?";
 			lines.add(new LineWithPercent(displayText, showPercent ? "0.0%" : null, showPercent, false, "forschung", showIcon));
 		}
 		
 		// Amboss Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmboss && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay) {
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay) {
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
 			String displayText = showIcon ? "? / ?" : "Amboss: ? / ?";
 			lines.add(new LineWithPercent(displayText, showPercent ? "0.0%" : null, showPercent, false, "amboss", showIcon));
 		}
 		
 		// Schmelzofen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay) {
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay) {
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
 			String displayText = showIcon ? "? / ?" : "Schmelzofen: ? / ?";
 			lines.add(new LineWithPercent(displayText, showPercent ? "0.0%" : null, showPercent, false, "schmelzofen", showIcon));
 		}
 		
 		// Jäger Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay) {
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaeger && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay) {
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
 			String displayText = showIcon ? "? / ?" : "Jäger: ? / ?";
 			lines.add(new LineWithPercent(displayText, showPercent ? "0.0%" : null, showPercent, false, "jaeger", showIcon));
 		}
 		
 		// Seelen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay) {
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay) {
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
 			String displayText = showIcon ? "? / ?" : "Seelen: ? / ?";
 			lines.add(new LineWithPercent(displayText, showPercent ? "0.0%" : null, showPercent, false, "seelen", showIcon));
 		}
 		
 		// Essenzen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay) {
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
 			String displayText = showIcon ? "? / ?" : "Essenzen: ? / ?";
 			lines.add(new LineWithPercent(displayText, showPercent ? "0.0%" : null, showPercent, false, "essenzen", showIcon));
 		}
 		
 		// Kombo Kiste
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
 			String displayText = showIcon ? "? / ?" : "Kombo Kiste: ? / ?";
 			lines.add(new LineWithPercent(displayText, null, false, false, "komboKiste", showIcon));
 		}
 		
 		// Machtkristalle
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
 			// Zeige alle 3 Slots mit Beispielwerten im Edit-Modus
 			// Im Edit-Modus zeigen wir immer "0.0%" als Beispiel, um zu zeigen wie es aussehen würde
 			for (int i = 0; i < 3; i++) {
@@ -1211,13 +1211,13 @@ public class TabInfoUtility {
 				boolean slotEnabled;
 				switch (i) {
 					case 0:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
 						break;
 					case 1:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
 						break;
 					case 2:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
 						break;
 					default:
 						slotEnabled = true;
@@ -1242,10 +1242,10 @@ public class TabInfoUtility {
 		}
 		
 		// Recycler Slots
-		boolean showRecyclerPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay) {
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+		boolean showRecyclerPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
 			String displayText = showIcon ? "? / ?" : "Recycler Slot 1: ? / ?";
 			String percent = null;
 			if (showRecyclerPercent && recyclerSlot1.isValid()) {
@@ -1253,9 +1253,9 @@ public class TabInfoUtility {
 			}
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, false, "recyclerSlot1", showIcon));
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay) {
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
 			String displayText = showIcon ? "? / ?" : "Recycler Slot 2: ? / ?";
 			String percent = null;
 			if (showRecyclerPercent && recyclerSlot2.isValid()) {
@@ -1263,9 +1263,9 @@ public class TabInfoUtility {
 			}
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, false, "recyclerSlot2", showIcon));
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay) {
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
 			String displayText = showIcon ? "? / ?" : "Recycler Slot 3: ? / ?";
 			String percent = null;
 			if (showRecyclerPercent && recyclerSlot3.isValid()) {
@@ -1285,10 +1285,10 @@ public class TabInfoUtility {
 		List<LineWithPercent> lines = new ArrayList<>();
 		
 		// Forschung
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
 			if (showPercent) {
 				if (forschung.isValid()) {
 					// Forschung zählt runter: wenn current näher an max ist, ist der Prozent höher
@@ -1310,124 +1310,124 @@ public class TabInfoUtility {
 			// Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
 			double currentPercent = forschung.isValid() ? 
 				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
 			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "forschung", showIcon));
 		}
 		
 		// Amboss Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmboss && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
 			if (showPercent && ambossKapazitaet.isValid()) {
 				percent = calculatePercent(ambossKapazitaet.current, ambossKapazitaet.max);
 			}
 			double currentPercent = ambossKapazitaet.isValid() ? 
 				((double)ambossKapazitaet.current / (double)ambossKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
 			boolean showWarning = ambossKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
 			String displayText = showIcon ? ambossKapazitaet.getDisplayString() : "Amboss: " + ambossKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "amboss", showIcon));
 		}
 		
 		// Schmelzofen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
 			if (showPercent && schmelzofenKapazitaet.isValid()) {
 				percent = calculatePercent(schmelzofenKapazitaet.current, schmelzofenKapazitaet.max);
 			}
 			double currentPercent = schmelzofenKapazitaet.isValid() ? 
 				((double)schmelzofenKapazitaet.current / (double)schmelzofenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
 			boolean showWarning = schmelzofenKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
 			String displayText = showIcon ? schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + schmelzofenKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "schmelzofen", showIcon));
 		}
 		
 		// Jäger Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaeger && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
 			if (showPercent && jaegerKapazitaet.isValid()) {
 				percent = calculatePercent(jaegerKapazitaet.current, jaegerKapazitaet.max);
 			}
 			double currentPercent = jaegerKapazitaet.isValid() ? 
 				((double)jaegerKapazitaet.current / (double)jaegerKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
 			boolean showWarning = jaegerKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
 			String displayText = showIcon ? jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "jaeger", showIcon));
 		}
 		
 		// Seelen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
 			if (showPercent && seelenKapazitaet.isValid()) {
 				percent = calculatePercent(seelenKapazitaet.current, seelenKapazitaet.max);
 			}
 			double currentPercent = seelenKapazitaet.isValid() ? 
 				((double)seelenKapazitaet.current / (double)seelenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
 			boolean showWarning = seelenKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
 			String displayText = showIcon ? seelenKapazitaet.getDisplayString() : "Seelen: " + seelenKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "seelen", showIcon));
 		}
 		
 		// Essenzen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
 			if (showPercent && essenzenKapazitaet.isValid()) {
 				percent = calculatePercent(essenzenKapazitaet.current, essenzenKapazitaet.max);
 			}
 			double currentPercent = essenzenKapazitaet.isValid() ? 
 				((double)essenzenKapazitaet.current / (double)essenzenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
 			boolean showWarning = essenzenKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
 			String displayText = showIcon ? essenzenKapazitaet.getDisplayString() : "Essenzen: " + essenzenKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "essenzen", showIcon));
 		}
 		
 		// Kombo Kiste (Werte später z. B. aus Bossbar/Leaderboard)
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay) {
 			boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
 			String fraction = getKomboKisteFractionDisplay();
 			String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
 			lines.add(new LineWithPercent(displayText, null, false, showWarning, "komboKiste", showIcon));
 		}
 		
 		// Machtkristalle
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
 			for (int i = 0; i < 3; i++) {
 				// Prüfe ob dieser Slot aktiviert ist
 				boolean slotEnabled;
 				switch (i) {
 					case 0:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
 						break;
 					case 1:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
 						break;
 					case 2:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
 						break;
 					default:
 						slotEnabled = true;
@@ -1469,49 +1469,49 @@ public class TabInfoUtility {
 		}
 		
 		// Recycler Slots
-		boolean showRecyclerPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay) {
+		boolean showRecyclerPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay) {
 			String percent = null;
 			if (showRecyclerPercent && recyclerSlot1.isValid()) {
 				percent = calculatePercent(recyclerSlot1.current, recyclerSlot1.max);
 			}
 			double currentPercent = recyclerSlot1.isValid() ? 
 				((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 			boolean showWarning = recyclerSlot1.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
 			String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, showWarning, "recyclerSlot1", showIcon));
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay) {
 			String percent = null;
 			if (showRecyclerPercent && recyclerSlot2.isValid()) {
 				percent = calculatePercent(recyclerSlot2.current, recyclerSlot2.max);
 			}
 			double currentPercent = recyclerSlot2.isValid() ? 
 				((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 			boolean showWarning = recyclerSlot2.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
 			String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, showWarning, "recyclerSlot2", showIcon));
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay) {
 			String percent = null;
 			if (showRecyclerPercent && recyclerSlot3.isValid()) {
 				percent = calculatePercent(recyclerSlot3.current, recyclerSlot3.max);
 			}
 			double currentPercent = recyclerSlot3.isValid() ? 
 				((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 			boolean showWarning = recyclerSlot3.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
 			String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent && percent != null, showWarning, "recyclerSlot3", showIcon));
 		}
@@ -1520,15 +1520,18 @@ public class TabInfoUtility {
 	}
 	
 	/**
-	 * Rendert das Tab-Info Overlay links auf dem Bildschirm
+	 * Rendert das NPC Alerts Overlay links auf dem Bildschirm
 	 */
-	private static void renderTabInfoDisplay(DrawContext context, MinecraftClient client) {
+	private static void renderNpcAlertsDisplay(DrawContext context, MinecraftClient client) {
 		if (client.getWindow() == null) {
 			return;
 		}
 		
-		// Prüfe ob Tab Info Utility aktiviert ist
-		if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoUtilityEnabled) {
+		// Prüfe ob NPC Alerts Utility aktiviert ist
+		if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
+			return;
+		}
+		if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible) {
 			return;
 		}
 		
@@ -1538,11 +1541,11 @@ public class TabInfoUtility {
 		List<LineWithPercent> lines = new ArrayList<>();
 		
 		// Forschung
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
 			if (showPercent) {
 				if (forschung.isValid()) {
 					// Forschung zählt runter: wenn current näher an max ist, ist der Prozent höher
@@ -1564,129 +1567,129 @@ public class TabInfoUtility {
 			// Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
 			double currentPercent = forschung.isValid() ? 
 				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
 			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "forschung", showIcon));
 		}
 		
 		// Amboss Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmboss && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
 			if (showPercent && ambossKapazitaet.isValid()) {
 				percent = calculatePercent(ambossKapazitaet.current, ambossKapazitaet.max);
 			}
 			double currentPercent = ambossKapazitaet.isValid() ? 
 				((double)ambossKapazitaet.current / (double)ambossKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
 			boolean showWarning = ambossKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
 			String displayText = showIcon ? ambossKapazitaet.getDisplayString() : "Amboss: " + ambossKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "amboss", showIcon));
 		}
 		
 		// Schmelzofen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
 			if (showPercent && schmelzofenKapazitaet.isValid()) {
 				percent = calculatePercent(schmelzofenKapazitaet.current, schmelzofenKapazitaet.max);
 			}
 			double currentPercent = schmelzofenKapazitaet.isValid() ? 
 				((double)schmelzofenKapazitaet.current / (double)schmelzofenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
 			boolean showWarning = schmelzofenKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
 			String displayText = showIcon ? schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + schmelzofenKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "schmelzofen", showIcon));
 		}
 		
 		// Jäger Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaeger && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
 			if (showPercent && jaegerKapazitaet.isValid()) {
 				percent = calculatePercent(jaegerKapazitaet.current, jaegerKapazitaet.max);
 			}
 			double currentPercent = jaegerKapazitaet.isValid() ? 
 				((double)jaegerKapazitaet.current / (double)jaegerKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
 			boolean showWarning = jaegerKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
 			String displayText = showIcon ? jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "jaeger", showIcon));
 		}
 		
 		// Seelen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
 			if (showPercent && seelenKapazitaet.isValid()) {
 				percent = calculatePercent(seelenKapazitaet.current, seelenKapazitaet.max);
 			}
 			double currentPercent = seelenKapazitaet.isValid() ? 
 				((double)seelenKapazitaet.current / (double)seelenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
 			boolean showWarning = seelenKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
 			String displayText = showIcon ? seelenKapazitaet.getDisplayString() : "Seelen: " + seelenKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "seelen", showIcon));
 		}
 		
 		// Essenzen Kapazität
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzen && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
 			if (showPercent && essenzenKapazitaet.isValid()) {
 				percent = calculatePercent(essenzenKapazitaet.current, essenzenKapazitaet.max);
 			}
 			double currentPercent = essenzenKapazitaet.isValid() ? 
 				((double)essenzenKapazitaet.current / (double)essenzenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
 			boolean showWarning = essenzenKapazitaet.isValid() && warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
 			String displayText = showIcon ? essenzenKapazitaet.getDisplayString() : "Essenzen: " + essenzenKapazitaet.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "essenzen", showIcon));
 		}
 		
 		// Kombo Kiste (Werte später z. B. aus Bossbar/Leaderboard)
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsKomboKiste && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay) {
 			boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
 			String fraction = getKomboKisteFractionDisplay();
 			String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
 			lines.add(new LineWithPercent(displayText, null, false, showWarning, "komboKiste", showIcon));
 		}
 		
 		// Machtkristalle
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
 			for (int i = 0; i < 3; i++) {
 				// Prüfe ob dieser Slot aktiviert ist
 				boolean slotEnabled;
 				switch (i) {
 					case 0:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
 						break;
 					case 1:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
 						break;
 					case 2:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
 						break;
 					default:
 						slotEnabled = true;
@@ -1728,9 +1731,9 @@ public class TabInfoUtility {
 		}
 		
 		// Recycler Slots
-		boolean showRecyclerPercent2 = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay) {
+		boolean showRecyclerPercent2 = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
 			if (showRecyclerPercent2 && recyclerSlot1.isValid()) {
@@ -1738,15 +1741,15 @@ public class TabInfoUtility {
 			}
 			double currentPercent = recyclerSlot1.isValid() ? 
 				((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 			boolean showWarning = recyclerSlot1.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
 			String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent2 && percent != null, showWarning, "recyclerSlot1", showIcon));
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
 			if (showRecyclerPercent2 && recyclerSlot2.isValid()) {
@@ -1754,15 +1757,15 @@ public class TabInfoUtility {
 			}
 			double currentPercent = recyclerSlot2.isValid() ? 
 				((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 			boolean showWarning = recyclerSlot2.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
 			String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent2 && percent != null, showWarning, "recyclerSlot2", showIcon));
 		}
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+		    !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay) {
 			// Zeige immer an, auch wenn noch keine Werte gefunden wurden
 			String percent = null;
 			if (showRecyclerPercent2 && recyclerSlot3.isValid()) {
@@ -1770,10 +1773,10 @@ public class TabInfoUtility {
 			}
 			double currentPercent = recyclerSlot3.isValid() ? 
 				((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 			// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 			boolean showWarning = recyclerSlot3.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
 			String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showRecyclerPercent2 && percent != null, showWarning, "recyclerSlot3", showIcon));
 		}
@@ -1834,7 +1837,7 @@ public class TabInfoUtility {
 		int unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * 2) + (PADDING * 2);
 		
 		// Get scale
-		float scale = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayScale;
+		float scale = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale;
 		if (scale <= 0) scale = 1.0f;
 		
 		// Berechne skalierte Dimensionen
@@ -1842,8 +1845,8 @@ public class TabInfoUtility {
 		int overlayHeight = Math.round(unscaledHeight * scale);
 		
 		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
-		int baseX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayX;
-		int yPosition = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayY;
+		int baseX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX;
+		int yPosition = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY;
 		
 		// Determine if overlay is on left or right side of screen
 		int screenWidth = client.getWindow().getScaledWidth();
@@ -1866,7 +1869,7 @@ public class TabInfoUtility {
 		int posY = yPosition;
 		
 		// Zeichne semi-transparenten Hintergrund (wenn aktiviert) - skaliert
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMainOverlayShowBackground) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
 			context.fill(posX, posY, posX + overlayWidth, posY + overlayHeight, 0x80000000);
 		}
 		
@@ -2128,10 +2131,10 @@ public class TabInfoUtility {
 		final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
 		
 		// Forschung
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschung && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
 			if (showPercent) {
 				if (forschung.isValid()) {
 					// Forschung zählt runter: wenn current näher an max ist, ist der Prozent höher
@@ -2153,144 +2156,144 @@ public class TabInfoUtility {
 			// Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
 			double currentPercent = forschung.isValid() ? 
 				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
 			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			renderSingleInfoOverlay(context, client, displayText, 
 				percent, showPercent, showWarning, "forschung", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground);
 		}
 		
 		// Amboss
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmboss && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
 			if (showPercent && ambossKapazitaet.isValid()) {
 				percent = calculatePercent(ambossKapazitaet.current, ambossKapazitaet.max);
 			}
 			double currentPercent = ambossKapazitaet.isValid() ? 
 				((double)ambossKapazitaet.current / (double)ambossKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
 			String displayText = showIcon ? ambossKapazitaet.getDisplayString() : "Amboss: " + ambossKapazitaet.getDisplayString();
 			renderSingleInfoOverlay(context, client, displayText, 
 				percent, showPercent, showWarning, "amboss", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground);
 		}
 		
 		// Schmelzofen
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofen && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
 			if (showPercent && schmelzofenKapazitaet.isValid()) {
 				percent = calculatePercent(schmelzofenKapazitaet.current, schmelzofenKapazitaet.max);
 			}
 			double currentPercent = schmelzofenKapazitaet.isValid() ? 
 				((double)schmelzofenKapazitaet.current / (double)schmelzofenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
 			String displayText = showIcon ? schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + schmelzofenKapazitaet.getDisplayString();
 			renderSingleInfoOverlay(context, client, displayText, 
 				percent, showPercent, showWarning, "schmelzofen", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground);
 		}
 		
 		// Jäger
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaeger && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaeger && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
 			if (showPercent && jaegerKapazitaet.isValid()) {
 				percent = calculatePercent(jaegerKapazitaet.current, jaegerKapazitaet.max);
 			}
 			double currentPercent = jaegerKapazitaet.isValid() ? 
 				((double)jaegerKapazitaet.current / (double)jaegerKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
 			String displayText = showIcon ? jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix();
 			renderSingleInfoOverlay(context, client, displayText, 
 				percent, showPercent, showWarning, "jaeger", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground);
 		}
 		
 		// Seelen
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelen && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelen && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
 			if (showPercent && seelenKapazitaet.isValid()) {
 				percent = calculatePercent(seelenKapazitaet.current, seelenKapazitaet.max);
 			}
 			double currentPercent = seelenKapazitaet.isValid() ? 
 				((double)seelenKapazitaet.current / (double)seelenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
 			String displayText = showIcon ? seelenKapazitaet.getDisplayString() : "Seelen: " + seelenKapazitaet.getDisplayString();
 			renderSingleInfoOverlay(context, client, displayText, 
 				percent, showPercent, showWarning, "seelen", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground);
 		}
 		
 		// Essenzen
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzen && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzen && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay) {
 			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent;
+			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
 			if (showPercent && essenzenKapazitaet.isValid()) {
 				percent = calculatePercent(essenzenKapazitaet.current, essenzenKapazitaet.max);
 			}
 			double currentPercent = essenzenKapazitaet.isValid() ? 
 				((double)essenzenKapazitaet.current / (double)essenzenKapazitaet.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenWarnPercent;
+			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
 			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
 			String displayText = showIcon ? essenzenKapazitaet.getDisplayString() : "Essenzen: " + essenzenKapazitaet.getDisplayString();
 			renderSingleInfoOverlay(context, client, displayText, 
 				percent, showPercent, showWarning, "essenzen", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground);
 		}
 		
 		// Kombo Kiste
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoKomboKiste && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsKomboKiste && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay) {
 			boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
 			String fraction = getKomboKisteFractionDisplay();
 			String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
 			renderSingleInfoOverlay(context, client, displayText, 
 				null, false, showWarning, "komboKiste", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground);
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteX,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteY,
+				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground);
 		}
 		
 		// Machtkristalle - prüfe ob einzeln oder zusammen gerendert werden soll
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalle && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay) {
+		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
+		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
 			// Prüfe welche Slots einzeln gerendert werden sollen
-			boolean slot1Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate;
-			boolean slot2Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate;
-			boolean slot3Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
+			boolean slot1Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
+			boolean slot2Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
+			boolean slot3Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
+			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
 			
 			// Liste für Slots, die zusammen gerendert werden sollen
 			List<LineWithPercent> mkLines = new ArrayList<>();
@@ -2302,13 +2305,13 @@ public class TabInfoUtility {
 				boolean slotEnabled;
 				switch (i) {
 					case 0:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
 						break;
 					case 1:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
 						break;
 					case 2:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
 						break;
 					default:
 						slotEnabled = true;
@@ -2350,7 +2353,7 @@ public class TabInfoUtility {
 				boolean showWarning = false;
 				if (percentText != null && slot.xpData.isValid()) {
 					double currentPercent = parsePercentValue(percentText);
-					double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleWarnPercent;
+					double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
 					showWarning = currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
 				}
 				
@@ -2359,20 +2362,20 @@ public class TabInfoUtility {
 					int slotX, slotY;
 					switch (i) {
 						case 0:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1X;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Y;
+							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1X;
+							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Y;
 							break;
 						case 1:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2X;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Y;
+							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2X;
+							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Y;
 							break;
 						case 2:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3X;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Y;
+							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3X;
+							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Y;
 							break;
 						default:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleX;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleY;
+							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleX;
+							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleY;
 							break;
 					}
 					// Bestimme den richtigen configKey für die Skalierung
@@ -2396,7 +2399,7 @@ public class TabInfoUtility {
 						percentText, percentText != null, showWarning, slotConfigKey, showIcon,
 						slotX,
 						slotY,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground);
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground);
 				} else {
 					// Füge zur Liste hinzu (wird zusammen gerendert)
 					mkLines.add(new LineWithPercent(displayText, percentText, percentText != null, showWarning, "machtkristalle", showIcon));
@@ -2406,29 +2409,29 @@ public class TabInfoUtility {
 			// Rendere alle Zeilen, die zusammen gerendert werden sollen, in einem einzigen Overlay
 			if (!mkLines.isEmpty()) {
 				// Berechne Y-Position für das Multi-Line-Overlay (nach den einzelnen Overlays)
-				int multiLineY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleY + yOffset;
+				int multiLineY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleY + yOffset;
 				renderMultiLineOverlay(context, client, mkLines,
-					net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleX,
+					net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleX,
 					multiLineY,
-					net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground,
+					net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground,
 					"machtkristalle");
 			}
 		}
 		
 		// Recycler Slots - prüfe ob einzeln oder zusammen gerendert werden soll
 		// Prüfe ob mindestens ein Recycler-Slot aktiviert ist und "Separates Overlay" hat
-		boolean recyclerSlot1Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 && 
-		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
-		boolean recyclerSlot2Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 && 
-		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
-		boolean recyclerSlot3Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 && 
-		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
+		boolean recyclerSlot1Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
+		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
+		boolean recyclerSlot2Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
+		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
+		boolean recyclerSlot3Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
+		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
 		
 		if (recyclerSlot1Active || recyclerSlot2Active || recyclerSlot3Active) {
 			// Prüfe welche Slots einzeln gerendert werden sollen
-			boolean slot1Separate = recyclerSlot1Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
-			boolean slot2Separate = recyclerSlot2Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
-			boolean slot3Separate = recyclerSlot3Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+			boolean slot1Separate = recyclerSlot1Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
+			boolean slot2Separate = recyclerSlot2Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
+			boolean slot3Separate = recyclerSlot3Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
 			
 			// Liste für Slots, die zusammen gerendert werden sollen
 			List<LineWithPercent> recyclerLines = new ArrayList<>();
@@ -2438,16 +2441,16 @@ public class TabInfoUtility {
 			// Recycler Slot 1
 			if (recyclerSlot1Active) {
 				String percent = null;
-				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
+				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
 				if (showPercent && recyclerSlot1.isValid()) {
 					percent = calculatePercent(recyclerSlot1.current, recyclerSlot1.max);
 				}
 				double currentPercent = recyclerSlot1.isValid() ? 
 					((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
-				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
 				// Wenn Icon aktiviert ist, zeige nur die Werte (oder "Nicht im Tab-Widget" wenn nicht gültig)
 				// Das Icon wird dann automatisch vor dem Text angezeigt
 				String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
@@ -2456,9 +2459,9 @@ public class TabInfoUtility {
 					// Rendere einzeln mit individueller Position
 					renderSingleInfoOverlay(context, client, displayText, 
 						percent, showPercent, showWarning, "recyclerSlot1", showIcon,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1X,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Y,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground);
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1X,
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Y,
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
 					yOffset += recyclerLineHeight;
 				} else {
 					// Füge zur Liste hinzu (wird zusammen gerendert)
@@ -2469,25 +2472,25 @@ public class TabInfoUtility {
 			// Recycler Slot 2
 			if (recyclerSlot2Active) {
 				String percent = null;
-				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
+				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
 				if (showPercent && recyclerSlot2.isValid()) {
 					percent = calculatePercent(recyclerSlot2.current, recyclerSlot2.max);
 				}
 				double currentPercent = recyclerSlot2.isValid() ? 
 					((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
-				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
 				String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
 				
 				if (slot2Separate) {
 					// Rendere einzeln mit individueller Position
 					renderSingleInfoOverlay(context, client, displayText, 
 						percent, showPercent, showWarning, "recyclerSlot2", showIcon,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2X,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Y,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground);
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2X,
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Y,
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
 					yOffset += recyclerLineHeight;
 				} else {
 					// Füge zur Liste hinzu (wird zusammen gerendert)
@@ -2498,25 +2501,25 @@ public class TabInfoUtility {
 			// Recycler Slot 3
 			if (recyclerSlot3Active) {
 				String percent = null;
-				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
+				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
 				if (showPercent && recyclerSlot3.isValid()) {
 					percent = calculatePercent(recyclerSlot3.current, recyclerSlot3.max);
 				}
 				double currentPercent = recyclerSlot3.isValid() ? 
 					((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
 				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
 				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
-				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
 				String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
 				
 				if (slot3Separate) {
 					// Rendere einzeln mit individueller Position
 					renderSingleInfoOverlay(context, client, displayText, 
 						percent, showPercent, showWarning, "recyclerSlot3", showIcon,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3X,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Y,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground);
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3X,
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Y,
+						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
 					yOffset += recyclerLineHeight;
 				} else {
 					// Füge zur Liste hinzu (wird zusammen gerendert)
@@ -2527,9 +2530,9 @@ public class TabInfoUtility {
 			// Rendere alle Zeilen, die zusammen gerendert werden sollen, in einem einzigen Overlay
 			if (!recyclerLines.isEmpty()) {
 				// Verwende die gemeinsame Position für das Multi-Line-Overlay
-				int baseX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerX;
-				int baseY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerY;
-				boolean showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground;
+				int baseX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerX;
+				int baseY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerY;
+				boolean showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground;
 				
 				renderMultiLineOverlay(context, client, recyclerLines,
 					baseX,
@@ -2560,37 +2563,37 @@ public class TabInfoUtility {
 		if (configKey != null) {
 			switch (configKey) {
 				case "forschung":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground;
 					break;
 				case "amboss":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground;
 					break;
 				case "schmelzofen":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground;
 					break;
 				case "jaeger":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground;
 					break;
 				case "komboKiste":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground;
 					break;
 				case "seelen":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground;
 					break;
 				case "essenzen":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground;
 					break;
 				case "machtkristalle":
 				case "machtkristalleSlot1":
 				case "machtkristalleSlot2":
 				case "machtkristalleSlot3":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground;
 					break;
 				case "recycler":
 				case "recyclerSlot1":
 				case "recyclerSlot2":
 				case "recyclerSlot3":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground;
+					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground;
 					break;
 			}
 		}
@@ -2845,79 +2848,79 @@ public class TabInfoUtility {
 		if (configKey == null) return 1.0f;
 		switch (configKey) {
 			case "forschung":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScale;
 			case "amboss":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScale;
 			case "schmelzofen":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScale;
 			case "jaeger":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScale;
 			case "komboKiste":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScale;
 			case "seelen":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScale;
 			case "essenzen":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScale;
 			case "machtkristalle":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScale;
 			case "machtkristalleSlot1":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Scale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Scale;
 			case "machtkristalleSlot2":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Scale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Scale;
 			case "machtkristalleSlot3":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Scale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Scale;
 			case "recycler":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerScale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScale;
 			case "recyclerSlot1":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Scale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Scale;
 			case "recyclerSlot2":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Scale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Scale;
 			case "recyclerSlot3":
-				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Scale;
+				return net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Scale;
 			default:
 				return 1.0f;
 		}
 	}
 	
 	/**
-	 * Gibt die konfigurierte Textfarbe für einen Tab-Info-Eintrag zurück
+	 * Gibt die konfigurierte Textfarbe für einen NPC Alerts-Eintrag zurück
 	 */
 	public static int getTextColorForConfigKey(String configKey) {
 		if (configKey == null) return 0xFFFFFFFF;
 		java.awt.Color color;
 		switch (configKey) {
 			case "forschung":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungTextColor;
 				break;
 			case "amboss":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossTextColor;
 				break;
 			case "schmelzofen":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenTextColor;
 				break;
 			case "jaeger":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerTextColor;
 				break;
 			case "komboKiste":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteTextColor;
 				break;
 			case "seelen":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenTextColor;
 				break;
 			case "essenzen":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenTextColor;
 				break;
 			case "machtkristalle":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleTextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleTextColor;
 				break;
 			case "recyclerSlot1":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
 				break;
 			case "recyclerSlot2":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
 				break;
 			case "recyclerSlot3":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
 				break;
 			default:
 				return 0xFFFFFFFF;
@@ -2926,41 +2929,41 @@ public class TabInfoUtility {
 	}
 	
 	/**
-	 * Gibt die konfigurierte Prozentfarbe für einen Tab-Info-Eintrag zurück
+	 * Gibt die konfigurierte Prozentfarbe für einen NPC Alerts-Eintrag zurück
 	 */
 	public static int getPercentColorForConfigKey(String configKey) {
 		if (configKey == null) return 0xFFFFFF00;
 		java.awt.Color color;
 		switch (configKey) {
 			case "forschung":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungPercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungPercentColor;
 				break;
 			case "amboss":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossPercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossPercentColor;
 				break;
 			case "schmelzofen":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenPercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenPercentColor;
 				break;
 			case "jaeger":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerPercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerPercentColor;
 				break;
 			case "seelen":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenPercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenPercentColor;
 				break;
 			case "essenzen":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenPercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenPercentColor;
 				break;
 			case "machtkristalle":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristallePercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentColor;
 				break;
 			case "recyclerSlot1":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
 				break;
 			case "recyclerSlot2":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
 				break;
 			case "recyclerSlot3":
-				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor;
+				color = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
 				break;
 			default:
 				return 0xFFFFFF00;

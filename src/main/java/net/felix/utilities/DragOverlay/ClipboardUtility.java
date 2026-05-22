@@ -81,6 +81,9 @@ public class ClipboardUtility {
         
         // Initialisiere ClipboardMaterialCollector
         ClipboardMaterialCollector.initialize();
+
+        // Farmzone: Ressourcen aus Actionbar (nur bei Scoreboard-Biom)
+        ClipboardFarmzoneActionBar.initialize();
         
         // Registriere Chat-Event für Coin-Updates
         net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> {

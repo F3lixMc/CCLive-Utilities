@@ -1,4 +1,4 @@
-package net.felix.utilities.DragOverlay.TabInfo;
+package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
@@ -11,9 +11,9 @@ import dev.isxander.yacl3.api.controller.*;
 import java.awt.Color;
 
 /**
- * Detail-Screen für einzelne Tab-Info-Einstellungen
+ * Detail-Screen für einzelne NPC Alerts-Einstellungen
  */
-public class TabInfoDetailScreen extends Screen {
+public class NpcAlertsDetailScreen extends Screen {
     
     private final Screen parent;
     private final String infoName;
@@ -22,8 +22,8 @@ public class TabInfoDetailScreen extends Screen {
     private String warnPercentInput = ""; // Warn-Prozent oder Kombo-Zielwert
     private boolean isEditingWarnPercent = false;
     
-    public TabInfoDetailScreen(Screen parent, String infoName, String configKey) {
-        super(Text.literal("Tab Info Detail Settings"));
+    public NpcAlertsDetailScreen(Screen parent, String infoName, String configKey) {
+        super(Text.literal("NPC Alerts Detail Settings"));
         this.parent = parent;
         this.infoName = infoName;
         this.configKey = configKey;
@@ -42,7 +42,7 @@ public class TabInfoDetailScreen extends Screen {
         addDrawableChild(titleWidget);
         
         if ("komboKiste".equals(configKey)) {
-            int z = CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert;
+            int z = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteZielwert;
             if (z < 1) {
                 z = 1;
             }
@@ -175,7 +175,7 @@ public class TabInfoDetailScreen extends Screen {
         
         // Checkmark wenn aktiviert
         if (showBackground) {
-            // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+            // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
             int checkX = backgroundCheckboxX + 2;
             int checkY = backgroundCheckboxYPos + 2;
             int checkSize = backgroundCheckboxSize - 4;
@@ -219,7 +219,7 @@ public class TabInfoDetailScreen extends Screen {
             
             // Checkmark wenn aktiviert
             if (showPercent) {
-                // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+                // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
                 int checkX = checkboxX + 2;
                 int checkY = checkboxY + 2;
                 int checkSize = checkboxSize - 4;
@@ -367,7 +367,7 @@ public class TabInfoDetailScreen extends Screen {
                 
                 // Checkmark wenn aktiviert
                 if (mkSlotEnabled) {
-                    // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+                    // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
                     int checkX = mkCheckboxX + 2;
                     int checkY = mkSlotY + 2;
                     int checkSize = mkCheckboxSize - 4;
@@ -409,7 +409,7 @@ public class TabInfoDetailScreen extends Screen {
                 
                 // Checkmark wenn aktiviert
                 if (mkSlotSeparate) {
-                    // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+                    // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
                     int checkX = mkCheckboxX + 2;
                     int checkY = mkCheckboxY + 2;
                     int checkSize = mkCheckboxSize - 4;
@@ -462,7 +462,7 @@ public class TabInfoDetailScreen extends Screen {
                 
                 // Checkmark wenn aktiviert
                 if (recyclerSlotEnabled) {
-                    // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+                    // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
                     int checkX = recyclerCheckboxX + 2;
                     int checkY = recyclerSlotY + 2;
                     int checkSize = recyclerCheckboxSize - 4;
@@ -504,7 +504,7 @@ public class TabInfoDetailScreen extends Screen {
                     
                     // Checkmark wenn aktiviert
                     if (recyclerSlotSeparate) {
-                        // Zeichne Häkchen (✓) - gleiche Logik wie in TabInfoSettingsScreen
+                        // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
                         int checkX = recyclerCheckboxX + 2;
                         int checkY = recyclerCheckboxY + 2;
                         int checkSize = recyclerCheckboxSize - 4;
@@ -694,24 +694,24 @@ public class TabInfoDetailScreen extends Screen {
     private boolean getShowPercent() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristallePercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristallePercent;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
             default:
                 return false;
         }
@@ -720,31 +720,31 @@ public class TabInfoDetailScreen extends Screen {
     private void setShowPercent(boolean value) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoForschungPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent = value;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoAmbossPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent = value;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSchmelzofenPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent = value;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoJaegerPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent = value;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoSeelenPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent = value;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoEssenzenPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent = value;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristallePercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristallePercent = value;
                 break;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent = value;
                 break;
         }
     }
@@ -1156,32 +1156,32 @@ public class TabInfoDetailScreen extends Screen {
     private boolean getSeparateOverlay() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay;
             case "recycler":
                 // Für "recycler" prüfe ob mindestens ein Slot "Separates Overlay" hat
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay ||
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay ||
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
             default:
                 return false;
         }
@@ -1190,43 +1190,43 @@ public class TabInfoDetailScreen extends Screen {
     private void setSeparateOverlay(boolean value) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay = value;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay = value;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay = value;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay = value;
                 break;
             case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay = value;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay = value;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay = value;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay = value;
                 break;
             case "recycler":
                 // Für "recycler" setze alle 3 Slots
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay = value;
                 break;
             case "recyclerSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1SeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay = value;
                 break;
             case "recyclerSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2SeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay = value;
                 break;
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3SeparateOverlay = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay = value;
                 break;
         }
         
@@ -1245,11 +1245,11 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
             case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
             case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
             default:
                 return false;
         }
@@ -1264,13 +1264,13 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot1Separate = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate = value;
                 break;
             case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot2Separate = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate = value;
                 break;
             case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleSlot3Separate = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate = value;
                 break;
         }
     }
@@ -1286,11 +1286,11 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
             case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
             case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
             default:
                 return false;
         }
@@ -1307,13 +1307,13 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot1 = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 = value;
                 break;
             case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot2 = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 = value;
                 break;
             case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoRecyclerSlot3 = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 = value;
                 break;
         }
         
@@ -1334,11 +1334,11 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
             case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
             case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
             default:
                 return false;
         }
@@ -1355,13 +1355,13 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1Separate = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate = value;
                 break;
             case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2Separate = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate = value;
                 break;
             case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3Separate = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate = value;
                 break;
         }
     }
@@ -1427,10 +1427,10 @@ public class TabInfoDetailScreen extends Screen {
                 if (z < 1) {
                     z = 1;
                 }
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert = z;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteZielwert = z;
                 CCLiveUtilitiesConfig.HANDLER.save();
             } catch (NumberFormatException e) {
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteZielwert = 1000;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteZielwert = 1000;
                 CCLiveUtilitiesConfig.HANDLER.save();
             }
             return;
@@ -1455,24 +1455,24 @@ public class TabInfoDetailScreen extends Screen {
     private double getWarnPercent() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleWarnPercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
             default:
                 return -1.0;
         }
@@ -1481,31 +1481,31 @@ public class TabInfoDetailScreen extends Screen {
     private void setWarnPercent(double value) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent = value;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent = value;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent = value;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent = value;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent = value;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent = value;
                 break;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent = value;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleWarnPercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent = value;
                 break;
         }
     }
@@ -1513,32 +1513,32 @@ public class TabInfoDetailScreen extends Screen {
     private boolean getShowIcon() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
             case "recycler":
                 // Für "recycler" prüfe ob mindestens ein Slot Icon aktiviert hat
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon ||
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon ||
+                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
             case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
             case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
             default:
                 return false;
         }
@@ -1547,43 +1547,43 @@ public class TabInfoDetailScreen extends Screen {
     private void setShowIcon(boolean value) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon = value;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon = value;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon = value;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon = value;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon = value;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon = value;
                 break;
             case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon = value;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon = value;
                 break;
             case "recycler":
                 // Für "recycler" setze alle 3 Slots
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon = value;
                 break;
             case "recyclerSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1ShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon = value;
                 break;
             case "recyclerSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2ShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon = value;
                 break;
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3ShowIcon = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon = value;
                 break;
         }
     }
@@ -1591,26 +1591,26 @@ public class TabInfoDetailScreen extends Screen {
     private boolean getShowBackground() {
         switch (configKey) {
             case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground;
             case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground;
             case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground;
             case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground;
             case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground;
             case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground;
             case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
             case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground;
             default:
                 return true;
         }
@@ -1619,34 +1619,34 @@ public class TabInfoDetailScreen extends Screen {
     private void setShowBackground(boolean value) {
         switch (configKey) {
             case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground = value;
                 break;
             case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground = value;
                 break;
             case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground = value;
                 break;
             case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground = value;
                 break;
             case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground = value;
                 break;
             case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground = value;
                 break;
             case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground = value;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground = value;
                 break;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
             case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerShowBackground = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground = value;
                 break;
         }
     }
@@ -1660,11 +1660,11 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
             case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
             case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3;
+                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
             default:
                 return false;
         }
@@ -1679,13 +1679,13 @@ public class TabInfoDetailScreen extends Screen {
         }
         switch (slotIndex) {
             case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot1 = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1 = value;
                 break;
             case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot2 = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2 = value;
                 break;
             case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().showTabInfoMachtkristalleSlot3 = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3 = value;
                 break;
         }
         
@@ -1696,7 +1696,7 @@ public class TabInfoDetailScreen extends Screen {
     }
     
     /**
-     * Erstellt einen YACL-Screen für die Farboptionen eines Tab-Info-Eintrags
+     * Erstellt einen YACL-Screen für die Farboptionen eines NPC Alerts-Eintrags
      * Enthält sowohl Textfarbe als auch Prozentfarbe
      */
     private static OptionGroup buildColorOptionGroup(String configKey) {
@@ -1711,7 +1711,7 @@ public class TabInfoDetailScreen extends Screen {
     
     private static Screen createColorConfigScreen(Screen parent, String configKey) {
         return YetAnotherConfigLib.createBuilder()
-                .title(Text.literal("Tab Info Farben"))
+                .title(Text.literal("NPC Alerts Farben"))
                 .category(ConfigCategory.createBuilder()
                         .name(Text.literal("Farben"))
                         .group(buildColorOptionGroup(configKey))
@@ -1724,7 +1724,7 @@ public class TabInfoDetailScreen extends Screen {
     }
     
     /**
-     * Erstellt eine Color-Option für einen Tab-Info-Eintrag
+     * Erstellt eine Color-Option für einen NPC Alerts-Eintrag
      */
     private static Option<Color> createColorOption(String configKey, boolean isTextColor, String name, String description) {
         Color defaultValue = isTextColor ? new Color(0xFFFFFFFF) : new Color(0xFFFFFF00);
@@ -1736,48 +1736,48 @@ public class TabInfoDetailScreen extends Screen {
         if (isTextColor) {
             switch (configKey) {
                 case "forschung":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungTextColor = val;
                     break;
                 case "amboss":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossTextColor = val;
                     break;
                 case "schmelzofen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenTextColor = val;
                     break;
                 case "jaeger":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerTextColor = val;
                     break;
                 case "komboKiste":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoKomboKisteTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteTextColor = val;
                     break;
                 case "seelen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenTextColor = val;
                     break;
                 case "essenzen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenTextColor = val;
                     break;
                 case "machtkristalle":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristalleTextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleTextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleTextColor = val;
                     break;
                 case "recyclerSlot1":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1TextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor = val;
                     break;
                 case "recyclerSlot2":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2TextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor = val;
                     break;
                 case "recyclerSlot3":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3TextColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor = val;
                     break;
                 default:
                     getter = () -> defaultValue;
@@ -1786,44 +1786,44 @@ public class TabInfoDetailScreen extends Screen {
         } else {
             switch (configKey) {
                 case "forschung":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoForschungPercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungPercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungPercentColor = val;
                     break;
                 case "amboss":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoAmbossPercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossPercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossPercentColor = val;
                     break;
                 case "schmelzofen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSchmelzofenPercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenPercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenPercentColor = val;
                     break;
                 case "jaeger":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoJaegerPercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerPercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerPercentColor = val;
                     break;
                 case "seelen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoSeelenPercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenPercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenPercentColor = val;
                     break;
                 case "essenzen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoEssenzenPercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenPercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenPercentColor = val;
                     break;
                 case "machtkristalle":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristallePercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoMachtkristallePercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentColor = val;
                     break;
                 case "recyclerSlot1":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot1PercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor = val;
                     break;
                 case "recyclerSlot2":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot2PercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor = val;
                     break;
                 case "recyclerSlot3":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().tabInfoRecyclerSlot3PercentColor = val;
+                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
+                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor = val;
                     break;
                 default:
                     getter = () -> defaultValue;
@@ -1849,11 +1849,11 @@ public class TabInfoDetailScreen extends Screen {
             if (currentParent instanceof OverlayEditorScreen) {
                 ((OverlayEditorScreen) currentParent).refreshOverlays();
                 break;
-            } else if (currentParent instanceof TabInfoSettingsScreen) {
-                // TabInfoSettingsScreen hat auch ein parent, das das OverlayEditorScreen sein könnte
-                // Wir müssen das parent des TabInfoSettingsScreen prüfen
+            } else if (currentParent instanceof NpcAlertsSettingsScreen) {
+                // NpcAlertsSettingsScreen hat auch ein parent, das das OverlayEditorScreen sein könnte
+                // Wir müssen das parent des NpcAlertsSettingsScreen prüfen
                 try {
-                    java.lang.reflect.Field parentField = TabInfoSettingsScreen.class.getDeclaredField("parent");
+                    java.lang.reflect.Field parentField = NpcAlertsSettingsScreen.class.getDeclaredField("parent");
                     parentField.setAccessible(true);
                     Screen settingsParent = (Screen) parentField.get(currentParent);
                     if (settingsParent instanceof OverlayEditorScreen) {

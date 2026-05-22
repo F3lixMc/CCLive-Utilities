@@ -23,6 +23,7 @@ public class AnimationBlockerUtility {
     private static final Set<String> LOGGING_LEVEL_UP_CHARACTERS = new HashSet<>();
     private static final Set<String> MOBLEXICON_CHARACTERS = new HashSet<>();
     private static final Set<String> MINING_LEVEL_UP_CHARACTERS = new HashSet<>();
+    private static final Set<String> FISHING_LEVEL_UP_CHARACTERS = new HashSet<>();
     private static final Set<String> AIRSHIP_CHARACTERS = new HashSet<>();
     
     // Combined set for checking (will be updated based on config)
@@ -59,6 +60,10 @@ public class AnimationBlockerUtility {
         if (CCLiveUtilitiesConfig.HANDLER.instance().miningLevelUpBlockingEnabled) {
             BLOCKED_CHARACTERS.addAll(MINING_LEVEL_UP_CHARACTERS);
         }
+
+        if (CCLiveUtilitiesConfig.HANDLER.instance().fishingLevelUpBlockingEnabled) {
+            BLOCKED_CHARACTERS.addAll(FISHING_LEVEL_UP_CHARACTERS);
+        }
         
         if (CCLiveUtilitiesConfig.HANDLER.instance().airshipBlockingEnabled) {
             BLOCKED_CHARACTERS.addAll(AIRSHIP_CHARACTERS);
@@ -66,26 +71,27 @@ public class AnimationBlockerUtility {
     }
     
     static {
-        // Lade Zeichen aus ZeichenUtility
-        // Epic drops
+        reloadCharacters();
+    }
+
+    /** Nach Resourcepack-Reload Zeichen neu aus {@link ZeichenUtility} laden. */
+    public static void reloadCharacters() {
+        EPIC_DROPS_CHARACTERS.clear();
+        LEGENDARY_DROPS_CHARACTERS.clear();
+        LOGGING_LEVEL_UP_CHARACTERS.clear();
+        MOBLEXICON_CHARACTERS.clear();
+        MINING_LEVEL_UP_CHARACTERS.clear();
+        FISHING_LEVEL_UP_CHARACTERS.clear();
+        AIRSHIP_CHARACTERS.clear();
+
         addCharactersFromString(ZeichenUtility.getEpicDrops(), EPIC_DROPS_CHARACTERS);
-        
-        // Legendary drops
         addCharactersFromString(ZeichenUtility.getLegendaryDrops(), LEGENDARY_DROPS_CHARACTERS);
-        
-        // Logging level up
         addCharactersFromString(ZeichenUtility.getLoggingLevelUp(), LOGGING_LEVEL_UP_CHARACTERS);
-        
-        // Moblexicon
         addCharactersFromString(ZeichenUtility.getMoblexiconAnimation(), MOBLEXICON_CHARACTERS);
-        
-        // Mining level up
         addCharactersFromString(ZeichenUtility.getMiningLevelUp(), MINING_LEVEL_UP_CHARACTERS);
-        
-        // Airship
+        addCharactersFromString(ZeichenUtility.getFishingLevelUp(), FISHING_LEVEL_UP_CHARACTERS);
         addCharactersFromString(ZeichenUtility.getAirship(), AIRSHIP_CHARACTERS);
-        
-        // Update the combined set based on config
+
         updateBlockedCharacters();
     }
     

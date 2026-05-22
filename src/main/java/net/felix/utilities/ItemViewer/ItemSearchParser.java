@@ -12,20 +12,37 @@ public class ItemSearchParser {
     // #Schuhe, #Schuh, #Schu, #Sch, #Sc, #S werden alle erkannt
     // Unterstützt auch Umlaute (ü, ä, ö) und andere Unicode-Buchstaben
     private static final Pattern TAG_PATTERN = Pattern.compile("#([\\p{L}\\p{N}_]*)", Pattern.UNICODE_CASE);
-    // Stat-Pattern: @StatName>Wert, @StatName<Wert, @StatName>=Wert, @StatName<=Wert, @StatName=Wert
-    // Floor-Vergleichs-Pattern: @Ebene>50, @Ebene<50, @Ebene>=50, @Ebene<=50, etc. (MUSS VOR STAT_PATTERN geparst werden)
-    private static final Pattern FLOOR_COMPARISON_PATTERN = Pattern.compile("@(?:ebene|floor)\\s*(>=|<=|>|<|=)\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
-    // Aspekt-Pattern: @Aspekt Name oder @AspektName (MUSS VOR STAT_NAME_PATTERN geparst werden)
-    // Unterstützt auch direkte Aspekt-Namen nach @ (z.B. @Erde, @Flamme) wenn sie bekannte Aspekte sind
-    // Pattern erlaubt Leerzeichen nach "aspekt" oder "aspect" (optional)
-    private static final Pattern ASPECT_AT_PATTERN = Pattern.compile("@(?:aspekt|aspect)\\s+([\\w\\s]+)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern STAT_PATTERN = Pattern.compile("@([\\w]+)\\s*([><=]+)\\s*([\\d.,]+)", Pattern.CASE_INSENSITIVE);
-    // Stat-Name-Pattern (ohne Operator/Wert für Live-Suche): @StatName
-    private static final Pattern STAT_NAME_PATTERN = Pattern.compile("@([\\w]+)(?![><=])", Pattern.CASE_INSENSITIVE);
-    // Modifier-Pattern: +modifier oder +modifier:anzahl
-    private static final Pattern MODIFIER_PATTERN = Pattern.compile(
-        "\\+([\\w\\s]+)(?::(\\d+))?",
+    // Stat-Pattern: @StatName>Wert, @StatName>=Wert, etc. (>= und <= vor > und <)
+    // Floor-Vergleichs-Pattern: @Ebene>50, @e>=5, etc. (MUSS VOR STAT_PATTERN geparst werden)
+    private static final Pattern FLOOR_COMPARISON_AT_PATTERN = Pattern.compile(
+        "@(?:ebene|floor|e)\\s*(>=|<=|>|<|=)\\s*(\\d+)",
         Pattern.CASE_INSENSITIVE
+    );
+    // Ebenen-Vergleich ohne @: >e5, >=ebene 10, <e4, [e4] mit Operator davor
+    private static final Pattern FLOOR_COMPARISON_PLAIN_PATTERN = Pattern.compile(
+        "(?:^|[\\s,])(>=|<=|>|<|=)\\s*(?:\\[)?(?:ebene\\s*|e\\s*)(\\d+)\\s*\\]?(?=[\\s,]|$)",
+        Pattern.CASE_INSENSITIVE
+    );
+    // Exakte Ebenen-Suche: e4, ebene 4, [e4]
+    private static final Pattern FLOOR_SIMPLE_PATTERN = Pattern.compile(
+        "^(?:\\[)?(?:ebene\\s*|e\\s*)(\\d+)\\s*\\]?$",
+        Pattern.CASE_INSENSITIVE
+    );
+    // Aspekt-Pattern: @Aspekt Name oder @AspektName (MUSS VOR STAT_NAME_PATTERN geparst werden)
+    private static final Pattern ASPECT_AT_PATTERN = Pattern.compile("@(?:aspekt|aspect)\\s+([\\p{L}\\p{N}_\\s]+)", Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS);
+    private static final Pattern STAT_PATTERN = Pattern.compile(
+        "@([\\p{L}\\p{N}_]+)\\s*(>=|<=|>|<|=)\\s*([\\d.,]+)",
+        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
+    );
+    // Stat-Name-Pattern (ohne Operator/Wert für Live-Suche): @StatName
+    private static final Pattern STAT_NAME_PATTERN = Pattern.compile(
+        "@([\\p{L}\\p{N}_]+)(?![><=])",
+        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
+    );
+    // Modifier-Pattern: +modifier oder +modifier:anzahl (Unicode für Umlaute wie Fähigkeiten)
+    private static final Pattern MODIFIER_PATTERN = Pattern.compile(
+        "\\+([\\p{L}\\p{N}_\\s]+)(?::(\\d+))?",
+        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
     );
     private static final Pattern COST_CATEGORY_PATTERN = Pattern.compile(
         "(amboss|ressource|material1|material2|kaktus|seele|coin|coins)[\\s:]*([\\w\\s\\d]+)",
@@ -92,25 +109,7 @@ public class ItemSearchParser {
         // Normale Suche ohne Komma
         String remaining = searchText.trim();
         
-        // Floor-Vergleichs-Filter: @Ebene>50, @Ebene<50, etc. (MUSS VOR STAT_PATTERN geparst werden)
-        Matcher floorComparisonMatcher = FLOOR_COMPARISON_PATTERN.matcher(remaining);
-        while (floorComparisonMatcher.find()) {
-            String operator = floorComparisonMatcher.group(1).trim();
-            String valueStr = floorComparisonMatcher.group(2).trim();
-            
-            try {
-                int value = Integer.parseInt(valueStr);
-                
-                FloorFilter filter = new FloorFilter();
-                filter.operator = operator;
-                filter.value = value;
-                
-                query.floorFilters.add(filter);
-                remaining = remaining.replace(floorComparisonMatcher.group(0), "").trim();
-            } catch (NumberFormatException e) {
-                // Ignoriere ungültige Werte
-            }
-        }
+        remaining = parseFloorComparisons(remaining, query);
         
         // Aspekt-Suche: @Aspekt Name oder direkter Aspekt-Name (MUSS VOR STAT_PATTERN geparst werden)
         Matcher aspectAtMatcher = ASPECT_AT_PATTERN.matcher(remaining);
@@ -149,7 +148,7 @@ public class ItemSearchParser {
                 
                 StatFilter filter = new StatFilter();
                 filter.statName = statName;
-                filter.operator = operator;
+                filter.operator = ComparisonUtils.normalizeOperator(operator);
                 filter.value = value;
                 
                 query.statFilters.add(filter);
@@ -171,12 +170,7 @@ public class ItemSearchParser {
             }
         }
         
-        // Floor-Suche: "Ebene 49", "floor_1", etc.
-        Matcher floorMatcher = FLOOR_PATTERN.matcher(remaining);
-        if (floorMatcher.find()) {
-            query.floor = Integer.parseInt(floorMatcher.group(1));
-            remaining = remaining.replace(floorMatcher.group(0), "").trim();
-        }
+        remaining = parseFloorExactSearch(remaining, query);
         
         // Modifier-Filter: +modifier oder +modifier:anzahl
         Matcher modifierMatcher = MODIFIER_PATTERN.matcher(remaining);
@@ -187,7 +181,6 @@ public class ItemSearchParser {
             ModifierFilter filter = new ModifierFilter();
             filter.modifier = modifierName;
             
-            // Prüfe ob Anzahl angegeben wurde
             if (countStr != null && !countStr.isEmpty()) {
                 try {
                     filter.count = Integer.parseInt(countStr);
@@ -209,11 +202,9 @@ public class ItemSearchParser {
             CostFilter filter = new CostFilter();
             filter.category = category;
             
-            // Prüfe ob Wert eine Zahl ist
             try {
                 filter.amount = Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                // Keine Zahl = Item-Name
                 filter.itemName = value;
             }
             
@@ -228,7 +219,6 @@ public class ItemSearchParser {
                 query.aspect = aspectMatcher.group(1);
                 remaining = remaining.replace(aspectMatcher.group(0), "").trim();
             } else {
-                // Prüfe ob direkter Aspekt-Name
                 for (String knownAspect : KNOWN_ASPECTS) {
                     if (remaining.toLowerCase().contains(knownAspect)) {
                         query.aspect = knownAspect;
@@ -239,8 +229,6 @@ public class ItemSearchParser {
             }
         }
         
-        // Rest = Name-Suche (wird immer als Name-Suche behandelt, auch wenn es ein einzelnes Wort ist)
-        // Modifier-Suche muss explizit mit <modifier> oder modifier:name angegeben werden
         query.nameSearch = remaining;
         
         return query;
@@ -258,25 +246,7 @@ public class ItemSearchParser {
         
         String remaining = searchText.trim();
         
-        // Floor-Vergleichs-Filter: @Ebene>50, @Ebene<50, etc. (MUSS VOR STAT_PATTERN geparst werden)
-        Matcher floorComparisonMatcher = FLOOR_COMPARISON_PATTERN.matcher(remaining);
-        while (floorComparisonMatcher.find()) {
-            String operator = floorComparisonMatcher.group(1).trim();
-            String valueStr = floorComparisonMatcher.group(2).trim();
-            
-            try {
-                int value = Integer.parseInt(valueStr);
-                
-                FloorFilter filter = new FloorFilter();
-                filter.operator = operator;
-                filter.value = value;
-                
-                query.floorFilters.add(filter);
-                remaining = remaining.replace(floorComparisonMatcher.group(0), "").trim();
-            } catch (NumberFormatException e) {
-                // Ignoriere ungültige Werte
-            }
-        }
+        remaining = parseFloorComparisons(remaining, query);
         
         // Stat-Filter: @StatName>Wert, @StatName<Wert, etc. (mit Operator und Wert)
         Matcher statMatcher = STAT_PATTERN.matcher(remaining);
@@ -292,7 +262,7 @@ public class ItemSearchParser {
                 
                 StatFilter filter = new StatFilter();
                 filter.statName = statName;
-                filter.operator = operator;
+                filter.operator = ComparisonUtils.normalizeOperator(operator);
                 filter.value = value;
                 
                 query.statFilters.add(filter);
@@ -331,7 +301,8 @@ public class ItemSearchParser {
         while (statNameMatcher.find()) {
             String statName = statNameMatcher.group(1).trim();
             // Überspringe "aspekt" oder "aspect" da diese bereits über ASPECT_AT_PATTERN behandelt werden
-            if (!statName.isEmpty() && !statName.equalsIgnoreCase("aspekt") && !statName.equalsIgnoreCase("aspect")) {
+            if (!statName.isEmpty() && !statName.equalsIgnoreCase("aspekt") && !statName.equalsIgnoreCase("aspect")
+                && !statName.equalsIgnoreCase("ebene") && !statName.equalsIgnoreCase("floor") && !statName.equalsIgnoreCase("e")) {
                 StatFilter filter = new StatFilter();
                 filter.statName = statName;
                 filter.operator = null; // Kein Operator = nur Stat-Name-Suche
@@ -352,12 +323,7 @@ public class ItemSearchParser {
             }
         }
         
-        // Floor-Suche: "Ebene 49", "floor_1", etc.
-        Matcher floorMatcher = FLOOR_PATTERN.matcher(remaining);
-        if (floorMatcher.find()) {
-            query.floor = Integer.parseInt(floorMatcher.group(1));
-            remaining = remaining.replace(floorMatcher.group(0), "").trim();
-        }
+        remaining = parseFloorExactSearch(remaining, query);
         
         // Modifier-Filter: +modifier oder +modifier:anzahl
         Matcher modifierMatcher = MODIFIER_PATTERN.matcher(remaining);
@@ -416,10 +382,62 @@ public class ItemSearchParser {
             }
         }
         
-        // Rest = Name-Suche
         query.nameSearch = remaining;
         
         return query;
+    }
+    
+    private static String parseFloorComparisons(String text, SearchQuery query) {
+        String remaining = text;
+        
+        Matcher atMatcher = FLOOR_COMPARISON_AT_PATTERN.matcher(remaining);
+        StringBuffer atBuffer = new StringBuffer();
+        while (atMatcher.find()) {
+            addFloorFilter(query, atMatcher.group(1), atMatcher.group(2));
+            atMatcher.appendReplacement(atBuffer, " ");
+        }
+        atMatcher.appendTail(atBuffer);
+        remaining = atBuffer.toString().replaceAll("\\s+", " ").trim();
+        
+        Matcher plainMatcher = FLOOR_COMPARISON_PLAIN_PATTERN.matcher(remaining);
+        StringBuffer plainBuffer = new StringBuffer();
+        while (plainMatcher.find()) {
+            addFloorFilter(query, plainMatcher.group(1), plainMatcher.group(2));
+            plainMatcher.appendReplacement(plainBuffer, " ");
+        }
+        plainMatcher.appendTail(plainBuffer);
+        remaining = plainBuffer.toString().replaceAll("\\s+", " ").trim();
+        
+        return remaining;
+    }
+    
+    private static String parseFloorExactSearch(String text, SearchQuery query) {
+        String remaining = text;
+        
+        Matcher simpleMatcher = FLOOR_SIMPLE_PATTERN.matcher(remaining.trim());
+        if (simpleMatcher.matches()) {
+            query.floor = Integer.parseInt(simpleMatcher.group(1));
+            return "";
+        }
+        
+        Matcher floorMatcher = FLOOR_PATTERN.matcher(remaining);
+        if (floorMatcher.find()) {
+            query.floor = Integer.parseInt(floorMatcher.group(1));
+            remaining = remaining.replace(floorMatcher.group(0), "").trim();
+        }
+        
+        return remaining;
+    }
+    
+    private static void addFloorFilter(SearchQuery query, String operator, String valueStr) {
+        try {
+            FloorFilter filter = new FloorFilter();
+            filter.operator = ComparisonUtils.normalizeOperator(operator);
+            filter.value = Integer.parseInt(valueStr.trim());
+            query.floorFilters.add(filter);
+        } catch (NumberFormatException e) {
+            // Ignoriere ungültige Werte
+        }
     }
 }
 

@@ -7778,7 +7778,7 @@
     {
       "id": "minecraft:diamond_helmet",
       "customModelData": 67,
-      "name": "Aufseher Helmvisir",
+      "name": "Aufseher Helmvisier",
       "foundAt": [
         {
           "floor": "Ebene 31"
@@ -11043,7 +11043,7 @@
     {
       "id": "minecraft:name_tag",
       "customModelData": 554,
-      "name": "Basahlthalskette",
+      "name": "Basalthalskette",
       "foundAt": [
         {
           "floor": "Ebene 22"
@@ -12200,7 +12200,7 @@
     {
       "id": "minecraft:name_tag",
       "customModelData": 756,
-      "name": "Bequeme Lederhandschuhe",
+      "name": "Bequeme Leinenhandschuhe",
       "foundAt": [
         {
           "floor": "Ebene 8"
@@ -31819,7 +31819,7 @@
     {
       "id": "minecraft:diamond_sword",
       "customModelData": 140,
-      "name": "Drachenzahn",
+      "name": "Reißzahn des Drachen",
       "clipboard_id": 1,
       "foundAt": [
         {
@@ -48852,7 +48852,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "legendary",
         "description": "",
         "type": "Leder",
         "piece": "Helm",
@@ -49668,7 +49668,7 @@
     {
       "id": "minecraft:diamond_axe",
       "customModelData": 174,
-      "name": "Frostfänger-Erdschneider",
+      "name": "Frostfänger-Pilz-Spalter",
       "foundAt": [
         {
           "floor": "Ebene 87"
@@ -54261,7 +54261,7 @@
     {
       "id": "minecraft:diamond_leggings",
       "customModelData": 60,
-      "name": "Gepräte Panzerbeinschützer",
+      "name": "Geprägte Panzerbeinschützer",
       "foundAt": [
         {
           "floor": "Ebene 32"
@@ -60679,7 +60679,7 @@
     {
       "id": "minecraft:diamond_boots",
       "customModelData": 112,
-      "name": "Gultgewebte Treter",
+      "name": "Glutgewebte Treter",
       "foundAt": [
         {
           "floor": "Ebene 25"
@@ -62983,7 +62983,7 @@
     {
       "id": "minecraft:name_tag",
       "customModelData": 1537,
-      "name": "Göttliches Amulett",
+      "name": "Heiliges Amulett",
       "clipboard_id": 4,
       "foundAt": [
         {
@@ -65915,7 +65915,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "uncommon",
         "description": "",
         "type": "Platte",
         "piece": "Gürtel",
@@ -74440,7 +74440,7 @@
     {
       "id": "minecraft:diamond_helmet",
       "customModelData": 194,
-      "name": "Klare Lederhülle",
+      "name": "Klare Lederschale",
       "foundAt": [
         {
           "floor": "Ebene 42"
@@ -75488,7 +75488,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "uncommon",
         "description": "",
         "type": "Leder",
         "piece": "Schuhe",
@@ -77439,7 +77439,7 @@
     {
       "id": "minecraft:crossbow",
       "customModelData": 0,
-      "name": "Knochengerfertigte Armbrust",
+      "name": "Knochengefertigte Armbrust",
       "foundAt": [
         {
           "floor": "Ebene 13"
@@ -78865,7 +78865,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "rare",
         "description": "",
         "type": "Platte",
         "piece": "Helm",
@@ -88669,10 +88669,10 @@
     {
       "id": "minecraft:diamond_leggings",
       "customModelData": 63,
-      "name": "Leichte Lederhose",
+      "name": "Leichte Leinenhose",
       "foundAt": [
         {
-          "floor": "Ebene 6"
+          "floor": "Ebene 84"
         }
       ],
       "price": {
@@ -88719,7 +88719,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "common",
+        "rarity": "uncommon",
         "description": "",
         "type": "Leder",
         "piece": "Hose",
@@ -94651,7 +94651,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "rare",
         "description": "",
         "type": "Platte",
         "piece": "Hose",
@@ -95446,7 +95446,7 @@
     {
       "id": "minecraft:diamond_axe",
       "customModelData": 111,
-      "name": "Marode Kriegsaxt",
+      "name": "Rostige Kriegsaxt",
       "foundAt": [
         {
           "floor": "Ebene 22"
@@ -97148,7 +97148,7 @@
     {
       "id": "minecraft:diamond_sword",
       "customModelData": 161,
-      "name": "Meisterschwert",
+      "name": "Master-Schwert",
       "foundAt": [
         {
           "floor": "Ebene 95"
@@ -99950,7 +99950,7 @@
     {
       "id": "minecraft:diamond_chestplate",
       "customModelData": 102,
-      "name": "Mondblick-Lederschutz",
+      "name": "Mondblick Lederrüstung",
       "foundAt": [
         {
           "floor": "Ebene 76"
@@ -106150,7 +106150,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "rare",
         "description": "",
         "type": "Platte",
         "piece": "Gürtel",
@@ -108994,7 +108994,7 @@
     {
       "id": "minecraft:diamond_chestplate",
       "customModelData": 162,
-      "name": "Pelzgewand des Eiswanderers",
+      "name": "Eiswanderer-Fellweste",
       "foundAt": [
         {
           "floor": "Ebene 1"
@@ -109063,7 +109063,7 @@
     {
       "id": "minecraft:diamond_helmet",
       "customModelData": 188,
-      "name": "Pelzgewand des Eiswanderers",
+      "name": "Eiswanderer-Pelzmütze",
       "foundAt": [
         {
           "floor": "Ebene 38"
@@ -109140,7 +109140,7 @@
     {
       "id": "minecraft:diamond_leggings",
       "customModelData": 41,
-      "name": "Pelzgewand des Eiswanderers",
+      "name": "Eiswanderer-Pelzhose",
       "foundAt": [
         {
           "floor": "Ebene 70"
@@ -109575,7 +109575,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "rare",
         "description": "",
         "type": "Leder",
         "piece": "Handschuhe",
@@ -122992,7 +122992,7 @@
     {
       "id": "minecraft:diamond_axe",
       "customModelData": 127,
-      "name": "Rostiges Kriegsbeil",
+      "name": "Rostige Kampfaxt",
       "foundAt": [
         {
           "floor": "Ebene 64"
@@ -133214,7 +133214,7 @@
     {
       "id": "minecraft:name_tag",
       "customModelData": 535,
-      "name": "Schlichte Lederschulterhaube",
+      "name": "Verstärkte Lederschulterhaube",
       "foundAt": [
         {
           "floor": "Ebene 73"
@@ -134203,7 +134203,7 @@
     {
       "id": "minecraft:diamond_helmet",
       "customModelData": 15,
-      "name": "Schlichter Lederhelm",
+      "name": "Einfacher Lederhelm",
       "foundAt": [
         {
           "floor": "Ebene 56"
@@ -134281,7 +134281,7 @@
     {
       "id": "minecraft:diamond_helmet",
       "customModelData": 76,
-      "name": "Schlichter Lederhelm",
+      "name": "Einfacher Lederhelm",
       "foundAt": [
         {
           "floor": "Ebene 38"
@@ -134814,7 +134814,7 @@
     {
       "id": "minecraft:crossbow",
       "customModelData": 0,
-      "name": "Schmerzreperierarmbrust",
+      "name": "Schmerzrepetierarmbrust",
       "foundAt": [
         {
           "floor": "Ebene 33"
@@ -137514,7 +137514,7 @@
       "name": "Seelengebundene Plattenhose",
       "foundAt": [
         {
-          "floor": "Ebene 61"
+          "floor": "Ebene 43"
         }
       ],
       "price": {
@@ -137561,7 +137561,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "epic",
         "description": "",
         "type": "Platte",
         "piece": "Hose",
@@ -139690,7 +139690,7 @@
     {
       "id": "minecraft:bow",
       "customModelData": 0,
-      "name": "Sengenderschuss",
+      "name": "Sengender Schuss",
       "foundAt": [
         {
           "floor": "Ebene 42"
@@ -141275,7 +141275,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "uncommon",
         "description": "",
         "type": "Leder",
         "piece": "Hose",
@@ -144052,7 +144052,7 @@
     {
       "id": "minecraft:bow",
       "customModelData": 0,
-      "name": "Stabiler Compundbogen",
+      "name": "Stabiler Compoundbogen",
       "foundAt": [
         {
           "floor": "Ebene 43"
@@ -150321,7 +150321,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "common",
         "description": "",
         "type": "Waffe",
         "piece": "Axt",
@@ -152218,7 +152218,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "epic",
         "description": "",
         "type": "Waffe",
         "piece": "Schwert",
@@ -166893,7 +166893,7 @@
     {
       "id": "minecraft:diamond_chestplate",
       "customModelData": 166,
-      "name": "Weicher Lederschutz",
+      "name": "Weiche Lederrüstung",
       "foundAt": [
         {
           "floor": "Ebene 13"
@@ -169956,7 +169956,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "uncommon",
         "description": "",
         "type": "Waffe",
         "piece": "Schwert",
@@ -173725,7 +173725,7 @@
       },
       "info": {
         "aspect": false,
-        "rarity": "",
+        "rarity": "rare",
         "description": "",
         "type": "Leder",
         "piece": "Schuhe",
@@ -173830,7 +173830,7 @@
     {
       "id": "minecraft:name_tag",
       "customModelData": 532,
-      "name": "Zweckmäßige Lederschulterhaube",
+      "name": "Funktionale Lederschulterkappen",
       "foundAt": [
         {
           "floor": "Ebene 94"
@@ -173905,7 +173905,7 @@
     {
       "id": "minecraft:name_tag",
       "customModelData": 584,
-      "name": "Zweckmäßige Lederschulterhaube",
+      "name": "Funktionale Lederschulterkappe",
       "foundAt": [
         {
           "floor": "Ebene 52"
@@ -182687,7 +182687,7 @@
     {
       "id": "minecraft:diamond",
       "customModelData": 0,
-      "name": "Hose des Gleichgewichts",
+      "name": "Schulterplatten des ewigen Gleichgewichts",
       "foundAt": [
         {
           "floor": "Ebene 34"
@@ -184425,7 +184425,7 @@
           "amount": "700"
         },
         "material2": {
-          "itemName": "Schweinequaste",
+          "itemName": "Schweineschwanzquaste",
           "amount": "340"
         },
         "material3": {
@@ -184551,7 +184551,7 @@
           "amount": "2.000"
         },
         "material2": {
-          "itemName": "Ocelotfell",
+          "itemName": "Ocelothaut",
           "amount": "800"
         },
         "material3": {
@@ -184610,11 +184610,11 @@
           "amount": "2.270.000"
         },
         "material1": {
-          "itemName": "Panzerschuppen",
+          "itemName": "Panzer-Schuppe",
           "amount": "3.000"
         },
         "material2": {
-          "itemName": "Pandafell",
+          "itemName": "Pandapelz",
           "amount": "1200"
         },
         "material3": {
@@ -184744,15 +184744,15 @@
           "amount": "1.700"
         },
         "material3": {
-          "itemName": "Axolottelschwanz",
+          "itemName": "Axolotl-Schwanz",
           "amount": "420"
         },
         "material4": {
-          "itemName": "Papageikralle",
+          "itemName": "Papageinkralle",
           "amount": "160"
         },
         "material5": {
-          "itemName": "Magischer Allay Überrest",
+          "itemName": "Magische Allay Überreste",
           "amount": "60"
         },
         "Ressource": {
@@ -184933,16 +184933,16 @@
           "amount": "12.000"
         },
         "material3": {
-          "itemName": "Eisenplatten",
-          "amount": "5.000"
-        },
-        "material4": {
           "itemName": "Fauler Knochen",
           "amount": "1.600"
         },
-        "material5": {
-          "itemName": "Kristall der Finsternis",
-          "amount": "500"
+        "material4": {
+          "itemName": "Kristall der Dunkelheit",
+          "amount": "500" 
+       },
+        "Amboss": {
+          "itemName": "Eisenplatten",
+          "amount": "5.000"
         },
         "Ressource": {
           "itemName": "Wirrholz",

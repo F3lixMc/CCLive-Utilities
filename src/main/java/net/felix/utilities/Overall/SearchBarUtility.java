@@ -48,6 +48,22 @@ public class SearchBarUtility {
 	private static Set<Integer> matchingSlots = new HashSet<>();
 	private static final int SLOT_SIZE = 16;
 	
+	// Karten-Menü: 0-3, 5-7, 9-12, 14-16, 18-21, 23-25, 27-30, 32-34
+	private static final int[] CARDS_MENU_SLOTS = {
+		0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 27, 28, 29, 30, 32, 33, 34
+	};
+	// Statuen-Menü: 10-16, 19-25, 28-34, 37-43
+	private static final int[] STATUES_MENU_SLOTS = {
+		10, 11, 12, 13, 14, 15, 16,
+		19, 20, 21, 22, 23, 24, 25,
+		28, 29, 30, 31, 32, 33, 34,
+		37, 38, 39, 40, 41, 42, 43
+	};
+	/** Fishing: ui_components_crafted */
+	private static final int[] FISHING_COMPONENTS_FULL_SLOTS = createSlotRange(0, 44);
+	/** Fishing: ui_components_craft, ui_crafted_components & ui_components_recycle */
+	private static final int[] FISHING_COMPONENTS_PARTIAL_SLOTS = createSlotRange(9, 44);
+	
 	// Inventar-Überwachung
 	private static List<ItemStack> previousInventory = new ArrayList<>();
 	
@@ -77,7 +93,8 @@ public class SearchBarUtility {
 			// Entferne Farbcodes für den Vergleich
 			String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
 			
-			if (ZeichenUtility.containsCardsStatues(cleanTitle) || //Cards and Statues
+			if (ZeichenUtility.isCardsMenuTitle(cleanTitle) || ZeichenUtility.isStatuesMenuTitle(cleanTitle) ||
+			    ZeichenUtility.isFishingEquipmentSearchMenu(cleanTitle) ||
 			    cleanTitle.contains("Bauplan") || cleanTitle.contains("Baupläne") ||
 				cleanTitle.contains("Umschmieden") || cleanTitle.contains("Zerlegen") || 
 				cleanTitle.contains("Ausrüstung") || cleanTitle.contains("Essenz") || 
@@ -160,14 +177,22 @@ public class SearchBarUtility {
 		String title = screen.getTitle().getString();
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
 		
-		String[] cardsStatuesChars = ZeichenUtility.getCardsStatues();
-		if (cleanTitle.contains(cardsStatuesChars[0])) {
-			// Spezielle Slots für Kartenmenü
-			return new int[]{ 0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 27, 28, 29, 30, 32, 33, 34};
-		} else if (cleanTitle.contains(cardsStatuesChars[1])) {
-			// Spezielle Slots für Statuenmenü
-			return new int[]{ 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
-		} else if (cleanTitle.contains("Umschmieden") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER")) {
+		// Statuen zuerst prüfen (falls beide Menü-Zeichen im Titel vorkommen)
+		if (ZeichenUtility.isStatuesMenuTitle(cleanTitle)) {
+			return STATUES_MENU_SLOTS;
+		}
+		if (ZeichenUtility.isCardsMenuTitle(cleanTitle)) {
+			return CARDS_MENU_SLOTS;
+		}
+		if (ZeichenUtility.isFishingComponentsCraftedTitle(cleanTitle)) {
+			return FISHING_COMPONENTS_FULL_SLOTS;
+		}
+		if (ZeichenUtility.isFishingComponentsCraftTitle(cleanTitle)
+				|| ZeichenUtility.isFishingCraftedComponentsTitle(cleanTitle)
+				|| ZeichenUtility.isFishingComponentsRecycleTitle(cleanTitle)) {
+			return FISHING_COMPONENTS_PARTIAL_SLOTS;
+		}
+		if (cleanTitle.contains("Umschmieden") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER")) {
 			// Slots für Umschmieden und Zerlegen (umfassender Bereich)
 			return new int[]{ 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
 		} else if (cleanTitle.contains("Runen [Baupläne]")) {
@@ -460,6 +485,181 @@ public class SearchBarUtility {
 		performSearch();
 	}
 	
+	private static final java.util.regex.Pattern FLOOR_SEARCH_COMPARISON_PATTERN = java.util.regex.Pattern.compile(
+		"^(>=|<=|[><=])\\s*(?:\\[)?(?:ebene\\s*|e\\s*)(\\d+)\\s*\\]?$",
+		java.util.regex.Pattern.CASE_INSENSITIVE
+	);
+	private static final java.util.regex.Pattern FLOOR_SEARCH_SIMPLE_PATTERN = java.util.regex.Pattern.compile(
+		"^(?:\\[)?(?:ebene\\s*|e\\s*)(\\d+)\\s*\\]?$",
+		java.util.regex.Pattern.CASE_INSENSITIVE
+	);
+	private static final java.util.regex.Pattern FLOOR_TAG_IN_TEXT_PATTERN = java.util.regex.Pattern.compile(
+		"\\[\\s*e\\s*(\\d+)\\s*\\]",
+		java.util.regex.Pattern.CASE_INSENSITIVE
+	);
+	private static final java.util.regex.Pattern FLOOR_TAG_MULTI_IN_BRACKET_PATTERN = java.util.regex.Pattern.compile(
+		"\\[([^\\]]+)\\]",
+		java.util.regex.Pattern.CASE_INSENSITIVE
+	);
+	private static final java.util.regex.Pattern FLOOR_E_NUMBER_PATTERN = java.util.regex.Pattern.compile(
+		"e\\s*(\\d+)",
+		java.util.regex.Pattern.CASE_INSENSITIVE
+	);
+	
+	private static class FloorSearchQuery {
+		final boolean isFloorSearch;
+		final String operator;
+		final int floorNumber;
+		
+		private FloorSearchQuery(boolean isFloorSearch, String operator, int floorNumber) {
+			this.isFloorSearch = isFloorSearch;
+			this.operator = operator;
+			this.floorNumber = floorNumber;
+		}
+		
+		static FloorSearchQuery notFloorSearch() {
+			return new FloorSearchQuery(false, null, -1);
+		}
+		
+		static FloorSearchQuery parse(String search) {
+			if (search == null || search.trim().isEmpty()) {
+				return notFloorSearch();
+			}
+			
+			String trimmed = search.trim();
+			java.util.regex.Matcher comparisonMatcher = FLOOR_SEARCH_COMPARISON_PATTERN.matcher(trimmed);
+			if (comparisonMatcher.matches()) {
+				return new FloorSearchQuery(true, comparisonMatcher.group(1), Integer.parseInt(comparisonMatcher.group(2)));
+			}
+			
+			java.util.regex.Matcher simpleMatcher = FLOOR_SEARCH_SIMPLE_PATTERN.matcher(trimmed);
+			if (simpleMatcher.matches()) {
+				return new FloorSearchQuery(true, null, Integer.parseInt(simpleMatcher.group(1)));
+			}
+			
+			return notFloorSearch();
+		}
+	}
+	
+	private static boolean isCardsStatuesMenu(HandledScreen<?> screen) {
+		String cleanTitle = screen.getTitle().getString().replaceAll("§[0-9a-fk-or]", "");
+		return ZeichenUtility.isCardsMenuTitle(cleanTitle) || ZeichenUtility.isStatuesMenuTitle(cleanTitle);
+	}
+
+	private static int[] createSlotRange(int fromInclusive, int toInclusive) {
+		int length = toInclusive - fromInclusive + 1;
+		int[] slots = new int[length];
+		for (int i = 0; i < length; i++) {
+			slots[i] = fromInclusive + i;
+		}
+		return slots;
+	}
+	
+	private static String getItemSearchableText(ItemStack itemStack) {
+		StringBuilder text = new StringBuilder(itemStack.getName().getString());
+		var loreComponent = itemStack.get(DataComponentTypes.LORE);
+		if (loreComponent != null) {
+			for (Text loreLine : loreComponent.lines()) {
+				text.append(' ').append(extractTextWithColors(loreLine));
+			}
+		}
+		return text.toString();
+	}
+	
+	private static java.util.List<Integer> extractFloorNumbersFromItem(ItemStack itemStack, HandledScreen<?> screen) {
+		java.util.List<Integer> floors = new java.util.ArrayList<>();
+		String searchableText = getItemSearchableText(itemStack);
+		
+		java.util.regex.Matcher singleMatcher = FLOOR_TAG_IN_TEXT_PATTERN.matcher(searchableText);
+		while (singleMatcher.find()) {
+			addFloorIfAbsent(floors, Integer.parseInt(singleMatcher.group(1)));
+		}
+		
+		java.util.regex.Matcher bracketMatcher = FLOOR_TAG_MULTI_IN_BRACKET_PATTERN.matcher(searchableText);
+		while (bracketMatcher.find()) {
+			String bracketContent = bracketMatcher.group(1);
+			if (!bracketContent.toLowerCase().contains("e")) {
+				continue;
+			}
+			java.util.regex.Matcher numberMatcher = FLOOR_E_NUMBER_PATTERN.matcher(bracketContent);
+			while (numberMatcher.find()) {
+				addFloorIfAbsent(floors, Integer.parseInt(numberMatcher.group(1)));
+			}
+		}
+		
+		if (floors.isEmpty() && isCardsStatuesMenu(screen)) {
+			java.util.List<Integer> cardStatueFloors = net.felix.utilities.Overall.InformationenUtility.getFloorsForCardOrStatue(itemStack);
+			if (cardStatueFloors != null) {
+				for (Integer floor : cardStatueFloors) {
+					addFloorIfAbsent(floors, floor);
+				}
+			}
+		}
+		
+		if (floors.isEmpty() && searchableText.contains("[Bauplan]")) {
+			String blueprintName = searchableText.substring(0, searchableText.indexOf("[Bauplan]")).trim();
+			if (blueprintName.startsWith("-")) {
+				blueprintName = blueprintName.substring(1).trim();
+			}
+			if (blueprintName.endsWith("-")) {
+				blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
+			}
+			String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
+				.replaceAll("[\\u3400-\\u4DBF]", "")
+				.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+			Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(
+				cleanBlueprintName, itemStack.getName());
+			if (floorNumber != null) {
+				addFloorIfAbsent(floors, floorNumber);
+			}
+		}
+		
+		return floors;
+	}
+	
+	private static void addFloorIfAbsent(java.util.List<Integer> floors, int floor) {
+		if (!floors.contains(floor)) {
+			floors.add(floor);
+		}
+	}
+	
+	private static boolean itemMatchesFloorSearch(ItemStack itemStack, FloorSearchQuery query, HandledScreen<?> screen) {
+		java.util.List<Integer> itemFloors = extractFloorNumbersFromItem(itemStack, screen);
+		if (itemFloors.isEmpty()) {
+			return false;
+		}
+		
+		for (int itemFloor : itemFloors) {
+			if (query.operator == null) {
+				if (itemFloor == query.floorNumber) {
+					return true;
+				}
+			} else {
+				switch (query.operator) {
+					case ">":
+					case ">=":
+						if (itemFloor >= query.floorNumber) {
+							return true;
+						}
+						break;
+					case "<":
+					case "<=":
+						if (itemFloor <= query.floorNumber) {
+							return true;
+						}
+						break;
+					case "=":
+						if (itemFloor == query.floorNumber) {
+							return true;
+						}
+						break;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
 	private static void performSearch() {
 		if (searchText.isEmpty()) {
 			matchingSlots.clear();
@@ -515,150 +715,29 @@ public class SearchBarUtility {
 							matches = searchInItemTooltips(itemStack, searchExact, searchLower);
 						}
 					} else {
-						// Normale Suche: Item-Name, Aspekte und Ebenen
-						String itemName = itemStack.getName().getString();
-						String itemNameLower = itemName.toLowerCase();
-						
-						// Prüfe zuerst ob es eine Ebenen-Suche mit Vergleichsoperator ist (>e5, <e5, =e5)
-						boolean isEbeneComparison = false;
-						String ebeneOperator = null;
-						String ebeneNumber = null;
-						
-						// Prüfe auf Vergleichsoperatoren vor "e" (>e5, <e5, =e5, >=e5, <=e5)
-						java.util.regex.Pattern ebeneComparisonPattern = java.util.regex.Pattern.compile("^(>=|<=|[><=])\\s*e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
-						java.util.regex.Matcher ebeneComparisonMatcher = ebeneComparisonPattern.matcher(searchExact);
-						if (ebeneComparisonMatcher.matches()) {
-							isEbeneComparison = true;
-							ebeneOperator = ebeneComparisonMatcher.group(1);
-							ebeneNumber = ebeneComparisonMatcher.group(2);
-						}
-						
-						// Prüfe ob es eine reine Ebenen-Suche ist (ohne Operator)
-						boolean isEbeneSearch = false;
-						if (!isEbeneComparison) {
-							// Entferne eckige Klammern vom Suchbegriff für die Prüfung
-							String searchWithoutBrackets = searchExact.replaceAll("^\\[|\\]$", "");
-							// Prüfe ob der Suchbegriff mit "e" beginnt (case-insensitive) und nur eine Zahl enthält
-							java.util.regex.Pattern ebeneSearchPattern = java.util.regex.Pattern.compile("^e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
-							java.util.regex.Matcher ebeneSearchMatcher = ebeneSearchPattern.matcher(searchWithoutBrackets);
-							if (ebeneSearchMatcher.matches()) {
-								isEbeneSearch = true;
-								ebeneNumber = ebeneSearchMatcher.group(1);
-							}
-						}
-						
-						// Wenn es eine Ebenen-Suche mit Vergleichsoperator ist
-						if (isEbeneComparison && ebeneNumber != null && itemName.contains("[Bauplan]")) {
-							// Extrahiere den Bauplan-Namen
-							String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
-							
-							// Entferne führende/trailing Bindestriche
-							if (blueprintName.startsWith("-")) {
-								blueprintName = blueprintName.substring(1).trim();
-							}
-							if (blueprintName.endsWith("-")) {
-								blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
-							}
-							
-							// Entferne Formatierungscodes und Unicode-Zeichen
-							String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
-																	.replaceAll("[\\u3400-\\u4DBF]", "")
-																	.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-							
-							// Hole die Ebene aus dem Item-Namen oder der Datenbank
-							Integer itemFloorNumber = null;
-							
-							// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
-							java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-							java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
-							if (ebeneMatcher.find()) {
-								itemFloorNumber = Integer.parseInt(ebeneMatcher.group(1));
-							} else {
-								// Falls nicht im Item-Namen gefunden, suche in der Datenbank
-								itemFloorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
-							}
-							
-							// Führe Vergleich durch
-							if (itemFloorNumber != null) {
-								int targetEbene = Integer.parseInt(ebeneNumber);
-								switch (ebeneOperator) {
-									case ">":
-									case ">=":
-										// ">e5" bedeutet Ebene 5 oder größer (>=)
-										matches = itemFloorNumber >= targetEbene;
-										break;
-									case "<":
-									case "<=":
-										// "<e4" bedeutet Ebene 4 oder kleiner (<=)
-										matches = itemFloorNumber <= targetEbene;
-										break;
-									case "=":
-										matches = itemFloorNumber.equals(targetEbene);
-										break;
-								}
-							}
-						}
-						// Wenn es eine reine Ebenen-Suche ist (ohne Operator), suche nur nach der Ebene
-						else if (isEbeneSearch && ebeneNumber != null && itemName.contains("[Bauplan]")) {
-							// Extrahiere den Bauplan-Namen
-							String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
-							
-							// Entferne führende/trailing Bindestriche
-							if (blueprintName.startsWith("-")) {
-								blueprintName = blueprintName.substring(1).trim();
-							}
-							if (blueprintName.endsWith("-")) {
-								blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
-							}
-							
-							// Entferne Formatierungscodes und Unicode-Zeichen
-							String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
-																	.replaceAll("[\\u3400-\\u4DBF]", "")
-																	.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-							
-							// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
-							java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-							java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
-							if (ebeneMatcher.find()) {
-								String itemEbene = ebeneMatcher.group(1);
-								if (itemEbene.equals(ebeneNumber)) {
-									matches = true;
-								}
-							}
-							
-							// Falls nicht im Item-Namen gefunden, suche in der Datenbank
-							if (!matches) {
-								Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
-								if (floorNumber != null && floorNumber.toString().equals(ebeneNumber)) {
-									matches = true;
-								}
-							}
+						FloorSearchQuery floorQuery = FloorSearchQuery.parse(searchExact);
+						if (floorQuery.isFloorSearch) {
+							matches = itemMatchesFloorSearch(itemStack, floorQuery, handledScreen);
 						} else {
-							// Normale Suche: Item-Name und Ebenen (Aspekte nur mit @)
-						matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
+							String itemName = itemStack.getName().getString();
+							String itemNameLower = itemName.toLowerCase();
 							
-							// Wenn es ein Bauplan ist, suche auch nach Ebene (Aspekt nur mit @)
+							// Ohne @ nur im Item-Namen suchen; Tooltips/Lore nur bei @-Suche
+							matches = itemName.contains(searchExact) || itemNameLower.contains(searchLower);
+							
 							if (!matches && itemName.contains("[Bauplan]")) {
-								// Extrahiere den Bauplan-Namen
 								String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
-								
-								// Entferne führende/trailing Bindestriche
 								if (blueprintName.startsWith("-")) {
 									blueprintName = blueprintName.substring(1).trim();
 								}
 								if (blueprintName.endsWith("-")) {
 									blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
 								}
-								
-								// Entferne Formatierungscodes und Unicode-Zeichen
 								String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
-																		.replaceAll("[\\u3400-\\u4DBF]", "")
-																		.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
+									.replaceAll("[\\u3400-\\u4DBF]", "")
+									.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 								
-								// Suche nach Ebene im Item-Namen oder in der Datenbank (Aspekt-Suche nur mit @)
-								// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
-								java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-								java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+								java.util.regex.Matcher ebeneMatcher = FLOOR_TAG_IN_TEXT_PATTERN.matcher(itemName);
 								if (ebeneMatcher.find()) {
 									String ebene = ebeneMatcher.group(1);
 									if (ebene.contains(searchExact) || ebene.toLowerCase().contains(searchLower)) {
@@ -666,9 +745,9 @@ public class SearchBarUtility {
 									}
 								}
 								
-								// Falls nicht im Item-Namen gefunden, suche in der Datenbank
 								if (!matches) {
-									Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+									Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(
+										cleanBlueprintName, itemStack.getName());
 									if (floorNumber != null) {
 										String floorStr = floorNumber.toString();
 										if (floorStr.contains(searchExact) || floorStr.toLowerCase().contains(searchLower)) {
@@ -895,68 +974,12 @@ public class SearchBarUtility {
 		try {
 			String itemName = itemStack.getName().getString();
 			
-			// Prüfe zuerst ob es eine reine Ebenen-Suche ist (Format: "e5", "[e5]", "e 5", etc.)
-			// Dies muss VOR der normalen Item-Namen-Suche passieren
-			boolean isEbeneSearch = false;
-			String ebeneNumber = null;
-			
-			// Entferne eckige Klammern vom Suchbegriff für die Prüfung
-			String searchWithoutBrackets = searchExact.replaceAll("^\\[|\\]$", "");
-			// Prüfe ob der Suchbegriff mit "e" beginnt (case-insensitive) und nur eine Zahl enthält
-			java.util.regex.Pattern ebeneSearchPattern = java.util.regex.Pattern.compile("^e\\s*(\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
-			java.util.regex.Matcher ebeneSearchMatcher = ebeneSearchPattern.matcher(searchWithoutBrackets);
-			if (ebeneSearchMatcher.matches()) {
-				isEbeneSearch = true;
-				ebeneNumber = ebeneSearchMatcher.group(1);
-			}
-			
-			// Wenn es eine reine Ebenen-Suche ist, suche NUR nach der Ebene (ohne Item-Namen)
-			if (isEbeneSearch && ebeneNumber != null) {
-				// Prüfe zuerst, ob es ein Bauplan ist
-				if (itemName.contains("[Bauplan]")) {
-					// Extrahiere den Bauplan-Namen
-					String blueprintName = itemName.substring(0, itemName.indexOf("[Bauplan]")).trim();
-					
-					// Entferne führende/trailing Bindestriche
-					if (blueprintName.startsWith("-")) {
-						blueprintName = blueprintName.substring(1).trim();
-					}
-					if (blueprintName.endsWith("-")) {
-						blueprintName = blueprintName.substring(0, blueprintName.length() - 1).trim();
-					}
-					
-					// Entferne Formatierungscodes und Unicode-Zeichen
-					String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
-															.replaceAll("[\\u3400-\\u4DBF]", "")
-															.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-					
-					// Suche nach "[eX]" oder " [eX]" Format im Item-Namen (falls bereits hinzugefügt)
-					java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-					java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
-					if (ebeneMatcher.find()) {
-						String itemEbene = ebeneMatcher.group(1);
-						if (itemEbene.equals(ebeneNumber)) {
-							return true;
-						}
-					}
-					
-					// Falls nicht im Item-Namen gefunden, suche in der Datenbank
-					Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
-					if (floorNumber != null && floorNumber.toString().equals(ebeneNumber)) {
-						return true;
-					}
-				} else {
-					// Für Nicht-Baupläne: Suche nach "[eX]" Format im Item-Namen
-					java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-					java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
-					if (ebeneMatcher.find()) {
-						String itemEbene = ebeneMatcher.group(1);
-						if (itemEbene.equals(ebeneNumber)) {
-							return true;
-						}
-					}
+			FloorSearchQuery floorQuery = FloorSearchQuery.parse(searchExact);
+			if (floorQuery.isFloorSearch) {
+				MinecraftClient client = MinecraftClient.getInstance();
+				if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+					return itemMatchesFloorSearch(itemStack, floorQuery, handledScreen);
 				}
-				// Wenn keine Übereinstimmung gefunden, return false (nur Ebenen-Suche, kein Item-Name)
 				return false;
 			}
 			
@@ -1013,13 +1036,11 @@ public class SearchBarUtility {
 					}
 				}
 				
-				// Suche nach Ebene: Zuerst im Item-Namen (falls bereits hinzugefügt), dann in der Datenbank
-				// Suche nach "[eX]" oder " [eX]" Format im Item-Namen
-				java.util.regex.Pattern ebenePattern = java.util.regex.Pattern.compile("\\s*\\[e(\\d+)\\]", java.util.regex.Pattern.CASE_INSENSITIVE);
-				java.util.regex.Matcher ebeneMatcher = ebenePattern.matcher(itemName);
+				String searchWithoutBrackets = searchExact.replaceAll("^\\[|\\]$", "");
+				
+				java.util.regex.Matcher ebeneMatcher = FLOOR_TAG_IN_TEXT_PATTERN.matcher(itemName);
 				if (ebeneMatcher.find()) {
 					String ebene = ebeneMatcher.group(1);
-					// Suche nach "eX" oder "[eX]" Format
 					String ebeneText1 = "e" + ebene;
 					String ebeneText2 = "[e" + ebene + "]";
 					if (ebeneText1.equalsIgnoreCase(searchWithoutBrackets) || 
@@ -1029,7 +1050,6 @@ public class SearchBarUtility {
 					}
 				}
 				
-				// Falls nicht im Item-Namen gefunden, suche in der Datenbank
 				Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
 				if (floorNumber != null) {
 					String floorStr = String.valueOf(floorNumber);

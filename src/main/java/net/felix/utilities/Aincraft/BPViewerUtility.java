@@ -260,11 +260,14 @@ public class BPViewerUtility {
             for (net.minecraft.text.Text line : lines) {
                 String lineText = line.getString();
                 
-                // Check if this line contains a blueprint name - handle both original and modified formats
-                // Original format: "Item Name - [Bauplan]"
-                // Modified format (after SchmiedTrackerUtility): "Item Name [Ebene X] - [Bauplan]"
-                if (lineText.contains(" - [Bauplan]")) {
-                    // Try to extract blueprint name and color from the line text
+                // "Item Name - [Bauplan]" or "Item Name - §3[Bauplan]" (getString may keep § codes)
+                // Modified (SchmiedTrackerUtility): "Item Name [Ebene X] - [Bauplan]"
+                int bauplanIdx = lineText.indexOf("[Bauplan]");
+                if (bauplanIdx < 0 || lineText.lastIndexOf(" - ", bauplanIdx) < 0) {
+                    continue;
+                }
+                
+                // Try to extract blueprint name and color from styled Text (all rarities)
                     InformationenUtility.BlueprintNameAndColor nameAndColor = 
                         InformationenUtility.extractBlueprintNameAndColorFromItemName(line);
                     
@@ -275,8 +278,9 @@ public class BPViewerUtility {
                         blueprintName = nameAndColor.name;
                         rarity = nameAndColor.rarity;
                     } else {
-                        // Fallback: extract from string
-                        blueprintName = lineText.replace(" - [Bauplan]", "");
+                        // Fallback: extract from plain string (same boundary as extract uses)
+                        int sep = lineText.lastIndexOf(" - ", bauplanIdx);
+                        blueprintName = lineText.substring(0, sep).trim();
                         
                         // Remove Unicode formatting characters (㔺㔸 etc.)
                         blueprintName = blueprintName.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
@@ -322,19 +326,18 @@ public class BPViewerUtility {
                                     (activeFloor != null && instance.isBlueprintFound(activeFloor, blueprintName));
                         }
                         
-                        if (isFound) {
-                            // Replace the current line with the blueprint name + checkmark, preserving original formatting
-                            // Simple approach: just add the green checkmark to the original text
-                            net.minecraft.text.MutableText coloredText = line.copy();
-                            coloredText.append(net.minecraft.text.Text.literal(" ✓").formatted(net.minecraft.util.Formatting.GREEN));
-                            
-                            lines.set(lineIndex, coloredText);
-                        } else {
-                            // Blueprint not found - add red cross
-                            net.minecraft.text.MutableText coloredText = line.copy();
-                            coloredText.append(net.minecraft.text.Text.literal(" ✗").formatted(net.minecraft.util.Formatting.RED));
-                            
-                            lines.set(lineIndex, coloredText);
+                        // Nur wenn aktiviert: ✓/✗ nur im Moblexicon (dieser Tooltip-Callback läuft nur dort bei name_tag).
+                        if (CCLiveUtilitiesConfig.HANDLER.instance().moblexiconBlueprintCheckmarksEnabled) {
+                            if (isFound) {
+                                // Replace the current line with the blueprint name + checkmark, preserving original formatting
+                                net.minecraft.text.MutableText coloredText = line.copy();
+                                coloredText.append(net.minecraft.text.Text.literal(" ✓").formatted(net.minecraft.util.Formatting.GREEN));
+                                lines.set(lineIndex, coloredText);
+                            } else {
+                                net.minecraft.text.MutableText coloredText = line.copy();
+                                coloredText.append(net.minecraft.text.Text.literal(" ✗").formatted(net.minecraft.util.Formatting.RED));
+                                lines.set(lineIndex, coloredText);
+                            }
                         }
                     }
                     
@@ -359,8 +362,8 @@ public class BPViewerUtility {
                                     // Since we're in the shop (not on a floor), search all floors
                                     boolean foundInAnyFloor = false;
                                     
-                                    // If we have color info (epic or legendary), only search for that specific rarity
-                                    if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
+                                    // If tooltip color gave a concrete tier, only match that rarity in config
+                                    if (rarity != null && !rarity.equals("unknown")) {
                                         for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : instance.config.floors.entrySet()) {
                                             BlueprintConfig.FloorData floor = floorEntry.getValue();
                                             if (floor != null && floor.blueprints != null) {
@@ -373,7 +376,7 @@ public class BPViewerUtility {
                                             }
                                         }
                                     } else {
-                                        // No color info or not epic/legendary - search all rarities (backwards compatibility)
+                                        // Unknown tier — search all rarities
                                         // BUT: Skip Drachenzahn and Band der dunklen Herrschaft to avoid marking wrong rarity
                                         if (blueprintName.equals("Drachenzahn")) {
                                         } else if (blueprintName.equals("Band der dunklen Herrschaft")) {
@@ -415,7 +418,6 @@ public class BPViewerUtility {
                             }
                         }
                     }
-                }
             }
         });
 
@@ -1082,9 +1084,7 @@ public class BPViewerUtility {
                                    blueprintKey = blueprintName + ":" + rarity;
                                }
                                
-                               // If we have color info, only search for the specific rarity
-                               if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
-                                   // Search only for this specific rarity
+                               if (rarity != null && !rarity.equals("unknown")) {
                                    for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
                                        BlueprintConfig.FloorData floor = floorEntry.getValue();
                                        if (floor != null && floor.blueprints != null) {
@@ -1104,7 +1104,7 @@ public class BPViewerUtility {
                                        }
                                    }
                                } else {
-                                   // No color info or not epic/legendary - search all rarities (backwards compatibility)
+                                   // Unknown tier — search all rarities
                                    // BUT: Skip Drachenzahn and Band der dunklen Herrschaft to avoid marking wrong rarity
                                    if (blueprintName.equals("Drachenzahn")) {
                                    } else if (blueprintName.equals("Band der dunklen Herrschaft")) {

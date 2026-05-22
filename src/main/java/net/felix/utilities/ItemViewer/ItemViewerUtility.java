@@ -28,7 +28,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,6 +47,34 @@ public class ItemViewerUtility {
     
     private static List<ItemData> allItems = new ArrayList<>();
     private static List<ItemData> filteredItems = new ArrayList<>();
+    private static final Map<String, ItemData> itemByName = new HashMap<>();
+    
+    private static final int FILTER_DEBOUNCE_TICKS = 2;
+    private static int filterDebounceTicks = 0;
+    private static int filterRevision = 0;
+    
+    private static List<ItemData> cachedPageItemsList = null;
+    private static int cachedPageItemsPage = -1;
+    private static int cachedPageItemsRevision = -1;
+    private static int cachedPageItemsPerPage = -1;
+    
+    private static int cachedSortDropdownWidth = -1;
+    private static ViewerPosition cachedHandledViewerPosition;
+    private static HandledScreen<?> cachedHandledViewerPositionScreen;
+    private static int cachedViewerScreenWidth = -1;
+    private static int cachedViewerScreenHeight = -1;
+    private static int cachedViewerInventoryX = -1;
+    private static int cachedViewerInventoryWidth = -1;
+    private static int cachedViewerInventoryY = -1;
+    private static int cachedViewerInventoryHeight = -1;
+    private static int cachedViewerMaxSlots = -1;
+    
+    private static java.lang.reflect.Field handledScreenXField;
+    private static java.lang.reflect.Field handledScreenYField;
+    private static java.lang.reflect.Field handledScreenBackgroundWidthField;
+    private static java.lang.reflect.Field handledScreenBackgroundHeightField;
+    private static boolean handledScreenFieldsResolved = false;
+    private static final int VIEWER_VERTICAL_MARGIN = 10;
     private static String currentSearch = "";
     private static SortMode currentSortMode = SortMode.DEFAULT;
     
@@ -350,6 +380,8 @@ public class ItemViewerUtility {
                     }
                     
                     if (!allItems.isEmpty()) {
+                        rebuildItemNameIndex();
+                        ItemViewerGrid.clearItemStackCache();
                         filteredItems = new ArrayList<>(allItems);
                         applySorting();
                     }
@@ -424,6 +456,8 @@ public class ItemViewerUtility {
                                     itemsLoaded = false;
                                     allItems.clear();
                                     filteredItems.clear();
+                                    itemByName.clear();
+                                    ItemViewerGrid.clearItemStackCache();
                                     loadItemsAsync();
                                     
                                     System.out.println("✅ [ItemViewer] Items-Config aktualisiert (Version " + serverVersion + ")");
@@ -602,6 +636,13 @@ public class ItemViewerUtility {
     }
     
     private static void onClientTick(MinecraftClient client) {
+        if (filterDebounceTicks > 0) {
+            filterDebounceTicks--;
+            if (filterDebounceTicks == 0) {
+                applyFilters();
+            }
+        }
+        
         if (toggleKeyBinding != null && toggleKeyBinding.wasPressed()) {
             // Performance-Optimierung: Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
             // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler "I" tippt
@@ -691,13 +732,25 @@ public class ItemViewerUtility {
             return null;
         }
         
+        ItemData indexed = itemByName.get(itemName);
+        if (indexed != null) {
+            return indexed;
+        }
         for (ItemData item : allItems) {
             if (item.name != null && item.name.equals(itemName)) {
                 return item;
             }
         }
-        
         return null;
+    }
+    
+    private static void rebuildItemNameIndex() {
+        itemByName.clear();
+        for (ItemData item : allItems) {
+            if (item.name != null && !item.name.isEmpty()) {
+                itemByName.putIfAbsent(item.name, item);
+            }
+        }
     }
     
     /**
@@ -1253,7 +1306,7 @@ public class ItemViewerUtility {
         // Prüfe ob Maus über Suchfeld ist
         ViewerPosition pos;
         if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
-            pos = calculateViewerPosition(handledScreen, client.currentScreen);
+            pos = getOrCalculateViewerPosition(handledScreen, client.currentScreen);
         } else {
             // Für nicht-HandledScreen Screens (z.B. Spielerinventar)
             pos = calculateViewerPositionForScreen(client.currentScreen);
@@ -1304,7 +1357,7 @@ public class ItemViewerUtility {
                     String clipboardText = client.keyboard.getClipboard();
                     if (clipboardText != null && !clipboardText.isEmpty()) {
                         currentSearch += clipboardText;
-                        applyFilters();
+                        scheduleApplyFilters();
                         currentPage = 0;
                     }
                     return true;
@@ -1326,13 +1379,13 @@ public class ItemViewerUtility {
                 currentSearch = currentSearch.substring(0, start) + currentSearch.substring(end);
                 cursorPosition = start;
                 clearSelection();
-                applyFilters();
+                scheduleApplyFilters();
                 currentPage = 0;
             } else if (cursorPosition > 0) {
                 // Lösche Zeichen vor Cursor
                 currentSearch = currentSearch.substring(0, cursorPosition - 1) + currentSearch.substring(cursorPosition);
                 cursorPosition--;
-                applyFilters();
+                scheduleApplyFilters();
                 currentPage = 0;
             }
             return true;
@@ -1347,12 +1400,12 @@ public class ItemViewerUtility {
                 currentSearch = currentSearch.substring(0, start) + currentSearch.substring(end);
                 cursorPosition = start;
                 clearSelection();
-                applyFilters();
+                scheduleApplyFilters();
                 currentPage = 0;
             } else if (cursorPosition < currentSearch.length()) {
                 // Lösche Zeichen nach Cursor
                 currentSearch = currentSearch.substring(0, cursorPosition) + currentSearch.substring(cursorPosition + 1);
-                applyFilters();
+                scheduleApplyFilters();
                 currentPage = 0;
             }
             return true;
@@ -1628,8 +1681,15 @@ public class ItemViewerUtility {
             currentSearch = currentSearch.substring(0, cursorPosition) + character + currentSearch.substring(cursorPosition);
             cursorPosition++;
         }
-        applyFilters();
+        scheduleApplyFilters();
         currentPage = 0; // Zurück zur ersten Seite
+    }
+    
+    /**
+     * Verzögert Filter-Updates beim Tippen, um Lag bei großen Item-Listen zu vermeiden.
+     */
+    private static void scheduleApplyFilters() {
+        filterDebounceTicks = FILTER_DEBOUNCE_TICKS;
     }
     
     /**
@@ -1749,33 +1809,37 @@ public class ItemViewerUtility {
     /**
      * Berechnet die Viewer-Position für nicht-HandledScreen Screens
      */
+    /**
+     * Viewer-Breite/-Höhe aus maximalem Platz; Grid höchstens laut Config ({@link CCLiveUtilitiesConfig#getItemViewerMaxSlots()} Slots).
+     */
+    private static int[] computeViewerSize(int maxViewerWidth, int maxViewerHeight) {
+        int minViewerWidth = ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
+        int gridSpaceW = Math.max(ItemViewerGrid.getDefaultGridWidth(), maxViewerWidth - VIEWER_PADDING * 2);
+        int gridSpaceH = Math.max(ItemViewerGrid.getGridHeight(), maxViewerHeight - VIEWER_GRID_CHROME_HEIGHT);
+        int[] grid = ItemViewerGrid.computeGridDimensions(gridSpaceW, gridSpaceH);
+        int viewerWidth = Math.max(minViewerWidth, grid[0] * ItemViewerGrid.getSlotSize() + VIEWER_PADDING * 2);
+        int viewerHeight = VIEWER_GRID_CHROME_HEIGHT + grid[1] * ItemViewerGrid.getSlotSize();
+        return new int[] { viewerWidth, viewerHeight };
+    }
+
     private static ViewerPosition calculateViewerPositionForScreen(Screen screen) {
         MinecraftClient client = MinecraftClient.getInstance();
         
-        // Nutze volle Bildschirmbreite/-höhe
         int screenWidth = screen.width;
         int screenHeight = screen.height;
         
-        // Berechne Viewer-Dimensionen
-        // Nutze maximale verfügbare Breite, aber mindestens die minimale Breite (Standard-Grid)
-        // Für Spielerinventar: Maximal 40% der Bildschirmbreite, damit es nicht zu breit wird
-        int minViewerWidth = ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
         int maxViewerWidth = screenWidth - VIEWER_PADDING * 2;
-        int maxAllowedWidth = (int) (screenWidth * 0.4); // Maximal 40% der Bildschirmbreite
-        int viewerWidth = Math.max(minViewerWidth, Math.min(maxViewerWidth, maxAllowedWidth));
+        int maxAllowedWidth = (int) (screenWidth * 0.4);
+        int cappedMaxWidth = Math.min(maxViewerWidth, maxAllowedWidth);
+        int maxViewerHeight = screenHeight - VIEWER_PADDING * 2;
+        int[] viewerSize = computeViewerSize(cappedMaxWidth, maxViewerHeight);
+        int viewerWidth = viewerSize[0];
+        int viewerHeight = viewerSize[1];
         
-        // Zentriere horizontal
         int viewerX = (screenWidth - viewerWidth) / 2;
-        int viewerY = VIEWER_PADDING;
-        int viewerHeight = screenHeight - VIEWER_PADDING * 2;
+        int viewerY = computeCenteredViewerY(screen, 0, screenHeight, viewerHeight);
         
-        // Berechne Dropdown-Breite
-        int maxDropdownWidth = 0;
-        for (SortMode mode : SortMode.values()) {
-            int textWidth = client.textRenderer.getWidth(mode.getDisplayName());
-            maxDropdownWidth = Math.max(maxDropdownWidth, textWidth);
-        }
-        int dropdownWidth = maxDropdownWidth + SORT_DROPDOWN_PADDING * 2 + 15;
+        int dropdownWidth = getSortDropdownWidth(client);
         
         // Suchfeld nutzt volle Breite (minus Hilfe-Button)
         int searchWidth = viewerWidth - VIEWER_PADDING * 2 - HELP_BUTTON_SIZE - 5;
@@ -1835,6 +1899,9 @@ public class ItemViewerUtility {
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
+            if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(titleWithUnicode)) {
+                return; // Equipment / Legend+ / Luftschiff / Glimfang-Shop: kein Item-Viewer
+            }
         }
         
         // DEBUG: Logge UI-Rendering nur wenn sich der Screen-Typ ändert
@@ -1870,6 +1937,9 @@ public class ItemViewerUtility {
     private static final int SORT_OPTION_HEIGHT = 16;
     private static final int SORT_DROPDOWN_PADDING = 6; // Padding links/rechts im Dropdown
     private static final int PAGINATION_HEIGHT = 20;
+    /** Höhe der UI oberhalb/unterhalb des Item-Grids (Padding, Suche, Dropdown, Pagination). */
+    private static final int VIEWER_GRID_CHROME_HEIGHT =
+            VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5 + PAGINATION_HEIGHT + VIEWER_PADDING;
     private static final int MINIMIZE_BUTTON_SIZE = 20; // Größe des Minimierungs-Buttons
     
     // Maus-Position für Hover-Detection
@@ -1927,10 +1997,7 @@ public class ItemViewerUtility {
     private static void renderItemViewer(DrawContext context, MinecraftClient client, HandledScreen<?> handledScreen) {
         Screen screen = (Screen) handledScreen;
         
-        // Berechne Viewer-Position (gleiche Logik wie beim Klick-Handling)
-        ViewerPosition pos = calculateViewerPosition(handledScreen, screen);
-        
-        renderItemViewer(context, client, pos);
+        renderItemViewer(context, client, getOrCalculateViewerPosition(handledScreen, screen));
     }
     
     /**
@@ -1992,6 +2059,10 @@ public class ItemViewerUtility {
         int gridAvailableHeight = paginationY - currentY; // Von currentY (nach Dropdown) bis Pagination
         currentGridAvailableHeight = gridAvailableHeight; // Speichere für Pagination etc.
         
+        if (!itemsLoaded) {
+            context.drawText(client.textRenderer, "Items werden geladen...", pos.viewerX + VIEWER_PADDING, currentY, 0xFFAAAAAA, true);
+            hoveredItemForClick = null;
+        } else {
         List<ItemData> currentPageItems = getCurrentPageItems();
         if (currentPageItems != null && !currentPageItems.isEmpty()) {
             int gridX = pos.viewerX + VIEWER_PADDING;
@@ -2006,6 +2077,7 @@ public class ItemViewerUtility {
             grid.renderTooltip(context);
         } else {
             hoveredItemForClick = null;
+        }
         }
         
         // Rendere Dropdown-Liste NACH dem Grid (damit sie darüber liegt)
@@ -2415,8 +2487,9 @@ public class ItemViewerUtility {
             "",
             "Erweiterte Suche:",
             "• #Tag - Suche nach Tags (z.B. #Ring, #Rüstung)",
-            "• @Stat>Wert - Suche nach Stats (z.B. @Abbaugeschwindigkeit>100)",
-            "• @Ebene>Wert - Suche nach Ebenen (z.B. @Ebene>50, @Ebene<30)",
+            "• @Stat>Wert - Stats (z.B. @Schaden>=100, @Rüstung<50)",
+            "• @Ebene>Wert - Ebenen (z.B. @Ebene>=50, @Ebene<30, >e5, e4)",
+            "• Operatoren: >, <, =, >=, <=",
             "• +Modifier - Suche nach Modifiern (z.B. +Andere, +Andere:2)",
             "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0)",
             "• @Aspekt Name - Suche nach Aspekten (z.B. @Aspekt der Flamme)",
@@ -3375,12 +3448,7 @@ public class ItemViewerUtility {
     private static void renderPagination(DrawContext context, int x, int y, int width) {
         MinecraftClient client = MinecraftClient.getInstance();
         
-        // Berechne Items pro Seite basierend auf aktueller Grid-Breite und -Höhe
-        int slotSize = ItemViewerGrid.getSlotSize();
-        int gridColumns = Math.max(1, currentGridAvailableWidth / slotSize);
-        int gridRows = Math.max(1, currentGridAvailableHeight / slotSize);
-        int itemsPerPage = gridColumns * gridRows;
-        
+        int itemsPerPage = ItemViewerGrid.computeItemsPerPage(currentGridAvailableWidth, currentGridAvailableHeight);
         int totalPages = (int) Math.ceil((double) filteredItems.size() / (double) itemsPerPage);
         if (totalPages == 0) totalPages = 1;
         
@@ -3454,61 +3522,142 @@ public class ItemViewerUtility {
     /**
      * Berechnet die Viewer-Position und Dimensionen (wird für Rendering und Klick-Handling verwendet)
      */
-    private static ViewerPosition calculateViewerPosition(HandledScreen<?> handledScreen, Screen screen) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        
-        // Hole Inventar-Position
-        int inventoryX = 0;
-        int inventoryWidth = 176;
-        
-        boolean reflectionSuccess = false;
+    public static void invalidateViewerPositionCache() {
+        cachedHandledViewerPosition = null;
+        cachedHandledViewerPositionScreen = null;
+        cachedViewerMaxSlots = -1;
+    }
+
+    public static void onMaxSlotsConfigChanged() {
+        invalidateViewerPositionCache();
+        invalidatePageItemsCache();
+        currentPage = 0;
+    }
+
+    private static ViewerPosition getOrCalculateViewerPosition(HandledScreen<?> handledScreen, Screen screen) {
+        int inventoryX = readHandledScreenInventoryX(handledScreen, screen);
+        int inventoryWidth = readHandledScreenInventoryWidth(handledScreen);
+        int inventoryY = readHandledScreenInventoryY(handledScreen, screen);
+        int inventoryHeight = readHandledScreenInventoryHeight(handledScreen);
+        int maxSlots = CCLiveUtilitiesConfig.getItemViewerMaxSlots();
+        if (cachedHandledViewerPosition != null
+                && cachedHandledViewerPositionScreen == handledScreen
+                && cachedViewerScreenWidth == screen.width
+                && cachedViewerScreenHeight == screen.height
+                && cachedViewerInventoryX == inventoryX
+                && cachedViewerInventoryWidth == inventoryWidth
+                && cachedViewerInventoryY == inventoryY
+                && cachedViewerInventoryHeight == inventoryHeight
+                && cachedViewerMaxSlots == maxSlots) {
+            return cachedHandledViewerPosition;
+        }
+        cachedHandledViewerPosition = calculateViewerPosition(handledScreen, screen, inventoryX, inventoryWidth);
+        cachedHandledViewerPositionScreen = handledScreen;
+        cachedViewerScreenWidth = screen.width;
+        cachedViewerScreenHeight = screen.height;
+        cachedViewerInventoryX = inventoryX;
+        cachedViewerInventoryWidth = inventoryWidth;
+        cachedViewerInventoryY = inventoryY;
+        cachedViewerInventoryHeight = inventoryHeight;
+        cachedViewerMaxSlots = maxSlots;
+        return cachedHandledViewerPosition;
+    }
+    
+    private static void resolveHandledScreenFields() {
+        if (handledScreenFieldsResolved) {
+            return;
+        }
         try {
-            java.lang.reflect.Field xField = HandledScreen.class.getDeclaredField("x");
-            xField.setAccessible(true);
-            inventoryX = xField.getInt(handledScreen);
-            
-            java.lang.reflect.Field widthField = HandledScreen.class.getDeclaredField("backgroundWidth");
-            widthField.setAccessible(true);
-            inventoryWidth = widthField.getInt(handledScreen);
-            reflectionSuccess = true;
-        } catch (Exception e) {
-            // Fallback: Versuche alternative Reflection-Methoden
+            handledScreenXField = HandledScreen.class.getDeclaredField("x");
+            handledScreenXField.setAccessible(true);
+        } catch (Exception ignored) {
+        }
+        try {
+            handledScreenYField = HandledScreen.class.getDeclaredField("y");
+            handledScreenYField.setAccessible(true);
+        } catch (Exception ignored) {
+        }
+        try {
+            handledScreenBackgroundWidthField = HandledScreen.class.getDeclaredField("backgroundWidth");
+            handledScreenBackgroundWidthField.setAccessible(true);
+        } catch (Exception ignored) {
+        }
+        try {
+            handledScreenBackgroundHeightField = HandledScreen.class.getDeclaredField("backgroundHeight");
+            handledScreenBackgroundHeightField.setAccessible(true);
+        } catch (Exception ignored) {
+        }
+        handledScreenFieldsResolved = true;
+    }
+    
+    private static int readHandledScreenInventoryX(HandledScreen<?> handledScreen, Screen screen) {
+        resolveHandledScreenFields();
+        if (handledScreenXField != null) {
             try {
-                // Versuche über getClass().getDeclaredField mit verschiedenen Feldnamen
-                Class<?> screenClass = handledScreen.getClass();
-                
-                // Versuche verschiedene mögliche Feldnamen für x
-                for (String fieldName : new String[]{"x", "field_2772", "left", "xPos"}) {
-                    try {
-                        java.lang.reflect.Field xFieldAlt = screenClass.getDeclaredField(fieldName);
-                        xFieldAlt.setAccessible(true);
-                        inventoryX = xFieldAlt.getInt(handledScreen);
-                        break;
-                    } catch (Exception ignored) {}
-                }
-                
-                // Versuche verschiedene mögliche Feldnamen für backgroundWidth
-                for (String fieldName : new String[]{"backgroundWidth", "field_2773", "imageWidth", "width"}) {
-                    try {
-                        java.lang.reflect.Field widthFieldAlt = screenClass.getDeclaredField(fieldName);
-                        widthFieldAlt.setAccessible(true);
-                        inventoryWidth = widthFieldAlt.getInt(handledScreen);
-                        break;
-                    } catch (Exception ignored) {}
-                }
-                
-                // Wenn immer noch nicht gefunden, verwende Fallback
-                if (inventoryX == 0 && inventoryWidth == 176) {
-                    inventoryX = (screen.width - inventoryWidth) / 2;
-                }
-            } catch (Exception e2) {
-                // Finaler Fallback: Verwende Standardwerte und zentriere das Inventar
-                // Die meisten Inventare sind zentriert
-                inventoryX = (screen.width - inventoryWidth) / 2;
+                return handledScreenXField.getInt(handledScreen);
+            } catch (Exception ignored) {
             }
         }
-        
-        // Reflection fehlgeschlagen - verwende Fallback-Werte
+        int width = readHandledScreenInventoryWidth(handledScreen);
+        return (screen.width - width) / 2;
+    }
+    
+    private static int readHandledScreenInventoryWidth(HandledScreen<?> handledScreen) {
+        resolveHandledScreenFields();
+        if (handledScreenBackgroundWidthField != null) {
+            try {
+                return handledScreenBackgroundWidthField.getInt(handledScreen);
+            } catch (Exception ignored) {
+            }
+        }
+        return 176;
+    }
+
+    private static int readHandledScreenInventoryY(HandledScreen<?> handledScreen, Screen screen) {
+        resolveHandledScreenFields();
+        if (handledScreenYField != null) {
+            try {
+                return handledScreenYField.getInt(handledScreen);
+            } catch (Exception ignored) {
+            }
+        }
+        int height = readHandledScreenInventoryHeight(handledScreen);
+        return (screen.height - height) / 2;
+    }
+
+    private static int readHandledScreenInventoryHeight(HandledScreen<?> handledScreen) {
+        resolveHandledScreenFields();
+        if (handledScreenBackgroundHeightField != null) {
+            try {
+                return handledScreenBackgroundHeightField.getInt(handledScreen);
+            } catch (Exception ignored) {
+            }
+        }
+        return 166;
+    }
+
+    /** Vertikal zentriert (gleicher Abstand oben/unten), am Inventar ausgerichtet wenn möglich. */
+    private static int computeCenteredViewerY(Screen screen, int referenceY, int referenceHeight, int viewerHeight) {
+        int viewerY = referenceY + (referenceHeight - viewerHeight) / 2;
+        int maxY = screen.height - viewerHeight - VIEWER_VERTICAL_MARGIN;
+        return Math.max(VIEWER_VERTICAL_MARGIN, Math.min(viewerY, maxY));
+    }
+    
+    private static int getSortDropdownWidth(MinecraftClient client) {
+        if (cachedSortDropdownWidth > 0) {
+            return cachedSortDropdownWidth;
+        }
+        int maxDropdownWidth = 0;
+        for (SortMode mode : SortMode.values()) {
+            int textWidth = client.textRenderer.getWidth(mode.getDisplayName());
+            maxDropdownWidth = Math.max(maxDropdownWidth, textWidth);
+        }
+        cachedSortDropdownWidth = maxDropdownWidth + SORT_DROPDOWN_PADDING * 2 + 15;
+        return cachedSortDropdownWidth;
+    }
+    
+    private static ViewerPosition calculateViewerPosition(HandledScreen<?> handledScreen, Screen screen, int inventoryX, int inventoryWidth) {
+        MinecraftClient client = MinecraftClient.getInstance();
         
         // Berechne verfügbaren Platz
         int availableWidthRight = screen.width - (inventoryX + inventoryWidth) - 10;
@@ -3529,41 +3678,29 @@ public class ItemViewerUtility {
             maxViewerWidth = availableWidthLeft; // Volle Breite bis zum Inventar
         }
         
-        // Berechne Viewer-Dimensionen
-        // Nutze maximale verfügbare Breite, aber mindestens die minimale Breite (Standard-Grid)
-        int minViewerWidth = ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
-        // Setze maximale Breite auf verfügbaren Platz, aber nicht mehr als 40% der Bildschirmbreite
-        // Das verhindert, dass der Viewer zu groß wird, während er sich trotzdem anpasst
         int maxAllowedWidth = Math.min(maxViewerWidth, (int) (screen.width * 0.4));
-        int viewerWidth = Math.max(minViewerWidth, maxAllowedWidth);
+        int maxViewerHeight = screen.height - 20;
+        int[] viewerSize = computeViewerSize(maxAllowedWidth, maxViewerHeight);
+        int viewerWidth = viewerSize[0];
+        int viewerHeight = viewerSize[1];
         
-        // Berechne Dropdown-Breite
-        int maxDropdownWidth = 0;
-        for (SortMode mode : SortMode.values()) {
-            int textWidth = client.textRenderer.getWidth(mode.getDisplayName());
-            maxDropdownWidth = Math.max(maxDropdownWidth, textWidth);
-        }
-        int dropdownWidth = maxDropdownWidth + SORT_DROPDOWN_PADDING * 2 + 15;
+        int dropdownWidth = getSortDropdownWidth(client);
         
-        // Nutze volle verfügbare Höhe (von oben bis unten mit Padding)
-        int viewerY = 10; // 10px Padding oben
-        int viewerHeight = screen.height - 20; // 10px oben + 10px unten = 20px Padding
+        int inventoryY = readHandledScreenInventoryY(handledScreen, screen);
+        int inventoryHeight = readHandledScreenInventoryHeight(handledScreen);
+        int viewerY = computeCenteredViewerY(screen, inventoryY, inventoryHeight, viewerHeight);
         
-        // Hilfe-Button Position (links neben der Suchleiste)
         int helpButtonX = viewerX + VIEWER_PADDING;
         int helpButtonY = viewerY + VIEWER_PADDING;
         
-        // Symbol-Button Position (oben rechts neben der Suchleiste)
-        int symbolButtonX = viewerX + viewerWidth - VIEWER_PADDING - SYMBOL_BUTTON_SIZE; // Rechts bündig mit Viewer
-        int symbolButtonY = viewerY + VIEWER_PADDING; // Gleiche Y-Position wie Suchleiste
+        int symbolButtonX = viewerX + viewerWidth - VIEWER_PADDING - SYMBOL_BUTTON_SIZE;
+        int symbolButtonY = viewerY + VIEWER_PADDING;
         
-        // Suchfeld nutzt Breite zwischen Hilfe-Button und Symbol-Button
-        int searchX = helpButtonX + HELP_BUTTON_SIZE + 5; // 5px Abstand zum Hilfe-Button
-        int searchWidth = symbolButtonX - searchX - 5; // 5px Abstand zum Symbol-Button
+        int searchX = helpButtonX + HELP_BUTTON_SIZE + 5;
+        int searchWidth = symbolButtonX - searchX - 5;
         
-        // Dropdown wird unter die Suchleiste platziert
         int dropdownX = viewerX + VIEWER_PADDING;
-        int dropdownY = viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5; // Unter der Suchleiste
+        int dropdownY = viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5;
         
         // Favoriten-Button Position (rechts vom Dropdown, gleiche Höhe)
         int favoritesButtonX = dropdownX + dropdownWidth + 5; // 5px Abstand zum Dropdown
@@ -3635,8 +3772,12 @@ public class ItemViewerUtility {
             return false;
         }
         
+        if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(handledScreen.getTitle().getString())) {
+            return false;
+        }
+        
         // Berechne Viewer-Position
-        ViewerPosition pos = calculateViewerPosition(handledScreen, client.currentScreen);
+        ViewerPosition pos = getOrCalculateViewerPosition(handledScreen, client.currentScreen);
         
         // Prüfe ob Maus über dem Viewer ist
         if (mouseX >= pos.viewerX && mouseX < pos.viewerX + pos.viewerWidth &&
@@ -3646,11 +3787,7 @@ public class ItemViewerUtility {
             int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
             int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
             int gridAvailableHeight = paginationY - (pos.viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5);
-            int slotSize = ItemViewerGrid.getSlotSize();
-            int gridColumns = Math.max(1, gridAvailableWidth / slotSize);
-            int gridRows = Math.max(1, gridAvailableHeight / slotSize);
-            int itemsPerPage = gridColumns * gridRows;
-            
+            int itemsPerPage = ItemViewerGrid.computeItemsPerPage(gridAvailableWidth, gridAvailableHeight);
             int totalPages = (int) Math.ceil((double) filteredItems.size() / (double) itemsPerPage);
             if (totalPages == 0) totalPages = 1;
             
@@ -3704,6 +3841,11 @@ public class ItemViewerUtility {
             return false;
         }
         
+        String currentTitle = handledScreen.getTitle().getString();
+        if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle) && !helpScreenOpen) {
+            return false;
+        }
+        
         // Prüfe ZUERST Klick auf Hilfe-Overlay Schließen-Button (höchste Priorität wenn geöffnet)
         if (helpScreenOpen) {
             int screenWidth = client.getWindow().getScaledWidth();
@@ -3737,7 +3879,7 @@ public class ItemViewerUtility {
         }
         
         // Berechne Viewer-Position (gleiche Logik wie beim Rendering)
-        ViewerPosition pos = calculateViewerPosition(handledScreen, client.currentScreen);
+        ViewerPosition pos = getOrCalculateViewerPosition(handledScreen, client.currentScreen);
         
         // Prüfe Klick auf Minimierungs-Button (außerhalb des Overlays, am linken Rand, wenn nicht minimiert)
         if (!isMinimized && button == 0) {
@@ -3866,6 +4008,7 @@ public class ItemViewerUtility {
                     // Aktualisiere Filter wenn im Favoriten-Modus
                     if (favoritesMode) {
                         applyFilters();
+                        ItemViewerGrid.invalidateTooltipCache();
                     }
                     
                     return true;
@@ -3957,11 +4100,7 @@ public class ItemViewerUtility {
             // Berechne Items pro Seite basierend auf aktueller Grid-Breite und -Höhe
             int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
             int gridAvailableHeight = paginationY - (pos.viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5);
-            int slotSize = ItemViewerGrid.getSlotSize();
-            int gridColumns = Math.max(1, gridAvailableWidth / slotSize);
-            int gridRows = Math.max(1, gridAvailableHeight / slotSize);
-            int itemsPerPage = gridColumns * gridRows;
-            
+            int itemsPerPage = ItemViewerGrid.computeItemsPerPage(gridAvailableWidth, gridAvailableHeight);
             int totalPages = (int) Math.ceil((double) filteredItems.size() / (double) itemsPerPage);
             if (totalPages == 0) totalPages = 1;
             
@@ -4006,28 +4145,36 @@ public class ItemViewerUtility {
     }
     
     private static List<ItemData> getCurrentPageItems() {
-        // Berechne Items pro Seite basierend auf aktueller Grid-Breite und -Höhe
-        int slotSize = ItemViewerGrid.getSlotSize();
-        int gridColumns = Math.max(1, currentGridAvailableWidth / slotSize);
-        int gridRows = Math.max(1, currentGridAvailableHeight / slotSize);
-        int itemsPerPage = gridColumns * gridRows;
-        
-        int start = currentPage * itemsPerPage;
-        int end = Math.min(start + itemsPerPage, filteredItems.size());
-        if (start >= filteredItems.size()) {
-            return new ArrayList<>();
+        int itemsPerPage = ItemViewerGrid.computeItemsPerPage(currentGridAvailableWidth, currentGridAvailableHeight);
+        if (cachedPageItemsList != null
+                && cachedPageItemsPage == currentPage
+                && cachedPageItemsRevision == filterRevision
+                && cachedPageItemsPerPage == itemsPerPage) {
+            return cachedPageItemsList;
         }
-        return filteredItems.subList(start, end);
+        int start = currentPage * itemsPerPage;
+        if (start >= filteredItems.size()) {
+            cachedPageItemsList = new ArrayList<>();
+        } else {
+            int end = Math.min(start + itemsPerPage, filteredItems.size());
+            cachedPageItemsList = new ArrayList<>(filteredItems.subList(start, end));
+        }
+        cachedPageItemsPage = currentPage;
+        cachedPageItemsRevision = filterRevision;
+        cachedPageItemsPerPage = itemsPerPage;
+        return cachedPageItemsList;
     }
     
     public static void setSearch(String search) {
         currentSearch = search;
-        applyFilters();
+        scheduleApplyFilters();
     }
     
     public static void setSortMode(SortMode mode) {
         currentSortMode = mode;
         applySorting();
+        invalidatePageItemsCache();
+        ItemViewerGrid.invalidateTooltipCache();
     }
     
     private static void applyFilters() {
@@ -4099,12 +4246,18 @@ public class ItemViewerUtility {
                 .collect(Collectors.toList());
         }
         applySorting();
-        currentPage = 0; // Zurück zur ersten Seite
+        currentPage = 0;
+        invalidatePageItemsCache();
     }
     
     private static void applySorting() {
         Comparator<ItemData> comparator = currentSortMode.getComparator();
         filteredItems.sort(comparator);
+    }
+    
+    private static void invalidatePageItemsCache() {
+        filterRevision++;
+        cachedPageItemsList = null;
     }
     
     public static boolean isVisible() {
@@ -4169,6 +4322,9 @@ public class ItemViewerUtility {
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return false; // KEINE Buttons in diesen speziellen Menüs
+            }
+            if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(titleWithUnicode)) {
+                return false;
             }
         }
         

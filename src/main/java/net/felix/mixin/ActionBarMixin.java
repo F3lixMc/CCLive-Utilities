@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.felix.utilities.Overall.ActionBarData;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Factory.BossHPUtility;
+import net.felix.utilities.DragOverlay.ClipboardFarmzoneActionBar;
 
 
 @Mixin(InGameHud.class)
@@ -27,10 +28,11 @@ public class ActionBarMixin {
         if (message != null) {
             String content = message.getString();
             
-            // Prüfe zuerst, ob wir auf einer Floor-Ebene sind
-            // Nur dann verarbeiten wir Material-Tracking aus der ActionBar
+            // Farmzone: Ressourcen (+XXX NAME [GESAMT]) → collected_materials-ressources.json
+            ClipboardFarmzoneActionBar.processActionBarMessage(message);
+
+            // Aincrad-Floor: Material-Tracking aus der ActionBar
             if (ActionBarData.isOnFloor()) {
-                // Process material tracking with original text (including color codes)
                 ActionBarData.processActionBarMessage(message);
             }
             

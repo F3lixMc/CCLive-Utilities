@@ -64,6 +64,60 @@ public class SchmiedTrackerUtility {
 		SMITHING_CONFIG_KEYS.put("[Sterngeschmiedet]", "sternengeschmiedet");
 		SMITHING_CONFIG_KEYS.put("[Sternengeschmiedet]", "sternengeschmiedet");
 	}
+
+	/**
+	 * Entfernt Formatierung und Custom-Font-Glyphen aus Inventartiteln.
+	 */
+	public static String cleanInventoryTitle(String title) {
+		if (title == null) {
+			return "";
+		}
+		return title.replaceAll("§[0-9a-fk-or]", "")
+				.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
+				.trim();
+	}
+
+	/**
+	 * Prüft, ob das Inventar Schmiedezustands-Rahmen anzeigen soll (Zerlegen, Nebenhand, Ausrüstung, …).
+	 */
+	public static boolean isSmithingRelatedInventoryTitle(String title) {
+		if (title == null || title.isEmpty()) {
+			return false;
+		}
+		if (ZeichenUtility.containsEquipmentDisplay(title)) {
+			return true;
+		}
+		String cleanTitle = cleanInventoryTitle(title);
+		return cleanTitle.contains("Zerlegen")
+				|| cleanTitle.contains("Umschmieden")
+				|| (cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen"))
+				|| cleanTitle.contains("Aufwerten")
+				|| cleanTitle.contains("Rüstungs Sammlung")
+				|| cleanTitle.contains("Waffen Sammlung")
+				|| cleanTitle.contains("Werkzeug Sammlung")
+				|| cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER")
+				|| cleanTitle.contains("Geschützte Items")
+				|| isNebenhandInventoryTitle(title);
+	}
+
+	private static boolean isNebenhandInventoryTitle(String title) {
+		if (titleContainsNebenhand(cleanInventoryTitle(title))) {
+			return true;
+		}
+		// Zusätzlich nur §-Codes entfernen (falls Glyphen außerhalb der üblichen Bereiche liegen)
+		return titleContainsNebenhand(title.replaceAll("§[0-9a-fk-or]", ""));
+	}
+
+	private static boolean titleContainsNebenhand(String text) {
+		if (text == null || text.isEmpty()) {
+			return false;
+		}
+		if (text.contains("Nebenhand")) {
+			return true;
+		}
+		// Unsichtbare/Custom-Zeichen zwischen Buchstaben ignorieren
+		return text.replaceAll("[^\\p{L}\\d\\[\\]]", "").contains("Nebenhand");
+	}
 	
 	// Slot-Größe für Rahmen
 	private static final int SLOT_SIZE = 16;
@@ -122,13 +176,7 @@ public class SchmiedTrackerUtility {
 		// Überprüfe ob wir in einem "Zerlegen" Kisteninventar sind
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
-			
-			// IMPORTANT: Check for Equipment Display BEFORE cleaning, as cleaning removes the characters
-			boolean isEquipmentDisplay = ZeichenUtility.containsEquipmentDisplay(title);
-			
-			// Remove Minecraft formatting codes and Unicode characters for comparison
-			String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
-								   .replaceAll("[\\u3400-\\u4DBF]", "");
+			String cleanTitle = cleanInventoryTitle(title);
 			
 			// Check for blueprint inventories
 			// Inventare für Hide Uncraftable Button
@@ -154,13 +202,8 @@ public class SchmiedTrackerUtility {
 				if (hideWrongClassActive) {
 					updateBlueprintItemsWrongClass(handledScreen, client);
 				}
-			// Inventare für Schmiedezustände	
-			} else if (cleanTitle.contains("Zerlegen") || cleanTitle.contains("Umschmieden") || 
-			(cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen")) || cleanTitle.contains("Aufwerten") || 
-			cleanTitle.contains("Rüstungs Sammlung") || cleanTitle.contains("Waffen Sammlung") || 
-			cleanTitle.contains("Werkzeug Sammlung") || cleanTitle.contains("CACTUS_CLICKER.CACTUS_CLICKER") || 
-			cleanTitle.contains("Geschützte Items") ||
-			isEquipmentDisplay) {//Equipment Display - checked BEFORE cleaning
+			// Inventare für Schmiedezustände (inkl. Nebenhand mit unsichtbaren Titel-Zeichen)
+			} else if (isSmithingRelatedInventoryTitle(title)) {
 				isInDisassembleChest = true;
 				isInBlueprintInventory = false;
 				updateSlotColors(handledScreen, client);

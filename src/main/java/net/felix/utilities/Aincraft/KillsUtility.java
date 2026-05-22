@@ -52,6 +52,11 @@ public class KillsUtility {
 		}
 		return CHINESE_NUMBERS;
 	}
+
+	/** Cache zurücksetzen nach Resourcepack-Reload (ZeichenUtility). */
+	public static void invalidateNumberCache() {
+		CHINESE_NUMBERS = null;
+	}
 	
 	// Rendering constants
 	private static final int MIN_OVERLAY_WIDTH = 65;

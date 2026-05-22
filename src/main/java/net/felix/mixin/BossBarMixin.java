@@ -7,7 +7,7 @@ import net.felix.utilities.Factory.WaveUtility;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Overall.InformationenUtility;
-import net.felix.utilities.Overall.TabInfo.TabInfoUtility;
+import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 // import net.felix.utilities.Overall.BossBarDecodeUtility; // Temporarily disabled
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -79,16 +79,16 @@ public class BossBarMixin {
                 }
             }
             
-            TabInfoUtility.beginKomboKisteBossBarScan();
+            NpcAlertsUtility.beginKomboKisteBossBarScan();
             MinecraftClient mc = MinecraftClient.getInstance();
-            boolean komboKisteDim = TabInfoUtility.isKomboKisteReadingDimension(mc);
+            boolean komboKisteDim = NpcAlertsUtility.isKomboKisteReadingDimension(mc);
             if (bossBars != null) {
                 int index = 0;
                 for (ClientBossBar bossBar : bossBars.values()) {
                     index++;
                     String name = bossBar.getName().getString();
                     if (komboKisteDim) {
-                        TabInfoUtility.observeKomboKisteBossBarTitle(name, index);
+                        NpcAlertsUtility.observeKomboKisteBossBarTitle(name, index);
                     }
                     
                     // Bossbar dekodieren und anzeigen (temporarily disabled)

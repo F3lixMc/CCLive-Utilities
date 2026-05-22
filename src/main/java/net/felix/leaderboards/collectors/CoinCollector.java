@@ -5,6 +5,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.DebugUtility;
+import net.felix.utilities.Overall.DimensionUtility;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -39,7 +40,7 @@ public class CoinCollector implements DataCollector {
     public void initialize() {
         if (isActive) return;
         
-        // Berechne ersten Command-Zeitpunkt (5-10 Minuten für schnelleren Start)
+        // Berechne ersten Command-Zeitpunkt (10-15 Minuten für schnelleren Start)
         scheduleFirstCommand();
         
         // Registriere Tick-Event
@@ -63,6 +64,11 @@ public class CoinCollector implements DataCollector {
         // Prüfe ob es Zeit für den nächsten Command ist
         long currentTime = System.currentTimeMillis();
         if (currentTime >= nextCommandTime && nextCommandTime > 0) {
+            // In der Lobby kein /cc coins; Timer neu planen statt zu senden
+            if (DimensionUtility.isInGeneralLobby(client)) {
+                scheduleNextCommand();
+                return;
+            }
             // Silent error handling("💰 [CoinCollector] Automatischer /cc coins Command wird ausgeführt (waitingForResponse wird auf true gesetzt)");
             executeCoinsCommand(client);
             scheduleNextCommand();
@@ -73,6 +79,9 @@ public class CoinCollector implements DataCollector {
      * Führt den /cc coins Command aus
      */
     private void executeCoinsCommand(MinecraftClient client) {
+        if (DimensionUtility.isInGeneralLobby(client)) {
+            return;
+        }
         try {
             long currentTime = System.currentTimeMillis();
             
@@ -101,10 +110,10 @@ public class CoinCollector implements DataCollector {
      * Plant den nächsten Command-Zeitpunkt
      */
     /**
-     * Berechnet den ersten Command-Zeitpunkt (5-10 Minuten für schnelleren Start)
+     * Berechnet den ersten Command-Zeitpunkt (10-15 Minuten für schnelleren Start)
      */
     private void scheduleFirstCommand() {
-        int firstInterval = 6000 + random.nextInt(6000); // 5-10 Minuten in Ticks (1200 ticks = 1 Minute)
+        int firstInterval = 12000 + random.nextInt(6000); // 10-15 Minuten in Ticks (1200 Ticks-Einheiten = 1 Minute)
         nextCommandTime = System.currentTimeMillis() + (firstInterval * 50); // 50ms pro tick
         
         int minutesUntilNext = firstInterval / 1200;

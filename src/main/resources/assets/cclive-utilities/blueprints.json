@@ -27,7 +27,7 @@
             "items": [
               "Erzbrecherballiste",
               "Ergiebiger Langbogen",
-              "Pelzgewand des Eiswanderers",
+              "Eiswanderer-Fellweste",
               "Rissiger Zwergentöter",
               "Rubinhelmschale"
             ]
@@ -45,7 +45,7 @@
           "epic": {
             "color": "PURPLE",
             "items": [
-              "Drachenzahn",
+              "Reißzahn des Drachen",
               "Rubinrote Kriegshose",
               "Ewiges Lichtband",
               "Eisengestärkter Fußharnisch",
@@ -403,7 +403,7 @@
               "Knochengriffbeil",
               "Rostiger Dolch",
               "Alte Holzfälleraxt",
-              "Bequeme Lederhandschuhe",
+              "Bequeme Leinenhandschuhe",
               "Kupfer Halskette"
             ]
           },
@@ -679,7 +679,7 @@
               "Leichte Reisestiefel",
               "Einfache Wollhandschuhe",
               "Abgenutzer Kopfpanzer",
-              "Weicher Lederschutz"
+              "Weiche Lederrüstung"
             ]
           },
           "uncommon": {
@@ -697,7 +697,7 @@
             "items": [
               "Wallwacht Handkappe",
               "Zweckmäßige Ledergamaschen",
-              "Knochengerfertigte Armbrust", 
+              "Knochengefertigte Armbrust",
               "Elfenbein Schulterpads",
               "Berserkerbogen"
             ]
@@ -1169,7 +1169,7 @@
               "Primitiver Langbogen",
               "Primitiver Gurt",
               "Stolze Kriegshose",
-              "Basahlthalskette",
+              "Basalthalskette",
               "Bernstein Talisman"
             ]
           },
@@ -1178,7 +1178,7 @@
             "items": [
               "Leichte Lederschlappen",
               "Repetier Armbrust",
-              "Marode Kriegsaxt",
+              "Rostige Kriegsaxt",
               "Auroraklinge",
               "Solide Ackerhacke"
             ]
@@ -1367,7 +1367,7 @@
             "items": [
               "Phantomfluch",
               "Drachenherz Brustpanzer",
-              "Gultgewebte Treter",
+              "Glutgewebte Treter",
               "Poseidons Flossen"
             ]
           }
@@ -1657,7 +1657,7 @@
               "Verstärkter Wurzelspaltaxt",
               "Wildjägerbogen",
               "Gravierte Plattenhose",
-              "Aufseher Helmvisir"
+              "Aufseher Helmvisier"
             ]
           },
           "rare": {
@@ -1708,7 +1708,7 @@
             "items": [
               "Bequeme Lederschulterpolster",
               "Verteidigungsbogen",
-              "Gepräte Panzerbeinschützer",
+              "Geprägte Panzerbeinschützer",
               "Adeptenaxt",
               "Breite Klinge"
             ]
@@ -1759,7 +1759,7 @@
           "uncommon": {
             "color": "GREEN",
             "items": [
-              "Schmerzreperierarmbrust",
+              "Schmerzrepetierarmbrust",
               "Gravierte Plattenhandschuhe",
               "Schädelring",
               "Verzierter Silberanhänger",
@@ -1844,7 +1844,7 @@
               "Frostbiss Kriegshelm",
               "Band der Ewigkeit",
               "Handschuhe des Gleichgewichts",
-              "Hose des Gleichgewichts",
+              "Schulterplatten des ewigen Gleichgewichts",
               "Frostbiss Plattenschuhe"
             ]
           }
@@ -2015,7 +2015,7 @@
             "color": "WHITE",
             "items": [
               "Steinsohlen",
-              "Schlichter Lederhelm",
+              "Einfacher Lederhelm",
               "Gebeulter Plattengurt",
               "Rostiges Kettenbeil",
               "Marode Kriegsaxt"
@@ -2025,7 +2025,7 @@
             "color": "GREEN",
             "items": [
               "Honigschrämmer",
-              "Pelzgewand des Eiswanderers",
+              "Eiswanderer-Pelzmütze",
               "Amulett der Flamme",
               "Kobaltstiefel",
               "Klare Ledergamaschen"
@@ -2248,8 +2248,8 @@
             "items": [
               "Schwarze Lederhose",
               "Geister Schulterhaube",
-              "Sengenderschuss",
-              "Klare Lederhülle",
+              "Sengender Schuss",
+              "Klare Lederschale",
               "Kolossale Schulterplatten"
             ]
           },
@@ -2292,7 +2292,7 @@
               "Unprätentiöse Sandalen",
               "Stahlaxt",
               "Eisenhalskette",
-              "Stabiler Compundbogen",
+              "Stabiler Compoundbogen",
               "Unprätentiöse Lederkappe"
             ]
           },
@@ -2777,7 +2777,7 @@
           "rare": {
             "color": "BLUE",
             "items": [
-              "Zweckmäßige Lederschulterhaube",
+              "Funktionale Lederschulterkappe",
               "Leichte Lederkrone",
               "Wolfsfell Handschützer",
               "Walküren Nackenschutz"
@@ -2997,7 +2997,7 @@
           "rare": {
             "color": "BLUE",
             "items": [
-              "Schlichter Lederhelm",
+              "Einfacher Lederhelm",
               "Meisterlicher Dunkleichen-Holzhauer",
               "Nietenverstärkte Panzerfinger",
               "Maroder Schweineschlachter",
@@ -3182,7 +3182,7 @@
               "Titanumhüllte Lederschulterpolster",
               "Göttliches Band",
               "Göttliche Lederhülle",
-              "Göttliches Amulett",
+              "Heiliges Amulett",
               "Titanumhüllte Lederpantalon"
   
             ]
@@ -3420,7 +3420,7 @@
               "Präzise Axt",
               "Stahlschutzfinger",
               "Stumpes Claymore",
-              "Rostiges Kriegsbeil",
+              "Rostige Kampfaxt",
               "Nachsicht Pfeilschleuder"
             ]
           },
@@ -3742,7 +3742,7 @@
             "color": "GREEN",
             "items": [
               "Talisman des Kämpfers",
-              "Pelzgewand des Eiswanderers",
+              "Eiswanderer-Pelzhose",
               "Kreuzritter Schulterplatten",
               "Lederschutzhandschuhe",
               "Smaragdbrustschutz"
@@ -3916,7 +3916,7 @@
               "Stählernder Panzer",
               "Gediegener Lederschutz",
               "Ziegenhörner Haube",
-              "Schlichte Lederschulterhaube"
+              "Verstärkte Lederschulterhaube"
             ]
           },
           "epic": {
@@ -4085,7 +4085,7 @@
             "color": "PURPLE",
             "items": [
               "Klinge des Richters",
-              "Mondblick-Lederschutz",
+              "Mondblick Lederrüstung",
               "Band der Wallwacht",
               "Dämmerungsflug-Lederstiefel",
               "Mondblick-Lederhandschuhe"
@@ -4498,7 +4498,7 @@
             "color": "GREEN",
             "items": [
               "Einfacher Piratensäbel",
-              "Leichte Lederhose",
+              "Leichte Leinenhose",
               "Magieerfüllte Plattenhosen",
               "Geprägte Plattentretter"
             ]
@@ -4678,7 +4678,7 @@
             "items": [
               "Klinge des Kriegsfürsten",
               "Hydrahauer",
-              "Frostfänger-Erdschneider",
+              "Frostfänger-Pilz-Spalter",
               "Himmelsstahl Fußschützer",
               "Frostschuppenhose"
             ]
@@ -5023,7 +5023,7 @@
           "common": {
             "color": "WHITE",
             "items": [
-              "Zweckmäßige Lederschulterhaube",
+              "Funktionale Lederschulterkappen",
               "Anfängerarmbrust",
               "Knappen Leggings",
               "Gebeulte Schulterpolster",
@@ -5098,7 +5098,7 @@
             "items": [
               "Runenbedeckter Helm",
               "Runeninfundierte Schulterpanzer",
-              "Meisterschwert",
+              "Master-Schwert",
               "Demonische Plattenschuhe",
               "Bernsteinkiefer Armbrust"
             ]

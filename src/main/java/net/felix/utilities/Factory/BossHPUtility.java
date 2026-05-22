@@ -8,6 +8,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
 
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
@@ -17,7 +18,9 @@ import org.joml.Matrix3x2fStack;
 
 import java.math.BigInteger;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -41,6 +44,15 @@ public class BossHPUtility {
 	private BigInteger initialBossHP = null; // Initiale HP beim ersten Erkennen des Bosses
 	private long bossFightStartTime = 0; // Zeitpunkt, wann der Kampf begonnen hat
 	private String lastTrackedBossName = null; // Letzter Boss-Name für Erkennung von Boss-Wechsel
+	
+	// Last-Dmg: HP-Snapshot, nach 2 Sekunden Differenz = Schaden in diesem Fenster
+	private BigInteger lastDmgWindowStartHp = null;
+	private long lastDmgWindowStartMs = 0;
+	private BigInteger displayedLastDamage = null; // null bis Messung; bleibt bei 0 Delta im Fenster; nach 5s ohne neuen Schaden -> 0
+	private static final long LAST_DMG_WINDOW_MS = 2000L;
+	/** Zeitpunkt des letzten echten Schadens (positives Delta im Fenster); für 5s-Timeout. */
+	private long lastDamagePositiveAtMs = 0;
+	private static final long LAST_DMG_IDLE_RESET_MS = 5000L;
 	
 	// Validierte Boss-Namen
 	private final Set<String> validBossNames = new HashSet<>();
@@ -70,6 +82,9 @@ public class BossHPUtility {
 	private int waveFailedRetryCount = 0;
 	private static final int WAVE_FAILED_MAX_RETRIES = 5;
 	private boolean waitingForWaveFailedRetry = false;
+	
+	/** Pro Scan: eine Boss-Zeile + zugehörige Entity (für Nähe zum Spieler). */
+	private record BossScanHit(Entity entity, String text) {}
 	
 	public BossHPUtility() {
 		INSTANCE = this;
@@ -200,7 +215,8 @@ public class BossHPUtility {
             if (entityScanTickCounter >= ENTITY_SCAN_INTERVAL) {
                 entityScanTickCounter = 0;
                 
-                // Only scan for bosses when in player's own dimension
+                // Alle Boss-Kandidaten sammeln, dann genau einen wählen (nächstes Display = echte Boss-Leiste)
+                List<BossScanHit> bossHits = new ArrayList<>();
                 for (Entity entity : client.world.getEntities()) {
                     String displayText = null;
                     
@@ -217,10 +233,12 @@ public class BossHPUtility {
                         }
                     }
                     
-                    if (displayText != null && !instance.shouldIgnoreEntity(displayText)) {
-                        instance.processTextDisplay(displayText);
+                    if (displayText != null && !instance.shouldIgnoreEntity(displayText)
+                        && instance.isStrictBossHpLine(displayText)) {
+                        bossHits.add(new BossScanHit(entity, displayText));
                     }
                 }
+                instance.applySingleBossDisplayFromScan(client, bossHits);
             }
 
         } else {
@@ -238,6 +256,81 @@ public class BossHPUtility {
         }
         
         instance.lastWaveState = instance.wavesActive;
+		
+		// Last-Dmg-Fenster (alle 2s: Delta) + nach 5s ohne neuen Schaden Anzeige auf 0
+		if (instance.wavesActive && instance.currentBossText != null && !instance.bossDefeated) {
+			instance.tickLastDamageWindow();
+			instance.tickLastDamageIdleTimeout();
+		}
+	}
+	
+	/**
+	 * Parst die aktuelle Boss-HP aus dem Text-Display-Format {@code Name|||||HP|||||}.
+	 */
+	private BigInteger parseHpFromBossText(String bossText) {
+		if (bossText == null || bossText.isEmpty()) {
+			return null;
+		}
+		String[] parts = bossText.split("\\|{5}");
+		if (parts.length < 2) {
+			return null;
+		}
+		try {
+			return new BigInteger(parts[1].trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
+	/**
+	 * Einmal pro Tick: nach {@link #LAST_DMG_WINDOW_MS} wird die HP-Differenz zum Snapshot ausgewertet.
+	 * Nur bei echtem HP-Verlust wird {@link #displayedLastDamage} aktualisiert; sonst bleibt der zuletzt gezeigte Wert.
+	 */
+	private void tickLastDamageWindow() {
+		BigInteger hp = parseHpFromBossText(currentBossText);
+		if (hp == null) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		if (lastDmgWindowStartMs <= 0 || lastDmgWindowStartHp == null) {
+			lastDmgWindowStartHp = hp;
+			lastDmgWindowStartMs = now;
+			return;
+		}
+		if (now - lastDmgWindowStartMs < LAST_DMG_WINDOW_MS) {
+			return;
+		}
+		BigInteger delta = lastDmgWindowStartHp.subtract(hp);
+		if (delta.compareTo(BigInteger.ZERO) > 0) {
+			displayedLastDamage = delta;
+			lastDamagePositiveAtMs = now;
+		}
+		lastDmgWindowStartHp = hp;
+		lastDmgWindowStartMs = now;
+	}
+	
+	/**
+	 * Wenn seit dem letzten positiven Schaden mindestens {@link #LAST_DMG_IDLE_RESET_MS} vergangen ist, Anzeige auf 0 setzen.
+	 */
+	private void tickLastDamageIdleTimeout() {
+		if (displayedLastDamage == null || displayedLastDamage.compareTo(BigInteger.ZERO) <= 0) {
+			return;
+		}
+		if (lastDamagePositiveAtMs <= 0L) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		if (now - lastDamagePositiveAtMs >= LAST_DMG_IDLE_RESET_MS) {
+			displayedLastDamage = BigInteger.ZERO;
+			lastDamagePositiveAtMs = 0L;
+		}
+	}
+	
+	private void resetLastDamageWindow() {
+		lastDmgWindowStartHp = null;
+		lastDmgWindowStartMs = 0;
+		displayedLastDamage = null;
+		lastDamagePositiveAtMs = 0L;
 	}
 	
 	/**
@@ -317,6 +410,65 @@ public class BossHPUtility {
 		return false;
 	}
 	
+	/**
+	 * Volles Boss-HP-Format (Name aus der Boss-Liste + {@code |||||Zahl|||||}) ohne Seiteneffekte.
+	 */
+	private boolean isStrictBossHpLine(String text) {
+		if (!validBossNames.stream().anyMatch(text::contains)) {
+			return false;
+		}
+		Matcher matcher = bossPattern.matcher(text);
+		if (!matcher.matches()) {
+			return false;
+		}
+		String bossName = matcher.group(1).trim();
+		return validBossNames.contains(bossName);
+	}
+	
+	/**
+	 * Verarbeitet pro Entity-Scan höchstens eine Boss-Leiste, damit Start-HP und aktuelle HP aus derselben Quelle stammen.
+	 */
+	private void applySingleBossDisplayFromScan(MinecraftClient client, List<BossScanHit> bossHits) {
+		if (bossHits.isEmpty()) {
+			return;
+		}
+		BossScanHit chosen = bossHits.size() == 1 ? bossHits.get(0) : pickNearestBossDisplay(client, bossHits);
+		processTextDisplay(chosen.text());
+	}
+	
+	/**
+	 * Unter mehreren gültigen Boss-Texten: nächstes Entity zum Spieler; bei praktisch gleicher Distanz höhere angezeigte HP.
+	 */
+	private BossScanHit pickNearestBossDisplay(MinecraftClient client, List<BossScanHit> hits) {
+		PlayerEntity player = client.player;
+		if (player == null) {
+			return hits.get(0);
+		}
+		BossScanHit best = hits.get(0);
+		double bestDist = best.entity().squaredDistanceTo(player);
+		BigInteger bestHp = parseHpFromBossText(best.text());
+		if (bestHp == null) {
+			bestHp = BigInteger.ZERO;
+		}
+		for (int i = 1; i < hits.size(); i++) {
+			BossScanHit h = hits.get(i);
+			double d = h.entity().squaredDistanceTo(player);
+			BigInteger hp = parseHpFromBossText(h.text());
+			if (hp == null) {
+				hp = BigInteger.ZERO;
+			}
+			if (d < bestDist - 1e-6) {
+				best = h;
+				bestDist = d;
+				bestHp = hp;
+			} else if (Math.abs(d - bestDist) <= 1e-6 && hp.compareTo(bestHp) > 0) {
+				best = h;
+				bestHp = hp;
+			}
+		}
+		return best;
+	}
+	
 	public void processTextDisplay(String text) {
 		// Prüfe, ob Boss-Erkennung blockiert ist
 		if (System.currentTimeMillis() < bossBlockedUntil) {
@@ -365,10 +517,12 @@ public class BossHPUtility {
 								initialBossHP = new BigInteger(parts[1].trim());
 								bossFightStartTime = System.currentTimeMillis();
 								lastTrackedBossName = bossName;
+								resetLastDamageWindow();
 							} catch (NumberFormatException e) {
 								// HP konnte nicht geparst werden, ignoriere
 								initialBossHP = null;
 								bossFightStartTime = 0;
+								resetLastDamageWindow();
 							}
 						}
 					}
@@ -395,6 +549,7 @@ public class BossHPUtility {
 		initialBossHP = null;
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
+		resetLastDamageWindow();
 		// Blockierung wird automatisch nach BOSS_BLOCK_DURATION ablaufen
 	}
 	
@@ -437,6 +592,7 @@ public class BossHPUtility {
 			initialBossHP = null;
 			bossFightStartTime = 0;
 			lastTrackedBossName = null;
+			resetLastDamageWindow();
 		}
 	}
 	
@@ -633,19 +789,51 @@ public class BossHPUtility {
 			}
 		}
 		
+		// Last Dmg: Schaden im letzten 2s-Fenster (siehe tickLastDamageWindow); nach 5s ohne Schaden -> 0
+		String lastDmgLine = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg
+			&& instance.initialBossHP != null && currentHP != null) {
+			String lastVal = instance.displayedLastDamage == null ? "-" : formatBigInteger(instance.displayedLastDamage);
+			int cd = getLastDmgIntervalCountdown();
+			lastDmgLine = "Last Dmg: " + lastVal + " | " + cd + "s";
+		}
+		// Overall DMG: kumulativer Schaden seit Kampfbeginn + Anteil der Start-HP
+		String overallDmgLine = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg
+			&& instance.initialBossHP != null && currentHP != null
+			&& instance.initialBossHP.compareTo(BigInteger.ZERO) > 0) {
+			BigInteger totalDealt = instance.initialBossHP.subtract(currentHP);
+			if (totalDealt.compareTo(BigInteger.ZERO) < 0) {
+				totalDealt = BigInteger.ZERO;
+			}
+			double removedPct = totalDealt.doubleValue() / instance.initialBossHP.doubleValue() * 100.0;
+			overallDmgLine = "Overall DMG: " + formatBigInteger(totalDealt) + " | "
+				+ String.format(Locale.US, "%.1f%%", removedPct);
+		}
+		
+		// Erste Zeile: Bossname + ": " + HP (+ optional %)
+		String nameWithColon = (!isDisappeared && !displayHP.isEmpty()) ? (displayText + ": ") : displayText;
 		// Berechne die Breiten für das Layout (unscaled)
-		int nameWidth = client.textRenderer.getWidth(displayText);
+		int nameWidth = client.textRenderer.getWidth(nameWithColon);
 		int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
 		int separatorWidth = percentageText != null ? client.textRenderer.getWidth("|") : 0;
 		int percentageWidth = percentageText != null ? client.textRenderer.getWidth(percentageText) : 0;
 		int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
+		int lastDmgWidth = lastDmgLine != null ? client.textRenderer.getWidth(lastDmgLine) : 0;
+		int overallDmgWidth = overallDmgLine != null ? client.textRenderer.getWidth(overallDmgLine) : 0;
 		int totalWidth = Math.max(
-			nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth + (percentageText != null ? 5 + separatorWidth + 5 + percentageWidth : 0)), // Erste Zeile
-			dpmWidth // Zweite Zeile (DPM)
+			nameWidth + (displayHP.isEmpty() ? 0 : 4 + hpWidth + (percentageText != null ? 5 + separatorWidth + 5 + percentageWidth : 0)), // Erste Zeile
+			Math.max(dpmWidth, Math.max(lastDmgWidth, overallDmgWidth))
 		);
 		int totalHeight = client.textRenderer.fontHeight + PADDING * 2;
 		if (dpmText != null) {
-			totalHeight += client.textRenderer.fontHeight + LINE_SPACING; // Zusätzliche Zeile für DPM
+			totalHeight += client.textRenderer.fontHeight + LINE_SPACING; // DPM
+		}
+		if (lastDmgLine != null) {
+			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
+		}
+		if (overallDmgLine != null) {
+			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
 		}
 		
 		// Die Gesamtbreite inklusive Padding (unscaled)
@@ -693,12 +881,12 @@ public class BossHPUtility {
 					 BACKGROUND_COLOR);
 		}
 		
-		// Zeichne den Boss-Namen (weiß) - relativ zur Matrix
-		context.drawText(client.textRenderer, displayText, PADDING, PADDING, TEXT_COLOR, true);
+		// Zeichne den Boss-Namen inkl. Doppelpunkt (weiß) - relativ zur Matrix
+		context.drawText(client.textRenderer, nameWithColon, PADDING, PADDING, TEXT_COLOR, true);
 		
 		// Zeichne die HP (rot) nur wenn vorhanden - relativ zur Matrix
 		if (!displayHP.isEmpty()) {
-			int hpX = PADDING + nameWidth + 10;
+			int hpX = PADDING + nameWidth + 4;
 			context.drawText(client.textRenderer, displayHP, hpX, PADDING, HP_COLOR, true);
 			
 			// Zeichne Prozentwert direkt nach den HP
@@ -710,10 +898,18 @@ public class BossHPUtility {
 			}
 		}
 		
-		// Zeichne DPM in zweiter Zeile, wenn verfügbar - relativ zur Matrix
+		// Stat-Zeilen unter der ersten Zeile (DPM, Last Dmg, Overall DMG)
+		int statLineY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
 		if (dpmText != null) {
-			int dpmY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
-			context.drawText(client.textRenderer, dpmText, PADDING, dpmY, dpmColor, true);
+			context.drawText(client.textRenderer, dpmText, PADDING, statLineY, dpmColor, true);
+			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
+		}
+		if (lastDmgLine != null) {
+			context.drawText(client.textRenderer, lastDmgLine, PADDING, statLineY, dpmColor, true);
+			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
+		}
+		if (overallDmgLine != null) {
+			context.drawText(client.textRenderer, overallDmgLine, PADDING, statLineY, dpmColor, true);
 		}
 
 		matrices.popMatrix();
@@ -800,6 +996,7 @@ public class BossHPUtility {
 		initialBossHP = null;
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
+		resetLastDamageWindow();
 	}
 	
 	/**
@@ -829,6 +1026,7 @@ public class BossHPUtility {
 		initialBossHP = null;
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
+		resetLastDamageWindow();
 	}
 	
 	/**
@@ -860,6 +1058,7 @@ public class BossHPUtility {
 		initialBossHP = null;
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
+		resetLastDamageWindow();
 	}
 	
 	/**
@@ -909,6 +1108,32 @@ public class BossHPUtility {
 	public static long getBossFightStartTime() {
 		BossHPUtility instance = getInstance();
 		return instance != null ? instance.bossFightStartTime : 0;
+	}
+	
+	/**
+	 * Letzter im 2s-Fenster ermittelter Schaden; null bis die erste Messung; nach 5s ohne neuen Schaden 0.
+	 */
+	public static BigInteger getDisplayedLastDamage() {
+		return getInstance().displayedLastDamage;
+	}
+	
+	/**
+	 * Countdown für die Last-Dmg-Zeile innerhalb jedes 2s-Messfensters: {@code 2}, {@code 1}, {@code 0}.
+	 */
+	public static int getLastDmgIntervalCountdown() {
+		BossHPUtility inst = getInstance();
+		if (inst.lastDmgWindowStartMs <= 0L) {
+			return 2;
+		}
+		long elapsed = System.currentTimeMillis() - inst.lastDmgWindowStartMs;
+		if (elapsed < 0L || elapsed >= LAST_DMG_WINDOW_MS) {
+			return 2;
+		}
+		int phase = (int) (elapsed * 3L / LAST_DMG_WINDOW_MS);
+		if (phase >= 2) {
+			return 0;
+		}
+		return 2 - phase;
 	}
 	
 	/**

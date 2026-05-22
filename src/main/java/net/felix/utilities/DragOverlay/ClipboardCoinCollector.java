@@ -3,6 +3,7 @@ package net.felix.utilities.DragOverlay;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.DimensionUtility;
 
 import java.util.List;
 import java.util.Random;
@@ -69,6 +70,10 @@ public class ClipboardCoinCollector {
         // Prüfe ob es Zeit für den nächsten Command ist
         long currentTime = System.currentTimeMillis();
         if (currentTime >= nextCommandTime && nextCommandTime > 0) {
+            if (DimensionUtility.isInGeneralLobby(client)) {
+                scheduleNextCommand();
+                return;
+            }
             executeCoinsCommand(client);
             scheduleNextCommand();
         }
@@ -94,6 +99,9 @@ public class ClipboardCoinCollector {
      * Führt den /cc coins Command aus
      */
     private static void executeCoinsCommand(MinecraftClient client) {
+        if (DimensionUtility.isInGeneralLobby(client)) {
+            return;
+        }
         try {
             // Sende Command
             client.player.networkHandler.sendChatCommand("cc coins");

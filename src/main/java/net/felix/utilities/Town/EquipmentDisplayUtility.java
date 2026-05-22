@@ -37,7 +37,7 @@ public class EquipmentDisplayUtility {
 	private static Map<String, Double> percentageStats = new HashMap<>();
 	private static Map<String, Double> absoluteStats = new HashMap<>();
 	private static double totalArmor = 0.0;
-	private static final int[] EQUIPMENT_SLOTS = {1, 2, 6, 10, 11, 15, 19, 20, 24, 29, 33, 38, 42, 48, 50};
+	private static final int[] EQUIPMENT_SLOTS = {1, 2, 6, 10, 11, 15, 19, 20, 24, 28, 29, 33, 38, 42, 48, 50};
 	// Pattern für Zahlen mit Tausendertrennungen: Kommas als Tausendertrennungen, Punkt als Dezimaltrenner
 	private static final Pattern STAT_PATTERN = Pattern.compile("([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
 	private static final Pattern ARMOR_PATTERN = Pattern.compile("Rüstung\\s*([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
@@ -476,20 +476,17 @@ public class EquipmentDisplayUtility {
 	}
 
 	private static String formatNumber(double value) {
-		// Erstelle DecimalFormat mit Komma als Tausendertrenner und Punkt als Dezimaltrenner
 		DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
 		symbols.setGroupingSeparator(',');
 		symbols.setDecimalSeparator('.');
-		
-		if (value == (int) value) {
-			// Glatte Zahl ohne Nachkommastellen
+
+		if (Math.abs(value - Math.rint(value)) < 1e-9) {
 			DecimalFormat df = new DecimalFormat("#,###", symbols);
-			return df.format((int) value);
-		} else {
-			// Zahl mit Nachkommastellen (maximal 1 Nachkommastelle)
-			DecimalFormat df = new DecimalFormat("#,###.0", symbols);
-			return df.format(value);
+			return df.format(Math.rint(value));
 		}
+		// Bis zu 2 Nachkommastellen, ohne unnötige Nullen (z. B. 0.09 statt 0.1)
+		DecimalFormat df = new DecimalFormat("#,##0.##", symbols);
+		return df.format(value);
 	}
 	
 	/**

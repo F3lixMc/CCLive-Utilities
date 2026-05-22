@@ -1,253 +1,150 @@
 {
+  "_comment": "Semantische Referenzen auf Font-Provider (group + name) in minecraft:font/default.json. Zeichen werden zur Laufzeit aus dem aktiven Resourcepack gelesen.",
   "aincraft_bottom_font": {
-    "description": "Aincraft Bottom Font - Zahlen 0-9",
-    "characters": "㚏㚐㚑㚒㚓㚔㚕㚖㚗㚘",
-    "numbers": {
-      "0": "㚏",
-      "1": "㚐",
-      "2": "㚑",
-      "3": "㚒",
-      "4": "㚓",
-      "5": "㚔",
-      "6": "㚕",
-      "7": "㚖",
-      "8": "㚗",
-      "9": "㚘"
-    }
+    "group": "cactusclicker_aincraft_overlay",
+    "name": "font_bottom_line"
   },
   "factory_bottom_font": {
-    "description": "Factory Bottom Font - Zahlen 0-9",
-    "characters": "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪",
-    "numbers": {
-      "0": "㝡",
-      "1": "㝢",
-      "2": "㝣",
-      "3": "㝤",
-      "4": "㝥",
-      "5": "㝦",
-      "6": "㝧",
-      "7": "㝨",
-      "8": "㝩",
-      "9": "㝪"
-    }
- },
-  "tab_info_kombo_kiste_bossbar_digits": {
-    "description": "Tab Info Kombo Kiste – Bossbar-Ziffern 0–9 (Lesereihenfolge, Bar 3)",
-    "characters": "㟮㟯㟰㟱㟲㟳㟴㟵㟶㟷",
-    "numbers": {
-      "0": "㟮",
-      "1": "㟯",
-      "2": "㟰",
-      "3": "㟱",
-      "4": "㟲",
-      "5": "㟳",
-      "6": "㟴",
-      "7": "㟵",
-      "8": "㟶",
-      "9": "㟷"
-    }
+    "group": "cactusclicker_factory_overlay",
+    "name": "font_bottom_line"
+  },
+  "npc_alerts_kombo_kiste_bossbar_digits": {
+    "group": "combo_chest",
+    "name": "numbers"
   },
   "equipment_display": {
-    "description": "Equipment Display",
-    "characters": ["㬄", "㬅", "㬆", "㬇"]
+    "entries": [
+      { "group": "equipment", "name": "ui_background" },
+      { "group": "equipment", "name": "ui_open_tool_bag" },
+      { "group": "equipment", "name": "ui_open_gadget_bag" },
+      { "group": "equipment", "name": "ui_open_both" }
+    ]
   },
   "moblexicon": {
-    "description": "Moblexicon",
-    "character": "㬊"
+    "group": "cactusclicker_mob_lexicon",
+    "name": "main_gui"
   },
   "pixel_spacer": {
-    "description": "Pixel Spacer",
-    "characters": "㓾㓿㔀㔁㔂㔃㔄㔅㔆㔇㔈㔉㔊㔋㔌㔍㔎㔏㔐㔑㔒㔓㔔㔕㔖㔗㔘㔙㔚㔛㔜㔝㔞㔟㔠㔡㔢㔤"
+    "group": "pixel_split"
   },
-  "cards_statues": {
-    "description": "Cards and Statues",
-    "characters": ["㭆", "㭂"]
+  "cards": {
+    "group": "cactusclicker_cards",
+    "name": "ui_background"
+  },
+  "statues": {
+    "group": "cactusclicker_statues",
+    "name": "ui_background"
   },
   "friends_request_accept_deny": {
-    "description": "friends_request_accept_deny -> Farmworld licenses", 
-    "character": "ぢ"
+    "group": "friends",
+    "name": "friends_request_accept_deny"
   },
   "hunter_ui_background": {
-    "description": "Hunter ui_background",
-    "character": "㨷"
+    "group": "hunter",
+    "name": "ui_background"
   },
-  "hunter_target_ui": {
-    "description": "Hunter target ui",
-    "character": "㨸"
+  "essence_harvester_ui": {
+    "group": "cactusclicker_harvesters",
+    "name": "essence_harvester_ui"
   },
-    "essence_harvester_ui": {
-    "description": "Essence Harvester UI",
-    "character": "㮌"
+  "essence_bag_ui": {
+    "group": "cactusclicker_essence",
+    "name": "ui_bag"
+  },
+  "essence_selection_ui": {
+    "group": "cactusclicker_essence",
+    "name": "ui_selection"
   },
   "ui_categories_factory": {
-    "description": "UI Categories Factory - JEI should not be displayed",
-    "character": "㮕"
+    "group": "cc_main_menu",
+    "name": "ui_categories_factory"
   },
   "ui_categories_aincrad": {
-    "description": "UI Categories Aincrad - JEI should not be displayed",
-    "character": "㮖"
+    "group": "cc_main_menu",
+    "name": "ui_categories_aincrad"
   },
   "ui_categories_farmzone": {
-    "description": "UI Categories Farmzone - JEI should not be displayed",
-    "character": "㮗"
+    "group": "cc_main_menu",
+    "name": "ui_categories_farmzone"
   },
   "ui_categories_hub": {
-    "description": "UI Categories Hub - JEI should not be displayed",
-    "character": "㮘"
+    "group": "cc_main_menu",
+    "name": "ui_categories_hub"
   },
   "ui_categories_class_selection": {
-    "description": "UI Categories Class Selection - JEI should not be displayed",
-    "character": "㬈"
+    "group": "class_selection",
+    "name": "ui_background"
   },
-
   "ui_ressource_bag": {
-    "description": "UI Ressource Bag",
-    "character": "Ⳅ"
+    "group": "cactusclicker_bag_types",
+    "name": "resource_bag_background"
   },
   "ui_material_bag": {
-    "description": "UI Material Bag",
-    "character": "ⳅ"
+    "group": "cactusclicker_bag_types",
+    "name": "material_bag_background"
   },
-
+  "fishing_components_crafted": {
+    "group": "cactusclicker_fishing_equipment",
+    "name": "ui_components_crafted"
+  },
+  "fishing_crafted_components": {
+    "group": "cactusclicker_fishing_equipment",
+    "name": "ui_crafted_components"
+  },
+  "fishing_components_craft": {
+    "group": "cactusclicker_fishing_equipment",
+    "name": "ui_components_craft"
+  },
+  "fishing_components_recycle": {
+    "group": "cactusclicker_fishing_equipment",
+    "name": "ui_components_recycle"
+  },
   "epic_drops": {
-    "description": "Epic drops",
-    "characters": "㩬㩭㩮㩯㩰㩱㩲㩳㩴㩵㩶㩷㩸㩹㩺㩻㩼㩽㩾㩿㪀㪁㪂㪃㪄㪅㪆㪇㪈㪉㪊㪋㪌㪍㪎㪏㪐㪑㪒㪓"
+    "group": "cactusclicker_drop_animation",
+    "name": "epic"
   },
   "legendary_drops": {
-    "description": "Legendary drops",
-    "characters": "㩄㩅㩆㩇㩈㩉㩊㩋㩌㩍㩎㩏㩐㩑㩒㩓㩔㩕㩖㩗㩘㩙㩚㩛㩜㩝㩞㩟㩠㩡㩢㩣㩤㩥㩦㩧㩨㩩㩪㩫"
+    "group": "cactusclicker_drop_animation",
+    "name": "legendary"
   },
   "logging_level_up": {
-    "description": "Logging level up",
-    "characters": "㪣㪤㪥㪦㪧㪨㪩㪪㪫㪬㪭㪮㪯㪰㪱㪲㪳㪴㪵㪶㪷㪸㪹㪺㪻㪼㪽㪾㪿㫀㫁㫂㫃㫄㫅㫆㫇㫈㫉㫊"
+    "group": "cactusclicker_logging_animation",
+    "name": "logging_level_up"
   },
   "mining_level_up": {
-    "description": "Mining level up",
-    "characters": "㫚㫛㫜㫝㫞㫟㫠㫡㫢㫣㫤㫥㫦㫧㫨㫩㫪㫫㫬㫭㫮㫯㫰㫱㫲㫳㫴㫵㫶㫷㫸㫹㫺㫻㫼㫽㫾㫿㬀㬁"
+    "group": "cactusclicker_mining_animation",
+    "name": "mining_level_up"
+  },
+  "fishing_level_up": {
+    "group": "cactusclicker_fishing_animation",
+    "name": "level_up"
   },
   "moblexicon_animation": {
-    "description": "Moblexicon animation",
-    "characters": "㬋㬌㬍㬎㬏㬐㬑㬒㬓㬔㬕㬖㬗㬘㬙㬚㬛㬜㬝㬞㬟㬠㬡㬢㬣㬤㬥㬦㬧㬨㬩㬪㬫㬬㬭㬮"
+    "group": "cactusclicker_mob_lexicon",
+    "name": "main_gui_opening_animation"
   },
   "airship": {
-    "description": "Airship",
-    "characters": "㭉㭊㭋㭌㭍㭎㭏㭐㭑㭒㭓㭔㭕㭖㭗㭘㭙㭚㭛㭜㭝㭞㭟㭠㭡㭢㭣㭤㭥㭦㭧㭨㭩㭪㭫㭬㭭㭮㭯㭰㭱㭲㭳㭴㭵㭶㭷㭸㭹㭺㭻㭼㭽㭾㭿㮀"
-
+    "group": "cactusclicker_airship",
+    "name": "main_gui_opening_animation"
   },
-  "factory_font_first_line": {
-    "description": "Factory Font First Line - Bossbar decoding",
-    "characters": "㜌㜍㜎㜏㜐㜑㜒㜓㜔㜕㜖㜗㜘㜙㜚㜛㜜㜝㜞㜟㜠㜡㜢㜣㜤㜥㜦㜧㜨㜩㜪㜫㜬㜭㜮㜯㜰㜱㜲㜳㜴㜵㜶㜷㜸㜹㜺㜻㜼㜽㜾",
-    "mapping": {
-      "A": "㜌",
-      "B": "㜍",
-      "C": "㜎",
-      "D": "㜏",
-      "E": "㜐",
-      "F": "㜑",
-      "G": "㜒",
-      "H": "㜓",
-      "I": "㜔",
-      "J": "㜕",
-      "K": "㜖",
-      "L": "㜗",
-      "M": "㜘",
-      "N": "㜙",
-      "O": "㜚",
-      "P": "㜛",
-      "Q": "㜜",
-      "R": "㜝",
-      "S": "㜞",
-      "T": "㜟",
-      "U": "㜠",
-      "V": "㜡",
-      "W": "㜢",
-      "X": "㜣",
-      "Y": "㜤",
-      "Z": "㜥",
-      "+": "㜦",
-      ".": "㜧",
-      "[": "㜨",
-      "]": "㜩",
-      "Ä": "㜪",
-      "Ö": "㜫",
-      "Ü": "㜬",
-      "ß": "㜭",
-      "0": "㜮",
-      "1": "㜯",
-      "2": "㜰",
-      "3": "㜱",
-      "4": "㜲",
-      "5": "㜳",
-      "6": "㜴",
-      "7": "㜵",
-      "8": "㜶",
-      "9": "㜷",
-      ":": "㜸",
-      "-": "㜹",
-      "(": "㜺",
-      ")": "㜻",
-      ",": "㜼",
-      "!": "㜽",
-      "?": "㜾"
-    }
+  "legend_plus_ui_background": {
+    "group": "cactusclicker_legend_plus",
+    "name": "ui_background"
+  },
+  "airship_main_gui": {
+    "group": "cactusclicker_airship",
+    "name": "main_gui"
+  },
+  "glimfang_shop_ui": {
+    "group": "cactusclicker_shop",
+    "name": "ui_background"
   },
   "aincraft_font_first_line": {
-    "description": "Aincraft Font First Line - Bossbar decoding for floor dimensions",
-    "characters": "㘺㘻㘼㘽㘾㘿㙀㙁㙂㙃㙄㙅㙆㙇㙈㙉㙊㙋㙌㙍㙎㙏㙐㙑㙒㙓㙔㙕㙖㙗㙘㙙㙚㙛㙜㙝㙞㙟㙠㙡㙢㙣㙤㙥㙦㙧㙨㙩㙪㙫㙬",
-    "mapping": {
-      "A": "㘺",
-      "B": "㘻",
-      "C": "㘼",
-      "D": "㘽",
-      "E": "㘾",
-      "F": "㘿",
-      "G": "㙀",
-      "H": "㙁",
-      "I": "㙂",
-      "J": "㙃",
-      "K": "㙄",
-      "L": "㙅",
-      "M": "㙆",
-      "N": "㙇",
-      "O": "㙈",
-      "P": "㙉",
-      "Q": "㙊",
-      "R": "㙋",
-      "S": "㙌",
-      "T": "㙍",
-      "U": "㙎",
-      "V": "㙏",
-      "W": "㙐",
-      "X": "㙑",
-      "Y": "㙒",
-      "Z": "㙓",
-      "+": "㙔",
-      ".": "㙕",
-      "[": "㙖",
-      "]": "㙗",
-      "Ä": "㙘",
-      "Ö": "㙙",
-      "Ü": "㙚",
-      "ß": "㙛",
-      "0": "㙜",
-      "1": "㙝",
-      "2": "㙞",
-      "3": "㙟",
-      "4": "㙠",
-      "5": "㙡",
-      "6": "㙢",
-      "7": "㙣",
-      "8": "㙤",
-      "9": "㙥",
-      ":": "㙦",
-      "-": "㙧",
-      "(": "㙨",
-      ")": "㙩",
-      ",": "㙪",
-      "!": "㙫",
-      "?": "㙬"
-    }
-
+    "group": "cactusclicker_aincraft_overlay",
+    "name": "font_first_line"
+  },
+  "factory_font_first_line": {
+    "group": "cactusclicker_factory_overlay",
+    "name": "font_first_line"
   }
 }
-
