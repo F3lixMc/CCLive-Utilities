@@ -637,31 +637,29 @@ public class ItemViewerGrid {
                         addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.paper_shreds);
                     }
                     
-                    // Favoriten-Information (ganz unten im Tooltip, nach Bauplan-Shop)
-                    // Nur für Blueprints anzeigen
+                    // Favoriten-Information (nur für Baupläne)
                     if (info.blueprint != null && info.blueprint) {
                         boolean isFavorite = net.felix.utilities.ItemViewer.FavoriteBlueprintsManager.isFavorite(hoveredItem.name);
                         if (isFavorite) {
-                            // In Favoriten: "Aus Favoriten entfernen:" (gelb) + "Mit Rechtsklick aus Favoriten entfernen" (rot)
                             tooltipLines.add(Text.empty());
                             tooltipLines.add(Text.literal("Aus Favoriten entfernen:")
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false))); // yellow
+                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
                             tooltipLines.add(Text.literal("Mit Rechtsklick aus Favoriten entfernen")
-                                .setStyle(Style.EMPTY.withColor(0xFFFF5555).withItalic(false))); // rot (gleiche Farbe wie "[Nicht Gefunden]")
+                                .setStyle(Style.EMPTY.withColor(0xFFFF5555).withItalic(false)));
                         } else {
-                            // Nicht in Favoriten: "Zu Favoriten hinzufügen:" (gelb) + "Mit Rechtsklick zu Favoriten hinzufügen" (grün)
                             tooltipLines.add(Text.empty());
                             tooltipLines.add(Text.literal("Zu Favoriten hinzufügen:")
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false))); // yellow
+                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
                             tooltipLines.add(Text.literal("Mit Rechtsklick zu Favoriten hinzufügen")
-                                .setStyle(Style.EMPTY.withColor(0xFF16A80C).withItalic(false))); // uncommon grün #16a80c (dunkleres grün)
+                                .setStyle(Style.EMPTY.withColor(0xFF16A80C).withItalic(false)));
                         }
-                        
-                        // Bauplan Anpinnen Hotkey-Information (nach Favoriten, in grau)
-                        // Keine leere Zeile davor, da es die letzte Zeile sein soll
+                    }
+                    
+                    // Anpinnen-Hotkey für alle pinnbaren Items (Baupläne, Module, Lizenzen, etc.)
+                    if (net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
                         String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
-                        tooltipLines.add(Text.literal("Bauplan Anpinnen mit Hotkey: " + hotkeyText)
-                            .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false))); // grau
+                        tooltipLines.add(Text.literal("An Pinnwand anheften mit Hotkey: " + hotkeyText)
+                            .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false)));
                     }
                     }
                 }

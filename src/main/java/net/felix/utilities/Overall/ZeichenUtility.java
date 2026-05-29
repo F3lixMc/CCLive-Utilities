@@ -691,7 +691,7 @@ public class ZeichenUtility {
         if (containsEquipmentDisplay(text)) {
             return true;
         }
-        if (legendPlusUiBackground != null && !legendPlusUiBackground.isEmpty() && text.contains(legendPlusUiBackground)) {
+        if (containsLegendPlusUiBackground(text)) {
             return true;
         }
         if (airshipMainGui != null && !airshipMainGui.isEmpty() && text.contains(airshipMainGui)) {
@@ -860,6 +860,12 @@ public class ZeichenUtility {
         ensureInitialized();
         return text != null && essenceSelectionUi != null && !essenceSelectionUi.isEmpty()
                 && text.contains(essenceSelectionUi);
+    }
+
+    public static boolean containsLegendPlusUiBackground(String text) {
+        ensureInitialized();
+        return text != null && legendPlusUiBackground != null && !legendPlusUiBackground.isEmpty()
+                && text.contains(legendPlusUiBackground);
     }
 
     /** Essence-Bag, -Auswahl und Harvester: keine Ebenen-Nummern in Tooltips. */

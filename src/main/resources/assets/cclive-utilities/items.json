@@ -182789,7 +182789,7 @@
           "amount": "70"
         },
         "material3": {
-          "itemName": "Kaninchenschwanz",
+          "itemName": "Hasenschwanz",
           "amount": "30"
         },
         "material4": {
@@ -182852,7 +182852,7 @@
           "amount": "150"
         },
         "material3": {
-          "itemName": "Kaninchenschwanz",
+          "itemName": "Hasenschwanz",
           "amount": "50"
         },
         "material4": {
@@ -182907,11 +182907,11 @@
           "amount": "250.000"
         },
         "material1": {
-          "itemName": "Ozelot Haar",
+          "itemName": "Ocelot Haar",
           "amount": "4.200"
         },
         "material2": {
-          "itemName": "Schafhuf",
+          "itemName": "Schafshuf",
           "amount": "1.200"
         },
         "material3": {
@@ -183858,7 +183858,7 @@
           "amount": "700"
         },
         "material2": {
-          "itemName": "Kaninchenpfote",
+          "itemName": "Hasenfuß",
           "amount": "340"
         },
         "material3": {
@@ -183870,7 +183870,7 @@
           "amount": "30"
         },
         "material5": {
-          "itemName": "Kräftiger Schweinehuft",
+          "itemName": "Kräftiger Schweinehuf",
           "amount": "12"
         },
         "Ressource": {
@@ -183980,7 +183980,7 @@
           "amount": "2.760.000"
         },
         "material1": {
-          "itemName": "Ocelothaar",
+          "itemName": "Ocelot Haar",
           "amount": "2.500"
         },
         "material2": {
@@ -183992,7 +183992,7 @@
           "amount": "250"
         },
         "material4": {
-          "itemName": "Fuchspfoten",
+          "itemName": "Fuchspfote",
           "amount": "90"
         },
         "material5": {
@@ -184601,7 +184601,7 @@
       "name": "Holzhacker #4",
       "foundAt": [
         {
-          "collection": "Fichtenholz V"
+          "collection": "Bambus VI"
         }
       ],
       "price": {
@@ -184997,7 +184997,7 @@
           "amount": "70"
         },
         "material3": {
-          "itemName": "Kaninchenschwanz",
+          "itemName": "Hasenschwanz",
           "amount": "30"
         },
         "material4": {
@@ -186211,7 +186211,7 @@
     },
     {
       "id": "minecraft:paper",
-      "name": "Dschungelholzstrand Lizenz",
+      "name": "Dschungelholz/Strand Lizenz",
       "foundAt": [
         {
           "collection": "Kupfermine III"
@@ -186224,7 +186224,7 @@
           "amount": "400.000"
         },
         "material1": {
-          "itemName": "Ozelot Haar",
+          "itemName": "Ocelot Haar",
           "amount": "500"
         },
         "ressource": {

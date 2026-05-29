@@ -234,18 +234,60 @@ public class ClipboardUtility {
     }
     
     /**
-     * Fügt einen Bauplan zum Clipboard hinzu (überladene Methode mit ItemData)
-     * @param itemData ItemData des Bauplans
-     * @return true wenn erfolgreich hinzugefügt, false wenn nicht gefunden
+     * Prüft ob ein Item an die Pinnwand angeheftet werden kann.
+     */
+    public static boolean isClipboardPinnable(ItemData itemData) {
+        if (itemData == null || itemData.name == null || itemData.name.isEmpty()) {
+            return false;
+        }
+        if (itemData.info != null && Boolean.TRUE.equals(itemData.info.blueprint)) {
+            return true;
+        }
+        String category = itemData.category;
+        if (category == null) {
+            return false;
+        }
+        switch (category) {
+            case "blueprints":
+            case "modules":
+            case "module_bags":
+            case "power_crystal_slots":
+            case "card_slots":
+            case "licence":
+                return true;
+            case "power_crystals":
+                return itemData.price != null;
+            default:
+                if (itemData.info != null) {
+                    if (Boolean.TRUE.equals(itemData.info.module) && "modules".equals(category)) {
+                        return true;
+                    }
+                    if (Boolean.TRUE.equals(itemData.info.card_slot)) {
+                        return true;
+                    }
+                    if (Boolean.TRUE.equals(itemData.info.licence)) {
+                        return true;
+                    }
+                    if (Boolean.TRUE.equals(itemData.info.power_crystal) && itemData.price != null) {
+                        return true;
+                    }
+                }
+                return false;
+        }
+    }
+    
+    /**
+     * Fügt ein Item zum Clipboard hinzu (Baupläne, Module, Lizenzen, etc.)
+     * @param itemData ItemData des Eintrags
+     * @return true wenn erfolgreich hinzugefügt, false wenn nicht unterstützt
      */
     public static boolean addBlueprint(ItemData itemData) {
         if (itemData == null) {
             return false;
         }
         
-        // Prüfe ob es ein Bauplan ist
-        if (itemData.info == null || !Boolean.TRUE.equals(itemData.info.blueprint)) {
-            return false; // Kein Bauplan
+        if (!isClipboardPinnable(itemData)) {
+            return false;
         }
         
         // Verwende clipboard_id falls vorhanden
@@ -420,9 +462,9 @@ public class ClipboardUtility {
                 continue; // Bauplan nicht gefunden, überspringe
             }
             
-            // Prüfe ob es ein Bauplan ist
-            if (itemData.info == null || itemData.info.blueprint == null || !itemData.info.blueprint) {
-                continue; // Kein Bauplan, überspringe
+            // Prüfe ob es ein pinnbares Item ist
+            if (!isClipboardPinnable(itemData)) {
+                continue;
             }
             
             // Erstelle ClipboardEntry (verwende clipboardId aus savedEntry oder itemData)

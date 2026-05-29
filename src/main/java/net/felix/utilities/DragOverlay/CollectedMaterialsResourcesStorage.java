@@ -23,6 +23,9 @@ public class CollectedMaterialsResourcesStorage {
     private static final String OLD_RESOURCES_FILE = "collected_resources.json";
     private static final Map<String, Long> materials = new HashMap<>();
     private static final Map<String, Long> resources = new HashMap<>();
+    /** Normalisierter Name → Menge (O(1)-Lookup statt linearem Scan). */
+    private static final Map<String, Long> normalizedMaterials = new HashMap<>();
+    private static final Map<String, Long> normalizedResources = new HashMap<>();
     private static final AtomicBoolean saveScheduled = new AtomicBoolean(false);
     private static File storageFile;
     private static boolean initialized = false;
@@ -69,7 +72,11 @@ public class CollectedMaterialsResourcesStorage {
             return 0L;
         }
         synchronized (materials) {
-            return materials.getOrDefault(materialName, 0L);
+            Long direct = materials.get(materialName);
+            if (direct != null) {
+                return direct;
+            }
+            return normalizedMaterials.getOrDefault(normalizeName(materialName), 0L);
         }
     }
     
@@ -80,7 +87,37 @@ public class CollectedMaterialsResourcesStorage {
             return 0L;
         }
         synchronized (resources) {
-            return resources.getOrDefault(resourceName, 0L);
+            Long direct = resources.get(resourceName);
+            if (direct != null) {
+                return direct;
+            }
+            return normalizedResources.getOrDefault(normalizeName(resourceName), 0L);
+        }
+    }
+    
+    /** Kopiert Materialien in {@code target} ohne zusätzliche Map-Allokation pro Lookup. */
+    public static void copyMaterialsInto(Map<String, Long> target) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (target == null) {
+            return;
+        }
+        synchronized (materials) {
+            target.clear();
+            target.putAll(materials);
+        }
+    }
+    
+    /** Kopiert Ressourcen in {@code target}. */
+    public static void copyResourcesInto(Map<String, Long> target) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (target == null) {
+            return;
+        }
+        synchronized (resources) {
+            target.clear();
+            target.putAll(resources);
         }
     }
     
@@ -106,6 +143,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
+            rebuildNormalizedCaches();
             scheduleSave();
         }
     }
@@ -132,6 +170,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
+            rebuildNormalizedCaches();
             scheduleSave();
         }
     }
@@ -162,6 +201,7 @@ public class CollectedMaterialsResourcesStorage {
         synchronized (resources) {
             resources.clear();
         }
+        rebuildNormalizedCaches();
         save();
     }
     
@@ -226,9 +266,43 @@ public class CollectedMaterialsResourcesStorage {
             // Silent error handling
         }
         
+        rebuildNormalizedCaches();
+        
         if (storageFile.exists()) {
             lastKnownModified = storageFile.lastModified();
         }
+    }
+    
+    private static void rebuildNormalizedCaches() {
+        normalizedMaterials.clear();
+        normalizedResources.clear();
+        synchronized (materials) {
+            for (Map.Entry<String, Long> entry : materials.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) {
+                    continue;
+                }
+                normalizedMaterials.put(normalizeName(entry.getKey()), entry.getValue());
+            }
+        }
+        synchronized (resources) {
+            for (Map.Entry<String, Long> entry : resources.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) {
+                    continue;
+                }
+                normalizedResources.put(normalizeName(entry.getKey()), entry.getValue());
+            }
+        }
+    }
+    
+    /** Gleiche Normalisierung wie im Clipboard-Overlay (Vergleich ohne Leerzeichen/Formatierung). */
+    static String normalizeName(String name) {
+        if (name == null) {
+            return "";
+        }
+        return name.replaceAll("§[0-9a-fk-or]", "")
+                .replaceAll("[\\u3400-\\u4DBF]", "")
+                .replaceAll("\\s+", "")
+                .toLowerCase();
     }
     
     private static void readSection(JsonObject root, String sectionName, Map<String, Long> target) {

@@ -351,6 +351,14 @@ public class InformationenUtility {
 				hideFloorNumbersInEssenceMenu = ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle);
 			}
 			
+			if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+				CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled &&
+				CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay &&
+				client.currentScreen != null &&
+				ZeichenUtility.containsEssenceBagUi(screenTitle)) {
+				addEssenceBagWaveDisplayToTooltip(lines, stack);
+			}
+			
 			if (hideFloorNumbersInEssenceMenu) {
 				return;
 			}
@@ -420,7 +428,7 @@ public class InformationenUtility {
 				
 				// Skip Essenz items that should not show level information (but allow essence improvement inventory)
 				if (screenTitle.contains("Essenz [Auswahl]") || screenTitle.contains("Essenz-Tasche") ||
-					screenTitle.contains("Essenzernter") ||screenTitle.contains("Legend+ Menü") ||
+					screenTitle.contains("Essenzernter") || ZeichenUtility.containsLegendPlusUiBackground(screenTitle) ||
 					screenTitle.contains("Machtkristalle Verbessern") ||
 					screenTitle.contains("Fabrik Skins") || screenTitle.contains("Fabrik Skins Menü") ||
 					screenTitle.contains("Factory Bridge Skins") ||
@@ -514,6 +522,11 @@ public class InformationenUtility {
 				
 				// In special inventory, only process material names on the first line
 				if (isSpecialInventory && i > 0) {
+					continue;
+				}
+
+				// Legend+-UI (cactusclicker_legend_plus / ui_background): keine Material-Ebenen
+				if (ZeichenUtility.containsLegendPlusUiBackground(screenTitle)) {
 					continue;
 				}
 				
@@ -3700,8 +3713,8 @@ public class InformationenUtility {
 		}
 		
 		// Hole den Hotkey-Text vom ItemViewer (gleicher Text wie im ItemViewer-Tooltip)
-		String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
-		String clipboardText = "Bauplan Anpinnen mit Hotkey: " + hotkeyText;
+        String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
+        String clipboardText = "An Pinnwand anheften mit Hotkey: " + hotkeyText;
 		
 		// Durchsuche Tooltip-Zeilen nach "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen"
 		for (int i = 0; i < lines.size(); i++) {
@@ -5819,6 +5832,113 @@ public class InformationenUtility {
 			return "?";
 		}
 		return String.valueOf(info.wave);
+	}
+	
+	/**
+	 * Wave display for essence bag tooltips: mob base (e.g. "Pferde") + tier number.
+	 */
+	private static String getWaveDisplayForEssenceMobAndTier(String mobBase, String tier) {
+		if (mobBase == null || mobBase.isEmpty() || tier == null || tier.isEmpty()) {
+			return null;
+		}
+		
+		java.util.LinkedHashSet<String> candidateKeys = new java.util.LinkedHashSet<>();
+		candidateKeys.add(mobBase + " [Essenz] Tier " + tier);
+		candidateKeys.add(convertToPlural(mobBase) + " [Essenz] Tier " + tier);
+		
+		for (String key : candidateKeys) {
+			EssenceInfo info = essencesDatabase.get(key);
+			if (info != null && info.wave != null) {
+				return String.valueOf(info.wave);
+			}
+		}
+		
+		String mkWave = getWaveDisplayForMKLevelEssence(mobBase + " T" + tier);
+		if (mkWave != null && !"?".equals(mkWave)) {
+			return mkWave;
+		}
+		mkWave = getWaveDisplayForMKLevelEssence(convertToPlural(mobBase) + " T" + tier);
+		if (mkWave != null && !"?".equals(mkWave)) {
+			return mkWave;
+		}
+		
+		return null;
+	}
+	
+	private static String cleanTooltipLineForMatching(String text) {
+		if (text == null) {
+			return "";
+		}
+		return text.replaceAll("§[0-9a-fk-or]", "")
+				.replaceAll("[\\u3400-\\u4DBF]", "")
+				.trim();
+	}
+	
+	/**
+	 * Appends perfect wave info to tier lines in the essence bag UI tooltip.
+	 * Format: {@code Tier X - amount -> Welle: NNN} (wave number in green).
+	 */
+	private static void addEssenceBagWaveDisplayToTooltip(List<Text> lines, ItemStack stack) {
+		if (lines == null || lines.isEmpty()) {
+			return;
+		}
+		
+		String essenceMobBase = extractEssenceMobBaseFromTooltip(lines, stack);
+		if (essenceMobBase == null || essenceMobBase.isEmpty()) {
+			return;
+		}
+		
+		java.util.regex.Pattern tierLinePattern = java.util.regex.Pattern.compile(
+				"Tier\\s+(\\d+)\\s*-\\s*.+", java.util.regex.Pattern.CASE_INSENSITIVE);
+		
+		for (int i = 0; i < lines.size(); i++) {
+			Text line = lines.get(i);
+			if (line == null) {
+				continue;
+			}
+			
+			String cleanLine = cleanTooltipLineForMatching(line.getString());
+			if (cleanLine.isEmpty() || cleanLine.contains("-> Welle:")) {
+				continue;
+			}
+			
+			java.util.regex.Matcher matcher = tierLinePattern.matcher(cleanLine);
+			if (!matcher.matches()) {
+				continue;
+			}
+			
+			String tier = matcher.group(1);
+			String waveText = getWaveDisplayForEssenceMobAndTier(essenceMobBase, tier);
+			if (waveText == null) {
+				continue;
+			}
+			
+			MutableText newLine = line.copy()
+					.append(Text.literal(" -> Welle: ").styled(style -> style.withColor(0xC0C0C0)))
+					.append(Text.literal(waveText).styled(style -> style.withColor(0x55FF55)));
+			lines.set(i, newLine);
+		}
+	}
+	
+	private static String extractEssenceMobBaseFromTooltip(List<Text> lines, ItemStack stack) {
+		for (Text line : lines) {
+			if (line == null) {
+				continue;
+			}
+			String clean = cleanTooltipLineForMatching(line.getString());
+			if (clean.contains("[Essenz]")) {
+				return clean.substring(0, clean.indexOf("[Essenz]")).trim();
+			}
+		}
+		
+		if (stack != null && !stack.isEmpty()) {
+			String clean = cleanTooltipLineForMatching(stack.getName().getString());
+			if (clean.contains("[Essenz]")) {
+				return clean.substring(0, clean.indexOf("[Essenz]")).trim();
+			}
+		}
+		
+		return null;
 	}
 	
 	/**

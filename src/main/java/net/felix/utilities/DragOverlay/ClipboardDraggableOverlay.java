@@ -35,6 +35,90 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
     }
     
+    private static CostItem resolveAmboss(net.felix.utilities.ItemViewer.PriceData price) {
+        if (price == null) {
+            return null;
+        }
+        return price.Amboss != null ? price.Amboss : price.amboss;
+    }
+    
+    private static CostItem resolveRessource(net.felix.utilities.ItemViewer.PriceData price) {
+        if (price == null) {
+            return null;
+        }
+        return price.Ressource != null ? price.Ressource : price.ressource;
+    }
+    
+    private static void addPriceCostItemsToDisplayList(List<CostItemWithCategory> list, net.felix.utilities.ItemViewer.PriceData price) {
+        if (price == null || list == null) {
+            return;
+        }
+        if (price.coin != null) list.add(new CostItemWithCategory(price.coin, 0));
+        if (price.cactus != null) list.add(new CostItemWithCategory(price.cactus, 1));
+        if (price.soul != null) list.add(new CostItemWithCategory(price.soul, 1));
+        if (price.material1 != null) list.add(new CostItemWithCategory(price.material1, 1));
+        if (price.material2 != null) list.add(new CostItemWithCategory(price.material2, 1));
+        if (price.material3 != null) list.add(new CostItemWithCategory(price.material3, 1));
+        if (price.material4 != null) list.add(new CostItemWithCategory(price.material4, 1));
+        if (price.material5 != null) list.add(new CostItemWithCategory(price.material5, 1));
+        CostItem amboss = resolveAmboss(price);
+        if (amboss != null) list.add(new CostItemWithCategory(amboss, 2));
+        CostItem ressource = resolveRessource(price);
+        if (ressource != null) list.add(new CostItemWithCategory(ressource, 3));
+    }
+    
+    private static void addPriceCostItemsToTotal(Map<String, CostItem> totalCostsMap, net.felix.utilities.ItemViewer.PriceData price, int quantity) {
+        if (price == null || totalCostsMap == null) {
+            return;
+        }
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.coin, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.cactus, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.soul, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material1, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material2, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material3, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material4, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material5, quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(resolveAmboss(price), quantity));
+        addCostItemToTotal(totalCostsMap, multiplyCostItem(resolveRessource(price), quantity));
+    }
+    
+    private static int countPriceCostLines(net.felix.utilities.ItemViewer.PriceData price) {
+        if (price == null) {
+            return 0;
+        }
+        int count = 0;
+        if (price.coin != null) count++;
+        if (price.cactus != null) count++;
+        if (price.soul != null) count++;
+        if (price.material1 != null) count++;
+        if (price.material2 != null) count++;
+        if (price.material3 != null) count++;
+        if (price.material4 != null) count++;
+        if (price.material5 != null) count++;
+        if (resolveAmboss(price) != null) count++;
+        if (resolveRessource(price) != null) count++;
+        return count;
+    }
+    
+    private static void collectRequiredMaterialsFromPrice(net.felix.utilities.ItemViewer.PriceData price, Set<String> requiredMaterials) {
+        if (price == null || requiredMaterials == null) {
+            return;
+        }
+        CostItem[] items = {
+            price.coin, price.cactus, price.soul,
+            price.material1, price.material2, price.material3, price.material4, price.material5,
+            resolveAmboss(price), resolveRessource(price)
+        };
+        for (CostItem costItem : items) {
+            if (costItem != null && costItem.itemName != null &&
+                !"Coins".equalsIgnoreCase(costItem.itemName) &&
+                !"Pergamentfetzen".equalsIgnoreCase(costItem.itemName)) {
+                requiredMaterials.add(normalizeMaterialName(costItem.itemName));
+            }
+        }
+    }
+    
     private static final int DEFAULT_WIDTH = 180;
     private static final int DEFAULT_HEIGHT = 150;
     
@@ -74,6 +158,18 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     // Separate Speicherung für Clipboard-Materialien (bleibt beim Dimensionswechsel erhalten)
     private static final Map<String, Long> clipboardMaterials = new HashMap<>();
+    /** Pro Tick nur einmal Materialien aus Storage/ActionBar synchronisieren. */
+    private static int materialsSyncTick = -1;
+    
+    private static void ensureClipboardMaterialsSynced() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        int tick = client != null && client.world != null ? (int) client.world.getTime() : -1;
+        if (tick >= 0 && materialsSyncTick == tick) {
+            return;
+        }
+        materialsSyncTick = tick;
+        updateClipboardMaterials();
+    }
     
     /**
      * Aktualisiert die Clipboard-Materialien mit den persistierten Materialien
@@ -93,17 +189,16 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             }
             CollectedMaterialsResourcesStorage.updateMaterials(updates);
         }
-        
-        Map<String, Long> storedMaterials = CollectedMaterialsResourcesStorage.getAllMaterials();
-        if (storedMaterials == null || storedMaterials.isEmpty()) {
-            return;
-        }
-        clipboardMaterials.clear();
-        clipboardMaterials.putAll(storedMaterials);
+    }
+    
+    public static void invalidateMaterialsSyncCache() {
+        materialsSyncTick = -1;
     }
     
     public static void resetCollectedMaterials() {
         clipboardMaterials.clear();
+        invalidateMaterialsSyncCache();
+        invalidateWidthCache();
     }
     
     /**
@@ -117,30 +212,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         for (ClipboardUtility.ClipboardEntry entry : entries) {
             if (entry.price != null) {
-                // Prüfe alle CostItems im Price
-                if (entry.price.coin != null && entry.price.coin.itemName != null && 
-                    !"Coins".equalsIgnoreCase(entry.price.coin.itemName) &&
-                    !"Pergamentfetzen".equalsIgnoreCase(entry.price.coin.itemName)) {
-                    requiredMaterials.add(normalizeMaterialName(entry.price.coin.itemName));
-                }
-                if (entry.price.cactus != null && entry.price.cactus.itemName != null) {
-                    requiredMaterials.add(normalizeMaterialName(entry.price.cactus.itemName));
-                }
-                if (entry.price.soul != null && entry.price.soul.itemName != null) {
-                    requiredMaterials.add(normalizeMaterialName(entry.price.soul.itemName));
-                }
-                if (entry.price.material1 != null && entry.price.material1.itemName != null) {
-                    requiredMaterials.add(normalizeMaterialName(entry.price.material1.itemName));
-                }
-                if (entry.price.material2 != null && entry.price.material2.itemName != null) {
-                    requiredMaterials.add(normalizeMaterialName(entry.price.material2.itemName));
-                }
-                if (entry.price.Amboss != null && entry.price.Amboss.itemName != null) {
-                    requiredMaterials.add(normalizeMaterialName(entry.price.Amboss.itemName));
-                }
-                if (entry.price.Ressource != null && entry.price.Ressource.itemName != null) {
-                    requiredMaterials.add(normalizeMaterialName(entry.price.Ressource.itemName));
-                }
+                collectRequiredMaterialsFromPrice(entry.price, requiredMaterials);
             }
             if (entry.blueprintShop != null && entry.blueprintShop.price != null) {
                 if (entry.blueprintShop.price.coin != null && entry.blueprintShop.price.coin.itemName != null &&
@@ -157,6 +229,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         // Entferne Materialien, die nicht mehr benötigt werden
+        CollectedMaterialsResourcesStorage.copyMaterialsInto(clipboardMaterials);
         clipboardMaterials.entrySet().removeIf(entry -> {
             String normalizedName = normalizeMaterialName(entry.getKey());
             return !requiredMaterials.contains(normalizedName);
@@ -231,6 +304,15 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale = scale;
     }
     
+    /** Gecachte Breitenberechnung – pro Tick nur einmal neu berechnen. */
+    private static int cachedUnscaledWidth = -1;
+    private static int widthCacheTick = -1;
+    
+    private static void invalidateWidthCache() {
+        cachedUnscaledWidth = -1;
+        widthCacheTick = -1;
+    }
+    
     /**
      * Calculate unscaled width (base width without scale factor)
      * Berechnet basierend auf dem neuen Format: "Bauplanname [Anzahl]", Kostenliste
@@ -239,7 +321,20 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     private static int calculateUnscaledWidth() {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return DEFAULT_WIDTH;
-        
+        int tick = client.world != null ? (int) client.world.getTime() : -1;
+        if (tick >= 0 && widthCacheTick == tick && cachedUnscaledWidth >= 0) {
+            return cachedUnscaledWidth;
+        }
+        ensureClipboardMaterialsSynced();
+        int result = computeUnscaledWidth(client);
+        if (tick >= 0) {
+            widthCacheTick = tick;
+            cachedUnscaledWidth = result;
+        }
+        return result;
+    }
+    
+    private static int computeUnscaledWidth(MinecraftClient client) {
         // Berechne maximale Breite basierend auf typischen Texten
         int maxWidth = DEFAULT_WIDTH;
         
@@ -795,6 +890,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         
+        ensureClipboardMaterialsSynced();
+        
         // Aktualisiere hideHover Flag (prüft ob Zeit abgelaufen ist)
         updateHideHover();
         
@@ -1061,11 +1158,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             
             // Erstelle Liste der Kosten-Items mit Kategorie-Information
             List<CostItemWithCategory> costItemsWithCategory = new ArrayList<>();
-            if (entry.price.coin != null) costItemsWithCategory.add(new CostItemWithCategory(entry.price.coin, 0)); // Coins
-            if (entry.price.material1 != null) costItemsWithCategory.add(new CostItemWithCategory(entry.price.material1, 1)); // Materialien
-            if (entry.price.material2 != null) costItemsWithCategory.add(new CostItemWithCategory(entry.price.material2, 1)); // Materialien
-            if (entry.price.Amboss != null) costItemsWithCategory.add(new CostItemWithCategory(entry.price.Amboss, 2)); // Amboss
-            if (entry.price.Ressource != null) costItemsWithCategory.add(new CostItemWithCategory(entry.price.Ressource, 3)); // Ressource
+            addPriceCostItemsToDisplayList(costItemsWithCategory, entry.price);
             
             // Kostenanzeige-Filterung/Sortierung (nur für normale Kosten, nicht für Bauplan Shop Kosten)
             boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
@@ -1711,15 +1804,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * Normalisiert einen Materialnamen für den Vergleich (entfernt Leerzeichen, ignoriert Groß-/Kleinschreibung)
      */
     private static String normalizeMaterialName(String materialName) {
-        if (materialName == null) {
-            return "";
-        }
-        // Entferne Formatierungscodes, Unicode-Zeichen, Leerzeichen und konvertiere zu Kleinbuchstaben
-        String cleaned = materialName.replaceAll("§[0-9a-fk-or]", "")
-                                     .replaceAll("[\\u3400-\\u4DBF]", "")
-                                     .replaceAll("\\s+", "")
-                                     .toLowerCase();
-        return cleaned;
+        return CollectedMaterialsResourcesStorage.normalizeName(materialName);
     }
     
     /**
@@ -1771,8 +1856,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return 0.0;
         }
         
-        // Prüfe persistierte Ressourcen (Amboss + Ressource)
-        long storedResourceAmount = getStoredResourceAmount(materialName);
+        // Prüfe persistierte Ressourcen (Amboss + Ressource) – O(1) über normalisierten Index
+        long storedResourceAmount = CollectedMaterialsResourcesStorage.getResourceAmount(materialName);
         if (storedResourceAmount > 0) {
             return storedResourceAmount;
         }
@@ -1787,78 +1872,14 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return ressourceAmount;
         }
         
-        try {
-            // Aktualisiere Clipboard-Materialien mit persistierten Materialien
-            updateClipboardMaterials();
-            
-            // Verwende Clipboard-Materialien (bleiben beim Dimensionswechsel erhalten)
-            if (clipboardMaterials == null || clipboardMaterials.isEmpty()) {
-                if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
-                    System.out.println("[Clipboard] Keine Materialien in Clipboard-Speicherung gefunden für: " + materialName);
-                }
-                return 0.0;
-            }
-            
-            // Normalisiere den Materialnamen für den Vergleich
-            String normalizedName = normalizeMaterialName(materialName);
-            
-            // DEBUG: Logge Vergleich
-            if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
-                System.out.println("[Clipboard] Suche Material: '" + materialName + "' -> normalisiert: '" + normalizedName + "'");
-                System.out.println("[Clipboard] Verfügbare Materialien in Clipboard-Speicherung: " + clipboardMaterials.size());
-            }
-            
-            // Suche nach einem passenden Materialnamen (normalisiert)
-            for (Map.Entry<String, Long> entry : clipboardMaterials.entrySet()) {
-                String normalizedEntryName = normalizeMaterialName(entry.getKey());
-                
-                // DEBUG: Logge jeden Vergleich
-                if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
-                    System.out.println("[Clipboard] Vergleiche: '" + normalizedName + "' mit '" + normalizedEntryName + "' (Original: '" + entry.getKey() + "')");
-                }
-                
-                if (normalizedName.equals(normalizedEntryName)) {
-                    if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
-                        System.out.println("[Clipboard] ✅ Material gefunden: " + entry.getKey() + " = " + entry.getValue());
-                    }
-                    return entry.getValue().doubleValue();
-                }
-            }
-            
-            // DEBUG: Logge wenn nicht gefunden
-            if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
-                System.out.println("[Clipboard] ❌ Material nicht gefunden: " + materialName);
-            }
-        } catch (Exception e) {
-            // DEBUG: Logge Fehler
-            if (CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
-                System.out.println("[Clipboard] ⚠️ Fehler beim Abrufen der Materialmenge: " + e.getMessage());
-                e.printStackTrace();
-            }
-            // Fallback: Wenn etwas schiefgeht, gebe 0 zurück
-            return 0.0;
-        }
-        
-        return 0.0;
+        return CollectedMaterialsResourcesStorage.getMaterialAmount(materialName);
     }
     
     private static long getStoredResourceAmount(String materialName) {
-        try {
-            Map<String, Long> storedResources = CollectedMaterialsResourcesStorage.getAllResources();
-            if (storedResources == null || storedResources.isEmpty()) {
-                return 0L;
-            }
-            String normalizedName = normalizeMaterialName(materialName);
-            for (Map.Entry<String, Long> entry : storedResources.entrySet()) {
-                String normalizedEntryName = normalizeMaterialName(entry.getKey());
-                if (normalizedName.equals(normalizedEntryName)) {
-                    return entry.getValue() != null ? entry.getValue() : 0L;
-                }
-            }
-        } catch (Exception e) {
-            // Silent error handling
+        if (materialName == null) {
+            return 0L;
         }
-        return 0L;
+        return CollectedMaterialsResourcesStorage.getResourceAmount(materialName);
     }
     
     /**
@@ -1915,14 +1936,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                     addCostItemToTotal(totalCostsMap, multiplyCostItem(entry.blueprintShop.price.paper_shreds, quantity));
                 }
             } else {
-                // Normale Bauplan-Kosten
+                // Normale Kosten (Baupläne, Module, Lizenzen, etc.)
                 if (entry.price != null) {
-                    // Addiere alle Kosten (multipliziert mit Anzahl)
-                    addCostItemToTotal(totalCostsMap, multiplyCostItem(entry.price.coin, quantity));
-                    addCostItemToTotal(totalCostsMap, multiplyCostItem(entry.price.material1, quantity));
-                    addCostItemToTotal(totalCostsMap, multiplyCostItem(entry.price.material2, quantity));
-                    addCostItemToTotal(totalCostsMap, multiplyCostItem(entry.price.Amboss, quantity));
-                    addCostItemToTotal(totalCostsMap, multiplyCostItem(entry.price.Ressource, quantity));
+                    addPriceCostItemsToTotal(totalCostsMap, entry.price, quantity);
                 }
             }
         }
@@ -2955,15 +2971,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 lineCount += 2; // "Kosten:" + "Keine Baupläne im Clipboard"
             }
         } else if (entry != null && entry.price != null) {
-            // Seite 2+: Einzelner Bauplan
+            // Seite 2+: Einzelner Eintrag
             lineCount += 1; // "Kosten:" Zeile
-            
-            // Zähle vorhandene Kosten-Items
-            if (entry.price.coin != null) lineCount++;
-            if (entry.price.material1 != null) lineCount++;
-            if (entry.price.material2 != null) lineCount++;
-            if (entry.price.Amboss != null) lineCount++;
-            if (entry.price.Ressource != null) lineCount++;
+            lineCount += countPriceCostLines(entry.price);
             
             // Optional: Bauplan Shop Kosten
             if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts && 

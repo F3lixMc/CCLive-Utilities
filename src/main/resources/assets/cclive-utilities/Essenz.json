@@ -107,6 +107,10 @@
             "wave": 4262
         },
         {
+            "name": "Zombie [Essenz] Tier 9",
+            "wave": 6131
+        },
+        {
             "name": "Zombie [Essenz] Tier 12",
             "wave": 8191
         },
@@ -170,6 +174,10 @@
             "wave": 4562
         },
         {
+            "name": "Ziegen [Essenz] Tier 9",
+            "wave": 6236
+        },
+        {
             "name": "Ziegen [Essenz] Tier 11",
             "wave": 8784
         },
@@ -188,6 +196,10 @@
         {
             "name": "Bienen [Essenz] Tier 4",
             "wave": 3006
+        },
+        {
+            "name": "Bienen [Essenz] Tier 9",
+            "wave": 6204
         },
         {
             "name": "Bienen [Essenz] Tier 11",
@@ -331,12 +343,16 @@
             "wave": 4442
         },
         {
+            "name": "Skelett [Essenz] Tier 9",
+            "wave": 6464
+        },
+        {
             "name": "Skelett [Essenz] Tier 10",
             "wave": 7201
         },
         {
             "name": "Skelett [Essenz] Tier 12",
-            "wave": 8191
+            "wave": 9784
         },
 
 
@@ -484,7 +500,7 @@
         },
         {
             "name": "Vindicator [Essenz] Tier 10",
-            "wave": 8362
+            "wave": 9772
         },
 
 
@@ -683,6 +699,10 @@
         
 
 
+        {
+            "name": "Polarbär [Essenz] Tier 6",
+            "wave": 6456
+        },
         {
             "name": "Polarbär [Essenz] Tier 8",
             "wave": 9152

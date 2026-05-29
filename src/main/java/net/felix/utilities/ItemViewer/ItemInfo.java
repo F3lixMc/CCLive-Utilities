@@ -21,5 +21,7 @@ public class ItemInfo {
     public Boolean ability;      // true wenn es eine Fähigkeit ist
     public Boolean rune;         // true wenn es eine Rune ist
     public Boolean power_crystal; // true wenn es ein Power Crystal ist
+    public Boolean card_slot;     // true wenn es ein Karten Slot ist
+    public Boolean licence;       // true wenn es eine Lizenz ist
 }
 

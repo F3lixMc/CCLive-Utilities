@@ -676,9 +676,7 @@ public class ItemViewerUtility {
                     // Hole gehoveres Item aus dem Grid
                     ItemData hoveredItem = getHoveredItemFromGrid();
                     
-                    if (hoveredItem != null && hoveredItem.info != null && 
-                        Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
-                        // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id Support)
+                    if (hoveredItem != null && net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
                         net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem);
                     }
                 }
@@ -889,73 +887,16 @@ public class ItemViewerUtility {
                 // Hole gehoveres Item aus dem Grid
                 ItemData hoveredItem = getHoveredItemFromGrid();
                 
-                if (hoveredItem != null && hoveredItem.info != null && 
-                    Boolean.TRUE.equals(hoveredItem.info.blueprint)) {
-                    // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id und foundAt Support)
+                if (hoveredItem != null && net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
                     net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem);
                     return true;
                 }
             }
             
             // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
-            // Dies funktioniert auch, wenn der ItemViewer sichtbar ist, aber kein Item gehovered wird
             if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-                // Prüfe ob wir in einem Bauplan-Inventar sind
-                boolean isBlueprintInv = isInBlueprintInventory(handledScreen);
-                
-                if (isBlueprintInv) {
-                    // Hole gehoverten Slot - verwende zuerst getrackten Slot, dann berechne
-                    net.minecraft.screen.slot.Slot hoveredSlot = null;
-                    if (lastHoveredScreen == handledScreen && lastHoveredSlot != null && lastHoveredSlot.hasStack()) {
-                        // Verwende getrackten Slot wenn verfügbar
-                        hoveredSlot = lastHoveredSlot;
-                    } else {
-                        // Fallback: Berechne Slot aus Mausposition
-                        hoveredSlot = getHoveredSlot(handledScreen, client);
-                    }
-                    
-                    if (hoveredSlot != null && hoveredSlot.hasStack()) {
-                        net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
-                        if (stack != null && !stack.isEmpty()) {
-                            // Extrahiere Item-Namen aus Tooltip (erste Zeile: "name - [Bauplan]")
-                            String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
-                            
-                            if (itemName == null || itemName.isEmpty()) {
-                                // Fallback: Verwende ItemStack-Name
-                                itemName = stack.getName().getString();
-                            }
-                            
-                            // Bereinige Item-Name: Entferne Formatierungszeichen, chinesische Zeichen und "- [Bauplan]"
-                            itemName = cleanItemNameForLookup(itemName);
-                            
-                            // Extrahiere "found at" Information aus Tooltip (für Baupläne mit doppelten Namen)
-                            String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
-                            
-                            // Suche Item in items.json (mit foundAt falls vorhanden)
-                            ItemData itemData = findItemByNameAndFoundAt(itemName, foundAtFloor);
-                            
-                            if (itemData != null && 
-                                itemData.info != null && 
-                                Boolean.TRUE.equals(itemData.info.blueprint)) {
-                                // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id Support)
-                                net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData);
-                                return true;
-                            }
-                            
-                            // Fallback: Suche nur nach Name (wenn foundAt nicht gefunden wurde)
-                            if (itemData == null) {
-                                itemData = findItemByName(itemName);
-                                
-                                if (itemData != null && 
-                                    itemData.info != null && 
-                                    Boolean.TRUE.equals(itemData.info.blueprint)) {
-                                    // Füge Bauplan zum Clipboard hinzu (mit ItemData für clipboard_id Support)
-                                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData);
-                                    return true;
-                                }
-                            }
-                        }
-                    }
+                if (tryPinHoveredInventoryItem(handledScreen, client)) {
+                    return true;
                 }
             }
         }
@@ -1003,6 +944,44 @@ public class ItemViewerUtility {
         }
         return client.currentScreen instanceof HandledScreen<?> || 
                client.currentScreen instanceof InventoryScreen;
+    }
+    
+    /**
+     * Versucht das aktuell gehoverte Inventar-Item an die Pinnwand anzuheften.
+     */
+    private static boolean tryPinHoveredInventoryItem(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen, MinecraftClient client) {
+        net.minecraft.screen.slot.Slot hoveredSlot = null;
+        if (lastHoveredScreen == handledScreen && lastHoveredSlot != null && lastHoveredSlot.hasStack()) {
+            hoveredSlot = lastHoveredSlot;
+        } else {
+            hoveredSlot = getHoveredSlot(handledScreen, client);
+        }
+        
+        if (hoveredSlot == null || !hoveredSlot.hasStack()) {
+            return false;
+        }
+        
+        net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        
+        String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
+        if (itemName == null || itemName.isEmpty()) {
+            itemName = stack.getName().getString();
+        }
+        itemName = cleanItemNameForLookup(itemName);
+        
+        String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
+        ItemData itemData = findItemByNameAndFoundAt(itemName, foundAtFloor);
+        if (itemData == null) {
+            itemData = findItemByName(itemName);
+        }
+        
+        if (itemData != null && net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(itemData)) {
+            return net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData);
+        }
+        return false;
     }
     
     /**
