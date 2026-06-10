@@ -3,6 +3,7 @@ package net.felix;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
@@ -74,5 +75,8 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
         
         // Initialisiere Item-Viewer
         ItemViewerUtility.initialize();
+        
+        // Item-Info-Extraktion (Baupläne + Angel-Komponenten)
+        ItemInfoUtility.initialize();
     }
 }

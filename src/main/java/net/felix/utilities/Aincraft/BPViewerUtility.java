@@ -184,6 +184,9 @@ public class BPViewerUtility {
                        
                        // Check for blueprint shop inventory
                        instance.checkBlueprintShopInventory(client);
+
+                       // Check fishing component inventories
+                       FishingComponentFoundUtility.onClientTick(client);
                        
                        // Check Tab key for overlay visibility
                        checkTabKey();
@@ -486,7 +489,7 @@ public class BPViewerUtility {
                            .executes(context -> {
                                BPViewerUtility instance = getInstance();
                                instance.resetFoundBlueprints();
-                               context.getSource().sendFeedback(Text.literal("§aAlle gefundenen Baupläne wurden zurückgesetzt!"));
+                               context.getSource().sendFeedback(Text.literal("§aAlle gefundenen Baupläne und Angel-Komponenten wurden zurückgesetzt!"));
                                return 1;
                            })
                        )
@@ -1429,6 +1432,9 @@ public class BPViewerUtility {
         
         // Clear floor progress
         floorProgress.clear();
+
+        // Clear found fishing components
+        FishingComponentFoundUtility.reset();
         
         // Save empty data to files
         saveFoundBlueprints();

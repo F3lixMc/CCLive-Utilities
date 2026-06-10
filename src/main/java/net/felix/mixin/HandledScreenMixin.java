@@ -98,6 +98,11 @@ public abstract class HandledScreenMixin {
         // Clear tooltip bounds after rendering
         net.felix.utilities.Overall.Aspekte.AspectOverlay.clearTooltipBounds();
         
+        // Item-Info-Overlay (nicht registrierte Baupläne / Angel-Komponenten markieren)
+        if (net.felix.utilities.Aincraft.ItemInfoUtility.isSupportedInventory(screen)) {
+            net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, x, y);
+        }
+        
         // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
         renderMKLevelOverlay(context);
         

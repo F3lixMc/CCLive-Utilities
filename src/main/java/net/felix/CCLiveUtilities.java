@@ -67,6 +67,7 @@ public class CCLiveUtilities implements ModInitializer {
 		AnimationBlockerUtility.initialize();
 		KillAnimationUtility.initialize();
 		BPViewerUtility.initialize();
+		net.felix.utilities.Aincraft.FishingComponentFoundUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();

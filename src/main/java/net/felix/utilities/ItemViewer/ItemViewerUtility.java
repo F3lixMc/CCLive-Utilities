@@ -330,6 +330,25 @@ public class ItemViewerUtility {
                         }
                         allItems.addAll(data.essences);
                     }
+                    if (data.fishing_components != null && !data.fishing_components.isEmpty()) {
+                        if (rootJson.has("fishing_components") && rootJson.get("fishing_components").isJsonArray()) {
+                            var fishingComponentsArray = rootJson.getAsJsonArray("fishing_components");
+                            for (int i = 0; i < fishingComponentsArray.size() && i < data.fishing_components.size(); i++) {
+                                JsonElement element = fishingComponentsArray.get(i);
+                                if (element.isJsonObject()) {
+                                    JsonObject jsonObj = element.getAsJsonObject();
+                                    ItemData item = data.fishing_components.get(i);
+                                    item.jsonObject = jsonObj;
+                                    item.category = "fishing_components";
+                                }
+                            }
+                        } else {
+                            for (ItemData item : data.fishing_components) {
+                                item.category = "fishing_components";
+                            }
+                        }
+                        allItems.addAll(data.fishing_components);
+                    }
                     if (data.module_bags != null && !data.module_bags.isEmpty()) {
                         for (ItemData item : data.module_bags) {
                             item.category = "module_bags";
@@ -1963,6 +1982,7 @@ public class ItemViewerUtility {
     // Kategorie-Buttons im Hilfe-Overlay
     private static final java.util.List<CategoryButton> CATEGORY_BUTTON_DEFS = Arrays.asList(
             new CategoryButton("Baupläne", java.util.List.of("bauplan")),
+            new CategoryButton("Angel-Komponenten", java.util.List.of("komponente")),
             new CategoryButton("Module", java.util.List.of("modul")),
             new CategoryButton("Modul-Taschen", java.util.List.of("modultasche")),
             new CategoryButton("Machtkristall", java.util.List.of("machtkristall")),
@@ -2760,6 +2780,9 @@ public class ItemViewerUtility {
         switch (categoryName) {
             case "Baupläne":
                 categoryKey = "blueprints";
+                break;
+            case "Angel-Komponenten":
+                categoryKey = "fishing_components";
                 break;
             case "Module":
                 categoryKey = "modules";
@@ -4350,7 +4373,7 @@ public class ItemViewerUtility {
             return null; // Kein Bauplan, kein Status
         }
         
-        boolean isFound = isBlueprintFound(item.name);
+        boolean isFound = isItemFound(item);
         return isFound ? "[Gefunden]" : "[Nicht Gefunden]";
     }
     
@@ -4364,8 +4387,18 @@ public class ItemViewerUtility {
             return 0xFFFFFFFF; // Kein Bauplan, weiß
         }
         
-        boolean isFound = isBlueprintFound(item.name);
+        boolean isFound = isItemFound(item);
         return isFound ? 0xFF00FF00 : 0xFFFF0000; // Grün wenn gefunden, rot wenn nicht
+    }
+
+    private static boolean isItemFound(ItemData item) {
+        if (item == null || item.name == null || item.name.isEmpty()) {
+            return false;
+        }
+        if ("fishing_components".equals(item.category)) {
+            return net.felix.utilities.Aincraft.FishingComponentFoundUtility.isFound(item.name);
+        }
+        return isBlueprintFound(item.name);
     }
 }
 

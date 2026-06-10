@@ -17,11 +17,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Rendert Items in einem Grid-Layout (ähnlich JEI)
  */
 public class ItemViewerGrid {
+    
+    private static final int COST_GREEN = 0xFF55FF55;
+    private static final Pattern FISHING_MODIFIER_VALUE = Pattern.compile("[+-]?[\\d.,]+(?:%|cg|lo|k|m|b)?");
     
     private static final Map<ItemData, ItemStack> ITEM_STACK_CACHE = new WeakHashMap<>();
     private static final Map<String, Identifier> TEXTURE_ID_CACHE = new HashMap<>();
@@ -552,21 +557,26 @@ public class ItemViewerGrid {
                     // Format: ⦁ [ModifierX] - nur ModifierX hat die Farbe, Rest ist weiß
                     // Kommt nach Aspekt, vor Status
                     if (info.modifier != null && !info.modifier.isEmpty()) {
+                        boolean fishingComponent = "fishing_components".equals(hoveredItem.category);
                         for (String modifier : info.modifier) {
                             if (modifier != null && !modifier.isEmpty()) {
-                                int modifierColor = getModifierColor(modifier);
-                                
-                                // Erstelle Text im Format: ⦁ [ModifierX]
-                                MutableText modifierText = Text.literal("⦁")
-                                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)); // weiß
-                                modifierText.append(Text.literal(" [")
-                                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false))); // weiß
-                                modifierText.append(Text.literal(modifier)
-                                    .setStyle(Style.EMPTY.withColor(modifierColor).withItalic(false))); // Modifier-Farbe
-                                modifierText.append(Text.literal("]")
-                                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false))); // weiß
-                                
-                                tooltipLines.add(modifierText);
+                                if (fishingComponent) {
+                                    tooltipLines.add(buildFishingComponentModifierText(modifier));
+                                } else {
+                                    int modifierColor = getModifierColor(modifier);
+                                    
+                                    // Erstelle Text im Format: ⦁ [ModifierX]
+                                    MutableText modifierText = Text.literal("⦁")
+                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)); // weiß
+                                    modifierText.append(Text.literal(" [")
+                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false))); // weiß
+                                    modifierText.append(Text.literal(modifier)
+                                        .setStyle(Style.EMPTY.withColor(modifierColor).withItalic(false))); // Modifier-Farbe
+                                    modifierText.append(Text.literal("]")
+                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false))); // weiß
+                                    
+                                    tooltipLines.add(modifierText);
+                                }
                             }
                         }
                         // Leere Zeile nach Modifier (vor Status)
@@ -576,7 +586,7 @@ public class ItemViewerGrid {
                     // Status (gelb Header, dann grün/rot für gefunden/nicht gefunden)
                     // Nur für Blueprints anzeigen, nicht für Module/Modulbags
                     if (info.blueprint != null && info.blueprint) {
-                        boolean isFound = isBlueprintFound(hoveredItem.name);
+                        boolean isFound = isItemFound(hoveredItem);
                         MutableText statusText = Text.literal("Status:")
                             .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)); // yellow
                         statusText.append(Text.literal(" ")
@@ -822,6 +832,48 @@ public class ItemViewerGrid {
     }
     
     /**
+     * Angel-Komponenten: weißer Text, Zahlen/Vorzeichen in [] in Kosten-Grün.
+     * Beispiel: Anbeißgeschwindigkeit: [-10% - 5%]
+     */
+    private MutableText buildFishingComponentModifierText(String modifier) {
+        MutableText text = Text.literal("⦁ ")
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false));
+        
+        int bracketStart = modifier.indexOf('[');
+        int bracketEnd = modifier.lastIndexOf(']');
+        if (bracketStart < 0 || bracketEnd <= bracketStart) {
+            text.append(Text.literal(modifier)
+                .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+            return text;
+        }
+        
+        text.append(Text.literal(modifier.substring(0, bracketStart + 1))
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+        appendFishingModifierBracketContent(text, modifier.substring(bracketStart + 1, bracketEnd));
+        text.append(Text.literal(modifier.substring(bracketEnd))
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+        return text;
+    }
+    
+    private void appendFishingModifierBracketContent(MutableText text, String inside) {
+        Matcher matcher = FISHING_MODIFIER_VALUE.matcher(inside);
+        int lastEnd = 0;
+        while (matcher.find()) {
+            if (matcher.start() > lastEnd) {
+                text.append(Text.literal(inside.substring(lastEnd, matcher.start()))
+                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+            }
+            text.append(Text.literal(matcher.group())
+                .setStyle(Style.EMPTY.withColor(COST_GREEN).withItalic(false)));
+            lastEnd = matcher.end();
+        }
+        if (lastEnd < inside.length()) {
+            text.append(Text.literal(inside.substring(lastEnd))
+                .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+        }
+    }
+    
+    /**
      * Gibt die Farbe für einen Modifier zurück
      * Jeder Modifier-Typ hat seine eigene Farbe für bessere Erkennbarkeit
      * Farbcodes basierend auf Minecraft-Farbcodes
@@ -975,6 +1027,16 @@ public class ItemViewerGrid {
         return amount.toString();
     }
     
+    private boolean isItemFound(ItemData item) {
+        if (item == null || item.name == null || item.name.isEmpty()) {
+            return false;
+        }
+        if ("fishing_components".equals(item.category)) {
+            return net.felix.utilities.Aincraft.FishingComponentFoundUtility.isFound(item.name);
+        }
+        return isBlueprintFound(item.name);
+    }
+
     /**
      * Prüft ob ein Bauplan gefunden wurde
      */

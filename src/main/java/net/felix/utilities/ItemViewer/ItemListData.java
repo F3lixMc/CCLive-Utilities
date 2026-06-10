@@ -26,6 +26,7 @@ public class ItemListData {
     public List<ItemData> power_crystals;
     public List<ItemData> power_crystal_slots;
     public List<ItemData> essences;
+    public List<ItemData> fishing_components;
     public List<ItemData> module_bags;
     public List<ItemData> card_slots;
     public List<ItemData> licence;      // Lizenzen (Farmzone)

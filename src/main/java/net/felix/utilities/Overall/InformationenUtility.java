@@ -1554,15 +1554,8 @@ public class InformationenUtility {
 			if (sep >= 0) {
 				dashIndex = sep + 1; // index of '-' in " - "
 			} else {
-				for (int i = bauplanStart - 1; i >= 0; i--) {
-					char ch = fullTextStr.charAt(i);
-					if (ch == '-' || ch == '—' || ch == '–') {
-						dashIndex = i;
-						break;
-					} else if (ch != ' ') {
-						break;
-					}
-				}
+				// "Meister-Rute [Bauplan]" has no " - " separator — use [Bauplan] as boundary, not inner hyphens
+				dashIndex = bauplanStart;
 			}
 		}
 		

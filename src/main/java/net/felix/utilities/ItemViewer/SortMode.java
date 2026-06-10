@@ -50,6 +50,7 @@ public enum SortMode {
     // Kategorien-Reihenfolge für Sortierung
     private static final List<String> CATEGORY_ORDER = java.util.Arrays.asList(
         "blueprints",
+        "fishing_components",
         "abilities",
         "modules",
         "module_bags",

@@ -249,6 +249,7 @@ public class ClipboardUtility {
         }
         switch (category) {
             case "blueprints":
+            case "fishing_components":
             case "modules":
             case "module_bags":
             case "power_crystal_slots":

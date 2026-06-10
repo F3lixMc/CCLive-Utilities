@@ -34,9 +34,6 @@ public class ClipboardMaterialCollector {
         if (client.player == null || client.world == null) {
             return;
         }
-        if (!shouldCollectMaterials()) {
-            return;
-        }
         if (!(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
             return;
         }
@@ -165,16 +162,6 @@ public class ClipboardMaterialCollector {
     
     private static boolean isCoinsName(String name) {
         return name != null && "coins".equalsIgnoreCase(name.trim());
-    }
-    
-    private static boolean shouldCollectMaterials() {
-        boolean clipboardEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled;
-        boolean showClipboard = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showClipboard;
-        if (!clipboardEnabled || !showClipboard) {
-            return false;
-        }
-        List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
-        return entries != null && !entries.isEmpty();
     }
     
     private static boolean isSchmiedInventory(HandledScreen<?> handledScreen) {

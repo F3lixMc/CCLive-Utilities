@@ -44,18 +44,12 @@ public class ClipboardAmbossRessourceCollector {
     
     /**
      * Wird jeden Tick aufgerufen
-     * Läuft nur wenn alle Bedingungen erfüllt sind:
-     * - Clipboard aktiviert und Baupläne vorhanden
+     * Läuft wenn ein passendes Inventar geöffnet ist (unabhängig vom Clipboard-Overlay):
      * - Inventar geöffnet
      * - Ressourcen-Bag Inventar (Symbol Ⳅ im Titel)
      */
     private static void onClientTick(MinecraftClient client) {
         if (client.player == null || client.world == null) {
-            return;
-        }
-        
-        // Prüfe zuerst ob Clipboard aktiv ist und Baupläne vorhanden sind
-        if (!shouldCollectAmbossRessource()) {
             return;
         }
         
@@ -306,24 +300,6 @@ public class ClipboardAmbossRessourceCollector {
                cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
                cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") ||
                cleanTitle.contains("Bauplan [Shop]");
-    }
-    
-    /**
-     * Prüft ob Amboss/Ressource gesammelt werden sollen
-     * Nur wenn Clipboard aktiviert ist und Baupläne vorhanden sind
-     */
-    private static boolean shouldCollectAmbossRessource() {
-        // Prüfe ob Clipboard aktiviert ist
-        boolean clipboardEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled;
-        boolean showClipboard = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showClipboard;
-        
-        if (!clipboardEnabled || !showClipboard) {
-            return false;
-        }
-        
-        // Prüfe ob Baupläne vorhanden sind
-        List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
-        return entries != null && !entries.isEmpty();
     }
     
     /**
