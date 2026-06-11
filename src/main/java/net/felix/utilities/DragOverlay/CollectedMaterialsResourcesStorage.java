@@ -192,6 +192,41 @@ public class CollectedMaterialsResourcesStorage {
         update.put(name, amount);
         updateResources(update);
     }
+
+    /** Addiert Mengen zu bestehenden Material-Einträgen (z. B. Fisch-Belohnungen im Chat). */
+    public static void addMaterials(Map<String, Long> deltas) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (deltas == null || deltas.isEmpty()) {
+            return;
+        }
+        boolean changed = false;
+        synchronized (materials) {
+            for (Map.Entry<String, Long> entry : deltas.entrySet()) {
+                String name = entry.getKey();
+                Long delta = entry.getValue();
+                if (name == null || name.isEmpty() || delta == null || delta <= 0) {
+                    continue;
+                }
+                long current = materials.getOrDefault(name, 0L);
+                materials.put(name, current + delta);
+                changed = true;
+            }
+        }
+        if (changed) {
+            rebuildNormalizedCaches();
+            scheduleSave();
+        }
+    }
+
+    public static void addMaterial(String name, long delta) {
+        if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        Map<String, Long> update = new HashMap<>();
+        update.put(name, delta);
+        addMaterials(update);
+    }
     
     public static void resetAll() {
         ensureInitialized();

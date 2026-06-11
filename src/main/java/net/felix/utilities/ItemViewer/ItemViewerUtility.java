@@ -19,6 +19,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
@@ -128,6 +129,8 @@ public class ItemViewerUtility {
             // Registriere Keybind
             registerKeybind();
             
+            ItemViewerInventoryFilterUtility.initialize();
+            
             // Registriere Client Tick Events
             ClientTickEvents.END_CLIENT_TICK.register(ItemViewerUtility::onClientTick);
             
@@ -154,11 +157,13 @@ public class ItemViewerUtility {
             try {
                 loadItems();
                 itemsLoaded = true;
+                scheduleApplyFiltersAfterLoad();
                 System.out.println("[ItemViewer] Items erfolgreich geladen (" + allItems.size() + " Items)");
             } catch (Exception e) {
                 System.err.println("Fehler beim asynchronen Laden der Items: " + e.getMessage());
                 e.printStackTrace();
                 itemsLoaded = true; // Setze Flag trotzdem, um Endlosschleifen zu vermeiden
+                scheduleApplyFiltersAfterLoad();
             }
         }, "CCLive-ItemViewer-Loader");
         loadItemsThread.setDaemon(true); // Thread wird beendet, wenn Hauptthread beendet wird
@@ -349,6 +354,28 @@ public class ItemViewerUtility {
                         }
                         allItems.addAll(data.fishing_components);
                     }
+                    if (data.fish_traps != null && !data.fish_traps.isEmpty()) {
+                        if (rootJson.has("fish_traps") && rootJson.get("fish_traps").isJsonArray()) {
+                            var fishTrapsArray = rootJson.getAsJsonArray("fish_traps");
+                            for (int i = 0; i < fishTrapsArray.size() && i < data.fish_traps.size(); i++) {
+                                JsonElement element = fishTrapsArray.get(i);
+                                if (element.isJsonObject()) {
+                                    JsonObject jsonObj = element.getAsJsonObject();
+                                    ItemData item = data.fish_traps.get(i);
+                                    item.jsonObject = jsonObj;
+                                    item.category = "fish_traps";
+                                    if (item.name != null && !item.name.isEmpty()) {
+                                        blueprintJsonMap.put(item.name, jsonObj);
+                                    }
+                                }
+                            }
+                        } else {
+                            for (ItemData item : data.fish_traps) {
+                                item.category = "fish_traps";
+                            }
+                        }
+                        allItems.addAll(data.fish_traps);
+                    }
                     if (data.module_bags != null && !data.module_bags.isEmpty()) {
                         for (ItemData item : data.module_bags) {
                             item.category = "module_bags";
@@ -401,8 +428,6 @@ public class ItemViewerUtility {
                     if (!allItems.isEmpty()) {
                         rebuildItemNameIndex();
                         ItemViewerGrid.clearItemStackCache();
-                        filteredItems = new ArrayList<>(allItems);
-                        applySorting();
                     }
                 }
             }
@@ -759,6 +784,39 @@ public class ItemViewerUtility {
             }
         }
         return null;
+    }
+
+    /**
+     * Findet ein Item per exaktem oder normalisiertem Namen (ohne Formatierungscodes).
+     */
+    public static ItemStack createDisplayStackForItemName(String itemName) {
+        ItemData itemData = findItemByNameFuzzy(itemName);
+        if (itemData == null) {
+            return ItemStack.EMPTY;
+        }
+        return ItemViewerGrid.createDisplayStack(itemData);
+    }
+
+    public static ItemData findItemByNameFuzzy(String itemName) {
+        ItemData exact = findItemByName(itemName);
+        if (exact != null) {
+            return exact;
+        }
+        ensureItemsLoaded();
+        if (allItems == null || itemName == null || itemName.isEmpty()) {
+            return null;
+        }
+        String cleanSearch = normalizeItemNameForLookup(itemName);
+        for (ItemData item : allItems) {
+            if (item.name != null && normalizeItemNameForLookup(item.name).equalsIgnoreCase(cleanSearch)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    private static String normalizeItemNameForLookup(String name) {
+        return name.replaceAll("§[0-9a-fk-or]", "").trim();
     }
     
     private static void rebuildItemNameIndex() {
@@ -1365,6 +1423,12 @@ public class ItemViewerUtility {
                         selectionEnd = currentSearch.length();
                     }
                     return true;
+                case GLFW.GLFW_KEY_BACKSPACE: // Strg+Backspace - Wort links löschen
+                    deleteSearchWord(false);
+                    return true;
+                case GLFW.GLFW_KEY_DELETE: // Strg+Delete - Wort rechts löschen
+                    deleteSearchWord(true);
+                    return true;
             }
         }
         
@@ -1704,7 +1768,52 @@ public class ItemViewerUtility {
         selectionStart = -1;
         selectionEnd = -1;
     }
-    
+
+    /**
+     * Löscht ein ganzes Wort in der Suchzeile (Strg+Backspace / Strg+Delete).
+     * @param forward true = Wort rechts vom Cursor, false = Wort links vom Cursor
+     */
+    private static void deleteSearchWord(boolean forward) {
+        if (hasSelection()) {
+            int start = Math.min(selectionStart, selectionEnd);
+            int end = Math.max(selectionStart, selectionEnd);
+            currentSearch = currentSearch.substring(0, start) + currentSearch.substring(end);
+            cursorPosition = start;
+            clearSelection();
+        } else if (forward) {
+            if (cursorPosition >= currentSearch.length()) {
+                return;
+            }
+            int end = cursorPosition;
+            while (end < currentSearch.length() && Character.isWhitespace(currentSearch.charAt(end))) {
+                end++;
+            }
+            while (end < currentSearch.length() && !Character.isWhitespace(currentSearch.charAt(end))) {
+                end++;
+            }
+            if (end > cursorPosition) {
+                currentSearch = currentSearch.substring(0, cursorPosition) + currentSearch.substring(end);
+            }
+        } else {
+            if (cursorPosition <= 0) {
+                return;
+            }
+            int start = cursorPosition;
+            while (start > 0 && Character.isWhitespace(currentSearch.charAt(start - 1))) {
+                start--;
+            }
+            while (start > 0 && !Character.isWhitespace(currentSearch.charAt(start - 1))) {
+                start--;
+            }
+            if (start < cursorPosition) {
+                currentSearch = currentSearch.substring(0, start) + currentSearch.substring(cursorPosition);
+                cursorPosition = start;
+            }
+        }
+        scheduleApplyFilters();
+        currentPage = 0;
+    }
+
     /**
      * Rendert Text mit Auswahl-Highlighting
      */
@@ -1863,7 +1972,16 @@ public class ItemViewerUtility {
         int kitButtonX = favoritesButtonX + SORT_DROPDOWN_HEIGHT + 5; // 5px Abstand zum Favoriten-Button
         int kitButtonY = dropdownY; // Gleiche Y-Position wie Dropdown
         
-        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY);
+        int applyButtonWidth = getApplyButtonWidth(client);
+        int applyButtonX = kitButtonX + KIT_BUTTON_SIZE + 5;
+        int applyButtonY = dropdownY;
+        
+        int minButtonRowWidth = VIEWER_PADDING + dropdownWidth + 5 + SORT_DROPDOWN_HEIGHT + 5 + KIT_BUTTON_SIZE + 5 + applyButtonWidth + VIEWER_PADDING;
+        if (viewerWidth < minButtonRowWidth) {
+            viewerWidth = minButtonRowWidth;
+        }
+        
+        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY, applyButtonX, applyButtonY, applyButtonWidth);
     }
     
     /**
@@ -1978,11 +2096,21 @@ public class ItemViewerUtility {
     private static final Identifier KIT_ICON_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/kits_icon_2.png");
     private static boolean kitFilterActive = false; // Ob Kit-Filter aktiv ist (Linksklick)
     private static final int KIT_BUTTON_INDEX = 0; // Verwende Kit Button 1 aus KitFilterUtility
+    
+    // Kit-Editor-Modus (eigenes Kit zusammenstellen)
+    private static HandledScreen<?> kitEditorBackgroundScreen = null;
+    private static java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.CustomKitEditorScreen.PickTarget> kitEditorPickHandler = null;
+    private static net.felix.utilities.Town.CustomKitEditorScreen.PickTarget kitEditorPickTarget =
+            net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+    
+    // Anwenden-Button (Item-Viewer-Filterung ins Schmiede-Inventar übernehmen)
+    private static final String APPLY_BUTTON_LABEL = "Anwenden";
 
     // Kategorie-Buttons im Hilfe-Overlay
     private static final java.util.List<CategoryButton> CATEGORY_BUTTON_DEFS = Arrays.asList(
             new CategoryButton("Baupläne", java.util.List.of("bauplan")),
             new CategoryButton("Angel-Komponenten", java.util.List.of("komponente")),
+            new CategoryButton("Fisch-Reusen", java.util.List.of("fischreuse")),
             new CategoryButton("Module", java.util.List.of("modul")),
             new CategoryButton("Modul-Taschen", java.util.List.of("modultasche")),
             new CategoryButton("Machtkristall", java.util.List.of("machtkristall")),
@@ -2045,6 +2173,7 @@ public class ItemViewerUtility {
         
         // Rendere Kit-Button (rechts vom Favoriten-Button)
         renderKitButton(context, pos.kitButtonX, pos.kitButtonY);
+        renderApplyButton(context, pos.applyButtonX, pos.applyButtonY, pos.applyButtonWidth);
         
         currentY += SORT_DROPDOWN_HEIGHT + 5;
         
@@ -2126,6 +2255,9 @@ public class ItemViewerUtility {
         boolean kitHovered = lastMouseX >= pos.kitButtonX && lastMouseX < pos.kitButtonX + KIT_BUTTON_SIZE &&
                              lastMouseY >= pos.kitButtonY && lastMouseY < pos.kitButtonY + KIT_BUTTON_SIZE;
         
+        boolean applyHovered = lastMouseX >= pos.applyButtonX && lastMouseX < pos.applyButtonX + pos.applyButtonWidth &&
+                               lastMouseY >= pos.applyButtonY && lastMouseY < pos.applyButtonY + SORT_DROPDOWN_HEIGHT;
+        
         // Rendere Tooltip für Hilfe-Button
         if (helpHovered && !helpScreenOpen) {
             List<Text> tooltip = new ArrayList<>();
@@ -2176,6 +2308,12 @@ public class ItemViewerUtility {
                 tooltip.add(Text.literal("Rechtsklick: Kit auswählen"));
             }
             // Minecraft's drawTooltip passt automatisch die Position an
+            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+        }
+        
+        if (applyHovered) {
+            List<Text> tooltip = new ArrayList<>();
+            tooltip.add(Text.literal("Filterung in geöffnetem Inventar anwenden"));
             context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
         }
         
@@ -2784,6 +2922,9 @@ public class ItemViewerUtility {
             case "Angel-Komponenten":
                 categoryKey = "fishing_components";
                 break;
+            case "Fisch-Reusen":
+                categoryKey = "fish_traps";
+                break;
             case "Module":
                 categoryKey = "modules";
                 break;
@@ -3145,14 +3286,110 @@ public class ItemViewerUtility {
         }
     }
     
+    private static int getApplyButtonWidth(MinecraftClient client) {
+        return client.textRenderer.getWidth(APPLY_BUTTON_LABEL) + 10;
+    }
+    
+    private static void renderApplyButton(DrawContext context, int x, int y, int width) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        boolean isHovered = lastMouseX >= x && lastMouseX < x + width &&
+                           lastMouseY >= y && lastMouseY < y + SORT_DROPDOWN_HEIGHT;
+        boolean isActive = ItemViewerInventoryFilterUtility.isFilterActive();
+        
+        int bgColor;
+        if (isActive) {
+            bgColor = isHovered ? 0x8060A060 : 0x80408040;
+        } else {
+            bgColor = isHovered ? 0xFF404040 : 0xFF202020;
+        }
+        context.fill(x, y, x + width, y + SORT_DROPDOWN_HEIGHT, bgColor);
+        
+        int borderColor = isActive
+            ? (isHovered ? 0xFF80FF80 : 0xFF40C040)
+            : (isHovered ? 0xFFFFFFFF : 0xFF808080);
+        context.fill(x, y, x + width, y + 1, borderColor);
+        context.fill(x, y + SORT_DROPDOWN_HEIGHT - 1, x + width, y + SORT_DROPDOWN_HEIGHT, borderColor);
+        context.fill(x, y, x + 1, y + SORT_DROPDOWN_HEIGHT, borderColor);
+        context.fill(x + width - 1, y, x + width, y + SORT_DROPDOWN_HEIGHT, borderColor);
+        
+        int textWidth = client.textRenderer.getWidth(APPLY_BUTTON_LABEL);
+        int textX = x + (width - textWidth) / 2;
+        int textY = y + (SORT_DROPDOWN_HEIGHT - client.textRenderer.fontHeight) / 2;
+        int textColor = isActive ? 0xFFAAFFAA : 0xFFFFFFFF;
+        context.drawText(client.textRenderer, Text.literal(APPLY_BUTTON_LABEL), textX, textY, textColor, false);
+    }
+    
     /**
      * Gibt die Farbe für ein Kit zurück (basierend auf Kit-Typ)
      */
+    public static void startKitEditorMode(HandledScreen<?> backgroundScreen,
+            java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.CustomKitEditorScreen.PickTarget> pickHandler) {
+        kitEditorBackgroundScreen = backgroundScreen;
+        kitEditorPickHandler = pickHandler;
+        kitEditorPickTarget = net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+        isMinimized = false;
+    }
+
+    public static void stopKitEditorMode() {
+        kitEditorBackgroundScreen = null;
+        kitEditorPickHandler = null;
+        kitEditorPickTarget = net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+    }
+
+    public static boolean isKitEditorMode() {
+        return kitEditorPickHandler != null;
+    }
+
+    public static HandledScreen<?> getKitEditorBackgroundScreen() {
+        return kitEditorBackgroundScreen;
+    }
+
+    public static void setKitEditorPickTarget(net.felix.utilities.Town.CustomKitEditorScreen.PickTarget target) {
+        kitEditorPickTarget = target != null
+                ? target
+                : net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+    }
+
+    public static int[] getKitEditorViewerBounds() {
+        if (!isKitEditorMode() || kitEditorBackgroundScreen == null) {
+            return null;
+        }
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
+            return null;
+        }
+        ViewerPosition pos = getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.currentScreen);
+        return new int[] { pos.viewerX, pos.viewerY, pos.viewerWidth, pos.viewerHeight };
+    }
+
+    public static boolean isMouseOverKitEditorItemViewer(double mouseX, double mouseY) {
+        int[] bounds = getKitEditorViewerBounds();
+        if (bounds == null) {
+            return false;
+        }
+        return mouseX >= bounds[0] && mouseX < bounds[0] + bounds[2]
+                && mouseY >= bounds[1] && mouseY < bounds[1] + bounds[3];
+    }
+
+    public static void renderKitEditorItemViewer(DrawContext context, MinecraftClient client, int mouseX, int mouseY) {
+        if (!isKitEditorMode() || kitEditorBackgroundScreen == null) {
+            return;
+        }
+        if (!itemsLoaded) {
+            return;
+        }
+        updateMousePosition(mouseX, mouseY);
+        renderItemViewerInScreen(context, client, kitEditorBackgroundScreen, mouseX, mouseY);
+    }
+
     private static int getKitColor(net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection) {
         if (kitSelection == null) {
             return 0xFF808080; // Grau als Standard
         }
-        
+        if (kitSelection.isCustom()) {
+            return 0xFFAA55FF;
+        }
+
         switch (kitSelection.kitType) {
             case MÜNZ_KIT:
                 return 0xFFFC54FC; // Helles Pink (wie modifier Andere)
@@ -3712,7 +3949,16 @@ public class ItemViewerUtility {
         int kitButtonX = favoritesButtonX + SORT_DROPDOWN_HEIGHT + 5; // 5px Abstand zum Favoriten-Button
         int kitButtonY = dropdownY; // Gleiche Y-Position wie Dropdown
         
-        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY);
+        int applyButtonWidth = getApplyButtonWidth(client);
+        int applyButtonX = kitButtonX + KIT_BUTTON_SIZE + 5;
+        int applyButtonY = dropdownY;
+        
+        int minButtonRowWidth = VIEWER_PADDING + dropdownWidth + 5 + SORT_DROPDOWN_HEIGHT + 5 + KIT_BUTTON_SIZE + 5 + applyButtonWidth + VIEWER_PADDING;
+        if (viewerWidth < minButtonRowWidth) {
+            viewerWidth = minButtonRowWidth;
+        }
+        
+        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY, applyButtonX, applyButtonY, applyButtonWidth);
     }
     
     /**
@@ -3725,11 +3971,13 @@ public class ItemViewerUtility {
         final int symbolButtonX, symbolButtonY;
         final int favoritesButtonX, favoritesButtonY;
         final int kitButtonX, kitButtonY;
+        final int applyButtonX, applyButtonY, applyButtonWidth;
         
         ViewerPosition(int viewerX, int viewerY, int viewerWidth, int viewerHeight,
                       int dropdownX, int dropdownY, int dropdownWidth, int searchWidth,
                       int helpButtonX, int helpButtonY, int symbolButtonX, int symbolButtonY,
-                      int favoritesButtonX, int favoritesButtonY, int kitButtonX, int kitButtonY) {
+                      int favoritesButtonX, int favoritesButtonY, int kitButtonX, int kitButtonY,
+                      int applyButtonX, int applyButtonY, int applyButtonWidth) {
             this.viewerX = viewerX;
             this.viewerY = viewerY;
             this.viewerWidth = viewerWidth;
@@ -3746,6 +3994,9 @@ public class ItemViewerUtility {
             this.favoritesButtonY = favoritesButtonY;
             this.kitButtonX = kitButtonX;
             this.kitButtonY = kitButtonY;
+            this.applyButtonX = applyButtonX;
+            this.applyButtonY = applyButtonY;
+            this.applyButtonWidth = applyButtonWidth;
         }
     }
     
@@ -3770,22 +4021,22 @@ public class ItemViewerUtility {
         }
         
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
+        HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
+        if (handledScreen == null) {
+            return false;
+        }
+
+        String currentTitle = handledScreen.getTitle().getString();
+        if (!isKitEditorMode()
+                && net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)) {
             return false;
         }
         
-        if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(handledScreen.getTitle().getString())) {
-            return false;
-        }
-        
-        // Berechne Viewer-Position
         ViewerPosition pos = getOrCalculateViewerPosition(handledScreen, client.currentScreen);
         
-        // Prüfe ob Maus über dem Viewer ist
         if (mouseX >= pos.viewerX && mouseX < pos.viewerX + pos.viewerWidth &&
             mouseY >= pos.viewerY && mouseY < pos.viewerY + pos.viewerHeight) {
             
-            // Berechne Items pro Seite
             int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
             int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
             int gridAvailableHeight = paginationY - (pos.viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5);
@@ -3839,12 +4090,15 @@ public class ItemViewerUtility {
             return false;
         }
         
-        if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
+        HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
+        if (handledScreen == null) {
             return false;
         }
         
         String currentTitle = handledScreen.getTitle().getString();
-        if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle) && !helpScreenOpen) {
+        if (!isKitEditorMode()
+                && net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
+                && !helpScreenOpen) {
             return false;
         }
         
@@ -4006,11 +4260,11 @@ public class ItemViewerUtility {
                             FavoriteBlueprintsManager.addFavorite(jsonObj);
                         }
                     }
-                    
-                    // Aktualisiere Filter wenn im Favoriten-Modus
+
+                    ItemViewerGrid.invalidateTooltipCache();
+
                     if (favoritesMode) {
                         applyFilters();
-                        ItemViewerGrid.invalidateTooltipCache();
                     }
                     
                     return true;
@@ -4062,6 +4316,12 @@ public class ItemViewerUtility {
                 net.felix.utilities.Town.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
                 return true;
             }
+        }
+        
+        if (button == 0 && mouseX >= pos.applyButtonX && mouseX < pos.applyButtonX + pos.applyButtonWidth &&
+            mouseY >= pos.applyButtonY && mouseY < pos.applyButtonY + SORT_DROPDOWN_HEIGHT) {
+            ItemViewerInventoryFilterUtility.toggleFilter();
+            return true;
         }
         
         // Prüfe Klick auf Dropdown-Button (nur Linksklick)
@@ -4132,6 +4392,20 @@ public class ItemViewerUtility {
             }
         }
         
+        // Kit-Editor: Linksklick auf Item im Grid übernimmt Item/Icon
+        if (isKitEditorMode() && button == 0 && hoveredItemForClick != null && kitEditorPickHandler != null) {
+            int gridX = pos.viewerX + VIEWER_PADDING;
+            int gridY = pos.dropdownY + SORT_DROPDOWN_HEIGHT + 5;
+            int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
+            int gridWidth = pos.viewerWidth - VIEWER_PADDING * 2;
+            int gridHeight = paginationY - gridY;
+            if (mouseX >= gridX && mouseX < gridX + gridWidth
+                    && mouseY >= gridY && mouseY < gridY + gridHeight) {
+                kitEditorPickHandler.accept(hoveredItemForClick, kitEditorPickTarget);
+                return true;
+            }
+        }
+        
         // Wenn Item Viewer sichtbar ist und Suchfeld fokussiert ist,
         // aber Klick außerhalb des Suchfeldes -> Fokus entfernen
         if (isVisible() && searchFieldFocused) {
@@ -4144,6 +4418,19 @@ public class ItemViewerUtility {
         }
         
         return false;
+    }
+    
+    private static HandledScreen<?> resolveHandledScreenForInput(MinecraftClient client) {
+        if (client.currentScreen == null) {
+            return null;
+        }
+        if (isKitEditorMode() && kitEditorBackgroundScreen != null) {
+            return kitEditorBackgroundScreen;
+        }
+        if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+            return handledScreen;
+        }
+        return null;
     }
     
     private static List<ItemData> getCurrentPageItems() {
@@ -4173,54 +4460,94 @@ public class ItemViewerUtility {
     }
     
     public static void setSortMode(SortMode mode) {
+        SortMode previous = currentSortMode;
         currentSortMode = mode;
-        applySorting();
-        invalidatePageItemsCache();
-        ItemViewerGrid.invalidateTooltipCache();
+        if (previous.filtersNotFoundOnly() || mode.filtersNotFoundOnly()) {
+            applyFilters();
+        } else {
+            applySorting();
+            invalidatePageItemsCache();
+            ItemViewerGrid.invalidateTooltipCache();
+        }
     }
     
-    private static void applyFilters() {
-        ensureItemsLoaded();
-        if (!itemsLoaded || allItems.isEmpty()) {
-            filteredItems = new ArrayList<>();
+    private static void scheduleApplyFiltersAfterLoad() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null) {
+            client.execute(ItemViewerUtility::applyFilters);
+        } else {
+            applyFilters();
+        }
+    }
+
+    /**
+     * Aktualisiert den Item Viewer, wenn sich der Gefunden-Status ändert
+     * (z. B. „Nicht Gefunden“-Filter sofort anwenden).
+     * Läuft immer auf dem Client-Thread (auch bei Chat-/Netzwerk-Callbacks).
+     */
+    public static void onFoundStatusChanged() {
+        if (!currentSortMode.filtersNotFoundOnly()) {
             return;
         }
-        
+        Runnable refresh = () -> {
+            applyFilters();
+            ItemViewerGrid.invalidateTooltipCache();
+        };
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null && client.isOnThread()) {
+            refresh.run();
+        } else if (client != null) {
+            client.execute(refresh);
+        } else {
+            refresh.run();
+        }
+    }
+
+    private static void applyFilters() {
+        filteredItems = new ArrayList<>(buildFilteredItemList());
+        applySorting();
+        currentPage = 0;
+        invalidatePageItemsCache();
+        ItemViewerInventoryFilterUtility.onFilteredItemsChanged();
+    }
+
+    /**
+     * Berechnet die gefilterte Item-Liste (Favoriten, Kit, Suche, „Nicht Gefunden“) ohne UI-Seitenzurücksetzung.
+     */
+    private static List<ItemData> buildFilteredItemList() {
+        ensureItemsLoaded();
+        if (!itemsLoaded || allItems.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         List<ItemData> itemsToFilter = allItems;
-        
-        // Wenn Favoriten-Modus aktiv ist, filtere nur Favoriten-Blueprints
+
         if (favoritesMode) {
             Set<String> favoriteNames = FavoriteBlueprintsManager.getFavoriteNames();
             itemsToFilter = allItems.stream()
-                .filter(item -> item.info != null && 
+                .filter(item -> item.info != null &&
                                Boolean.TRUE.equals(item.info.blueprint) &&
-                               item.name != null && 
+                               item.name != null &&
                                favoriteNames.contains(item.name))
                 .collect(Collectors.toList());
         }
-        
-        // Wenn Kit-Filter aktiv ist, filtere nach Kit-Items (Hintergrund-Filterung, ohne Suchleiste zu füllen)
+
         if (kitFilterActive) {
-            net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection = 
+            net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection =
                 net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
             if (kitSelection != null) {
-                // Hole Kit-Item-Namen
-                java.util.Set<String> kitItemNames = net.felix.utilities.Town.KitFilterUtility.getKitItemNames(
-                    kitSelection.kitType, kitSelection.level);
-                
+                java.util.Set<String> kitItemNames = net.felix.utilities.Town.KitFilterUtility.getKitItemNamesForSelection(
+                    kitSelection);
+
                 if (!kitItemNames.isEmpty()) {
-                    // Filtere Items: Nur Items die in der Kit-Liste sind
                     itemsToFilter = itemsToFilter.stream()
                         .filter(item -> {
                             if (item.name == null || item.name.isEmpty()) {
                                 return false;
                             }
-                            // Entferne Formatierungs-Codes für Vergleich
                             String cleanItemName = item.name.replaceAll("§[0-9a-fk-or]", "");
-                            // Prüfe ob der Item-Name mit einem der Kit-Item-Namen übereinstimmt (exakt)
                             for (String kitItemName : kitItemNames) {
                                 String cleanKitItemName = kitItemName.replaceAll("§[0-9a-fk-or]", "");
-                                // Nur exakte Matches, keine Teilstring-Matches
                                 if (cleanItemName.equalsIgnoreCase(cleanKitItemName)) {
                                     return true;
                                 }
@@ -4229,27 +4556,57 @@ public class ItemViewerUtility {
                         })
                         .collect(Collectors.toList());
                 } else {
-                    // Keine Kit-Items gefunden - zeige nichts
                     itemsToFilter = new ArrayList<>();
                 }
             } else {
-                // Kein Kit ausgewählt - deaktiviere Filter
                 kitFilterActive = false;
             }
         }
-        
-        // Wende Suchfilter an
+
+        List<ItemData> result;
         if (currentSearch == null || currentSearch.trim().isEmpty()) {
-            filteredItems = new ArrayList<>(itemsToFilter);
+            result = new ArrayList<>(itemsToFilter);
         } else {
             SearchQuery query = ItemSearchParser.parse(currentSearch);
-            filteredItems = itemsToFilter.stream()
+            result = itemsToFilter.stream()
                 .filter(item -> ItemFilter.matchesSearch(item, query))
                 .collect(Collectors.toList());
         }
-        applySorting();
-        currentPage = 0;
-        invalidatePageItemsCache();
+
+        if (currentSortMode.filtersNotFoundOnly()) {
+            result = result.stream()
+                .filter(item -> !ItemViewerFoundUtility.isFound(item))
+                .collect(Collectors.toList());
+        }
+
+        return result;
+    }
+    
+    /**
+     * Gibt die bereinigten Namen der aktuell gefilterten Item-Viewer-Einträge zurück.
+     * Berechnet die Liste frisch, damit z. B. „Nicht Gefunden“ auch ohne Suchtext greift.
+     */
+    public static java.util.Set<String> getFilteredItemNamesForInventory(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen) {
+        java.util.Set<String> names = new java.util.HashSet<>();
+        String categoryFilter = screen != null
+            ? ItemViewerInventoryFilterUtility.resolveItemCategoryForInventory(screen)
+            : null;
+
+        for (ItemData item : buildFilteredItemList()) {
+            if (item.name == null || item.name.isEmpty()) {
+                continue;
+            }
+            if (categoryFilter != null && item.category != null
+                    && !categoryFilter.equalsIgnoreCase(item.category)) {
+                continue;
+            }
+            names.add(cleanItemNameForInventoryMatch(item.name));
+        }
+        return names;
+    }
+    
+    private static String cleanItemNameForInventoryMatch(String name) {
+        return name.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "").trim();
     }
     
     private static void applySorting() {
@@ -4263,6 +4620,9 @@ public class ItemViewerUtility {
     }
     
     public static boolean isVisible() {
+        if (isKitEditorMode()) {
+            return true;
+        }
         // Prüfe Config-Option
         if (!CCLiveUtilitiesConfig.HANDLER.instance().showItemViewer) {
             return false;
@@ -4397,6 +4757,9 @@ public class ItemViewerUtility {
         }
         if ("fishing_components".equals(item.category)) {
             return net.felix.utilities.Aincraft.FishingComponentFoundUtility.isFound(item.name);
+        }
+        if ("fish_traps".equals(item.category)) {
+            return net.felix.utilities.Aincraft.FishTrapFoundUtility.isFound(item.name);
         }
         return isBlueprintFound(item.name);
     }

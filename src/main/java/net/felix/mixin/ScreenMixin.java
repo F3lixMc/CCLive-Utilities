@@ -120,6 +120,14 @@ public class ScreenMixin {
             return;
         }
         
+        // Kit-Editor: Aspekt-Overlay über dem zentrierten Editor-Panel
+        if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
+            if (ItemViewerUtility.isVisible()) {
+                net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+            }
+            return;
+        }
+
         // Alle anderen Screens (inkl. andere HandledScreens) werden nicht hier behandelt
         // HandledScreens (Kisten, etc.) werden im HandledScreenMixin behandelt
     }
@@ -129,7 +137,10 @@ public class ScreenMixin {
      */
     @Inject(method = "removed", at = @At("HEAD"))
     private void onRemoved(CallbackInfo ci) {
-        // Schließe Hilfe-Overlay wenn Screen geschlossen wird
+        Screen screen = (Screen) (Object) this;
+        if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
+            ItemViewerUtility.stopKitEditorMode();
+        }
         ItemViewerUtility.closeHelpOverlay();
     }
 }

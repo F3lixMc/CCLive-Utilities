@@ -227,14 +227,14 @@ public class ItemViewerGrid {
      */
     public void renderTooltip(DrawContext context) {
         if (hoveredItem != null) {
-            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
             MinecraftClient client = MinecraftClient.getInstance();
             ItemStack itemStack = getCachedItemStack(hoveredItem);
             if (!itemStack.isEmpty()) {
                 if (hoveredItem != lastTooltipItem) {
                     lastTooltipItem = hoveredItem;
-                    cachedTooltipLines = buildTooltipLines(hoveredItem, itemStack, client);
+                    cachedTooltipLines = buildTooltipLines(hoveredItem, itemStack, client, true);
                 }
+                updateItemViewerAspectOverlay(hoveredItem);
                 java.util.List<Text> tooltipLines = cachedTooltipLines;
                 if (tooltipLines == null || tooltipLines.isEmpty()) {
                     return;
@@ -249,8 +249,33 @@ public class ItemViewerGrid {
             net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
         }
     }
+
+    private void updateItemViewerAspectOverlay(ItemData hoveredItem) {
+        if (hoveredItem == null || hoveredItem.info == null || hoveredItem.name == null || hoveredItem.name.isEmpty()) {
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+            return;
+        }
+
+        ItemInfo info = hoveredItem.info;
+        boolean hasAspect = info.aspect != null && !info.aspect.isEmpty()
+            && !"false".equalsIgnoreCase(info.aspect);
+        if (!hasAspect) {
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+            return;
+        }
+
+        net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo =
+            net.felix.utilities.Overall.InformationenUtility.getAspectInfoForBlueprintFull(hoveredItem.name);
+        if (aspectInfo != null && aspectInfo.aspectName != null && !aspectInfo.aspectName.isEmpty()
+            && !"-".equals(aspectInfo.aspectName)) {
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromItemViewer(hoveredItem.name, aspectInfo);
+        } else {
+            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+        }
+    }
     
-    private List<Text> buildTooltipLines(ItemData hoveredItem, ItemStack itemStack, MinecraftClient client) {
+    private List<Text> buildTooltipLines(ItemData hoveredItem, ItemStack itemStack, MinecraftClient client,
+            boolean includeInteractionHints) {
                 java.util.List<Text> tooltipLines = new java.util.ArrayList<>();
                 try {
                     tooltipLines.add(itemStack.getName());
@@ -267,10 +292,19 @@ public class ItemViewerGrid {
                 
                 // Leere Zeile zwischen Name und Tooltip
                 tooltipLines.add(Text.empty());
+
+                if ("fishing_components".equals(hoveredItem.category)) {
+                    appendFoundAtLocationLines(tooltipLines, hoveredItem);
+                }
                 
                 // Zusätzliche Informationen aus ItemInfo und anderen Daten
                 if (hoveredItem.info != null) {
                     ItemInfo info = hoveredItem.info;
+
+                    if ("fish_traps".equals(hoveredItem.category) || Boolean.TRUE.equals(info.fish_trap)) {
+                        appendFishTrapTooltipLines(tooltipLines, hoveredItem, info, includeInteractionHints);
+                        return tooltipLines;
+                    }
                     
                     // Power Crystals haben ein spezielles Format
                     if (info.power_crystal != null && info.power_crystal) {
@@ -500,17 +534,9 @@ public class ItemViewerGrid {
                         }
                     }
                     
-                    // Level/Collection (aus foundAt, purple/magenta, nicht kursiv)
-                    // Zeigt floor für Baupläne oder collection für Module/Modultaschen
-                    if (hoveredItem.foundAt != null && !hoveredItem.foundAt.isEmpty()) {
-                        LocationData firstLocation = hoveredItem.foundAt.get(0);
-                        if (firstLocation.floor != null && !firstLocation.floor.isEmpty()) {
-                            tooltipLines.add(Text.literal(firstLocation.floor)
-                                .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false))); // purple/magenta (alte Epic-Farbe)
-                        } else if (firstLocation.collection != null && !firstLocation.collection.isEmpty()) {
-                            tooltipLines.add(Text.literal(firstLocation.collection)
-                                .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false))); // purple/magenta (gleiche Farbe wie floor)
-                        }
+                    // Level/Collection (aus foundAt) – bei Angel-Komponenten bereits oben nach dem Namen
+                    if (!"fishing_components".equals(hoveredItem.category)) {
+                        appendFoundAtLocationLines(tooltipLines, hoveredItem, false);
                     }
                     
                     // Leere Zeile als Trenner (vor Aspekt)
@@ -544,9 +570,6 @@ public class ItemViewerGrid {
                             // "(Shift für mehr Info)" - ohne Einrückung, hellgrau
                             tooltipLines.add(Text.literal("(Shift für mehr Info)")
                                 .setStyle(Style.EMPTY.withColor(0xFFCCCCCC).withItalic(false)));
-                            
-                            // Update AspectOverlay für Shift-Funktion
-                            net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromName(hoveredItem.name, aspectInfo);
                             
                             // Leere Zeile nach Aspekt (vor Modifier)
                             tooltipLines.add(Text.empty());
@@ -647,29 +670,8 @@ public class ItemViewerGrid {
                         addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.paper_shreds);
                     }
                     
-                    // Favoriten-Information (nur für Baupläne)
-                    if (info.blueprint != null && info.blueprint) {
-                        boolean isFavorite = net.felix.utilities.ItemViewer.FavoriteBlueprintsManager.isFavorite(hoveredItem.name);
-                        if (isFavorite) {
-                            tooltipLines.add(Text.empty());
-                            tooltipLines.add(Text.literal("Aus Favoriten entfernen:")
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
-                            tooltipLines.add(Text.literal("Mit Rechtsklick aus Favoriten entfernen")
-                                .setStyle(Style.EMPTY.withColor(0xFFFF5555).withItalic(false)));
-                        } else {
-                            tooltipLines.add(Text.empty());
-                            tooltipLines.add(Text.literal("Zu Favoriten hinzufügen:")
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
-                            tooltipLines.add(Text.literal("Mit Rechtsklick zu Favoriten hinzufügen")
-                                .setStyle(Style.EMPTY.withColor(0xFF16A80C).withItalic(false)));
-                        }
-                    }
-                    
-                    // Anpinnen-Hotkey für alle pinnbaren Items (Baupläne, Module, Lizenzen, etc.)
-                    if (net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
-                        String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
-                        tooltipLines.add(Text.literal("An Pinnwand anheften mit Hotkey: " + hotkeyText)
-                            .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false)));
+                    if (includeInteractionHints) {
+                        appendInteractionHints(tooltipLines, hoveredItem, info);
                     }
                     }
                 }
@@ -688,6 +690,62 @@ public class ItemViewerGrid {
         cachedTooltipLines = null;
     }
     
+    private static final ItemViewerGrid TOOLTIP_BUILDER =
+            new ItemViewerGrid(java.util.Collections.emptyList(), 0, 0, 0, 0, 1, 1);
+
+    public static ItemStack createDisplayStack(ItemData itemData) {
+        return getCachedItemStack(itemData);
+    }
+
+    public static java.util.List<Text> buildTooltipLinesForItem(ItemData itemData) {
+        if (itemData == null) {
+            return java.util.Collections.emptyList();
+        }
+        ItemStack stack = createDisplayStack(itemData);
+        if (stack.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        MinecraftClient client = MinecraftClient.getInstance();
+        return TOOLTIP_BUILDER.buildTooltipLines(itemData, stack, client, false);
+    }
+
+    private void appendInteractionHints(java.util.List<Text> tooltipLines, ItemData hoveredItem, ItemInfo info) {
+        if (info.blueprint != null && info.blueprint) {
+            boolean isFavorite = net.felix.utilities.ItemViewer.FavoriteBlueprintsManager.isFavorite(hoveredItem.name);
+            tooltipLines.add(Text.empty());
+            if (isFavorite) {
+                tooltipLines.add(Text.literal("Aus Favoriten entfernen:")
+                    .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
+                tooltipLines.add(Text.literal("Mit Rechtsklick aus Favoriten entfernen")
+                    .setStyle(Style.EMPTY.withColor(0xFFFF5555).withItalic(false)));
+            } else {
+                tooltipLines.add(Text.literal("Zu Favoriten hinzufügen:")
+                    .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
+                tooltipLines.add(Text.literal("Mit Rechtsklick zu Favoriten hinzufügen")
+                    .setStyle(Style.EMPTY.withColor(0xFF16A80C).withItalic(false)));
+            }
+        }
+
+        if (net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
+            String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
+            tooltipLines.add(Text.literal("An Pinnwand anheften mit Hotkey: " + hotkeyText)
+                .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false)));
+        }
+    }
+
+    public static void renderItemTooltip(DrawContext context, ItemData itemData, int mouseX, int mouseY) {
+        java.util.List<Text> lines = buildTooltipLinesForItem(itemData);
+        if (lines.isEmpty()) {
+            return;
+        }
+        MinecraftClient client = MinecraftClient.getInstance();
+        context.drawTooltip(client.textRenderer, lines, mouseX, mouseY);
+    }
+
+    public static void updateAspectOverlayForItem(ItemData itemData) {
+        TOOLTIP_BUILDER.updateItemViewerAspectOverlay(itemData);
+    }
+
     private static ItemStack getCachedItemStack(ItemData itemData) {
         if (itemData == null) {
             return ItemStack.EMPTY;
@@ -1027,43 +1085,166 @@ public class ItemViewerGrid {
         return amount.toString();
     }
     
-    private boolean isItemFound(ItemData item) {
-        if (item == null || item.name == null || item.name.isEmpty()) {
-            return false;
-        }
-        if ("fishing_components".equals(item.category)) {
-            return net.felix.utilities.Aincraft.FishingComponentFoundUtility.isFound(item.name);
-        }
-        return isBlueprintFound(item.name);
+    private static final int FISH_TRAP_LABEL_GREEN = 0xFF55FF55;
+    private static final int FISH_TRAP_BLUEPRINT_BLUE = 0xFF5555FF;
+    private static final int[] SHINY_LETTER_COLORS = {
+        0xFFFF5555, 0xFFFFAA00, 0xFFFFFF55, 0xFF55FF55, 0xFF55FFFF
+    };
+
+    private void appendFoundAtLocationLines(java.util.List<Text> tooltipLines, ItemData hoveredItem) {
+        appendFoundAtLocationLines(tooltipLines, hoveredItem, true);
     }
 
-    /**
-     * Prüft ob ein Bauplan gefunden wurde
-     */
-    private boolean isBlueprintFound(String blueprintName) {
-        if (blueprintName == null || blueprintName.isEmpty()) {
-            return false;
+    private void appendFoundAtLocationLines(java.util.List<Text> tooltipLines, ItemData hoveredItem, boolean trailingEmptyLine) {
+        if (hoveredItem.foundAt == null || hoveredItem.foundAt.isEmpty()) {
+            return;
         }
-        
-        try {
-            net.felix.utilities.Aincraft.BPViewerUtility bpViewer = 
-                net.felix.utilities.Aincraft.BPViewerUtility.getInstance();
-            
-            // Prüfe foundBlueprints (ähnlich wie in BPViewerUtility.isBlueprintFoundAnywhere)
-            // Für Drachenzahn: prüfe beide Rarities separat
-            if (blueprintName.equals("Drachenzahn")) {
-                return bpViewer.isBlueprintFoundAnywhere(blueprintName + ":epic") ||
-                       bpViewer.isBlueprintFoundAnywhere(blueprintName + ":legendary");
-            } else {
-                // Für andere Blueprints: prüfe mit und ohne Rarity-Suffix
-                return bpViewer.isBlueprintFoundAnywhere(blueprintName) ||
-                       bpViewer.isBlueprintFoundAnywhere(blueprintName + ":epic") ||
-                       bpViewer.isBlueprintFoundAnywhere(blueprintName + ":legendary");
+        LocationData firstLocation = hoveredItem.foundAt.get(0);
+        if (firstLocation.floor != null && !firstLocation.floor.isEmpty()) {
+            tooltipLines.add(Text.literal(firstLocation.floor)
+                .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false)));
+        } else if (firstLocation.collection != null && !firstLocation.collection.isEmpty()) {
+            tooltipLines.add(Text.literal(firstLocation.collection)
+                .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false)));
+        } else {
+            return;
+        }
+        if (trailingEmptyLine) {
+            tooltipLines.add(Text.empty());
+        }
+    }
+
+    private void appendFishTrapTooltipLines(java.util.List<Text> tooltipLines, ItemData hoveredItem, ItemInfo info,
+            boolean includeInteractionHints) {
+        appendFoundAtLocationLines(tooltipLines, hoveredItem);
+
+        if (info.catch_time != null && !info.catch_time.isEmpty()) {
+            MutableText catchTime = Text.literal("Fangzeit: ")
+                .setStyle(Style.EMPTY.withColor(FISH_TRAP_LABEL_GREEN).withItalic(false));
+            catchTime.append(Text.literal(info.catch_time)
+                .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+            tooltipLines.add(catchTime);
+        }
+
+        if (info.capacity != null) {
+            MutableText capacity = Text.literal("Kapazität: ")
+                .setStyle(Style.EMPTY.withColor(FISH_TRAP_LABEL_GREEN).withItalic(false));
+            capacity.append(Text.literal(String.valueOf(info.capacity))
+                .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+            tooltipLines.add(capacity);
+        }
+
+        if (info.catch_chances != null && !info.catch_chances.isEmpty()) {
+            tooltipLines.add(Text.empty());
+            tooltipLines.add(Text.literal("Fangchancen:")
+                .setStyle(Style.EMPTY.withColor(FISH_TRAP_LABEL_GREEN).withItalic(false)));
+            for (CatchChance chance : info.catch_chances) {
+                if (chance == null || chance.label == null || chance.label.isEmpty()) {
+                    continue;
+                }
+                tooltipLines.add(buildFishTrapCatchChanceLine(chance));
             }
-        } catch (Exception e) {
-            // Falls BPViewerUtility nicht verfügbar ist
-            return false;
         }
+
+        if (info.blueprint != null && info.blueprint) {
+            tooltipLines.add(Text.empty());
+            boolean isFound = isItemFound(hoveredItem);
+            MutableText statusText = Text.literal("Status:")
+                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false));
+            statusText.append(Text.literal(" ")
+                .setStyle(Style.EMPTY.withItalic(false)));
+            if (isFound) {
+                statusText.append(Text.literal("[Gefunden]")
+                    .setStyle(Style.EMPTY.withColor(0xFF00FF00).withItalic(false)));
+            } else {
+                statusText.append(Text.literal("[Nicht Gefunden]")
+                    .setStyle(Style.EMPTY.withColor(0xFFFF5555).withItalic(false)));
+            }
+            tooltipLines.add(statusText);
+        }
+
+        if (hoveredItem.price != null) {
+            tooltipLines.add(Text.empty());
+            tooltipLines.add(Text.literal("Kosten:")
+                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
+            addCostItem(tooltipLines, hoveredItem.price.coin);
+            addCostItem(tooltipLines, hoveredItem.price.cactus);
+            addCostItem(tooltipLines, hoveredItem.price.soul);
+            addCostItem(tooltipLines, hoveredItem.price.material1);
+            addCostItem(tooltipLines, hoveredItem.price.material2);
+            addCostItem(tooltipLines, hoveredItem.price.material3);
+            addCostItem(tooltipLines, hoveredItem.price.material4);
+            addCostItem(tooltipLines, hoveredItem.price.material5);
+            addCostItem(tooltipLines, hoveredItem.price.Amboss != null ? hoveredItem.price.Amboss : hoveredItem.price.amboss);
+            addCostItem(tooltipLines, hoveredItem.price.Ressource != null ? hoveredItem.price.Ressource : hoveredItem.price.ressource);
+        }
+
+        if (info.prerequisites != null && !info.prerequisites.isEmpty()) {
+            tooltipLines.add(Text.empty());
+            tooltipLines.add(Text.literal("Voraussetzungen:")
+                .setStyle(Style.EMPTY.withColor(FISH_TRAP_LABEL_GREEN).withItalic(false)));
+            for (String prerequisite : info.prerequisites) {
+                if (prerequisite == null || prerequisite.isEmpty()) {
+                    continue;
+                }
+                MutableText prereqLine = Text.literal("  • ")
+                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false));
+                prereqLine.append(Text.literal(prerequisite)
+                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+                prereqLine.append(Text.literal(" [Bauplan]")
+                    .setStyle(Style.EMPTY.withColor(FISH_TRAP_BLUEPRINT_BLUE).withItalic(false)));
+                tooltipLines.add(prereqLine);
+            }
+        }
+
+        if (includeInteractionHints) {
+            appendInteractionHints(tooltipLines, hoveredItem, info);
+        }
+    }
+
+    private MutableText buildFishTrapCatchChanceLine(CatchChance chance) {
+        MutableText line = Text.literal("  • ")
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false));
+        if ("shiny".equalsIgnoreCase(chance.rarity)) {
+            line.append(buildShinyRarityLabel(chance.label));
+        } else {
+            line.append(Text.literal(chance.label)
+                .setStyle(Style.EMPTY.withColor(getFishTrapCatchRarityColor(chance.rarity)).withItalic(false)));
+        }
+        String percent = chance.percent != null ? chance.percent : "";
+        line.append(Text.literal(": " + percent)
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+        return line;
+    }
+
+    private MutableText buildShinyRarityLabel(String label) {
+        MutableText shinyText = Text.empty();
+        String text = label != null ? label : "Shiny";
+        for (int i = 0; i < text.length(); i++) {
+            int color = i < SHINY_LETTER_COLORS.length
+                ? SHINY_LETTER_COLORS[i]
+                : SHINY_LETTER_COLORS[SHINY_LETTER_COLORS.length - 1];
+            shinyText.append(Text.literal(String.valueOf(text.charAt(i)))
+                .setStyle(Style.EMPTY.withColor(color).withItalic(false)));
+        }
+        return shinyText;
+    }
+
+    private int getFishTrapCatchRarityColor(String rarity) {
+        if (rarity == null) {
+            return 0xFFFFFFFF;
+        }
+        return switch (rarity.toLowerCase()) {
+            case "uncommon" -> 0xFF55FF55;
+            case "rare" -> 0xFF5555FF;
+            case "epic" -> 0xFFAA00AA;
+            case "legendary" -> 0xFFFFAA00;
+            default -> 0xFFFFFFFF;
+        };
+    }
+
+    private boolean isItemFound(ItemData item) {
+        return ItemViewerFoundUtility.isFound(item);
     }
     
     /**

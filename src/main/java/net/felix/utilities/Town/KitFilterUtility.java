@@ -13,13 +13,18 @@ import net.minecraft.item.Items;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.ItemViewer.FloorNumberExtractor;
+import net.felix.utilities.ItemViewer.ItemData;
+import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonArray;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -226,18 +231,34 @@ public class KitFilterUtility {
 	};
 	
 	/**
-	 * Repräsentiert eine Kit-Auswahl (Kit-Typ + Stufe)
+	 * Repräsentiert eine Kit-Auswahl (Standard-Kit oder eigenes Kit).
 	 */
 	public static class KitSelection {
 		public final KitType kitType;
-		public final int level; // 1-7
-		
+		public final int level; // 1-7, bei eigenen Kits 0
+		public final String customKitId;
+
 		public KitSelection(KitType kitType, int level) {
 			this.kitType = kitType;
-			this.level = Math.max(1, Math.min(7, level)); // Begrenze auf 1-7
+			this.level = Math.max(1, Math.min(7, level));
+			this.customKitId = null;
 		}
-		
+
+		public KitSelection(String customKitId) {
+			this.kitType = null;
+			this.level = 0;
+			this.customKitId = customKitId;
+		}
+
+		public boolean isCustom() {
+			return customKitId != null && !customKitId.isEmpty();
+		}
+
 		public String getDisplayName() {
+			if (isCustom()) {
+				CustomKit kit = CustomKitManager.getKit(customKitId);
+				return kit != null ? kit.name : "Eigenes Kit";
+			}
 			return kitType.getDisplayName() + " Stufe " + level;
 		}
 	}
@@ -263,6 +284,7 @@ public class KitFilterUtility {
 		try {
 			// Lade Kit-Item-Namen aus JSON-Datei
 			loadKitItemNames();
+			CustomKitManager.ensureLoaded();
 			
 			// Lade gespeicherte Kit-Auswahlen aus der Config
 			loadSavedKitSelections();
@@ -302,35 +324,24 @@ public class KitFilterUtility {
 	private static void loadSavedKitSelections() {
 		try {
 			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-			
-			// Button 1
-			if (config.kitFilterButton1KitType != null && !config.kitFilterButton1KitType.isEmpty()) {
-				KitType kitType = getKitTypeFromString(config.kitFilterButton1KitType);
-				if (kitType != null) {
-					int level = Math.max(1, Math.min(7, config.kitFilterButton1Level));
-					selectedKits.put(0, new KitSelection(kitType, level));
-				}
-			}
-			
-			// Button 2
-			if (config.kitFilterButton2KitType != null && !config.kitFilterButton2KitType.isEmpty()) {
-				KitType kitType = getKitTypeFromString(config.kitFilterButton2KitType);
-				if (kitType != null) {
-					int level = Math.max(1, Math.min(7, config.kitFilterButton2Level));
-					selectedKits.put(1, new KitSelection(kitType, level));
-				}
-			}
-			
-			// Button 3
-			if (config.kitFilterButton3KitType != null && !config.kitFilterButton3KitType.isEmpty()) {
-				KitType kitType = getKitTypeFromString(config.kitFilterButton3KitType);
-				if (kitType != null) {
-					int level = Math.max(1, Math.min(7, config.kitFilterButton3Level));
-					selectedKits.put(2, new KitSelection(kitType, level));
-				}
-			}
+			loadButtonKitSelection(0, config.kitFilterButton1CustomKitId, config.kitFilterButton1KitType, config.kitFilterButton1Level);
+			loadButtonKitSelection(1, config.kitFilterButton2CustomKitId, config.kitFilterButton2KitType, config.kitFilterButton2Level);
+			loadButtonKitSelection(2, config.kitFilterButton3CustomKitId, config.kitFilterButton3KitType, config.kitFilterButton3Level);
 		} catch (Exception e) {
 			// Silent error handling
+		}
+	}
+
+	private static void loadButtonKitSelection(int buttonIndex, String customKitId, String kitTypeString, int level) {
+		if (customKitId != null && !customKitId.isEmpty() && CustomKitManager.getKit(customKitId) != null) {
+			selectedKits.put(buttonIndex, new KitSelection(customKitId));
+			return;
+		}
+		if (kitTypeString != null && !kitTypeString.isEmpty()) {
+			KitType kitType = getKitTypeFromString(kitTypeString);
+			if (kitType != null) {
+				selectedKits.put(buttonIndex, new KitSelection(kitType, Math.max(1, Math.min(7, level))));
+			}
 		}
 	}
 	
@@ -358,23 +369,49 @@ public class KitFilterUtility {
 	private static void saveKitSelectionToConfig(int buttonIndex, KitType kitType, int level) {
 		try {
 			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-			
 			switch (buttonIndex) {
 				case 0:
 					config.kitFilterButton1KitType = getStringFromKitType(kitType);
 					config.kitFilterButton1Level = level;
+					config.kitFilterButton1CustomKitId = "";
 					break;
 				case 1:
 					config.kitFilterButton2KitType = getStringFromKitType(kitType);
 					config.kitFilterButton2Level = level;
+					config.kitFilterButton2CustomKitId = "";
 					break;
 				case 2:
 					config.kitFilterButton3KitType = getStringFromKitType(kitType);
 					config.kitFilterButton3Level = level;
+					config.kitFilterButton3CustomKitId = "";
 					break;
 			}
-			
-			// Speichere die Config
+			CCLiveUtilitiesConfig.HANDLER.save();
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+
+	private static void saveCustomKitSelectionToConfig(int buttonIndex, String customKitId) {
+		try {
+			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+			switch (buttonIndex) {
+				case 0:
+					config.kitFilterButton1CustomKitId = customKitId != null ? customKitId : "";
+					config.kitFilterButton1KitType = "";
+					config.kitFilterButton1Level = 1;
+					break;
+				case 1:
+					config.kitFilterButton2CustomKitId = customKitId != null ? customKitId : "";
+					config.kitFilterButton2KitType = "";
+					config.kitFilterButton2Level = 1;
+					break;
+				case 2:
+					config.kitFilterButton3CustomKitId = customKitId != null ? customKitId : "";
+					config.kitFilterButton3KitType = "";
+					config.kitFilterButton3Level = 1;
+					break;
+			}
 			CCLiveUtilitiesConfig.HANDLER.save();
 		} catch (Exception e) {
 			// Silent error handling
@@ -809,10 +846,12 @@ public class KitFilterUtility {
 	private static String getButtonText(int buttonIndex) {
 		KitSelection selection = selectedKits.get(buttonIndex);
 		if (selection != null) {
-			// Zeige Kit-Name und Stufe an
+			if (selection.isCustom()) {
+				CustomKit kit = CustomKitManager.getKit(selection.customKitId);
+				return kit != null ? kit.name : "Eigenes Kit";
+			}
 			return selection.kitType.getDisplayName() + " " + selection.level;
 		}
-		// Standard-Text
 		return "Kit " + (buttonIndex + 1);
 	}
 	
@@ -915,61 +954,64 @@ public class KitFilterUtility {
 	 * Setzt die Kit-Auswahl für einen Button
 	 */
 	public static void setKitSelection(int buttonIndex, KitType kitType, int level) {
-		// Prüfe ob die Kit-Auswahl geändert wurde
 		KitSelection oldSelection = selectedKits.get(buttonIndex);
-		boolean selectionChanged = (oldSelection == null || 
-			oldSelection.kitType != kitType || oldSelection.level != level);
-		
-		// Setze die neue Kit-Auswahl
+		boolean selectionChanged = oldSelection == null
+				|| oldSelection.isCustom()
+				|| oldSelection.kitType != kitType
+				|| oldSelection.level != level;
+
 		selectedKits.put(buttonIndex, new KitSelection(kitType, level));
-		
-		// Speichere die Auswahl in der Config
 		saveKitSelectionToConfig(buttonIndex, kitType, level);
-		
+		applyKitSelectionSideEffects(buttonIndex, selectionChanged, getKitItemNames(kitType, level));
+	}
+
+	public static void setCustomKitSelection(int buttonIndex, String customKitId) {
+		KitSelection oldSelection = selectedKits.get(buttonIndex);
+		boolean selectionChanged = oldSelection == null
+				|| !oldSelection.isCustom()
+				|| !customKitId.equals(oldSelection.customKitId);
+
+		selectedKits.put(buttonIndex, new KitSelection(customKitId));
+		saveCustomKitSelectionToConfig(buttonIndex, customKitId);
+		applyKitSelectionSideEffects(buttonIndex, selectionChanged, getKitItemNamesForSelection(selectedKits.get(buttonIndex)));
+	}
+
+	public static void clearCustomKitSelectionIfDeleted(String kitId) {
+		if (kitId == null || kitId.isEmpty()) {
+			return;
+		}
+		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++) {
+			KitSelection selection = selectedKits.get(buttonIndex);
+			if (selection != null && selection.isCustom() && kitId.equals(selection.customKitId)) {
+				selectedKits.remove(buttonIndex);
+				saveCustomKitSelectionToConfig(buttonIndex, "");
+				applyKitSelectionSideEffects(buttonIndex, true, Set.of());
+			}
+		}
+	}
+
+	private static void applyKitSelectionSideEffects(int buttonIndex, boolean selectionChanged, Set<String> itemNames) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			if (isRelevantInventory(handledScreen)) {
-				// Stelle zuerst alle Items wieder her (falls sie ausgeblendet waren)
-				// Dies stellt sicher, dass wir mit einem sauberen Zustand starten
-				restoreOriginalItems(handledScreen, false); // Nicht löschen, da wir sie noch brauchen
-				
-				// Wenn die Auswahl geändert wurde, aktualisiere die originalen Items
+				restoreOriginalItems(handledScreen, false);
 				if (selectionChanged) {
-					// Aktualisiere die originalen Items, falls sich das Inventar geändert hat
 					saveOriginalItems(handledScreen);
 				} else {
-					// Stelle sicher, dass originale Items gespeichert sind
 					saveOriginalItems(handledScreen);
 				}
-				
-				// Prüfe ob für das neue Kit Item-Namen definiert sind
-				Set<String> itemNames = getKitItemNames(kitType, level);
 				if (itemNames.isEmpty()) {
-					// Keine Item-Namen definiert - deaktiviere nur diesen Filter
-					// Die anderen aktiven Filter bleiben aktiv
 					activeFilters.put(buttonIndex, false);
-				} else {
-					// Filter wird NICHT automatisch aktiviert - muss manuell durch Linksklick aktiviert werden
-					// Behalte den aktuellen Filter-Status bei (oder setze auf false wenn noch nicht gesetzt)
-					if (!activeFilters.containsKey(buttonIndex)) {
-						activeFilters.put(buttonIndex, false);
-					}
+				} else if (!activeFilters.containsKey(buttonIndex)) {
+					activeFilters.put(buttonIndex, false);
 				}
-				
-				// Wende ALLE aktiven Filter zusammen an (inklusive der anderen aktiven Filter)
-				// Dies stellt sicher, dass andere aktive Filter weiterhin funktionieren
 				updateFilteredItems(handledScreen, client);
 			}
 		} else {
-			// Wenn nicht im Inventar, setze den Filter-Status auf false (muss manuell aktiviert werden)
-			Set<String> itemNames = getKitItemNames(kitType, level);
 			if (itemNames.isEmpty()) {
 				activeFilters.put(buttonIndex, false);
-			} else {
-				// Filter wird NICHT automatisch aktiviert - muss manuell durch Linksklick aktiviert werden
-				if (!activeFilters.containsKey(buttonIndex)) {
-					activeFilters.put(buttonIndex, false);
-				}
+			} else if (!activeFilters.containsKey(buttonIndex)) {
+				activeFilters.put(buttonIndex, false);
 			}
 		}
 	}
@@ -1308,34 +1350,23 @@ public class KitFilterUtility {
 		if (itemStack == null || itemStack.isEmpty() || kitSelection == null) {
 			return false;
 		}
-		
-		// Hole die Item-Informationen für dieses Kit und diese Stufe
-		Set<ItemInfo> itemInfos = getKitItemInfos(kitSelection.kitType, kitSelection.level);
-		if (itemInfos == null || itemInfos.isEmpty()) {
-			return false; // Keine Item-Informationen für dieses Kit und diese Stufe definiert
+
+		Set<String> expectedNames = getKitItemNamesForSelection(kitSelection);
+		if (expectedNames.isEmpty()) {
+			return false;
 		}
-		
-		// Extrahiere die Item-Namen aus den Item-Informationen
-		Set<String> expectedNames = new HashSet<>();
-		for (ItemInfo itemInfo : itemInfos) {
-			expectedNames.add(itemInfo.name);
-		}
-		
-		// Hole den Item-Namen (ohne Formatierung)
+
 		String itemName = itemStack.getName().getString();
-		// Entferne Formatierungs-Codes für Vergleich
 		String cleanItemName = itemName.replaceAll("§[0-9a-fk-or]", "");
-		
-		// Prüfe ob der Item-Name mit einem der erwarteten Namen übereinstimmt
+
 		for (String expectedName : expectedNames) {
 			String cleanExpectedName = expectedName.replaceAll("§[0-9a-fk-or]", "");
-			if (cleanItemName.equalsIgnoreCase(cleanExpectedName) || 
-				cleanItemName.contains(cleanExpectedName) ||
-				cleanExpectedName.contains(cleanItemName)) {
+			if (cleanItemName.equalsIgnoreCase(cleanExpectedName)
+					|| cleanItemName.contains(cleanExpectedName)
+					|| cleanExpectedName.contains(cleanItemName)) {
 				return true;
 			}
 		}
-		
 		return false;
 	}
 	
@@ -1367,6 +1398,126 @@ public class KitFilterUtility {
 			itemNames.add(itemInfo.name);
 		}
 		return itemNames;
+	}
+
+	public static ItemInfo findItemInfoByName(String itemName) {
+		if (itemName == null || itemName.isEmpty()) {
+			return null;
+		}
+		for (Map<Integer, Set<ItemInfo>> levelMap : kitItemInfos.values()) {
+			for (Set<ItemInfo> infos : levelMap.values()) {
+				for (ItemInfo info : infos) {
+					if (itemNamesMatch(info.name, itemName)) {
+						return info;
+					}
+				}
+			}
+		}
+		ItemInfo fromItemViewer = itemInfoFromItemViewer(itemName);
+		if (fromItemViewer != null) {
+			return fromItemViewer;
+		}
+		return new ItemInfo(itemName);
+	}
+
+	private static ItemInfo itemInfoFromItemViewer(String itemName) {
+		ItemData item = ItemViewerUtility.findItemByNameFuzzy(itemName);
+		if (item == null) {
+			return null;
+		}
+		return convertItemDataToKitItemInfo(item);
+	}
+
+	private static ItemInfo convertItemDataToKitItemInfo(ItemData item) {
+		String name = item.name != null ? item.name : "";
+		String ebene = null;
+		if (item.foundAt != null && !item.foundAt.isEmpty() && item.foundAt.get(0).floor != null) {
+			String floor = item.foundAt.get(0).floor;
+			Integer floorNum = FloorNumberExtractor.parseFloorString(floor);
+			ebene = floorNum != null ? "e" + floorNum : floor;
+		}
+
+		String itemType = null;
+		String nameColorString = null;
+		String modifier = null;
+		String infoText = null;
+		int nameColor = 0xFFFFFFFF;
+
+		if (item.info != null) {
+			net.felix.utilities.ItemViewer.ItemInfo ivInfo = item.info;
+			if (ivInfo.piece != null && !ivInfo.piece.isEmpty()) {
+				itemType = ivInfo.piece;
+			} else if (ivInfo.type != null && !ivInfo.type.isEmpty()) {
+				itemType = ivInfo.type;
+			}
+			if (ivInfo.rarity != null && !ivInfo.rarity.isEmpty()) {
+				nameColorString = ivInfo.rarity;
+				nameColor = rarityColorFromItemViewer(ivInfo.rarity);
+			}
+			if (ivInfo.modifier != null && !ivInfo.modifier.isEmpty()) {
+				StringBuilder modifierBuilder = new StringBuilder();
+				for (int i = 0; i < ivInfo.modifier.size(); i++) {
+					if (i > 0) {
+						modifierBuilder.append(", ");
+					}
+					modifierBuilder.append("[").append(ivInfo.modifier.get(i)).append("]");
+				}
+				modifier = modifierBuilder.toString();
+			}
+			if (ivInfo.description != null && !ivInfo.description.isEmpty()) {
+				infoText = ivInfo.description;
+			}
+		}
+
+		return new ItemInfo(name, ebene, infoText, nameColor, nameColorString, itemType, modifier);
+	}
+
+	private static int rarityColorFromItemViewer(String rarity) {
+		if (rarity == null || rarity.isEmpty()) {
+			return 0xFFFFFFFF;
+		}
+		return switch (rarity.toLowerCase()) {
+			case "common" -> 0xFFFFFFFF;
+			case "uncommon" -> 0xFF25D119;
+			case "rare" -> 0xFF5555FF;
+			case "epic" -> 0xFF8409DB;
+			case "legendary" -> 0xFFDE680D;
+			default -> ItemInfo.parseColorString(rarity);
+		};
+	}
+
+	public static List<ItemInfo> getCustomKitItemInfos(CustomKit kit) {
+		List<ItemInfo> result = new ArrayList<>();
+		if (kit == null || kit.itemNames == null) {
+			return result;
+		}
+		for (String itemName : kit.itemNames) {
+			result.add(findItemInfoByName(itemName));
+		}
+		return result;
+	}
+
+	private static boolean itemNamesMatch(String a, String b) {
+		if (a == null || b == null) {
+			return false;
+		}
+		String cleanA = a.replaceAll("§[0-9a-fk-or]", "").trim();
+		String cleanB = b.replaceAll("§[0-9a-fk-or]", "").trim();
+		return cleanA.equalsIgnoreCase(cleanB);
+	}
+
+	public static Set<String> getKitItemNamesForSelection(KitSelection selection) {
+		if (selection == null) {
+			return new HashSet<>();
+		}
+		if (selection.isCustom()) {
+			CustomKit kit = CustomKitManager.getKit(selection.customKitId);
+			if (kit == null || kit.itemNames == null) {
+				return new HashSet<>();
+			}
+			return new HashSet<>(kit.itemNames);
+		}
+		return getKitItemNames(selection.kitType, selection.level);
 	}
 	
 	/**

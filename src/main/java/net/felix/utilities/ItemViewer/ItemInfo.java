@@ -23,5 +23,10 @@ public class ItemInfo {
     public Boolean power_crystal; // true wenn es ein Power Crystal ist
     public Boolean card_slot;     // true wenn es ein Karten Slot ist
     public Boolean licence;       // true wenn es eine Lizenz ist
+    public Boolean fish_trap;     // true wenn es eine Fischreuse ist
+    public String catch_time;      // z. B. "00:40:00"
+    public Integer capacity;
+    public List<CatchChance> catch_chances;
+    public List<String> prerequisites;
 }
 

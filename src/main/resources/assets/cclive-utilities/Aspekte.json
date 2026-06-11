@@ -911,7 +911,7 @@
     "aspect_name": "-",
     "aspect_description": "Kein Aspekt auf diesem Bauplan"
   },
-  "Göttliches Amulett": {
+  "Heiliges Amulett": {
     "aspect_name": "Aspekt der Heilung",
     "aspect_description": "Jedes mal wenn ein Aspekt ausgelöst wird, besteht eine Chance von 3% - 7% das du um (x)% deines maximalen Lebens geheilt wirst."
   },

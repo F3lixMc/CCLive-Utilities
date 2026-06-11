@@ -26,7 +26,10 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 public class ItemInfoUtility {
-	
+
+	/** Item-Extraktion (Hotkeys, Auto-Klick, Overlays) – derzeit deaktiviert. */
+	private static final boolean ENABLED = false;
+
 	private static boolean isInitialized = false;
 	private static KeyBinding extractKeyBinding;
 	
@@ -83,7 +86,7 @@ public class ItemInfoUtility {
 	private static final int[] FISHING_COMPONENTS_PARTIAL_SLOTS = IntStream.rangeClosed(9, 44).toArray();
 	
 	public static void initialize() {
-		if (isInitialized) {
+		if (!ENABLED || isInitialized) {
 			return;
 		}
 		
@@ -424,7 +427,7 @@ public class ItemInfoUtility {
 	}
 	
 	public static boolean isSupportedInventory(HandledScreen<?> screen) {
-		if (screen == null) {
+		if (!ENABLED || !isInitialized || screen == null) {
 			return false;
 		}
 		String cleanTitle = cleanInventoryTitle(screen.getTitle().getString());
@@ -468,6 +471,30 @@ public class ItemInfoUtility {
 			name = cleanBlueprintName(stack.getName().getString());
 		}
 		return normalizeFishingComponentName(name);
+	}
+
+	/** Öffentlicher Name-Extractor für Inventar-Scan (Fischreusen). */
+	public static String getFishTrapNameFromStack(ItemStack stack) {
+		if (stack == null || stack.isEmpty()) {
+			return "";
+		}
+		InformationenUtility.BlueprintNameAndColor nameAndColor =
+			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getName());
+		String name = nameAndColor != null && nameAndColor.name != null ? nameAndColor.name : "";
+		if (name.isEmpty()) {
+			name = stack.getName().getString();
+		}
+		return normalizeFishTrapName(name);
+	}
+
+	private static String normalizeFishTrapName(String name) {
+		if (name == null || name.isEmpty()) {
+			return "";
+		}
+		return cleanBlueprintName(name)
+			.replaceAll("[\\u4E00-\\u9FFF]", "")
+			.replaceAll("\\s+", " ")
+			.trim();
 	}
 	
 	/**
@@ -918,7 +945,7 @@ public class ItemInfoUtility {
 		return data;
 	}
 	
-	private static Integer extractCustomModelData(ItemStack stack) {
+	public static Integer extractCustomModelData(ItemStack stack) {
 		try {
 			var customModelData = stack.get(DataComponentTypes.CUSTOM_MODEL_DATA);
 			if (customModelData == null) {
@@ -1088,7 +1115,7 @@ public class ItemInfoUtility {
 		return amountStr.trim().replace(",", ".");
 	}
 	
-	private static boolean isFishingRarityMaterial(String materialName) {
+	public static boolean isFishingRarityMaterial(String materialName) {
 		return materialName != null && FISHING_RARITY_MATERIAL_PATTERN.matcher(materialName).matches();
 	}
 	
@@ -1478,6 +1505,9 @@ public class ItemInfoUtility {
 	 * Called from HandledScreenMixin
 	 */
 	public static void renderUnregisteredItemOverlays(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
+		if (!ENABLED || !isInitialized) {
+			return;
+		}
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client == null || client.player == null) {
 			return;

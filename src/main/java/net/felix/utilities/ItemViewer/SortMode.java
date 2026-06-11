@@ -11,7 +11,8 @@ public enum SortMode {
     NAME_AZ("Name A-Z", Comparator.comparing(item -> item.name.toLowerCase())),
     NAME_ZA("Name Z-A", Comparator.comparing((ItemData item) -> item.name.toLowerCase()).reversed()),
     FLOOR_ASC("Ebene 1-100", Comparator.comparing(SortMode::getMinFloor)),
-    FLOOR_DESC("Ebene 100-1", Comparator.comparing(SortMode::getMinFloor).reversed());
+    FLOOR_DESC("Ebene 100-1", Comparator.comparing(SortMode::getMinFloor).reversed()),
+    NOT_FOUND("Nicht Gefunden", null);
     
     private final String displayName;
     private final Comparator<ItemData> comparator;
@@ -26,10 +27,14 @@ public enum SortMode {
     }
     
     public Comparator<ItemData> getComparator() {
-        if (this == DEFAULT) {
+        if (this == DEFAULT || this == NOT_FOUND) {
             return getDefaultComparator();
         }
         return comparator;
+    }
+
+    public boolean filtersNotFoundOnly() {
+        return this == NOT_FOUND;
     }
     
     private static Comparator<ItemData> getDefaultComparator() {
@@ -42,15 +47,38 @@ public enum SortMode {
             int compare = Integer.compare(categoryIndex1, categoryIndex2);
             if (compare != 0) return compare;
             
-            // Gleiche Kategorie: nach Name A-Z
+            // Gleiche Kategorie: Fischreusen in Upgrade-Reihenfolge, sonst Name A-Z
+            if ("fish_traps".equalsIgnoreCase(item1.category) && "fish_traps".equalsIgnoreCase(item2.category)) {
+                return Integer.compare(getFishTrapOrderIndex(item1), getFishTrapOrderIndex(item2));
+            }
             return item1.name.compareToIgnoreCase(item2.name);
         };
+    }
+
+    private static final List<String> FISH_TRAP_ORDER = java.util.Arrays.asList(
+        "Jungelholz Fischreuse",
+        "Fichtenholzreuse",
+        "Bambusholz Fischreuse",
+        "Pilzholz Fischreuse",
+        "Dunkeleichenholz Fischreuse",
+        "Mangrovenholz Fischreuse",
+        "Karmesinholz Fischreuse",
+        "Wirrwarr Holz Fischreuse"
+    );
+
+    private static int getFishTrapOrderIndex(ItemData item) {
+        if (item.name == null || item.name.isEmpty()) {
+            return 999;
+        }
+        int index = FISH_TRAP_ORDER.indexOf(item.name);
+        return index != -1 ? index : 999;
     }
     
     // Kategorien-Reihenfolge für Sortierung
     private static final List<String> CATEGORY_ORDER = java.util.Arrays.asList(
         "blueprints",
         "fishing_components",
+        "fish_traps",
         "abilities",
         "modules",
         "module_bags",

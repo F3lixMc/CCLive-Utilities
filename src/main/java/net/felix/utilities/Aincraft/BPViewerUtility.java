@@ -187,6 +187,7 @@ public class BPViewerUtility {
 
                        // Check fishing component inventories
                        FishingComponentFoundUtility.onClientTick(client);
+                       FishTrapFoundUtility.onClientTick(client);
                        
                        // Check Tab key for overlay visibility
                        checkTabKey();
@@ -1149,12 +1150,21 @@ public class BPViewerUtility {
            }
     
     private void markBlueprintAsFound(String blueprintName, String rarity, String floor) {
-        // Create a key that includes rarity if it's epic or legendary (to distinguish duplicates)
+        MinecraftClient client = MinecraftClient.getInstance();
+        Runnable task = () -> markBlueprintAsFoundOnClient(blueprintName, rarity, floor);
+        if (client != null && !client.isOnThread()) {
+            client.execute(task);
+            return;
+        }
+        task.run();
+    }
+
+    private void markBlueprintAsFoundOnClient(String blueprintName, String rarity, String floor) {
         String blueprintKey = blueprintName;
         if (rarity != null && (rarity.equals("epic") || rarity.equals("legendary"))) {
             blueprintKey = blueprintName + ":" + rarity;
         }
-        
+
         if (!foundBlueprints.containsKey(blueprintKey)) {
             foundBlueprints.put(blueprintKey, rarity);
             String floorToUse = floor != null ? floor : getActiveFloor();
@@ -1162,6 +1172,7 @@ public class BPViewerUtility {
                 markBlueprintFound(floorToUse, blueprintKey);
             }
             saveFoundBlueprints();
+            net.felix.utilities.ItemViewer.ItemViewerUtility.onFoundStatusChanged();
         }
     }
     
@@ -1433,8 +1444,9 @@ public class BPViewerUtility {
         // Clear floor progress
         floorProgress.clear();
 
-        // Clear found fishing components
+        // Clear found fishing components and fish traps
         FishingComponentFoundUtility.reset();
+        FishTrapFoundUtility.reset();
         
         // Save empty data to files
         saveFoundBlueprints();
@@ -1448,6 +1460,7 @@ public class BPViewerUtility {
             // Ignoriere Fehler wenn ProfileStatsManager nicht verfügbar ist
         }
 
+        net.felix.utilities.ItemViewer.ItemViewerUtility.onFoundStatusChanged();
     }
     
     private void loadBlueprintConfig() {

@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 
 import java.util.ArrayList;
@@ -16,9 +17,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Sammelt Materialien aus dem Material-Bag Inventar (Symbol ⳅ) und Schmiede-Inventaren
+ * Sammelt Materialien aus dem Material-Bag Inventar (Symbol ⳅ), Schmiede-Inventaren
+ * und dem Angel-Komponenten-Craft-Menü (ui_components_craft).
  * Material Bag Format: "Materialname (Anzahl)"
- * Schmiede Format: "AKTUELLE / BENÖTIGTE MATERIALNAME"
+ * Schmiede / Angel-Craft Format: "AKTUELLE / BENÖTIGTE MATERIALNAME"
  */
 public class ClipboardMaterialCollector {
     private static final Pattern MATERIAL_BAG_PATTERN =
@@ -41,8 +43,9 @@ public class ClipboardMaterialCollector {
         String title = handledScreen.getTitle() != null ? handledScreen.getTitle().getString() : "";
         boolean isMaterialBag = net.felix.utilities.Overall.ZeichenUtility.containsUiMaterialBag(title);
         boolean isSchmiedInventory = isSchmiedInventory(handledScreen);
+        boolean isFishingCraft = net.felix.utilities.Overall.ZeichenUtility.isFishingComponentsCraftTitle(title);
         
-        if (!isMaterialBag && !isSchmiedInventory) {
+        if (!isMaterialBag && !isSchmiedInventory && !isFishingCraft) {
             return;
         }
         
@@ -50,8 +53,9 @@ public class ClipboardMaterialCollector {
         Map<String, Long> collectedResources = new HashMap<>();
         try {
             List<Slot> slots = handledScreen.getScreenHandler().slots;
-            int maxIndex = Math.min(53, slots.size() - 1);
-            for (int i = 0; i <= maxIndex; i++) {
+            int minIndex = isFishingCraft ? 9 : 0;
+            int maxIndex = isFishingCraft ? Math.min(44, slots.size() - 1) : Math.min(53, slots.size() - 1);
+            for (int i = minIndex; i <= maxIndex; i++) {
                 Slot slot = slots.get(i);
                 ItemStack stack = slot.getStack();
                 if (stack.isEmpty()) {
@@ -78,13 +82,14 @@ public class ClipboardMaterialCollector {
                                 collectedMaterials.put(name, amount);
                             }
                         }
-                    } else if (isSchmiedInventory) {
+                    } else if (isSchmiedInventory || isFishingCraft) {
                         Matcher matcher = SCHMIED_PATTERN.matcher(cleanLine);
                         if (matcher.find()) {
                             String name = cleanMaterialName(matcher.group(3));
                             long amount = parseAmount(matcher.group(1));
-                            if (!name.isEmpty() && !isCoinsName(name)) {
-                                if (isAincraftMaterial(name)) {
+                            if (!name.isEmpty() && !isCoinsName(name)
+                                    && !(isFishingCraft && isNonMaterialCost(name))) {
+                                if (isClipboardMaterial(name)) {
                                     collectedMaterials.put(name, amount);
                                 } else {
                                     collectedResources.put(name, amount);
@@ -159,9 +164,21 @@ public class ClipboardMaterialCollector {
         }
         return InformationenUtility.getMaterialFloorInfo(itemName) != null;
     }
+
+    private static boolean isClipboardMaterial(String itemName) {
+        return isAincraftMaterial(itemName) || ItemInfoUtility.isFishingRarityMaterial(itemName);
+    }
     
     private static boolean isCoinsName(String name) {
         return name != null && "coins".equalsIgnoreCase(name.trim());
+    }
+
+    private static boolean isNonMaterialCost(String name) {
+        if (name == null) {
+            return false;
+        }
+        String trimmed = name.trim();
+        return "Kaktus".equalsIgnoreCase(trimmed) || "Seelen".equalsIgnoreCase(trimmed);
     }
     
     private static boolean isSchmiedInventory(HandledScreen<?> handledScreen) {

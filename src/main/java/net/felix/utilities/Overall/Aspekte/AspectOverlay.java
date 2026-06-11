@@ -144,6 +144,28 @@ public class AspectOverlay {
         isCurrentlyHovering = true;
         lastTooltipUpdateTime = System.currentTimeMillis(); // Star items use timeout
     }
+
+    /**
+     * Item Viewer: kein Tooltip-Timeout, Overlay bleibt solange aktiv wie gehovert wird.
+     */
+    public static void updateAspectInfoFromItemViewer(String cleanItemName,
+            net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
+        if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
+            isCurrentlyHovering = false;
+            currentAspectName = "";
+            currentAspectDescription = "";
+            currentItemName = "";
+            lastTooltipUpdateTime = 0;
+            return;
+        }
+
+        currentAspectName = aspectInfo.aspectName;
+        currentAspectDescription = aspectInfo.aspectDescription;
+        currentItemName = cleanItemName;
+        isChatHovering = false;
+        isCurrentlyHovering = true;
+        lastTooltipUpdateTime = -1;
+    }
     
     /**
      * Updates aspect info from blueprint name for chat messages only

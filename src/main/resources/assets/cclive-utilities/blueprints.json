@@ -4085,7 +4085,7 @@
             "color": "PURPLE",
             "items": [
               "Klinge des Richters",
-              "Mondblick Lederrüstung",
+              "Mondblick-Lederrüstung",
               "Band der Wallwacht",
               "Dämmerungsflug-Lederstiefel",
               "Mondblick-Lederhandschuhe"
@@ -4678,7 +4678,7 @@
             "items": [
               "Klinge des Kriegsfürsten",
               "Hydrahauer",
-              "Frostfänger-Pilz-Spalter",
+              "Frostfänger-Pilz-Spaltaxt",
               "Himmelsstahl Fußschützer",
               "Frostschuppenhose"
             ]
@@ -5272,7 +5272,7 @@
           "epic": {
             "color": "PURPLE",
             "items": [
-              "CACTUS_CLICKER.tools.titan_reinforced_master_hoe",
+              "Titanverstärkte Meisterhacke",
               "Mondsichel Beinschutz",
               "Schattenweber Halsband"
             ]

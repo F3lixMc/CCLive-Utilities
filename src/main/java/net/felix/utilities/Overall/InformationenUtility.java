@@ -42,6 +42,7 @@ public class InformationenUtility {
 	
 	// Aspect tracking
 	private static Map<String, AspectInfo> aspectsDatabase = new HashMap<>();
+	private static Map<String, AspectInfo> tooltipAspectDisplayNameLookup = new HashMap<>();
 	
 	// License tracking
 	private static Map<String, LicenseInfo> licensesDatabase = new HashMap<>();
@@ -640,18 +641,6 @@ public class InformationenUtility {
 		// First, extract the item name from the tooltip (usually the first line)
 		String itemName = extractItemNameFromTooltip(lines, stack);
 		
-		// Check if "(transferiert)" is in the tooltip - if so, skip aspect search and Shift info
-		boolean hasTransferiert = false;
-		for (Text line : lines) {
-			if (line != null) {
-				String lineText = line.getString();
-				if (lineText != null && lineText.contains("(transferiert)")) {
-					hasTransferiert = true;
-					break;
-				}
-			}
-		}
-		
 		// Check for lines containing "⭐" (star symbol) - this is for items with aspect info in tooltip
 		for (int i = 0; i < lines.size(); i++) {
 			Text line = lines.get(i);
@@ -663,26 +652,26 @@ public class InformationenUtility {
 			}
 			
 			// Check if this line contains "⭐"
-			if (lineText.contains("⭐")) {
-				// Skip if "(transferiert)" is in the tooltip
-				if (hasTransferiert) {
-					continue;
-				}
-				
-				// If we have an item name, look it up directly in the aspects database
-				if (itemName != null && !itemName.isEmpty()) {
-					// Get aspect info for this item directly from the database
-					AspectInfo aspectInfo = aspectsDatabase.get(itemName);
-					
-					if (aspectInfo != null && !aspectInfo.aspectName.equals("-")) {
-						// Modify the line to add "(shift für info)" after the "]"
-						Text modifiedLine = modifyStarLineWithShiftInfo(line, aspectInfo, itemName);
-						if (modifiedLine != null) {
-							lines.set(i, modifiedLine);
-							// Set up aspect overlay to show when Shift is pressed
-							net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromName(itemName, aspectInfo);
-						}
-					}
+			if (!lineText.contains("⭐")) {
+				continue;
+			}
+
+			AspectInfo aspectInfo = null;
+			String lineLower = lineText.toLowerCase();
+			boolean isTransferred = lineLower.contains("(transferiert)");
+
+			if (isTransferred) {
+				String tooltipAspectName = extractBracketAspectNameFromStarLine(lineText);
+				aspectInfo = getAspectInfoByTooltipDisplayName(tooltipAspectName);
+			} else if (itemName != null && !itemName.isEmpty()) {
+				aspectInfo = aspectsDatabase.get(itemName);
+			}
+
+			if (aspectInfo != null && !aspectInfo.aspectName.equals("-") && itemName != null && !itemName.isEmpty()) {
+				Text modifiedLine = modifyStarLineWithShiftInfo(line, aspectInfo, itemName);
+				if (modifiedLine != null) {
+					lines.set(i, modifiedLine);
+					net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromName(itemName, aspectInfo);
 				}
 			}
 		}
@@ -914,6 +903,125 @@ public class InformationenUtility {
 		return null;
 	}
 	
+	/**
+	 * Liest den Aspekt-Namen aus einer ⭐-Tooltip-Zeile, z. B. "[Mond Aspekt]" aus
+	 * "⭐ [Mond Aspekt] (Transferiert)".
+	 */
+	private static String extractBracketAspectNameFromStarLine(String lineText) {
+		if (lineText == null || lineText.isEmpty()) {
+			return null;
+		}
+		String cleanLine = lineText.replaceAll("§[0-9a-fk-or]", "");
+		int starIndex = cleanLine.indexOf("⭐");
+		int searchFrom = starIndex >= 0 ? starIndex : 0;
+		int start = cleanLine.indexOf('[', searchFrom);
+		if (start < 0) {
+			return null;
+		}
+		int end = cleanLine.indexOf(']', start);
+		if (end <= start) {
+			return null;
+		}
+		String aspectName = cleanLine.substring(start + 1, end).trim();
+		return aspectName.isEmpty() ? null : aspectName;
+	}
+
+	/**
+	 * Wandelt einen Aspekt-Namen aus Aspekte.json in die Tooltip-Schreibweise um,
+	 * z. B. "Aspekt des Mondes" -> "Mond Aspekt".
+	 */
+	public static String toTooltipAspectDisplayName(String jsonAspectName) {
+		if (jsonAspectName == null || jsonAspectName.isEmpty() || "-".equals(jsonAspectName)) {
+			return null;
+		}
+		String trimmed = jsonAspectName.trim();
+		if (trimmed.regionMatches(true, 0, "Aspekt der ", 0, "Aspekt der ".length())) {
+			return trimmed.substring("Aspekt der ".length()).trim() + " Aspekt";
+		}
+		if (trimmed.regionMatches(true, 0, "Aspekt des ", 0, "Aspekt des ".length())) {
+			String genitive = trimmed.substring("Aspekt des ".length()).trim();
+			return genitiveFromDes(genitive) + " Aspekt";
+		}
+		if (trimmed.regionMatches(true, 0, "Aspekt von ", 0, "Aspekt von ".length())) {
+			return trimmed.substring("Aspekt von ".length()).trim() + " Aspekt";
+		}
+		return trimmed;
+	}
+
+	private static String genitiveFromDes(String genitive) {
+		if (genitive == null || genitive.isEmpty()) {
+			return "";
+		}
+		if (genitive.endsWith("es") && genitive.length() > 2) {
+			return genitive.substring(0, genitive.length() - 2);
+		}
+		if (genitive.endsWith("s") && genitive.length() > 1) {
+			return genitive.substring(0, genitive.length() - 1);
+		}
+		return genitive;
+	}
+
+	/**
+	 * Findet Aspekt-Infos anhand des Tooltip-Namens in eckigen Klammern (transferierte Aspekte).
+	 */
+	public static AspectInfo getAspectInfoByTooltipDisplayName(String tooltipAspectName) {
+		if (tooltipAspectName == null || tooltipAspectName.isEmpty()) {
+			return null;
+		}
+		String cleanName = tooltipAspectName.replaceAll("§[0-9a-fk-or]", "").trim();
+		if (cleanName.isEmpty()) {
+			return null;
+		}
+
+		AspectInfo directMatch = tooltipAspectDisplayNameLookup.get(cleanName.toLowerCase());
+		if (directMatch != null) {
+			return directMatch;
+		}
+
+		for (Map.Entry<String, AspectInfo> entry : tooltipAspectDisplayNameLookup.entrySet()) {
+			if (entry.getKey().equalsIgnoreCase(cleanName)) {
+				return entry.getValue();
+			}
+		}
+
+		Map<String, AspectInfo> uniqueAspects = new HashMap<>();
+		for (AspectInfo info : aspectsDatabase.values()) {
+			if (info == null || info.aspectName == null || info.aspectName.equals("-")) {
+				continue;
+			}
+			uniqueAspects.putIfAbsent(info.aspectName, info);
+		}
+		for (AspectInfo info : uniqueAspects.values()) {
+			String displayName = toTooltipAspectDisplayName(info.aspectName);
+			if (displayName != null && displayName.equalsIgnoreCase(cleanName)) {
+				return info;
+			}
+			if (info.aspectName.equalsIgnoreCase(cleanName)) {
+				return info;
+			}
+		}
+
+		return null;
+	}
+
+	private static void buildTooltipAspectDisplayNameLookup() {
+		tooltipAspectDisplayNameLookup.clear();
+		Map<String, AspectInfo> uniqueAspects = new HashMap<>();
+		for (AspectInfo info : aspectsDatabase.values()) {
+			if (info == null || info.aspectName == null || info.aspectName.equals("-")) {
+				continue;
+			}
+			uniqueAspects.putIfAbsent(info.aspectName, info);
+		}
+		for (Map.Entry<String, AspectInfo> entry : uniqueAspects.entrySet()) {
+			String displayName = toTooltipAspectDisplayName(entry.getKey());
+			if (displayName != null && !displayName.isEmpty()) {
+				tooltipAspectDisplayNameLookup.put(displayName.toLowerCase(), entry.getValue());
+			}
+			tooltipAspectDisplayNameLookup.put(entry.getKey().toLowerCase(), entry.getValue());
+		}
+	}
+
 	/**
 	 * Modifies a line containing "⭐ [ASPEKT DES ITEMS]" to add "(shift für info)" after the "]"
 	 * @param originalLine The original Text line
@@ -3529,6 +3637,7 @@ public class InformationenUtility {
 							aspectsDatabase.put(itemName, new AspectInfo(aspectName, aspectDescription));
 						}
 					}
+					buildTooltipAspectDisplayNameLookup();
 				}
 			}
 		} catch (Exception e) {
@@ -8068,6 +8177,7 @@ public class InformationenUtility {
 	 */
 	public static void reloadAspectsDatabase() {
 		aspectsDatabase.clear();
+		tooltipAspectDisplayNameLookup.clear();
 		loadAspectsDatabase();
 	}
 	

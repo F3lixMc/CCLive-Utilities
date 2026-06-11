@@ -84,6 +84,9 @@ public class ClipboardUtility {
 
         // Farmzone: Ressourcen aus Actionbar (nur bei Scoreboard-Biom)
         ClipboardFarmzoneActionBar.initialize();
+
+        // Fisch-Belohnungen aus Server-Chat (Materialien addieren)
+        FishingRewardChatCollector.initialize();
         
         // Registriere Chat-Event für Coin-Updates
         net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> {
@@ -250,6 +253,7 @@ public class ClipboardUtility {
         switch (category) {
             case "blueprints":
             case "fishing_components":
+            case "fish_traps":
             case "modules":
             case "module_bags":
             case "power_crystal_slots":

@@ -537,16 +537,25 @@ public class CCLiveUtilitiesConfig {
     public int kitFilterButton1Level = 1; // Level für Button 1 (1-7)
     
     @SerialEntry
+    public String kitFilterButton1CustomKitId = ""; // Eigene Kit-ID für Button 1
+    
+    @SerialEntry
     public String kitFilterButton2KitType = ""; // Kit-Typ für Button 2
     
     @SerialEntry
     public int kitFilterButton2Level = 1; // Level für Button 2 (1-7)
     
     @SerialEntry
+    public String kitFilterButton2CustomKitId = ""; // Eigene Kit-ID für Button 2
+    
+    @SerialEntry
     public String kitFilterButton3KitType = ""; // Kit-Typ für Button 3
     
     @SerialEntry
     public int kitFilterButton3Level = 1; // Level für Button 3 (1-7)
+    
+    @SerialEntry
+    public String kitFilterButton3CustomKitId = ""; // Eigene Kit-ID für Button 3
     
     @SerialEntry
     public boolean kitFilterButtonsEnabled = true; // Kit Filter Buttons ein-/ausblenden

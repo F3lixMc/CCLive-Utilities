@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 
 import java.util.ArrayList;
@@ -66,8 +67,9 @@ public class ClipboardAmbossRessourceCollector {
         String screenTitle = titleText != null ? titleText.getString() : "";
         boolean isRessourceBag = net.felix.utilities.Overall.ZeichenUtility.containsUiRessourceBag(screenTitle);
         boolean isSchmiedInventory = isSchmiedInventory(handledScreen);
+        boolean isFishingCraft = net.felix.utilities.Overall.ZeichenUtility.isFishingComponentsCraftTitle(screenTitle);
         
-        if (!isRessourceBag && !isSchmiedInventory) {
+        if (!isRessourceBag && !isSchmiedInventory && !isFishingCraft) {
             // Nicht im Ressourcen-Bag oder Schmied - Cache zurücksetzen
             lastScreenTitle = "";
             lastSlotCount = 0;
@@ -90,8 +92,9 @@ public class ClipboardAmbossRessourceCollector {
         // Werte, die nicht auf der aktuellen Seite sind, bleiben erhalten
         try {
             List<Slot> slots = handledScreen.getScreenHandler().slots;
-            int maxIndex = Math.min(53, slots.size() - 1);
-            for (int i = 0; i <= maxIndex; i++) {
+            int minIndex = isFishingCraft ? 9 : 0;
+            int maxIndex = isFishingCraft ? Math.min(44, slots.size() - 1) : Math.min(53, slots.size() - 1);
+            for (int i = minIndex; i <= maxIndex; i++) {
                 Slot slot = slots.get(i);
                 ItemStack stack = slot.getStack();
                 if (stack.isEmpty()) {
@@ -137,14 +140,16 @@ public class ClipboardAmbossRessourceCollector {
                             updateResourceFromBag(cleanItemName, amount);
                         }
                     }
-                } else if (isSchmiedInventory) {
+                } else if (isSchmiedInventory || isFishingCraft) {
                     for (Text line : tooltip) {
                         String cleanLineText = cleanTooltipLine(line.getString());
                         Matcher matcher = SCHMIED_PATTERN.matcher(cleanLineText);
                         if (matcher.find()) {
                             String name = cleanTooltipLine(matcher.group(3));
                             long amount = parseAmount(matcher.group(1));
-                            if (!isAincraftMaterial(name) && !isCoinsName(name)) {
+                            if (!isAincraftMaterial(name) && !ItemInfoUtility.isFishingRarityMaterial(name)
+                                    && !isCoinsName(name)
+                                    && !(isFishingCraft && isNonMaterialCost(name))) {
                                 updateResourceAmounts(name, amount);
                             }
                         }
@@ -285,6 +290,14 @@ public class ClipboardAmbossRessourceCollector {
     
     private static boolean isCoinsName(String name) {
         return name != null && "coins".equalsIgnoreCase(name.trim());
+    }
+
+    private static boolean isNonMaterialCost(String name) {
+        if (name == null) {
+            return false;
+        }
+        String trimmed = name.trim();
+        return "Kaktus".equalsIgnoreCase(trimmed) || "Seelen".equalsIgnoreCase(trimmed);
     }
     
     private static boolean isSchmiedInventory(HandledScreen<?> handledScreen) {

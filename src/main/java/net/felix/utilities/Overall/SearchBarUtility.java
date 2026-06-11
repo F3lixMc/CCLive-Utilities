@@ -102,7 +102,8 @@ public class SearchBarUtility {
 				cleanTitle.contains("Runen [Baupläne]") || cleanTitle.contains("Werkzeug Sammlung") ||
 				cleanTitle.contains("Waffen Sammlung") || cleanTitle.contains("Rüstungs Sammlung") ||
 				cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
-				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") || cleanTitle.contains("[Nebenhand]")) {
+				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") || cleanTitle.contains("[Nebenhand]")
+				|| cleanTitle.contains("Geschützte Items")) {
 				isSearchBarVisible = true;
 				
 				// Überprüfe Inventaränderungen
@@ -197,8 +198,10 @@ public class SearchBarUtility {
 			return new int[]{ 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
 		} else if (cleanTitle.contains("Runen [Baupläne]")) {
 			return new int[]{10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34};
-		} else if (cleanTitle.contains("Ausrüstung") || cleanTitle.contains("Zerlegen")) {
-			// Slots für Ausrüstungsmenü (umfassender Bereich)
+		} else if (cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen")) {
+			return new int[]{10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+		} else if (cleanTitle.contains("Zerlegen") || cleanTitle.contains("Geschützte Items")) {
+			// Slots für Zerlegen / Geschützte Items (umfassender Bereich)
 			return new int[]{9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44};
 		} else if (cleanTitle.contains("Essenz")) {
 			// Slots für Essenz-Menüs (umfassender Bereich)

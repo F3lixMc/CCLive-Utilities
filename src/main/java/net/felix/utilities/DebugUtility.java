@@ -19,7 +19,9 @@ import net.minecraft.scoreboard.ScoreboardDisplaySlot;
 import net.minecraft.scoreboard.ScoreboardEntry;
 import net.minecraft.scoreboard.ScoreboardObjective;
 import net.minecraft.scoreboard.Team;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
+import net.felix.utilities.Aincraft.ItemInfoUtility;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,6 +184,10 @@ public class DebugUtility {
             return;
         }
         
+        String itemId = Registries.ITEM.getId(hoveredItem.getItem()).toString();
+        Integer customModelData = ItemInfoUtility.extractCustomModelData(hoveredItem);
+        var customModelDataComponent = hoveredItem.get(DataComponentTypes.CUSTOM_MODEL_DATA);
+
         // Get tooltip
         List<Text> tooltip = getItemTooltip(hoveredItem, client.player);
         
@@ -189,6 +195,20 @@ public class DebugUtility {
             System.out.println("[ItemHoverLogger] Kein Tooltip gefunden!");
             return;
         }
+
+        System.out.println("========================================");
+        System.out.println("[ItemHoverLogger] Item Info:");
+        System.out.println("========================================");
+        System.out.println("Item ID: " + itemId);
+        if (customModelData != null) {
+            System.out.println("CustomModelData: " + customModelData);
+        } else if (customModelDataComponent != null) {
+            System.out.println("CustomModelData: nicht extrahiert (Rohkomponente: " + customModelDataComponent + ")");
+        } else {
+            System.out.println("CustomModelData: nicht gesetzt");
+        }
+        System.out.println("========================================");
+        System.out.println();
         
         // Create both raw and clean versions
         List<String> rawLines = new ArrayList<>();
