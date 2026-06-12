@@ -189,14 +189,6 @@ public class OverlayEditorScreen extends Screen {
                 overlays.add(new MaterialTrackerDraggableOverlay());
                 overlays.add(new KillsUtilityDraggableOverlay());
             } else {
-                // Check if we're in an equipment chest inventory (where Equipment Display works)
-                boolean isInEquipmentChest = isInEquipmentChestInventory();
-                
-                if (isInEquipmentChest) {
-                    // In equipment chest inventories, show equipment display overlay
-                    overlays.add(new EquipmentDisplayDraggableOverlay());
-                }
-                
                 // Mining/Lumberjack overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
                 // Only show if biome is detected in scoreboard
@@ -1215,10 +1207,6 @@ public class OverlayEditorScreen extends Screen {
             boolean newValue = !config.killsUtilityEnabled;
             config.killsUtilityEnabled = newValue;
             config.showKillsUtility = newValue; // Synchronisiere mit *Enabled Option
-        } else if (overlay instanceof EquipmentDisplayDraggableOverlay) {
-            boolean newValue = !config.showEquipmentDisplay;
-            config.showEquipmentDisplay = newValue;
-            config.equipmentDisplayEnabled = newValue; // Synchronisiere mit show* Option
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
             boolean newValue = !config.miningLumberjackOverlayEnabled;
             config.miningLumberjackOverlayEnabled = newValue;

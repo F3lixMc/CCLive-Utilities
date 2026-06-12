@@ -2285,4 +2285,1884 @@
       }
     ]
   }
+,
+  "neu": {
+
+      "münz_kit":  {
+
+                       "1":  [
+
+                                 "Rubinrote Kriegshose",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden]",
+
+                                     "floor":  "e1",
+
+                                     "item_type":  "Hose"
+
+                                 },
+
+                                 "Ewiges Lichtband",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden]",
+
+                                     "floor":  "e1",
+
+                                     "item_type":  "Ringe"
+
+                                 },
+
+                                 "Göttliche Plattenläufer",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                     "floor":  "e2",
+
+                                     "item_type":  "Schuhe"
+
+                                 },
+
+                                 "Rubinrote Kriegsschultern",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Verteidigung]",
+
+                                     "floor":  "e2",
+
+                                     "item_type":  "Schultern"
+
+                                 },
+
+                                 "Ewiges Lichtamulett",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Attribute]",
+
+                                     "floor":  "e2",
+
+                                     "item_type":  "Halskette"
+
+                                 },
+
+                                 "Rubinrote Kriegshandschuhe",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Fähigkeiten]",
+
+                                     "floor":  "e3",
+
+                                     "item_type":  "Handschuhe"
+
+                                 },
+
+                                 "Blutige Fleischhackeraxt",
+
+                                 {
+
+                                     "rarity":  "Rare",
+
+                                     "modifier":  "[Andere], [Andere]",
+
+                                     "floor":  "e3",
+
+                                     "item_type":  "Axt"
+
+                                 },
+
+                                 "Rubinstaub Schrammer",
+
+                                 {
+
+                                     "rarity":  "Rare",
+
+                                     "modifier":  "[Andere], [Verteidigung]",
+
+                                     "floor":  "e4",
+
+                                     "item_type":  "Spitzhacke"
+
+                                 },
+
+                                 "Rubinroter Kriegshelm",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Attribute]",
+
+                                     "floor":  "e4",
+
+                                     "item_type":  "Helm"
+
+                                 },
+
+                                 "Rubinroter Kriegsharnisch",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Verteidigung]",
+
+                                     "floor":  "e5",
+
+                                     "item_type":  "Brust"
+
+                                 },
+
+                                 "Rubinroter Kriegsgürtel",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Fähigkeiten]",
+
+                                     "item_type":  "Gürtel",
+
+                                     "floor":  "e6"
+
+                                 },
+
+                                 "Kaktuszermalmer",
+
+                                 {
+
+                                     "rarity":  "Rare",
+
+                                     "modifier":  "[Andere], [Andere]",
+
+                                     "floor":  "e6",
+
+                                     "item_type":  "Hacke"
+
+                                 }
+
+                             ],
+
+                       "2":  [
+
+                                 "Ewiges Lichtband",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden]",
+
+                                     "floor":  "e1",
+
+                                     "item_type":  "Ringe"
+
+                                 },
+
+                                 "Rubinrote Kriegshose",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden]",
+
+                                     "floor":  "e1",
+
+                                     "item_type":  "Hose"
+
+                                 },
+
+                                 "Blutige Fleischhackeraxt",
+
+                                 {
+
+                                     "rarity":  "Rare",
+
+                                     "modifier":  "[Andere], [Andere]",
+
+                                     "floor":  "e3",
+
+                                     "item_type":  "Axt"
+
+                                 },
+
+                                 "Rubinroter Kriegshelm",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Attribute]",
+
+                                     "floor":  "e4",
+
+                                     "item_type":  "Helm"
+
+                                 },
+
+                                 "Fäustlinge der Ahnen",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Schaden], [Schaden], [Verteidigung], [Andere]",
+
+                                     "item_type":  "Handschuhe",
+
+                                     "floor":  "e5"
+
+                                 },
+
+                                 "Beinkleid der Ahnen",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Schaden], [Schaden], [Verteidigung], [Andere]",
+
+                                     "floor":  "e11",
+
+                                     "item_type":  "Hose"
+
+                                 },
+
+                                 "Saphirumhüllte Feldhacke",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden]",
+
+                                     "item_type":  "Hacke",
+
+                                     "floor":  "e13"
+
+                                 },
+
+                                 "Glühendes Schutzband",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Herstellung], [Schaden]",
+
+                                     "item_type":  "Gürtel",
+
+                                     "floor":  "e14"
+
+                                 },
+
+                                 "Kriegspanzer der Ahnen",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Schaden], [Schaden], [Verteidigung], [Andere]",
+
+                                     "floor":  "e14",
+
+                                     "item_type":  "Brust"
+
+                                 },
+
+                                 "Plattenschuhe des Legionärs",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden]",
+
+                                     "item_type":  "Schuhe",
+
+                                     "floor":  "e15"
+
+                                 },
+
+                                 "Amulett der Ahnen",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Schaden], [Schaden], [Verteidigung], [Andere]",
+
+                                     "floor":  "e15",
+
+                                     "item_type":  "Halskette"
+
+                                 },
+
+                                 "Werkzeug des Goldgräbers",
+
+                                 {
+
+                                     "rarity":  "Rare",
+
+                                     "modifier":  "[Andere], [Andere]",
+
+                                     "item_type":  "Spitzhacke",
+
+                                     "floor":  "e18"
+
+                                 }
+
+                             ],
+
+                       "3":  [
+
+                                 "Wurzelring des Lebens",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Schaden], [Schaden], [Verteidigung], [Andere]",
+
+                                     "floor":  "e38",
+
+                                     "item_type":  "Ringe"
+
+                                 },
+
+                                 "Kristalline Schulterpanzer",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Verteidigung]",
+
+                                     "floor":  "e40",
+
+                                     "item_type":  "Schultern"
+
+                                 },
+
+                                 "Sculkwanderer Plattenschuhe",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Verteidigung], [Herstellung]",
+
+                                     "floor":  "e41",
+
+                                     "item_type":  "Schuhe"
+
+                                 },
+
+                                 "Spitzhacke des Kaktusmeister",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Attribute]",
+
+                                     "floor":  "e41",
+
+                                     "item_type":  "Spitzhacke"
+
+                                 },
+
+                                 "Kristallkürass",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Herstellung]",
+
+                                     "item_type":  "Brust",
+
+                                     "floor":  "e45"
+
+                                 },
+
+                                 "Kristalliner Helmpanzer",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Verteidigung], [Fähigkeiten]",
+
+                                     "floor":  "e46",
+
+                                     "item_type":  "Helm"
+
+                                 },
+
+                                 "Göttliche Pilzfällaxt",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Fähigkeiten], [Andere], [Andere], [Schaden]",
+
+                                     "item_type":  "Axt",
+
+                                     "floor":  "e46"
+
+                                 },
+
+                                 "Kristalline Plattenhandschuhe",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Attribute]",
+
+                                     "floor":  "e47",
+
+                                     "item_type":  "Handschuhe"
+
+                                 },
+
+                                 "Amulett der Unsterblichkeit",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Fähigkeiten], [Schaden]",
+
+                                     "floor":  "e47",
+
+                                     "item_type":  "Halskette"
+
+                                 },
+
+                                 "Kristalline Plattenhose",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Verteidigung]",
+
+                                     "floor":  "e48",
+
+                                     "item_type":  "Hose"
+
+                                 },
+
+                                 "Kristallenes Schutzband",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Attribute], [Schaden]",
+
+                                     "floor":  "e48",
+
+                                     "item_type":  "Gürtel"
+
+                                 },
+
+                                 "Der Kaktusernter",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Fähigkeiten]",
+
+                                     "floor":  "e54",
+
+                                     "item_type":  "Hacke"
+
+                                 }
+
+                             ],
+
+                       "4":  [
+
+                                 "Göttliche Erzzerstörung",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Schaden], [Schaden], [Andere], [Verteidigung]",
+
+                                     "item_type":  "Spitzhacke",
+
+                                     "floor":  "e74"
+
+                                 },
+
+                                 "Großer Kaktussporn",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Schaden], [Schaden], [Verteidigung], [Andere]",
+
+                                     "item_type":  "Hacke",
+
+                                     "floor":  "e77"
+
+                                 },
+
+                                 "Donnerfaust-Pilzspalteraxt",
+
+                                 {
+
+                                     "rarity":  "Epic",
+
+                                     "modifier":  "[Andere], [Andere], [Herstellung]",
+
+                                     "floor":  "e83",
+
+                                     "item_type":  "Axt"
+
+                                 },
+
+                                 "Himmlischer Panzerhelm",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Fähigkeiten], [Schaden]",
+
+                                     "floor":  "e86",
+
+                                     "item_type":  "Helm"
+
+                                 },
+
+                                 "Himmlische Plattenhandschuhe",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Herstellung], [Fähigkeiten]",
+
+                                     "floor":  "e86",
+
+                                     "item_type":  "Handschuhe"
+
+                                 },
+
+                                 "Himmlischer Gürtel",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Herstellung], [Attribute]",
+
+                                     "item_type":  "Gürtel",
+
+                                     "floor":  "e87"
+
+                                 },
+
+                                 "Anhänger des Himmels",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Verteidigung], [Schaden]",
+
+                                     "item_type":  "Halskette",
+
+                                     "floor":  "e87"
+
+                                 },
+
+                                 "Himmlische Treter",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Herstellung]",
+
+                                     "floor":  "e89",
+
+                                     "item_type":  "Schuhe"
+
+                                 },
+
+                                 "Himmlische Plattenhose",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Verteidigung], [Attribute]",
+
+                                     "floor":  "e90",
+
+                                     "item_type":  "Hose"
+
+                                 },
+
+                                 "Ring des Himmels",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Attribute], [Fähigkeiten]",
+
+                                     "floor":  "e90",
+
+                                     "item_type":  "Ringe"
+
+                                 },
+
+                                 "Himmlische Schulterplatten",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Verteidigung]",
+
+                                     "floor":  "e91",
+
+                                     "item_type":  "Schultern"
+
+                                 },
+
+                                 "Himmlischer Brustharnisch",
+
+                                 {
+
+                                     "rarity":  "Legendary",
+
+                                     "modifier":  "[Andere], [Andere], [Verteidigung], [Verteidigung]",
+
+                                     "floor":  "e92",
+
+                                     "item_type":  "Brust"
+
+                                 }
+
+                             ]
+
+                   },
+
+      "ressourcen_kit":  {
+
+                             "1":  [
+
+                                       "Drachenschuppen Kriegshelm",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                           "floor":  "e1",
+
+                                           "item_type":  "Helm"
+
+                                       },
+
+                                       "Stählernde Sabatons",
+
+                                       {
+
+                                           "rarity":  "Rare",
+
+                                           "modifier":  "[Fähigkeiten], [Attribute]",
+
+                                           "item_type":  "Schuhe",
+
+                                           "floor":  "e1"
+
+                                       },
+
+                                       "Eroberers Schulterpanzer",
+
+                                       {
+
+                                           "rarity":  "Rare",
+
+                                           "modifier":  "[Herstellung], [Fähigkeiten]",
+
+                                           "floor":  "e1",
+
+                                           "item_type":  "Schultern"
+
+                                       },
+
+                                       "Demonischer Gürtel",
+
+                                       {
+
+                                           "rarity":  "Rare",
+
+                                           "modifier":  "[Attribute], [Fähigkeiten]",
+
+                                           "item_type":  "Gürtel",
+
+                                           "floor":  "e2"
+
+                                       },
+
+                                       "Panzerbrecher",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Attribute]",
+
+                                           "floor":  "e2",
+
+                                           "item_type":  "Schwert"
+
+                                       },
+
+                                       "Zirkonband",
+
+                                       {
+
+                                           "rarity":  "Uncommon",
+
+                                           "modifier":  "[Fähigkeiten]",
+
+                                           "floor":  "e3",
+
+                                           "item_type":  "Ringe"
+
+                                       },
+
+                                       "Rubinrote Kriegshandschuhe",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Andere], [Andere], [Fähigkeiten]",
+
+                                           "floor":  "e3",
+
+                                           "item_type":  "Handschuhe"
+
+                                       },
+
+                                       "Anhänger des Windes",
+
+                                       {
+
+                                           "rarity":  "Rare",
+
+                                           "modifier":  "[Attribute], [Fähigkeiten]",
+
+                                           "item_type":  "Halskette",
+
+                                           "floor":  "e4"
+
+                                       },
+
+                                       "Blutrünstige Brustplatte",
+
+                                       {
+
+                                           "rarity":  "Rare",
+
+                                           "modifier":  "[Fähigkeiten], [Herstellung]",
+
+                                           "item_type":  "Brust",
+
+                                           "floor":  "e5"
+
+                                       },
+
+                                       "Drachenschuppen Kriegshosen",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                           "floor":  "e5",
+
+                                           "item_type":  "Hose"
+
+                                       }
+
+                                   ],
+
+                             "2":  [
+
+                                       "Panzerbrecher",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Attribute]",
+
+                                           "floor":  "e2",
+
+                                           "item_type":  "Schwert"
+
+                                       },
+
+                                       "Dunkelmond Gamaschen",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e6",
+
+                                           "item_type":  "Hose"
+
+                                       },
+
+                                       "Dunkelmond Helmvisier",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e6",
+
+                                           "item_type":  "Helm"
+
+                                       },
+
+                                       "Dunkelmond Panzerhandbuckel",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e7",
+
+                                           "item_type":  "Handschuhe"
+
+                                       },
+
+                                       "Band der dunklen Herrschaft",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e7",
+
+                                           "item_type":  "Ringe"
+
+                                       },
+
+                                       "Dunkelmond Schulterbuckel",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e8",
+
+                                           "item_type":  "Schultern"
+
+                                       },
+
+                                       "Angus Abzeichen der Dunkelheit",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e8",
+
+                                           "item_type":  "Halskette"
+
+                                       },
+
+                                       "Sternenstahlstiefel",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e10",
+
+                                           "item_type":  "Schuhe"
+
+                                       },
+
+                                       "Dunkelmond Brustpanzer",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e11",
+
+                                           "item_type":  "Brust"
+
+                                       },
+
+                                       "Dunkelmond Gurt",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e12",
+
+                                           "item_type":  "Gürtel"
+
+                                       },
+
+                                       "Stabiler Kornpflücker",
+
+                                       {
+
+                                           "rarity":  "Uncommon",
+
+                                           "modifier":  "[Fähigkeiten]",
+
+                                           "item_type":  "Hacke",
+
+                                           "floor":  "e13"
+
+                                       }
+
+                                   ],
+
+                             "3":  [
+
+                                       "Der Zeitverzerrer",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Herstellung]",
+
+                                           "floor":  "e36",
+
+                                           "item_type":  "Schwert"
+
+                                       },
+
+                                       "Mithril Sabatons",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Attribute]",
+
+                                           "floor":  "e51",
+
+                                           "item_type":  "Schuhe"
+
+                                       },
+
+                                       "Zwergenstahl Plattenpanzer",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung]",
+
+                                           "floor":  "e53",
+
+                                           "item_type":  "Brust"
+
+                                       },
+
+                                       "Mithril Schulterhaube",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung]",
+
+                                           "floor":  "e53",
+
+                                           "item_type":  "Schultern"
+
+                                       },
+
+                                       "Mithril Band",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Attribute]",
+
+                                           "floor":  "e54",
+
+                                           "item_type":  "Ringe"
+
+                                       },
+
+                                       "Zwergenstahl Plattenhandschuhe",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung]",
+
+                                           "floor":  "e54",
+
+                                           "item_type":  "Handschuhe"
+
+                                       },
+
+                                       "Majestätische Kaktushacke",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "item_type":  "Hacke",
+
+                                           "floor":  "e54"
+
+                                       },
+
+                                       "Mithril Kopfschutz",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung]",
+
+                                           "floor":  "e55",
+
+                                           "item_type":  "Helm"
+
+                                       },
+
+                                       "Sternenfeuer-Anhänger",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Attribute]",
+
+                                           "item_type":  "Halskette",
+
+                                           "floor":  "e55"
+
+                                       },
+
+                                       "Mithril Gamaschen",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung]",
+
+                                           "floor":  "e56",
+
+                                           "item_type":  "Hose"
+
+                                       },
+
+                                       "Sternenfeuer-Ring",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Attribute]",
+
+                                           "floor":  "e56",
+
+                                           "item_type":  "Ringe"
+
+                                       }
+
+                                   ],
+
+                             "4":  [
+
+                                       "Obsidian Hacke",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung]",
+
+                                           "floor":  "e75",
+
+                                           "item_type":  "Hacke"
+
+                                       },
+
+                                       "Sturmgesang",
+
+                                       {
+
+                                           "rarity":  "Epic",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung]",
+
+                                           "floor":  "e80",
+
+                                           "item_type":  "Schwert"
+
+                                       },
+
+                                       "Nebelwacht Plattenpanzer",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e82",
+
+                                           "item_type":  "Brust"
+
+                                       },
+
+                                       "Kristallring Kometenband",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e82",
+
+                                           "item_type":  "Ringe"
+
+                                       },
+
+                                       "Der Bergversetzer",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Verteidigung], [Andere]",
+
+                                           "floor":  "e82",
+
+                                           "item_type":  "Spitzhacke"
+
+                                       },
+
+                                       "Nebel Schreiter",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e83",
+
+                                           "item_type":  "Schuhe"
+
+                                       },
+
+                                       "Nebelwächter Gamaschen",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "item_type":  "Hose",
+
+                                           "floor":  "e83"
+
+                                       },
+
+                                       "Nebelwächter Stulpen",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "item_type":  "Handschuhe",
+
+                                           "floor":  "e83"
+
+                                       },
+
+                                       "Nebelwächter Schulterhaube",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "item_type":  "Schultern",
+
+                                           "floor":  "e84"
+
+                                       },
+
+                                       "Kosmischer Anhänger",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "item_type":  "Halskette",
+
+                                           "floor":  "e84"
+
+                                       },
+
+                                       "Nebelwächter Helm",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "item_type":  "Helm",
+
+                                           "floor":  "e85"
+
+                                       },
+
+                                       "Nebelwacht Schutzband",
+
+                                       {
+
+                                           "rarity":  "Legendary",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Attribute]",
+
+                                           "floor":  "e85",
+
+                                           "item_type":  "Gürtel"
+
+                                       },
+
+                                       "Saphir Hacke",
+
+                                       {
+
+                                           "rarity":  "Rare",
+
+                                           "modifier":  "[Fähigkeiten], [Fähigkeiten]",
+
+                                           "floor":  "e94",
+
+                                           "item_type":  "Hacke"
+
+                                       }
+
+                                   ]
+
+                         },
+
+      "herstellungs_kit":  {
+
+                               "1":  [
+
+                                         "Drachenschuppen Kriegshelm",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e1",
+
+                                             "item_type":  "Helm"
+
+                                         },
+
+                                         "Drachenschuppen Kriegsgürtel",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "item_type":  "Gürtel",
+
+                                             "floor":  "e1"
+
+                                         },
+
+                                         "Göttliche Plattenläufer",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e2",
+
+                                             "item_type":  "Schuhe"
+
+                                         },
+
+                                         "Drachenschuppen Kriegshandschuhe",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e3",
+
+                                             "item_type":  "Handschuhe"
+
+                                         },
+
+                                         "Excalibur",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten]",
+
+                                             "floor":  "e3",
+
+                                             "item_type":  "Schwert"
+
+                                         },
+
+                                         "Drachenschuppen Kriegsbrustplatte",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e4",
+
+                                             "item_type":  "Brust"
+
+                                         },
+
+                                         "Drachenschuppen Kriegsschultern",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e4",
+
+                                             "item_type":  "Schultern"
+
+                                         },
+
+                                         "Drachenschuppen Kriegshosen",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e5",
+
+                                             "item_type":  "Hose"
+
+                                         },
+
+                                         "Drachenblutband",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e5",
+
+                                             "item_type":  "Ringe"
+
+                                         },
+
+                                         "Drachenblutamulett",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e6",
+
+                                             "item_type":  "Halskette"
+
+                                         },
+
+                                         "Titanstahl-Dschungelholzhacker",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Attribute], [Verteidigung]",
+
+                                             "floor":  "e6",
+
+                                             "item_type":  "Axt"
+
+                                         },
+
+                                         "Frostfänger-Eisenzerstörung",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten]",
+
+                                             "item_type":  "Spitzhacke",
+
+                                             "floor":  "e7"
+
+                                         }
+
+                                     ],
+
+                               "2":  [
+
+                                         "Der Zeitverzerrer",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Herstellung]",
+
+                                             "floor":  "e36",
+
+                                             "item_type":  "Schwert"
+
+                                         },
+
+                                         "Rubin Beil",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e42",
+
+                                             "item_type":  "Axt"
+
+                                         },
+
+                                         "Meeres Furcher",
+
+                                         {
+
+                                             "rarity":  "Rare",
+
+                                             "modifier":  "[Herstellung], [Andere]",
+
+                                             "floor":  "e44",
+
+                                             "item_type":  "Hacke"
+
+                                         },
+
+                                         "Sternenstahl Helmschale",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e48",
+
+                                             "item_type":  "Helm"
+
+                                         },
+
+                                         "Sternenstahl Gürtelschutz",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten]",
+
+                                             "item_type":  "Gürtel",
+
+                                             "floor":  "e49"
+
+                                         },
+
+                                         "Band der Sterne",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten]",
+
+                                             "floor":  "e49",
+
+                                             "item_type":  "Ringe"
+
+                                         },
+
+                                         "Sternenstahl Handrüstung",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "item_type":  "Handschuhe",
+
+                                             "floor":  "e50"
+
+                                         },
+
+                                         "Halsband der Sterne",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e50",
+
+                                             "item_type":  "Halskette"
+
+                                         },
+
+                                         "Sternenstahl Schulterrüstung",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "item_type":  "Schultern",
+
+                                             "floor":  "e51"
+
+                                         },
+
+                                         "Sternenstahl Leggings",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e52",
+
+                                             "item_type":  "Hose"
+
+                                         },
+
+                                         "Sternenstahl Brustpanzer",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e52",
+
+                                             "item_type":  "Brust"
+
+                                         },
+
+                                         "Götterstahl-Kohledezimierer",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten]",
+
+                                             "item_type":  "Spitzhacke",
+
+                                             "floor":  "e60"
+
+                                         }
+
+                                     ],
+
+                               "3":  [
+
+                                         "Götterstahl-Kohledezimierer",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten]",
+
+                                             "item_type":  "Spitzhacke",
+
+                                             "floor":  "e60"
+
+                                         },
+
+                                         "Die Morgenröte",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "item_type":  "Schwert",
+
+                                             "floor":  "e71"
+
+                                         },
+
+                                         "Meister Spaltaxt",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e72",
+
+                                             "item_type":  "Axt"
+
+                                         },
+
+                                         "Auroras Schritte",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e74",
+
+                                             "item_type":  "Schuhe"
+
+                                         },
+
+                                         "Himmelsstahl Fingerschützer",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "item_type":  "Handschuhe",
+
+                                             "floor":  "e89"
+
+                                         },
+
+                                         "Schattenstahl Gürtelschutz",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "item_type":  "Gürtel",
+
+                                             "floor":  "e76"
+
+                                         },
+
+                                         "Schattenstahl Brustpanzer",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e78",
+
+                                             "item_type":  "Brust"
+
+                                         },
+
+                                         "Schattenstahl Helmpanzer",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+
+                                             "floor":  "e79",
+
+                                             "item_type":  "Helm"
+
+                                         },
+
+                                         "Ring der scharfen Klinge",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e88",
+
+                                             "item_type":  "Ringe"
+
+                                         },
+
+                                         "Himmelsstahl Schulterplatten",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e90",
+
+                                             "item_type":  "Schultern"
+
+                                         },
+
+                                         "Himmelsstahl Beinschienen",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "floor":  "e94",
+
+                                             "item_type":  "Hose"
+
+                                         },
+
+                                         "Teuflische Kaktushacke",
+
+                                         {
+
+                                             "rarity":  "Legendary",
+
+                                             "modifier":  "[Herstellung], [Fähigkeiten], [Andere], [Verteidigung]",
+
+                                             "floor":  "e94",
+
+                                             "item_type":  "Hacke"
+
+                                         },
+
+                                         "Anhänger der Klinge",
+
+                                         {
+
+                                             "rarity":  "Epic",
+
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere]",
+
+                                             "item_type":  "Halskette",
+
+                                             "floor":  ""
+
+                                         }
+
+                                     ]
+
+                           }
+
+  }
 }

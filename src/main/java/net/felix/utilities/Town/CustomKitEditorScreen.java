@@ -36,20 +36,27 @@ public class CustomKitEditorScreen extends Screen {
             Identifier.of("cclive-utilities", "textures/gui/kits_background.png");
     private static final Text EMPTY_ITEM_SLOT_TOOLTIP =
             Text.literal("Klicke mit der linken Maustaste auf ein Item, um es auszuwählen");
-    private static final int ICON_PICKER_COLUMNS = 2;
+    private static final int ICON_PICKER_COLUMNS = 3;
     private static final int ICON_PICKER_ROWS = 5;
     private static final int ICON_PICKER_GAP = 10;
     private static final Item[] PRESET_ICON_ITEMS = {
+
+            Items.CACTUS,
             Items.GOLD_NUGGET,
             Items.DIAMOND_SWORD,
-            Items.DIAMOND_PICKAXE,
-            Items.DIAMOND_CHESTPLATE,
-            Items.ANVIL,
-            Items.FURNACE,
-            Items.FISHING_ROD,
             Items.CHORUS_FRUIT,
+            Items.ANVIL,                       
+            Items.DIAMOND_PICKAXE,
+            Items.SOUL_TORCH,
+            Items.FURNACE,           
+            Items.DIAMOND_AXE,
+            Items.NETHER_STAR,  
+            Items.DIAMOND_CHESTPLATE,                      
+            Items.DIAMOND_HOE,
             Items.WITHER_SKELETON_SKULL,
-            Items.SOUL_TORCH
+            Items.SHIELD,
+            Items.FISHING_ROD
+
     };
 
     public enum PickTarget {
@@ -67,6 +74,9 @@ public class CustomKitEditorScreen extends Screen {
     private ButtonWidget doneButton;
     private ButtonWidget cancelButton;
     private ButtonWidget deleteButton;
+    private ButtonWidget confirmDeleteButton;
+    private ButtonWidget confirmCancelDialogButton;
+    private boolean showDeleteConfirmation = false;
 
     private PickTarget pickTarget = PickTarget.ADD_ITEM;
     private int panelX;
@@ -147,7 +157,7 @@ public class CustomKitEditorScreen extends Screen {
             int totalWidth = buttonWidth * 3 + buttonGap * 2;
             int startX = (this.width - totalWidth) / 2;
 
-            deleteButton = ButtonWidget.builder(Text.literal("Löschen"), button -> onDelete())
+            deleteButton = ButtonWidget.builder(Text.literal("Löschen"), button -> openDeleteConfirmation())
                     .dimensions(startX, buttonY, buttonWidth, 20)
                     .build();
             this.addDrawableChild(deleteButton);
@@ -175,6 +185,10 @@ public class CustomKitEditorScreen extends Screen {
 
         ItemViewerUtility.startKitEditorMode(itemViewerScreen, this::onItemPickedFromViewer);
         ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
+
+        if (showDeleteConfirmation) {
+            initDeleteConfirmationButtons();
+        }
     }
 
     private void getItemSlotPosition(int itemIndex, int[] out) {
@@ -246,25 +260,31 @@ public class CustomKitEditorScreen extends Screen {
 
         renderItemList(context, mouseX, mouseY);
 
-        if (pickTarget == PickTarget.ICON) {
+        if (!showDeleteConfirmation && pickTarget == PickTarget.ICON) {
             renderIconPicker(context, mouseX, mouseY);
+        }
+
+        if (showDeleteConfirmation) {
+            renderDeleteConfirmationDialog(context);
         }
 
         super.render(context, mouseX, mouseY, delta);
 
-        ItemViewerUtility.renderKitEditorItemViewer(context, client, mouseX, mouseY);
+        if (!showDeleteConfirmation) {
+            ItemViewerUtility.renderKitEditorItemViewer(context, client, mouseX, mouseY);
+        }
 
-        if (hoveredSlotItem != null) {
+        if (!showDeleteConfirmation && hoveredSlotItem != null) {
             ItemViewerGrid.updateAspectOverlayForItem(hoveredSlotItem);
             ItemViewerGrid.renderItemTooltip(context, hoveredSlotItem, mouseX, mouseY);
-        } else if (hoveredPresetIconName != null) {
+        } else if (!showDeleteConfirmation && hoveredPresetIconName != null) {
             context.drawTooltip(
                     this.textRenderer,
                     Collections.singletonList(Text.literal(hoveredPresetIconName)),
                     mouseX,
                     mouseY
             );
-        } else if (hoveredEmptyItemSlot) {
+        } else if (!showDeleteConfirmation && hoveredEmptyItemSlot) {
             context.drawTooltip(this.textRenderer, Collections.singletonList(EMPTY_ITEM_SLOT_TOOLTIP), mouseX, mouseY);
         }
     }
@@ -398,6 +418,10 @@ public class CustomKitEditorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (showDeleteConfirmation) {
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
+
         if (button == 0 && handleIconPickerClick(mouseX, mouseY)) {
             return true;
         }
@@ -477,11 +501,98 @@ public class CustomKitEditorScreen extends Screen {
         closeToReturnScreen();
     }
 
-    private void onDelete() {
+    private void openDeleteConfirmation() {
         if (!editingExisting || kit.id == null || kit.id.isEmpty()) {
             return;
         }
+        showDeleteConfirmation = true;
+        setEditorWidgetsVisible(false);
+        initDeleteConfirmationButtons();
+    }
+
+    private void initDeleteConfirmationButtons() {
+        if (confirmDeleteButton != null) {
+            this.remove(confirmDeleteButton);
+        }
+        if (confirmCancelDialogButton != null) {
+            this.remove(confirmCancelDialogButton);
+        }
+
+        int boxWidth = 220;
+        int boxHeight = 80;
+        int boxX = (this.width - boxWidth) / 2;
+        int boxY = (this.height - boxHeight) / 2;
+        int buttonWidth = 80;
+        int buttonHeight = 20;
+        int buttonGap = 10;
+        int buttonsY = boxY + boxHeight - buttonHeight - 12;
+        int buttonsStartX = boxX + (boxWidth - (buttonWidth * 2 + buttonGap)) / 2;
+
+        confirmDeleteButton = ButtonWidget.builder(Text.literal("Löschen"), button -> performDelete())
+                .dimensions(buttonsStartX, buttonsY, buttonWidth, buttonHeight)
+                .build();
+        confirmCancelDialogButton = ButtonWidget.builder(Text.literal("Abbrechen"), button -> closeDeleteConfirmation())
+                .dimensions(buttonsStartX + buttonWidth + buttonGap, buttonsY, buttonWidth, buttonHeight)
+                .build();
+        this.addDrawableChild(confirmDeleteButton);
+        this.addDrawableChild(confirmCancelDialogButton);
+    }
+
+    private void renderDeleteConfirmationDialog(DrawContext context) {
+        context.fill(0, 0, this.width, this.height, 0xC0000000);
+
+        int boxWidth = 220;
+        int boxHeight = 80;
+        int boxX = (this.width - boxWidth) / 2;
+        int boxY = (this.height - boxHeight) / 2;
+        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF202020);
+        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+
+        String question = "Wirklich Löschen?";
+        int textWidth = this.textRenderer.getWidth(question);
+        int textX = boxX + (boxWidth - textWidth) / 2;
+        int textY = boxY + 14;
+        context.drawText(this.textRenderer, question, textX, textY, 0xFFFFFFFF, true);
+    }
+
+    private void closeDeleteConfirmation() {
+        showDeleteConfirmation = false;
+        if (confirmDeleteButton != null) {
+            this.remove(confirmDeleteButton);
+            confirmDeleteButton = null;
+        }
+        if (confirmCancelDialogButton != null) {
+            this.remove(confirmCancelDialogButton);
+            confirmCancelDialogButton = null;
+        }
+        setEditorWidgetsVisible(true);
+    }
+
+    private void setEditorWidgetsVisible(boolean visible) {
+        if (nameField != null) {
+            nameField.setVisible(visible);
+            if (!visible) {
+                nameField.setFocused(false);
+            }
+        }
+        if (doneButton != null) {
+            doneButton.visible = visible;
+        }
+        if (cancelButton != null) {
+            cancelButton.visible = visible;
+        }
+        if (deleteButton != null) {
+            deleteButton.visible = visible;
+        }
+    }
+
+    private void performDelete() {
+        if (!editingExisting || kit.id == null || kit.id.isEmpty()) {
+            closeDeleteConfirmation();
+            return;
+        }
         String kitId = kit.id;
+        closeDeleteConfirmation();
         CustomKitManager.deleteKit(kitId);
         KitFilterUtility.clearCustomKitSelectionIfDeleted(kitId);
         closeToReturnScreen();
@@ -493,6 +604,8 @@ public class CustomKitEditorScreen extends Screen {
         if (client != null && returnScreen != null) {
             if (returnScreen instanceof KitSelectionScreen kitScreen) {
                 kitScreen.switchToCustomTab();
+            } else if (returnScreen instanceof KitViewScreen viewScreen) {
+                viewScreen.switchToCustomTab();
             }
             client.setScreen(returnScreen);
         } else {
@@ -503,6 +616,10 @@ public class CustomKitEditorScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            if (showDeleteConfirmation) {
+                closeDeleteConfirmation();
+                return true;
+            }
             onCancel();
             return true;
         }

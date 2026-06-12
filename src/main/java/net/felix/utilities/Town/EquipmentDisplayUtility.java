@@ -433,30 +433,26 @@ public class EquipmentDisplayUtility {
 
 		// Render nur wenn Overlays sichtbar sind
 		if (showOverlays) {
-			// Zeichne Rüstungswert mit konfigurierbarer Position und halbtransparentem Hintergrund
+			// Rüstungswert mittig über dem Inventar
 			if (totalArmor > 0) {
 				String armorText = String.format("Rüstung: %s", formatNumber(totalArmor));
 				int armorTextWidth = client.textRenderer.getWidth(armorText);
-				
-				// Berechne X-Position basierend auf Konfiguration
-				int armorX = (screenWidth - armorTextWidth) / 2 + CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorX;
-				
-				// Berechne Y-Position basierend auf Konfiguration
-				int armorY = screenHeight - CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorY;
-				
-				// Zeichne halbtransparentes Hintergrund-Overlay
-				int padding = 4; // Padding um den Text
+				int textHeight = client.textRenderer.fontHeight;
+				int padding = 4;
+				int gapAboveInventory = 40;
+
+				int armorX = inventoryX + (inventoryWidth - armorTextWidth) / 2;
+				int armorY = inventoryY - textHeight - padding - gapAboveInventory;
+
 				int armorOverlayWidth = armorTextWidth + (padding * 2);
-				int armorOverlayHeight = 12 + (padding * 2); // Text-Höhe + Padding
+				int armorOverlayHeight = textHeight + (padding * 2);
 				int armorOverlayX = armorX - padding;
 				int armorOverlayY = armorY - padding;
-				
-				// Halbtransparentes schwarzes Overlay nur wenn ein Hintergrund gewünscht ist
+
 				if (CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType != OverlayType.NONE) {
 					context.fill(armorOverlayX, armorOverlayY, armorOverlayX + armorOverlayWidth, armorOverlayY + armorOverlayHeight, 0x80000000);
 				}
-				
-				// Zeichne den Text
+
 				context.drawText(
 					client.textRenderer,
 					armorText,

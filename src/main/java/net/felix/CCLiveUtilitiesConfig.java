@@ -540,6 +540,9 @@ public class CCLiveUtilitiesConfig {
     public String kitFilterButton1CustomKitId = ""; // Eigene Kit-ID für Button 1
     
     @SerialEntry
+    public boolean kitFilterButton1NeuKit = false; // Neu-Tab Kit für Button 1
+    
+    @SerialEntry
     public String kitFilterButton2KitType = ""; // Kit-Typ für Button 2
     
     @SerialEntry
@@ -549,6 +552,9 @@ public class CCLiveUtilitiesConfig {
     public String kitFilterButton2CustomKitId = ""; // Eigene Kit-ID für Button 2
     
     @SerialEntry
+    public boolean kitFilterButton2NeuKit = false; // Neu-Tab Kit für Button 2
+    
+    @SerialEntry
     public String kitFilterButton3KitType = ""; // Kit-Typ für Button 3
     
     @SerialEntry
@@ -556,6 +562,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public String kitFilterButton3CustomKitId = ""; // Eigene Kit-ID für Button 3
+    
+    @SerialEntry
+    public boolean kitFilterButton3NeuKit = false; // Neu-Tab Kit für Button 3
     
     @SerialEntry
     public boolean kitFilterButtonsEnabled = true; // Kit Filter Buttons ein-/ausblenden

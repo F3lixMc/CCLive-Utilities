@@ -337,6 +337,7 @@ public class InformationenUtility {
 			// Check if we're in the special inventory (Moblexicon)
 			boolean isSpecialInventory = false;
 			boolean isLicenseInventory = false;
+			boolean isMaterialBagInventory = false;
 			boolean hideFloorNumbersInEssenceMenu = false;
 			String screenTitle = "";
 			if (client.currentScreen != null) {
@@ -350,6 +351,7 @@ public class InformationenUtility {
 				}
 				// Essence-Bag, -Auswahl, Harvester: keine Ebenen-Nummern
 				hideFloorNumbersInEssenceMenu = ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle);
+				isMaterialBagInventory = ZeichenUtility.containsUiMaterialBag(screenTitle);
 			}
 			
 			if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
@@ -555,6 +557,11 @@ public class InformationenUtility {
 						// In special inventory, only show floor info for mob names, not materials
 						if (isSpecialInventory && !info.rarity.equals("mob")) {
 							continue; // Skip materials in special inventory
+						}
+						
+						// Material-Bag: Ebene nur hinter Materiallisten, nicht im Item-Namen
+						if (isMaterialBagInventory && i == 0) {
+							break;
 						}
 						
 						// Create new text with material info appended to the same line
@@ -962,6 +969,16 @@ public class InformationenUtility {
 	}
 
 	/**
+	 * Normalisiert Tooltip-Aspektnamen für den Abgleich, z. B. "Blitz Aspekt" und "Blitzaspekt" -> "blitzaspekt".
+	 */
+	private static String normalizeAspectTooltipName(String name) {
+		if (name == null || name.isEmpty()) {
+			return "";
+		}
+		return name.replaceAll("§[0-9a-fk-or]", "").replaceAll("\\s+", "").toLowerCase();
+	}
+
+	/**
 	 * Findet Aspekt-Infos anhand des Tooltip-Namens in eckigen Klammern (transferierte Aspekte).
 	 */
 	public static AspectInfo getAspectInfoByTooltipDisplayName(String tooltipAspectName) {
@@ -978,8 +995,15 @@ public class InformationenUtility {
 			return directMatch;
 		}
 
+		String normalizedInput = normalizeAspectTooltipName(cleanName);
+		AspectInfo normalizedMatch = tooltipAspectDisplayNameLookup.get(normalizedInput);
+		if (normalizedMatch != null) {
+			return normalizedMatch;
+		}
+
 		for (Map.Entry<String, AspectInfo> entry : tooltipAspectDisplayNameLookup.entrySet()) {
-			if (entry.getKey().equalsIgnoreCase(cleanName)) {
+			if (entry.getKey().equalsIgnoreCase(cleanName)
+					|| normalizeAspectTooltipName(entry.getKey()).equals(normalizedInput)) {
 				return entry.getValue();
 			}
 		}
@@ -993,10 +1017,12 @@ public class InformationenUtility {
 		}
 		for (AspectInfo info : uniqueAspects.values()) {
 			String displayName = toTooltipAspectDisplayName(info.aspectName);
-			if (displayName != null && displayName.equalsIgnoreCase(cleanName)) {
+			if (displayName != null && (displayName.equalsIgnoreCase(cleanName)
+					|| normalizeAspectTooltipName(displayName).equals(normalizedInput))) {
 				return info;
 			}
-			if (info.aspectName.equalsIgnoreCase(cleanName)) {
+			if (info.aspectName.equalsIgnoreCase(cleanName)
+					|| normalizeAspectTooltipName(info.aspectName).equals(normalizedInput)) {
 				return info;
 			}
 		}
@@ -1017,8 +1043,10 @@ public class InformationenUtility {
 			String displayName = toTooltipAspectDisplayName(entry.getKey());
 			if (displayName != null && !displayName.isEmpty()) {
 				tooltipAspectDisplayNameLookup.put(displayName.toLowerCase(), entry.getValue());
+				tooltipAspectDisplayNameLookup.put(normalizeAspectTooltipName(displayName), entry.getValue());
 			}
 			tooltipAspectDisplayNameLookup.put(entry.getKey().toLowerCase(), entry.getValue());
+			tooltipAspectDisplayNameLookup.put(normalizeAspectTooltipName(entry.getKey()), entry.getValue());
 		}
 	}
 

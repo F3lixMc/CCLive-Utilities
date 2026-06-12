@@ -3351,15 +3351,44 @@ public class ItemViewerUtility {
     }
 
     public static int[] getKitEditorViewerBounds() {
-        if (!isKitEditorMode() || kitEditorBackgroundScreen == null) {
+        ViewerPosition pos = resolveKitEditorViewerPosition();
+        if (pos == null) {
+            return null;
+        }
+        return new int[] { pos.viewerX, pos.viewerY, pos.viewerWidth, pos.viewerHeight };
+    }
+
+    private static ViewerPosition resolveKitEditorViewerPosition() {
+        if (!isKitEditorMode()) {
             return null;
         }
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.currentScreen == null) {
             return null;
         }
-        ViewerPosition pos = getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.currentScreen);
-        return new int[] { pos.viewerX, pos.viewerY, pos.viewerWidth, pos.viewerHeight };
+        if (kitEditorBackgroundScreen != null) {
+            return getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.currentScreen);
+        }
+        return calculateViewerPositionBesideCenteredInventory(client.currentScreen);
+    }
+
+    private static ViewerPosition resolveViewerPositionForMouseInput(MinecraftClient client) {
+        if (isKitEditorMode()) {
+            return resolveKitEditorViewerPosition();
+        }
+        if (client.currentScreen == null) {
+            return null;
+        }
+        HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
+        if (handledScreen == null) {
+            return null;
+        }
+        String currentTitle = handledScreen.getTitle().getString();
+        if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
+                && !helpScreenOpen) {
+            return null;
+        }
+        return getOrCalculateViewerPosition(handledScreen, client.currentScreen);
     }
 
     public static boolean isMouseOverKitEditorItemViewer(double mouseX, double mouseY) {
@@ -3372,14 +3401,17 @@ public class ItemViewerUtility {
     }
 
     public static void renderKitEditorItemViewer(DrawContext context, MinecraftClient client, int mouseX, int mouseY) {
-        if (!isKitEditorMode() || kitEditorBackgroundScreen == null) {
+        if (!isKitEditorMode()) {
             return;
         }
         if (!itemsLoaded) {
             return;
         }
         updateMousePosition(mouseX, mouseY);
-        renderItemViewerInScreen(context, client, kitEditorBackgroundScreen, mouseX, mouseY);
+        ViewerPosition pos = resolveKitEditorViewerPosition();
+        if (pos != null) {
+            renderItemViewer(context, client, pos);
+        }
     }
 
     private static int getKitColor(net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection) {
@@ -3896,37 +3928,46 @@ public class ItemViewerUtility {
     }
     
     private static ViewerPosition calculateViewerPosition(HandledScreen<?> handledScreen, Screen screen, int inventoryX, int inventoryWidth) {
+        int inventoryY = readHandledScreenInventoryY(handledScreen, screen);
+        int inventoryHeight = readHandledScreenInventoryHeight(handledScreen);
+        return buildViewerPositionForInventoryArea(screen, inventoryX, inventoryWidth, inventoryY, inventoryHeight);
+    }
+
+    /** Gleiche Viewer-Position wie neben einem zentrierten Schmied-Inventar (176×166). */
+    private static ViewerPosition calculateViewerPositionBesideCenteredInventory(Screen screen) {
+        int inventoryWidth = 176;
+        int inventoryHeight = 166;
+        int inventoryX = (screen.width - inventoryWidth) / 2;
+        int inventoryY = (screen.height - inventoryHeight) / 2;
+        return buildViewerPositionForInventoryArea(screen, inventoryX, inventoryWidth, inventoryY, inventoryHeight);
+    }
+
+    private static ViewerPosition buildViewerPositionForInventoryArea(Screen screen, int inventoryX, int inventoryWidth,
+            int inventoryY, int inventoryHeight) {
         MinecraftClient client = MinecraftClient.getInstance();
-        
-        // Berechne verfügbaren Platz
+
         int availableWidthRight = screen.width - (inventoryX + inventoryWidth) - 10;
-        int availableWidthLeft = inventoryX - 20; // 10px links + 10px rechts Padding
-        
-        // Verwende Standard-Grid-Breite für die Platzierungsprüfung
+        int availableWidthLeft = inventoryX - 20;
+
         boolean placeRight = availableWidthRight >= ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
         int viewerX;
         int maxViewerWidth;
-        
+
         if (placeRight) {
-            // Nutze verfügbare Breite rechts vom Inventar
             viewerX = inventoryX + inventoryWidth + 10;
-            maxViewerWidth = screen.width - viewerX - 10; // Volle Breite bis zum rechten Rand
+            maxViewerWidth = screen.width - viewerX - 10;
         } else {
-            // Nutze verfügbare Breite links vom Inventar
-            viewerX = 10; // Starte am linken Rand mit Padding
-            maxViewerWidth = availableWidthLeft; // Volle Breite bis zum Inventar
+            viewerX = 10;
+            maxViewerWidth = availableWidthLeft;
         }
-        
+
         int maxAllowedWidth = Math.min(maxViewerWidth, (int) (screen.width * 0.4));
         int maxViewerHeight = screen.height - 20;
         int[] viewerSize = computeViewerSize(maxAllowedWidth, maxViewerHeight);
         int viewerWidth = viewerSize[0];
         int viewerHeight = viewerSize[1];
-        
+
         int dropdownWidth = getSortDropdownWidth(client);
-        
-        int inventoryY = readHandledScreenInventoryY(handledScreen, screen);
-        int inventoryHeight = readHandledScreenInventoryHeight(handledScreen);
         int viewerY = computeCenteredViewerY(screen, inventoryY, inventoryHeight, viewerHeight);
         
         int helpButtonX = viewerX + VIEWER_PADDING;
@@ -4021,18 +4062,10 @@ public class ItemViewerUtility {
         }
         
         MinecraftClient client = MinecraftClient.getInstance();
-        HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
-        if (handledScreen == null) {
+        ViewerPosition pos = resolveViewerPositionForMouseInput(client);
+        if (pos == null) {
             return false;
         }
-
-        String currentTitle = handledScreen.getTitle().getString();
-        if (!isKitEditorMode()
-                && net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)) {
-            return false;
-        }
-        
-        ViewerPosition pos = getOrCalculateViewerPosition(handledScreen, client.currentScreen);
         
         if (mouseX >= pos.viewerX && mouseX < pos.viewerX + pos.viewerWidth &&
             mouseY >= pos.viewerY && mouseY < pos.viewerY + pos.viewerHeight) {
@@ -4090,15 +4123,18 @@ public class ItemViewerUtility {
             return false;
         }
         
-        HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
-        if (handledScreen == null) {
-            return false;
-        }
-        
-        String currentTitle = handledScreen.getTitle().getString();
-        if (!isKitEditorMode()
-                && net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
-                && !helpScreenOpen) {
+        if (!isKitEditorMode() || kitEditorBackgroundScreen != null) {
+            HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
+            if (handledScreen == null) {
+                return false;
+            }
+            String currentTitle = handledScreen.getTitle().getString();
+            if (!isKitEditorMode()
+                    && net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
+                    && !helpScreenOpen) {
+                return false;
+            }
+        } else if (client.currentScreen == null) {
             return false;
         }
         
@@ -4134,8 +4170,10 @@ public class ItemViewerUtility {
             return true;
         }
         
-        // Berechne Viewer-Position (gleiche Logik wie beim Rendering)
-        ViewerPosition pos = getOrCalculateViewerPosition(handledScreen, client.currentScreen);
+        ViewerPosition pos = resolveViewerPositionForMouseInput(client);
+        if (pos == null) {
+            return false;
+        }
         
         // Prüfe Klick auf Minimierungs-Button (außerhalb des Overlays, am linken Rand, wenn nicht minimiert)
         if (!isMinimized && button == 0) {

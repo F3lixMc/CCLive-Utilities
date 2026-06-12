@@ -70,6 +70,7 @@ public class KitFilterUtility {
 	
 	// Status-Tracking
 	private static boolean wasInRelevantInventory = false;
+	private static HandledScreen<?> lastRelevantInventoryScreen = null;
 	
 	// Flag für verzögertes Öffnen des KitViewScreen (nach Chat-Schließung)
 	private static boolean pendingKitViewScreen = false;
@@ -81,6 +82,21 @@ public class KitFilterUtility {
 	// Item-Informationen für jedes Kit und jede Stufe
 	// Map: KitType -> Level -> Set von Item-Informationen
 	private static Map<KitType, Map<Integer, Set<ItemInfo>>> kitItemInfos = new HashMap<>();
+	private static Map<KitType, Map<Integer, Set<ItemInfo>>> neuKitItemInfos = new HashMap<>();
+	
+	public static final KitType[] NEU_KIT_TYPES = {
+		KitType.MÜNZ_KIT,
+		KitType.RESSOURCEN_KIT,
+		KitType.HERSTELLUNGS_KIT
+	};
+	public static final int NEU_LEVEL_COUNT = 4;
+
+	public static int getNeuLevelCount(KitType kitType) {
+		if (kitType == KitType.HERSTELLUNGS_KIT) {
+			return 3;
+		}
+		return NEU_LEVEL_COUNT;
+	}
 	
 	/**
 	 * Repräsentiert Informationen über ein Item in einem Kit
@@ -162,14 +178,14 @@ public class KitFilterUtility {
 				return 0xFFFFFFFF; // Standard: weiß
 			}
 			
-			switch (colorString.toLowerCase()) {
-				case "epic":
-					return 0xFFA134EB; // #A134EB
-				case "legendary":
-					return 0xFFFC7E00; // #FC7E00
-				default:
-					return 0xFFFFFFFF; // Standard: weiß
-			}
+			return switch (colorString.toLowerCase()) {
+				case "common" -> 0xFFFFFFFF; // Weiß (wie ItemViewer)
+				case "uncommon" -> 0xFF25D119; // #25d119
+				case "rare" -> 0xFF5555FF; // #5555FF
+				case "epic" -> 0xFF8409DB; // #8409db
+				case "legendary" -> 0xFFDE680D; // #de680d
+				default -> 0xFFFFFFFF;
+			};
 		}
 		
 		/**
@@ -235,12 +251,20 @@ public class KitFilterUtility {
 	 */
 	public static class KitSelection {
 		public final KitType kitType;
-		public final int level; // 1-7, bei eigenen Kits 0
+		public final int level; // 1-7 (Alt) oder 1-4 (Neu), bei eigenen Kits 0
 		public final String customKitId;
+		public final boolean neuKit;
 
 		public KitSelection(KitType kitType, int level) {
+			this(kitType, level, false);
+		}
+
+		public KitSelection(KitType kitType, int level, boolean neuKit) {
 			this.kitType = kitType;
-			this.level = Math.max(1, Math.min(7, level));
+			this.neuKit = neuKit;
+			this.level = neuKit
+				? Math.max(1, Math.min(getNeuLevelCount(kitType), level))
+				: Math.max(1, Math.min(7, level));
 			this.customKitId = null;
 		}
 
@@ -248,6 +272,7 @@ public class KitFilterUtility {
 			this.kitType = null;
 			this.level = 0;
 			this.customKitId = customKitId;
+			this.neuKit = false;
 		}
 
 		public boolean isCustom() {
@@ -259,7 +284,7 @@ public class KitFilterUtility {
 				CustomKit kit = CustomKitManager.getKit(customKitId);
 				return kit != null ? kit.name : "Eigenes Kit";
 			}
-			return kitType.getDisplayName() + " Stufe " + level;
+			return kitType.getDisplayName() + " " + level;
 		}
 	}
 	
@@ -324,15 +349,15 @@ public class KitFilterUtility {
 	private static void loadSavedKitSelections() {
 		try {
 			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-			loadButtonKitSelection(0, config.kitFilterButton1CustomKitId, config.kitFilterButton1KitType, config.kitFilterButton1Level);
-			loadButtonKitSelection(1, config.kitFilterButton2CustomKitId, config.kitFilterButton2KitType, config.kitFilterButton2Level);
-			loadButtonKitSelection(2, config.kitFilterButton3CustomKitId, config.kitFilterButton3KitType, config.kitFilterButton3Level);
+			loadButtonKitSelection(0, config.kitFilterButton1CustomKitId, config.kitFilterButton1KitType, config.kitFilterButton1Level, config.kitFilterButton1NeuKit);
+			loadButtonKitSelection(1, config.kitFilterButton2CustomKitId, config.kitFilterButton2KitType, config.kitFilterButton2Level, config.kitFilterButton2NeuKit);
+			loadButtonKitSelection(2, config.kitFilterButton3CustomKitId, config.kitFilterButton3KitType, config.kitFilterButton3Level, config.kitFilterButton3NeuKit);
 		} catch (Exception e) {
 			// Silent error handling
 		}
 	}
 
-	private static void loadButtonKitSelection(int buttonIndex, String customKitId, String kitTypeString, int level) {
+	private static void loadButtonKitSelection(int buttonIndex, String customKitId, String kitTypeString, int level, boolean neuKit) {
 		if (customKitId != null && !customKitId.isEmpty() && CustomKitManager.getKit(customKitId) != null) {
 			selectedKits.put(buttonIndex, new KitSelection(customKitId));
 			return;
@@ -340,7 +365,7 @@ public class KitFilterUtility {
 		if (kitTypeString != null && !kitTypeString.isEmpty()) {
 			KitType kitType = getKitTypeFromString(kitTypeString);
 			if (kitType != null) {
-				selectedKits.put(buttonIndex, new KitSelection(kitType, Math.max(1, Math.min(7, level))));
+				selectedKits.put(buttonIndex, new KitSelection(kitType, level, neuKit));
 			}
 		}
 	}
@@ -366,7 +391,7 @@ public class KitFilterUtility {
 	/**
 	 * Speichert die Kit-Auswahl in der Config
 	 */
-	private static void saveKitSelectionToConfig(int buttonIndex, KitType kitType, int level) {
+	private static void saveKitSelectionToConfig(int buttonIndex, KitType kitType, int level, boolean neuKit) {
 		try {
 			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
 			switch (buttonIndex) {
@@ -374,16 +399,19 @@ public class KitFilterUtility {
 					config.kitFilterButton1KitType = getStringFromKitType(kitType);
 					config.kitFilterButton1Level = level;
 					config.kitFilterButton1CustomKitId = "";
+					config.kitFilterButton1NeuKit = neuKit;
 					break;
 				case 1:
 					config.kitFilterButton2KitType = getStringFromKitType(kitType);
 					config.kitFilterButton2Level = level;
 					config.kitFilterButton2CustomKitId = "";
+					config.kitFilterButton2NeuKit = neuKit;
 					break;
 				case 2:
 					config.kitFilterButton3KitType = getStringFromKitType(kitType);
 					config.kitFilterButton3Level = level;
 					config.kitFilterButton3CustomKitId = "";
+					config.kitFilterButton3NeuKit = neuKit;
 					break;
 			}
 			CCLiveUtilitiesConfig.HANDLER.save();
@@ -400,16 +428,19 @@ public class KitFilterUtility {
 					config.kitFilterButton1CustomKitId = customKitId != null ? customKitId : "";
 					config.kitFilterButton1KitType = "";
 					config.kitFilterButton1Level = 1;
+					config.kitFilterButton1NeuKit = false;
 					break;
 				case 1:
 					config.kitFilterButton2CustomKitId = customKitId != null ? customKitId : "";
 					config.kitFilterButton2KitType = "";
 					config.kitFilterButton2Level = 1;
+					config.kitFilterButton2NeuKit = false;
 					break;
 				case 2:
 					config.kitFilterButton3CustomKitId = customKitId != null ? customKitId : "";
 					config.kitFilterButton3KitType = "";
 					config.kitFilterButton3Level = 1;
+					config.kitFilterButton3NeuKit = false;
 					break;
 			}
 			CCLiveUtilitiesConfig.HANDLER.save();
@@ -423,7 +454,6 @@ public class KitFilterUtility {
 	 */
 	private static void loadKitItemNames() {
 		try {
-			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
 			java.nio.file.Path resource = getKitsConfigFilePath();
 			if (resource == null) {
 				return;
@@ -433,90 +463,98 @@ public class KitFilterUtility {
 				try (var reader = new java.io.InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
 					JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
 					
-					// Durchlaufe alle Kit-Typen
 					for (String kitKey : json.keySet()) {
-						// Konvertiere String zu KitType
+						if ("neu".equalsIgnoreCase(kitKey)) {
+							continue;
+						}
 						KitType kitType = getKitTypeFromKey(kitKey);
 						if (kitType == null) {
 							continue;
 						}
-						
-						JsonObject kitData = json.getAsJsonObject(kitKey);
-						
-						// Durchlaufe alle Stufen (1-7)
-						for (int level = 1; level <= 7; level++) {
-							String levelKey = String.valueOf(level);
-							if (kitData.has(levelKey)) {
-								JsonArray itemsArray = kitData.getAsJsonArray(levelKey);
-								Set<ItemInfo> itemInfos = new HashSet<>();
-								
-								// Füge alle Item-Informationen hinzu
-								ItemInfo lastItemInfo = null; // Speichere das letzte Item für Kombination
-								for (var element : itemsArray) {
-									if (element.isJsonObject()) {
-										// Neues Format: Objekt mit zusätzlichen Informationen
-										com.google.gson.JsonObject itemObj = element.getAsJsonObject();
-										String itemName = itemObj.has("name") ? itemObj.get("name").getAsString() : "";
-										
-										if (!itemName.isEmpty()) {
-											// Vollständiges Objekt mit Name
-											String ebene = itemObj.has("floor") ? itemObj.get("floor").getAsString() : null;
-											String info = itemObj.has("info") ? itemObj.get("info").getAsString() : null;
-											String nameColorStr = itemObj.has("rarity") ? itemObj.get("rarity").getAsString() : null;
-											String itemType = itemObj.has("item_type") ? itemObj.get("item_type").getAsString() : null;
-											String modifier = itemObj.has("modifier") ? itemObj.get("modifier").getAsString() : null;
-											int nameColor = ItemInfo.parseColorString(nameColorStr);
-											lastItemInfo = new ItemInfo(itemName, ebene, info, nameColor, nameColorStr, itemType, modifier);
-											itemInfos.add(lastItemInfo);
-										} else if (lastItemInfo != null) {
-											// Objekt ohne Name: Füge Ebene/Info/Farbe/Item-Typ/Modifier zum vorherigen Item hinzu
-											String ebene = itemObj.has("floor") ? itemObj.get("floor").getAsString() : null;
-											String info = itemObj.has("info") ? itemObj.get("info").getAsString() : null;
-											String nameColorStr = itemObj.has("rarity") ? itemObj.get("rarity").getAsString() : null;
-											String itemType = itemObj.has("item_type") ? itemObj.get("item_type").getAsString() : null;
-											String modifier = itemObj.has("modifier") ? itemObj.get("modifier").getAsString() : null;
-											
-											// Erstelle neues ItemInfo mit kombinierten Informationen
-											String combinedEbene = (ebene != null && !ebene.isEmpty()) ? ebene : lastItemInfo.ebene;
-											String combinedInfo = (info != null && !info.isEmpty()) ? info : lastItemInfo.info;
-											String combinedColorStr = (nameColorStr != null && !nameColorStr.isEmpty()) 
-												? nameColorStr 
-												: lastItemInfo.nameColorString;
-											String combinedItemType = (itemType != null && !itemType.isEmpty())
-												? itemType
-												: lastItemInfo.itemType;
-											String combinedModifier = (modifier != null && !modifier.isEmpty())
-												? modifier
-												: lastItemInfo.modifier;
-											int combinedColor = (combinedColorStr != null && !combinedColorStr.isEmpty())
-												? ItemInfo.parseColorString(combinedColorStr)
-												: lastItemInfo.nameColor;
-											ItemInfo combinedItemInfo = new ItemInfo(lastItemInfo.name, combinedEbene, combinedInfo, combinedColor, combinedColorStr, combinedItemType, combinedModifier);
-											
-											// Entferne das alte und füge das neue hinzu
-											itemInfos.remove(lastItemInfo);
-											itemInfos.add(combinedItemInfo);
-											lastItemInfo = combinedItemInfo;
-										}
-									} else {
-										// Altes Format: Nur String (rückwärtskompatibel)
-										String itemName = element.getAsString();
-										if (!itemName.isEmpty()) {
-											lastItemInfo = new ItemInfo(itemName);
-											itemInfos.add(lastItemInfo);
-										}
-									}
-								}
-								
-								// Speichere die Item-Informationen
-								setKitItemInfos(kitType, level, itemInfos);
+						parseKitLevels(json.getAsJsonObject(kitKey), kitType, 7, false);
+					}
+					
+					if (json.has("neu") && json.get("neu").isJsonObject()) {
+						JsonObject neuData = json.getAsJsonObject("neu");
+						for (String kitKey : neuData.keySet()) {
+							KitType kitType = getKitTypeFromKey(kitKey);
+							if (kitType == null) {
+								continue;
 							}
+							parseKitLevels(neuData.getAsJsonObject(kitKey), kitType, NEU_LEVEL_COUNT, true);
 						}
 					}
 				}
 			}
 		} catch (Exception e) {
 			// Silent error handling
+		}
+	}
+	
+	private static void parseKitLevels(JsonObject kitData, KitType kitType, int maxLevel, boolean neu) {
+		for (int level = 1; level <= maxLevel; level++) {
+			String levelKey = String.valueOf(level);
+			if (!kitData.has(levelKey)) {
+				continue;
+			}
+			JsonArray itemsArray = kitData.getAsJsonArray(levelKey);
+			Set<ItemInfo> itemInfos = new HashSet<>();
+			ItemInfo lastItemInfo = null;
+			for (var element : itemsArray) {
+				if (element.isJsonObject()) {
+					com.google.gson.JsonObject itemObj = element.getAsJsonObject();
+					String itemName = itemObj.has("name") ? itemObj.get("name").getAsString() : "";
+					
+					if (!itemName.isEmpty()) {
+						String ebene = itemObj.has("floor") ? itemObj.get("floor").getAsString() : null;
+						String info = itemObj.has("info") ? itemObj.get("info").getAsString() : null;
+						String nameColorStr = itemObj.has("rarity") ? itemObj.get("rarity").getAsString() : null;
+						String itemType = itemObj.has("item_type") ? itemObj.get("item_type").getAsString() : null;
+						String modifier = itemObj.has("modifier") ? itemObj.get("modifier").getAsString() : null;
+						int nameColor = ItemInfo.parseColorString(nameColorStr);
+						lastItemInfo = new ItemInfo(itemName, ebene, info, nameColor, nameColorStr, itemType, modifier);
+						itemInfos.add(lastItemInfo);
+					} else if (lastItemInfo != null) {
+						String ebene = itemObj.has("floor") ? itemObj.get("floor").getAsString() : null;
+						String info = itemObj.has("info") ? itemObj.get("info").getAsString() : null;
+						String nameColorStr = itemObj.has("rarity") ? itemObj.get("rarity").getAsString() : null;
+						String itemType = itemObj.has("item_type") ? itemObj.get("item_type").getAsString() : null;
+						String modifier = itemObj.has("modifier") ? itemObj.get("modifier").getAsString() : null;
+						
+						String combinedEbene = (ebene != null && !ebene.isEmpty()) ? ebene : lastItemInfo.ebene;
+						String combinedInfo = (info != null && !info.isEmpty()) ? info : lastItemInfo.info;
+						String combinedColorStr = (nameColorStr != null && !nameColorStr.isEmpty())
+							? nameColorStr
+							: lastItemInfo.nameColorString;
+						String combinedItemType = (itemType != null && !itemType.isEmpty())
+							? itemType
+							: lastItemInfo.itemType;
+						String combinedModifier = (modifier != null && !modifier.isEmpty())
+							? modifier
+							: lastItemInfo.modifier;
+						int combinedColor = (combinedColorStr != null && !combinedColorStr.isEmpty())
+							? ItemInfo.parseColorString(combinedColorStr)
+							: lastItemInfo.nameColor;
+						ItemInfo combinedItemInfo = new ItemInfo(lastItemInfo.name, combinedEbene, combinedInfo, combinedColor, combinedColorStr, combinedItemType, combinedModifier);
+						
+						itemInfos.remove(lastItemInfo);
+						itemInfos.add(combinedItemInfo);
+						lastItemInfo = combinedItemInfo;
+					}
+				} else {
+					String itemName = element.getAsString();
+					if (!itemName.isEmpty()) {
+						lastItemInfo = new ItemInfo(itemName);
+						itemInfos.add(lastItemInfo);
+					}
+				}
+			}
+			
+			if (neu) {
+				setNeuKitItemInfos(kitType, level, itemInfos);
+			} else {
+				setKitItemInfos(kitType, level, itemInfos);
+			}
 		}
 	}
 	
@@ -574,6 +612,7 @@ public class KitFilterUtility {
 		// Aktualisiere Button-Positionen und Filter-Logik wenn in einem relevanten Inventar
 		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
 			if (isRelevantInventory(handledScreen)) {
+				lastRelevantInventoryScreen = handledScreen;
 				// Prüfe ob Kit Filter Buttons aktiviert sind
 				if (!CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled) {
 					// Wenn Buttons deaktiviert sind, stelle alle Items wieder her und setze Filter zurück
@@ -657,9 +696,10 @@ public class KitFilterUtility {
 		} else {
 			// Prüfe ob der aktuelle Screen ein KitSelectionScreen ist
 			// In diesem Fall haben wir das Inventar nicht verlassen, sondern nur ein Menü geöffnet
-			if (client.currentScreen instanceof KitSelectionScreen) {
-				// Kit-Auswahl-Menü ist offen - Filter bleiben aktiv
-				// Keine Aktion erforderlich
+			if (client.currentScreen instanceof KitSelectionScreen
+					|| client.currentScreen instanceof KitViewScreen
+					|| client.currentScreen instanceof CustomKitEditorScreen) {
+				// Kit-Menüs sind offen - Filter bleiben aktiv
 				return;
 			}
 			
@@ -676,18 +716,21 @@ public class KitFilterUtility {
 	
 	/**
 	 * Prüft ob das aktuelle Inventar relevant für Kit-Filter ist
-	 * Kit-Filter werden nur in "Baupläne [Rüstung]" und "Bauplan [Shop]" angezeigt
+	 * (Schmied-Bauplan-Inventare: Rüstung, Waffen, Werkzeuge, Shop und Favoriten).
 	 */
 	private static boolean isRelevantInventory(HandledScreen<?> screen) {
 		String title = screen.getTitle().getString();
-		// Entferne Minecraft-Formatierungs-Codes und Unicode-Zeichen für Vergleich
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
-								 .replaceAll("[\\u3400-\\u4DBF]", "");
-		
-		// Prüfe auf die spezifischen Inventare
-		return cleanTitle.contains("Baupläne [Rüstung]") ||
-			   cleanTitle.contains("Bauplan [Shop]") ||
-			   cleanTitle.contains("Favorisierte [Rüstungsbaupläne]"); 
+				.replaceAll("[\\u3400-\\u4DBF]", "");
+
+		return cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Blueprints [Weapons]") ||
+				cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Blueprints [Armor]") ||
+				cleanTitle.contains("Baupläne [Werkzeuge]") || cleanTitle.contains("Blueprints [Tools]") ||
+				cleanTitle.contains("Bauplan [Shop]") || cleanTitle.contains("Blueprint Store") ||
+				cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorited [Armor Blueprints]") ||
+				cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorited [Weapon Blueprints]") ||
+				cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") || cleanTitle.contains("Favorited [Tools Blueprints]") ||
+				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
 	}
 	
 	/**
@@ -850,7 +893,7 @@ public class KitFilterUtility {
 				CustomKit kit = CustomKitManager.getKit(selection.customKitId);
 				return kit != null ? kit.name : "Eigenes Kit";
 			}
-			return selection.kitType.getDisplayName() + " " + selection.level;
+			return selection.getDisplayName();
 		}
 		return "Kit " + (buttonIndex + 1);
 	}
@@ -949,20 +992,43 @@ public class KitFilterUtility {
 			client.setScreen(new KitSelectionScreen(buttonIndex));
 		}
 	}
+
+	public static HandledScreen<?> getLastRelevantInventoryScreen() {
+		if (lastRelevantInventoryScreen != null && isRelevantInventory(lastRelevantInventoryScreen)) {
+			return lastRelevantInventoryScreen;
+		}
+		return null;
+	}
+
+	public static HandledScreen<?> resolveKitEditorItemViewerBackground(net.minecraft.client.gui.screen.Screen directPreviousScreen) {
+		if (directPreviousScreen instanceof HandledScreen<?> handled && isRelevantInventory(handled)) {
+			return handled;
+		}
+		return getLastRelevantInventoryScreen();
+	}
 	
 	/**
 	 * Setzt die Kit-Auswahl für einen Button
 	 */
 	public static void setKitSelection(int buttonIndex, KitType kitType, int level) {
+		setKitSelection(buttonIndex, kitType, level, false);
+	}
+
+	public static void setNeuKitSelection(int buttonIndex, KitType kitType, int level) {
+		setKitSelection(buttonIndex, kitType, level, true);
+	}
+
+	private static void setKitSelection(int buttonIndex, KitType kitType, int level, boolean neuKit) {
 		KitSelection oldSelection = selectedKits.get(buttonIndex);
 		boolean selectionChanged = oldSelection == null
 				|| oldSelection.isCustom()
 				|| oldSelection.kitType != kitType
-				|| oldSelection.level != level;
+				|| oldSelection.level != level
+				|| oldSelection.neuKit != neuKit;
 
-		selectedKits.put(buttonIndex, new KitSelection(kitType, level));
-		saveKitSelectionToConfig(buttonIndex, kitType, level);
-		applyKitSelectionSideEffects(buttonIndex, selectionChanged, getKitItemNames(kitType, level));
+		selectedKits.put(buttonIndex, new KitSelection(kitType, level, neuKit));
+		saveKitSelectionToConfig(buttonIndex, kitType, level, neuKit);
+		applyKitSelectionSideEffects(buttonIndex, selectionChanged, getKitItemNames(kitType, level, neuKit));
 	}
 
 	public static void setCustomKitSelection(int buttonIndex, String customKitId) {
@@ -1376,12 +1442,20 @@ public class KitFilterUtility {
 	private static void setKitItemInfos(KitType kitType, int level, Set<ItemInfo> itemInfos) {
 		kitItemInfos.computeIfAbsent(kitType, k -> new HashMap<>()).put(level, itemInfos);
 	}
+
+	private static void setNeuKitItemInfos(KitType kitType, int level, Set<ItemInfo> itemInfos) {
+		neuKitItemInfos.computeIfAbsent(kitType, k -> new HashMap<>()).put(level, itemInfos);
+	}
 	
 	/**
 	 * Gibt die Item-Informationen für ein Kit und eine Stufe zurück
 	 */
 	public static Set<ItemInfo> getKitItemInfos(KitType kitType, int level) {
-		Map<Integer, Set<ItemInfo>> levelMap = kitItemInfos.get(kitType);
+		return getKitItemInfos(kitType, level, false);
+	}
+
+	public static Set<ItemInfo> getKitItemInfos(KitType kitType, int level, boolean neuKit) {
+		Map<Integer, Set<ItemInfo>> levelMap = neuKit ? neuKitItemInfos.get(kitType) : kitItemInfos.get(kitType);
 		if (levelMap == null) {
 			return new HashSet<>();
 		}
@@ -1392,7 +1466,11 @@ public class KitFilterUtility {
 	 * Gibt die Item-Namen für ein Kit und eine Stufe zurück (nur Namen, für Rückwärtskompatibilität)
 	 */
 	public static Set<String> getKitItemNames(KitType kitType, int level) {
-		Set<ItemInfo> itemInfos = getKitItemInfos(kitType, level);
+		return getKitItemNames(kitType, level, false);
+	}
+
+	public static Set<String> getKitItemNames(KitType kitType, int level, boolean neuKit) {
+		Set<ItemInfo> itemInfos = getKitItemInfos(kitType, level, neuKit);
 		Set<String> itemNames = new HashSet<>();
 		for (ItemInfo itemInfo : itemInfos) {
 			itemNames.add(itemInfo.name);
@@ -1405,6 +1483,15 @@ public class KitFilterUtility {
 			return null;
 		}
 		for (Map<Integer, Set<ItemInfo>> levelMap : kitItemInfos.values()) {
+			for (Set<ItemInfo> infos : levelMap.values()) {
+				for (ItemInfo info : infos) {
+					if (itemNamesMatch(info.name, itemName)) {
+						return info;
+					}
+				}
+			}
+		}
+		for (Map<Integer, Set<ItemInfo>> levelMap : neuKitItemInfos.values()) {
 			for (Set<ItemInfo> infos : levelMap.values()) {
 				for (ItemInfo info : infos) {
 					if (itemNamesMatch(info.name, itemName)) {
@@ -1473,17 +1560,7 @@ public class KitFilterUtility {
 	}
 
 	private static int rarityColorFromItemViewer(String rarity) {
-		if (rarity == null || rarity.isEmpty()) {
-			return 0xFFFFFFFF;
-		}
-		return switch (rarity.toLowerCase()) {
-			case "common" -> 0xFFFFFFFF;
-			case "uncommon" -> 0xFF25D119;
-			case "rare" -> 0xFF5555FF;
-			case "epic" -> 0xFF8409DB;
-			case "legendary" -> 0xFFDE680D;
-			default -> ItemInfo.parseColorString(rarity);
-		};
+		return ItemInfo.parseColorString(rarity);
 	}
 
 	public static List<ItemInfo> getCustomKitItemInfos(CustomKit kit) {
@@ -1517,7 +1594,7 @@ public class KitFilterUtility {
 			}
 			return new HashSet<>(kit.itemNames);
 		}
-		return getKitItemNames(selection.kitType, selection.level);
+		return getKitItemNames(selection.kitType, selection.level, selection.neuKit);
 	}
 	
 	/**
@@ -1567,6 +1644,7 @@ public class KitFilterUtility {
 	 */
 	public static void reloadKitsDatabase() {
 		kitItemInfos.clear();
+		neuKitItemInfos.clear();
 		loadKitItemNames();
 	}
 }

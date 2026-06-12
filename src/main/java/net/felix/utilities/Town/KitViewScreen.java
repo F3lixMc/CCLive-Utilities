@@ -6,6 +6,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -46,10 +47,30 @@ public class KitViewScreen extends Screen {
 	// Anzahl Kits und Stufen
 	private static final int KIT_COUNT = 5; // 5 Kits
 	private static final int LEVEL_COUNT = 7; // 7 Stufen pro Kit
+	private static final int CUSTOM_COLUMNS = 7;
+	private static final int TAB_HEIGHT = 14;
+	private static final int TAB_GAP = 2;
+	private static final int TAB_PADDING_X = 4;
+	private static final int TAB_MIN_WIDTH = 26;
+	private static final String[] TAB_LABELS = {"Alt", "Neu", "Eigene"};
+	
+	private static final int TAB_ALT = 0;
+	private static final int TAB_NEU = 1;
+	private static final int TAB_EIGENE = 2;
+	private static final int TAB_COLOR_ACTIVE = 0xFF4C635E;
+	private static final int TAB_COLOR_ACTIVE_TOP = 0xFF3D4F4B;
+	private static final int TAB_COLOR_INACTIVE = 0xFF4D6E6D;
+	private static final int TAB_COLOR_INACTIVE_TOP = 0xFF466363;
+	private static final int TOOLTIP_ACTION_GREEN = 0xFF16A80C;
+	
+	private int activeTab = TAB_ALT;
 	
 	// Hover-Informationen für Tooltip
 	private KitFilterUtility.KitType hoveredKitType = null;
 	private int hoveredLevel = -1;
+	private boolean hoveredNeuKit = false;
+	private CustomKit hoveredCustomKit = null;
+	private boolean hoveredPlusSlot = false;
 	
 	// Button zum Schließen
 	private ButtonWidget cancelButton;
@@ -79,6 +100,10 @@ public class KitViewScreen extends Screen {
 		
 		// Speichere den aktuellen Screen bevor wir den Kit-View-Screen öffnen
 		this.previousScreen = MinecraftClient.getInstance().currentScreen;
+	}
+
+	public void switchToCustomTab() {
+		this.activeTab = TAB_EIGENE;
 	}
 	
 	@Override
@@ -127,20 +152,14 @@ public class KitViewScreen extends Screen {
 			Text.literal("Abbrechen"),
 			button -> onCancel()
 		)
-		.dimensions(this.width / 2 - 40, this.height - 120, 80, 20)
+		.dimensions(this.width / 2 - 40, this.height - 30, 80, 20)
 		.build();
 		this.addDrawableChild(this.cancelButton);
 	}
 	
 	@Override
 	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-		// Render the previous screen in the background if it exists (Overlay-Style)
-		if (previousScreen != null) {
-			previousScreen.render(context, mouseX, mouseY, delta);
-		}
-		
-		// Render very transparent background overlay
-		context.fill(0, 0, this.width, this.height, 0x20000000);
+		context.fill(0, 0, this.width, this.height, 0xC0101010);
 		
 		// Rendere Kits-Background-Textur als Hintergrund für das Overlay
 		// Prüfe ob init() bereits ausgeführt wurde
@@ -173,16 +192,37 @@ public class KitViewScreen extends Screen {
 		
 		// Grid rendern (nur wenn init() bereits ausgeführt wurde)
 		if (maxKitNameWidth > 0 && gridStartX > 0) {
-			renderKitGrid(context, mouseX, mouseY);
+			if (activeTab == TAB_ALT) {
+				renderKitGrid(context, mouseX, mouseY);
+			} else if (activeTab == TAB_NEU) {
+				renderNeuKitGrid(context, mouseX, mouseY);
+			} else {
+				renderCustomKitGrid(context, mouseX, mouseY);
+			}
 		}
 		
 		// Buttons rendern (wird automatisch gemacht)
 		super.render(context, mouseX, mouseY, delta);
+
+		renderForegroundUi(context, mouseX, mouseY);
 		
-		// Tooltip rendern (nach super.render(), damit er über allem liegt)
+		// Tooltip rendern (nach Tabs, damit er nicht verdeckt wird)
 		if (hoveredKitType != null && hoveredLevel > 0) {
-			renderTooltip(context, mouseX, mouseY);
+			renderTooltip(context, mouseX, mouseY, hoveredNeuKit);
+		} else if (hoveredCustomKit != null) {
+			renderCustomKitTooltip(context, mouseX, mouseY);
+		} else if (hoveredPlusSlot) {
+			renderPlusSlotTooltip(context, mouseX, mouseY);
 		}
+	}
+
+	private void renderForegroundUi(DrawContext context, int mouseX, int mouseY) {
+		if (backgroundWidth <= 0) {
+			return;
+		}
+		context.enableScissor(0, 0, this.width, this.height);
+		renderTabs(context, mouseX, mouseY);
+		context.disableScissor();
 	}
 	
 	/**
@@ -321,13 +361,14 @@ public class KitViewScreen extends Screen {
 	/**
 	 * Rendert einen Tooltip mit Kit-Namen, Stufe und Item-Namen in tabellarischer Form
 	 */
-	private void renderTooltip(DrawContext context, int mouseX, int mouseY) {
-		// Formatiere Tooltip-Text (z.B. "Münz-Kit 1", "Schaden-Kit 4")
+	private void renderTooltip(DrawContext context, int mouseX, int mouseY, boolean neuKit) {
+		if (hoveredKitType == null || hoveredLevel <= 0) {
+			return;
+		}
 		String kitName = hoveredKitType.getDisplayName();
 		String tooltipHeader = kitName + " " + hoveredLevel;
 		
-		// Hole die Item-Informationen für dieses Kit und Level
-		java.util.Set<KitFilterUtility.ItemInfo> itemInfosSet = KitFilterUtility.getKitItemInfos(hoveredKitType, hoveredLevel);
+		java.util.Set<KitFilterUtility.ItemInfo> itemInfosSet = KitFilterUtility.getKitItemInfos(hoveredKitType, hoveredLevel, neuKit);
 		
 		if (itemInfosSet.isEmpty()) {
 			return; // Keine Items, kein Tooltip
@@ -529,6 +570,7 @@ public class KitViewScreen extends Screen {
 		// Reset hover-Informationen
 		hoveredKitType = null;
 		hoveredLevel = -1;
+		hoveredNeuKit = false;
 		
 		// Rendere jede Reihe (Kit)
 		for (int kitIndex = 0; kitIndex < KIT_COUNT && kitIndex < kitTypes.length; kitIndex++) {
@@ -592,15 +634,470 @@ public class KitViewScreen extends Screen {
 		}
 	}
 	
+	private void renderNeuKitGrid(DrawContext context, int mouseX, int mouseY) {
+		KitFilterUtility.KitType[] kitTypes = KitFilterUtility.NEU_KIT_TYPES;
+		
+		hoveredKitType = null;
+		hoveredLevel = -1;
+		hoveredNeuKit = false;
+		hoveredCustomKit = null;
+		hoveredPlusSlot = false;
+		
+		for (int kitIndex = 0; kitIndex < kitTypes.length; kitIndex++) {
+			KitFilterUtility.KitType kitType = kitTypes[kitIndex];
+			ItemStack kitIcon = getKitIcon(kitType);
+			
+			int kitNameY = gridStartY + (kitIndex * GRID_SPACING_Y) + (SLOT_SIZE / 2) - 4;
+			int kitNameWidth = this.textRenderer.getWidth(kitType.getDisplayName());
+			int kitNameX = kitNameStartX + (this.maxKitNameWidth - kitNameWidth);
+			context.drawText(this.textRenderer, kitType.getDisplayName(), kitNameX, kitNameY, 0xFFFFFF, false);
+			
+			for (int level = 1; level <= KitFilterUtility.getNeuLevelCount(kitType); level++) {
+				int slotX = gridStartX + ((level - 1) * GRID_SPACING_X);
+				int slotY = gridStartY + (kitIndex * GRID_SPACING_Y);
+				boolean isHovered = mouseX >= slotX && mouseX < slotX + SLOT_SIZE
+						&& mouseY >= slotY && mouseY < slotY + SLOT_SIZE;
+				if (isHovered) {
+					hoveredKitType = kitType;
+					hoveredLevel = level;
+					hoveredNeuKit = true;
+				}
+				
+				int backgroundColor = isHovered ? 0xFFFFFFFF : 0xFF808080;
+				context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, backgroundColor);
+				context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + 1, 0xFF000000);
+				context.fill(slotX, slotY + SLOT_SIZE - 1, slotX + SLOT_SIZE, slotY + SLOT_SIZE, 0xFF000000);
+				context.fill(slotX, slotY, slotX + 1, slotY + SLOT_SIZE, 0xFF000000);
+				context.fill(slotX + SLOT_SIZE - 1, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, 0xFF000000);
+				
+				if (!kitIcon.isEmpty()) {
+					context.drawItem(kitIcon, slotX + 1, slotY + 1, 0);
+				}
+				
+				String levelText = String.valueOf(level);
+				int textX = slotX + SLOT_SIZE - this.textRenderer.getWidth(levelText) - 2;
+				int textY = slotY + SLOT_SIZE - 8;
+				context.drawText(this.textRenderer, levelText, textX, textY, 0xFFFFFF, false);
+			}
+		}
+	}
+	
+	private int getTabY() {
+		return backgroundY - TAB_HEIGHT + 4;
+	}
+
+	private void computeTabPositions(int[] outX, int[] outWidth) {
+		int total = TAB_GAP * 2;
+		for (int i = 0; i < TAB_LABELS.length; i++) {
+			outWidth[i] = Math.max(TAB_MIN_WIDTH, this.textRenderer.getWidth(TAB_LABELS[i]) + TAB_PADDING_X * 2);
+			total += outWidth[i];
+		}
+		if (total > backgroundWidth) {
+			int equalWidth = Math.max(TAB_MIN_WIDTH, (backgroundWidth - TAB_GAP * 2) / TAB_LABELS.length);
+			for (int i = 0; i < TAB_LABELS.length; i++) {
+				outWidth[i] = equalWidth;
+			}
+			total = equalWidth * TAB_LABELS.length + TAB_GAP * 2;
+		}
+		int startX = backgroundX + (backgroundWidth - total) / 2;
+		outX[0] = startX;
+		for (int i = 1; i < TAB_LABELS.length; i++) {
+			outX[i] = outX[i - 1] + outWidth[i - 1] + TAB_GAP;
+		}
+	}
+
+	private int getTabAt(double mouseX, double mouseY) {
+		if (backgroundWidth <= 0) {
+			return -1;
+		}
+		int tabY = getTabY();
+		if (mouseY < tabY || mouseY >= tabY + TAB_HEIGHT) {
+			return -1;
+		}
+		int[] xs = new int[TAB_LABELS.length];
+		int[] widths = new int[TAB_LABELS.length];
+		computeTabPositions(xs, widths);
+		for (int i = 0; i < TAB_LABELS.length; i++) {
+			if (mouseX >= xs[i] && mouseX < xs[i] + widths[i]) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private void renderTabs(DrawContext context, int mouseX, int mouseY) {
+		if (backgroundWidth <= 0) {
+			return;
+		}
+		int tabY = getTabY();
+		int[] xs = new int[TAB_LABELS.length];
+		int[] widths = new int[TAB_LABELS.length];
+		computeTabPositions(xs, widths);
+		int[] tabIds = {TAB_ALT, TAB_NEU, TAB_EIGENE};
+		for (int i = 0; i < TAB_LABELS.length; i++) {
+			renderTab(context, xs[i], tabY, widths[i], TAB_LABELS[i], activeTab == tabIds[i], mouseX, mouseY);
+		}
+	}
+
+	private void drawCenteredLabel(DrawContext context, int x, int y, int width, int height, String label, boolean active) {
+		int textY = y + (height - this.textRenderer.fontHeight) / 2;
+		int textColor = active ? 0xFFFFFFFF : 0xFFCCCCCC;
+		int textWidth = this.textRenderer.getWidth(label);
+		context.drawText(this.textRenderer, label, x + (width - textWidth) / 2, textY, textColor, true);
+	}
+
+	private void renderTab(DrawContext context, int x, int y, int width, String label, boolean active, int mouseX, int mouseY) {
+		boolean hovered = mouseX >= x && mouseX < x + width
+				&& mouseY >= y && mouseY < y + TAB_HEIGHT;
+		int bg = active ? TAB_COLOR_ACTIVE : TAB_COLOR_INACTIVE;
+		int topBorder = active ? TAB_COLOR_ACTIVE_TOP : TAB_COLOR_INACTIVE_TOP;
+		context.fill(x, y, x + width, y + TAB_HEIGHT, bg);
+		context.fill(x, y, x + width, y + 1, topBorder);
+		context.fill(x, y + TAB_HEIGHT - 1, x + width, y + TAB_HEIGHT, 0xFF1D2F3B);
+		drawCenteredLabel(context, x, y, width, TAB_HEIGHT, label, active);
+		if (hovered) {
+			context.drawBorder(x, y, width, TAB_HEIGHT, 0xFFFFFFFF);
+		}
+	}
+
+	private void drawCenteredPlusInSlot(DrawContext context, int slotX, int slotY, int color) {
+		int centerX = slotX + SLOT_SIZE / 2;
+		int centerY = slotY + SLOT_SIZE / 2;
+		int armLength = 4;
+		context.fill(centerX - armLength, centerY - 1, centerX + armLength, centerY + 1, color);
+		context.fill(centerX - 1, centerY - armLength, centerX + 1, centerY + armLength, color);
+	}
+
+	private void renderCustomKitGrid(DrawContext context, int mouseX, int mouseY) {
+		hoveredCustomKit = null;
+		hoveredPlusSlot = false;
+		hoveredKitType = null;
+		hoveredLevel = -1;
+
+		java.util.List<CustomKit> kits = CustomKitManager.getAllKits();
+		int slotIndex = 0;
+
+		for (CustomKit kit : kits) {
+			int col = slotIndex % CUSTOM_COLUMNS;
+			int row = slotIndex / CUSTOM_COLUMNS;
+			int slotX = gridStartX + col * GRID_SPACING_X;
+			int slotY = gridStartY + row * GRID_SPACING_Y;
+			boolean isHovered = mouseX >= slotX && mouseX < slotX + SLOT_SIZE
+					&& mouseY >= slotY && mouseY < slotY + SLOT_SIZE;
+			if (isHovered) {
+				hoveredCustomKit = kit;
+			}
+
+			int backgroundColor = isHovered ? 0xFFFFFFFF : 0xFF808080;
+			context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, backgroundColor);
+			context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + 1, 0xFF000000);
+			context.fill(slotX, slotY + SLOT_SIZE - 1, slotX + SLOT_SIZE, slotY + SLOT_SIZE, 0xFF000000);
+			context.fill(slotX, slotY, slotX + 1, slotY + SLOT_SIZE, 0xFF000000);
+			context.fill(slotX + SLOT_SIZE - 1, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, 0xFF000000);
+
+			ItemStack icon = kit.createIconStack();
+			if (!icon.isEmpty()) {
+				context.drawItem(icon, slotX + 1, slotY + 1, 0);
+			}
+			slotIndex++;
+		}
+
+		int plusCol = slotIndex % CUSTOM_COLUMNS;
+		int plusRow = slotIndex / CUSTOM_COLUMNS;
+		int plusX = gridStartX + plusCol * GRID_SPACING_X;
+		int plusY = gridStartY + plusRow * GRID_SPACING_Y;
+		boolean plusHovered = mouseX >= plusX && mouseX < plusX + SLOT_SIZE
+				&& mouseY >= plusY && mouseY < plusY + SLOT_SIZE;
+		if (plusHovered) {
+			hoveredPlusSlot = true;
+		}
+		int plusBg = plusHovered ? 0xFFFFFFFF : 0xFF808080;
+		context.fill(plusX, plusY, plusX + SLOT_SIZE, plusY + SLOT_SIZE, plusBg);
+		context.fill(plusX, plusY, plusX + SLOT_SIZE, plusY + 1, 0xFF000000);
+		context.fill(plusX, plusY + SLOT_SIZE - 1, plusX + SLOT_SIZE, plusY + SLOT_SIZE, 0xFF000000);
+		context.fill(plusX, plusY, plusX + 1, plusY + SLOT_SIZE, 0xFF000000);
+		context.fill(plusX + SLOT_SIZE - 1, plusY, plusX + SLOT_SIZE, plusY + SLOT_SIZE, 0xFF000000);
+		drawCenteredPlusInSlot(context, plusX, plusY, 0xFF202020);
+	}
+
+	private void renderCustomKitTooltip(DrawContext context, int mouseX, int mouseY) {
+		if (hoveredCustomKit == null) {
+			return;
+		}
+		String kitName = hoveredCustomKit.name;
+		if (kitName == null || kitName.isEmpty()) {
+			kitName = "Neues Kit";
+		}
+		renderCustomKitItemInfosTooltip(
+				context,
+				mouseX,
+				mouseY,
+				kitName,
+				KitFilterUtility.getCustomKitItemInfos(hoveredCustomKit),
+				true
+		);
+	}
+
+	private void renderPlusSlotTooltip(DrawContext context, int mouseX, int mouseY) {
+		renderSingleActionHintTooltip(context, mouseX, mouseY, "Linksklick", "Kit Erstellen");
+	}
+
+	private void renderSingleActionHintTooltip(DrawContext context, int mouseX, int mouseY,
+			String bracketContent, String actionText) {
+		int padding = 4;
+		int offset = 10;
+		int textHeight = this.textRenderer.fontHeight;
+		int totalWidth = this.textRenderer.getWidth("[" + bracketContent + "]: " + actionText);
+		int totalHeight = textHeight + padding * 2;
+		int tooltipWidth = totalWidth + padding * 2;
+
+		int tooltipX = mouseX + offset;
+		if (tooltipX + tooltipWidth > this.width) {
+			tooltipX = mouseX - tooltipWidth - offset;
+			if (tooltipX < padding) {
+				tooltipX = padding;
+			}
+		}
+		if (tooltipX + tooltipWidth > this.width) {
+			tooltipX = this.width - tooltipWidth - padding;
+		}
+
+		int tooltipY = mouseY - totalHeight - offset;
+		if (tooltipY < padding) {
+			tooltipY = mouseY + offset;
+			if (tooltipY + totalHeight > this.height - padding) {
+				tooltipY = this.height - totalHeight - padding;
+			}
+		}
+		if (tooltipY + totalHeight > this.height - padding) {
+			tooltipY = this.height - totalHeight - padding;
+		}
+		if (tooltipY < padding) {
+			tooltipY = padding;
+		}
+
+		int bgX1 = tooltipX - padding;
+		int bgY1 = tooltipY - padding;
+		int bgX2 = tooltipX + totalWidth + padding;
+		int bgY2 = tooltipY + totalHeight - padding;
+
+		context.fill(bgX1, bgY1, bgX2, bgY2, 0xF0000000);
+		context.fill(bgX1, bgY1, bgX2, bgY1 + 1, 0xFFFFFFFF);
+		context.fill(bgX1, bgY2 - 1, bgX2, bgY2, 0xFFFFFFFF);
+		context.fill(bgX1, bgY1, bgX1 + 1, bgY2, 0xFFFFFFFF);
+		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF);
+
+		drawActionHintLine(context, tooltipX, tooltipY, bracketContent, actionText);
+	}
+
+	private void drawActionHintLine(DrawContext context, int x, int y, String bracketContent, String actionText) {
+		int cursor = x;
+		context.drawText(this.textRenderer, "[", cursor, y, TOOLTIP_ACTION_GREEN, true);
+		cursor += this.textRenderer.getWidth("[");
+		context.drawText(this.textRenderer, bracketContent, cursor, y, TOOLTIP_ACTION_GREEN, true);
+		cursor += this.textRenderer.getWidth(bracketContent);
+		context.drawText(this.textRenderer, "]", cursor, y, TOOLTIP_ACTION_GREEN, true);
+		cursor += this.textRenderer.getWidth("]");
+		context.drawText(this.textRenderer, ":", cursor, y, TOOLTIP_ACTION_GREEN, true);
+		cursor += this.textRenderer.getWidth(":");
+		context.drawText(this.textRenderer, " " + actionText, cursor, y, 0xFFFFFFFF, true);
+	}
+
+	private void renderCustomKitItemInfosTooltip(DrawContext context, int mouseX, int mouseY, String tooltipHeader,
+			java.util.List<KitFilterUtility.ItemInfo> itemInfos, boolean showEditHint) {
+		if (tooltipHeader == null || tooltipHeader.isEmpty()) {
+			return;
+		}
+		if (itemInfos == null) {
+			itemInfos = java.util.Collections.emptyList();
+		} else {
+			itemInfos = new java.util.ArrayList<>(itemInfos);
+			if (!itemInfos.isEmpty()) {
+				itemInfos.sort((a, b) -> Integer.compare(parseEbeneNumber(a.ebene), parseEbeneNumber(b.ebene)));
+			}
+		}
+
+		int maxItemTypeWidth = 0;
+		int maxItemNameWidth = 0;
+		int maxModifierWidth = 0;
+		int maxEbeneWidth = 0;
+		for (KitFilterUtility.ItemInfo itemInfo : itemInfos) {
+			maxItemTypeWidth = Math.max(maxItemTypeWidth, calculateItemTypeWidth(itemInfo));
+			maxItemNameWidth = Math.max(maxItemNameWidth, calculateItemNameWidth(itemInfo));
+			maxModifierWidth = Math.max(maxModifierWidth, calculateModifierWidth(itemInfo));
+			maxEbeneWidth = Math.max(maxEbeneWidth, calculateEbeneWidth(itemInfo));
+		}
+
+		int columnSpacing = 12;
+		String bulletPoint = "• ";
+		int bulletWidth = this.textRenderer.getWidth(bulletPoint);
+		int statusWidth = 0;
+		if (shouldShowBPViewerStatus()) {
+			statusWidth = this.textRenderer.getWidth(" ✓") + columnSpacing;
+		}
+
+		int headerWidth = this.textRenderer.getWidth(tooltipHeader);
+		int totalWidth = Math.max(headerWidth, bulletWidth + maxItemTypeWidth + columnSpacing + maxItemNameWidth
+				+ columnSpacing + maxModifierWidth + columnSpacing + maxEbeneWidth + statusWidth);
+		if (showEditHint) {
+			totalWidth = Math.max(totalWidth, this.textRenderer.getWidth("[Rechtsklick]: Bearbeiten"));
+		}
+
+		int textHeight = this.textRenderer.fontHeight;
+		int padding = 4;
+		int lineSpacing = 2;
+		int offset = 10;
+		int totalHeight = textHeight + padding * 2;
+		if (!itemInfos.isEmpty()) {
+			totalHeight += lineSpacing + textHeight * itemInfos.size();
+		}
+		if (showEditHint) {
+			totalHeight += lineSpacing + textHeight;
+		}
+
+		int tooltipWidth = totalWidth + padding * 2;
+		int tooltipX = mouseX + offset;
+		if (tooltipX + tooltipWidth > this.width) {
+			tooltipX = mouseX - tooltipWidth - offset;
+			if (tooltipX < padding) {
+				tooltipX = padding;
+			}
+		}
+		if (tooltipX + tooltipWidth > this.width) {
+			tooltipX = this.width - tooltipWidth - padding;
+		}
+
+		int tooltipY = mouseY - totalHeight - offset;
+		if (tooltipY < padding) {
+			tooltipY = mouseY + offset;
+			if (tooltipY + totalHeight > this.height - padding) {
+				tooltipY = this.height - totalHeight - padding;
+			}
+		}
+		if (tooltipY + totalHeight > this.height - padding) {
+			tooltipY = this.height - totalHeight - padding;
+		}
+		if (tooltipY < padding) {
+			tooltipY = padding;
+		}
+
+		int bgX1 = tooltipX - padding;
+		int bgY1 = tooltipY - padding;
+		int bgX2 = tooltipX + totalWidth + padding;
+		int bgY2 = tooltipY + totalHeight - padding;
+		context.fill(bgX1, bgY1, bgX2, bgY2, 0xF0000000);
+		context.fill(bgX1, bgY1, bgX2, bgY1 + 1, 0xFFFFFFFF);
+		context.fill(bgX1, bgY2 - 1, bgX2, bgY2, 0xFFFFFFFF);
+		context.fill(bgX1, bgY1, bgX1 + 1, bgY2, 0xFFFFFFFF);
+		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF);
+
+		context.drawText(this.textRenderer, tooltipHeader, tooltipX, tooltipY, 0xFFFFFFFF, true);
+		int currentY = tooltipY + textHeight;
+		if (!itemInfos.isEmpty()) {
+			currentY += lineSpacing;
+		}
+		for (KitFilterUtility.ItemInfo itemInfo : itemInfos) {
+			int currentX = tooltipX;
+			context.drawText(this.textRenderer, bulletPoint, currentX, currentY, 0xFFFFFFFF, true);
+			currentX += bulletWidth;
+			if (itemInfo.itemType != null && !itemInfo.itemType.isEmpty()) {
+				context.drawText(this.textRenderer, itemInfo.itemType, currentX, currentY, 0xFFFFFFFF, true);
+			}
+			currentX += maxItemTypeWidth + columnSpacing;
+			if (itemInfo.name != null && !itemInfo.name.isEmpty()) {
+				int nameColor = (itemInfo.nameColorString != null && !itemInfo.nameColorString.isEmpty())
+						? itemInfo.nameColor : 0xFFFFFFFF;
+				context.drawText(this.textRenderer, itemInfo.name, currentX, currentY, nameColor, true);
+			}
+			currentX += maxItemNameWidth + columnSpacing;
+			if (itemInfo.modifier != null && !itemInfo.modifier.isEmpty()) {
+				context.drawText(this.textRenderer, itemInfo.modifier, currentX, currentY, 0xFFFFFFFF, true);
+			}
+			currentX += maxModifierWidth + columnSpacing;
+			if (itemInfo.ebene != null && !itemInfo.ebene.isEmpty()) {
+				context.drawText(this.textRenderer, itemInfo.ebene, currentX, currentY, 0xFFFFFFFF, true);
+			}
+			if (shouldShowBPViewerStatus()) {
+				boolean isFound = isBlueprintFound(itemInfo.name);
+				String statusSymbol = isFound ? " ✓" : " ✗";
+				int statusColor = isFound ? 0xFF00FF00 : 0xFFFF0000;
+				context.drawText(this.textRenderer, statusSymbol, currentX + maxEbeneWidth, currentY, statusColor, true);
+			}
+			currentY += textHeight;
+		}
+		if (showEditHint) {
+			currentY += lineSpacing;
+			drawActionHintLine(context, tooltipX, currentY, "Rechtsklick", "Bearbeiten");
+		}
+	}
+
+	private void openCustomKitEditor(CustomKit existing) {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client == null) {
+			return;
+		}
+		HandledScreen<?> itemViewerScreen = KitFilterUtility.resolveKitEditorItemViewerBackground(previousScreen);
+		if (existing == null) {
+			client.setScreen(new CustomKitEditorScreen(0, this, itemViewerScreen));
+		} else {
+			client.setScreen(new CustomKitEditorScreen(0, this, itemViewerScreen, existing));
+		}
+	}
+
 	@Override
 	public boolean mouseClicked(double mouseX, double mouseY, int button) {
-		// Erlaube Button-Klicks (z.B. Abbrechen-Button)
-		// Prüfe zuerst ob ein Button geklickt wurde
+		if (button == 0) {
+			int clickedTab = getTabAt(mouseX, mouseY);
+			if (clickedTab == 0) {
+				activeTab = TAB_ALT;
+				return true;
+			}
+			if (clickedTab == 1) {
+				activeTab = TAB_NEU;
+				return true;
+			}
+			if (clickedTab == 2) {
+				activeTab = TAB_EIGENE;
+				return true;
+			}
+		}
+
+		if (activeTab == TAB_EIGENE) {
+			java.util.List<CustomKit> kits = CustomKitManager.getAllKits();
+			int slotIndex = 0;
+			for (CustomKit kit : kits) {
+				int col = slotIndex % CUSTOM_COLUMNS;
+				int row = slotIndex / CUSTOM_COLUMNS;
+				int slotX = gridStartX + col * GRID_SPACING_X;
+				int slotY = gridStartY + row * GRID_SPACING_Y;
+				if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE
+						&& mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
+					if (button == 1) {
+						openCustomKitEditor(kit);
+						return true;
+					}
+					return true;
+				}
+				slotIndex++;
+			}
+
+			if (button == 0) {
+				int plusCol = slotIndex % CUSTOM_COLUMNS;
+				int plusRow = slotIndex / CUSTOM_COLUMNS;
+				int plusX = gridStartX + plusCol * GRID_SPACING_X;
+				int plusY = gridStartY + plusRow * GRID_SPACING_Y;
+				if (mouseX >= plusX && mouseX < plusX + SLOT_SIZE
+						&& mouseY >= plusY && mouseY < plusY + SLOT_SIZE) {
+					openCustomKitEditor(null);
+					return true;
+				}
+			}
+		}
+
 		if (super.mouseClicked(mouseX, mouseY, button)) {
 			return true;
 		}
-		
-		// Keine Auswahl möglich für Kit-Slots - ignoriere andere Klicks
+
 		return false;
 	}
 	
