@@ -2628,7 +2628,7 @@ public class ItemViewerUtility {
             "• @Ebene>Wert - Ebenen (z.B. @Ebene>=50, @Ebene<30, >e5, e4)",
             "• Operatoren: >, <, =, >=, <=",
             "• +Modifier - Suche nach Modifiern (z.B. +Andere, +Andere:2)",
-            "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0)",
+            "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0, ofen:38)",
             "• @Aspekt Name - Suche nach Aspekten (z.B. @Aspekt der Flamme)",
             "",
             "Sortierung:",

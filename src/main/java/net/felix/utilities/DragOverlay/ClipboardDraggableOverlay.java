@@ -121,6 +121,15 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 180;
     private static final int DEFAULT_HEIGHT = 150;
+    private static final String QUANTITY_PREFIX = "x";
+    private static final int QUANTITY_FIELD_PADDING = 4;
+    private static final int QUANTITY_TEXT_FIELD_WIDTH = 50;
+    private static final int QUANTITY_FIELD_OUTLINE_PADDING = 2;
+    private static final int QUANTITY_AFTER_BUTTONS_SPACING = 8;
+    private static final int HEADER_BUTTON_GAP = 5;
+    private static final int HEADER_COUNT_PADDING = 5;
+    private static final int HEADER_NAME_PADDING = 5;
+    private static final int COST_LINE_HORIZONTAL_PADDING = 10;
     
     // TextField für [Anzahl] Eingabe
     private static TextFieldWidget quantityTextField = null;
@@ -352,244 +361,56 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             maxWidth = Math.max(maxWidth, shopCostsHeaderWidth + 10);
         }
         
-        // Berechne Breite für "Bauplanname [Anzahl]" + Buttons
-        // Hole alle tatsächlichen Bauplan-Namen aus dem Clipboard
+        // Berechne Breite für "Bauplanname xAnzahl" + Buttons
         List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
         
-        // Buttons: « + Leerzeichen + | + Leerzeichen + » + Abstand
-        String leftArrow = "«";
-        String rightArrow = "»";
-        String separator = "|";
-        String space = " ";
-        int leftArrowWidth = client.textRenderer.getWidth(leftArrow);
-        int rightArrowWidth = client.textRenderer.getWidth(rightArrow);
-        int separatorWidth = client.textRenderer.getWidth(separator);
-        int spaceWidth = client.textRenderer.getWidth(space);
-        int totalButtonWidth = leftArrowWidth + spaceWidth + separatorWidth + spaceWidth + rightArrowWidth;
-        int buttonSpacing = 5; // Abstand zwischen Buttons und [Anzahl]
-        int countPadding = 5; // Padding rechts
-        int namePadding = 5; // Padding links für Bauplan-Name
-        
-        // Berücksichtige Textfeld-Breite (50px) wenn in Inventar
-        int textFieldWidth = 50;
-        boolean isInInventory = client.currentScreen instanceof HandledScreen;
-        
-        // Prüfe alle Bauplan-Namen
         for (ClipboardUtility.ClipboardEntry entry : entries) {
             if (entry.blueprintName != null) {
-                // Berechne Breite für "Bauplanname [Anzahl]"
-                String countText = "[" + entry.quantity + "]";
-                int countWidth = client.textRenderer.getWidth(countText);
-                int nameWidth = client.textRenderer.getWidth(entry.blueprintName);
-                
-                // Berechne benötigte Breite: Name + Buttons + Abstand + [Anzahl/Textfeld] + Padding
-                int countOrTextFieldWidth = isInInventory ? textFieldWidth : countWidth;
-                int totalLineWidth = namePadding + nameWidth + buttonSpacing + totalButtonWidth + buttonSpacing + countOrTextFieldWidth + countPadding;
-                maxWidth = Math.max(maxWidth, totalLineWidth);
+                String countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
+                maxWidth = Math.max(maxWidth, computeHeaderLineWidth(client, entry.blueprintName, countText));
             }
         }
         
-        // Prüfe auch "Gesamtliste" für Seite 1
-        String gesamtlisteText = "Gesamtliste";
-        // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
         int quantityForPage1 = getQuantityForPage(1, null);
-        String countText = "[" + quantityForPage1 + "]";
-        int countWidth = client.textRenderer.getWidth(countText);
-        int nameWidth = client.textRenderer.getWidth(gesamtlisteText);
-        int countOrTextFieldWidth = isInInventory ? textFieldWidth : countWidth;
-        int totalLineWidth = namePadding + nameWidth + buttonSpacing + totalButtonWidth + buttonSpacing + countOrTextFieldWidth + countPadding;
-        maxWidth = Math.max(maxWidth, totalLineWidth);
+        maxWidth = Math.max(maxWidth, computeHeaderLineWidth(
+            client,
+            "Gesamtliste",
+            formatQuantityText(quantityForPage1)
+        ));
         
-        // Prüfe alle Materialien in den Einträgen für "(Ebene X)" Text
+        // Prüfe alle Kostenzeilen inkl. "(Ebene X)" und Coin-Abkürzungen
+        int page1Quantity = getQuantityForPage(1, null);
         for (ClipboardUtility.ClipboardEntry entry : entries) {
+            int entryQuantity = entry.quantity > 0 ? entry.quantity : 1;
+            
             if (entry.price != null) {
-                // Prüfe alle CostItems
                 CostItem[] costItems = {
                     entry.price.coin, entry.price.material1, entry.price.material2,
                     entry.price.Amboss, entry.price.Ressource
                 };
-                
                 for (CostItem costItem : costItems) {
-                    if (costItem != null && costItem.itemName != null && costItem.amount != null) {
-                        boolean isCoins = "Coins".equalsIgnoreCase(costItem.itemName);
-                        
-                        double ownedAmount = 0.0;
-                        if (isCoins) {
-                            ownedAmount = ClipboardCoinCollector.getCurrentCoins();
-                        } else {
-                            ownedAmount = getOwnedMaterialAmount(costItem.itemName);
-                        }
-                        String ownedAmountStr = formatAmount(ownedAmount, true);
-                        String neededAmountStr = formatAmount(costItem.amount, true);
-                        String materialLine = ownedAmountStr + " / " + neededAmountStr + " " + costItem.itemName;
-                        
-                        // Prüfe ob es ein Aincraft-Material ist
-                        InformationenUtility.MaterialFloorInfo floorInfo = 
-                            InformationenUtility.getMaterialFloorInfo(costItem.itemName);
-                        
-                        if (floorInfo != null) {
-                            // Füge Breite für "(Ebene X)" hinzu
-                            String floorText = " (Ebene " + floorInfo.floor + ")";
-                            int floorTextWidth = client.textRenderer.getWidth(floorText);
-                            int materialLineWidth = client.textRenderer.getWidth(materialLine);
-                            int totalCostWidth = materialLineWidth + floorTextWidth + 5; // 5px padding
-                            maxWidth = Math.max(maxWidth, totalCostWidth);
-                        } else {
-                            // Normale Breite ohne Ebene
-                            int materialLineWidth = client.textRenderer.getWidth(materialLine) + 5;
-                            maxWidth = Math.max(maxWidth, materialLineWidth);
-                        }
-                    }
+                    maxWidth = Math.max(maxWidth, measureCostLineWidth(client, costItem, entryQuantity));
                 }
             }
             
-            // Prüfe auch Blueprint Shop Kosten
-            if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts && 
-                entry.blueprintShop != null && entry.blueprintShop.price != null) {
+            if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts
+                && entry.blueprintShop != null && entry.blueprintShop.price != null) {
                 CostItem[] shopCostItems = {
                     entry.blueprintShop.price.coin, entry.blueprintShop.price.paper_shreds
                 };
-                
                 for (CostItem costItem : shopCostItems) {
-                    if (costItem != null && costItem.itemName != null && costItem.amount != null) {
-                        boolean isCoins = "Coins".equalsIgnoreCase(costItem.itemName);
-                        
-                        double ownedAmount = 0.0;
-                        if (isCoins) {
-                            ownedAmount = ClipboardCoinCollector.getCurrentCoins();
-                        } else {
-                            ownedAmount = getOwnedMaterialAmount(costItem.itemName);
-                        }
-                        String ownedAmountStr = formatAmount(ownedAmount, true);
-                        String neededAmountStr = formatAmount(costItem.amount, true);
-                        String materialLine = ownedAmountStr + " / " + neededAmountStr + " " + costItem.itemName;
-                        
-                        // Prüfe ob es ein Aincraft-Material ist
-                        InformationenUtility.MaterialFloorInfo floorInfo = 
-                            InformationenUtility.getMaterialFloorInfo(costItem.itemName);
-                        
-                        if (floorInfo != null) {
-                            // Füge Breite für "(Ebene X)" hinzu
-                            String floorText = " (Ebene " + floorInfo.floor + ")";
-                            int floorTextWidth = client.textRenderer.getWidth(floorText);
-                            int materialLineWidth = client.textRenderer.getWidth(materialLine);
-                            int totalCostWidth = materialLineWidth + floorTextWidth + 5; // 5px padding
-                            maxWidth = Math.max(maxWidth, totalCostWidth);
-                        } else {
-                            // Normale Breite ohne Ebene
-                            int materialLineWidth = client.textRenderer.getWidth(materialLine) + 5;
-                            maxWidth = Math.max(maxWidth, materialLineWidth);
-                        }
-                    }
+                    maxWidth = Math.max(maxWidth, measureCostLineWidth(client, costItem, entryQuantity));
                 }
             }
         }
         
-        // Prüfe auch zusammengerechnete Kosten für Seite 1 (Gesamtliste)
-        List<CostItem> totalCosts = calculateTotalCosts(false);
-        for (CostItem costItem : totalCosts) {
-            if (costItem != null && costItem.itemName != null && costItem.amount != null) {
-                boolean isCoins = "Coins".equalsIgnoreCase(costItem.itemName);
-                // Verwende das neue Format: "0 / 15 Materialname"
-                double neededAmount = parseAmountToDouble(costItem.amount);
-                double ownedAmount = 0.0;
-                if (isCoins) {
-                    ownedAmount = ClipboardCoinCollector.getCurrentCoins();
-                } else {
-                    ownedAmount = getOwnedMaterialAmount(costItem.itemName);
-                }
-                String ownedAmountStr = formatAmount(ownedAmount, true);
-                String neededAmountStr = formatAmount(costItem.amount, true);
-                String materialLine = ownedAmountStr + " / " + neededAmountStr + " " + costItem.itemName;
-                
-                // Für Coins: Berechne abgekürzte Version (für alle Seiten)
-                String abbreviatedText = "";
-                if (isCoins) {
-                    try {
-                        long coinAmount = (long) neededAmount;
-                        if (coinAmount >= 1000) {
-                            String abbreviated = formatNumberAbbreviated(coinAmount);
-                            abbreviatedText = " (" + abbreviated + ")";
-                        }
-                    } catch (Exception e) {
-                        // Ignoriere Fehler bei Abkürzung
-                    }
-                }
-                
-                // Prüfe ob es ein Aincraft-Material ist
-                InformationenUtility.MaterialFloorInfo floorInfo = 
-                    InformationenUtility.getMaterialFloorInfo(costItem.itemName);
-                
-                int materialLineWidth = client.textRenderer.getWidth(materialLine);
-                int abbreviatedWidth = abbreviatedText.isEmpty() ? 0 : client.textRenderer.getWidth(abbreviatedText);
-                
-                if (floorInfo != null) {
-                    // Füge Breite für "(Ebene X)" hinzu
-                    String floorText = " (Ebene " + floorInfo.floor + ")";
-                    int floorTextWidth = client.textRenderer.getWidth(floorText);
-                    int totalCostWidth = materialLineWidth + abbreviatedWidth + floorTextWidth + 5; // 5px padding
-                    maxWidth = Math.max(maxWidth, totalCostWidth);
-                } else {
-                    // Normale Breite ohne Ebene, aber mit Abkürzung falls vorhanden
-                    int totalCostWidth = materialLineWidth + abbreviatedWidth + 5;
-                    maxWidth = Math.max(maxWidth, totalCostWidth);
-                }
-            }
+        for (CostItem costItem : calculateTotalCosts(false)) {
+            maxWidth = Math.max(maxWidth, measureCostLineWidth(client, costItem, page1Quantity));
         }
         
-        // Prüfe auch zusammengerechnete Shop-Kosten für Seite 1
         if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts) {
-            List<CostItem> totalShopCosts = calculateTotalCosts(true);
-            for (CostItem costItem : totalShopCosts) {
-                if (costItem != null && costItem.itemName != null && costItem.amount != null) {
-                    boolean isCoins = "Coins".equalsIgnoreCase(costItem.itemName);
-                    boolean needsSeparators = needsThousandSeparators(costItem.itemName);
-                    
-                    // Verwende das neue Format: "0 / 15 Materialname"
-                    double neededAmount = parseAmountToDouble(costItem.amount);
-                    double ownedAmount = 0.0;
-                    if (isCoins) {
-                        ownedAmount = ClipboardCoinCollector.getCurrentCoins();
-                    } else {
-                        ownedAmount = getOwnedMaterialAmount(costItem.itemName);
-                    }
-                    String ownedAmountStr = formatAmount(ownedAmount, needsSeparators);
-                    String neededAmountStr = formatAmount(costItem.amount, needsSeparators);
-                    String materialLine = ownedAmountStr + " / " + neededAmountStr + " " + costItem.itemName;
-                    
-                    // Für Coins auf Seite 1: Berechne abgekürzte Version
-                    String abbreviatedText = "";
-                    if (isCoins && ClipboardUtility.getCurrentPage() == 1) {
-                        try {
-                            long coinAmount = (long) neededAmount;
-                            if (coinAmount >= 1000) {
-                                String abbreviated = formatNumberAbbreviated(coinAmount);
-                                abbreviatedText = " (" + abbreviated + ")";
-                            }
-                        } catch (Exception e) {
-                            // Ignoriere Fehler bei Abkürzung
-                        }
-                    }
-                    
-                    // Prüfe ob es ein Aincraft-Material ist
-                    InformationenUtility.MaterialFloorInfo floorInfo = 
-                        InformationenUtility.getMaterialFloorInfo(costItem.itemName);
-                    
-                    int materialLineWidth = client.textRenderer.getWidth(materialLine);
-                    int abbreviatedWidth = abbreviatedText.isEmpty() ? 0 : client.textRenderer.getWidth(abbreviatedText);
-                    
-                    if (floorInfo != null) {
-                        // Füge Breite für "(Ebene X)" hinzu
-                        String floorText = " (Ebene " + floorInfo.floor + ")";
-                        int floorTextWidth = client.textRenderer.getWidth(floorText);
-                        int totalCostWidth = materialLineWidth + abbreviatedWidth + floorTextWidth + 5; // 5px padding
-                        maxWidth = Math.max(maxWidth, totalCostWidth);
-                    } else {
-                        // Normale Breite ohne Ebene, aber mit Abkürzung falls vorhanden
-                        int totalCostWidth = materialLineWidth + abbreviatedWidth + 5;
-                        maxWidth = Math.max(maxWidth, totalCostWidth);
-                    }
-                }
+            for (CostItem costItem : calculateTotalCosts(true)) {
+                maxWidth = Math.max(maxWidth, measureCostLineWidth(client, costItem, page1Quantity));
             }
         }
         
@@ -680,7 +501,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // Im F6-Menü: Immer statisches Beispiel-Design
         // "Bauplanname [Anzahl]" - Anzahl oben rechts, mit Pfeil-Buttons davor
         String blueprintName = "Bauplan Name";
-        String countText = "[Anzahl]";
+        String countText = formatQuantityText(1);
         
         int countWidth = client.textRenderer.getWidth(countText);
         
@@ -933,11 +754,11 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int estimatedLineCount = calculateEstimatedLineCount();
         int estimatedHeight = padding + (estimatedLineCount * lineHeight) + padding;
         
-        // Render background NACH der Matrix-Transformation, damit Background und Text in derselben Transformations-Ebene sind
-        int unscaledWidth = calculateUnscaledWidth();
+        int currentPage = ClipboardUtility.getCurrentPage();
+        ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(currentPage);
+        int unscaledWidth = resolveRenderWidth(client, currentPage, entry);
         context.fill(0, 0, unscaledWidth, estimatedHeight, 0x80000000);
         
-        // lineHeight und padding wurden bereits oben definiert
         int currentY = padding;
         
         // Zähle Zeilen für dynamische Höhenberechnung
@@ -945,10 +766,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         // Liste für fertige Items, die nach Background-Update gerendert werden sollen (nur für Seite 2+ in Mode 2)
         List<CostItemWithCategory> completeItemsToRenderLater = new ArrayList<>();
-        
-        // Hole aktuelle Seite und Daten
-        int currentPage = ClipboardUtility.getCurrentPage();
-        ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(currentPage);
         
         // "Bauplanname [Anzahl]" - Anzahl oben rechts, mit Pfeil-Buttons davor
         String blueprintName;
@@ -959,15 +776,15 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             blueprintName = "Gesamtliste";
             // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
             int quantityForPage1 = getQuantityForPage(1, null);
-            countText = "[" + quantityForPage1 + "]";
+            countText = formatQuantityText(quantityForPage1);
         } else if (entry != null) {
             // Seite 2+: Einzelner Bauplan
             blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
-            countText = "[" + entry.quantity + "]";
+            countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
         } else {
             // Fallback
             blueprintName = "Bauplan Name";
-            countText = "[Anzahl]";
+            countText = formatQuantityText(1);
         }
         
         // Berechne Button-Positionen mit Hilfsmethode
@@ -1051,10 +868,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int quantity = getQuantityForPage(currentPage, entry);
         
         if (isInInventory) {
-            // In Inventar: Rendere Textfeld für [Anzahl] (auch auf Seite 1)
-            // rightButtonX wird aus buttonPositions[1] geholt
-            int textFieldRightButtonX = buttonPositions[1];
-            renderQuantityTextField(context, client, countX, currentY, currentPage, quantity, unscaledWidth, scale, textFieldRightButtonX);
+            renderQuantityTextField(context, client, countX, currentY, currentPage, quantity, unscaledWidth, scale);
         } else {
             // Außerhalb von Inventar: Rendere als Text
             context.drawText(
@@ -2230,27 +2044,23 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int spaceWidth = client.textRenderer.getWidth(space);
         int totalButtonWidth = leftArrowWidth + spaceWidth + separatorWidth + spaceWidth + rightArrowWidth;
         
-        // countX wird für die Position des [Anzahl] Textes berechnet (wenn kein Textfeld)
-        int countX = unscaledWidth - countWidth - 5;
-        int nameX = 5;
-        int buttonSpacing = 5;
+        // Berücksichtige Textfeld-Breite + "x"-Präfix wenn in Inventar
+        boolean isInInventory = client.currentScreen instanceof HandledScreen;
+        int quantityAreaWidth = getQuantityAreaWidth(client, countText, isInInventory);
+        int quantityAreaX = unscaledWidth - quantityAreaWidth - HEADER_COUNT_PADDING;
         
-        // Berücksichtige Textfeld-Breite (50px) wenn in Inventar
-        int textFieldWidth = 50;
-        int textFieldX = unscaledWidth - textFieldWidth - 5; // Textfeld rechts am Ende
+        int countX = quantityAreaX;
+        int nameX = HEADER_NAME_PADDING;
+        int buttonSpacing = HEADER_BUTTON_GAP;
         
-        // Buttons sollen links vom Textfeld stehen
-        // Position für Buttons: textFieldX - buttonSpacing - totalButtonWidth
-        int buttonsX = textFieldX - buttonSpacing - totalButtonWidth;
+        int buttonsX = quantityAreaX - QUANTITY_AFTER_BUTTONS_SPACING - totalButtonWidth;
         
         int nameEndX = nameX + nameWidth;
         int buttonsAfterNameX = nameEndX + buttonSpacing;
         
         int leftButtonX, rightButtonX, spaceAfterLeftX, separatorX, spaceAfterSeparatorX, spaceAfterRightX;
         
-        // Prüfe ob Buttons nach dem Namen passen oder rechts positioniert werden müssen
         if (buttonsAfterNameX + totalButtonWidth <= buttonsX) {
-            // Name ist kurz: Buttons rechts (links vom Textfeld)
             leftButtonX = buttonsX;
             spaceAfterLeftX = leftButtonX + leftArrowWidth;
             separatorX = spaceAfterLeftX + spaceWidth;
@@ -2258,13 +2068,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             spaceAfterRightX = spaceAfterSeparatorX + spaceWidth;
             rightButtonX = spaceAfterRightX;
         } else {
-            // Name ist lang: Buttons direkt nach dem Namen
             leftButtonX = nameEndX + buttonSpacing;
             spaceAfterLeftX = leftButtonX + leftArrowWidth;
             separatorX = spaceAfterLeftX + spaceWidth;
             spaceAfterSeparatorX = separatorX + separatorWidth;
             spaceAfterRightX = spaceAfterSeparatorX + spaceWidth;
             rightButtonX = spaceAfterRightX;
+            countX = rightButtonX + rightArrowWidth + QUANTITY_AFTER_BUTTONS_SPACING;
         }
         
         return new int[]{leftButtonX, rightButtonX, spaceAfterLeftX, separatorX, spaceAfterSeparatorX, spaceAfterRightX, countX};
@@ -2393,13 +2203,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             // Seite 1: Gesamtliste
             // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
             int quantityForPage1 = getQuantityForPage(1, null);
-            countText = "[" + quantityForPage1 + "]";
+            countText = formatQuantityText(quantityForPage1);
         } else if (entry != null) {
             // Seite 2+: Einzelner Bauplan
-            countText = "[" + entry.quantity + "]";
+            countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
         } else {
             // Fallback
-            countText = "[Anzahl]";
+            countText = formatQuantityText(1);
         }
         
         // Hole Bauplan-Name für Button-Positionierung
@@ -2616,13 +2426,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             blueprintName = "Gesamtliste";
             // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
             int quantityForPage1 = getQuantityForPage(1, null);
-            countText = "[" + quantityForPage1 + "]";
+            countText = formatQuantityText(quantityForPage1);
         } else if (entry != null) {
             blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
-            countText = "[" + entry.quantity + "]";
+            countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
         } else {
             blueprintName = "Bauplan Name";
-            countText = "[Anzahl]";
+            countText = formatQuantityText(1);
         }
         
         int unscaledWidth = calculateUnscaledWidth();
@@ -2643,6 +2453,19 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 int tooltipY = (int) (y + buttonY * scale);
                 context.drawTooltip(client.textRenderer, java.util.List.of(tooltip), tooltipX, tooltipY);
             }
+            return;
+        }
+        
+        boolean isInInventory = client.currentScreen instanceof HandledScreen;
+        int lineHeight = client.textRenderer.fontHeight + 2;
+        int quantityX = buttonPositions[6];
+        int quantityWidth = getQuantityAreaWidth(client, countText, isInInventory);
+        
+        if (unscaledMouseX >= quantityX && unscaledMouseX <= quantityX + quantityWidth
+            && unscaledMouseY >= buttonY && unscaledMouseY <= buttonY + lineHeight) {
+            int tooltipX = (int) (x + quantityX * scale);
+            int tooltipY = (int) (y + buttonY * scale);
+            context.drawTooltip(client.textRenderer, java.util.List.of(Text.literal("Anzahl")), tooltipX, tooltipY);
         }
     }
     
@@ -2656,30 +2479,227 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
     
     /**
+     * Speichert die aktuelle Mengeneingabe und setzt leere oder ungültige Werte auf 1.
+     */
+    public static void finalizeQuantityTextField() {
+        if (quantityTextField == null) {
+            return;
+        }
+        
+        int page = quantityTextFieldPage;
+        int quantity = parseQuantityText(quantityTextField.getText());
+        quantityTextField.setText(String.valueOf(quantity));
+        applyQuantityForPage(page, quantity);
+        
+        quantityTextField.setFocused(false);
+        resetQuantityTextField();
+        invalidateWidthCache();
+    }
+    
+    private static void applyQuantityForPage(int page, int quantity) {
+        if (page == 1) {
+            page1Quantity = quantity;
+        }
+        
+        ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(page);
+        if (entry != null) {
+            entry.quantity = quantity;
+            ClipboardUtility.saveClipboardEntries();
+        }
+    }
+    
+    private static void normalizeQuantityTextFieldIfNeeded() {
+        if (quantityTextField == null || quantityTextField.isFocused()) {
+            return;
+        }
+        
+        String text = quantityTextField.getText();
+        if (text == null || text.trim().isEmpty()) {
+            quantityTextField.setText("1");
+            applyQuantityForPage(quantityTextFieldPage, 1);
+            invalidateWidthCache();
+        }
+    }
+    
+    private static int parseQuantityText(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return 1;
+        }
+        try {
+            int quantity = Integer.parseInt(text.trim());
+            return quantity > 0 ? quantity : 1;
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+    
+    private static String formatQuantityText(int quantity) {
+        return QUANTITY_PREFIX + quantity;
+    }
+    
+    private static int getQuantityPrefixWidth(MinecraftClient client) {
+        return client.textRenderer.getWidth(QUANTITY_PREFIX);
+    }
+    
+    private static int getQuantityPrefixAreaWidth(MinecraftClient client) {
+        return QUANTITY_FIELD_PADDING + getQuantityPrefixWidth(client);
+    }
+    
+    private static int getQuantityInputWidth(MinecraftClient client) {
+        return getQuantityPrefixAreaWidth(client) + QUANTITY_TEXT_FIELD_WIDTH;
+    }
+    
+    private static int getQuantityAreaWidth(MinecraftClient client, String countText, boolean isInInventory) {
+        if (isInInventory) {
+            return getQuantityInputWidth(client) + QUANTITY_FIELD_OUTLINE_PADDING;
+        }
+        return client.textRenderer.getWidth(countText);
+    }
+    
+    private static int getNavigationButtonsWidth(MinecraftClient client) {
+        return client.textRenderer.getWidth("«")
+            + client.textRenderer.getWidth(" ")
+            + client.textRenderer.getWidth("|")
+            + client.textRenderer.getWidth(" ")
+            + client.textRenderer.getWidth("»");
+    }
+    
+    private static int computeHeaderLineWidth(MinecraftClient client, String blueprintName, String countText) {
+        boolean isInInventory = client.currentScreen instanceof HandledScreen;
+        int quantityAreaWidth = getQuantityAreaWidth(client, countText, isInInventory);
+        int totalButtonWidth = getNavigationButtonsWidth(client);
+        int nameEndX = HEADER_NAME_PADDING + client.textRenderer.getWidth(blueprintName);
+        
+        int flowLayoutWidth = nameEndX + HEADER_BUTTON_GAP + totalButtonWidth
+            + QUANTITY_AFTER_BUTTONS_SPACING + quantityAreaWidth + HEADER_COUNT_PADDING;
+        
+        int rightAlignedMinWidth = nameEndX + HEADER_BUTTON_GAP + QUANTITY_AFTER_BUTTONS_SPACING + totalButtonWidth
+            + QUANTITY_AFTER_BUTTONS_SPACING + quantityAreaWidth + HEADER_COUNT_PADDING;
+        
+        return Math.max(flowLayoutWidth, rightAlignedMinWidth);
+    }
+    
+    private static int resolveRenderWidth(MinecraftClient client, int currentPage, ClipboardUtility.ClipboardEntry entry) {
+        int width = calculateUnscaledWidth();
+        String blueprintName;
+        String countText;
+        
+        if (currentPage == 1) {
+            blueprintName = "Gesamtliste";
+            countText = formatQuantityText(getQuantityForPage(1, null));
+        } else if (entry != null) {
+            blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
+            countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
+        } else {
+            blueprintName = "Bauplan Name";
+            countText = formatQuantityText(1);
+        }
+        
+        width = Math.max(width, computeHeaderLineWidth(client, blueprintName, countText));
+        
+        int quantity = getQuantityForPage(currentPage, entry);
+        if (currentPage == 1) {
+            for (CostItem costItem : calculateTotalCosts(false)) {
+                width = Math.max(width, measureCostLineWidth(client, costItem, quantity));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts) {
+                for (CostItem costItem : calculateTotalCosts(true)) {
+                    width = Math.max(width, measureCostLineWidth(client, costItem, quantity));
+                }
+            }
+        } else if (entry != null && entry.price != null) {
+            CostItem[] costItems = {
+                entry.price.coin, entry.price.material1, entry.price.material2,
+                entry.price.Amboss, entry.price.Ressource
+            };
+            for (CostItem costItem : costItems) {
+                width = Math.max(width, measureCostLineWidth(client, costItem, quantity));
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts
+                && entry.blueprintShop != null && entry.blueprintShop.price != null) {
+                width = Math.max(width, measureCostLineWidth(client, entry.blueprintShop.price.coin, quantity));
+                width = Math.max(width, measureCostLineWidth(client, entry.blueprintShop.price.paper_shreds, quantity));
+            }
+        }
+        
+        return width;
+    }
+    
+    private static int measureCostLineWidth(MinecraftClient client, CostItem costItem, int quantity) {
+        if (costItem == null || costItem.itemName == null || costItem.amount == null) {
+            return 0;
+        }
+        
+        CostItem multipliedItem = multiplyCostItem(costItem, quantity);
+        boolean isCoins = "Coins".equalsIgnoreCase(multipliedItem.itemName);
+        
+        double ownedAmount = isCoins
+            ? ClipboardCoinCollector.getCurrentCoins()
+            : getOwnedMaterialAmount(costItem.itemName);
+        
+        String ownedAmountStr = formatAmount(ownedAmount, true);
+        String neededAmountStr = formatAmount(multipliedItem.amount, true);
+        String materialLine = ownedAmountStr + " / " + neededAmountStr + " " + costItem.itemName;
+        
+        String abbreviatedText = "";
+        if (isCoins) {
+            try {
+                long coinAmount = 0;
+                if (multipliedItem.amount instanceof Number) {
+                    coinAmount = ((Number) multipliedItem.amount).longValue();
+                } else if (multipliedItem.amount instanceof String) {
+                    coinAmount = Long.parseLong(removeThousandSeparators((String) multipliedItem.amount));
+                }
+                if (coinAmount >= 1000) {
+                    abbreviatedText = " (" + formatNumberAbbreviated(coinAmount) + ")";
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        
+        InformationenUtility.MaterialFloorInfo floorInfo =
+            InformationenUtility.getMaterialFloorInfo(multipliedItem.itemName);
+        String floorText = floorInfo != null ? " (Ebene " + floorInfo.floor + ")" : "";
+        
+        return client.textRenderer.getWidth(materialLine)
+            + client.textRenderer.getWidth(abbreviatedText)
+            + client.textRenderer.getWidth(floorText)
+            + COST_LINE_HORIZONTAL_PADDING;
+    }
+    
+    private static void renderQuantityFieldBackground(DrawContext context, int x, int y, int width, int height, boolean focused) {
+        int outlineColor = focused ? 0xFFFFFFFF : 0xFFA0A0A0;
+        context.fill(x - 1, y - 1, x + width + 1, y + height + 1, outlineColor);
+        context.fill(x, y, x + width, y + height, 0xFF000000);
+    }
+    
+    private static int getQuantityFieldTextY(int fieldY, int fieldHeight) {
+        return fieldY + (fieldHeight - 8) / 2;
+    }
+    
+    /**
      * Gibt die aktuelle Anzahl für eine Seite zurück (mit Fallback auf 1)
      */
     private static int getQuantityForPage(int page, ClipboardUtility.ClipboardEntry entry) {
         // Wenn Textfeld existiert und für diese Seite aktiv ist, verwende den Wert aus dem Textfeld
         if (quantityTextField != null && quantityTextFieldPage == page) {
             String text = quantityTextField.getText();
-            if (text != null && !text.trim().isEmpty()) {
-                    try {
-                        int quantity = Integer.parseInt(text.trim());
-                        if (quantity > 0) {
-                            // Für Seite 1: Speichere in statischer Variable
-                            if (page == 1) {
-                                page1Quantity = quantity;
-                            } else if (entry != null) {
-                                // Für andere Seiten: Aktualisiere entry.quantity
-                                entry.quantity = quantity;
-                                // Speichere in Config
-                                ClipboardUtility.saveClipboardEntries();
-                            }
-                            return quantity;
-                        }
-                } catch (NumberFormatException e) {
-                    // Ungültige Eingabe, verwende Fallback
+            if (text == null || text.trim().isEmpty()) {
+                return 1;
+            }
+            try {
+                int quantity = Integer.parseInt(text.trim());
+                if (quantity > 0) {
+                    if (page == 1) {
+                        page1Quantity = quantity;
+                    } else if (entry != null) {
+                        entry.quantity = quantity;
+                        ClipboardUtility.saveClipboardEntries();
+                    }
+                    return quantity;
                 }
+            } catch (NumberFormatException e) {
+                // Ungültige Eingabe, verwende Fallback
             }
         }
         
@@ -2698,22 +2718,26 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     /**
      * Rendert das Textfeld für die [Anzahl] Eingabe
-     * @param rightButtonX X-Position des rechten Buttons (wird verwendet, um Textfeld rechts davon zu positionieren)
      */
     private static void renderQuantityTextField(DrawContext context, MinecraftClient client, 
-                                                 int countX, int countY, int page, int currentQuantity,
-                                                 int unscaledWidth, float scale, int rightButtonX) {
+                                                 int quantityAreaX, int countY, int page, int currentQuantity,
+                                                 int unscaledWidth, float scale) {
         // Erstelle oder aktualisiere Textfeld wenn nötig
+        if (quantityTextField != null && quantityTextFieldPage != page) {
+            finalizeQuantityTextField();
+        }
         if (quantityTextField == null || quantityTextFieldPage != page) {
             quantityTextField = new TextFieldWidget(
                 client.textRenderer,
                 0, 0, // Wird später gesetzt
-                50, // Breite
+                QUANTITY_TEXT_FIELD_WIDTH, // Breite
                 client.textRenderer.fontHeight + 2, // Höhe
                 Text.literal("")
             );
             quantityTextField.setMaxLength(10); // Maximal 10 Ziffern
             quantityTextField.setTextPredicate(s -> s.matches("\\d*")); // Nur Zahlen erlauben
+            quantityTextField.setDrawsBackground(false);
+            quantityTextField.setEditableColor(0xFFFFFF00);
             quantityTextField.setChangedListener(text -> {
                 // Validierung: Stelle sicher, dass es eine positive Zahl ist
                 if (text != null && !text.trim().isEmpty()) {
@@ -2733,12 +2757,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                         }
                     } catch (NumberFormatException e) {
                         quantityTextField.setText("1");
-                        // Aktualisiere gespeicherte Anzahl für Seite 1
                         if (quantityTextFieldPage == 1) {
                             page1Quantity = 1;
                         }
                     }
                 }
+                invalidateWidthCache();
             });
             quantityTextFieldPage = page;
             
@@ -2754,25 +2778,41 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             }
         }
         
+        normalizeQuantityTextFieldIfNeeded();
+        
         // Berechne Position (unskaliert, relativ zum Overlay)
         // Textfeld soll rechts von den Buttons stehen, nicht überlappen
         // FESTE Position: rechts vom rechten Button, damit es sich nicht verschiebt
-        int textFieldWidth = 50;
-        int textFieldHeight = client.textRenderer.fontHeight + 2;
-        int buttonSpacing = 8; // 5px + 3px mehr Abstand = 8px
+        int fieldHeight = client.textRenderer.fontHeight + 2;
+        int innerFieldHeight = 8;
+        int prefixAreaWidth = getQuantityPrefixAreaWidth(client);
+        int totalWidth = getQuantityInputWidth(client);
+        int textFieldX = quantityAreaX + prefixAreaWidth;
+        int fieldY = countY;
+        int textY = getQuantityFieldTextY(fieldY, fieldHeight);
         
-        // Berechne Textfeld-Position: rechts vom rechten Button
-        // rightButtonX + buttonSpacing = Position rechts vom Button
-        // Diese Position ist FEST und ändert sich nicht, auch wenn der Text im Textfeld sich ändert
-        int textFieldX = rightButtonX + buttonSpacing;
+        renderQuantityFieldBackground(
+            context,
+            quantityAreaX,
+            fieldY,
+            totalWidth,
+            fieldHeight,
+            quantityTextField.isFocused()
+        );
         
-        int textFieldY = countY;
+        context.drawText(
+            client.textRenderer,
+            QUANTITY_PREFIX,
+            quantityAreaX + QUANTITY_FIELD_PADDING,
+            textY,
+            0xFFFFFF00,
+            true
+        );
         
-        // Setze Textfeld-Position (unskaliert, wird durch Matrix-Transformation skaliert)
         quantityTextField.setX(textFieldX);
-        quantityTextField.setY(textFieldY);
-        quantityTextField.setWidth(textFieldWidth);
-        quantityTextField.setHeight(textFieldHeight);
+        quantityTextField.setY(textY);
+        quantityTextField.setWidth(QUANTITY_TEXT_FIELD_WIDTH);
+        quantityTextField.setHeight(innerFieldHeight);
         
         // Rendere Textfeld (Matrix-Stack ist bereits aktiv in renderInGame)
         // Mouse position für Textfeld-Rendering (unskaliert, relativ zum Overlay)
@@ -2822,19 +2862,31 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int unscaledMouseX = (int) ((mouseX - overlayX) / scale);
         int unscaledMouseY = (int) ((mouseY - overlayY) / scale);
         
-        // Prüfe ob Klick innerhalb des Textfelds ist (unskaliert)
+        // Prüfe ob Klick innerhalb des kombinierten x+Zahlenfelds ist (unskaliert)
         int textFieldX = quantityTextField.getX();
         int textFieldY = quantityTextField.getY();
-        int textFieldWidth = quantityTextField.getWidth();
-        int textFieldHeight = quantityTextField.getHeight();
+        int innerFieldHeight = quantityTextField.getHeight();
+        int quantityAreaX = textFieldX - getQuantityPrefixAreaWidth(client);
+        int totalWidth = getQuantityAreaWidth(client, formatQuantityText(1), true);
+        int outerFieldHeight = client.textRenderer.fontHeight + 2;
+        int fieldY = textFieldY - (outerFieldHeight - innerFieldHeight) / 2;
         
-        if (unscaledMouseX >= textFieldX && unscaledMouseX <= textFieldX + textFieldWidth && 
-            unscaledMouseY >= textFieldY && unscaledMouseY <= textFieldY + textFieldHeight) {
+        if (unscaledMouseX >= quantityAreaX && unscaledMouseX <= quantityAreaX + totalWidth
+            && unscaledMouseY >= fieldY && unscaledMouseY <= fieldY + outerFieldHeight) {
+            if (button == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+                quantityTextField.setFocused(true);
+                quantityTextField.setText("");
+                return true;
+            }
+            
             quantityTextField.setFocused(true);
-            // Textfeld erwartet unskalierte Koordinaten
-            quantityTextField.mouseClicked(unscaledMouseX, unscaledMouseY, button);
+            int clickX = Math.max(unscaledMouseX, textFieldX);
+            quantityTextField.mouseClicked(clickX, unscaledMouseY, button);
             return true;
-        } else {
+        }
+        
+        if (quantityTextField.isFocused()) {
+            normalizeQuantityTextFieldIfNeeded();
             quantityTextField.setFocused(false);
         }
         
@@ -2845,6 +2897,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * Behandelt Tasteneingaben für das [Anzahl] Textfeld
      * Verarbeitet auch Zeicheneingaben, indem es die Zeichen aus den KeyCodes extrahiert
      */
+    public static boolean isQuantityTextFieldFocused() {
+        return quantityTextField != null && quantityTextField.isFocused();
+    }
+
     public static boolean handleQuantityTextFieldKeyPress(int keyCode, int scanCode, int modifiers) {
         if (quantityTextField != null && quantityTextField.isFocused()) {
             // Verarbeite normale Tasteneingaben (Backspace, Enter, etc.)

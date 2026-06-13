@@ -9,7 +9,6 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
@@ -82,26 +81,7 @@ public class KitSelectionScreen extends Screen {
 	// Button zum Schließen
 	private ButtonWidget doneButton;
 	private ButtonWidget cancelButton;
-	
-	/**
-	 * Gibt das Icon-Item für ein Kit zurück
-	 */
-	private static ItemStack getKitIcon(KitFilterUtility.KitType kitType) {
-		switch (kitType) {
-			case MÜNZ_KIT:
-				return new ItemStack(Items.GOLD_NUGGET);
-			case SCHADEN_KIT:
-				return new ItemStack(Items.DIAMOND_SWORD);
-			case RESSOURCEN_KIT:
-				return new ItemStack(Items.DIAMOND_PICKAXE);
-			case HERSTELLUNGS_KIT:
-				return new ItemStack(Items.ANVIL);
-			case TANK_KIT:
-				return new ItemStack(Items.DIAMOND_CHESTPLATE);
-			default:
-				return ItemStack.EMPTY;
-		}
-	}
+	private final KitTooltipHelper tooltipHelper = new KitTooltipHelper();
 	
 	public KitSelectionScreen(int buttonIndex) {
 		super(Text.literal("Kit Auswahl"));
@@ -269,6 +249,7 @@ public class KitSelectionScreen extends Screen {
 		}
 		context.enableScissor(0, 0, this.width, this.height);
 		renderTabs(context, mouseX, mouseY);
+		context.disableScissor();
 	}
 	
 	/**
@@ -340,94 +321,25 @@ public class KitSelectionScreen extends Screen {
 	}
 	
 	/**
-	 * Parst die numerische Ebene aus einem String wie "e5", "e3", etc.
-	 * Gibt 0 zurück, wenn keine Ebene vorhanden ist oder nicht geparst werden kann.
-	 */
-	private int parseEbeneNumber(String ebene) {
-		if (ebene == null || ebene.isEmpty()) {
-			return 0;
-		}
-		
-		// Entferne "e" oder "E" am Anfang und versuche die Zahl zu parsen
-		String cleaned = ebene.trim().toLowerCase();
-		if (cleaned.startsWith("e")) {
-			cleaned = cleaned.substring(1);
-		}
-		
-		try {
-			return Integer.parseInt(cleaned);
-		} catch (NumberFormatException e) {
-			return 0;
-		}
-	}
-	
-	/**
-	 * Berechnet die Breite des Item-Typs
-	 */
-	private int calculateItemTypeWidth(KitFilterUtility.ItemInfo itemInfo) {
-		if (itemInfo.itemType != null && !itemInfo.itemType.isEmpty()) {
-			return this.textRenderer.getWidth(itemInfo.itemType);
-		}
-		return 0;
-	}
-	
-	/**
-	 * Berechnet die Breite der Modifier
-	 */
-	private int calculateModifierWidth(KitFilterUtility.ItemInfo itemInfo) {
-		if (itemInfo.modifier == null || itemInfo.modifier.isEmpty()) {
-			return 0;
-		}
-		
-		int width = 0;
-		String[] modifierParts = itemInfo.modifier.split(",\\s*");
-		for (int i = 0; i < modifierParts.length; i++) {
-			String part = modifierParts[i].trim();
-			if (i > 0) {
-				width += this.textRenderer.getWidth(", "); // Komma und Leerzeichen
-			}
-			
-			// Parse Modifier: [ModifierName]
-			if (part.startsWith("[") && part.endsWith("]")) {
-				String modifierName = part.substring(1, part.length() - 1);
-				width += this.textRenderer.getWidth("[");
-				width += this.textRenderer.getWidth(modifierName);
-				width += this.textRenderer.getWidth("]");
-			} else {
-				width += this.textRenderer.getWidth(part);
-			}
-		}
-		return width;
-	}
-	
-	/**
-	 * Berechnet die Breite des Item-Namens
-	 */
-	private int calculateItemNameWidth(KitFilterUtility.ItemInfo itemInfo) {
-		if (itemInfo.name != null && !itemInfo.name.isEmpty()) {
-			return this.textRenderer.getWidth(itemInfo.name);
-		}
-		return 0;
-	}
-	
-	/**
-	 * Berechnet die Breite der Ebene
-	 */
-	private int calculateEbeneWidth(KitFilterUtility.ItemInfo itemInfo) {
-		if (itemInfo.ebene != null && !itemInfo.ebene.isEmpty()) {
-			return this.textRenderer.getWidth(itemInfo.ebene);
-		}
-		return 0;
-	}
-	
-	/**
 	 * Rendert einen Tooltip mit Kit-Namen, Stufe und Item-Namen in tabellarischer Form
 	 */
 	private void renderTooltip(DrawContext context, int mouseX, int mouseY, boolean neuKit) {
-		String kitName = hoveredKitType.getDisplayName();
-		String tooltipHeader = kitName + " " + hoveredLevel;
-		java.util.Set<KitFilterUtility.ItemInfo> itemInfosSet = KitFilterUtility.getKitItemInfos(hoveredKitType, hoveredLevel, neuKit);
-		renderItemInfosTooltip(context, mouseX, mouseY, tooltipHeader, new java.util.ArrayList<>(itemInfosSet));
+		if (hoveredKitType == null || hoveredLevel <= 0) {
+			return;
+		}
+		String tooltipHeader = hoveredKitType.getDisplayName() + " " + hoveredLevel;
+		java.util.Set<KitFilterUtility.ItemInfo> itemInfosSet =
+				KitFilterUtility.getKitItemInfos(hoveredKitType, hoveredLevel, neuKit);
+		renderCachedItemInfosTooltip(
+				context,
+				mouseX,
+				mouseY,
+				"kit:" + hoveredKitType.name() + ":" + hoveredLevel + ":" + neuKit + tooltipBpCacheSuffix(),
+				tooltipHeader,
+				itemInfosSet,
+				false,
+				false
+		);
 	}
 
 	private void renderCustomKitTooltip(DrawContext context, int mouseX, int mouseY) {
@@ -438,234 +350,44 @@ public class KitSelectionScreen extends Screen {
 		if (kitName == null || kitName.isEmpty()) {
 			kitName = "Neues Kit";
 		}
-		renderItemInfosTooltip(
-			context,
-			mouseX,
-			mouseY,
-			kitName,
-			KitFilterUtility.getCustomKitItemInfos(hoveredCustomKit),
-			true
+		renderCachedItemInfosTooltip(
+				context,
+				mouseX,
+				mouseY,
+				"custom:" + KitFilterUtility.getCustomKitItemCacheKey(hoveredCustomKit) + tooltipBpCacheSuffix(),
+				kitName,
+				KitFilterUtility.getCustomKitItemInfos(hoveredCustomKit),
+				true,
+				true
 		);
 	}
 
-	private void renderItemInfosTooltip(DrawContext context, int mouseX, int mouseY, String tooltipHeader,
-			java.util.List<KitFilterUtility.ItemInfo> itemInfos) {
-		renderItemInfosTooltip(context, mouseX, mouseY, tooltipHeader, itemInfos, false);
+	private String tooltipBpCacheSuffix() {
+		return ":bp" + (shouldShowBPViewerStatus() ? 1 : 0);
 	}
 
-	private void renderItemInfosTooltip(DrawContext context, int mouseX, int mouseY, String tooltipHeader,
-			java.util.List<KitFilterUtility.ItemInfo> itemInfos, boolean showActionHints) {
-		if (tooltipHeader == null || tooltipHeader.isEmpty()) {
-			return;
-		}
-		if (itemInfos == null) {
-			itemInfos = java.util.Collections.emptyList();
-		} else {
-			itemInfos = new java.util.ArrayList<>(itemInfos);
-			if (!itemInfos.isEmpty()) {
-				itemInfos.sort((a, b) -> {
-					int ebeneA = parseEbeneNumber(a.ebene);
-					int ebeneB = parseEbeneNumber(b.ebene);
-					return Integer.compare(ebeneA, ebeneB);
-				});
-			}
-		}
-		
-		// Berechne maximale Breiten für jede Spalte
-		int maxItemTypeWidth = 0;
-		int maxItemNameWidth = 0;
-		int maxModifierWidth = 0;
-		int maxEbeneWidth = 0;
-		
-		for (KitFilterUtility.ItemInfo itemInfo : itemInfos) {
-			maxItemTypeWidth = Math.max(maxItemTypeWidth, calculateItemTypeWidth(itemInfo));
-			maxItemNameWidth = Math.max(maxItemNameWidth, calculateItemNameWidth(itemInfo));
-			maxModifierWidth = Math.max(maxModifierWidth, calculateModifierWidth(itemInfo));
-			maxEbeneWidth = Math.max(maxEbeneWidth, calculateEbeneWidth(itemInfo));
-		}
-		
-		// Spaltenabstände
-		int columnSpacing = 12; // Abstand zwischen Spalten
-		
-		// Berechne Breite für Aufzählungspunkt
-		String bulletPoint = "• ";
-		int bulletWidth = this.textRenderer.getWidth(bulletPoint);
-		
-		// Berechne Breite für BPViewer Status (falls angezeigt)
-		int statusWidth = 0;
-		if (shouldShowBPViewerStatus()) {
-			statusWidth = this.textRenderer.getWidth(" ✓") + columnSpacing; // Platz für Haken/Kreuz
-		}
-		
-		// Berechne Gesamtbreite
-		int headerWidth = this.textRenderer.getWidth(tooltipHeader);
-		int totalWidth = Math.max(headerWidth, bulletWidth + maxItemTypeWidth + columnSpacing + maxItemNameWidth + columnSpacing + maxModifierWidth + columnSpacing + maxEbeneWidth + statusWidth);
-		if (showActionHints) {
-			totalWidth = Math.max(totalWidth, this.textRenderer.getWidth("[Linksklick]: Auswählen"));
-			totalWidth = Math.max(totalWidth, this.textRenderer.getWidth("[Rechtsklick]: Bearbeiten"));
-		}
-		
-		int textHeight = this.textRenderer.fontHeight;
-		int padding = 4;
-		int lineSpacing = 2;
-		int offset = 10; // Abstand vom Mauszeiger
-		
-		// Berechne die Gesamthöhe (Header + Item-Informationen)
-		int totalHeight = textHeight + padding * 2; // Header + Padding
-		if (!itemInfos.isEmpty()) {
-			totalHeight += lineSpacing;
-			totalHeight += textHeight * itemInfos.size();
-		}
-		if (showActionHints) {
-			totalHeight += lineSpacing;
-			totalHeight += textHeight * 2;
-		}
-		
-		int tooltipWidth = totalWidth + padding * 2;
-		
-		// Berechne X-Position: Versuche rechts vom Mauszeiger, falls nicht möglich dann links
-		int tooltipX = mouseX + offset;
-		if (tooltipX + tooltipWidth > this.width) {
-			// Tooltip würde rechts rausragen, verschiebe nach links
-			tooltipX = mouseX - tooltipWidth - offset;
-			// Falls es dann links rausragt, positioniere es am linken Rand
-			if (tooltipX < padding) {
-				tooltipX = padding;
-			}
-		}
-		// Stelle sicher, dass es nicht rechts rausragt
-		if (tooltipX + tooltipWidth > this.width) {
-			tooltipX = this.width - tooltipWidth - padding;
-		}
-		
-		// Berechne Y-Position: Versuche oberhalb des Mauszeigers, falls nicht möglich dann unterhalb
-		int tooltipY = mouseY - totalHeight - offset;
-		if (tooltipY < padding) {
-			// Tooltip würde oben rausragen, verschiebe nach unten
-			tooltipY = mouseY + offset;
-			// Falls es dann unten rausragt, positioniere es am unteren Rand
-			if (tooltipY + totalHeight > this.height - padding) {
-				tooltipY = this.height - totalHeight - padding;
-			}
-		}
-		// Stelle sicher, dass es nicht unten rausragt
-		if (tooltipY + totalHeight > this.height - padding) {
-			tooltipY = this.height - totalHeight - padding;
-		}
-		// Stelle sicher, dass es nicht oben rausragt
-		if (tooltipY < padding) {
-			tooltipY = padding;
-		}
-		
-		// Berechne Hintergrund-Positionen
-		int bgX1 = tooltipX - padding;
-		int bgY1 = tooltipY - padding;
-		int bgX2 = tooltipX + totalWidth + padding;
-		int bgY2 = tooltipY + totalHeight - padding;
-		
-		// Tooltip-Hintergrund (halbtransparent schwarz) - ZUERST
-		context.fill(bgX1, bgY1, bgX2, bgY2, 0xF0000000);
-		
-		// Tooltip-Rahmen (weiß) - VOR Text
-		context.fill(bgX1, bgY1, bgX2, bgY1 + 1, 0xFFFFFFFF); // Oben
-		context.fill(bgX1, bgY2 - 1, bgX2, bgY2, 0xFFFFFFFF); // Unten
-		context.fill(bgX1, bgY1, bgX1 + 1, bgY2, 0xFFFFFFFF); // Links
-		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF); // Rechts
-		
-		// Tooltip-Header (Kit-Name + Level)
-		context.drawText(this.textRenderer, tooltipHeader, tooltipX, tooltipY, 0xFFFFFFFF, true);
-		
-		// Tooltip-Item-Informationen in tabellarischer Form
-		int currentY = tooltipY + textHeight;
-		if (!itemInfos.isEmpty()) {
-			currentY += lineSpacing;
-		}
-		for (KitFilterUtility.ItemInfo itemInfo : itemInfos) {
-			int currentX = tooltipX;
-			
-			// Aufzählungspunkt vor jeder Zeile
-			context.drawText(this.textRenderer, bulletPoint, currentX, currentY, 0xFFFFFFFF, true);
-			currentX += bulletWidth;
-			
-			// Spalte 1: Item-Typ (linksbündig)
-			if (itemInfo.itemType != null && !itemInfo.itemType.isEmpty()) {
-				context.drawText(this.textRenderer, itemInfo.itemType, currentX, currentY, 0xFFFFFFFF, true);
-			}
-			currentX += maxItemTypeWidth + columnSpacing;
-			
-			// Spalte 2: Item-Name (linksbündig, mit entsprechender Farbe)
-			if (itemInfo.name != null && !itemInfo.name.isEmpty()) {
-				int nameColor = (itemInfo.nameColorString != null && !itemInfo.nameColorString.isEmpty()) 
-					? itemInfo.nameColor 
-					: 0xFFFFFFFF;
-				context.drawText(this.textRenderer, itemInfo.name, currentX, currentY, nameColor, true);
-			}
-			currentX += maxItemNameWidth + columnSpacing;
-			
-			// Spalte 3: Modifier (linksbündig in der Spalte)
-			if (itemInfo.modifier != null && !itemInfo.modifier.isEmpty()) {
-				// Parse und rendere Modifier mit Farben
-				String[] modifierParts = itemInfo.modifier.split(",\\s*");
-				int modifierX = currentX;
-				for (int i = 0; i < modifierParts.length; i++) {
-					String part = modifierParts[i].trim();
-					if (i > 0) {
-						// Rendere Komma und Leerzeichen in weiß
-						String separator = ", ";
-						context.drawText(this.textRenderer, separator, modifierX, currentY, 0xFFFFFFFF, true);
-						modifierX += this.textRenderer.getWidth(separator);
-					}
-					
-					// Parse Modifier: [ModifierName]
-					if (part.startsWith("[") && part.endsWith("]")) {
-						String modifierName = part.substring(1, part.length() - 1);
-						int modifierColor = KitFilterUtility.ItemInfo.parseModifierColor(modifierName);
-						
-						// Rendere öffnende Klammer in weiß
-						context.drawText(this.textRenderer, "[", modifierX, currentY, 0xFFFFFFFF, true);
-						modifierX += this.textRenderer.getWidth("[");
-						
-						// Rendere Modifier-Name in der entsprechenden Farbe
-						context.drawText(this.textRenderer, modifierName, modifierX, currentY, modifierColor, true);
-						modifierX += this.textRenderer.getWidth(modifierName);
-						
-						// Rendere schließende Klammer in weiß
-						context.drawText(this.textRenderer, "]", modifierX, currentY, 0xFFFFFFFF, true);
-						modifierX += this.textRenderer.getWidth("]");
-					} else {
-						// Fallback: Rendere als normalen Text in weiß
-						context.drawText(this.textRenderer, part, modifierX, currentY, 0xFFFFFFFF, true);
-						modifierX += this.textRenderer.getWidth(part);
-					}
-				}
-			}
-			currentX += maxModifierWidth + columnSpacing;
-			
-			// Spalte 4: Ebene (linksbündig in der Spalte)
-			if (itemInfo.ebene != null && !itemInfo.ebene.isEmpty()) {
-				context.drawText(this.textRenderer, itemInfo.ebene, currentX, currentY, 0xFFFFFFFF, true);
-				currentX += this.textRenderer.getWidth(itemInfo.ebene);
-			} else {
-				currentX += maxEbeneWidth;
-			}
-			
-			// Spalte 5: BPViewer Status (Haken/Kreuz) - nur wenn aktiviert und in speziellem Inventar
-			if (shouldShowBPViewerStatus()) {
-				boolean isFound = isBlueprintFound(itemInfo.name);
-				String statusSymbol = isFound ? " ✓" : " ✗";
-				int statusColor = isFound ? 0xFF00FF00 : 0xFFFF0000; // Grün für Haken, Rot für Kreuz
-				context.drawText(this.textRenderer, statusSymbol, currentX, currentY, statusColor, true);
-			}
-			
-			currentY += textHeight;
-		}
-
-		if (showActionHints) {
-			currentY += lineSpacing;
-			drawActionHintLine(context, tooltipX, currentY, "Linksklick", "Auswählen");
-			currentY += textHeight;
-			drawActionHintLine(context, tooltipX, currentY, "Rechtsklick", "Bearbeiten");
-		}
+	private void renderCachedItemInfosTooltip(
+			DrawContext context,
+			int mouseX,
+			int mouseY,
+			String cacheKey,
+			String tooltipHeader,
+			java.util.Collection<KitFilterUtility.ItemInfo> itemInfos,
+			boolean showSelectActionHint,
+			boolean showEditActionHint
+	) {
+		boolean showBpStatus = shouldShowBPViewerStatus();
+		KitTooltipHelper.CachedTooltip cached = tooltipHelper.getOrBuild(
+				cacheKey,
+				this.textRenderer,
+				tooltipHeader,
+				itemInfos,
+				showSelectActionHint,
+				showEditActionHint,
+				showBpStatus,
+				this::isBlueprintFound
+		);
+		KitTooltipHelper.render(context, this.textRenderer, cached, mouseX, mouseY, this.width, this.height);
 	}
 
 	private void renderPlusSlotTooltip(DrawContext context, int mouseX, int mouseY) {
@@ -751,7 +473,7 @@ public class KitSelectionScreen extends Screen {
 			KitFilterUtility.KitType kitType = kitTypes[kitIndex];
 			
 			// Hole das Icon-Item für dieses Kit
-			ItemStack kitIcon = getKitIcon(kitType);
+			ItemStack kitIcon = KitFilterUtility.getKitTypeIcon(kitType);
 			
 			// Rendere Kit-Name links
 			int kitNameY = gridStartY + (kitIndex * GRID_SPACING_Y) + (SLOT_SIZE / 2) - 4;
@@ -822,7 +544,7 @@ public class KitSelectionScreen extends Screen {
 		
 		for (int kitIndex = 0; kitIndex < kitTypes.length; kitIndex++) {
 			KitFilterUtility.KitType kitType = kitTypes[kitIndex];
-			ItemStack kitIcon = getKitIcon(kitType);
+			ItemStack kitIcon = KitFilterUtility.getKitTypeIcon(kitType);
 			
 			int kitNameY = gridStartY + (kitIndex * GRID_SPACING_Y) + (SLOT_SIZE / 2) - 4;
 			int kitNameWidth = this.textRenderer.getWidth(kitType.getDisplayName());

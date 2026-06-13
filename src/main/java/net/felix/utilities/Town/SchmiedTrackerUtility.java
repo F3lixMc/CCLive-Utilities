@@ -1120,7 +1120,7 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 
-		net.felix.ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerItemDisplayMode;
+		net.felix.SchmiedItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerItemDisplayMode;
 
 		// Zeichne farbige Rahmen oder Hintergrund um die Items
 		for (Map.Entry<Integer, Integer> entry : slotColors.entrySet()) {
@@ -1138,7 +1138,7 @@ public class SchmiedTrackerUtility {
 				int slotX = screenX + slot.x;
 				int slotY = screenY + slot.y;
 				
-				if (displayMode == net.felix.ItemDisplayMode.BACKGROUND) {
+				if (displayMode == net.felix.SchmiedItemDisplayMode.BACKGROUND) {
 					// Zeichne halbtransparenten Hintergrund
 					// Verwende die Rahmenfarbe, aber mit reduzierter Transparenz
 					int backgroundColor = (color & 0x00FFFFFF) | 0x80000000; // 50% Transparenz für bessere Sichtbarkeit

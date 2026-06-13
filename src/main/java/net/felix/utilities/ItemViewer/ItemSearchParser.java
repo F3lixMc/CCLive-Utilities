@@ -44,9 +44,11 @@ public class ItemSearchParser {
         "\\+([\\p{L}\\p{N}_\\s]+)(?::(\\d+))?",
         Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
     );
+    // Kosten-Kategorien: nur als eigenständiges Wort mit Trenner (z.B. "kaktus:0", "ressource:Eichenholz")
+    // Wortgrenzen verhindern, dass "Kaktusernter" fälschlich als Kaktus-Kostenfilter gelesen wird
     private static final Pattern COST_CATEGORY_PATTERN = Pattern.compile(
-        "(amboss|ressource|material1|material2|kaktus|seele|coin|coins)[\\s:]*([\\w\\s\\d]+)",
-        Pattern.CASE_INSENSITIVE
+        "\\b(amboss|ressource|material1|material2|kaktus|seele|coin|coins|ofen)\\b(?:\\s*:\\s*|\\s+)([\\p{L}\\p{N}_\\s\\d]+)",
+        Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
     );
     private static final Pattern ASPECT_PATTERN = Pattern.compile(
         "aspekt[\\s:]+(\\w+)",
@@ -219,13 +221,7 @@ public class ItemSearchParser {
                 query.aspect = aspectMatcher.group(1);
                 remaining = remaining.replace(aspectMatcher.group(0), "").trim();
             } else {
-                for (String knownAspect : KNOWN_ASPECTS) {
-                    if (remaining.toLowerCase().contains(knownAspect)) {
-                        query.aspect = knownAspect;
-                        remaining = remaining.replaceAll("(?i)" + knownAspect, "").trim();
-                        break;
-                    }
-                }
+                remaining = parseKnownAspectName(remaining, query);
             }
         }
         
@@ -372,13 +368,7 @@ public class ItemSearchParser {
                 query.aspect = aspectMatcher.group(1);
                 remaining = remaining.replace(aspectMatcher.group(0), "").trim();
             } else {
-                for (String knownAspect : KNOWN_ASPECTS) {
-                    if (remaining.toLowerCase().contains(knownAspect)) {
-                        query.aspect = knownAspect;
-                        remaining = remaining.replaceAll("(?i)" + knownAspect, "").trim();
-                        break;
-                    }
-                }
+                remaining = parseKnownAspectName(remaining, query);
             }
         }
         
@@ -429,6 +419,21 @@ public class ItemSearchParser {
         return remaining;
     }
     
+    private static String parseKnownAspectName(String remaining, SearchQuery query) {
+        for (String knownAspect : KNOWN_ASPECTS) {
+            Pattern aspectWordPattern = Pattern.compile(
+                "\\b" + Pattern.quote(knownAspect) + "\\b",
+                Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
+            );
+            Matcher matcher = aspectWordPattern.matcher(remaining);
+            if (matcher.find()) {
+                query.aspect = knownAspect;
+                return matcher.replaceAll("").trim();
+            }
+        }
+        return remaining;
+    }
+
     private static void addFloorFilter(SearchQuery query, String operator, String valueStr) {
         try {
             FloorFilter filter = new FloorFilter();

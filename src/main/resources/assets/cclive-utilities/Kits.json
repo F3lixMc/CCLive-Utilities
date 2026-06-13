@@ -2726,7 +2726,7 @@
 
                                      "rarity":  "Legendary",
 
-                                     "modifier":  "[Fähigkeiten], [Andere], [Andere], [Schaden]",
+                                     "modifier":  "[Andere], [Andere],[Schaden], [Fähigkeiten]", 
 
                                      "item_type":  "Axt",
 
@@ -2754,7 +2754,7 @@
 
                                      "rarity":  "Legendary",
 
-                                     "modifier":  "[Andere], [Andere], [Fähigkeiten], [Schaden]",
+                                     "modifier":  "[Andere], [Andere],[Schaden], [Fähigkeiten] ", 
 
                                      "floor":  "e47",
 
@@ -2782,7 +2782,7 @@
 
                                      "rarity":  "Legendary",
 
-                                     "modifier":  "[Andere], [Andere], [Attribute], [Schaden]",
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Attribute]",
 
                                      "floor":  "e48",
 
@@ -2828,7 +2828,7 @@
 
                                      "rarity":  "Legendary",
 
-                                     "modifier":  "[Schaden], [Schaden], [Verteidigung], [Andere]",
+                                     "modifier":  "[Schaden], [Schaden], [Andere], [Verteidigung]",
 
                                      "item_type":  "Hacke",
 
@@ -2856,7 +2856,7 @@
 
                                      "rarity":  "Legendary",
 
-                                     "modifier":  "[Andere], [Andere], [Fähigkeiten], [Schaden]",
+                                     "modifier":  "[Andere], [Andere],[Schaden], [Fähigkeiten]", 
 
                                      "floor":  "e86",
 
@@ -2898,7 +2898,7 @@
 
                                      "rarity":  "Legendary",
 
-                                     "modifier":  "[Andere], [Andere], [Verteidigung], [Schaden]",
+                                     "modifier":  "[Andere], [Andere], [Schaden], [Verteidigung]",
 
                                      "item_type":  "Halskette",
 
@@ -2990,7 +2990,7 @@
 
                                            "rarity":  "Legendary",
 
-                                           "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                           "modifier":  "[Fähigkeiten], [Herstellung], [Herstellung], [Andere]",
 
                                            "floor":  "e1",
 
@@ -3018,7 +3018,7 @@
 
                                            "rarity":  "Rare",
 
-                                           "modifier":  "[Herstellung], [Fähigkeiten]",
+                                           "modifier":  "[Fähigkeiten], [Herstellung]",
 
                                            "floor":  "e1",
 
@@ -3032,7 +3032,7 @@
 
                                            "rarity":  "Rare",
 
-                                           "modifier":  "[Attribute], [Fähigkeiten]",
+                                           "modifier":  "[Fähigkeiten], [Attribute]",
 
                                            "item_type":  "Gürtel",
 
@@ -3074,7 +3074,7 @@
 
                                            "rarity":  "Epic",
 
-                                           "modifier":  "[Andere], [Andere], [Fähigkeiten]",
+                                           "modifier":  "[Fähigkeiten], [Andere], [Andere]",
 
                                            "floor":  "e3",
 
@@ -3088,7 +3088,7 @@
 
                                            "rarity":  "Rare",
 
-                                           "modifier":  "[Attribute], [Fähigkeiten]",
+                                           "modifier":  "[Fähigkeiten], [Attribute]",
 
                                            "item_type":  "Halskette",
 
@@ -3116,7 +3116,7 @@
 
                                            "rarity":  "Legendary",
 
-                                           "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                           "modifier":  "[Fähigkeiten], [Herstellung], [Herstellung], [Andere]",
 
                                            "floor":  "e5",
 
@@ -3812,7 +3812,7 @@
 
                                              "rarity":  "Legendary",
 
-                                             "modifier":  "[Fähigkeiten], [Fähigkeiten], [Herstellung], [Herstellung]",
+                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Fähigkeiten]",
 
                                              "floor":  "e36",
 
@@ -3998,7 +3998,7 @@
 
                                              "rarity":  "Legendary",
 
-                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten] ",
 
                                              "item_type":  "Schwert",
 
@@ -4012,7 +4012,7 @@
 
                                              "rarity":  "Legendary",
 
-                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten]",
 
                                              "floor":  "e72",
 
@@ -4026,7 +4026,7 @@
 
                                              "rarity":  "Legendary",
 
-                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten]",
 
                                              "floor":  "e74",
 
@@ -4054,7 +4054,7 @@
 
                                              "rarity":  "Legendary",
 
-                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten]",
 
                                              "item_type":  "Gürtel",
 
@@ -4068,7 +4068,7 @@
 
                                              "rarity":  "Legendary",
 
-                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten]",
 
                                              "floor":  "e78",
 
@@ -4082,7 +4082,7 @@
 
                                              "rarity":  "Legendary",
 
-                                             "modifier":  "[Herstellung], [Herstellung], [Fähigkeiten], [Andere]",
+                                             "modifier":  "[Herstellung], [Herstellung], [Andere], [Fähigkeiten]",
 
                                              "floor":  "e79",
 
@@ -4156,7 +4156,7 @@
 
                                              "item_type":  "Halskette",
 
-                                             "floor":  ""
+                                             "floor":  "95"
 
                                          }
 

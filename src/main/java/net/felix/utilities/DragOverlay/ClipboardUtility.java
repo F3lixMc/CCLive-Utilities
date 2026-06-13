@@ -43,6 +43,8 @@ public class ClipboardUtility {
     
     // KeyBinding für das Togglen des Clipboards
     private static KeyBinding toggleClipboardKeyBinding;
+    private static KeyBinding nextPageKeyBinding;
+    private static KeyBinding previousPageKeyBinding;
     
     // Flag für asynchrones Laden
     private static volatile boolean clipboardEntriesLoaded = false;
@@ -141,20 +143,86 @@ public class ClipboardUtility {
                 if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
                     return; // Ignoriere Hotkey wenn Chat offen ist
                 }
+                if (isTextFieldFocused(client)) {
+                    return;
+                }
                 
                 toggleClipboard();
             }
+
+            handlePageHotkeys(client);
         });
+    }
+
+    private static void handlePageHotkeys(net.minecraft.client.MinecraftClient client) {
+        if (!canHandleClipboardPageHotkeys(client)) {
+            return;
+        }
+        if (previousPageKeyBinding != null && previousPageKeyBinding.wasPressed()) {
+            goToPreviousPage();
+        }
+        if (nextPageKeyBinding != null && nextPageKeyBinding.wasPressed()) {
+            goToNextPage();
+        }
+    }
+
+    private static boolean canHandleClipboardPageHotkeys(net.minecraft.client.MinecraftClient client) {
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+            return false;
+        }
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled) {
+            return false;
+        }
+        if (client == null) {
+            return false;
+        }
+        if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
+            return false;
+        }
+        if (isTextFieldFocused(client)) {
+            return false;
+        }
+        if (ClipboardDraggableOverlay.isQuantityTextFieldFocused()) {
+            return false;
+        }
+        return true;
+    }
+
+    public static void goToNextPage() {
+        int currentPage = getCurrentPage();
+        int totalPages = getTotalPages();
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    }
+
+    public static void goToPreviousPage() {
+        int currentPage = getCurrentPage();
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
     }
     
     /**
-     * Registriert den KeyBinding für das Togglen des Clipboards
+     * Registriert KeyBindings für das Clipboard
      */
     private static void registerKeyBinding() {
         toggleClipboardKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
             "key.cclive-utilities.toggle-clipboard",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_UNKNOWN, // Kein Standard-Key (unbelegt)
+            "categories.cclive-utilities.itemviewer"
+        ));
+        nextPageKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key.cclive-utilities.clipboard.next-page",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN,
+            "categories.cclive-utilities.itemviewer"
+        ));
+        previousPageKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            "key.cclive-utilities.clipboard.previous-page",
+            InputUtil.Type.KEYSYM,
+            GLFW.GLFW_KEY_UNKNOWN,
             "categories.cclive-utilities.itemviewer"
         ));
     }
@@ -180,13 +248,25 @@ public class ClipboardUtility {
      */
     public static boolean handleKeyPress(int keyCode, int scanCode) {
         try {
+            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+
+            if (canHandleClipboardPageHotkeys(client)) {
+                if (nextPageKeyBinding != null && nextPageKeyBinding.matchesKey(keyCode, scanCode)) {
+                    goToNextPage();
+                    return true;
+                }
+                if (previousPageKeyBinding != null && previousPageKeyBinding.matchesKey(keyCode, scanCode)) {
+                    goToPreviousPage();
+                    return true;
+                }
+            }
+
             // Prüfe ob der gedrückte Key dem konfigurierten KeyBinding entspricht
             if (toggleClipboardKeyBinding != null) {
                 // Verwende matchesKey um zu prüfen, ob der gedrückte Key dem konfigurierten KeyBinding entspricht
                 if (toggleClipboardKeyBinding.matchesKey(keyCode, scanCode)) {
                     // Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
                     // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler tippt
-                    net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
                     if (client != null && isTextFieldFocused(client)) {
                         return false; // Ignoriere Hotkey wenn Textfeld fokussiert ist
                     }

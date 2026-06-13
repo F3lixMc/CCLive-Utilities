@@ -46,6 +46,7 @@ public class InformationenUtility {
 	
 	// License tracking
 	private static Map<String, LicenseInfo> licensesDatabase = new HashMap<>();
+	private static final List<PondInfo> pondsDatabase = new ArrayList<>();
 	private static final String LICENSES_CONFIG_FILE = "assets/cclive-utilities/Farmworld.json";
 	
 	// Cards and Statues effects tracking
@@ -337,6 +338,7 @@ public class InformationenUtility {
 			// Check if we're in the special inventory (Moblexicon)
 			boolean isSpecialInventory = false;
 			boolean isLicenseInventory = false;
+			boolean isQuickTravelInventory = false;
 			boolean isMaterialBagInventory = false;
 			boolean hideFloorNumbersInEssenceMenu = false;
 			String screenTitle = "";
@@ -348,6 +350,9 @@ public class InformationenUtility {
 				// Check for license inventory character (friends_request_accept_deny)
 				if (ZeichenUtility.containsFriendsRequestAcceptDeny(screenTitle)) {
 					isLicenseInventory = true;
+				}
+				if (ZeichenUtility.containsFarmzoneQuickTravel(screenTitle)) {
+					isQuickTravelInventory = true;
 				}
 				// Essence-Bag, -Auswahl, Harvester: keine Ebenen-Nummern
 				hideFloorNumbersInEssenceMenu = ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle);
@@ -364,6 +369,11 @@ public class InformationenUtility {
 			
 			if (hideFloorNumbersInEssenceMenu) {
 				return;
+			}
+
+			// Teich-Zuordnung in Schnellreise-Inventaren (unabhängig von Ebenen-Einstellung)
+			if (isQuickTravelInventory && CCLiveUtilitiesConfig.HANDLER.instance().showLicenseInformation) {
+				checkForPondInformation(lines);
 			}
 			
 			// Check if the respective setting is enabled for this inventory type
@@ -596,7 +606,7 @@ public class InformationenUtility {
 					checkForLicenseInformation(lines, client);
 				}
 			}
-			
+
 			// Check for gadget information in "Module [Upgraden]" inventory
 			if (CCLiveUtilitiesConfig.HANDLER.instance().showModuleInformation) {
 				boolean isModuleUpgradeInventory = false;
@@ -3632,12 +3642,103 @@ public class InformationenUtility {
 							}
 						}
 					}
+
+					if (json.has("ponds")) {
+						com.google.gson.JsonArray pondsArray = json.getAsJsonArray("ponds");
+						for (var element : pondsArray) {
+							JsonObject pondData = element.getAsJsonObject();
+							String biome = pondData.has("biome") ? pondData.get("biome").getAsString() : "";
+							String pond = pondData.has("pond") ? pondData.get("pond").getAsString() : "";
+							if (!biome.isEmpty() && !pond.isEmpty()) {
+								pondsDatabase.add(new PondInfo(biome, pond));
+							}
+						}
+					}
 				}
 			}
 		} catch (Exception e) {
 			// Silent error handling("Failed to load licenses database: " + e.getMessage());
 			// Silent error handling
 		}
+	}
+
+	/**
+	 * Sucht in Tooltip-Zeilen nach Biom-Namen und fügt die Teich-Zuordnung hinzu.
+	 */
+	private static void checkForPondInformation(List<Text> lines) {
+		if (pondsDatabase.isEmpty()) {
+			return;
+		}
+
+		List<PondInfo> sortedPonds = new ArrayList<>(pondsDatabase);
+		sortedPonds.sort((a, b) -> Integer.compare(b.biome.length(), a.biome.length()));
+
+		for (int i = 0; i < lines.size(); i++) {
+			String cleanLineText = cleanTooltipLineForMatching(lines.get(i).getString());
+			if (cleanLineText.isEmpty()) {
+				continue;
+			}
+
+			for (PondInfo pondInfo : sortedPonds) {
+				if (!tooltipLineContainsBiome(cleanLineText, pondInfo.biome)) {
+					continue;
+				}
+
+				String pondDisplay = "-> " + pondInfo.pond;
+				if (tooltipAlreadyContainsPondLine(lines, pondInfo.pond)) {
+					return;
+				}
+
+				int rareColor = getRarityColor("rare");
+				Text pondText = Text.literal(pondDisplay)
+						.styled(style -> style.withColor(rareColor));
+				lines.add(i + 1, pondText);
+				return;
+			}
+		}
+	}
+
+	private static boolean tooltipLineContainsBiome(String cleanLineText, String biome) {
+		if (biome == null || biome.isEmpty() || cleanLineText == null || cleanLineText.isEmpty()) {
+			return false;
+		}
+
+		String normalizedBiome = normalizePondMatchText(biome);
+		String normalizedLine = normalizePondMatchText(cleanLineText);
+
+		if (normalizedLine.contains("[" + normalizedBiome + "]")) {
+			return true;
+		}
+		if (normalizedLine.contains(normalizedBiome)) {
+			return true;
+		}
+
+		java.util.regex.Matcher bracketMatcher = java.util.regex.Pattern.compile("\\[([^\\]]+)\\]").matcher(normalizedLine);
+		while (bracketMatcher.find()) {
+			String bracketContent = normalizePondMatchText(bracketMatcher.group(1));
+			if (bracketContent.equals(normalizedBiome)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static String normalizePondMatchText(String text) {
+		if (text == null) {
+			return "";
+		}
+		return text.replaceAll("\\s+", " ").trim().toLowerCase();
+	}
+
+	private static boolean tooltipAlreadyContainsPondLine(List<Text> lines, String pondName) {
+		for (Text line : lines) {
+			String text = cleanTooltipLineForMatching(line.getString());
+			if (text.contains("-> " + pondName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -4392,6 +4493,16 @@ public class InformationenUtility {
 		
 		public LicenseInfo(String location) {
 			this.location = location;
+		}
+	}
+
+	private static class PondInfo {
+		public final String biome;
+		public final String pond;
+
+		public PondInfo(String biome, String pond) {
+			this.biome = biome;
+			this.pond = pond;
 		}
 	}
 	
@@ -5999,9 +6110,33 @@ public class InformationenUtility {
 		if (text == null) {
 			return "";
 		}
-		return text.replaceAll("§[0-9a-fk-or]", "")
-				.replaceAll("[\\u3400-\\u4DBF]", "")
-				.trim();
+		String clean = text.replaceAll("§[0-9a-fk-orxA-FK-ORX]", "");
+		clean = clean.replaceAll("§#[0-9a-fA-F]{6}", "");
+		clean = clean.replaceAll("§x(§[0-9a-fA-F]){6}", "");
+		clean = clean.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
+		clean = removePixelSpacerCharacters(clean);
+		return clean.replaceAll("\\s+", " ").trim();
+	}
+
+	private static String removePixelSpacerCharacters(String text) {
+		if (text == null || text.isEmpty()) {
+			return text;
+		}
+		String spacers = ZeichenUtility.getPixelSpacer();
+		if (spacers == null || spacers.isEmpty()) {
+			return text;
+		}
+		StringBuilder result = new StringBuilder(text);
+		for (int i = 0; i < spacers.length(); ) {
+			int codePoint = spacers.codePointAt(i);
+			String spacer = new String(Character.toChars(codePoint));
+			int index = 0;
+			while ((index = result.indexOf(spacer, index)) >= 0) {
+				result.delete(index, index + spacer.length());
+			}
+			i += Character.charCount(codePoint);
+		}
+		return result.toString();
 	}
 	
 	/**
@@ -8214,6 +8349,7 @@ public class InformationenUtility {
 	 */
 	public static void reloadLicensesDatabase() {
 		licensesDatabase.clear();
+		pondsDatabase.clear();
 		loadLicensesDatabase();
 	}
 	

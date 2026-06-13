@@ -83,6 +83,9 @@ public class KitFilterUtility {
 	// Map: KitType -> Level -> Set von Item-Informationen
 	private static Map<KitType, Map<Integer, Set<ItemInfo>>> kitItemInfos = new HashMap<>();
 	private static Map<KitType, Map<Integer, Set<ItemInfo>>> neuKitItemInfos = new HashMap<>();
+	private static final Map<String, ItemInfo> itemInfoByNormalizedName = new HashMap<>();
+	private static final Map<String, List<ItemInfo>> customKitItemInfosCache = new HashMap<>();
+	private static final ItemStack[] KIT_TYPE_ICONS = buildKitTypeIcons();
 	
 	public static final KitType[] NEU_KIT_TYPES = {
 		KitType.MÜNZ_KIT,
@@ -96,6 +99,32 @@ public class KitFilterUtility {
 			return 3;
 		}
 		return NEU_LEVEL_COUNT;
+	}
+
+	public static ItemStack getKitTypeIcon(KitType kitType) {
+		if (kitType == null) {
+			return ItemStack.EMPTY;
+		}
+		int index = kitType.ordinal();
+		if (index < 0 || index >= KIT_TYPE_ICONS.length) {
+			return ItemStack.EMPTY;
+		}
+		return KIT_TYPE_ICONS[index];
+	}
+
+	private static ItemStack[] buildKitTypeIcons() {
+		ItemStack[] icons = new ItemStack[KitType.values().length];
+		for (KitType kitType : KitType.values()) {
+			switch (kitType) {
+				case MÜNZ_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.GOLD_NUGGET);
+				case SCHADEN_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.DIAMOND_SWORD);
+				case RESSOURCEN_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.DIAMOND_PICKAXE);
+				case HERSTELLUNGS_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.ANVIL);
+				case TANK_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.DIAMOND_CHESTPLATE);
+				default -> icons[kitType.ordinal()] = ItemStack.EMPTY;
+			}
+		}
+		return icons;
 	}
 	
 	/**
@@ -489,6 +518,7 @@ public class KitFilterUtility {
 		} catch (Exception e) {
 			// Silent error handling
 		}
+		rebuildItemInfoIndex();
 	}
 	
 	private static void parseKitLevels(JsonObject kitData, KitType kitType, int maxLevel, boolean neu) {
@@ -1482,26 +1512,14 @@ public class KitFilterUtility {
 		if (itemName == null || itemName.isEmpty()) {
 			return null;
 		}
-		for (Map<Integer, Set<ItemInfo>> levelMap : kitItemInfos.values()) {
-			for (Set<ItemInfo> infos : levelMap.values()) {
-				for (ItemInfo info : infos) {
-					if (itemNamesMatch(info.name, itemName)) {
-						return info;
-					}
-				}
-			}
-		}
-		for (Map<Integer, Set<ItemInfo>> levelMap : neuKitItemInfos.values()) {
-			for (Set<ItemInfo> infos : levelMap.values()) {
-				for (ItemInfo info : infos) {
-					if (itemNamesMatch(info.name, itemName)) {
-						return info;
-					}
-				}
-			}
+		String key = normalizeItemName(itemName);
+		ItemInfo indexed = itemInfoByNormalizedName.get(key);
+		if (indexed != null) {
+			return indexed;
 		}
 		ItemInfo fromItemViewer = itemInfoFromItemViewer(itemName);
 		if (fromItemViewer != null) {
+			itemInfoByNormalizedName.putIfAbsent(key, fromItemViewer);
 			return fromItemViewer;
 		}
 		return new ItemInfo(itemName);
@@ -1563,24 +1581,75 @@ public class KitFilterUtility {
 		return ItemInfo.parseColorString(rarity);
 	}
 
+	public static String getCustomKitItemCacheKey(CustomKit kit) {
+		return customKitCacheKey(kit);
+	}
+
 	public static List<ItemInfo> getCustomKitItemInfos(CustomKit kit) {
-		List<ItemInfo> result = new ArrayList<>();
 		if (kit == null || kit.itemNames == null) {
-			return result;
+			return new ArrayList<>();
 		}
+		String cacheKey = customKitCacheKey(kit);
+		List<ItemInfo> cached = customKitItemInfosCache.get(cacheKey);
+		if (cached != null) {
+			return cached;
+		}
+		List<ItemInfo> result = new ArrayList<>();
 		for (String itemName : kit.itemNames) {
-			result.add(findItemInfoByName(itemName));
+			ItemInfo info = findItemInfoByName(itemName);
+			if (info != null) {
+				result.add(info);
+			}
 		}
+		customKitItemInfosCache.put(cacheKey, result);
 		return result;
+	}
+
+	private static String customKitCacheKey(CustomKit kit) {
+		StringBuilder key = new StringBuilder(kit.id != null ? kit.id : "");
+		for (String itemName : kit.itemNames) {
+			key.append('|').append(itemName);
+		}
+		return key.toString();
+	}
+
+	private static void rebuildItemInfoIndex() {
+		itemInfoByNormalizedName.clear();
+		for (Map<Integer, Set<ItemInfo>> levelMap : kitItemInfos.values()) {
+			for (Set<ItemInfo> infos : levelMap.values()) {
+				for (ItemInfo info : infos) {
+					registerItemInfoInIndex(info);
+				}
+			}
+		}
+		for (Map<Integer, Set<ItemInfo>> levelMap : neuKitItemInfos.values()) {
+			for (Set<ItemInfo> infos : levelMap.values()) {
+				for (ItemInfo info : infos) {
+					registerItemInfoInIndex(info);
+				}
+			}
+		}
+	}
+
+	private static void registerItemInfoInIndex(ItemInfo info) {
+		if (info == null || info.name == null || info.name.isEmpty()) {
+			return;
+		}
+		itemInfoByNormalizedName.putIfAbsent(normalizeItemName(info.name), info);
+	}
+
+	private static String normalizeItemName(String name) {
+		if (name == null) {
+			return "";
+		}
+		return name.replaceAll("§[0-9a-fk-or]", "").trim().toLowerCase();
 	}
 
 	private static boolean itemNamesMatch(String a, String b) {
 		if (a == null || b == null) {
 			return false;
 		}
-		String cleanA = a.replaceAll("§[0-9a-fk-or]", "").trim();
-		String cleanB = b.replaceAll("§[0-9a-fk-or]", "").trim();
-		return cleanA.equalsIgnoreCase(cleanB);
+		return normalizeItemName(a).equals(normalizeItemName(b));
 	}
 
 	public static Set<String> getKitItemNamesForSelection(KitSelection selection) {
@@ -1645,6 +1714,8 @@ public class KitFilterUtility {
 	public static void reloadKitsDatabase() {
 		kitItemInfos.clear();
 		neuKitItemInfos.clear();
+		itemInfoByNormalizedName.clear();
+		customKitItemInfosCache.clear();
 		loadKitItemNames();
 	}
 }

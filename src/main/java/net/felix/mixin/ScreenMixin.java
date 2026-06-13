@@ -142,6 +142,8 @@ public class ScreenMixin {
             ItemViewerUtility.stopKitEditorMode();
         }
         ItemViewerUtility.closeHelpOverlay();
+        if (screen instanceof HandledScreen) {
+            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.finalizeQuantityTextField();
+        }
     }
 }
-

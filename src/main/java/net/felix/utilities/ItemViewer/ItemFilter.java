@@ -8,6 +8,13 @@ import java.util.List;
  */
 public class ItemFilter {
     
+    private static final java.util.Set<String> OFEN_MATERIALS = java.util.Set.of(
+            "Netherite Schrott",
+            "Eisenbarren",
+            "Goldbarren",
+            "Kupferbarren"
+    );
+    
     public static boolean matchesSearch(ItemData item, SearchQuery query) {
         // Tags: Alle müssen matchen (AND)
         // Unterstützt Live-Suche: @Schuhe, @Schuh, @Schu, @Sch, @Sc, @S werden alle erkannt
@@ -221,6 +228,7 @@ public class ItemFilter {
                 costItem = item.price.material2;
                 break;
             case "cactus":
+            case "kaktus":
                 costItem = item.price.cactus;
                 break;
             case "soul":
@@ -230,6 +238,9 @@ public class ItemFilter {
             case "coin":
             case "coins":
                 costItem = item.price.coin;
+                break;
+            case "ofen":
+                costItem = getOfenCostItem(item);
                 break;
         }
         
@@ -282,6 +293,31 @@ public class ItemFilter {
         }
         
         return true;
+    }
+    
+    private static boolean isOfenMaterial(String itemName) {
+        if (itemName == null || itemName.isEmpty()) {
+            return false;
+        }
+        for (String ofenMaterial : OFEN_MATERIALS) {
+            if (ofenMaterial.equalsIgnoreCase(itemName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private static CostItem getOfenCostItem(ItemData item) {
+        if (item.price == null) {
+            return null;
+        }
+        if (item.price.Ressource != null && isOfenMaterial(item.price.Ressource.itemName)) {
+            return item.price.Ressource;
+        }
+        if (item.price.ressource != null && isOfenMaterial(item.price.ressource.itemName)) {
+            return item.price.ressource;
+        }
+        return null;
     }
     
     private static boolean matchesModifierFilter(ItemData item, ModifierFilter filter) {

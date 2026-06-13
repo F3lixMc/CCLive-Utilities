@@ -271,5 +271,59 @@
             "level": "II",
             "location": "Netherite Collection VI"
         }
+    ],
+    "ponds": [
+        {
+            "biome": "Eichenwald",
+            "pond": "Smaragdsee"
+        },
+        {
+            "biome": "Strand",
+            "pond": "Perlenbucht"
+        },
+        {
+            "biome": "Fichtenwald",
+            "pond": "Nebelsee"
+        },
+        {
+            "biome": "Dunkeleichenwald",
+            "pond": "Nachtschattensee"
+        },
+        {
+            "biome": "Mangrovensumpf",
+            "pond": "Wurzelbucht"
+        },
+        {
+            "biome": "Schwefelfelder",
+            "pond": "Schwefeldampfsee"
+        },
+        {
+            "biome": "Pilzwald",
+            "pond": "Sporenweiher"
+        },
+        {
+            "biome": "Goldmine",
+            "pond": "Goldsee"
+        },
+        {
+            "biome": "Kohle Mine",
+            "pond": "Rußwasserteich"
+        },
+        {
+            "biome": "Kupfermine",
+            "pond": "Erzschimmer See"
+        },
+        {
+            "biome": "Eisenmine",
+            "pond": "Blutwasser See"
+        },
+        {
+            "biome": "Karmesinwald",
+            "pond": "Infernoweiher"
+        },
+        {
+            "biome": "Antike Mine",
+            "pond": "Lavaquellsee"
+        }
     ]
 }

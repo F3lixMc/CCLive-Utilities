@@ -100,7 +100,7 @@ public class NpcAlertsDetailScreen extends Screen {
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
         boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
-        int baseBoxHeight = hasIconOption ? 250 : 210;
+        int baseBoxHeight = hasIconOption ? 275 : 235;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
             baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
@@ -212,10 +212,43 @@ public class NpcAlertsDetailScreen extends Screen {
         context.drawText(textRenderer, "Hintergrund anzeigen", backgroundTextX, backgroundCheckboxYPos + 1, 
             showBackground ? 0xFFFFFFFF : 0xFF808080, false);
         
+        // Bildschirm-Nachricht Checkbox (für alle Informationen)
+        int screenMessageCheckboxY = boxY + 60;
+        int screenMessageCheckboxX = boxX + 10;
+        int screenMessageCheckboxSize = 10;
+        boolean showScreenMessage = getShowScreenMessage();
+        
+        context.fill(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageCheckboxY + screenMessageCheckboxSize, 0xFF808080);
+        context.drawBorder(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
+        
+        if (showScreenMessage) {
+            int checkX = screenMessageCheckboxX + 2;
+            int checkY = screenMessageCheckboxY + 2;
+            int checkSize = screenMessageCheckboxSize - 4;
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + i;
+                int py = checkY + checkSize / 2 + i;
+                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2 && py < screenMessageCheckboxY + screenMessageCheckboxSize - 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + checkSize / 2 + i;
+                int py = checkY + checkSize - 2 - i;
+                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2 && py >= screenMessageCheckboxY + 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+        }
+        
+        int screenMessageTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
+        context.drawText(textRenderer, "Bildschirm-Nachricht", screenMessageTextX, screenMessageCheckboxY + 1,
+            showScreenMessage ? 0xFFFFFFFF : 0xFF808080, false);
+        
         // Variablen für Prozente Checkbox (außerhalb if-Block für Hover-Feedback)
         int checkboxSize = 10;
         int checkboxX = boxX + 10;
-        int checkboxY = boxY + 60;
+        int checkboxY = boxY + 85;
         
         if (supportsPercent) {
             // Prozente Checkbox
@@ -256,7 +289,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 showPercent ? 0xFFFFFFFF : 0xFF808080, false);
             
             // Warn-Eingabe (Prozent)
-            int inputY = boxY + 85;
+            int inputY = boxY + 110;
             int inputX = boxX + 10;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -283,7 +316,7 @@ public class NpcAlertsDetailScreen extends Screen {
             context.drawText(textRenderer, "(Leer lassen oder -1 = deaktiviert)",
                 inputX, inputY + inputHeight + 5, 0xFF808080, false);
         } else if ("komboKiste".equals(configKey)) {
-            int inputY = boxY + 60;
+            int inputY = boxY + 85;
             int inputX = boxX + 10;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -305,11 +338,11 @@ public class NpcAlertsDetailScreen extends Screen {
         } else {
             // Diese Information unterstützt keine Prozente
             context.drawText(textRenderer, "Keine zusätzlichen Einstellungen verfügbar", 
-                boxX + 10, boxY + 60, 0xFF808080, false);
+                boxX + 10, boxY + 85, 0xFF808080, false);
         }
         
         // Variablen für Icon Button (außerhalb if-Block für Hover-Feedback)
-        int iconButtonY = boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85));
+        int iconButtonY = boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110));
         int iconButtonX = boxX + 10;
         int iconButtonWidth = 280;
         int iconButtonHeight = 20;
@@ -332,7 +365,7 @@ public class NpcAlertsDetailScreen extends Screen {
         }
         
         // Farben Button (für alle Informationen)
-        int colorButtonY = hasIconOption ? (iconButtonY + iconButtonHeight + 10) : (boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85)));
+        int colorButtonY = hasIconOption ? (iconButtonY + iconButtonHeight + 10) : (boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110)));
         int colorButtonX = boxX + 10;
         int colorButtonWidth = 280;
         int colorButtonHeight = 20;
@@ -571,6 +604,18 @@ public class NpcAlertsDetailScreen extends Screen {
             context.fill(hoverStartX, backgroundCheckboxYPos - 1, hoverEndX, backgroundCheckboxYPos + backgroundCheckboxSize + 1, 0x40FFFFFF);
         }
         
+        int screenMessageTextWidth = textRenderer.getWidth("Bildschirm-Nachricht");
+        int screenMessageTextHeight = textRenderer.fontHeight;
+        boolean isHoveringScreenMessageCheckbox = mouseX >= screenMessageCheckboxX && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize &&
+                                                 mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageCheckboxSize;
+        boolean isHoveringScreenMessageText = mouseX >= screenMessageTextX && mouseX <= screenMessageTextX + screenMessageTextWidth &&
+                                             mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageTextHeight;
+        if (isHoveringScreenMessageCheckbox || isHoveringScreenMessageText) {
+            int hoverStartX = screenMessageCheckboxX - 2;
+            int hoverEndX = screenMessageTextX + screenMessageTextWidth + 2;
+            context.fill(hoverStartX, screenMessageCheckboxY - 1, hoverEndX, screenMessageCheckboxY + screenMessageCheckboxSize + 1, 0x40FFFFFF);
+        }
+        
         if (supportsPercent) {
             // Prozente Checkbox Hover
             int percentTextX = checkboxX + checkboxSize + 5;
@@ -787,7 +832,7 @@ public class NpcAlertsDetailScreen extends Screen {
             boolean isRecyclerClose = configKey.equals("recycler");
             boolean isRecyclerSlotClose = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
             boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay();
-            int baseBoxHeightClose = hasIconOptionClose ? 250 : 210;
+            int baseBoxHeightClose = hasIconOptionClose ? 275 : 235;
             if (isMachtkristalleClose) {
                 baseBoxHeightClose += 60;
             }
@@ -854,7 +899,7 @@ public class NpcAlertsDetailScreen extends Screen {
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
         boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
-            int baseBoxHeight = hasIconOption ? 250 : 210;
+            int baseBoxHeight = hasIconOption ? 275 : 235;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
             baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
@@ -928,9 +973,28 @@ public class NpcAlertsDetailScreen extends Screen {
             return true;
         }
         
+        int screenMessageCheckboxY = boxY + 60;
+        int screenMessageCheckboxX = boxX + 10;
+        int screenMessageCheckboxSize = 10;
+        int screenMessageTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
+        int screenMessageTextWidth = textRenderer.getWidth("Bildschirm-Nachricht");
+        int screenMessageTextHeight = textRenderer.fontHeight;
+        
+        boolean clickedOnScreenMessageCheckbox = (mouseX >= screenMessageCheckboxX && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize &&
+                                                  mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageCheckboxSize);
+        boolean clickedOnScreenMessageText = (mouseX >= screenMessageTextX && mouseX <= screenMessageTextX + screenMessageTextWidth &&
+                                              mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageTextHeight);
+        
+        if (clickedOnScreenMessageCheckbox || clickedOnScreenMessageText) {
+            boolean newValue = !getShowScreenMessage();
+            setShowScreenMessage(newValue);
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
         if (supportsPercent) {
             // Prozente Checkbox
-            int y = boxY + 60;
+            int y = boxY + 85;
             int checkboxSize = 10;
             int checkboxX = boxX + 10;
             int checkboxY = y;
@@ -954,7 +1018,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             // Warn-Eingabefeld
-            int inputY = boxY + 85;
+            int inputY = boxY + 110;
             int fieldX = boxX + 90;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -968,7 +1032,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             isEditingWarnPercent = false;
         } else if ("komboKiste".equals(configKey)) {
-            int inputY = boxY + 60;
+            int inputY = boxY + 85;
             int fieldX = boxX + 135;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -991,7 +1055,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
         if (hasIconOptionClick) {
-            int iconButtonY = boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85));
+            int iconButtonY = boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110));
             int iconButtonX = boxX + 10;
             int iconButtonWidth = 280;
             int iconButtonHeight = 20;
@@ -1010,9 +1074,9 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Farben Button (für alle Informationen)
         // Variablen für Icon Button (außerhalb if-Block für Click-Handler)
-        int iconButtonYClick = boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85));
+        int iconButtonYClick = boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110));
         int iconButtonHeightClick = 20;
-        int colorButtonY = hasIconOptionClick ? (iconButtonYClick + iconButtonHeightClick + 10) : (boxY + (supportsPercent ? 135 : ("komboKiste".equals(configKey) ? 115 : 85)));
+        int colorButtonY = hasIconOptionClick ? (iconButtonYClick + iconButtonHeightClick + 10) : (boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110)));
         int colorButtonX = boxX + 10;
         int colorButtonWidth = 280;
         int colorButtonHeight = 20;
@@ -1670,6 +1734,69 @@ public class NpcAlertsDetailScreen extends Screen {
             case "recyclerSlot2":
             case "recyclerSlot3":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground = value;
+                break;
+        }
+    }
+    
+    private boolean getShowScreenMessage() {
+        switch (configKey) {
+            case "forschung":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessage;
+            case "amboss":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessage;
+            case "schmelzofen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessage;
+            case "jaeger":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessage;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessage;
+            case "seelen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessage;
+            case "essenzen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessage;
+            case "machtkristalle":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessage;
+            case "recycler":
+            case "recyclerSlot1":
+            case "recyclerSlot2":
+            case "recyclerSlot3":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessage;
+            default:
+                return false;
+        }
+    }
+    
+    private void setShowScreenMessage(boolean value) {
+        switch (configKey) {
+            case "forschung":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessage = value;
+                break;
+            case "amboss":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessage = value;
+                break;
+            case "schmelzofen":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessage = value;
+                break;
+            case "jaeger":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessage = value;
+                break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessage = value;
+                break;
+            case "seelen":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessage = value;
+                break;
+            case "essenzen":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessage = value;
+                break;
+            case "machtkristalle":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessage = value;
+                break;
+            case "recycler":
+            case "recyclerSlot1":
+            case "recyclerSlot2":
+            case "recyclerSlot3":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessage = value;
                 break;
         }
     }

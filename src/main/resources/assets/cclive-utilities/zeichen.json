@@ -146,5 +146,17 @@
   "factory_font_first_line": {
     "group": "cactusclicker_factory_overlay",
     "name": "font_first_line"
+  },
+  "ui_quick_travel_overworld": {
+    "group": "farmzone_quick_travel",
+    "name": "ui_overworld"
+  },
+  "ui_quick_travel_mining": {
+    "group": "farmzone_quick_travel",
+    "name": "ui_mining"
+  },
+  "ui_quick_travel_ocean": {
+    "group": "farmzone_quick_travel",
+    "name": "ui_ocean"
   }
 }

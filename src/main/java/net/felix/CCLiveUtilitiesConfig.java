@@ -461,7 +461,7 @@ public class CCLiveUtilitiesConfig {
     public boolean schmiedTrackerShowBackground = true; // Schwarzer Hintergrund für Schmied Tracker
     
     @SerialEntry
-    public net.felix.ItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.ItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
+    public net.felix.SchmiedItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.SchmiedItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
     
     @SerialEntry
     public boolean hideUncraftableEnabled = true; // Hide Uncraftable Button aktiviert
@@ -1110,6 +1110,33 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean npcAlertsRecyclerShowBackground = true;
     
+    @SerialEntry
+    public boolean npcAlertsForschungScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsAmbossScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsSchmelzofenScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsJaegerScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsSeelenScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsEssenzenScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsKomboKisteScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsMachtkristalleScreenMessage = false;
+    
+    @SerialEntry
+    public boolean npcAlertsRecyclerScreenMessage = false;
+    
     // NPC Alerts Text Colors
     @SerialEntry
     public Color npcAlertsForschungTextColor = new Color(0xFFFFFFFF);
@@ -1482,16 +1509,18 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .option(Option.<ItemDisplayMode>createBuilder()
                                         .name(Text.literal("Item-Anzeigemodus"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für gefilterte Items")))
+                                        .description(OptionDescription.of(Text.literal("Rahmen, Hintergrund oder nicht passende Items ausblenden")))
                                         .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().searchBarItemDisplayMode, newVal -> HANDLER.instance().searchBarItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(ItemDisplayMode.class)
                                                 .valueFormatter(mode -> {
                                                     if (mode == ItemDisplayMode.BORDER) {
                                                         return Text.literal("Rahmen");
-                                                    } else {
+                                                    }
+                                                    if (mode == ItemDisplayMode.BACKGROUND) {
                                                         return Text.literal("Hintergrund");
                                                     }
+                                                    return Text.literal("Falsche Ausblenden");
                                                 }))
                                         .build())
 
@@ -1644,18 +1673,17 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().schmiedTrackerEnabled, newVal -> HANDLER.instance().schmiedTrackerEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
-                                .option(Option.<ItemDisplayMode>createBuilder()
+                                .option(Option.<SchmiedItemDisplayMode>createBuilder()
                                         .name(Text.literal("Item-Anzeigemodus"))
                                         .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für Schmiedezustand Items")))
-                                        .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().schmiedTrackerItemDisplayMode, newVal -> HANDLER.instance().schmiedTrackerItemDisplayMode = newVal)
+                                        .binding(SchmiedItemDisplayMode.BORDER, () -> HANDLER.instance().schmiedTrackerItemDisplayMode, newVal -> HANDLER.instance().schmiedTrackerItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
-                                                .enumClass(ItemDisplayMode.class)
+                                                .enumClass(SchmiedItemDisplayMode.class)
                                                 .valueFormatter(mode -> {
-                                                    if (mode == ItemDisplayMode.BORDER) {
+                                                    if (mode == SchmiedItemDisplayMode.BORDER) {
                                                         return Text.literal("Rahmen");
-                                                    } else {
-                                                        return Text.literal("Hintergrund");
                                                     }
+                                                    return Text.literal("Hintergrund");
                                                 }))
                                         .build())
                                 .option(Option.<Boolean>createBuilder()

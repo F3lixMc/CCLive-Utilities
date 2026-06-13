@@ -99,6 +99,9 @@ public class ZeichenUtility {
     private static String fishingCraftedComponents = "";
     private static String fishingComponentsCraft = "";
     private static String fishingComponentsRecycle = "";
+    private static String uiQuickTravelOverworld = "";
+    private static String uiQuickTravelMining = "";
+    private static String uiQuickTravelOcean = "";
     private static Map<Character, String> factoryFontFirstLine = new HashMap<>();
     private static Map<Character, String> aincraftFontFirstLine = new HashMap<>();
     private static Map<Integer, Integer> npcAlertsKomboKisteBossBarDigitCodePoints = new HashMap<>();
@@ -267,6 +270,9 @@ public class ZeichenUtility {
         fishingCraftedComponents = "";
         fishingComponentsCraft = "";
         fishingComponentsRecycle = "";
+        uiQuickTravelOverworld = "";
+        uiQuickTravelMining = "";
+        uiQuickTravelOcean = "";
         factoryFontFirstLine = new HashMap<>();
         aincraftFontFirstLine = new HashMap<>();
         npcAlertsKomboKisteBossBarDigitCodePoints = new HashMap<>();
@@ -328,6 +334,10 @@ public class ZeichenUtility {
         fishingCraftedComponents = singleChar(index, "cactusclicker_fishing_equipment", "ui_crafted_components");
         fishingComponentsCraft = singleChar(index, "cactusclicker_fishing_equipment", "ui_components_craft");
         fishingComponentsRecycle = singleChar(index, "cactusclicker_fishing_equipment", "ui_components_recycle");
+
+        uiQuickTravelOverworld = singleChar(index, "farmzone_quick_travel", "ui_overworld");
+        uiQuickTravelMining = singleChar(index, "farmzone_quick_travel", "ui_mining");
+        uiQuickTravelOcean = singleChar(index, "farmzone_quick_travel", "ui_ocean");
 
         find(index, "cactusclicker_aincraft_overlay", "font_first_line").ifPresent(cps ->
                 aincraftFontFirstLine = buildGlyphToDecodedMap(cps, STANDARD_LINE_DECODE));
@@ -503,6 +513,15 @@ public class ZeichenUtility {
         if (json.has("ui_material_bag")) {
             uiMaterialBag = json.getAsJsonObject("ui_material_bag").get("character").getAsString();
         }
+        if (json.has("ui_quick_travel_overworld")) {
+            uiQuickTravelOverworld = json.getAsJsonObject("ui_quick_travel_overworld").get("character").getAsString();
+        }
+        if (json.has("ui_quick_travel_mining")) {
+            uiQuickTravelMining = json.getAsJsonObject("ui_quick_travel_mining").get("character").getAsString();
+        }
+        if (json.has("ui_quick_travel_ocean")) {
+            uiQuickTravelOcean = json.getAsJsonObject("ui_quick_travel_ocean").get("character").getAsString();
+        }
         if (json.has("factory_bottom_font")) {
             JsonObject factoryObj = json.getAsJsonObject("factory_bottom_font");
             if (factoryObj.has("characters")) {
@@ -621,6 +640,10 @@ public class ZeichenUtility {
         fishingCraftedComponents = "㶃";
         fishingComponentsCraft = "㶄";
         fishingComponentsRecycle = "㶅";
+
+        uiQuickTravelOverworld = "㷔";
+        uiQuickTravelMining = "㷕";
+        uiQuickTravelOcean = "㷖";
 
         factoryBottomFont = "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪";
         factoryBottomFontNumbers.clear();
@@ -792,6 +815,16 @@ public class ZeichenUtility {
         ensureInitialized();
         return text != null && friendsRequestAcceptDeny != null && !friendsRequestAcceptDeny.isEmpty()
                 && text.contains(friendsRequestAcceptDeny);
+    }
+
+    public static boolean containsFarmzoneQuickTravel(String text) {
+        ensureInitialized();
+        if (text == null) {
+            return false;
+        }
+        return containsGlyph(text, uiQuickTravelOverworld)
+                || containsGlyph(text, uiQuickTravelMining)
+                || containsGlyph(text, uiQuickTravelOcean);
     }
 
     public static String getHunterUiBackground() {

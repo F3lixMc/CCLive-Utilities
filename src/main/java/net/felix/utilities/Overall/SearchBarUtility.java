@@ -7,12 +7,16 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.text.Text;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.component.DataComponentTypes;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.ItemDisplayMode;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class SearchBarUtility {
@@ -46,6 +50,10 @@ public class SearchBarUtility {
 	private static final net.minecraft.util.Identifier APPLE_ICON_TEXTURE = net.minecraft.util.Identifier.of("cclive-utilities", "textures/icons/apple_icon_2.png");
 	
 	private static Set<Integer> matchingSlots = new HashSet<>();
+	private static final Map<Integer, ItemStack> hiddenOriginalItems = new HashMap<>();
+	private static final Set<Integer> hiddenSlots = new HashSet<>();
+	private static HandledScreen<?> lastSearchScreen = null;
+	private static ItemDisplayMode lastSearchDisplayMode = ItemDisplayMode.BORDER;
 	private static final int SLOT_SIZE = 16;
 	
 	// Karten-Menü: 0-3, 5-7, 9-12, 14-16, 18-21, 23-25, 27-30, 32-34
@@ -108,6 +116,7 @@ public class SearchBarUtility {
 				
 				// Überprüfe Inventaränderungen
 				checkInventoryChanges(handledScreen);
+				updateSearchDisplayMode(handledScreen);
 				
 				// Cursor blinken lassen
 				if (isSearchBarFocused) {
@@ -156,7 +165,7 @@ public class SearchBarUtility {
 		for (int slot : slotsToCheck) {
 			if (slot < screen.getScreenHandler().slots.size()) {
 				Slot slotObj = screen.getScreenHandler().slots.get(slot);
-				currentInventory.add(slotObj.getStack());
+				currentInventory.add(resolveItemForMatching(slot, slotObj.getStack()).copy());
 			}
 		}
 		
@@ -666,15 +675,18 @@ public class SearchBarUtility {
 	private static void performSearch() {
 		if (searchText.isEmpty()) {
 			matchingSlots.clear();
+			restoreAllHiddenSlots(getActiveSearchScreen());
 			return;
 		}
 		
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
 			matchingSlots.clear();
+			restoreAllHiddenSlots(getActiveSearchScreen());
 			return;
 		}
 		
+		lastSearchScreen = handledScreen;
 		matchingSlots.clear();
 		
 		// Prüfe ob es eine @-Suche ist (ein oder mehrere @)
@@ -704,7 +716,7 @@ public class SearchBarUtility {
 		for (int slot : slotsToSearch) {
 			if (slot < handledScreen.getScreenHandler().slots.size()) {
 				Slot slotObj = handledScreen.getScreenHandler().slots.get(slot);
-				ItemStack itemStack = slotObj.getStack();
+				ItemStack itemStack = resolveItemForMatching(slot, slotObj.getStack());
 				
 				if (!itemStack.isEmpty()) {
 					boolean matches = false;
@@ -768,6 +780,131 @@ public class SearchBarUtility {
 				}
 			}
 		}
+
+		applySearchDisplay(handledScreen);
+	}
+	
+	private static HandledScreen<?> getActiveSearchScreen() {
+		if (lastSearchScreen != null) {
+			return lastSearchScreen;
+		}
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+			return handledScreen;
+		}
+		return null;
+	}
+	
+	private static ItemStack resolveItemForMatching(int slotIndex, ItemStack currentStack) {
+		if (currentStack == null || currentStack.isEmpty()) {
+			return ItemStack.EMPTY;
+		}
+		if (currentStack.getItem() == Items.BLACK_CONCRETE && hiddenSlots.contains(slotIndex)
+				&& hiddenOriginalItems.containsKey(slotIndex)) {
+			return hiddenOriginalItems.get(slotIndex);
+		}
+		return currentStack;
+	}
+	
+	private static void updateSearchDisplayMode(HandledScreen<?> screen) {
+		ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().searchBarItemDisplayMode;
+		if (displayMode == lastSearchDisplayMode) {
+			return;
+		}
+		lastSearchDisplayMode = displayMode;
+		if (displayMode != ItemDisplayMode.HIDE_NON_MATCHING) {
+			restoreAllHiddenSlots(screen);
+		} else if (!searchText.isEmpty()) {
+			applySearchDisplay(screen);
+		}
+	}
+	
+	private static void applySearchDisplay(HandledScreen<?> screen) {
+		if (screen == null) {
+			return;
+		}
+		lastSearchScreen = screen;
+		ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().searchBarItemDisplayMode;
+		lastSearchDisplayMode = displayMode;
+		
+		if (displayMode != ItemDisplayMode.HIDE_NON_MATCHING || searchText.isEmpty()) {
+			restoreAllHiddenSlots(screen);
+			return;
+		}
+		
+		int[] slotsToSearch = getSlotsForMenu(screen);
+		for (int slotIndex : slotsToSearch) {
+			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+				continue;
+			}
+			
+			ItemStack currentStack = screen.getScreenHandler().slots.get(slotIndex).getStack();
+			ItemStack itemForMatch = resolveItemForMatching(slotIndex, currentStack);
+			
+			if (itemForMatch.isEmpty()) {
+				if (hiddenSlots.contains(slotIndex)) {
+					restoreHiddenSlot(screen, slotIndex);
+				}
+				continue;
+			}
+			
+			if (matchingSlots.contains(slotIndex)) {
+				if (hiddenSlots.contains(slotIndex)) {
+					restoreHiddenSlot(screen, slotIndex);
+				}
+			} else {
+				hideNonMatchingSlot(screen, slotIndex, itemForMatch);
+			}
+		}
+	}
+	
+	private static void hideNonMatchingSlot(HandledScreen<?> screen, int slotIndex, ItemStack originalItem) {
+		if (!hiddenOriginalItems.containsKey(slotIndex)) {
+			hiddenOriginalItems.put(slotIndex, originalItem.copy());
+		}
+		
+		Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+		ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
+		blackConcrete.set(DataComponentTypes.LORE, originalItem.get(DataComponentTypes.LORE));
+		
+		Text displayName = originalItem.getName();
+		if (!displayName.getString().contains("[Ausgeblendet]")) {
+			blackConcrete.set(DataComponentTypes.CUSTOM_NAME, displayName.copy().append(Text.literal(" §7[Ausgeblendet]")));
+		} else {
+			blackConcrete.set(DataComponentTypes.CUSTOM_NAME, displayName.copy());
+		}
+		
+		slot.setStack(blackConcrete);
+		hiddenSlots.add(slotIndex);
+	}
+	
+	private static void restoreHiddenSlot(HandledScreen<?> screen, int slotIndex) {
+		if (!hiddenSlots.contains(slotIndex) || slotIndex >= screen.getScreenHandler().slots.size()) {
+			return;
+		}
+		
+		Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+		ItemStack currentItem = slot.getStack();
+		if (currentItem.getItem() == Items.BLACK_CONCRETE && hiddenOriginalItems.containsKey(slotIndex)) {
+			slot.setStack(hiddenOriginalItems.get(slotIndex).copy());
+		}
+		hiddenSlots.remove(slotIndex);
+	}
+	
+	private static void restoreAllHiddenSlots(HandledScreen<?> screen) {
+		if (screen == null) {
+			hiddenSlots.clear();
+			hiddenOriginalItems.clear();
+			return;
+		}
+		
+		for (int slotIndex : new HashSet<>(hiddenSlots)) {
+			if (slotIndex < screen.getScreenHandler().slots.size()) {
+				restoreHiddenSlot(screen, slotIndex);
+			}
+		}
+		hiddenSlots.clear();
+		hiddenOriginalItems.clear();
 	}
 	
 	// Hilfsklasse für Suchfilter
@@ -1125,6 +1262,9 @@ public class SearchBarUtility {
 	}
 	
 	private static void clearSearchBar() {
+		restoreAllHiddenSlots(getActiveSearchScreen());
+		lastSearchScreen = null;
+		lastSearchDisplayMode = ItemDisplayMode.BORDER;
 		searchText = "";
 		cursorPosition = 0;
 		selectionStart = 0;
@@ -2024,8 +2164,12 @@ public class SearchBarUtility {
 			return;
 		}
 
+		ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().searchBarItemDisplayMode;
+		if (displayMode == ItemDisplayMode.HIDE_NON_MATCHING) {
+			return;
+		}
+
 		int frameColor = CCLiveUtilitiesConfig.HANDLER.instance().searchBarFrameColor.getRGB();
-		net.felix.ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().searchBarItemDisplayMode;
 		
 		// Zeichne Rahmen oder Hintergrund um die passenden Items
 		for (Integer slotIndex : matchingSlots) {
@@ -2036,7 +2180,7 @@ public class SearchBarUtility {
 				int slotX = screenX + slot.x;
 				int slotY = screenY + slot.y;
 				
-				if (displayMode == net.felix.ItemDisplayMode.BACKGROUND) {
+				if (displayMode == ItemDisplayMode.BACKGROUND) {
 					// Zeichne halbtransparenten Hintergrund
 					// Verwende die Rahmenfarbe, aber mit reduzierter Transparenz
 					int backgroundColor = (frameColor & 0x00FFFFFF) | 0x80000000; // 50% Transparenz für bessere Sichtbarkeit

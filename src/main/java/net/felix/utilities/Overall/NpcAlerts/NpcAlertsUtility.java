@@ -359,6 +359,7 @@ public class NpcAlertsUtility {
 		
 		try {
 			updateNpcAlerts(client);
+			updateScreenMessages();
 		} catch (Exception e) {
 			// Silent error handling
 		}
@@ -979,6 +980,182 @@ public class NpcAlertsUtility {
 	/**
 	 * HUD Render callback für das NPC Alerts Overlay
 	 */
+	private static final List<String> activeScreenMessages = new ArrayList<>();
+	private static final int SCREEN_MESSAGE_COLOR = 0xFFFF5555;
+	
+	private static boolean isCapacityFull(CapacityData data) {
+		return data.isValid() && data.max > 0 && data.current >= data.max;
+	}
+	
+	private static boolean isCapacityEmpty(CapacityData data) {
+		return data.isValid() && data.current <= 0;
+	}
+	
+	private static boolean isMachtkristallFull(MachtkristallSlot slot) {
+		return !slot.isEmpty() && !slot.isNotFound() && slot.xpData.isValid()
+			&& slot.xpData.current.compareTo(slot.xpData.required) >= 0;
+	}
+	
+	private static double getCapacityPercent(CapacityData data) {
+		if (!data.isValid() || data.max <= 0) {
+			return 0;
+		}
+		return ((double) data.current / (double) data.max) * 100.0;
+	}
+	
+	private static boolean shouldShowHighCapacityScreenMessage(CapacityData data, double warnPercent) {
+		if (!data.isValid()) {
+			return false;
+		}
+		double currentPercent = getCapacityPercent(data);
+		return isCapacityFull(data) || (warnPercent >= 0 && currentPercent >= warnPercent);
+	}
+	
+	private static boolean shouldShowLowCapacityScreenMessage(CapacityData data, double warnPercent) {
+		if (!data.isValid()) {
+			return false;
+		}
+		double currentPercent = getCapacityPercent(data);
+		return isCapacityEmpty(data) || (warnPercent >= 0 && currentPercent <= warnPercent);
+	}
+	
+	private static boolean shouldShowMachtkristallScreenMessage(MachtkristallSlot slot, double warnPercent) {
+		return isMachtkristallFull(slot) || getMachtkristallShowWarning(slot, warnPercent);
+	}
+	
+	private static boolean getMachtkristallShowWarning(MachtkristallSlot slot, double warnPercent) {
+		if (slot.isEmpty() || slot.isNotFound() || !slot.xpData.isValid()) {
+			return false;
+		}
+		String percentText = slot.getPercentText();
+		if (percentText == null) {
+			return false;
+		}
+		double currentPercent = parsePercentValue(percentText);
+		return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
+	}
+	
+	private static boolean isScreenMessageEnabled(String configKey) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return switch (configKey) {
+			case "forschung" -> config.npcAlertsForschungScreenMessage;
+			case "amboss" -> config.npcAlertsAmbossScreenMessage;
+			case "schmelzofen" -> config.npcAlertsSchmelzofenScreenMessage;
+			case "jaeger" -> config.npcAlertsJaegerScreenMessage;
+			case "seelen" -> config.npcAlertsSeelenScreenMessage;
+			case "essenzen" -> config.npcAlertsEssenzenScreenMessage;
+			case "komboKiste" -> config.npcAlertsKomboKisteScreenMessage;
+			case "machtkristalle" -> config.npcAlertsMachtkristalleScreenMessage;
+			case "recycler", "recyclerSlot1", "recyclerSlot2", "recyclerSlot3" -> config.npcAlertsRecyclerScreenMessage;
+			default -> false;
+		};
+	}
+	
+	private static void addScreenMessageIfEnabled(String configKey, boolean condition, String message) {
+		if (condition && isScreenMessageEnabled(configKey)) {
+			activeScreenMessages.add(message);
+		}
+	}
+	
+	private static void updateScreenMessages() {
+		activeScreenMessages.clear();
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!config.npcAlertsUtilityEnabled) {
+			return;
+		}
+		
+		if (config.showNpcAlertsForschung) {
+			addScreenMessageIfEnabled("forschung",
+				shouldShowLowCapacityScreenMessage(forschung, config.npcAlertsForschungWarnPercent),
+				"Forschungen sind leer");
+		}
+		if (config.showNpcAlertsAmboss) {
+			addScreenMessageIfEnabled("amboss",
+				shouldShowHighCapacityScreenMessage(ambossKapazitaet, config.npcAlertsAmbossWarnPercent),
+				"Amboss ist voll");
+		}
+		if (config.showNpcAlertsSchmelzofen) {
+			addScreenMessageIfEnabled("schmelzofen",
+				shouldShowHighCapacityScreenMessage(schmelzofenKapazitaet, config.npcAlertsSchmelzofenWarnPercent),
+				"Schmelzofen ist voll");
+		}
+		if (config.showNpcAlertsJaeger) {
+			addScreenMessageIfEnabled("jaeger",
+				shouldShowHighCapacityScreenMessage(jaegerKapazitaet, config.npcAlertsJaegerWarnPercent),
+				"Jäger ist voll");
+		}
+		if (config.showNpcAlertsSeelen) {
+			addScreenMessageIfEnabled("seelen",
+				shouldShowHighCapacityScreenMessage(seelenKapazitaet, config.npcAlertsSeelenWarnPercent),
+				"Seelen sind voll");
+		}
+		if (config.showNpcAlertsEssenzen) {
+			addScreenMessageIfEnabled("essenzen",
+				shouldShowHighCapacityScreenMessage(essenzenKapazitaet, config.npcAlertsEssenzenWarnPercent),
+				"Essenzen sind voll");
+		}
+		if (config.showNpcAlertsKomboKiste) {
+			addScreenMessageIfEnabled("komboKiste",
+				komboKiste.isValid() && komboKiste.current >= komboKiste.max,
+				"Kombo Kiste ist voll");
+		}
+		if (config.showNpcAlertsMachtkristalle) {
+			for (int i = 0; i < 3; i++) {
+				boolean slotEnabled = switch (i) {
+					case 0 -> config.showNpcAlertsMachtkristalleSlot1;
+					case 1 -> config.showNpcAlertsMachtkristalleSlot2;
+					case 2 -> config.showNpcAlertsMachtkristalleSlot3;
+					default -> true;
+				};
+				if (slotEnabled && shouldShowMachtkristallScreenMessage(machtkristallSlots[i], config.npcAlertsMachtkristalleWarnPercent)) {
+					addScreenMessageIfEnabled("machtkristalle", true, "Machtkristall ist voll");
+					break;
+				}
+			}
+		}
+		if (config.showNpcAlertsRecyclerSlot1) {
+			addScreenMessageIfEnabled("recycler",
+				shouldShowLowCapacityScreenMessage(recyclerSlot1, config.npcAlertsRecyclerWarnPercent),
+				"Recycler Slot 1 ist leer");
+		}
+		if (config.showNpcAlertsRecyclerSlot2) {
+			addScreenMessageIfEnabled("recycler",
+				shouldShowLowCapacityScreenMessage(recyclerSlot2, config.npcAlertsRecyclerWarnPercent),
+				"Recycler Slot 2 ist leer");
+		}
+		if (config.showNpcAlertsRecyclerSlot3) {
+			addScreenMessageIfEnabled("recycler",
+				shouldShowLowCapacityScreenMessage(recyclerSlot3, config.npcAlertsRecyclerWarnPercent),
+				"Recycler Slot 3 ist leer");
+		}
+	}
+	
+	private static void renderScreenMessages(DrawContext context, MinecraftClient client) {
+		if (activeScreenMessages.isEmpty()) {
+			return;
+		}
+		
+		int screenWidth = client.getWindow().getScaledWidth();
+		int screenHeight = client.getWindow().getScaledHeight();
+		int baseY = screenHeight / 4;
+		int lineSpacing = 24;
+		int startY = baseY - ((activeScreenMessages.size() - 1) * lineSpacing) / 2;
+		
+		Matrix3x2fStack matrices = context.getMatrices();
+		for (int i = 0; i < activeScreenMessages.size(); i++) {
+			String message = activeScreenMessages.get(i);
+			matrices.pushMatrix();
+			matrices.translate(screenWidth / 2f, startY + i * lineSpacing);
+			matrices.scale(2.0f, 2.0f);
+			int textWidth = client.textRenderer.getWidth(message);
+			context.drawText(client.textRenderer, message, -textWidth / 2, 0, SCREEN_MESSAGE_COLOR, true);
+			matrices.popMatrix();
+		}
+	}
+	
+	/**
+	 * HUD Render callback für das NPC Alerts Overlay
+	 */
 	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		if (client == null || client.player == null || client.world == null) {
@@ -994,6 +1171,13 @@ public class NpcAlertsUtility {
 		if (isInGeneralLobby()) {
 			return;
 		}
+		
+		// Hide overlay if Tab list is open (like other overlays)
+		if (KeyBindingUtility.isPlayerListKeyPressed()) {
+			return;
+		}
+		
+		renderScreenMessages(context, client);
 		
 		// Render nur wenn Overlays sichtbar sind
 		if (!showOverlays) {
@@ -1463,7 +1647,9 @@ public class NpcAlertsUtility {
 						// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
 						displayText = displayText.replaceFirst("^MK [^:]+: ", "");
 					}
-					lines.add(new LineWithPercent(displayText, percentText, percentText != null, false, "machtkristalle", showIcon));
+					double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
+					boolean showWarning = getMachtkristallShowWarning(slot, warnPercent);
+					lines.add(new LineWithPercent(displayText, percentText, percentText != null, showWarning, "machtkristalle", showIcon));
 				}
 			}
 		}
@@ -1725,7 +1911,9 @@ public class NpcAlertsUtility {
 						// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
 						displayText = displayText.replaceFirst("^MK [^:]+: ", "");
 					}
-					lines.add(new LineWithPercent(displayText, percentText, percentText != null, false, "machtkristalle", showIcon));
+					double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
+					boolean showWarning = getMachtkristallShowWarning(slot, warnPercent);
+					lines.add(new LineWithPercent(displayText, percentText, percentText != null, showWarning, "machtkristalle", showIcon));
 				}
 			}
 		}
@@ -2350,12 +2538,8 @@ public class NpcAlertsUtility {
 				}
 				
 				// Warnung: wenn Prozent >= dem Warnwert ist (wie bei Amboss)
-				boolean showWarning = false;
-				if (percentText != null && slot.xpData.isValid()) {
-					double currentPercent = parsePercentValue(percentText);
-					double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
-					showWarning = currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
-				}
+				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
+				boolean showWarning = getMachtkristallShowWarning(slot, warnPercent);
 				
 				if (slotSeparate) {
 					// Rendere einzeln mit individueller Position
