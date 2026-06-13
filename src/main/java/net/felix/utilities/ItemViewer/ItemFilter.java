@@ -17,7 +17,7 @@ public class ItemFilter {
     
     public static boolean matchesSearch(ItemData item, SearchQuery query) {
         // Tags: Alle müssen matchen (AND)
-        // Unterstützt Live-Suche: @Schuhe, @Schuh, @Schu, @Sch, @Sc, @S werden alle erkannt
+        // Vollständiger Tag (#Schuhe) → exakt; Prefix (#Schuh) → Teilstring (Live-Suche)
         if (!query.tags.isEmpty()) {
             // Erstelle eine kombinierte Liste aller Tags (aus item.tags, info.type, info.piece, info.rarity)
             java.util.List<String> allItemTags = new java.util.ArrayList<>();
@@ -26,7 +26,7 @@ public class ItemFilter {
             if (item.tags != null) {
                 for (String tag : item.tags) {
                     if (tag != null && !tag.isEmpty()) {
-                        allItemTags.add(tag.toLowerCase());
+                        allItemTags.add(tag);
                     }
                 }
             }
@@ -34,13 +34,13 @@ public class ItemFilter {
             // Füge info.type, info.piece, info.rarity als Tags hinzu (wie in getAllTagsForCategory)
             if (item.info != null) {
                 if (item.info.type != null && !item.info.type.isEmpty()) {
-                    allItemTags.add(item.info.type.toLowerCase());
+                    allItemTags.add(item.info.type);
                 }
                 if (item.info.piece != null && !item.info.piece.isEmpty()) {
-                    allItemTags.add(item.info.piece.toLowerCase());
+                    allItemTags.add(item.info.piece);
                 }
                 if (item.info.rarity != null && !item.info.rarity.isEmpty()) {
-                    allItemTags.add(item.info.rarity.toLowerCase());
+                    allItemTags.add(item.info.rarity);
                 }
             }
             
@@ -49,14 +49,10 @@ public class ItemFilter {
                 return false;
             }
             
-            // Für jeden gesuchten Tag prüfen, ob mindestens ein Item-Tag den gesuchten Tag enthält (case-insensitive)
-            // Unterstützt Live-Suche: #waffe, #waff, #waf, #wa, #w werden alle erkannt
             for (String searchTag : query.tags) {
                 boolean tagMatches = false;
-                String searchTagLower = searchTag.toLowerCase();
                 for (String itemTag : allItemTags) {
-                    // Prüfe ob Item-Tag den gesuchten Tag enthält (case-insensitive)
-                    if (itemTag.contains(searchTagLower)) {
+                    if (ItemViewerUtility.matchesSearchTag(itemTag, searchTag)) {
                         tagMatches = true;
                         break;
                     }
@@ -210,84 +206,112 @@ public class ItemFilter {
     }
     
     private static boolean matchesCostFilter(ItemData item, CostFilter filter) {
-        if (item.price == null) return false;
-        
-        CostItem costItem = null;
-        
-        switch (filter.category.toLowerCase()) {
-            case "amboss":
-                costItem = item.price.Amboss;
-                break;
-            case "ressource":
-                costItem = item.price.Ressource;
-                break;
-            case "material1":
-                costItem = item.price.material1;
-                break;
-            case "material2":
-                costItem = item.price.material2;
-                break;
-            case "cactus":
-            case "kaktus":
-                costItem = item.price.cactus;
-                break;
-            case "soul":
-            case "seele":
-                costItem = item.price.soul;
-                break;
-            case "coin":
-            case "coins":
-                costItem = item.price.coin;
-                break;
-            case "ofen":
-                costItem = getOfenCostItem(item);
-                break;
+        if (filter.category.equalsIgnoreCase("material")) {
+            return matchesMaterialCostFilter(item, filter);
         }
         
-        // Prüfe Betrag (kann Integer oder String sein)
+        if (item.price == null) {
+            return false;
+        }
+        
+        CostItem costItem = getCostItemForCategory(item.price, filter.category.toLowerCase(), item);
+        return matchesSingleCostItem(costItem, filter);
+    }
+    
+    private static CostItem getCostItemForCategory(PriceData price, String category, ItemData item) {
+        return switch (category) {
+            case "amboss" -> price.Amboss != null ? price.Amboss : price.amboss;
+            case "ressource" -> price.Ressource != null ? price.Ressource : price.ressource;
+            case "material1" -> price.material1;
+            case "material2" -> price.material2;
+            case "material3" -> price.material3;
+            case "material4" -> price.material4;
+            case "material5" -> price.material5;
+            case "cactus", "kaktus" -> price.cactus;
+            case "soul", "seele" -> price.soul;
+            case "coin", "coins" -> price.coin;
+            case "ofen" -> getOfenCostItem(item);
+            default -> null;
+        };
+    }
+    
+    private static java.util.List<CostItem> getMaterialCostItems(PriceData price) {
+        java.util.List<CostItem> materials = new java.util.ArrayList<>();
+        if (price == null) {
+            return materials;
+        }
+        if (price.material1 != null) materials.add(price.material1);
+        if (price.material2 != null) materials.add(price.material2);
+        if (price.material3 != null) materials.add(price.material3);
+        if (price.material4 != null) materials.add(price.material4);
+        if (price.material5 != null) materials.add(price.material5);
+        return materials;
+    }
+    
+    /**
+     * material:ANZAHL oder material:MATERIALNAME – prüft alle Ebenen-Material-Slots (material1–5).
+     */
+    private static boolean matchesMaterialCostFilter(ItemData item, CostFilter filter) {
+        java.util.List<CostItem> materials = getMaterialCostItems(item.price);
+        
+        if (filter.amount != null && filter.amount == 0) {
+            if (materials.isEmpty()) {
+                return true;
+            }
+            for (CostItem material : materials) {
+                if (!matchesSingleCostItem(material, filter)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        if (materials.isEmpty()) {
+            return filter.amount != null && filter.amount == 0;
+        }
+        
+        for (CostItem material : materials) {
+            if (matchesSingleCostItem(material, filter)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private static boolean matchesSingleCostItem(CostItem costItem, CostFilter filter) {
         if (filter.amount != null) {
-            // Wenn amount 0 ist, prüfe ob costItem leer/null ist
             if (filter.amount == 0) {
-                // Wenn costItem null ist (Feld fehlt), matched es (fehlend = 0)
                 if (costItem == null) {
                     return true;
                 }
-                // Wenn costItem.amount null, leer oder "0" ist, dann matched es
                 if (costItem.amount != null) {
                     String amountStr = costItem.amount.toString().trim();
                     if (!amountStr.isEmpty() && !amountStr.equals("0")) {
                         return false;
                     }
                 }
-                // Wenn costItem.amount null ist, matched es auch (leer = 0)
                 return true;
-            } else {
-                // Für andere Werte: costItem muss existieren
-                if (costItem == null) {
-                    return false;
-                }
-                if (costItem.amount == null) {
-                    return false;
-                }
-                // Vergleiche als String, da amount auch formatierte Strings sein kann
-                if (!costItem.amount.toString().equals(filter.amount.toString())) {
-                    return false;
-                }
+            }
+            
+            if (costItem == null || costItem.amount == null) {
+                return false;
+            }
+            if (!costItem.amount.toString().equals(filter.amount.toString())) {
+                return false;
             }
         }
         
-        // Wenn nur Item-Name gesucht wird, muss costItem existieren
         if (filter.itemName != null) {
-            if (costItem == null) {
+            if (costItem == null || costItem.itemName == null) {
                 return false;
             }
-            if (costItem.itemName == null ||
-                !costItem.itemName.equalsIgnoreCase(filter.itemName)) {
+            String itemNameLower = costItem.itemName.toLowerCase();
+            String filterNameLower = filter.itemName.toLowerCase();
+            if (!itemNameLower.equals(filterNameLower) && !itemNameLower.contains(filterNameLower)) {
                 return false;
             }
         }
         
-        // Wenn weder amount noch itemName gesucht wird, aber costItem existiert, matched es
         if (filter.amount == null && filter.itemName == null) {
             return costItem != null;
         }

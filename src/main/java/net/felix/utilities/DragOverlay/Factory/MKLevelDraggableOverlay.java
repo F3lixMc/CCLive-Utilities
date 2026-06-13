@@ -269,36 +269,24 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
             int textX = padding;
             
             // Draw buttons above overlay (at negative Y, aligned with top edge)
-            // This matches the original overlay position exactly
-            // Buttons are rendered first so the red border appears on top
             int buttonY = -unscaledButtonHeight;
-            int buttonWidth = unscaledWidth / 2;
+            int tabCount = 3;
+            int buttonWidth = unscaledWidth / tabCount;
+            String[] tabLabels = {"Einzelne", "Kombiniert", "Gesamt"};
             
-            // Left button: "Einzelne Wellen" (same style as right button in F6 preview)
-            int leftButtonBgColor = 0xFF202020; // Same as inactive button color
-            int leftButtonBorderColor = 0xFF808080; // Gray border
-            context.fill(0, buttonY, buttonWidth, buttonY + unscaledButtonHeight, leftButtonBgColor);
-            context.drawBorder(0, buttonY, buttonWidth, unscaledButtonHeight, leftButtonBorderColor);
-            
-            // Center text in left button
-            String leftButtonText = "Einzelne Wellen";
-            int leftTextWidth = client.textRenderer.getWidth(leftButtonText);
-            int leftTextX = (buttonWidth - leftTextWidth) / 2;
-            int leftTextY = buttonY + (unscaledButtonHeight - client.textRenderer.fontHeight) / 2;
-            context.drawText(client.textRenderer, leftButtonText, leftTextX, leftTextY, 0xFFFFFFFF, false);
-            
-            // Right button: "Kombinierte Wellen" (inactive in preview)
-            int rightButtonBgColor = 0xFF202020; // Inactive button color
-            int rightButtonBorderColor = 0xFF808080; // Gray border for inactive
-            context.fill(buttonWidth, buttonY, unscaledWidth, buttonY + unscaledButtonHeight, rightButtonBgColor);
-            context.drawBorder(buttonWidth, buttonY, buttonWidth, unscaledButtonHeight, rightButtonBorderColor);
-            
-            // Center text in right button
-            String rightButtonText = "Kombinierte Wellen";
-            int rightTextWidth = client.textRenderer.getWidth(rightButtonText);
-            int rightTextX = buttonWidth + (buttonWidth - rightTextWidth) / 2;
-            int rightTextY = buttonY + (unscaledButtonHeight - client.textRenderer.fontHeight) / 2;
-            context.drawText(client.textRenderer, rightButtonText, rightTextX, rightTextY, 0xFFFFFFFF, false);
+            for (int i = 0; i < tabCount; i++) {
+                int buttonX = i * buttonWidth;
+                int buttonBgColor = i == 0 ? 0xFF404040 : 0xFF202020;
+                int buttonBorderColor = i == 0 ? 0xFFFFFF00 : 0xFF808080;
+                context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + unscaledButtonHeight, buttonBgColor);
+                context.drawBorder(buttonX, buttonY, buttonWidth, unscaledButtonHeight, buttonBorderColor);
+                
+                String buttonText = tabLabels[i];
+                int textWidth = client.textRenderer.getWidth(buttonText);
+                int textXButton = buttonX + (buttonWidth - textWidth) / 2;
+                int textYButton = buttonY + (unscaledButtonHeight - client.textRenderer.fontHeight) / 2;
+                context.drawText(client.textRenderer, buttonText, textXButton, textYButton, 0xFFFFFFFF, false);
+            }
             
             // Draw search bar
             int searchBarY = padding - contentOffset;
@@ -316,7 +304,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
             int textY = contentY;
             
             String previewLevel = "-Level 2";
-            String previewEssence = " Pferd T1, 3.000";
+            String previewEssence = " Pferd T1, x3.000";
             
             context.drawText(client.textRenderer, previewLevel, textX, textY, 0xFFFFFF00, true);
             textY += lineHeight;
@@ -325,7 +313,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
             
             context.drawText(client.textRenderer, "-Level 3", textX, textY, 0xFFFFFF00, true);
             textY += lineHeight;
-            context.drawText(client.textRenderer, " Lohe T1, 4.000", textX, textY, 0xFFFFFFFF, true);
+            context.drawText(client.textRenderer, " Lohe T1, x4.000", textX, textY, 0xFFFFFFFF, true);
             
             matrices.popMatrix();
         }

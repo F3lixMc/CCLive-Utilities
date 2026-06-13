@@ -95,6 +95,9 @@ public class ScreenMixin {
             // Render Clipboard Overlay (wenn aktiviert)
             net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
             
+            // Render Clipboard Button Tooltips (Anzahl, Seiten-Navigation)
+            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
+            
             // Render Item Viewer (als HandledScreen behandeln)
             ItemViewerUtility.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
             

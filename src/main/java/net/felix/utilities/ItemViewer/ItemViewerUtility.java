@@ -49,6 +49,7 @@ public class ItemViewerUtility {
     private static List<ItemData> allItems = new ArrayList<>();
     private static List<ItemData> filteredItems = new ArrayList<>();
     private static final Map<String, ItemData> itemByName = new HashMap<>();
+    private static java.util.Set<String> knownSearchTags = null;
     
     private static final int FILTER_DEBOUNCE_TICKS = 2;
     private static int filterDebounceTicks = 0;
@@ -201,6 +202,7 @@ public class ItemViewerUtility {
             // Erstelle leere Liste als Fallback
             allItems = new ArrayList<>();
             filteredItems = new ArrayList<>();
+            knownSearchTags = null;
         }
     }
     
@@ -222,6 +224,7 @@ public class ItemViewerUtility {
                 
                 if (data != null) {
                     allItems = new ArrayList<>();
+                    knownSearchTags = null;
                     
                     // Unterstütze verschiedene Strukturen:
                     // 1. Alte Struktur: {"items": [...]}
@@ -427,6 +430,7 @@ public class ItemViewerUtility {
                     
                     if (!allItems.isEmpty()) {
                         rebuildItemNameIndex();
+                        rebuildKnownSearchTags();
                         ItemViewerGrid.clearItemStackCache();
                     }
                 }
@@ -826,6 +830,64 @@ public class ItemViewerUtility {
                 itemByName.putIfAbsent(item.name, item);
             }
         }
+    }
+    
+    /**
+     * Alle bekannten Tags für die #Tag-Suche (item.tags, info.type/piece/rarity).
+     * Wird genutzt um exakte vs. Teilstring-Suche zu unterscheiden.
+     */
+    public static java.util.Set<String> getKnownSearchTags() {
+        if (knownSearchTags == null) {
+            rebuildKnownSearchTags();
+        }
+        return knownSearchTags;
+    }
+    
+    private static void rebuildKnownSearchTags() {
+        java.util.Set<String> tags = new java.util.HashSet<>();
+        if (allItems != null) {
+            for (ItemData item : allItems) {
+                collectSearchTagsFromItem(item, tags);
+            }
+        }
+        knownSearchTags = java.util.Collections.unmodifiableSet(tags);
+    }
+    
+    private static void collectSearchTagsFromItem(ItemData item, java.util.Set<String> tags) {
+        if (item.tags != null) {
+            for (String tag : item.tags) {
+                if (tag != null && !tag.isEmpty()) {
+                    tags.add(tag.toLowerCase());
+                }
+            }
+        }
+        if (item.info != null) {
+            if (item.info.type != null && !item.info.type.isEmpty()) {
+                tags.add(item.info.type.toLowerCase());
+            }
+            if (item.info.piece != null && !item.info.piece.isEmpty()) {
+                tags.add(item.info.piece.toLowerCase());
+            }
+            if (item.info.rarity != null && !item.info.rarity.isEmpty()) {
+                tags.add(item.info.rarity.toLowerCase());
+            }
+        }
+    }
+    
+    /**
+     * Prüft ob ein Item-Tag zur #Tag-Suche passt.
+     * Vollständiger Tag (z.B. #Schuhe) → exakter Match; Prefix (z.B. #Schuh) → Teilstring.
+     */
+    public static boolean matchesSearchTag(String itemTag, String searchTag) {
+        if (itemTag == null || searchTag == null || searchTag.isEmpty()) {
+            return false;
+        }
+        String itemTagLower = itemTag.toLowerCase();
+        String searchTagLower = searchTag.toLowerCase();
+        if (getKnownSearchTags().contains(searchTagLower)) {
+            return itemTagLower.equals(searchTagLower);
+        }
+        return itemTagLower.contains(searchTagLower);
     }
     
     /**
@@ -2623,12 +2685,13 @@ public class ItemViewerUtility {
             "• Suche nach Item-Namen",
             "",
             "Erweiterte Suche:",
-            "• #Tag - Suche nach Tags (z.B. #Ring, #Rüstung)",
+            "• #Tag - Tags (z.B. #Schuhe exakt, #Schuh als Vorschau mit Teiltreffern)",
             "• @Stat>Wert - Stats (z.B. @Schaden>=100, @Rüstung<50)",
             "• @Ebene>Wert - Ebenen (z.B. @Ebene>=50, @Ebene<30, >e5, e4)",
             "• Operatoren: >, <, =, >=, <=",
             "• +Modifier - Suche nach Modifiern (z.B. +Andere, +Andere:2)",
             "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0, ofen:38)",
+            "• material:Anzahl / material:Name - Ebenen-Material (z.B. material:51, material:Eichenholz)",
             "• @Aspekt Name - Suche nach Aspekten (z.B. @Aspekt der Flamme)",
             "",
             "Sortierung:",

@@ -165,6 +165,25 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     // Flag für Clipboard-Hover (wird bei Tab/F1 ausgeblendet)
     private static boolean hideHover = false;
     
+    // Zuletzt gerendeter Hover-Bereich für die Anzahl (für Tooltips, synchron mit renderInGame)
+    private static boolean quantityHoverBoundsValid = false;
+    private static int quantityHoverX = 0;
+    private static int quantityHoverY = 0;
+    private static int quantityHoverWidth = 0;
+    private static int quantityHoverHeight = 0;
+    
+    private static void updateQuantityHoverBounds(int x, int y, int width, int height) {
+        quantityHoverX = x;
+        quantityHoverY = y;
+        quantityHoverWidth = width;
+        quantityHoverHeight = height;
+        quantityHoverBoundsValid = true;
+    }
+    
+    private static void clearQuantityHoverBounds() {
+        quantityHoverBoundsValid = false;
+    }
+    
     // Separate Speicherung für Clipboard-Materialien (bleibt beim Dimensionswechsel erhalten)
     private static final Map<String, Long> clipboardMaterials = new HashMap<>();
     /** Pro Tick nur einmal Materialien aus Storage/ActionBar synchronisieren. */
@@ -718,6 +737,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         // Prüfe ob Hover ausgeblendet werden soll (bei Tab/F1)
         if (hideHover) {
+            clearQuantityHoverBounds();
             return;
         }
         
@@ -760,8 +780,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         context.fill(0, 0, unscaledWidth, estimatedHeight, 0x80000000);
         
         int currentY = padding;
-        
-        // Zähle Zeilen für dynamische Höhenberechnung
+        clearQuantityHoverBounds();
         int lineCount = 0;
         
         // Liste für fertige Items, die nach Background-Update gerendert werden sollen (nur für Seite 2+ in Mode 2)
@@ -869,6 +888,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         if (isInInventory) {
             renderQuantityTextField(context, client, countX, currentY, currentPage, quantity, unscaledWidth, scale);
+            updateQuantityHoverBounds(countX, currentY, getQuantityAreaWidth(client, countText, true), lineHeight);
         } else {
             // Außerhalb von Inventar: Rendere als Text
             context.drawText(
@@ -878,6 +898,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 0xFFFFFF00, // Gelb für Anzahl
                 true
             );
+            updateQuantityHoverBounds(countX, currentY, client.textRenderer.getWidth(countText), lineHeight);
         }
         currentY += lineHeight;
         lineCount++; // Bauplan-Name Zeile
@@ -2401,6 +2422,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         
+        if (hideHover) {
+            return;
+        }
+        
         int x = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
         int y = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
@@ -2435,7 +2460,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             countText = formatQuantityText(1);
         }
         
-        int unscaledWidth = calculateUnscaledWidth();
+        int unscaledWidth = resolveRenderWidth(client, currentPage, entry);
         
         // Berechne Button-Positionen mit Hilfsmethode (exakt wie in renderInGame)
         int[] buttonPositions = calculateButtonPositions(client, blueprintName, countText, unscaledWidth);
@@ -2456,15 +2481,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         
-        boolean isInInventory = client.currentScreen instanceof HandledScreen;
-        int lineHeight = client.textRenderer.fontHeight + 2;
-        int quantityX = buttonPositions[6];
-        int quantityWidth = getQuantityAreaWidth(client, countText, isInInventory);
-        
-        if (unscaledMouseX >= quantityX && unscaledMouseX <= quantityX + quantityWidth
-            && unscaledMouseY >= buttonY && unscaledMouseY <= buttonY + lineHeight) {
-            int tooltipX = (int) (x + quantityX * scale);
-            int tooltipY = (int) (y + buttonY * scale);
+        // Anzahl-Tooltip: verwende gerenderte Hover-Bounds (exakt synchron mit renderInGame)
+        if (quantityHoverBoundsValid
+            && unscaledMouseX >= quantityHoverX && unscaledMouseX <= quantityHoverX + quantityHoverWidth
+            && unscaledMouseY >= quantityHoverY && unscaledMouseY <= quantityHoverY + quantityHoverHeight) {
+            int tooltipX = (int) (x + quantityHoverX * scale);
+            int tooltipY = (int) (y + quantityHoverY * scale);
             context.drawTooltip(client.textRenderer, java.util.List.of(Text.literal("Anzahl")), tooltipX, tooltipY);
         }
     }

@@ -57,7 +57,10 @@ public class DrawContextMixin {
                 "Linksklick: Nach Kit Suchen",
                 "Rechtsklick: Kit auswählen",
                 "ItemViewer einklappen",
-                "ItemViewer ausklappen"
+                "ItemViewer ausklappen",
+                "Anzahl",
+                "Keine vorherige Seite",
+                "Keine nächste Seite"
             );
             
             // Prüfe ob es ein bekannter Button-Tooltip ist
@@ -73,6 +76,11 @@ public class DrawContextMixin {
                     }
                     // Prüfe auch auf Hotkey-Zeilen (z.B. "(Hotkey: I)")
                     if (cleanText.startsWith("(Hotkey:")) {
+                        isAllowedTooltip = true;
+                        break;
+                    }
+                    // Clipboard-Seiten-Navigation (z.B. "Seite 2")
+                    if (cleanText.startsWith("Seite ")) {
                         isAllowedTooltip = true;
                         break;
                     }

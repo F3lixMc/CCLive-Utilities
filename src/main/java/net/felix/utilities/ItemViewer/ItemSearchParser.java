@@ -47,7 +47,7 @@ public class ItemSearchParser {
     // Kosten-Kategorien: nur als eigenständiges Wort mit Trenner (z.B. "kaktus:0", "ressource:Eichenholz")
     // Wortgrenzen verhindern, dass "Kaktusernter" fälschlich als Kaktus-Kostenfilter gelesen wird
     private static final Pattern COST_CATEGORY_PATTERN = Pattern.compile(
-        "\\b(amboss|ressource|material1|material2|kaktus|seele|coin|coins|ofen)\\b(?:\\s*:\\s*|\\s+)([\\p{L}\\p{N}_\\s\\d]+)",
+        "\\b(amboss|ressource|material1|material2|material3|material4|material5|material|kaktus|seele|coin|coins|ofen)\\b(?:\\s*:\\s*|\\s+)([\\p{L}\\p{N}_\\s\\d.,]+)",
         Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
     );
     private static final Pattern ASPECT_PATTERN = Pattern.compile(

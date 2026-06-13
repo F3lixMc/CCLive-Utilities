@@ -1052,7 +1052,7 @@ public class NpcAlertsUtility {
 	}
 	
 	private static void addScreenMessageIfEnabled(String configKey, boolean condition, String message) {
-		if (condition && isScreenMessageEnabled(configKey)) {
+		if (condition && isNpcAlertCollectorEnabled(configKey) && isScreenMessageEnabled(configKey)) {
 			activeScreenMessages.add(message);
 		}
 	}
@@ -1060,70 +1060,65 @@ public class NpcAlertsUtility {
 	private static void updateScreenMessages() {
 		activeScreenMessages.clear();
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-		if (!config.npcAlertsUtilityEnabled) {
+		if (!areNpcAlertsOverlaysActive()) {
 			return;
 		}
 		
-		if (config.showNpcAlertsForschung) {
+		if (isNpcAlertCollectorEnabled("forschung")) {
 			addScreenMessageIfEnabled("forschung",
 				shouldShowLowCapacityScreenMessage(forschung, config.npcAlertsForschungWarnPercent),
 				"Forschungen sind leer");
 		}
-		if (config.showNpcAlertsAmboss) {
+		if (isNpcAlertCollectorEnabled("amboss")) {
 			addScreenMessageIfEnabled("amboss",
 				shouldShowHighCapacityScreenMessage(ambossKapazitaet, config.npcAlertsAmbossWarnPercent),
 				"Amboss ist voll");
 		}
-		if (config.showNpcAlertsSchmelzofen) {
+		if (isNpcAlertCollectorEnabled("schmelzofen")) {
 			addScreenMessageIfEnabled("schmelzofen",
 				shouldShowHighCapacityScreenMessage(schmelzofenKapazitaet, config.npcAlertsSchmelzofenWarnPercent),
 				"Schmelzofen ist voll");
 		}
-		if (config.showNpcAlertsJaeger) {
+		if (isNpcAlertCollectorEnabled("jaeger")) {
 			addScreenMessageIfEnabled("jaeger",
 				shouldShowHighCapacityScreenMessage(jaegerKapazitaet, config.npcAlertsJaegerWarnPercent),
 				"Jäger ist voll");
 		}
-		if (config.showNpcAlertsSeelen) {
+		if (isNpcAlertCollectorEnabled("seelen")) {
 			addScreenMessageIfEnabled("seelen",
 				shouldShowHighCapacityScreenMessage(seelenKapazitaet, config.npcAlertsSeelenWarnPercent),
 				"Seelen sind voll");
 		}
-		if (config.showNpcAlertsEssenzen) {
+		if (isNpcAlertCollectorEnabled("essenzen")) {
 			addScreenMessageIfEnabled("essenzen",
 				shouldShowHighCapacityScreenMessage(essenzenKapazitaet, config.npcAlertsEssenzenWarnPercent),
 				"Essenzen sind voll");
 		}
-		if (config.showNpcAlertsKomboKiste) {
+		if (isNpcAlertCollectorEnabled("komboKiste")) {
 			addScreenMessageIfEnabled("komboKiste",
 				komboKiste.isValid() && komboKiste.current >= komboKiste.max,
 				"Kombo Kiste ist voll");
 		}
-		if (config.showNpcAlertsMachtkristalle) {
+		if (isNpcAlertCollectorEnabled("machtkristalle")) {
 			for (int i = 0; i < 3; i++) {
-				boolean slotEnabled = switch (i) {
-					case 0 -> config.showNpcAlertsMachtkristalleSlot1;
-					case 1 -> config.showNpcAlertsMachtkristalleSlot2;
-					case 2 -> config.showNpcAlertsMachtkristalleSlot3;
-					default -> true;
-				};
-				if (slotEnabled && shouldShowMachtkristallScreenMessage(machtkristallSlots[i], config.npcAlertsMachtkristalleWarnPercent)) {
+				if (isNpcAlertMachtkristallSlotEnabled(i)
+					&& shouldShowMachtkristallScreenMessage(machtkristallSlots[i], config.npcAlertsMachtkristalleWarnPercent)) {
 					addScreenMessageIfEnabled("machtkristalle", true, "Machtkristall ist voll");
 					break;
 				}
 			}
 		}
-		if (config.showNpcAlertsRecyclerSlot1) {
+		if (isNpcAlertRecyclerSlotEnabled(0)) {
 			addScreenMessageIfEnabled("recycler",
 				shouldShowLowCapacityScreenMessage(recyclerSlot1, config.npcAlertsRecyclerWarnPercent),
 				"Recycler Slot 1 ist leer");
 		}
-		if (config.showNpcAlertsRecyclerSlot2) {
+		if (isNpcAlertRecyclerSlotEnabled(1)) {
 			addScreenMessageIfEnabled("recycler",
 				shouldShowLowCapacityScreenMessage(recyclerSlot2, config.npcAlertsRecyclerWarnPercent),
 				"Recycler Slot 2 ist leer");
 		}
-		if (config.showNpcAlertsRecyclerSlot3) {
+		if (isNpcAlertRecyclerSlotEnabled(2)) {
 			addScreenMessageIfEnabled("recycler",
 				shouldShowLowCapacityScreenMessage(recyclerSlot3, config.npcAlertsRecyclerWarnPercent),
 				"Recycler Slot 3 ist leer");
@@ -1131,7 +1126,7 @@ public class NpcAlertsUtility {
 	}
 	
 	private static void renderScreenMessages(DrawContext context, MinecraftClient client) {
-		if (activeScreenMessages.isEmpty()) {
+		if (!areNpcAlertsOverlaysActive() || activeScreenMessages.isEmpty()) {
 			return;
 		}
 		
@@ -1177,14 +1172,57 @@ public class NpcAlertsUtility {
 			return;
 		}
 		
-		renderScreenMessages(context, client);
-		
-		// Render nur wenn Overlays sichtbar sind
-		if (!showOverlays) {
+		// Bildschirm-Nachrichten nur wenn NPC-Overlays aktiv/sichtbar sind
+		if (!showOverlays || !areNpcAlertsOverlaysActive()) {
 			return;
 		}
 		
+		renderScreenMessages(context, client);
 		renderNpcAlertsDisplay(context, client);
+	}
+	
+	/** NPC Alerts Utility aktiv und Overlays nicht global ausgeblendet („Overlays Ein/Aus“). */
+	private static boolean areNpcAlertsOverlaysActive() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return config.npcAlertsUtilityEnabled && config.npcAlertsOverlaysVisible;
+	}
+	
+	/** Einzelner Collector aktiv (Overlay-Eintrag in den Einstellungen). */
+	private static boolean isNpcAlertCollectorEnabled(String configKey) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return switch (configKey) {
+			case "forschung" -> config.showNpcAlertsForschung;
+			case "amboss" -> config.showNpcAlertsAmboss;
+			case "schmelzofen" -> config.showNpcAlertsSchmelzofen;
+			case "jaeger" -> config.showNpcAlertsJaeger;
+			case "seelen" -> config.showNpcAlertsSeelen;
+			case "essenzen" -> config.showNpcAlertsEssenzen;
+			case "komboKiste" -> config.showNpcAlertsKomboKiste;
+			case "machtkristalle" -> config.showNpcAlertsMachtkristalle;
+			case "recycler", "recyclerSlot1", "recyclerSlot2", "recyclerSlot3" ->
+				config.showNpcAlertsRecyclerSlot1 || config.showNpcAlertsRecyclerSlot2 || config.showNpcAlertsRecyclerSlot3;
+			default -> true;
+		};
+	}
+	
+	private static boolean isNpcAlertRecyclerSlotEnabled(int slotIndex) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return switch (slotIndex) {
+			case 0 -> config.showNpcAlertsRecyclerSlot1;
+			case 1 -> config.showNpcAlertsRecyclerSlot2;
+			case 2 -> config.showNpcAlertsRecyclerSlot3;
+			default -> false;
+		};
+	}
+	
+	private static boolean isNpcAlertMachtkristallSlotEnabled(int slotIndex) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return switch (slotIndex) {
+			case 0 -> config.showNpcAlertsMachtkristalleSlot1;
+			case 1 -> config.showNpcAlertsMachtkristalleSlot2;
+			case 2 -> config.showNpcAlertsMachtkristalleSlot3;
+			default -> false;
+		};
 	}
 	
 	/**
