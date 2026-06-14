@@ -85,6 +85,10 @@ public class ZeichenUtility {
     private static String airshipMainGui = "";
     /** Glyph aus {@code cactusclicker_shop} / {@code ui_background} – Glimfang-Shop (Item-Viewer aus). */
     private static String glimfangShopUi = "";
+    /** Glyph aus {@code cactusclicker_anvil} / {@code main_ui} – Amboss-Inventar. */
+    private static String anvilMainUi = "";
+    /** Glyph aus {@code cactusclicker_furnace} / {@code main_ui} – Schmelzofen-Inventar. */
+    private static String furnaceMainUi = "";
     private static String essenceHarvesterUi = "";
     private static String essenceBagUi = "";
     private static String essenceSelectionUi = "";
@@ -256,6 +260,8 @@ public class ZeichenUtility {
         legendPlusUiBackground = "";
         airshipMainGui = "";
         glimfangShopUi = "";
+        anvilMainUi = "";
+        furnaceMainUi = "";
         essenceHarvesterUi = "";
         essenceBagUi = "";
         essenceSelectionUi = "";
@@ -318,6 +324,8 @@ public class ZeichenUtility {
         legendPlusUiBackground = singleChar(index, "cactusclicker_legend_plus", "ui_background");
         airshipMainGui = singleChar(index, "cactusclicker_airship", "main_gui");
         glimfangShopUi = singleChar(index, "cactusclicker_shop", "ui_background");
+        anvilMainUi = singleChar(index, "cactusclicker_anvil", "main_ui");
+        furnaceMainUi = singleChar(index, "cactusclicker_furnace", "main_ui");
 
         essenceHarvesterUi = singleChar(index, "cactusclicker_harvesters", "essence_harvester_ui");
         essenceBagUi = singleChar(index, "cactusclicker_essence", "ui_bag");
@@ -483,6 +491,18 @@ public class ZeichenUtility {
                 airshipMainGui = o.get("character").getAsString();
             }
         }
+        if (json.has("anvil_main_ui")) {
+            JsonObject o = json.getAsJsonObject("anvil_main_ui");
+            if (o.has("character")) {
+                anvilMainUi = o.get("character").getAsString();
+            }
+        }
+        if (json.has("furnace_main_ui")) {
+            JsonObject o = json.getAsJsonObject("furnace_main_ui");
+            if (o.has("character")) {
+                furnaceMainUi = o.get("character").getAsString();
+            }
+        }
         if (json.has("essence_harvester_ui")) {
             essenceHarvesterUi = json.getAsJsonObject("essence_harvester_ui").get("character").getAsString();
         }
@@ -625,6 +645,8 @@ public class ZeichenUtility {
         legendPlusUiBackground = "㵷";
         airshipMainGui = "㷈";
         glimfangShopUi = "㷇";
+        anvilMainUi = "㸒";
+        furnaceMainUi = "㷒";
         essenceHarvesterUi = "㸏";
         essenceBagUi = "㸊";
         essenceSelectionUi = "㸋";
@@ -899,6 +921,16 @@ public class ZeichenUtility {
         ensureInitialized();
         return text != null && legendPlusUiBackground != null && !legendPlusUiBackground.isEmpty()
                 && text.contains(legendPlusUiBackground);
+    }
+
+    public static boolean containsAnvilMainUi(String text) {
+        ensureInitialized();
+        return text != null && anvilMainUi != null && !anvilMainUi.isEmpty() && text.contains(anvilMainUi);
+    }
+
+    public static boolean containsFurnaceMainUi(String text) {
+        ensureInitialized();
+        return text != null && furnaceMainUi != null && !furnaceMainUi.isEmpty() && text.contains(furnaceMainUi);
     }
 
     /** Essence-Bag, -Auswahl und Harvester: keine Ebenen-Nummern in Tooltips. */

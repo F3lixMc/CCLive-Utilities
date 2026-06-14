@@ -227,6 +227,41 @@ public class CollectedMaterialsResourcesStorage {
         update.put(name, delta);
         addMaterials(update);
     }
+
+    /** Addiert Mengen zu bestehenden Ressourcen-Einträgen (z. B. Legend+-Sammler). */
+    public static void addResources(Map<String, Long> deltas) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (deltas == null || deltas.isEmpty()) {
+            return;
+        }
+        boolean changed = false;
+        synchronized (resources) {
+            for (Map.Entry<String, Long> entry : deltas.entrySet()) {
+                String name = entry.getKey();
+                Long delta = entry.getValue();
+                if (name == null || name.isEmpty() || delta == null || delta <= 0) {
+                    continue;
+                }
+                long current = resources.getOrDefault(name, 0L);
+                resources.put(name, current + delta);
+                changed = true;
+            }
+        }
+        if (changed) {
+            rebuildNormalizedCaches();
+            scheduleSave();
+        }
+    }
+
+    public static void addResource(String name, long delta) {
+        if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        Map<String, Long> update = new HashMap<>();
+        update.put(name, delta);
+        addResources(update);
+    }
     
     public static void resetAll() {
         ensureInitialized();

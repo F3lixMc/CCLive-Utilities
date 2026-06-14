@@ -6,6 +6,7 @@ import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Factory.WaveUtility;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 // import net.felix.utilities.Overall.BossBarDecodeUtility; // Temporarily disabled
@@ -94,6 +95,9 @@ public class BossBarMixin {
                     // Bossbar dekodieren und anzeigen (temporarily disabled)
                     // BossBarDecodeUtility.processBossBar(name);
                     
+                    // HUD-Statistik (Souls / Coins / Cactus) per Pixel-Font dekodieren
+                    CoinTrackerUtility.processBossBar(name);
+
                     // Fabrik-Wellen (2. Bossbar) verarbeiten
                     WaveUtility.processBossBarWave(name, index);
                     

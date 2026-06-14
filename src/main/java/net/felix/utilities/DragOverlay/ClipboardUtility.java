@@ -84,6 +84,9 @@ public class ClipboardUtility {
         // Initialisiere ClipboardMaterialCollector
         ClipboardMaterialCollector.initialize();
 
+        // Legend+-Sammler: Ressourcen aus [Sammler]-Tooltip bei Klick
+        LegendPlusSammlerCollector.initialize();
+
         // Farmzone: Ressourcen aus Actionbar (nur bei Scoreboard-Biom)
         ClipboardFarmzoneActionBar.initialize();
 

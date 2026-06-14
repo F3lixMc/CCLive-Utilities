@@ -73,6 +73,7 @@ public class CCLiveUtilities implements ModInitializer {
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
+		net.felix.utilities.Overall.CoinTrackerUtility.initialize();
 		NpcAlertsUtility.initialize();
 		net.felix.utilities.DebugUtility.initializeItemLogger();
 		net.felix.utilities.DragOverlay.ClipboardUtility.initialize();

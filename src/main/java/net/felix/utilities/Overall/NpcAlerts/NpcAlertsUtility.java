@@ -1018,6 +1018,13 @@ public class NpcAlertsUtility {
 		double currentPercent = getCapacityPercent(data);
 		return isCapacityEmpty(data) || (warnPercent >= 0 && currentPercent <= warnPercent);
 	}
+
+	private static boolean shouldShowForschungWarning(int warnValue) {
+		if (!forschung.isValid() || warnValue < 0) {
+			return false;
+		}
+		return forschung.current <= warnValue;
+	}
 	
 	private static boolean shouldShowMachtkristallScreenMessage(MachtkristallSlot slot, double warnPercent) {
 		return isMachtkristallFull(slot) || getMachtkristallShowWarning(slot, warnPercent);
@@ -1066,7 +1073,7 @@ public class NpcAlertsUtility {
 		
 		if (isNpcAlertCollectorEnabled("forschung")) {
 			addScreenMessageIfEnabled("forschung",
-				shouldShowLowCapacityScreenMessage(forschung, config.npcAlertsForschungWarnPercent),
+				shouldShowForschungWarning(config.npcAlertsForschungWarnValue),
 				"Forschungen sind leer");
 		}
 		if (isNpcAlertCollectorEnabled("amboss")) {
@@ -1529,11 +1536,9 @@ public class NpcAlertsUtility {
 					}
 				}
 			}
-			// Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
-			double currentPercent = forschung.isValid() ? 
-				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
-			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
+			// Warnung: wenn verbleibender Wert <= Schwelle (0-23)
+			int warnValue = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
+			boolean showWarning = shouldShowForschungWarning(warnValue);
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "forschung", showIcon));
@@ -1788,11 +1793,9 @@ public class NpcAlertsUtility {
 					}
 				}
 			}
-			// Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
-			double currentPercent = forschung.isValid() ? 
-				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
-			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
+			// Warnung: wenn verbleibender Wert <= Schwelle (0-23)
+			int warnValue = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
+			boolean showWarning = shouldShowForschungWarning(warnValue);
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			lines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "forschung", showIcon));
@@ -2379,11 +2382,9 @@ public class NpcAlertsUtility {
 					}
 				}
 			}
-			// Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
-			double currentPercent = forschung.isValid() ? 
-				((double)forschung.current / (double)forschung.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
-			boolean showWarning = forschung.isValid() && warnPercent >= 0 && currentPercent <= warnPercent;
+			// Warnung: wenn verbleibender Wert <= Schwelle (0-23)
+			int warnValue = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
+			boolean showWarning = shouldShowForschungWarning(warnValue);
 			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
 			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 			renderSingleInfoOverlay(context, client, displayText, 

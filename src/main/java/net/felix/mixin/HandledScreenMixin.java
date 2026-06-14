@@ -265,6 +265,15 @@ public abstract class HandledScreenMixin {
         if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
+
+        // Legend+-Sammler: Ressourcen vor Linksklick auf [Sammler] merken
+        HandledScreen<?> legendPlusScreen = (HandledScreen<?>) (Object) this;
+        net.felix.utilities.DragOverlay.LegendPlusSammlerCollector.handleMouseClick(
+                legendPlusScreen, mouseX, mouseY, button, x, y);
+
+        // Amboss/Schmelzofen: Ressourcen aus Lager-Tooltip bei Linksklick addieren
+        net.felix.utilities.DragOverlay.AnvilFurnaceLagerCollector.handleMouseClick(
+                legendPlusScreen, mouseX, mouseY, button, x, y);
     }
     
     /**

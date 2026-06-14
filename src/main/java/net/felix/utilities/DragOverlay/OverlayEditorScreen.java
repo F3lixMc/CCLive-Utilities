@@ -7,6 +7,7 @@ import net.felix.utilities.DragOverlay.Aincraft.CardsDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.KillsUtilityDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.MaterialTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
 import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
 import net.felix.utilities.DragOverlay.Factory.MKLevelDraggableOverlay;
@@ -188,6 +189,7 @@ public class OverlayEditorScreen extends Screen {
                 overlays.add(new BlueprintViewerDraggableOverlay());
                 overlays.add(new MaterialTrackerDraggableOverlay());
                 overlays.add(new KillsUtilityDraggableOverlay());
+                overlays.add(new CoinTrackerDraggableOverlay());
             } else {
                 // Mining/Lumberjack overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
@@ -524,6 +526,39 @@ public class OverlayEditorScreen extends Screen {
         
         // Render buttons
         super.render(context, mouseX, mouseY, delta);
+        
+        renderOverlayHandleTooltips(context, mouseX, mouseY);
+    }
+    
+    private void renderOverlayHandleTooltips(DrawContext context, int mouseX, int mouseY) {
+        for (DraggableOverlay overlay : overlays) {
+            if (!overlay.isEnabled()) {
+                continue;
+            }
+            
+            if (isOverlayResetHandle(mouseX, mouseY, overlay)) {
+                context.drawTooltip(textRenderer, List.of(Text.literal("Größe zurücksetzen")), mouseX, mouseY);
+                return;
+            }
+            if (isOverlayResizeHandle(mouseX, mouseY, overlay)) {
+                context.drawTooltip(textRenderer, List.of(Text.literal("Ziehen um Größe anzupassen")), mouseX, mouseY);
+                return;
+            }
+        }
+    }
+    
+    private boolean isOverlayResizeHandle(int mouseX, int mouseY, DraggableOverlay overlay) {
+        int handleSize = 10;
+        int x = overlay.getX() + overlay.getWidth() - handleSize;
+        int y = overlay.getY() + overlay.getHeight() - handleSize;
+        return mouseX >= x && mouseX <= x + handleSize && mouseY >= y && mouseY <= y + handleSize;
+    }
+    
+    private boolean isOverlayResetHandle(int mouseX, int mouseY, DraggableOverlay overlay) {
+        int handleSize = 10;
+        int x = overlay.getX() + overlay.getWidth() - handleSize;
+        int y = overlay.getY();
+        return mouseX >= x && mouseX <= x + handleSize && mouseY >= y && mouseY <= y + handleSize;
     }
     
     private void renderResizeHandle(DrawContext context, DraggableOverlay overlay) {
@@ -1207,6 +1242,10 @@ public class OverlayEditorScreen extends Screen {
             boolean newValue = !config.killsUtilityEnabled;
             config.killsUtilityEnabled = newValue;
             config.showKillsUtility = newValue; // Synchronisiere mit *Enabled Option
+        } else if (overlay instanceof CoinTrackerDraggableOverlay) {
+            boolean newValue = !config.coinTrackerEnabled;
+            config.coinTrackerEnabled = newValue;
+            config.showCoinTracker = newValue;
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
             boolean newValue = !config.miningLumberjackOverlayEnabled;
             config.miningLumberjackOverlayEnabled = newValue;

@@ -47,6 +47,9 @@ public class NpcAlertsDetailScreen extends Screen {
                 z = 1;
             }
             warnPercentInput = String.valueOf(z);
+        } else if ("forschung".equals(configKey)) {
+            int warnValue = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
+            warnPercentInput = warnValue >= 0 ? String.valueOf(warnValue) : "";
         } else {
             double currentWarnPercent = getWarnPercent();
             if (currentWarnPercent >= 0) {
@@ -288,6 +291,29 @@ public class NpcAlertsDetailScreen extends Screen {
             context.drawText(textRenderer, "Prozente anzeigen", checkboxX + checkboxSize + 5, checkboxY + 1, 
                 showPercent ? 0xFFFFFFFF : 0xFF808080, false);
             
+            if ("forschung".equals(configKey)) {
+                int inputY = boxY + 110;
+                int inputX = boxX + 10;
+                int inputWidth = 100;
+                int inputHeight = 16;
+                context.drawText(textRenderer, "Warn bei:", inputX, inputY + 3, 0xFFFFFFFF, false);
+                int fieldX = inputX + 80;
+                context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
+                    isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
+                context.drawBorder(fieldX, inputY, inputWidth, inputHeight,
+                    isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
+                String displayText = warnPercentInput;
+                int textX = fieldX + 3;
+                if (!displayText.isEmpty()) {
+                    context.drawText(textRenderer, displayText, textX, inputY + 4, 0xFFFFFFFF, false);
+                    textX += textRenderer.getWidth(displayText);
+                }
+                if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
+                    context.drawText(textRenderer, "_", textX, inputY + 4, 0xFFFFFFFF, false);
+                }
+                context.drawText(textRenderer, "(Leer = deaktiviert, 0-23)",
+                    inputX, inputY + inputHeight + 5, 0xFF808080, false);
+            } else {
             // Warn-Eingabe (Prozent)
             int inputY = boxY + 110;
             int inputX = boxX + 10;
@@ -315,6 +341,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             context.drawText(textRenderer, "(Leer lassen oder -1 = deaktiviert)",
                 inputX, inputY + inputHeight + 5, 0xFF808080, false);
+            }
         } else if ("komboKiste".equals(configKey)) {
             int inputY = boxY + 85;
             int inputX = boxX + 10;
@@ -1456,7 +1483,7 @@ public class NpcAlertsDetailScreen extends Screen {
     @Override
     public boolean charTyped(char chr, int modifiers) {
         if (isEditingWarnPercent) {
-            if ("komboKiste".equals(configKey)) {
+            if ("komboKiste".equals(configKey) || "forschung".equals(configKey)) {
                 if (chr >= '0' && chr <= '9' && warnPercentInput.length() < 12) {
                     warnPercentInput += chr;
                     saveWarnPercent();
@@ -1522,6 +1549,25 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             return;
         }
+        if ("forschung".equals(configKey)) {
+            try {
+                int value = -1;
+                if (!warnPercentInput.trim().isEmpty()) {
+                    value = Integer.parseInt(warnPercentInput.trim());
+                }
+                if (value < 0) {
+                    value = -1;
+                } else if (value > 23) {
+                    value = 23;
+                }
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue = value;
+                CCLiveUtilitiesConfig.HANDLER.save();
+            } catch (NumberFormatException e) {
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue = -1;
+                CCLiveUtilitiesConfig.HANDLER.save();
+            }
+            return;
+        }
         try {
             double value = -1.0;
             if (!warnPercentInput.trim().isEmpty()) {
@@ -1541,8 +1587,6 @@ public class NpcAlertsDetailScreen extends Screen {
     
     private double getWarnPercent() {
         switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
             case "amboss":
                 return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
             case "schmelzofen":
@@ -1567,9 +1611,6 @@ public class NpcAlertsDetailScreen extends Screen {
     
     private void setWarnPercent(double value) {
         switch (configKey) {
-            case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent = value;
-                break;
             case "amboss":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent = value;
                 break;

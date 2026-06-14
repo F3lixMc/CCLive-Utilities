@@ -507,24 +507,28 @@ public class ProfileStatsManager {
             return;
         }
         
-        // 1. Höchster Floor (aus FloorProgressCollector)
+        // 1. Höchster Floor (BPViewerUtility / FloorProgressCollector)
         try {
-            LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
-            DataCollector floorCollector = leaderboardManager.getCollector("floors");
-            if (floorCollector instanceof FloorProgressCollector) {
-                FloorProgressCollector fpc = (FloorProgressCollector) floorCollector;
-                String currentFloor = fpc.getCurrentFloor();
-                if (currentFloor != null) {
-                    // Extrahiere Floor-Nummer (z.B. "floor_1" -> 1)
-                    try {
-                        String floorNum = currentFloor.replace("floor_", "");
-                        int floor = Integer.parseInt(floorNum);
-                        if (floor > highestFloor) {
-                            highestFloor = floor;
-                        }
-                    } catch (NumberFormatException e) {
-                        // Ignoriere
+            String currentFloor = null;
+            BPViewerUtility bpViewer = BPViewerUtility.getInstance();
+            if (bpViewer != null) {
+                currentFloor = bpViewer.getActiveFloor();
+            }
+            if (currentFloor == null) {
+                LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
+                DataCollector floorCollector = leaderboardManager.getCollector("floors");
+                if (floorCollector instanceof FloorProgressCollector) {
+                    currentFloor = ((FloorProgressCollector) floorCollector).getCurrentFloor();
+                }
+            }
+            if (currentFloor != null && currentFloor.startsWith("floor_")) {
+                try {
+                    int floor = Integer.parseInt(currentFloor.substring("floor_".length()));
+                    if (floor > highestFloor) {
+                        highestFloor = floor;
                     }
+                } catch (NumberFormatException e) {
+                    // Ignoriere
                 }
             }
         } catch (Exception e) {

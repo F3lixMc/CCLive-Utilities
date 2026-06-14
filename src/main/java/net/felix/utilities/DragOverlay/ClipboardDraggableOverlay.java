@@ -66,6 +66,58 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         CostItem ressource = resolveRessource(price);
         if (ressource != null) list.add(new CostItemWithCategory(ressource, 3));
     }
+
+    /**
+     * Wendet die Kostenanzeige-Filterung an (Ausblenden / Ans Ende setzen).
+     * Modus 1 entfernt fertige Items (außer Coins), Modus 2 sortiert sie ans Ende.
+     */
+    private static void filterCostItemsForDisplay(List<CostItemWithCategory> costItemsWithCategory, int quantity) {
+        if (costItemsWithCategory == null || costItemsWithCategory.isEmpty()) {
+            return;
+        }
+
+        boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
+        if (!costDisplayEnabled) {
+            return;
+        }
+
+        int costDisplayMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
+        if (costDisplayMode == 1) {
+            costItemsWithCategory.removeIf(item -> {
+                if (item.category == 0) {
+                    return false;
+                }
+                return isCostItemComplete(item.costItem, quantity);
+            });
+        } else if (costDisplayMode == 2) {
+            List<CostItemWithCategory> notComplete = new ArrayList<>();
+            List<CostItemWithCategory> complete = new ArrayList<>();
+
+            for (CostItemWithCategory item : costItemsWithCategory) {
+                if (item.category == 0) {
+                    notComplete.add(item);
+                } else if (isCostItemComplete(item.costItem, quantity)) {
+                    complete.add(item);
+                } else {
+                    notComplete.add(item);
+                }
+            }
+
+            notComplete.sort((item1, item2) -> Integer.compare(item1.category, item2.category));
+            complete.sort((item1, item2) -> Integer.compare(item1.category, item2.category));
+
+            costItemsWithCategory.clear();
+            costItemsWithCategory.addAll(notComplete);
+            costItemsWithCategory.addAll(complete);
+        }
+    }
+
+    private static int countVisiblePriceCostLines(net.felix.utilities.ItemViewer.PriceData price, int quantity) {
+        List<CostItemWithCategory> costItemsWithCategory = new ArrayList<>();
+        addPriceCostItemsToDisplayList(costItemsWithCategory, price);
+        filterCostItemsForDisplay(costItemsWithCategory, quantity);
+        return costItemsWithCategory.size();
+    }
     
     private static void addPriceCostItemsToTotal(Map<String, CostItem> totalCostsMap, net.felix.utilities.ItemViewer.PriceData price, int quantity) {
         if (price == null || totalCostsMap == null) {
@@ -438,7 +490,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     /**
      * Calculate unscaled height (base height without scale factor)
-     * Berechnet basierend auf dem neuen Format (ohne Titel und Trennlinie im Spiel)
+     * Entspricht dem F6-Vorschau-Layout in renderInEditMode (inkl. Titel und Trennlinie)
      */
     private static int calculateUnscaledHeight() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -447,24 +499,19 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int lineHeight = client.textRenderer.fontHeight + 2;
         int padding = 5;
         
-        // "Bauplanname [Anzahl]" - 1 Zeile
-        int height = lineHeight;
+        int height = padding;
+        height += lineHeight; // "Pinnwand"
+        height += 2; // Trennlinie unter dem Titel
+        height += lineHeight; // "Bauplanname xAnzahl"
+        height += lineHeight; // "Bauplan Kosten:"
+        height += lineHeight * 4; // Coins, Material, Amboss, Ressource
         
-        // "Bauplan Kosten:" oder "Kosten:" - 1 Zeile
-        height += lineHeight;
-        
-        // Beispiel-Kosten (4 Zeilen: Coins, Material, Amboss, Ressource)
-        height += lineHeight * 4;
-        
-        // Optional: "Bauplan Shop Kosten" + Beispiel-Kosten (Coins, Pergamentfetzen)
         if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts) {
-            height += lineHeight; // "Bauplan Shop Kosten"
+            height += lineHeight; // "Bauplan Shop Kosten:"
             height += lineHeight * 2; // Coins, Pergamentfetzen
         }
         
-        // Padding oben und unten
-        height += padding * 2;
-        
+        height += padding;
         return height;
     }
     
@@ -783,9 +830,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         clearQuantityHoverBounds();
         int lineCount = 0;
         
-        // Liste für fertige Items, die nach Background-Update gerendert werden sollen (nur für Seite 2+ in Mode 2)
-        List<CostItemWithCategory> completeItemsToRenderLater = new ArrayList<>();
-        
         // "Bauplanname [Anzahl]" - Anzahl oben rechts, mit Pfeil-Buttons davor
         String blueprintName;
         String countText;
@@ -998,70 +1042,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             // Kostenanzeige-Filterung/Sortierung (nur für normale Kosten, nicht für Bauplan Shop Kosten)
             boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
             if (costDisplayEnabled) {
-                int costDisplayMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
-                
-                if (costDisplayMode == 1) {
-                    // Mode 1: Ausblenden fertiger Items (außer Coins)
-                    costItemsWithCategory.removeIf(item -> {
-                        if (item.category == 0) { // Coins
-                            return false; // Coins immer anzeigen
-                        }
-                        return isCostItemComplete(item.costItem, quantity);
-                    });
-                } else if (costDisplayMode == 2) {
-                    // Mode 2: Fertige Items ans Ende ALLER Kategorien setzen
-                    // Trenne nicht-fertige und fertige Items
-                    List<CostItemWithCategory> notComplete = new ArrayList<>();
-                    List<CostItemWithCategory> complete = new ArrayList<>();
-                    
-                    for (CostItemWithCategory item : costItemsWithCategory) {
-                        if (item.category == 0) { // Coins
-                            notComplete.add(item); // Coins immer zuerst
-                        } else if (isCostItemComplete(item.costItem, quantity)) {
-                            complete.add(item);
-                        } else {
-                            notComplete.add(item);
-                        }
-                    }
-                    
-                    // Sortiere nicht-fertige Items nach Kategorie
-                    notComplete.sort((item1, item2) -> Integer.compare(item1.category, item2.category));
-                    
-                    // Sortiere fertige Items nach Kategorie
-                    complete.sort((item1, item2) -> Integer.compare(item1.category, item2.category));
-                    
-                    // Setze Liste zurück: zuerst nicht-fertige, dann fertige
-                    costItemsWithCategory.clear();
-                    costItemsWithCategory.addAll(notComplete);
-                    costItemsWithCategory.addAll(complete);
-                }
+                filterCostItemsForDisplay(costItemsWithCategory, quantity);
             }
             
-            // Trenne fertige und nicht-fertige Items für Mode 2 (damit fertige Items nach Background-Update gerendert werden)
-            List<CostItemWithCategory> itemsToRenderNow = new ArrayList<>();
-            completeItemsToRenderLater.clear(); // Leere die Liste für diese Seite
-            
-            // Verwende bereits deklarierte costDisplayEnabled Variable
-            int costDisplayMode = costDisplayEnabled ? CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode : 0;
-            
-            if (costDisplayMode == 2) {
-                // Mode 2: Trenne fertige Items, um sie später zu rendern
-                for (CostItemWithCategory itemWithCategory : costItemsWithCategory) {
-                    if (itemWithCategory.category == 0 || !isCostItemComplete(itemWithCategory.costItem, quantity)) {
-                        // Coins oder nicht-fertige Items: jetzt rendern
-                        itemsToRenderNow.add(itemWithCategory);
-                    } else {
-                        // Fertige Items: später rendern (nach Background-Update)
-                        completeItemsToRenderLater.add(itemWithCategory);
-                    }
-                }
-            } else {
-                // Mode 0 oder 1: Alle Items jetzt rendern
-                itemsToRenderNow.addAll(costItemsWithCategory);
-            }
-            
-            // Rendere nicht-fertige Items (und Coins) jetzt
-            for (CostItemWithCategory itemWithCategory : itemsToRenderNow) {
+            for (CostItemWithCategory itemWithCategory : costItemsWithCategory) {
                 if (renderCostItem(context, client, itemWithCategory.costItem, currentY, quantity)) {
                     currentY += lineHeight;
                     lineCount++;
@@ -1106,38 +1090,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         // Berechne tatsächliche Höhe basierend auf gerenderten Zeilen
         int actualHeight = padding + (lineCount * lineHeight) + padding;
-        
-        // Falls die tatsächliche Höhe von der geschätzten Höhe abweicht, aktualisiere den Background
-        // (Background wird innerhalb der Matrix-Transformation gerendert, damit er mit dem Text in derselben Ebene ist)
-        if (actualHeight > estimatedHeight) {
-            // Zeichne nur den fehlenden Hintergrund unterhalb der bisherigen Fläche,
-            // damit bereits gerenderter Text nicht abgedunkelt wird.
-            context.fill(0, estimatedHeight, unscaledWidth, actualHeight, 0x80000000);
-        }
-        
-        // Rendere fertige Items NACH dem Background-Update (nur für Seite 2+ in Mode 2)
-        // Damit der Text nicht dunkler wirkt, weil er vor dem Background gerendert wurde
-        if (currentPage != 1 && entry != null && entry.price != null) {
-            boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
-            int costDisplayMode = costDisplayEnabled ? CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode : 0;
-            
-            if (costDisplayMode == 2 && !completeItemsToRenderLater.isEmpty()) {
-                // Rendere fertige Items nach dem Background-Update
-                for (CostItemWithCategory itemWithCategory : completeItemsToRenderLater) {
-                    if (renderCostItem(context, client, itemWithCategory.costItem, currentY, quantity)) {
-                        currentY += lineHeight;
-                        lineCount++;
-                    }
-                }
-                
-                // Aktualisiere Background erneut, falls Höhe sich geändert hat
-                int newActualHeight = padding + (lineCount * lineHeight) + padding;
-                if (newActualHeight > actualHeight) {
-                    context.fill(0, actualHeight, unscaledWidth, newActualHeight, 0x80000000);
-                    actualHeight = newActualHeight;
-                }
-            }
-        }
         
         matrices.popMatrix();
         
@@ -3051,7 +3003,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         } else if (entry != null && entry.price != null) {
             // Seite 2+: Einzelner Eintrag
             lineCount += 1; // "Kosten:" Zeile
-            lineCount += countPriceCostLines(entry.price);
+            int quantity = getQuantityForPage(currentPage, entry);
+            lineCount += countVisiblePriceCostLines(entry.price, quantity);
             
             // Optional: Bauplan Shop Kosten
             if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts && 

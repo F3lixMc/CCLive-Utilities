@@ -139,6 +139,14 @@
     "group": "cactusclicker_shop",
     "name": "ui_background"
   },
+  "anvil_main_ui": {
+    "group": "cactusclicker_anvil",
+    "name": "main_ui"
+  },
+  "furnace_main_ui": {
+    "group": "cactusclicker_furnace",
+    "name": "main_ui"
+  },
   "aincraft_font_first_line": {
     "group": "cactusclicker_aincraft_overlay",
     "name": "font_first_line"

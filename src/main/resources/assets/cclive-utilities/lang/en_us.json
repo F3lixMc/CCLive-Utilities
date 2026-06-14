@@ -1,7 +1,9 @@
 {
     "key.cclive-utilities.kills-toggle": "Toggle Kill Tracker",
     "key.cclive-utilities.kills-reset": "Reset Kill Tracker",
+    "key.cclive-utilities.coin-tracker-reset": "Coin Tracker zurücksetzen",
     "category.cclive-utilities.kills": "CCLive Utilities - Kill Tracker",
+    "category.cclive-utilities.overall": "CCLive Utilities - Allgemein",
     "key.cclive-utilities.material-toggle": "Toggle Material Tracker",
     "category.cclive-utilities.material": "CCLive Utilities - Material Tracker",
     "key.cclive-utilities.cards-toggle": "Toggle Cards & Statues",

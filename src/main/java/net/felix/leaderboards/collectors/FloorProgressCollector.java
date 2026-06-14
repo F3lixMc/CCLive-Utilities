@@ -132,7 +132,7 @@ public class FloorProgressCollector implements DataCollector {
                     // Validiere: Nur floor_1 bis floor_10 sind gültig
                     try {
                         int floorNum = Integer.parseInt(floorNumber);
-                        if (floorNum >= 1 && floorNum <= 10) {
+                        if (floorNum >= 1 && floorNum <= 100) {
                             return "floor_" + floorNumber;
                         }
                     } catch (NumberFormatException e) {

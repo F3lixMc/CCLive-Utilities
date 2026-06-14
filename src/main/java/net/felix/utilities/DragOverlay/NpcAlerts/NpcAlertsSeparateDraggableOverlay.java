@@ -1778,10 +1778,8 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         switch (configKey) {
             case "forschung":
                 if (NpcAlertsUtility.forschung.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.forschung.current / (double)NpcAlertsUtility.forschung.max) * 100.0;
-                    double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnPercent;
-                    // Warnung: wenn Prozent UNTER dem Warnwert ist (da Forschung runter zählt)
-                    return warnPercent >= 0 && currentPercent < warnPercent;
+                    int warnValue = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
+                    return warnValue >= 0 && NpcAlertsUtility.forschung.current <= warnValue;
                 }
                 break;
             case "amboss":

@@ -356,6 +356,31 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean killsUtilityShowNextLevel = true; // "Nächste Ebene" Zeile anzeigen
 
+    // Coin Tracker Settings
+    @SerialEntry
+    public boolean coinTrackerEnabled = true;
+
+    @SerialEntry
+    public boolean showCoinTracker = true;
+
+    @SerialEntry
+    public int coinTrackerX = 570;
+
+    @SerialEntry
+    public int coinTrackerY = 180;
+
+    @SerialEntry
+    public Color coinTrackerHeaderColor = new Color(0xFFFFFF00);
+
+    @SerialEntry
+    public Color coinTrackerTextColor = new Color(0xE6FFFFFF);
+
+    @SerialEntry
+    public boolean coinTrackerShowBackground = true;
+
+    @SerialEntry
+    public float coinTrackerScale = 1.0f;
+
 
     // Schmied Tracker Settings
     @SerialEntry
@@ -1019,9 +1044,10 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean npcAlertsRecyclerSlot3Separate = false;
     
-    // NPC Alerts Warn-Prozentwerte
+    // NPC Alerts Warn-Schwellen
+    /** Forschung: Warnung wenn verbleibender Wert &lt;= Schwelle (0–23); -1 = deaktiviert */
     @SerialEntry
-    public double npcAlertsForschungWarnPercent = -1.0;
+    public int npcAlertsForschungWarnValue = -1;
     
     @SerialEntry
     public double npcAlertsAmbossWarnPercent = -1.0;
@@ -1871,6 +1897,33 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("Nächste Ebene anzeigen"))
                                         .description(OptionDescription.of(Text.literal("Zeile 'Nächste Ebene' im Kill Tracker anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().killsUtilityShowNextLevel, newVal -> HANDLER.instance().killsUtilityShowNextLevel = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Coin Tracker"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Coin Tracker aktivieren"))
+                                        .description(OptionDescription.of(Text.literal("Liest Seelen, Coins und Kaktus aus der HUD-Bossbar in Aincraft-Ebenen (floor_X) und zeigt Session-Statistiken an")))
+                                        .binding(true, () -> HANDLER.instance().coinTrackerEnabled, newVal -> HANDLER.instance().coinTrackerEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Text.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschrift im Coin Tracker")))
+                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().coinTrackerHeaderColor, newVal -> HANDLER.instance().coinTrackerHeaderColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Text.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Text.literal("Farbe für den Text im Coin Tracker")))
+                                        .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().coinTrackerTextColor, newVal -> HANDLER.instance().coinTrackerTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Coin Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().coinTrackerShowBackground, newVal -> HANDLER.instance().coinTrackerShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
