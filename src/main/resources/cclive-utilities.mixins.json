@@ -23,6 +23,7 @@
 		"HelpOverlayMixin",
 		"HelpOverlayScreenMixin",
 		"InGameHudHelpOverlayMixin",
+		"InGameHudScoreboardMixin",
 		"MouseClickMixin"
 	],
 	"injectors": {

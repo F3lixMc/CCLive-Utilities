@@ -988,14 +988,13 @@ public class ItemViewerGrid {
                 net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(costItem.itemName);
             
             if (floorInfo != null) {
-                // Erstelle Text mit Material-Name in grün und "(Ebene X)" in Rarity-Farbe
                 MutableText materialText = Text.literal(materialLine)
-                    .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false)); // Grün für Material
+                    .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false));
                 
-                String floorText = " (Ebene " + floorInfo.floor + ")";
-                int rarityColor = getMaterialRarityColor(floorInfo.rarity);
+                String floorText = net.felix.utilities.Overall.InformationenUtility.formatMaterialLocationSuffix(floorInfo);
+                int rarityColor = net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
                 Text floorTextObj = Text.literal(floorText)
-                    .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false)); // Rarity-Farbe für "(Ebene X)"
+                    .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false));
                 
                 // Kombiniere beide Texte
                 tooltipLines.add(materialText.append(floorTextObj));

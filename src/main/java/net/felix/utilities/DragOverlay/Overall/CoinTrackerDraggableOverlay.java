@@ -1,6 +1,7 @@
 package net.felix.utilities.DragOverlay.Overall;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.CoinTrackerDisplayMode;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.felix.utilities.Overall.BossBarHudValueDecoder;
 import net.felix.utilities.Overall.CoinTrackerUtility;
@@ -145,11 +146,7 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
         int textY = PADDING;
         context.drawText(client.textRenderer, Text.literal("Coin Tracker"), PADDING, textY, headerColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("Seelen: 12,5K"), PADDING, textY, textColor, true);
-        textY += LINE_HEIGHT;
         context.drawText(client.textRenderer, Text.literal("Coins: 1.256K"), PADDING, textY, textColor, true);
-        textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("Kaktus: 500"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
         context.drawText(client.textRenderer, Text.literal("Gewinn: +12,3K"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
@@ -169,12 +166,13 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
     public boolean isEnabled() {
         return CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerEnabled
                 && CCLiveUtilitiesConfig.HANDLER.instance().showCoinTracker
+                && CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode == CoinTrackerDisplayMode.OVERLAY
                 && BossBarHudValueDecoder.isFloorDimension();
     }
 
     @Override
     public Text getTooltip() {
-        return Text.literal("Coin Tracker - Liest Seelen, Coins und Kaktus aus der HUD-Bossbar");
+        return Text.literal("Coin Tracker - Liest Coins aus der HUD-Bossbar und zeigt Session-Statistiken");
     }
 
     @Override

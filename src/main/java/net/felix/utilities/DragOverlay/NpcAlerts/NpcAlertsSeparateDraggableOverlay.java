@@ -15,6 +15,8 @@ import org.joml.Matrix3x2fStack;
  * Draggable Overlay für einzelne NPC Alerts Overlays
  */
 public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
+
+    private static final float MIN_SCALE = 0.05f;
     
     private final String configKey;
     private final String displayName;
@@ -461,14 +463,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 }
             }
             
-            // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
-            int actualLineHeight = lineHeight;
-            boolean showIcon = getShowIcon();
-            if (showIcon) {
-                int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-                actualLineHeight = Math.max(actualLineHeight, iconSize);
-            }
-            return (lineCount * actualLineHeight) + (padding * 2);
+            return (lineCount * lineHeight) + (padding * 2);
         }
         
         // Für Recycler: mehrere Zeilen möglich
@@ -516,14 +511,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 }
             }
             
-            // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
-            int actualLineHeight = lineHeight;
-            boolean showIcon = getShowIcon();
-            if (showIcon) {
-                int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-                actualLineHeight = Math.max(actualLineHeight, iconSize);
-            }
-            return (lineCount * actualLineHeight) + (padding * 2);
+            return (lineCount * lineHeight) + (padding * 2);
         }
         
         // Für Recycler: mehrere Zeilen möglich
@@ -571,34 +559,10 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 }
             }
             
-            // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
-            int actualLineHeight = lineHeight;
-            boolean showIcon = getShowIcon();
-            if (showIcon) {
-                int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-                actualLineHeight = Math.max(actualLineHeight, iconSize);
-            }
-            return (lineCount * actualLineHeight) + (padding * 2);
+            return (lineCount * lineHeight) + (padding * 2);
         }
         
-        // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
-        int actualLineHeight = lineHeight;
-        boolean showIcon = getShowIcon();
-        if (showIcon && configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
-                                               "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
-                                               "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
-                                               "komboKiste".equals(configKey) ||
-                                               "machtkristalle".equals(configKey) ||
-                                               "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
-                                               "machtkristalleSlot3".equals(configKey) ||
-                                               "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
-                                               "recyclerSlot3".equals(configKey))) {
-            int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-            // Die tatsächliche Höhe ist das Maximum aus Icon-Höhe und Text-Höhe
-            actualLineHeight = Math.max(actualLineHeight, iconSize);
-        }
-        
-        return actualLineHeight + (padding * 2);
+        return lineHeight + (padding * 2);
     }
     
     @Override
@@ -658,9 +622,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         // Calculate scale based on width and height
         float scaleX = (float) width / unscaledWidth;
         float scaleY = (float) height / unscaledHeight;
-        float scale = (scaleX + scaleY) / 2.0f;
-        
-        // Keine Grenzen für Scale
+        float scale = Math.max(MIN_SCALE, Math.min(scaleX, scaleY));
         setScale(scale);
     }
     
@@ -698,17 +660,8 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         boolean showIcon = getShowIcon();
         
         int currentX = 5; // Relativ zu (x, y) nach Matrix-Transformation
-        // Vertikal zentriert - berücksichtige Icon-Höhe wenn aktiviert
         int lineHeight = client.textRenderer.fontHeight + 2;
-        int actualLineHeight = lineHeight;
-        if (showIcon && configKey != null) {
-            int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-            // Die tatsächliche Höhe ist das Maximum aus Icon-Höhe und Text-Höhe
-            actualLineHeight = Math.max(actualLineHeight, iconSize);
-        }
-        // Berechne unskalierte Höhe für Zentrierung
         int unscaledHeight = calculateUnscaledHeight();
-        // Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der fontHeight (da Text-Baseline unten ist)
         int overlayCenterY = unscaledHeight / 2;
         int currentY = overlayCenterY - client.textRenderer.fontHeight / 2;
         
@@ -756,7 +709,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                                                 "machtkristalleSlot3".equals(configKey) ||
                                                 "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
                                                 "recyclerSlot3".equals(configKey)))) {
-            int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+            int iconSize = lineHeight;
             // Zentriere Icon vertikal: Overlay-Mitte minus die Hälfte der Icon-Höhe (overlayCenterY wurde bereits berechnet)
             int iconY = overlayCenterY - iconSize / 2;
             Identifier iconToUse = null;
@@ -818,7 +771,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
             // Für Multi-Line-Overlay: Starte oben mit PADDING, nicht zentriert
             int lineY = 5; // PADDING
             int mkPercentColor = 0xFFFFFF00; // Gelb für Prozente
-            int iconSize = showIcon ? (int)(client.textRenderer.fontHeight * 1.5) : 0;
+            int iconSize = showIcon ? lineHeight : 0;
             
             for (int i = 0; i < 3; i++) {
                 // Prüfe ob dieser Slot aktiviert ist
@@ -851,7 +804,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 
                 NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[i];
                 int lineX = currentX;
-                int lineCenterY = lineY + actualLineHeight / 2;
+                int lineCenterY = lineY + lineHeight / 2;
                 
                 // Berechne displayText (gleiche Logik wie in renderSeparateOverlays)
                 String displayText;
@@ -924,7 +877,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     );
                 }
                 
-                lineY += actualLineHeight;
+                lineY += lineHeight;
             }
         } else if ("recycler".equals(configKey)) {
             // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
@@ -940,7 +893,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
             
             // Für Multi-Line-Overlay: Starte oben mit PADDING, nicht zentriert
             int lineY = 5; // PADDING
-            int iconSize = showIcon ? (int)(client.textRenderer.fontHeight * 1.5) : 0;
+            int iconSize = showIcon ? lineHeight : 0;
             
             for (int i = 0; i < 3; i++) {
                 // Lade Farben für diesen Slot aus Config
@@ -1001,7 +954,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                                                           (i == 1) ? NpcAlertsUtility.recyclerSlot2 : 
                                                           NpcAlertsUtility.recyclerSlot3;
                 int lineX = currentX;
-                int lineCenterY = lineY + actualLineHeight / 2;
+                int lineCenterY = lineY + lineHeight / 2;
                 
                 // Berechne displayText
                 String displayText;
@@ -1068,7 +1021,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     );
                 }
                 
-                lineY += actualLineHeight;
+                lineY += lineHeight;
             }
         } else {
             // Einzeiliger Text

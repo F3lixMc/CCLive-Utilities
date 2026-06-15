@@ -287,7 +287,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 int inputX = boxX + 10;
                 int inputWidth = 100;
                 int inputHeight = 16;
-                context.drawText(textRenderer, "Warn bei:", inputX, inputY + 3, 0xFFFFFFFF, false);
+                context.drawText(textRenderer, "Warnen ab:", inputX, inputY + 3, 0xFFFFFFFF, false);
                 int fieldX = inputX + 80;
                 context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
                     isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
@@ -310,7 +310,7 @@ public class NpcAlertsDetailScreen extends Screen {
             int inputX = boxX + 10;
             int inputWidth = 100;
             int inputHeight = 16;
-            context.drawText(textRenderer, "Warn bei %:", inputX, inputY + 3, 0xFFFFFFFF, false);
+            context.drawText(textRenderer, "Warnen ab %:", inputX, inputY + 3, 0xFFFFFFFF, false);
             int fieldX = inputX + 80;
             context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
                 isEditingWarnPercent ? 0xFF404040 : 0xFF202020);

@@ -10,6 +10,7 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.CoinTrackerDisplayMode;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
@@ -19,6 +20,7 @@ import java.util.Locale;
 /**
  * Liest Seelen, Coins und Kaktus aus der HUD-Bossbar per Pixel-Font-Dekodierung
  * und berechnet Session-Statistiken wie Gewinn und Coins pro Minute.
+ * Im Overlay werden nur Coins und Session-Werte angezeigt.
  */
 public class CoinTrackerUtility {
 
@@ -73,7 +75,7 @@ public class CoinTrackerUtility {
      * Wird vom BossBarMixin aufgerufen, wenn eine Bossbar mit HUD-Statistik-Struktur erkannt wird.
      */
     public static void processBossBar(String bossBarText) {
-        if (!isTrackingAllowed()) {
+        if (!isActiveOnFloor()) {
             return;
         }
         if (!BossBarHudValueDecoder.looksLikeHudStatsBar(bossBarText)) {
@@ -141,7 +143,7 @@ public class CoinTrackerUtility {
             return;
         }
 
-        if (!isTrackingAllowed()) {
+        if (!isActiveOnFloor()) {
             if (isTracking) {
                 resetSession();
             }
@@ -221,7 +223,7 @@ public class CoinTrackerUtility {
     }
 
     private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
-        if (!isTrackingAllowed() || !isTracking || currentCoins < 0) {
+        if (!shouldRenderOverlay() || !isTracking || currentCoins < 0) {
             return;
         }
 
@@ -249,9 +251,7 @@ public class CoinTrackerUtility {
         }
 
         String title = "Coin Tracker";
-        String soulsText = "Seelen: " + formatHudValueDisplay(currentSoulsDisplay, currentSouls);
         String coinsText = "Coins: " + formatHudValueDisplay(currentCoinsDisplay, currentCoins);
-        String cactusText = "Kaktus: " + formatHudValueDisplay(currentCactusDisplay, currentCactus);
         String gainedText = "Gewinn: " + (gainedCoins >= 0 ? "+" : "") + formatAbbreviatedDisplay(gainedCoins);
         String cpmText = "CPM: " + formatAbbreviatedDisplay(Math.round(coinsPerMinute));
 
@@ -267,7 +267,7 @@ public class CoinTrackerUtility {
         int textColor = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerTextColor.getRGB();
 
         int maxTextWidth = client.textRenderer.getWidth(title);
-        for (String line : new String[] { soulsText, coinsText, cactusText, gainedText, cpmText, timeText }) {
+        for (String line : new String[] { coinsText, gainedText, cpmText, timeText }) {
             maxTextWidth = Math.max(maxTextWidth, client.textRenderer.getWidth(line));
         }
         int overlayWidth = Math.max(MIN_OVERLAY_WIDTH, maxTextWidth + PADDING * 2);
@@ -294,11 +294,7 @@ public class CoinTrackerUtility {
         int textY = PADDING;
         context.drawText(client.textRenderer, Text.literal(title), PADDING, textY, headerColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal(soulsText), PADDING, textY, textColor, true);
-        textY += LINE_HEIGHT;
         context.drawText(client.textRenderer, Text.literal(coinsText), PADDING, textY, textColor, true);
-        textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal(cactusText), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
         context.drawText(client.textRenderer, Text.literal(gainedText), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
@@ -356,7 +352,7 @@ public class CoinTrackerUtility {
         return String.format(Locale.ROOT, "%.1f%s", rounded, suffix);
     }
 
-    private static final int OVERLAY_LINE_COUNT = 7;
+    private static final int OVERLAY_LINE_COUNT = 5;
 
     public static int getCurrentOverlayWidth(MinecraftClient client) {
         if (client == null || client.textRenderer == null) {
@@ -371,9 +367,7 @@ public class CoinTrackerUtility {
 
     static String[] getOverlayLines() {
         return new String[] {
-                "Seelen: " + formatHudValueDisplay(currentSoulsDisplay, currentSouls),
                 "Coins: " + formatHudValueDisplay(currentCoinsDisplay, currentCoins),
-                "Kaktus: " + formatHudValueDisplay(currentCactusDisplay, currentCactus),
                 "Gewinn: " + (gainedCoins >= 0 ? "+" : "") + formatAbbreviatedDisplay(gainedCoins),
                 "CPM: " + formatAbbreviatedDisplay(Math.round(coinsPerMinute)),
                 "Zeit: 00:00"
@@ -400,6 +394,10 @@ public class CoinTrackerUtility {
         return coinsPerMinute;
     }
 
+    public static String formatCpmForScoreboard() {
+        return formatAbbreviatedDisplay(Math.round(coinsPerMinute));
+    }
+
     public static long getCurrentSouls() {
         return currentSouls;
     }
@@ -413,9 +411,22 @@ public class CoinTrackerUtility {
     }
 
     private static boolean isTrackingAllowed() {
-        return isEnabled()
+        return isActiveOnFloor()
+                && CCLiveUtilitiesConfig.HANDLER.instance().showCoinTracker;
+    }
+
+    private static boolean isActiveOnFloor() {
+        return isEnabled() && isAllowedDimension();
+    }
+
+    private static boolean shouldRenderOverlay() {
+        return isActiveOnFloor()
                 && CCLiveUtilitiesConfig.HANDLER.instance().showCoinTracker
-                && isAllowedDimension();
+                && CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode == CoinTrackerDisplayMode.OVERLAY;
+    }
+
+    public static boolean usesOverlayDisplay() {
+        return CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode == CoinTrackerDisplayMode.OVERLAY;
     }
 
     private static boolean isEnabled() {

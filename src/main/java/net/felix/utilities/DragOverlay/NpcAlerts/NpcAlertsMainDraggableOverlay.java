@@ -16,6 +16,8 @@ import java.util.List;
  * Draggable Overlay für das große NPC Alerts Overlay
  */
 public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
+
+    private static final float MIN_SCALE = 0.05f;
     
     // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler
     private static final Identifier FORSCHUNG_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
@@ -143,19 +145,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         final int PADDING = 5;
         final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
         
-        // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
-        int actualLineHeight = LINE_HEIGHT;
-        int iconLineCount = 0;
-        for (NpcAlertsUtility.LineWithPercent line : lines) {
-            if (line.showIcon && line.configKey != null) {
-                int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-                actualLineHeight = Math.max(actualLineHeight, iconSize);
-                iconLineCount++;
-            }
-        }
-        
-        // Berücksichtige zusätzlichen Abstand für Zeilen mit Icons (2 Pixel pro Icon-Zeile)
-        return (lines.size() * actualLineHeight) + (iconLineCount * 2) + (PADDING * 2);
+        return (lines.size() * LINE_HEIGHT) + (PADDING * 2);
     }
     
     @Override
@@ -215,9 +205,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         // Calculate scale based on width and height
         float scaleX = (float) width / unscaledWidth;
         float scaleY = (float) height / unscaledHeight;
-        float scale = (scaleX + scaleY) / 2.0f;
-        
-        // Keine Grenzen für Scale
+        float scale = Math.max(MIN_SCALE, Math.min(scaleX, scaleY));
         CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale = scale;
     }
     
@@ -265,23 +253,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         final int PADDING = 5;
         final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
         
-        // Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
-        int actualLineHeight = LINE_HEIGHT;
-        for (NpcAlertsUtility.LineWithPercent line : lines) {
-            if (line.showIcon && line.configKey != null) {
-                int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-                actualLineHeight = Math.max(actualLineHeight, iconSize);
-            }
-        }
-        
-        // Berechne die tatsächliche Text-Höhe (inkl. zusätzlicher Abstände für Icon-Zeilen)
-        int totalTextHeight = 0;
-        for (NpcAlertsUtility.LineWithPercent line : lines) {
-            totalTextHeight += actualLineHeight;
-            if (line.showIcon && line.configKey != null) {
-                totalTextHeight += 2; // Zusätzlicher Abstand für Icon-Zeilen
-            }
-        }
+        int totalTextHeight = lines.size() * LINE_HEIGHT;
         
         // Berechne unskalierte Höhe für Zentrierung
         int unscaledHeight = calculateUnscaledHeight();
@@ -296,7 +268,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         // Rendere alle Zeilen (gleiche Logik wie im Original)
         for (NpcAlertsUtility.LineWithPercent line : lines) {
             if (line.text == null || line.text.trim().isEmpty()) {
-                currentY += actualLineHeight;
+                currentY += LINE_HEIGHT;
                 continue;
             }
             
@@ -319,8 +291,8 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
                 
                 // Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
                 if (line.showIcon && (line.configKey != null)) {
-                    int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
-                    int lineCenterY = currentY + actualLineHeight / 2;
+                    int iconSize = LINE_HEIGHT;
+                    int lineCenterY = currentY + LINE_HEIGHT / 2;
                     int iconY = lineCenterY - iconSize / 2;
                     Identifier iconToUse = null;
                     String fallbackText = null;
@@ -442,8 +414,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
                 // Ignoriere Fehler
             }
             
-            // Verwende actualLineHeight statt LINE_HEIGHT, um größere Icons zu berücksichtigen
-            int lineSpacing = actualLineHeight;
+            int lineSpacing = LINE_HEIGHT;
             if (line.showIcon && line.configKey != null) {
                 lineSpacing += 2; // Zusätzlicher Abstand für Icon-Zeilen
             }

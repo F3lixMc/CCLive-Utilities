@@ -381,6 +381,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public float coinTrackerScale = 1.0f;
 
+    @SerialEntry
+    public CoinTrackerDisplayMode coinTrackerDisplayMode = CoinTrackerDisplayMode.OVERLAY;
+
 
     // Schmied Tracker Settings
     @SerialEntry
@@ -1904,9 +1907,25 @@ public class CCLiveUtilitiesConfig {
                                 .name(Text.literal("Coin Tracker"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Text.literal("Coin Tracker aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Liest Seelen, Coins und Kaktus aus der HUD-Bossbar in Aincraft-Ebenen (floor_X) und zeigt Session-Statistiken an")))
+                                        .description(OptionDescription.of(Text.literal("Liest Coins aus der HUD-Bossbar in Aincraft-Ebenen (floor_X) und zeigt Session-Statistiken an")))
                                         .binding(true, () -> HANDLER.instance().coinTrackerEnabled, newVal -> HANDLER.instance().coinTrackerEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<CoinTrackerDisplayMode>createBuilder()
+                                        .name(Text.literal("CPM-Anzeige"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Wo Coins pro Minute angezeigt werden:\n"
+                                                        + "• Overlay – Coin Tracker Overlay, Scoreboard-CPM ausgeblendet\n"
+                                                        + "• Scoreboard – CPM im Scoreboard, kein Coin Tracker Overlay")))
+                                        .binding(CoinTrackerDisplayMode.OVERLAY,
+                                                () -> HANDLER.instance().coinTrackerDisplayMode,
+                                                newVal -> HANDLER.instance().coinTrackerDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(CoinTrackerDisplayMode.class)
+                                                .valueFormatter(mode -> switch (mode) {
+                                                    case OVERLAY -> Text.literal("Overlay");
+                                                    case SCOREBOARD -> Text.literal("Scoreboard");
+                                                }))
                                         .build())
                                 .option(Option.<Color>createBuilder()
                                         .name(Text.literal("Überschriftenfarbe"))

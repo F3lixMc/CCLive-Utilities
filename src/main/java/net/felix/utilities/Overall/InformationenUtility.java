@@ -27,8 +27,13 @@ import com.google.gson.JsonParser;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class InformationenUtility {
 	
@@ -47,7 +52,25 @@ public class InformationenUtility {
 	// License tracking
 	private static Map<String, LicenseInfo> licensesDatabase = new HashMap<>();
 	private static final List<PondInfo> pondsDatabase = new ArrayList<>();
+	private static final Map<String, Set<String>> fishFamilyToPonds = new HashMap<>();
+	private static final List<String> sortedFishFamilies = new ArrayList<>();
 	private static final String LICENSES_CONFIG_FILE = "assets/cclive-utilities/Farmworld.json";
+
+	/** Fisch-Materialien: „Legendäres Thunfischfleisch“, „Gewöhnliche Oktopuswirbelsäule“, … */
+	private static final Pattern FISHING_RARITY_MATERIAL_PATTERN = Pattern.compile(
+		"^(Gewöhnlich|Ungewöhnlich|Selten|Episch|Legendär)[a-zäöüß]*\\s+.+",
+		Pattern.UNICODE_CHARACTER_CLASS | Pattern.CASE_INSENSITIVE
+	);
+	private static final Pattern FISHING_RARITY_PREFIX_PATTERN = Pattern.compile(
+		"^(Gewöhnlich|Ungewöhnlich|Selten|Episch|Legendär)[a-zäöüß]*\\s+(.+)$",
+		Pattern.UNICODE_CHARACTER_CLASS | Pattern.CASE_INSENSITIVE
+	);
+	private static final Pattern LEADING_FRACTION_AMOUNT_PATTERN = Pattern.compile(
+		"^\\d+(?:[.,]\\d+)?\\s*/\\s*\\d+(?:[.,]\\d+)?\\s+"
+	);
+	private static final Pattern TRAILING_NUMERIC_AMOUNT_PATTERN = Pattern.compile(
+		"\\s*\\([\\d.,]+\\)\\s*$"
+	);
 	
 	// Cards and Statues effects tracking
 	private static Map<String, String> cardsEffects = new HashMap<>();
@@ -562,6 +585,8 @@ public class InformationenUtility {
 				// Sort materials by length (longest first) to avoid shorter names matching before longer ones
 				List<Map.Entry<String, MaterialInfo>> sortedMaterials = new ArrayList<>(materialsDatabase.entrySet());
 				sortedMaterials.sort((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()));
+
+				boolean materialLocationAdded = false;
 				
 				// Look for materials in the material name part (longest first)
 				for (Map.Entry<String, MaterialInfo> entry : sortedMaterials) {
@@ -591,16 +616,20 @@ public class InformationenUtility {
 						}
 						
 						// Create new text with material info appended to the same line
-						int color = getRarityColor(info.rarity);
-						
-						// Different format for special inventory
+
+						MaterialFloorInfo locationInfo = new MaterialFloorInfo(
+							info.floor, info.pond, null, info.rarity, info.color);
+						String locationSuffix = formatMaterialLocationSuffix(locationInfo);
+						int color = getMaterialLocationRarityColor(locationInfo);
+
 						Text materialInfo;
-						if (isSpecialInventory) {
-							// In special inventory: show just the floor number behind the mob name
+						if (!locationSuffix.isEmpty()) {
+							materialInfo = Text.literal(locationSuffix)
+								.styled(style -> style.withColor(color));
+						} else if (isSpecialInventory) {
 							materialInfo = Text.literal(" [" + info.floor + "]")
 								.styled(style -> style.withColor(color));
 						} else {
-							// In normal inventory: show full floor information
 							materialInfo = Text.literal(" [Ebene " + info.floor + "]")
 								.styled(style -> style.withColor(color));
 						}
@@ -610,8 +639,14 @@ public class InformationenUtility {
 						
 						// Replace the original line
 						lines.set(i, combinedText);
+						materialLocationAdded = true;
 						break; // Only add info for the first match in this line
 					}
+				}
+
+				if (!materialLocationAdded) {
+					appendFishingMaterialLocationToLine(
+						lines, i, line, cleanLineText, isSpecialInventory, isMaterialBagInventory);
 				}
 			}
 			
@@ -3057,6 +3092,59 @@ public class InformationenUtility {
 			// Silent error handling
 		}
 	}
+
+	private static void clearPondMaterialsFromDatabase() {
+		materialsDatabase.entrySet().removeIf(entry -> entry.getValue().pond != null);
+	}
+
+	private static void loadPondMaterialsFromJson(JsonObject json) {
+		if (json == null || !json.has("ponds")) {
+			return;
+		}
+		fishFamilyToPonds.clear();
+		com.google.gson.JsonArray pondsArray = json.getAsJsonArray("ponds");
+		for (var element : pondsArray) {
+			JsonObject pondData = element.getAsJsonObject();
+			String pondName = pondData.has("pond") ? pondData.get("pond").getAsString() : "";
+			if (pondName.isEmpty()) {
+				continue;
+			}
+
+			if (pondData.has("fish_familys")) {
+				com.google.gson.JsonArray familiesArray = pondData.getAsJsonArray("fish_familys");
+				for (var familyElement : familiesArray) {
+					String family = familyElement.getAsString().trim();
+					if (!family.isEmpty()) {
+						fishFamilyToPonds.computeIfAbsent(family, key -> new LinkedHashSet<>()).add(pondName);
+					}
+				}
+			}
+
+			if (!pondData.has("materials")) {
+				continue;
+			}
+			JsonObject pondMaterials = pondData.getAsJsonObject("materials");
+			for (String rarityKey : pondMaterials.keySet()) {
+				JsonObject rarityData = pondMaterials.getAsJsonObject(rarityKey);
+				String color = rarityData.get("color").getAsString();
+				com.google.gson.JsonArray materialsArray = rarityData.getAsJsonArray("materials");
+				for (var materialElement : materialsArray) {
+					String materialName = materialElement.getAsString();
+					if (!materialName.isEmpty()) {
+						materialsDatabase.put(materialName,
+								new MaterialInfo(0, pondName, rarityKey, color));
+					}
+				}
+			}
+		}
+		rebuildSortedFishFamilies();
+	}
+
+	private static void rebuildSortedFishFamilies() {
+		sortedFishFamilies.clear();
+		sortedFishFamilies.addAll(fishFamilyToPonds.keySet());
+		sortedFishFamilies.sort((a, b) -> Integer.compare(b.length(), a.length()));
+	}
 	
 	/**
 	 * Loads the essences database from Essenz.json
@@ -3669,6 +3757,7 @@ public class InformationenUtility {
 								pondsDatabase.add(new PondInfo(biome, pond));
 							}
 						}
+						loadPondMaterialsFromJson(json);
 					}
 				}
 			}
@@ -4397,9 +4486,12 @@ public class InformationenUtility {
 	}
 	
 	/**
-	 * Gets the custom hex color for a rarity level
+	 * Gets the custom hex color for a rarity level (Aincraft-Ebenen)
 	 */
 	private static int getRarityColor(String rarity) {
+		if (rarity == null) {
+			return 0x808080;
+		}
 		switch (rarity.toLowerCase()) {
 			case "common":
 				return 0xFFFFFF; // White
@@ -4417,6 +4509,41 @@ public class InformationenUtility {
 				return 0x808080; // Gray
 		}
 	}
+
+	/** Seltenheitsfarben für Fisch-Materialien / Teich-Anzeige */
+	private static int getFishMaterialRarityColor(String rarity) {
+		if (rarity == null) {
+			return 0x808080;
+		}
+		switch (rarity.toLowerCase()) {
+			case "common":
+				return 0xFFFFFF; // White
+			case "uncommon":
+				return 0x54FC54; // #54FC54
+			case "rare":
+				return 0x5454FC; // #5454FC
+			case "epic":
+				return 0xA800A8; // #A800A8
+			case "legendary":
+				return 0xFCA800; // #FCA800
+			default:
+				return 0x808080; // Gray
+		}
+	}
+
+	public static int getMaterialLocationRarityColor(MaterialFloorInfo info) {
+		if (info == null) {
+			return 0x808080;
+		}
+		if (hasPondLocation(info)) {
+			return getFishMaterialRarityColor(info.rarity);
+		}
+		return getRarityColor(info.rarity);
+	}
+
+	public static int getMaterialLocationRarityColorArgb(MaterialFloorInfo info) {
+		return 0xFF000000 | (getMaterialLocationRarityColor(info) & 0xFFFFFF);
+	}
 	
 	/**
 	 * Gets the formatting for a rarity level
@@ -4433,11 +4560,17 @@ public class InformationenUtility {
 	 */
 	private static class MaterialInfo {
 		public final int floor;
+		public final String pond;
 		public final String rarity;
 		public final String color;
 		
 		public MaterialInfo(int floor, String rarity, String color) {
+			this(floor, null, rarity, color);
+		}
+		
+		public MaterialInfo(int floor, String pond, String rarity, String color) {
 			this.floor = floor;
+			this.pond = pond;
 			this.rarity = rarity;
 			this.color = color;
 		}
@@ -4448,14 +4581,174 @@ public class InformationenUtility {
 	 */
 	public static class MaterialFloorInfo {
 		public final int floor;
+		public final String pond;
+		public final List<String> ponds;
 		public final String rarity;
 		public final String color;
 		
 		public MaterialFloorInfo(int floor, String rarity, String color) {
+			this(floor, null, null, rarity, color);
+		}
+		
+		public MaterialFloorInfo(int floor, String pond, String rarity, String color) {
+			this(floor, pond, null, rarity, color);
+		}
+
+		public MaterialFloorInfo(int floor, String pond, List<String> ponds, String rarity, String color) {
 			this.floor = floor;
+			this.pond = pond;
+			this.ponds = ponds;
 			this.rarity = rarity;
 			this.color = color;
 		}
+	}
+	
+	/** Suffix für Material-Zeilen: {@code (Ebene X)} oder {@code (Teich1, Teich2)} */
+	public static String formatMaterialLocationSuffix(MaterialFloorInfo info) {
+		if (info == null) {
+			return "";
+		}
+		if (info.ponds != null && !info.ponds.isEmpty()) {
+			return " (" + String.join(", ", info.ponds) + ")";
+		}
+		if (info.pond != null && !info.pond.isEmpty()) {
+			return " (" + info.pond + ")";
+		}
+		if (info.floor > 0) {
+			return " (Ebene " + info.floor + ")";
+		}
+		return "";
+	}
+
+	public static boolean isFishingRarityMaterial(String materialName) {
+		return materialName != null && FISHING_RARITY_MATERIAL_PATTERN.matcher(materialName.trim()).matches();
+	}
+
+	private static String extractFishingMaterialNameFromLine(String cleanLineText) {
+		if (cleanLineText == null || cleanLineText.isEmpty()) {
+			return null;
+		}
+
+		String text = cleanLineText;
+		if (text.contains("[")) {
+			text = text.substring(0, text.indexOf("[")).trim();
+		}
+
+		text = TRAILING_NUMERIC_AMOUNT_PATTERN.matcher(text).replaceAll("").trim();
+		text = LEADING_FRACTION_AMOUNT_PATTERN.matcher(text).replaceFirst("").trim();
+
+		return isFishingRarityMaterial(text) ? text : null;
+	}
+
+	private static String extractFishFamilyFromMaterial(String materialName) {
+		Matcher matcher = FISHING_RARITY_PREFIX_PATTERN.matcher(materialName.trim());
+		if (!matcher.matches()) {
+			return null;
+		}
+
+		String materialPart = matcher.group(2);
+		for (String family : sortedFishFamilies) {
+			if (materialPart.length() >= family.length()
+					&& materialPart.regionMatches(true, 0, family, 0, family.length())) {
+				return family;
+			}
+		}
+		return null;
+	}
+
+	private static String getRarityKeyFromFishingMaterial(String materialName) {
+		String lower = materialName.trim().toLowerCase();
+		if (lower.startsWith("gewöhnlich")) {
+			return "common";
+		}
+		if (lower.startsWith("ungewöhnlich")) {
+			return "uncommon";
+		}
+		if (lower.startsWith("selten")) {
+			return "rare";
+		}
+		if (lower.startsWith("episch")) {
+			return "epic";
+		}
+		if (lower.startsWith("legendär")) {
+			return "legendary";
+		}
+		return "common";
+	}
+
+	private static MaterialFloorInfo getFishingMaterialFloorInfo(String materialName) {
+		if (!isFishingRarityMaterial(materialName)) {
+			return null;
+		}
+
+		String family = extractFishFamilyFromMaterial(materialName);
+		if (family == null) {
+			return null;
+		}
+
+		Set<String> pondSet = fishFamilyToPonds.get(family);
+		if (pondSet == null || pondSet.isEmpty()) {
+			return null;
+		}
+
+		List<String> ponds = new ArrayList<>(pondSet);
+		Collections.sort(ponds);
+		String rarity = getRarityKeyFromFishingMaterial(materialName);
+		return new MaterialFloorInfo(0, null, ponds, rarity, rarity);
+	}
+
+	private static boolean hasPondLocation(MaterialFloorInfo info) {
+		return info != null
+			&& ((info.ponds != null && !info.ponds.isEmpty())
+				|| (info.pond != null && !info.pond.isEmpty()));
+	}
+
+	private static boolean lineAlreadyHasPondSuffix(String cleanLineText, MaterialFloorInfo info) {
+		if (info.ponds != null) {
+			for (String pond : info.ponds) {
+				if (cleanLineText.contains(pond)) {
+					return true;
+				}
+			}
+		}
+		if (info.pond != null && cleanLineText.contains(info.pond)) {
+			return true;
+		}
+		return false;
+	}
+
+	private static void appendFishingMaterialLocationToLine(
+			List<Text> lines,
+			int lineIndex,
+			Text line,
+			String cleanLineText,
+			boolean isSpecialInventory,
+			boolean isMaterialBagInventory) {
+		if (isMaterialBagInventory && lineIndex == 0) {
+			return;
+		}
+		if (isSpecialInventory && lineIndex > 0) {
+			return;
+		}
+
+		String fishingMaterialName = extractFishingMaterialNameFromLine(cleanLineText);
+		if (fishingMaterialName == null) {
+			return;
+		}
+
+		MaterialFloorInfo info = getFishingMaterialFloorInfo(fishingMaterialName);
+		if (!hasPondLocation(info) || lineAlreadyHasPondSuffix(cleanLineText, info)) {
+			return;
+		}
+
+		String suffix = formatMaterialLocationSuffix(info);
+		if (suffix.isEmpty()) {
+			return;
+		}
+
+		int color = getFishMaterialRarityColor(info.rarity);
+		Text locationText = Text.literal(suffix).styled(style -> style.withColor(color));
+		lines.set(lineIndex, line.copy().append(locationText));
 	}
 	
 	/**
@@ -4464,16 +4757,16 @@ public class InformationenUtility {
 	 * @return MaterialFloorInfo with floor, rarity, and color, or null if not found
 	 */
 	public static MaterialFloorInfo getMaterialFloorInfo(String materialName) {
-		if (materialName == null || materialsDatabase == null) {
+		if (materialName == null || materialName.isEmpty()) {
 			return null;
 		}
 		
 		MaterialInfo info = materialsDatabase.get(materialName);
 		if (info != null) {
-			return new MaterialFloorInfo(info.floor, info.rarity, info.color);
+			return new MaterialFloorInfo(info.floor, info.pond, null, info.rarity, info.color);
 		}
-		
-		return null;
+
+		return getFishingMaterialFloorInfo(materialName);
 	}
 	
 	private static void addMoblexiconHpToTooltip(List<Text> lines) {
@@ -8437,6 +8730,24 @@ public class InformationenUtility {
 	public static void reloadMaterialsDatabase() {
 		materialsDatabase.clear();
 		loadMaterialsDatabase();
+		loadPondMaterialsFromFarmworld();
+	}
+
+	private static void loadPondMaterialsFromFarmworld() {
+		try {
+			java.nio.file.Path resource = getConfigFilePath("Farmworld.json");
+			if (resource == null) {
+				return;
+			}
+			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
+				try (var reader = new java.io.InputStreamReader(inputStream)) {
+					JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+					loadPondMaterialsFromJson(json);
+				}
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
 	}
 	
 	/**
@@ -8473,6 +8784,7 @@ public class InformationenUtility {
 	public static void reloadLicensesDatabase() {
 		licensesDatabase.clear();
 		pondsDatabase.clear();
+		clearPondMaterialsFromDatabase();
 		loadLicensesDatabase();
 	}
 	

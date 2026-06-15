@@ -37,11 +37,13 @@ public class ItemInfoUtility {
 	private static final String BLUEPRINTS_CONFIG_FILE = "assets/cclive-utilities/blueprints.json";
 	private static final String ASPECTS_CONFIG_FILE = "assets/cclive-utilities/Aspekte.json";
 	private static final String AINCRAFT_CONFIG_FILE = "assets/cclive-utilities/Aincraft.json";
+	private static final String FARMWORLD_CONFIG_FILE = "assets/cclive-utilities/Farmworld.json";
 	
 	// Cache for loaded JSON data
 	private static JsonObject blueprintsData = null;
 	private static JsonObject aspectsData = null;
 	private static JsonObject aincraftData = null;
+	private static JsonObject farmworldData = null;
 	
 	// Set of registered item names (from extracted_items.json)
 	private static Set<String> registeredItemNames = new HashSet<>();
@@ -95,6 +97,7 @@ public class ItemInfoUtility {
 			loadBlueprintsData();
 			loadAspectsData();
 			loadAincraftData();
+			loadFarmworldData();
 			
 			// Load registered items
 			loadRegisteredItems();
@@ -1342,7 +1345,9 @@ public class ItemInfoUtility {
 										JsonArray materialArray = rarity.getAsJsonArray("materials");
 										for (int i = 0; i < materialArray.size(); i++) {
 											String materialName = materialArray.get(i).getAsString();
-											aincraftMaterials.add(materialName);
+											if (!materialName.isEmpty()) {
+												aincraftMaterials.add(materialName);
+											}
 										}
 									}
 								}
@@ -1356,17 +1361,63 @@ public class ItemInfoUtility {
 			// Silent error handling
 		}
 	}
+
+	private static void loadFarmworldData() {
+		try {
+			var resource = FabricLoader.getInstance().getModContainer("cclive-utilities")
+				.orElseThrow(() -> new RuntimeException("Mod container not found"))
+				.findPath(FARMWORLD_CONFIG_FILE)
+				.orElseThrow(() -> new RuntimeException("Farmworld config file not found"));
+
+			try (var inputStream = Files.newInputStream(resource)) {
+				try (var reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+					farmworldData = JsonParser.parseReader(reader).getAsJsonObject();
+
+					if (farmworldData.has("ponds")) {
+						JsonArray pondsArray = farmworldData.getAsJsonArray("ponds");
+						for (var element : pondsArray) {
+							JsonObject pondData = element.getAsJsonObject();
+							if (!pondData.has("materials")) {
+								continue;
+							}
+							JsonObject materials = pondData.getAsJsonObject("materials");
+							for (String rarityKey : materials.keySet()) {
+								JsonObject rarity = materials.getAsJsonObject(rarityKey);
+								if (rarity.has("materials")) {
+									JsonArray materialArray = rarity.getAsJsonArray("materials");
+									for (int i = 0; i < materialArray.size(); i++) {
+										String materialName = materialArray.get(i).getAsString();
+										if (!materialName.isEmpty()) {
+											aincraftMaterials.add(materialName);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
 	
 	/**
 	 * Data class to store material floor and rarity information
 	 */
 	public static class MaterialFloorInfo {
 		public final int floor;
+		public final String pond;
 		public final String rarity;
 		public final String color;
 		
 		public MaterialFloorInfo(int floor, String rarity, String color) {
+			this(floor, null, rarity, color);
+		}
+		
+		public MaterialFloorInfo(int floor, String pond, String rarity, String color) {
 			this.floor = floor;
+			this.pond = pond;
 			this.rarity = rarity;
 			this.color = color;
 		}
@@ -1378,11 +1429,15 @@ public class ItemInfoUtility {
 	 * @return MaterialFloorInfo with floor number, rarity, and color, or null if not found
 	 */
 	public static MaterialFloorInfo getMaterialFloorInfo(String materialName) {
-		if (materialName == null || aincraftData == null) {
+		if (materialName == null || (aincraftData == null && farmworldData == null)) {
 			return null;
 		}
 		
 		try {
+			MaterialFloorInfo pondInfo = findMaterialInPonds(materialName);
+			if (pondInfo != null) {
+				return pondInfo;
+			}
 			if (aincraftData.has("floors")) {
 				JsonObject floors = aincraftData.getAsJsonObject("floors");
 				for (String floorKey : floors.keySet()) {
@@ -1419,6 +1474,35 @@ public class ItemInfoUtility {
 			// Silent error handling
 		}
 		
+		return null;
+	}
+	
+	private static MaterialFloorInfo findMaterialInPonds(String materialName) {
+		if (farmworldData == null || !farmworldData.has("ponds")) {
+			return null;
+		}
+		JsonArray pondsArray = farmworldData.getAsJsonArray("ponds");
+		for (var element : pondsArray) {
+			JsonObject pondData = element.getAsJsonObject();
+			String pondName = pondData.has("pond") ? pondData.get("pond").getAsString() : "";
+			if (pondName.isEmpty() || !pondData.has("materials")) {
+				continue;
+			}
+			JsonObject materials = pondData.getAsJsonObject("materials");
+			for (String rarityKey : materials.keySet()) {
+				JsonObject rarity = materials.getAsJsonObject(rarityKey);
+				if (!rarity.has("materials")) {
+					continue;
+				}
+				JsonArray materialArray = rarity.getAsJsonArray("materials");
+				for (int i = 0; i < materialArray.size(); i++) {
+					if (materialName.equals(materialArray.get(i).getAsString())) {
+						String color = rarity.has("color") ? rarity.get("color").getAsString() : "WHITE";
+						return new MaterialFloorInfo(0, pondName, rarityKey, color);
+					}
+				}
+			}
+		}
 		return null;
 	}
 	

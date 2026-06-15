@@ -42,6 +42,9 @@ import java.util.List;
  */
 public class OverlayEditorScreen extends Screen {
     
+    private static final int MIN_OVERLAY_RESIZE_WIDTH = 20;
+    private static final int MIN_OVERLAY_RESIZE_HEIGHT = 6;
+    
     private final List<DraggableOverlay> overlays = new ArrayList<>();
     private DraggableOverlay draggingOverlay = null;
     private DraggableOverlay resizingOverlay = null;
@@ -728,8 +731,8 @@ public class OverlayEditorScreen extends Screen {
                 int deltaWidth = (int) mouseX - resizeStartX;
                 int deltaHeight = (int) mouseY - resizeStartY;
                 
-                int newWidth = Math.max(50, resizeStartWidth + deltaWidth);
-                int newHeight = Math.max(20, resizeStartHeight + deltaHeight);
+                int newWidth = Math.max(MIN_OVERLAY_RESIZE_WIDTH, resizeStartWidth + deltaWidth);
+                int newHeight = Math.max(MIN_OVERLAY_RESIZE_HEIGHT, resizeStartHeight + deltaHeight);
                 
                 // Setze die neue Größe
                 resizingOverlay.setSize(newWidth, newHeight);

@@ -24,6 +24,11 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         return "Statues";
     }
     
+    private float getScale() {
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
+        return scale <= 0 ? 1.0f : scale;
+    }
+    
     @Override
     public int getX() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -31,11 +36,9 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().statueX;
-        // Use the same position calculation as CardsStatuesUtility line 454
-        // Position is calculated without -11 offset, but we need to account for it visually
         int baseX = screenWidth - xOffset;
-        // Apply -11 offset for visual representation (same as renderStatueBackground line 115)
-        return baseX - 11;
+        float scale = getScale();
+        return Math.round(baseX - 11 * scale);
     }
     
     @Override
@@ -45,27 +48,19 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         
         int screenHeight = client.getWindow().getScaledHeight();
         int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().statueY;
-        // Use the same position calculation as CardsStatuesUtility line 455
-        // Position is calculated without -11 offset, but we need to account for it visually
         int baseY = screenHeight - yOffset;
-        // Apply -11 offset for visual representation (same as renderStatueBackground line 115)
-        return baseY - 11;
+        float scale = getScale();
+        return Math.round(baseY - 11 * scale);
     }
     
     @Override
     public int getWidth() {
-        // Apply scale factor to match the visual size in the real overlay
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
-        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-        return (int) (DEFAULT_WIDTH * scale);
+        return Math.round(DEFAULT_WIDTH * getScale());
     }
     
     @Override
     public int getHeight() {
-        // Apply scale factor to match the visual size in the real overlay
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
-        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
-        return (int) (DEFAULT_HEIGHT * scale);
+        return Math.round(DEFAULT_HEIGHT * getScale());
     }
     
     @Override
@@ -75,12 +70,11 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
+        float scale = getScale();
+        int textureOffset = Math.round(11 * scale);
         
-        int xOffset = screenWidth - x - 11; // +11 für Textur-Offset
-        int yOffset = screenHeight - y - 11; // +11 für Textur-Offset
-        
-        CCLiveUtilitiesConfig.HANDLER.instance().statueX = xOffset;
-        CCLiveUtilitiesConfig.HANDLER.instance().statueY = yOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().statueX = screenWidth - x - textureOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().statueY = screenHeight - y - textureOffset;
     }
     
     @Override

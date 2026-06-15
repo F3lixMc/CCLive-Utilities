@@ -1390,16 +1390,15 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             InformationenUtility.MaterialFloorInfo floorInfo = InformationenUtility.getMaterialFloorInfo(multipliedItem.itemName);
             
             if (floorInfo != null) {
-                // Rendere "(Ebene X)" in der Rarity-Farbe
-                String floorText = " (Ebene " + floorInfo.floor + ")";
-                int rarityColor = getRarityColor(floorInfo.rarity);
-                int floorTextX = 5 + materialLineWidth + abbreviatedWidth; // Nach Material-Text und Abkürzung
+                String floorText = InformationenUtility.formatMaterialLocationSuffix(floorInfo);
+                int rarityColor = InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
+                int floorTextX = 5 + materialLineWidth + abbreviatedWidth;
                 
                 context.drawText(
                     client.textRenderer,
                     floorText,
                     floorTextX, y,
-                    rarityColor, // Rarity-Farbe nur für "(Ebene X)"
+                    rarityColor,
                     true
                 );
             }
@@ -2633,7 +2632,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         InformationenUtility.MaterialFloorInfo floorInfo =
             InformationenUtility.getMaterialFloorInfo(multipliedItem.itemName);
-        String floorText = floorInfo != null ? " (Ebene " + floorInfo.floor + ")" : "";
+        String floorText = InformationenUtility.formatMaterialLocationSuffix(floorInfo);
         
         return client.textRenderer.getWidth(materialLine)
             + client.textRenderer.getWidth(abbreviatedText)

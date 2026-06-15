@@ -275,55 +275,658 @@
     "ponds": [
         {
             "biome": "Eichenwald",
-            "pond": "Smaragdsee"
+            "pond": "Smaragdsee",
+            "fish_familys": [
+                "Flunder",
+                "Stör"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Grünrücken-Flunder",
+                        "Zwerg-Stör",
+                        "Grüner-Stör"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Eisenflanken-Stör",
+                        "Grünschild-Stör",
+                        "Moosflecken-Flunder"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Farnaderig",
+                        "Uralter Schilf-Stör",
+                        "Quarzsporn-Stör"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Jadekrusten-Flunder",
+                        "Geodenrücken-Stör",
+                        "Waldherz-Stör"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Naturmonarch-Stör",
+                        "Edelsteinkern.Stör",
+                        "Malachitmantel-Flunder"
+                    ]
+                }
+            }
         },
         {
             "biome": "Strand",
-            "pond": "Perlenbucht"
+            "pond": "Perlenbucht",
+            "fish_familys": [
+                "Wels",
+                "Krabbe"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Korallen-Wels",
+                        "Fels-Krabbe",
+                        "Silberwels"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Perlschuppen-Wels",
+                        "Rosenmantel-Wels",
+                        "Seepocken-Krabbe"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Austernschalen-Krabbe",
+                        "Schillernder Wels",
+                        "Schalenkiefer-Wels"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Abalone-Wels",
+                        "Perlenpanzer-Krabbe",
+                        "Mondperlen-Wels"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Prismatischer Gezeiten-Wels",
+                        "Tiefperlmutt-Wels",
+                        "Gezeitenthron-Krabbe"
+                    ]
+                }
+            }
         },
         {
             "biome": "Fichtenwald",
-            "pond": "Nebelsee"
+            "pond": "Nebelsee",
+            "fish_familys": [
+                "Qualle",
+                "Lachs"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Seeengel",
+                        "Blasser Lachs",
+                        "Geisterflossen-Lachs"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Nebelflossen-Lachs",
+                        "Halo-Kern-Seeengel",
+                        "Ascheschuppen-Lachs"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Verblassungsmal-Lachs",
+                        "Hohlschuppen-Lachs",
+                        "Prismatischer Schleier-Seeengel"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Geister-Lachs",
+                        "Seaphflossen-Seeengel",
+                        "Schleierläufer-Lachs"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Dampfpirscher-Lachs",
+                        "Cherubischer Geister-Seeengel",
+                        "Ewiger Nebel-Lachs"
+                    ]
+                }
+            }
         },
         {
             "biome": "Dunkeleichenwald",
-            "pond": "Nachtschattensee"
+            "pond": "Nachtschattensee",
+            "fish_familys": [
+                "Plattfisch",
+                "Tilapia"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Schwarzwangen-Zungenfisch",
+                        "Dunkler Tilapia",
+                        "Schwarzkinn-Tilapia"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Zobelschuppen-Tilapia",
+                        "Schattenkinn-Tilapia",
+                        "Schattenwangen-Zungenfisch"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Tintendurchtränkter Tilapia",
+                        "Düsterschleier-Zungenfisch",
+                        "Dämmermantel-Tilapia"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Nachtgebundener Zungenfisch",
+                        "Nachtschatten-Tilapia",
+                        "Abgrundplatten-Tilapia"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Leerkronen-Tilapia",
+                        "Erebus-Erben-Tilapia",
+                        "Leerengeist-Zungenfisch"
+                    ]
+                }
+            }
         },
         {
             "biome": "Mangrovensumpf",
-            "pond": "Wurzelbucht"
+            "pond": "Wurzelbucht",
+            "fish_familys": [
+                "Meeräsche",
+                "Giftfisch"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Gestreifte Meeräsche",
+                        "Blaugefleckter Krötenfisch",
+                        "Flachkopf-Graue Meeräsche"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Neonpustel-Krötenfisch",
+                        "Bandverzierte Meeräsche",
+                        "Bretplatten-Meeräsche"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Hammerstirn-Meeräsche",
+                        "Zyanidsporen-Krötenfisch",
+                        "Gitterschuppen-Meeräsche"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Kobaltkrusten-Krötenfisch",
+                        "Ambosskopf-Meeräsche",
+                        "Graphitbalken-Meeräsche"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Basaltgrat-Behemoth-Meeräsche",
+                        "Monochrom Vektor-Meeräsche",
+                        "Saphirseuche-Goliath-Krötenfisch"
+                    ]
+                }
+            }
         },
         {
             "biome": "Schwefelfelder",
-            "pond": "Schwefeldampfsee"
+            "pond": "Schwefeldampfsee",
+            "fish_familys": [
+                "Oktopus",
+                "Thunfisch"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Gelber Oktopus",
+                        "Gelbflossen-Thunfisch",
+                        "Großaugen-Thunfisch"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Schwefelwolken-Oktopus",
+                        "Bernsteinlinsen-Thunfisch",
+                        "Blitzflossen-Thunfisch"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Schwefelstreifen-Thunfisch",
+                        "Thermalsicht-Thunfisch",
+                        "Vitriolhaut-Oktopus"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Brennender-Blick-Thunfisch",
+                        "Säuredrüsen-Oktopus",
+                        "Vergoldeter Legierungs-Thunfisch"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Sonneneruptions-Thunfisch",
+                        "Magmablick-Thunfisch",
+                        "Schwefelzorn-Oktopus"
+                    ]
+                }
+            }
         },
         {
             "biome": "Pilzwald",
-            "pond": "Sporenweiher"
+            "pond": "Sporenweiher",
+            "fish_familys": [
+                "Meerbrasse",
+                "Plattfisch"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Spitzschnauzen-Meerbrasse",
+                        "Dorniger Rochen",
+                        "Sattel-Meeerbrasse"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Stachelrücken-Rochen",
+                        "Klingenkanten-Meerbrasse",
+                        "Manschetten-Meeerbrasse"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Lanzettflossen-Meerbrasse",
+                        "Rasierkanten-Rochen",
+                        "Schwarzgeschirr-Meeerbrasse"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Eggenplatten-Rochen",
+                        "Basaltreiter-Meerbrasse",
+                        "Stahlschnabel-Meeerbrasse"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Spitzenherrscher-Meeerbrasse",
+                        "Obsidiangefesselter Monarch-Meerbrasse",
+                        "Eisendistel-Juggernaut-Rochen"
+                    ]
+                }
+            }
         },
         {
             "biome": "Goldmine",
-            "pond": "Goldsee"
+            "pond": "Goldsee",
+            "fish_familys": [
+                "Schnapper",
+                "Giftfisch"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Gelbschwanz-Schnapper",
+                        "Goldener Kugelfisch",
+                        "Goldener Schnapper"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Gliterschwanz-Schnapper",
+                        "Vergoldeter Stachel-Kugelfisch",
+                        "Goldflossen-Schnapper"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Karat-Schuppen-Schnapper",
+                        "Flammenschwanz-Schnapper",
+                        "Schwerer Aurum-Kugelfisch"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Sonnenfeuer-Schnapper",
+                        "Giftplatten-Kugelfisch",
+                        "Juwelenpanzer-Schnapper"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Aurelischer Herrscher-Kugelfisch",
+                        "Apollonischer Zenit-Schnapper",
+                        "König-Midas-Schnapper"
+                    ]
+                }
+            }
         },
         {
             "biome": "Kohle Mine",
-            "pond": "Rußwasserteich"
+            "pond": "Rußwasserteich",
+            "fish_familys": [
+                "Aal",
+                "Heilbutt"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Schwarzer Sumpfaal",
+                        "Schwarzer Heilbutt",
+                        "Rußiger Aal"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Torfgefärbter Aal",
+                        "Aschbauch-Heiltbutt",
+                        "Schwelhaut-Aal"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Rußplatten-Heilbutt",
+                        "Aschewolken-Aal",
+                        "Sumpfgas-Aal"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Glutsturm-Aal",
+                        "Moorgeist-Aal",
+                        "Kohleschuppen-Heilbutt"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Tartarus-Moor-Aal",
+                        "Obsidian-Tiefen-Heilbutt",
+                        "Abrund-Fallout-Aal"
+                    ]
+                }
+            }
         },
         {
             "biome": "Kupfermine",
-            "pond": "Erzschimmer See"
+            "pond": "Erzschimmer See",
+            "fish_familys": [
+                "Krabbe",
+                "Karpfen"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Goldfisch",
+                        "Smaragd-Krabbe",
+                        "Silberkarpfen"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Beryllpanzer-Krabbe",
+                        "Bartflossen-Goldfisch",
+                        "Eisenglas-Karpfen"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Malachitader-Krabbe",
+                        "Beryllpanzer-Krabbe",
+                        "Bartflossen-Goldfisch"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Imperiale Nephrit-Krabbe",
+                        "Bollwerkschuppen-Karpfen",
+                        "Großgehörnter Goldfisch"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Jadeweisen-Krabbe",
+                        "Aurum-Drachenherrscher",
+                        "Silberwächter-Karpfen"
+                    ]
+                }
+            }
         },
         {
             "biome": "Eisenmine",
-            "pond": "Blutwasser See"
+            "pond": "Blutwasser See",
+            "fish_familys": [
+                "Kabeljau",
+                "Qualle"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Glutgefleckter Kabeljau",
+                        "Blutwasser Kabeljau",
+                        "Blutbauch-Kammqualle"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Tiefblut-Qualle",
+                        "Flammenspur-Kabeljau",
+                        "Tiefblut-Kabeljau"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Versengter Streifen-Kabeljau",
+                        "Adernnarben-Kabeljau",
+                        "Pulsierende Purpur-Qualle"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Blutmond-Qualle",
+                        "Blutrunen-Kabeljau",
+                        "Glutadern-Kabeljau"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Scharlach-Behemoth-Kabeljau",
+                        "Glutmal-Koloss-Kabeljau",
+                        "Blutrote Gezeiten-Qualle"
+                    ]
+                }
+            }
         },
         {
             "biome": "Karmesinwald",
-            "pond": "Infernoweiher"
+            "pond": "Infernoweiher",
+            "fish_familys": [
+                "Schlangenkopf",
+                "Oktopus"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Feuer-und-Eis-Schlangenkopf",
+                        "Gefleckter Schlangenkopf",
+                        "Feuerroter Oktopus"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Trübfleck-Schlangenkopf",
+                        "Glut-Oktopus",
+                        "Nebelschleier-Schlangenkopf"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Flammenmantel-Oktopus",
+                        "Ölschimmer-Schlangenkopf",
+                        "Dampfdunst-Schlangenkopf"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Glutverhüllter Oktopus",
+                        "Frostflammen-Schlangenkopf",
+                        "Magmaadern-Schlangenkopf"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Infernoverhüllter Oktopus",
+                        "Obsidianfeuer-Schlangenkopf",
+                        "Thundra-Inferno-Schlangenkopf"
+                    ]
+                }
+            }
         },
         {
             "biome": "Antike Mine",
-            "pond": "Lavaquellsee"
+            "pond": "Lavaquellsee",
+            "fish_familys": [
+                "Kaninchenfisch",
+                "Hai"
+            ],
+            "materials": {
+                "common": {
+                    "color": "WHITE",
+                    "materials": [
+                        "Maskierter Kaninchenfisch",
+                        "Schwarzspitzen-Hai",
+                        "Sternfleck-Kaninchenfisch",
+                        "Weißspitzen-Hai"
+                    ]
+                },
+                "uncommon": {
+                    "color": "GREEN",
+                    "materials": [
+                        "Glutflecken Kaninchenfisch",
+                        "Schattengezeichneter Hai",
+                        "Silbergezeichneter Hai",
+                        "Versengter Masken-Kaninchenfisch"
+                    ]
+                },
+                "rare": {
+                    "color": "BLUE",
+                    "materials": [
+                        "Magmapunkt-Kaninchenfisch",
+                        "Leuchtmasken-Kaninchenfisch",
+                        "Obsidianflossen-Hai",
+                        "Perlflossen-Hai"
+                    ]
+                },
+                "epic": {
+                    "color": "PURPLE",
+                    "materials": [
+                        "Sternenflare-Kaninchenfisch",
+                        "Lavamasken-Kaninchenfisch",
+                        "Sonnenwenden-Jägerhai",
+                        "Finsternisjäger-Hai"
+                    ]
+                },
+                "legendary": {
+                    "color": "GOLD",
+                    "materials": [
+                        "Äther-Spitzenhai",
+                        "Galaktischer Eruptions-Kaninchenfisch",
+                        "Leeren-Spitzenhai",
+                        "Volkanorakel-Kaninchenfisch"
+                    ]
+                }
+            }
         }
     ]
 }
