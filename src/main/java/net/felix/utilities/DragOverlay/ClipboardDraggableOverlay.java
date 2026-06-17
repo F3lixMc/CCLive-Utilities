@@ -137,24 +137,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         addCostItemToTotal(totalCostsMap, multiplyCostItem(resolveRessource(price), quantity));
     }
     
-    private static int countPriceCostLines(net.felix.utilities.ItemViewer.PriceData price) {
-        if (price == null) {
-            return 0;
-        }
-        int count = 0;
-        if (price.coin != null) count++;
-        if (price.cactus != null) count++;
-        if (price.soul != null) count++;
-        if (price.material1 != null) count++;
-        if (price.material2 != null) count++;
-        if (price.material3 != null) count++;
-        if (price.material4 != null) count++;
-        if (price.material5 != null) count++;
-        if (resolveAmboss(price) != null) count++;
-        if (resolveRessource(price) != null) count++;
-        return count;
-    }
-    
     private static void collectRequiredMaterialsFromPrice(net.felix.utilities.ItemViewer.PriceData price, Set<String> requiredMaterials) {
         if (price == null || requiredMaterials == null) {
             return;
@@ -1382,40 +1364,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
     
     /**
-     * Gets the color for a rarity level (same as InformationenUtility.getRarityColor)
-     */
-    private static int getRarityColor(String rarity) {
-        if (rarity == null) {
-            return 0xFFFFFFFF; // Default white
-        }
-        
-        switch (rarity.toLowerCase()) {
-            case "common":
-                return 0xFFFFFFFF; // White
-            case "uncommon":
-                return 0xFF1EFC00; // #1EFC00
-            case "rare":
-                return 0xFF006FDA; // #006FDA
-            case "epic":
-                return 0xFFA134EB; // #A134EB
-            case "legendary":
-                return 0xFFFF7E00; // #FC7E00
-            case "mob":
-                return 0xFFFFFFFF; // White for mob names
-            default:
-                return 0xFF808080; // Gray
-        }
-    }
-    
-    /**
-     * Prüft ob ein Item-Name Tausendertrennzeichen benötigt (Coins oder Pergamentfetzen)
-     */
-    private static boolean needsThousandSeparators(String itemName) {
-        if (itemName == null) return false;
-        return "Coins".equalsIgnoreCase(itemName) || "Pergamentfetzen".equalsIgnoreCase(itemName);
-    }
-    
-    /**
      * Formatiert einen Amount-Wert: Ganze Zahlen ohne ".0", andere bleiben wie sie sind
      * Alle Werte werden mit Tausendertrennzeichen formatiert (1.000.000)
      */
@@ -1601,13 +1549,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         return CollectedMaterialsResourcesStorage.getMaterialAmount(materialName);
-    }
-    
-    private static long getStoredResourceAmount(String materialName) {
-        if (materialName == null) {
-            return 0L;
-        }
-        return CollectedMaterialsResourcesStorage.getResourceAmount(materialName);
     }
     
     /**
@@ -1945,7 +1886,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * @return Array mit [leftButtonX, rightButtonX, spaceAfterLeftX, separatorX, spaceAfterSeparatorX, spaceAfterRightX, countX]
      */
     private static int[] calculateButtonPositions(MinecraftClient client, String blueprintName, String countText, int unscaledWidth) {
-        int countWidth = client.textRenderer.getWidth(countText);
         int nameWidth = client.textRenderer.getWidth(blueprintName);
         
         String leftArrow = "«";

@@ -343,21 +343,11 @@ public class CollectionCollector implements DataCollector {
      */
     private void fetchPlayerRankIfNeeded(String leaderboardName) {
         if (!canFetchLeaderboardNow()) {
-            if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                LocalDateTime nextFetch = getNextFetchTime();
-                String nextFetchStr = nextFetch.format(TIME_FORMATTER);
-                // Silent error handling("⏳ Leaderboard-Fetch für " + leaderboardName + " - nächster Fetch: " + nextFetchStr);
-            }
             return;
         }
         
         // Markiere als abgerufen
         lastRankFetch.put(leaderboardName, System.currentTimeMillis());
-        
-        if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            LocalDateTime now = LocalDateTime.now(GERMAN_TIMEZONE);
-            // Silent error handling("🕐 Leaderboard-Fetch gestartet um " + now.format(TIME_FORMATTER) + " für: " + leaderboardName);
-        }
         
         // Asynchron Rang abrufen
         LeaderboardManager.getInstance().getLeaderboard(leaderboardName)

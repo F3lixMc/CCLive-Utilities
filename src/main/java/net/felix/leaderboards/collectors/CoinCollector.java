@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
  */
 public class CoinCollector implements DataCollector {
     private boolean isActive = false;
-    private int tickCounter = 0;
     private long nextCommandTime = 0; // Absoluter Zeitpunkt in Millisekunden
     private final Random random = new Random();
     
@@ -34,7 +33,6 @@ public class CoinCollector implements DataCollector {
     private long lastCommandTime = 0;
     private boolean waitingForResponse = false;
     private boolean pendingSuccessFeedback = false;
-    private long pendingCoins = 0;
     
     @Override
     public void initialize() {
@@ -47,8 +45,6 @@ public class CoinCollector implements DataCollector {
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
         isActive = true;
-        long timeUntilFirst = (nextCommandTime - System.currentTimeMillis()) / 60000; // Millisekunden zu Minuten
-        // Silent error handling("✅ CoinCollector initialisiert (erster Command in " + timeUntilFirst + " Minuten)");
     }
     
     private void onClientTick(MinecraftClient client) {
@@ -110,9 +106,6 @@ public class CoinCollector implements DataCollector {
     private void scheduleFirstCommand() {
         int firstInterval = 12000 + random.nextInt(6000); // 10-15 Minuten in Ticks (1200 Ticks-Einheiten = 1 Minute)
         nextCommandTime = System.currentTimeMillis() + (firstInterval * 50); // 50ms pro tick
-        
-        int minutesUntilNext = firstInterval / 1200;
-        // Silent error handling("💰 CoinCollector: Erster Command in " + minutesUntilNext + " Minuten (dann normale 30-60min Intervalle)");
     }
     
     /**
@@ -121,9 +114,6 @@ public class CoinCollector implements DataCollector {
     private void scheduleNextCommand() {
         int interval = MIN_INTERVAL + random.nextInt(MAX_INTERVAL - MIN_INTERVAL);
         nextCommandTime = System.currentTimeMillis() + (interval * 50); // 50ms pro tick
-        
-        int minutesUntilNext = interval / 1200; // 1200 ticks = 1 Minute
-        // Silent error handling("💰 CoinCollector: Nächster Command in " + minutesUntilNext + " Minuten");
     }
     
     /**
@@ -172,7 +162,6 @@ public class CoinCollector implements DataCollector {
                     // Setze Pending-Flag für manuellen Command (immer bei manuellen Commands)
                     if (!waitingForResponse) {
                         pendingSuccessFeedback = true;
-                        pendingCoins = coins;
                     }
                     
                     // Silent error handling("💰 Coins aktualisiert: " + coins + " (formatiert: " + matcher.group(1) + ")");
@@ -332,7 +321,6 @@ public class CoinCollector implements DataCollector {
             // Silent error handling("🔥 DEBUG: KEIN Success-Feedback - Bedingung nicht erfüllt");
         }
         pendingSuccessFeedback = false;
-        pendingCoins = 0;
     }
     
     /**
@@ -346,7 +334,6 @@ public class CoinCollector implements DataCollector {
             });
         }
         pendingSuccessFeedback = false;
-        pendingCoins = 0;
     }
     
 }

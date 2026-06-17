@@ -484,9 +484,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             if (java.util.Map.class.isAssignableFrom(field.getType())) {
                                 field.setAccessible(true);
                                 Object fieldValue = field.get(scoreboard);
-                                if (fieldValue instanceof java.util.Map) {
-                                    @SuppressWarnings("unchecked")
-                                    java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
+                                if (fieldValue instanceof java.util.Map<?, ?> map) {
                                     
                                     // Prüfe ob dies playerObjectives ist:
                                     // 1. Name enthält "player" oder "objective" ODER
@@ -607,9 +605,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             if (java.util.Map.class.isAssignableFrom(field.getType())) {
                                 field.setAccessible(true);
                                 Object fieldValue = field.get(scoreboard);
-                                if (fieldValue instanceof java.util.Map) {
-                                    @SuppressWarnings("unchecked")
-                                    java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
+                                if (fieldValue instanceof java.util.Map<?, ?> map) {
                                     
                                     // Prüfe ob dies die "scores" Map ist:
                                     // 1. Name enthält "score" ODER
@@ -677,7 +673,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             // OPTIMIERUNG: Durchsuche zuerst nur die sb_display_* Einträge und prüfe direkt field_1418
                             // Die Zone steht in field_1418 des Team-Objekts (net.minecraft.class_268)
                             for (java.util.Map.Entry<?, ?> entry : sbDisplayEntries) {
-                                Object key = entry.getKey();
                                 Object value = entry.getValue();
                                 
                                 // Die Zone steht in field_1418 des Team-Objekts
@@ -913,10 +908,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                                         return zoneName;
                                                                     }
                                                                 }
-                                                            } else if (scoresFieldValue instanceof java.util.Map) {
+                                                            } else if (scoresFieldValue instanceof java.util.Map<?, ?> innerMap) {
                                                                 // Wenn es eine Map ist, durchsuche auch diese (enthält möglicherweise ScoreboardPlayerScore-Objekte)
-                                                                @SuppressWarnings("unchecked")
-                                                                java.util.Map<?, ?> innerMap = (java.util.Map<?, ?>) scoresFieldValue;
                                                                 
                                                                 // Prüfe Keys
                                                                 for (Object innerKey : innerMap.keySet()) {
@@ -966,9 +959,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         }
                                         
                                         // Prüfe ob der Value eine Collection ist
-                                        if (value instanceof java.util.Collection) {
-                                            @SuppressWarnings("unchecked")
-                                            java.util.Collection<?> tempScores = (java.util.Collection<?>) value;
+                                        if (value instanceof java.util.Collection<?> tempScores) {
                                             if (!tempScores.isEmpty()) {
                                                 Object first = tempScores.iterator().next();
                                                 if (first != null && first.getClass().getName().contains("ScoreboardPlayerScore")) {
@@ -979,9 +970,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         }
                                         
                                         // Prüfe ob der Key das Objective ist und der Value die Scores
-                                        if (key instanceof ScoreboardObjective && value instanceof java.util.Collection) {
-                                            @SuppressWarnings("unchecked")
-                                            java.util.Collection<?> tempScores = (java.util.Collection<?>) value;
+                                        if (key instanceof ScoreboardObjective && value instanceof java.util.Collection<?> tempScores) {
                                             if (!tempScores.isEmpty()) {
                                                 scores = tempScores;
                                                 
@@ -998,9 +987,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 if (java.util.Map.class.isAssignableFrom(field.getType())) {
                                     field.setAccessible(true);
                                     Object fieldValue = field.get(scoreboard);
-                                    if (fieldValue instanceof java.util.Map) {
-                                        @SuppressWarnings("unchecked")
-                                        java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
+                                    if (fieldValue instanceof java.util.Map<?, ?> map) {
                                         
                                         // Prüfe Keys
                                         for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
@@ -1028,10 +1015,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
             
             // Wenn wir Scores gefunden haben, durchsuche sie
             if (scores != null && !scores.isEmpty()) {
-                int index = 0;
                 for (Object scoreObj : scores) {
                     if (scoreObj == null) {
-                        index++;
                         continue;
                     }
                     
@@ -1071,13 +1056,10 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             }
                         }
                     } catch (Exception e) {
-                        index++;
                         continue;
                     }
                     
                     if (text == null || text.isEmpty()) {
-                        
-                        index++;
                         continue;
                     }
                     
@@ -1089,7 +1071,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
                             return zoneName;
                         }
                     }
-                    index++;
                 }
             } else {
                 
@@ -1104,10 +1085,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                         if (java.util.Map.class.isAssignableFrom(field.getType())) {
                             field.setAccessible(true);
                             Object fieldValue = field.get(scoreboard);
-                            if (fieldValue instanceof java.util.Map) {
-                                @SuppressWarnings("unchecked")
-                                java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
-                                
+                            if (fieldValue instanceof java.util.Map<?, ?> map) {
                                 // Wenn der Key ein String ist, könnte es ein Player-Name sein
                                 for (Object key : map.keySet()) {
                                     if (key instanceof String) {
@@ -1117,9 +1095,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 
                                 // Wenn der Value eine Map ist, durchsuche auch diese
                                 for (Object value : map.values()) {
-                                    if (value instanceof java.util.Map) {
-                                        @SuppressWarnings("unchecked")
-                                        java.util.Map<?, ?> innerMap = (java.util.Map<?, ?>) value;
+                                    if (value instanceof java.util.Map<?, ?> innerMap) {
                                         for (Object innerKey : innerMap.keySet()) {
                                             if (innerKey instanceof String) {
                                                 playerNames.add((String) innerKey);

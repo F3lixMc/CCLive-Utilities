@@ -331,7 +331,6 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         
         // Get unscaled dimensions
         int unscaledWidth = calculateUnscaledWidth();
-        int unscaledHeight = calculateUnscaledHeight();
         
         // Render background at the left edge position (scaled)
         context.fill(x, y, x + width, y + height, 0x80000000);
@@ -432,85 +431,13 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     }
     
     /**
-     * Render actual boss data for preview - exactly like the standard overlay
-     */
-    private void renderBossData(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return;
-        
-        // Get boss data exactly like the standard overlay
-        BossData bossData = getCurrentBossData();
-        
-        if (bossData != null && bossData.getName() != null) {
-            // Parse the data exactly like the standard overlay does
-            String bossText = bossData.getBossText();
-            
-            String displayText = null;
-            String displayHP = null;
-            
-            if (bossText != null && !bossText.isEmpty()) {
-                String[] parts = bossText.split("\\|{5}");
-                if (parts.length >= 2) {
-                    displayText = parts[0].trim();
-                    displayHP = parts[1].trim();
-                }
-            }
-            
-                                    if (displayText != null) {
-                            // Render exactly like the standard overlay - with left-growing logic
-                            int nameWidth = client.textRenderer.getWidth(displayText);
-                            int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
-                            int totalWidth = nameWidth + (displayHP.isEmpty() ? 0 : 10 + hpWidth);
-                            
-                            // Calculate position like standard overlay - grows to the left
-                            int renderX = x - totalWidth - PADDING * 2;
-
-                            // Render boss name (white)
-                            context.drawText(
-                                client.textRenderer,
-                                displayText,
-                                renderX + PADDING, y + PADDING,
-                                0xFFFFFFFF,
-                                true
-                            );
-
-                            // Render HP (red) if available - use exact same spacing as standard overlay
-                            if (!displayHP.isEmpty()) {
-                                context.drawText(
-                                    client.textRenderer,
-                                    displayHP,
-                                    renderX + PADDING + nameWidth + 10, y + PADDING,
-                                    0xFFFF5555,
-                                    true
-                                );
-                            }
-                        }
-                } else {
-            // No boss data to display
-            // If no boss data and no test overlay, don't render anything (like standard overlay)
-        }
-    }
-    
-    /**
      * Data class for boss information
      */
     private static class BossData {
-        private final String name;
-        private final String hp;
         private final String bossText;
         
-        public BossData(String name, String hp, String bossText) {
-            this.name = name;
-            this.hp = hp;
+        public BossData(String bossText) {
             this.bossText = bossText;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        
-        public String getHP() {
-            return hp;
         }
         
         public String getBossText() {
@@ -533,8 +460,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                 // Parse HP from boss text (format: "BossName|||||HP|||||")
                 String[] parts = bossText.split("\\|{5}");
                 if (parts.length >= 2) {
-                    String hp = parts[1].trim();
-                    return new BossData(bossName, hp, bossText);
+                    return new BossData(bossText);
                 }
             }
             

@@ -94,7 +94,6 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         }
         
         net.minecraft.client.gui.screen.Screen screenToCheck = client.currentScreen;
-        boolean isFromPreviousScreen = false;
         
         // Wenn wir im F6-Editor sind, versuche auf previousScreen zuzugreifen (Fallback)
         if (client.currentScreen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
@@ -114,7 +113,6 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
                     if (title.contains("Machtkristalle Verbessern") || 
                         net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode)) {
                         screenToCheck = previousScreen;
-                        isFromPreviousScreen = true;
                     } else {
                         // Not MKLevel inventory, use cached height
                         int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();

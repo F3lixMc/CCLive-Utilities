@@ -1,6 +1,5 @@
 package net.felix.leaderboards;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
@@ -52,7 +51,6 @@ public class LeaderboardManager {
     // Status
     private boolean isEnabled = true;
     private boolean isRegistered = false;
-    private boolean isChatEventRegistered = false;
     
     private LeaderboardManager() {
         this.config = new LeaderboardConfig();

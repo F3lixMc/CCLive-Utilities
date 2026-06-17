@@ -14,7 +14,6 @@ import org.joml.Matrix3x2fStack;
 public class CollectionDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 200;
-    private static final int DEFAULT_HEIGHT = 80;
     private static final int LINE_HEIGHT = 11;
     private static final int PADDING = 5;
     
