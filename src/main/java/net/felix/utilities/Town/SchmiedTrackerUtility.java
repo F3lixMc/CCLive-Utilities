@@ -457,266 +457,6 @@ public class SchmiedTrackerUtility {
 	}
 	
 	/**
-	 * Analysiert die Craftbarkeit basierend auf Unicode-Codes und Text-Inhalt
-	 * Diese Methode wird nur verwendet, wenn die Farbanalyse nicht funktioniert
-	 */
-	private static boolean analyzeCraftabilityByUnicodeCodes(int firstCode, int lastCode, String nameText) {
-		// Diese Methode wird nur als Fallback verwendet, wenn die Farbanalyse nicht funktioniert
-		// Da die Farbanalyse jetzt korrekt implementiert ist, sollte diese Methode nicht mehr benötigt werden
-		
-		// Prüfe ob die Unicode-Codes im erwarteten Bereich liegen
-		if (firstCode >= 13617 && firstCode <= 13668 && lastCode >= 13617 && lastCode <= 13668) {
-			// Ohne Farbinformationen können wir nicht entscheiden
-			// Standard: als uncraftbar behandeln (sicherheitshalber)
-			return false;
-		}
-		
-		// Falls die Unicode-Codes nicht im erwarteten Bereich liegen,
-		// prüfe auf spezielle Item-Namen die craftbar sein könnten
-		String lowerName = nameText.toLowerCase();
-		
-		// Liste von Items die definitiv uncraftbar sind (basierend auf Ihren Logs)
-		if (lowerName.contains("champions wappengurt") ||
-			lowerName.contains("drachenlederhelm") ||
-			lowerName.contains("drachenlederschuhe") ||
-			lowerName.contains("enderstahl waffengurt") ||
-			lowerName.contains("eroberers schulterpanzer") ||
-			lowerName.contains("ewiges lichtband") ||
-			lowerName.contains("flora panzerbrust") ||
-			lowerName.contains("gebeulte handgelenkmanschetten") ||
-			lowerName.contains("halskette des bezwingers") ||
-			lowerName.contains("kappe des forschers") ||
-			lowerName.contains("kopfgeldjägerring") ||
-			lowerName.contains("natürliche lederfinger") ||
-			lowerName.contains("pelzgewand des eiswanderers") ||
-			lowerName.contains("rote lederhandschuhe") ||
-			lowerName.contains("rubinhelmschale") ||
-			lowerName.contains("rubinrote kriegshose") ||
-			lowerName.contains("rubinrote kriegsschultern") ||
-			lowerName.contains("ruhmreicher kopfschutz") ||
-			lowerName.contains("solide stahlfingerlinge") ||
-			lowerName.contains("stählernde sabatons") ||
-			lowerName.contains("zeitloser lederband")) {
-			
-			// Diese Items sind alle uncraftbar
-			return false;
-		}
-		
-		// Standard: Wenn keine spezielle Regel greift, behandle als uncraftbar
-		return false;
-	}
-	
-	/**
-	 * Analysiert die Farbe eines Textes durch Parsing der Formatierung
-	 */
-	private static String analyzeTextColor(Text text) {
-		if (text == null) {
-			return "null";
-		}
-		
-		try {
-			// 1. Versuche die Farbe aus dem Style zu extrahieren
-			var style = text.getStyle();
-			if (style != null && style.getColor() != null) {
-				return "0x" + Integer.toHexString(style.getColor().getRgb()).toUpperCase() + " (Style)";
-			}
-			
-			// 2. Rekursive Analyse der Text-Komponenten
-			String recursiveResult = analyzeTextColorRecursive(text);
-			if (recursiveResult != null && !recursiveResult.equals("null")) {
-				return recursiveResult;
-			}
-			
-			// 3. Versuche die Farbe aus dem rohen String zu extrahieren
-			String textString = text.getString();
-			if (textString.contains("§")) {
-				// Suche nach Minecraft-Farbcodes
-				for (int i = 0; i < textString.length() - 1; i++) {
-					if (textString.charAt(i) == '§') {
-						char colorCode = textString.charAt(i + 1);
-						switch (colorCode) {
-							case 'f': return "0xFFFFFF (Weiß)"; // Weiß
-							case 'F': return "0xFFFFFF (Weiß)"; // Weiß
-							case 'e': return "0xFFFF55 (Gelb)"; // Gelb
-							case 'E': return "0xFFFF55 (Gelb)"; // Gelb
-							case 'a': return "0x55FF55 (Grün)"; // Grün
-							case 'A': return "0x55FF55 (Grün)"; // Grün
-							case 'b': return "0x5555FF (Blau)"; // Blau
-							case 'B': return "0x5555FF (Blau)"; // Blau
-							case 'c': return "0xFF5555 (Rot)"; // Rot
-							case 'C': return "0xFF5555 (Rot)"; // Rot
-							case 'd': return "0xFF55FF (Magenta)"; // Magenta
-							case 'D': return "0xFF55FF (Magenta)"; // Magenta
-							case '3': return "0x00AAAA (Türkis)"; // Türkis
-							case '9': return "0x5555FF (Blau)"; // Blau
-							case '5': return "0xAA00AA (Lila)"; // Lila
-							case '6': return "0xFFAA00 (Gold)"; // Gold
-							case '7': return "0xAAAAAA (Grau)"; // Grau
-							case '8': return "0x555555 (Dunkelgrau)"; // Dunkelgrau
-							case '0': return "0x000000 (Schwarz)"; // Schwarz
-							case '1': return "0x0000AA (Dunkelblau)"; // Dunkelblau
-							case '2': return "0x00AA00 (Dunkelgrün)"; // Dunkelgrün
-							case '4': return "0xAA0000 (Dunkelrot)"; // Dunkelrot
-						}
-					}
-				}
-			}
-			
-			// 4. Spezielle Behandlung für Unicode-Zeichen
-			if (textString.length() >= 2 && hasCraftingUnicodeIndicators(textString)) {
-				// Versuche die Farbe aus dem Style zu extrahieren (falls verfügbar)
-				var unicodeStyle = text.getStyle();
-				if (unicodeStyle != null && unicodeStyle.getColor() != null) {
-					int colorRgb = unicodeStyle.getColor().getRgb();
-					return "0x" + Integer.toHexString(colorRgb).toUpperCase() + " (Unicode Style)";
-				}
-				
-				// Wenn keine Style-Farbe gefunden wurde, gib eine neutrale Antwort zurück
-				return "null (keine Style-Farbe für Unicode)";
-			}
-			
-			return "null (keine Farbe erkannt)";
-		} catch (Exception e) {
-			return "null (Fehler bei Farbanalyse: " + e.getMessage() + ")";
-		}
-	}
-	
-	/**
-	 * Rekursiv analysiert Text-Komponenten um Farben zu finden
-	 */
-	private static String analyzeTextColorRecursive(Text text) {
-		if (text == null) {
-			return null;
-		}
-		
-		try {
-			// Prüfe den Style dieser Komponente
-			var style = text.getStyle();
-			if (style != null && style.getColor() != null) {
-				int colorRgb = style.getColor().getRgb();
-				return "0x" + Integer.toHexString(colorRgb).toUpperCase() + " (Rekursiv)";
-			}
-			
-			// Prüfe die Siblings (Geschwister-Komponenten)
-			var siblings = text.getSiblings();
-			if (siblings != null) {
-				for (Text sibling : siblings) {
-					String siblingResult = analyzeTextColorRecursive(sibling);
-					if (siblingResult != null && !siblingResult.equals("null")) {
-						return siblingResult;
-					}
-				}
-			}
-			
-			// Prüfe auf spezielle Text-Typen basierend auf der Klasse
-			String className = text.getClass().getSimpleName();
-			if (className.contains("Literal") || className.contains("Text")) {
-				// Versuche nochmal den Style zu prüfen
-				var textStyle = text.getStyle();
-				if (textStyle != null && textStyle.getColor() != null) {
-					int colorRgb = textStyle.getColor().getRgb();
-					return "0x" + Integer.toHexString(colorRgb).toUpperCase() + " (" + className + ")";
-				}
-			}
-			
-			return null;
-		} catch (Exception e) {
-			return null;
-		}
-	}
-	
-	/**
-	 * Speziell für Unicode-Zeichen: Analysiert die Farbe der ersten und letzten Zeichen
-	 */
-	private static String analyzeUnicodeColor(Text text) {
-		if (text == null) {
-			return "null";
-		}
-		
-		try {
-			String textString = text.getString();
-			if (textString.length() < 2) {
-				return "null (Text zu kurz)";
-			}
-			
-			// Prüfe ob es sich um Unicode-Indikatoren handelt
-			if (!hasCraftingUnicodeIndicators(textString)) {
-				return "null (keine Unicode-Indikatoren)";
-			}
-			
-			// NEUE METHODE: Analysiere die Siblings um die Unicode-Farbe zu finden
-			var siblings = text.getSiblings();
-			if (siblings != null && !siblings.isEmpty()) {
-				// Suche nach den ersten und letzten Siblings (die Unicode-Zeichen enthalten)
-				if (siblings.size() >= 2) {
-					Text firstSibling = siblings.get(0);
-					Text lastSibling = siblings.get(siblings.size() - 1);
-					
-					// Prüfe ob die ersten und letzten Siblings Unicode-Zeichen enthalten
-					String firstSiblingString = firstSibling.getString();
-					String lastSiblingString = lastSibling.getString();
-					
-					if (firstSiblingString.length() > 0 && lastSiblingString.length() > 0) {
-						char firstSiblingChar = firstSiblingString.charAt(0);
-						char lastSiblingChar = lastSiblingString.charAt(0);
-						int firstSiblingCode = (int)firstSiblingChar;
-						int lastSiblingCode = (int)lastSiblingChar;
-						
-						// Prüfe ob es sich um Unicode-Zeichen handelt
-						if ((firstSiblingCode >= 13617 && firstSiblingCode <= 13668) && 
-							(lastSiblingCode >= 13617 && lastSiblingCode <= 13668)) {
-							
-							// NEUE LOGIK: Die Unicode-Zeichen erben die Farbe vom umgebenden Kontext
-							// Da die Unicode-Zeichen selbst keinen Style haben, verwenden wir die Farbe des Item-Namens
-							// als Indikator für die Unicode-Farbe
-							
-							// Suche nach dem Sibling mit dem Item-Namen (normalerweise der zweite)
-							if (siblings.size() >= 3) {
-								Text itemNameSibling = siblings.get(1);
-								var itemNameStyle = itemNameSibling.getStyle();
-								if (itemNameStyle != null && itemNameStyle.getColor() != null) {
-									int colorRgb = itemNameStyle.getColor().getRgb();
-									return "0x" + Integer.toHexString(colorRgb).toUpperCase() + " (Unicode Context)";
-								}
-							}
-							
-							// PRIORITÄT 1: Versuche die Farbe aus dem ersten Unicode-Sibling zu extrahieren
-							var firstSiblingStyle = firstSibling.getStyle();
-							if (firstSiblingStyle != null && firstSiblingStyle.getColor() != null) {
-								int colorRgb = firstSiblingStyle.getColor().getRgb();
-								return "0x" + Integer.toHexString(colorRgb).toUpperCase() + " (Unicode Sibling)";
-							}
-							
-							// PRIORITÄT 2: Versuche die Farbe aus dem letzten Unicode-Sibling zu extrahieren
-							var lastSiblingStyle = lastSibling.getStyle();
-							if (lastSiblingStyle != null && lastSiblingStyle.getColor() != null) {
-								int colorRgb = lastSiblingStyle.getColor().getRgb();
-								return "0x" + Integer.toHexString(colorRgb).toUpperCase() + " (Unicode Sibling)";
-							}
-							
-							// PRIORITÄT 3: Versuche die Farbe aus dem Root-Style zu extrahieren
-							var rootStyle = text.getStyle();
-							if (rootStyle != null && rootStyle.getColor() != null) {
-								int colorRgb = rootStyle.getColor().getRgb();
-								return "0x" + Integer.toHexString(colorRgb).toUpperCase() + " (Unicode Root)";
-							}
-							
-							// Wenn keine Unicode-Farbe gefunden wurde, verwende Standard weiß
-							return "0xFFFFFF (Unicode Standard Weiß)";
-						}
-					}
-				}
-			}
-			
-			// Fallback: Verwende die heuristische Methode
-			return analyzeUnicodeColorHeuristic(textString);
-			
-		} catch (Exception e) {
-			return "null (Fehler bei Unicode-Analyse: " + e.getMessage() + ")";
-		}
-	}
-	
-	/**
 	 * Findet automatisch die Blueprint-Slots im Inventar
 	 */
 	private static List<Integer> findBlueprintSlots(HandledScreen<?> screen) {
@@ -760,51 +500,6 @@ public class SchmiedTrackerUtility {
 		}
 		
 		return blueprintSlots;
-	}
-	
-	/**
-	 * Heuristische Methode zur Unicode-Farbanalyse
-	 * Da die direkte Style-Analyse nicht funktioniert, verwende alternative Methoden
-	 */
-	private static String analyzeUnicodeColorHeuristic(String textString) {
-		try {
-			// Methode 1: Prüfe auf spezielle Zeichenkombinationen die auf Farben hindeuten
-			if (textString.contains("§")) {
-				// Suche nach Minecraft-Farbcodes
-				for (int i = 0; i < textString.length() - 1; i++) {
-					if (textString.charAt(i) == '§') {
-						char colorCode = textString.charAt(i + 1);
-						switch (colorCode) {
-							case '3': return "0x00FFFF (Türkis - Heuristik)"; // Türkis
-							case 'b': return "0x5555FF (Blau - Heuristik)"; // Blau
-							case '9': return "0x5555FF (Blau - Heuristik)"; // Blau
-							case 'f': return "0xFFFFFF (Weiß - Heuristik)"; // Weiß
-							case 'F': return "0xFFFFFF (Weiß - Heuristik)"; // Weiß
-							case '7': return "0xAAAAAA (Grau - Heuristik)"; // Grau
-							case '8': return "0x555555 (Dunkelgrau - Heuristik)"; // Dunkelgrau
-						}
-					}
-				}
-			}
-			
-			// Methode 2: Prüfe auf spezielle Unicode-Zeichen-Kombinationen
-			// Einige Unicode-Zeichen haben standardmäßig bestimmte Farben
-			char firstChar = textString.charAt(0);
-			char lastChar = textString.charAt(textString.length() - 1);
-			int firstCode = (int)firstChar;
-			int lastCode = (int)lastChar;
-			
-			// Prüfe ob es sich um spezielle Unicode-Bereiche handelt
-			if ((firstCode >= 13617 && firstCode <= 13668) && (lastCode >= 13617 && lastCode <= 13668)) {
-				// Wenn keine spezifische Farbe gefunden wurde, verwende die rekursive Text-Analyse
-				// Diese sollte bereits die korrekte Farbe gefunden haben
-				return "null (keine heuristische Farbe gefunden)";
-			}
-			
-			return "null (keine heuristische Farbe gefunden)";
-		} catch (Exception e) {
-			return "null (Fehler bei heuristischer Analyse: " + e.getMessage() + ")";
-		}
 	}
 	
 	/**
@@ -855,7 +550,6 @@ public class SchmiedTrackerUtility {
 	 */
 	private static void updateButtonPosition(HandledScreen<?> screen, MinecraftClient client) {
 		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
 		
 		// Standard-Position in der oberen rechten Ecke des Bildschirms
 		int baseX = screenWidth - buttonWidth - 20;
@@ -1120,7 +814,7 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 
-		net.felix.SchmiedItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerItemDisplayMode;
+		net.felix.utilities.Town.SchmiedItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerItemDisplayMode;
 
 		// Zeichne farbige Rahmen oder Hintergrund um die Items
 		for (Map.Entry<Integer, Integer> entry : slotColors.entrySet()) {
@@ -1138,7 +832,7 @@ public class SchmiedTrackerUtility {
 				int slotX = screenX + slot.x;
 				int slotY = screenY + slot.y;
 				
-				if (displayMode == net.felix.SchmiedItemDisplayMode.BACKGROUND) {
+				if (displayMode == net.felix.utilities.Town.SchmiedItemDisplayMode.BACKGROUND) {
 					// Zeichne halbtransparenten Hintergrund
 					// Verwende die Rahmenfarbe, aber mit reduzierter Transparenz
 					int backgroundColor = (color & 0x00FFFFFF) | 0x80000000; // 50% Transparenz für bessere Sichtbarkeit
@@ -1187,8 +881,6 @@ public class SchmiedTrackerUtility {
 		
 		int unscaledWidth = buttonWidth;
 		int unscaledHeight = buttonHeight;
-		int scaledWidth = (int) (unscaledWidth * scale);
-		int scaledHeight = (int) (unscaledHeight * scale);
 		
 		// Use Matrix transformations for scaling
 		Matrix3x2fStack matrices = context.getMatrices();
@@ -1278,8 +970,6 @@ public class SchmiedTrackerUtility {
 		
 		int unscaledWidth = buttonWidth;
 		int unscaledHeight = buttonHeight;
-		int scaledWidth = (int) (unscaledWidth * scale);
-		int scaledHeight = (int) (unscaledHeight * scale);
 		
 		// Use Matrix transformations for scaling
 		Matrix3x2fStack matrices = context.getMatrices();

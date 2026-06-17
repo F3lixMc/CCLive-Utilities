@@ -17,8 +17,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Sammelt Amboss- und Ressourcen-Anzahlen aus dem Ressourcen-Bag Inventar (Symbol Ⳅ)
- * Liest die Anzahl aus den Tooltips der Items im Format: "Name\nAnzahl x\nFür Details klicken"
+ * Sammelt Amboss- und Ressourcen-Anzahlen aus dem Ressourcen-Bag Inventar (Symbol Ⳅ),
+ * Schmiede-/Modul-/Ingenieur-Inventaren, Bestätigungs- und Freunde-Menüs.
  */
 public class ClipboardAmbossRessourceCollector {
     private static final Map<String, Long> ambossItems = new HashMap<>(); // ItemName -> Anzahl
@@ -66,10 +66,10 @@ public class ClipboardAmbossRessourceCollector {
         net.minecraft.text.Text titleText = handledScreen.getTitle();
         String screenTitle = titleText != null ? titleText.getString() : "";
         boolean isRessourceBag = net.felix.utilities.Overall.ZeichenUtility.containsUiRessourceBag(screenTitle);
-        boolean isSchmiedInventory = isSchmiedInventory(handledScreen);
+        boolean isCostInventory = ClipboardCostInventoryUtility.usesSchmiedCostTooltipFormat(handledScreen);
         boolean isFishingCraft = net.felix.utilities.Overall.ZeichenUtility.isFishingComponentsCraftTitle(screenTitle);
         
-        if (!isRessourceBag && !isSchmiedInventory && !isFishingCraft) {
+        if (!isRessourceBag && !isCostInventory && !isFishingCraft) {
             // Nicht im Ressourcen-Bag oder Schmied - Cache zurücksetzen
             lastScreenTitle = "";
             lastSlotCount = 0;
@@ -140,7 +140,7 @@ public class ClipboardAmbossRessourceCollector {
                             updateResourceFromBag(cleanItemName, amount);
                         }
                     }
-                } else if (isSchmiedInventory || isFishingCraft) {
+                } else if (isCostInventory || isFishingCraft) {
                     for (Text line : tooltip) {
                         String cleanLineText = cleanTooltipLine(line.getString());
                         Matcher matcher = SCHMIED_PATTERN.matcher(cleanLineText);
@@ -149,6 +149,7 @@ public class ClipboardAmbossRessourceCollector {
                             long amount = parseAmount(matcher.group(1));
                             if (!isAincraftMaterial(name) && !ItemInfoUtility.isFishingRarityMaterial(name)
                                     && !isCoinsName(name)
+                                    && !ClipboardCostTooltipParser.shouldIgnoreCostName(name)
                                     && !(isFishingCraft && isNonMaterialCost(name))) {
                                 updateResourceAmounts(name, amount);
                             }
@@ -298,21 +299,6 @@ public class ClipboardAmbossRessourceCollector {
         }
         String trimmed = name.trim();
         return "Kaktus".equalsIgnoreCase(trimmed) || "Seelen".equalsIgnoreCase(trimmed);
-    }
-    
-    private static boolean isSchmiedInventory(HandledScreen<?> handledScreen) {
-        String title = handledScreen.getTitle() != null ? handledScreen.getTitle().getString() : "";
-        String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
-                                 .replaceAll("[\\u3400-\\u4DBF]", "");
-        
-        return cleanTitle.contains("Baupläne [Waffen]") ||
-               cleanTitle.contains("Baupläne [Rüstung]") ||
-               cleanTitle.contains("Baupläne [Werkzeuge]") ||
-               cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
-               cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
-               cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
-               cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") ||
-               cleanTitle.contains("Bauplan [Shop]");
     }
     
     /**

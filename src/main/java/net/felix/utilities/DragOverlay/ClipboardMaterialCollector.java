@@ -17,8 +17,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Sammelt Materialien aus dem Material-Bag Inventar (Symbol ⳅ), Schmiede-Inventaren
- * und dem Angel-Komponenten-Craft-Menü (ui_components_craft).
+ * Sammelt Materialien aus dem Material-Bag Inventar (Symbol ⳅ), Schmiede-/Modul-/Ingenieur-Inventaren,
+ * Bestätigungs- und Freunde-Menüs sowie dem Angel-Komponenten-Craft-Menü (ui_components_craft).
  * Material Bag Format: "Materialname (Anzahl)"
  * Schmiede / Angel-Craft Format: "AKTUELLE / BENÖTIGTE MATERIALNAME"
  */
@@ -42,10 +42,10 @@ public class ClipboardMaterialCollector {
         
         String title = handledScreen.getTitle() != null ? handledScreen.getTitle().getString() : "";
         boolean isMaterialBag = net.felix.utilities.Overall.ZeichenUtility.containsUiMaterialBag(title);
-        boolean isSchmiedInventory = isSchmiedInventory(handledScreen);
+        boolean isCostInventory = ClipboardCostInventoryUtility.usesSchmiedCostTooltipFormat(handledScreen);
         boolean isFishingCraft = net.felix.utilities.Overall.ZeichenUtility.isFishingComponentsCraftTitle(title);
         
-        if (!isMaterialBag && !isSchmiedInventory && !isFishingCraft) {
+        if (!isMaterialBag && !isCostInventory && !isFishingCraft) {
             return;
         }
         
@@ -82,12 +82,13 @@ public class ClipboardMaterialCollector {
                                 collectedMaterials.put(name, amount);
                             }
                         }
-                    } else if (isSchmiedInventory || isFishingCraft) {
+                    } else if (isCostInventory || isFishingCraft) {
                         Matcher matcher = SCHMIED_PATTERN.matcher(cleanLine);
                         if (matcher.find()) {
                             String name = cleanMaterialName(matcher.group(3));
                             long amount = parseAmount(matcher.group(1));
                             if (!name.isEmpty() && !isCoinsName(name)
+                                    && !ClipboardCostTooltipParser.shouldIgnoreCostName(name)
                                     && !(isFishingCraft && isNonMaterialCost(name))) {
                                 if (isClipboardMaterial(name)) {
                                     collectedMaterials.put(name, amount);
@@ -179,20 +180,5 @@ public class ClipboardMaterialCollector {
         }
         String trimmed = name.trim();
         return "Kaktus".equalsIgnoreCase(trimmed) || "Seelen".equalsIgnoreCase(trimmed);
-    }
-    
-    private static boolean isSchmiedInventory(HandledScreen<?> handledScreen) {
-        String title = handledScreen.getTitle() != null ? handledScreen.getTitle().getString() : "";
-        String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
-                                 .replaceAll("[\\u3400-\\u4DBF]", "");
-        
-        return cleanTitle.contains("Baupläne [Waffen]") ||
-               cleanTitle.contains("Baupläne [Rüstung]") ||
-               cleanTitle.contains("Baupläne [Werkzeuge]") ||
-               cleanTitle.contains("Favorisierte [Waffenbaupläne]") ||
-               cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") ||
-               cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") ||
-               cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools") ||
-               cleanTitle.contains("Bauplan [Shop]");
     }
 }

@@ -24,9 +24,6 @@ public abstract class HandledScreenMixin {
      * Injects at the very end of the render method to ensure our overlays are drawn last
      * This preserves all normal rendering while ensuring our overlays appear above tooltips
      */
-    // Debug: Letzter erkannter Screen (um Logs zu reduzieren)
-    private static String lastDetectedScreen = "";
-    
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
@@ -36,11 +33,8 @@ public abstract class HandledScreenMixin {
             return;
         }
         
-        String currentScreen = screen.getClass().getSimpleName();
-        lastDetectedScreen = currentScreen;
-        
         // Update mouse position for DebugUtility (Item Logger)
-        net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
+        net.felix.utilities.Other.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Update mouse position for Item Viewer
         net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
@@ -49,7 +43,7 @@ public abstract class HandledScreenMixin {
         updateHoveredSlotForItemViewer(screen, mouseX, mouseY);
         
         // Update mouse position for DebugUtility (Item Logger)
-        net.felix.utilities.DebugUtility.updateMousePosition(mouseX, mouseY);
+        net.felix.utilities.Other.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Render Clipboard Overlay (wenn aktiviert)
         net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
@@ -273,6 +267,10 @@ public abstract class HandledScreenMixin {
 
         // Amboss/Schmelzofen: Ressourcen aus Lager-Tooltip bei Linksklick addieren
         net.felix.utilities.DragOverlay.AnvilFurnaceLagerCollector.handleMouseClick(
+                legendPlusScreen, mouseX, mouseY, button, x, y);
+
+        // Kosten-Inventare: Kauf-Kosten merken und nach Klick ggf. abziehen
+        net.felix.utilities.DragOverlay.ClipboardCostPurchaseTracker.handleMouseClick(
                 legendPlusScreen, mouseX, mouseY, button, x, y);
     }
     

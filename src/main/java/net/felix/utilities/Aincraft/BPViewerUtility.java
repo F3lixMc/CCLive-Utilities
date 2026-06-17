@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -18,11 +18,11 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.OverlayType;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.felix.utilities.Town.OverlayType;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -135,6 +135,14 @@ public class BPViewerUtility {
     public Map<String, Set<String>> getFloorProgress() {
         return new HashMap<>(floorProgress); // Defensive copy
     }
+
+    public BlueprintConfig getConfig() {
+        return config;
+    }
+
+    public String getCurrentRarity() {
+        return currentRarity;
+    }
     
     /**
      * Gibt die Anzahl aller gefundenen Blueprints zurück (für ProfileStatsManager)
@@ -156,7 +164,7 @@ public class BPViewerUtility {
         registerKeyBindings();
         
         // Register HUD render callback
-        HudRenderCallback.EVENT.register((context, tickCounter) -> {
+        HudElementRegistry.addLast(Identifier.of("cclive-utilities", "blueprint_viewer"), (context, tickCounter) -> {
             if (isVisible && instance.getActiveFloor() != null && showOverlays && !EquipmentDisplayUtility.isEquipmentOverlayActive()) {
                 instance.onHudRender(context, tickCounter);
             }

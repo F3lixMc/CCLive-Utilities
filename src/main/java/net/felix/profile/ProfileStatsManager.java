@@ -49,8 +49,6 @@ public class ProfileStatsManager {
     private static final int UPDATE_INTERVAL = 1200; // Alle 60 Sekunden (20 ticks/sec * 60)
     
     // Validierungs-Variablen für Karten/Statuen-Menüs
-    private boolean isInCardsMenu = false;
-    private boolean isInStatuesMenu = false;
     private final Map<Integer, ItemStack> lastKnownCardsItems = new HashMap<>();
     private final Map<Integer, ItemStack> lastKnownStatuesItems = new HashMap<>();
     
@@ -85,9 +83,6 @@ public class ProfileStatsManager {
     
     // Server-Prüfung deaktivieren für Testing (auf true setzen zum Testen)
     private static final boolean DISABLE_SERVER_CHECK = true; // true = Server-Prüfung überspringen (für Testing)
-    
-    // Cache für aktuellen Server-Namen (wird beim Join gesetzt)
-    private String currentServerName = null;
     
     // Flag: Ist der Spieler auf dem erlaubten Server für Playtime-Tracking?
     // Wird beim Server-Join gesetzt und beim Disconnect zurückgesetzt
@@ -179,9 +174,8 @@ public class ProfileStatsManager {
         // Registriere Tick-Event für periodische Updates
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
-        // Registriere Server-Join Event (Reset + Server-Prüfung + Server-Name speichern)
+        // Registriere Server-Join Event (Reset + Server-Prüfung)
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            updateServerName(client);
             // Prüfe beim Join, ob es der erlaubte Server ist (nur einmal beim Join)
             isOnAllowedServerForPlaytime = isOnAllowedServer(client);
             resetCounters();
@@ -199,9 +193,8 @@ public class ProfileStatsManager {
                 sendStatsUpdate(true); // Finales Update für andere Stats
             }
             
-            // Reset Server-Flag und Server-Name
+            // Reset Server-Flag
             isOnAllowedServerForPlaytime = false;
-            currentServerName = null;
         });
         
         isInitialized = true;
@@ -253,93 +246,6 @@ public class ProfileStatsManager {
         // Nur alle 10 Ticks prüfen (0.5 Sekunden) um Performance zu verbessern
         if (client.player.age % 10 == 0) {
             checkCardsStatuesMenuForChanges(client);
-        }
-    }
-    
-    /**
-     * Aktualisiert den aktuellen Server-Namen (wird beim Join aufgerufen)
-     * Versucht mehrere Methoden, um den Server-Namen zu bekommen (wie im F3-Screen angezeigt)
-     */
-    private void updateServerName(MinecraftClient client) {
-        try {
-            boolean debug = isDebugEnabled();
-            if (debug) {
-                // Silent error handling("=== [ProfileStats] Server-Name Debug Log ===");
-            }
-            
-            // Methode 1: getCurrentServerEntry (Server-Liste)
-            String serverEntryName = null;
-            try {
-                if (client.getCurrentServerEntry() != null) {
-                    serverEntryName = client.getCurrentServerEntry().name;
-                    if (debug) {
-                        // Silent error handling("[ProfileStats] getCurrentServerEntry().name = '" + serverEntryName + "'");
-                    }
-                } else {
-                    if (debug) {
-                        // Silent error handling("[ProfileStats] getCurrentServerEntry() = null");
-                    }
-                }
-            } catch (Exception e) {
-                if (debug) {
-                    // Silent error handling("[ProfileStats] getCurrentServerEntry() Fehler: " + e.getMessage());
-                }
-            }
-            
-            // Methode 2: NetworkHandler ServerInfo (wenn verbunden)
-            String serverInfoName = null;
-            try {
-                if (client.getNetworkHandler() != null) {
-                    if (client.getNetworkHandler().getServerInfo() != null) {
-                        serverInfoName = client.getNetworkHandler().getServerInfo().name;
-                        if (debug) {
-                            // Silent error handling("[ProfileStats] getNetworkHandler().getServerInfo().name = '" + serverInfoName + "'");
-                        }
-                    } else {
-                        if (debug) {
-                            // Silent error handling("[ProfileStats] getNetworkHandler().getServerInfo() = null");
-                        }
-                    }
-                } else {
-                    if (debug) {
-                        // Silent error handling("[ProfileStats] getNetworkHandler() = null");
-                    }
-                }
-            } catch (Exception e) {
-                if (debug) {
-                    // Silent error handling("[ProfileStats] getNetworkHandler() Fehler: " + e.getMessage());
-                }
-            }
-            
-            // Entscheide welchen Wert verwenden
-            if (serverEntryName != null && !serverEntryName.isEmpty()) {
-                currentServerName = serverEntryName;
-                if (debug) {
-                    // Silent error handling("[ProfileStats] ✅ Verwende getCurrentServerEntry: '" + currentServerName + "'");
-                }
-            } else if (serverInfoName != null && !serverInfoName.isEmpty()) {
-                currentServerName = serverInfoName;
-                if (debug) {
-                    // Silent error handling("[ProfileStats] ✅ Verwende getNetworkHandler().getServerInfo(): '" + currentServerName + "'");
-                }
-            } else {
-                currentServerName = null;
-                if (debug) {
-                    // Silent error handling("[ProfileStats] ❌ WARNUNG: Server-Name konnte nicht erkannt werden!");
-                }
-            }
-            
-            if (debug) {
-                // Silent error handling("[ProfileStats] Erwarteter Server-Name: '" + ALLOWED_SERVER_NAME + "'");
-                // Silent error handling("[ProfileStats] Aktueller Server-Name: '" + currentServerName + "'");
-                // Silent error handling("[ProfileStats] Match: " + (currentServerName != null && currentServerName.equalsIgnoreCase(ALLOWED_SERVER_NAME)));
-                // Silent error handling("=== [ProfileStats] Debug Log Ende ===");
-            }
-            
-        } catch (Exception e) {
-            // Silent error handling("[ProfileStats] Fehler beim Erkennen des Server-Namens: " + e.getMessage());
-            // Silent error handling
-            currentServerName = null;
         }
     }
     
@@ -450,7 +356,6 @@ public class ProfileStatsManager {
         boolean debug = isDebugEnabled();
         if (debug) {
             // Silent error handling("⏱️ [ProfileStats] sendPlaytimeToLeaderboard() aufgerufen");
-            LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
             // Silent error handling("⏱️ [ProfileStats] isRegistered: " + leaderboardManager.isRegistered());
             // Silent error handling("⏱️ [ProfileStats] playtimeTicks: " + playtimeTicks);
             // Silent error handling("⏱️ [ProfileStats] isOnAllowedServerForPlaytime: " + isOnAllowedServerForPlaytime);
@@ -1245,8 +1150,6 @@ public class ProfileStatsManager {
      */
     private void checkCardsStatuesMenuForChanges(MinecraftClient client) {
         if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
-            isInCardsMenu = false;
-            isInStatuesMenu = false;
             lastKnownCardsItems.clear();
             lastKnownStatuesItems.clear();
             return;
@@ -1270,9 +1173,7 @@ public class ProfileStatsManager {
             if (hasCardsMenuChanged(screen)) {
                 scanCardsMenu(screen, client);
             }
-            isInCardsMenu = true;
         } else {
-            isInCardsMenu = false;
             lastKnownCardsItems.clear();
         }
         
@@ -1281,9 +1182,7 @@ public class ProfileStatsManager {
             if (hasStatuesMenuChanged(screen)) {
                 scanStatuesMenu(screen, client);
             }
-            isInStatuesMenu = true;
         } else {
-            isInStatuesMenu = false;
             lastKnownStatuesItems.clear();
         }
     }

@@ -2,19 +2,22 @@ package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.CoinTrackerDisplayMode;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Locale;
 
 /**
@@ -29,14 +32,12 @@ public class CoinTrackerUtility {
     private static boolean showOverlays = true;
     private static boolean firstUpdate = true;
 
-    private static long initialCoins = -1;
-    private static long currentCoins = -1;
-    private static long gainedCoins = 0;
+    private static BigDecimal initialCoins = null;
+    private static BigDecimal currentCoins = null;
+    private static BigDecimal gainedCoins = BigDecimal.ZERO;
     private static long currentSouls = -1;
     private static long currentCactus = -1;
-    private static String currentSoulsDisplay = "";
     private static String currentCoinsDisplay = "";
-    private static String currentCactusDisplay = "";
     private static double coinsPerMinute = 0.0;
 
     private static long sessionStartTime = 0;
@@ -64,7 +65,9 @@ public class CoinTrackerUtility {
             ));
 
             ClientTickEvents.END_CLIENT_TICK.register(CoinTrackerUtility::onClientTick);
-            HudRenderCallback.EVENT.register((drawContext, tickDelta) -> onHudRender(drawContext, tickDelta));
+            HudElementRegistry.addLast(
+                    Identifier.of("cclive-utilities", "coin_tracker"),
+                    CoinTrackerUtility::onHudRender);
             isInitialized = true;
         } catch (Exception e) {
             // Silent error handling
@@ -91,42 +94,36 @@ public class CoinTrackerUtility {
             lastHudUpdateTime = System.currentTimeMillis();
             isTracking = true;
 
-            if (stats.souls >= 0) {
-                currentSouls = stats.souls;
+            if (stats.souls != null && stats.souls.signum() >= 0) {
+                currentSouls = HudNumberSuffixUtility.toLongOrMax(stats.souls);
             }
-            if (stats.cactus >= 0) {
-                currentCactus = stats.cactus;
-            }
-            if (stats.soulsDisplay != null && !stats.soulsDisplay.isEmpty()) {
-                currentSoulsDisplay = stats.soulsDisplay;
+            if (stats.cactus != null && stats.cactus.signum() >= 0) {
+                currentCactus = HudNumberSuffixUtility.toLongOrMax(stats.cactus);
             }
             if (stats.coinsDisplay != null && !stats.coinsDisplay.isEmpty()) {
                 currentCoinsDisplay = stats.coinsDisplay;
             }
-            if (stats.cactusDisplay != null && !stats.cactusDisplay.isEmpty()) {
-                currentCactusDisplay = stats.cactusDisplay;
-            }
 
-            long coins = stats.coins;
+            BigDecimal coins = stats.coins;
             if (firstUpdate) {
                 initialCoins = coins;
                 currentCoins = coins;
-                gainedCoins = 0;
+                gainedCoins = BigDecimal.ZERO;
                 firstUpdate = false;
                 if (sessionStartTime == 0) {
                     sessionStartTime = System.currentTimeMillis();
                 }
-            } else if (coins > currentCoins) {
+            } else if (coins.compareTo(currentCoins) > 0) {
                 currentCoins = coins;
-                gainedCoins = currentCoins - initialCoins;
-            } else if (coins < currentCoins) {
+                gainedCoins = currentCoins.subtract(initialCoins);
+            } else if (coins.compareTo(currentCoins) < 0) {
                 initialCoins = coins;
                 currentCoins = coins;
-                gainedCoins = 0;
+                gainedCoins = BigDecimal.ZERO;
                 sessionStartTime = System.currentTimeMillis();
             } else {
                 currentCoins = coins;
-                gainedCoins = currentCoins - initialCoins;
+                gainedCoins = currentCoins.subtract(initialCoins);
             }
 
             updateCoinsPerMinute();
@@ -193,7 +190,7 @@ public class CoinTrackerUtility {
     }
 
     private static void updateCoinsPerMinute() {
-        if (sessionStartTime == 0 || gainedCoins <= 0) {
+        if (sessionStartTime == 0 || gainedCoins.signum() <= 0) {
             coinsPerMinute = 0.0;
             return;
         }
@@ -203,18 +200,16 @@ public class CoinTrackerUtility {
             return;
         }
         double minutes = elapsed / 60000.0;
-        coinsPerMinute = gainedCoins / minutes;
+        coinsPerMinute = gainedCoins.divide(BigDecimal.valueOf(minutes), 2, RoundingMode.HALF_UP).doubleValue();
     }
 
     public static void resetSession() {
-        initialCoins = -1;
-        currentCoins = -1;
-        gainedCoins = 0;
+        initialCoins = null;
+        currentCoins = null;
+        gainedCoins = BigDecimal.ZERO;
         currentSouls = -1;
         currentCactus = -1;
-        currentSoulsDisplay = "";
         currentCoinsDisplay = "";
-        currentCactusDisplay = "";
         coinsPerMinute = 0.0;
         firstUpdate = true;
         sessionStartTime = System.currentTimeMillis();
@@ -223,7 +218,7 @@ public class CoinTrackerUtility {
     }
 
     private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
-        if (!shouldRenderOverlay() || !isTracking || currentCoins < 0) {
+        if (!shouldRenderOverlay() || !isTracking || currentCoins == null) {
             return;
         }
 
@@ -252,7 +247,8 @@ public class CoinTrackerUtility {
 
         String title = "Coin Tracker";
         String coinsText = "Coins: " + formatHudValueDisplay(currentCoinsDisplay, currentCoins);
-        String gainedText = "Gewinn: " + (gainedCoins >= 0 ? "+" : "") + formatAbbreviatedDisplay(gainedCoins);
+        String gainedText = "Gewinn: " + (gainedCoins.signum() >= 0 ? "+" : "")
+                + formatAbbreviatedDisplay(gainedCoins);
         String cpmText = "CPM: " + formatAbbreviatedDisplay(Math.round(coinsPerMinute));
 
         String timeText = "Zeit: 00:00";
@@ -305,51 +301,31 @@ public class CoinTrackerUtility {
         matrices.popMatrix();
     }
 
-    private static String formatHudValueDisplay(String hudDisplay, long fallbackValue) {
+    private static String formatHudValueDisplay(String hudDisplay, BigDecimal fallbackValue) {
         if (hudDisplay != null && !hudDisplay.isEmpty()) {
             String normalized = BossBarHudValueDecoder.normalizeHudDisplay(hudDisplay);
             if (!normalized.isEmpty()) {
                 return normalized;
             }
         }
-        if (fallbackValue < 0) {
+        if (fallbackValue == null || fallbackValue.signum() < 0) {
             return "-";
         }
         return formatAbbreviatedDisplay(fallbackValue);
+    }
+
+    private static String formatAbbreviatedDisplay(BigDecimal number) {
+        if (number == null) {
+            return "-";
+        }
+        return HudNumberSuffixUtility.formatAbbreviated(number);
     }
 
     private static String formatAbbreviatedDisplay(long number) {
         if (number < 0) {
             return "-";
         }
-        if (number < 1000) {
-            return String.valueOf(number);
-        }
-        return formatAbbreviated(number);
-    }
-
-    private static String formatAbbreviated(long number) {
-        if (number < 1000) {
-            return String.valueOf(number);
-        }
-        if (number >= 1_000_000_000_000L) {
-            return formatAbbreviatedValue(number / 1_000_000_000_000.0, "T");
-        }
-        if (number >= 1_000_000_000L) {
-            return formatAbbreviatedValue(number / 1_000_000_000.0, "B");
-        }
-        if (number >= 1_000_000L) {
-            return formatAbbreviatedValue(number / 1_000_000.0, "M");
-        }
-        return formatAbbreviatedValue(number / 1_000.0, "K");
-    }
-
-    private static String formatAbbreviatedValue(double value, String suffix) {
-        double rounded = Math.round(value * 10.0) / 10.0;
-        if (rounded == Math.floor(rounded)) {
-            return String.format(Locale.ROOT, "%.0f%s", rounded, suffix);
-        }
-        return String.format(Locale.ROOT, "%.1f%s", rounded, suffix);
+        return HudNumberSuffixUtility.formatAbbreviated(BigDecimal.valueOf(number));
     }
 
     private static final int OVERLAY_LINE_COUNT = 5;
@@ -368,7 +344,7 @@ public class CoinTrackerUtility {
     static String[] getOverlayLines() {
         return new String[] {
                 "Coins: " + formatHudValueDisplay(currentCoinsDisplay, currentCoins),
-                "Gewinn: " + (gainedCoins >= 0 ? "+" : "") + formatAbbreviatedDisplay(gainedCoins),
+                "Gewinn: " + (gainedCoins.signum() >= 0 ? "+" : "") + formatAbbreviatedDisplay(gainedCoins),
                 "CPM: " + formatAbbreviatedDisplay(Math.round(coinsPerMinute)),
                 "Zeit: 00:00"
         };
@@ -383,11 +359,11 @@ public class CoinTrackerUtility {
     }
 
     public static long getCurrentCoins() {
-        return currentCoins;
+        return HudNumberSuffixUtility.toLongOrMax(currentCoins);
     }
 
     public static long getGainedCoins() {
-        return gainedCoins;
+        return HudNumberSuffixUtility.toLongOrMax(gainedCoins);
     }
 
     public static double getCoinsPerMinute() {
@@ -408,11 +384,6 @@ public class CoinTrackerUtility {
 
     public static boolean isAllowedDimension() {
         return BossBarHudValueDecoder.isFloorDimension();
-    }
-
-    private static boolean isTrackingAllowed() {
-        return isActiveOnFloor()
-                && CCLiveUtilitiesConfig.HANDLER.instance().showCoinTracker;
     }
 
     private static boolean isActiveOnFloor() {

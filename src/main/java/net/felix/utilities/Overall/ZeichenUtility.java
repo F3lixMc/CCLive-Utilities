@@ -71,6 +71,7 @@ public class ZeichenUtility {
     private static String cardsMenu = "";
     private static String statuesMenu = "";
     private static String friendsRequestAcceptDeny = "";
+    private static String confirmationUiBackground = "";
     private static String hunterUiBackground = "";
     private static String epicDrops = "";
     private static String legendaryDrops = "";
@@ -249,6 +250,7 @@ public class ZeichenUtility {
         cardsMenu = "";
         statuesMenu = "";
         friendsRequestAcceptDeny = "";
+        confirmationUiBackground = "";
         hunterUiBackground = "";
         epicDrops = "";
         legendaryDrops = "";
@@ -312,6 +314,7 @@ public class ZeichenUtility {
         cardsMenu = singleChar(index, "cactusclicker_cards", "ui_background");
         statuesMenu = singleChar(index, "cactusclicker_statues", "ui_background");
         friendsRequestAcceptDeny = singleChar(index, "friends", "friends_request_accept_deny");
+        confirmationUiBackground = singleChar(index, "confirmation", "ui_background");
         hunterUiBackground = singleChar(index, "hunter", "ui_background");
 
         find(index, "cactusclicker_drop_animation", "epic").ifPresent(cps -> epicDrops = codePointsToString(cps));
@@ -454,6 +457,12 @@ public class ZeichenUtility {
         }
         if (json.has("friends_request_accept_deny")) {
             friendsRequestAcceptDeny = json.getAsJsonObject("friends_request_accept_deny").get("character").getAsString();
+        }
+        if (json.has("confirmation_ui_background")) {
+            JsonObject o = json.getAsJsonObject("confirmation_ui_background");
+            if (o.has("character")) {
+                confirmationUiBackground = o.get("character").getAsString();
+            }
         }
         if (json.has("hunter_ui_background")) {
             hunterUiBackground = json.getAsJsonObject("hunter_ui_background").get("character").getAsString();
@@ -634,6 +643,7 @@ public class ZeichenUtility {
         cardsMenu = "㷆";
         statuesMenu = "㷂";
         friendsRequestAcceptDeny = "ぢ";
+        confirmationUiBackground = "㡟";
         hunterUiBackground = "㲂";
         epicDrops = "㲷㲸㲹㲺㲻㲼㲽㲾㲿㳀㳁㳂㳃㳄㳅㳆㳇㳈㳉㳊㳋㳌㳍㳎㳏㳐㳑㳒㳓㳔㳕㳖㳗㳘㳙㳚㳛㳜㳝㳞";
         legendaryDrops = "㲏㲐㲑㲒㲓㲔㲕㲖㲗㲘㲙㲚㲛㲜㲝㲞㲟㲠㲡㲢㲣㲤㲥㲦㲧㲨㲩㲪㲫㲬㲭㲮㲯㲰㲱㲲㲳㲴㲵㲶";
@@ -837,6 +847,17 @@ public class ZeichenUtility {
         ensureInitialized();
         return text != null && friendsRequestAcceptDeny != null && !friendsRequestAcceptDeny.isEmpty()
                 && text.contains(friendsRequestAcceptDeny);
+    }
+
+    public static String getConfirmationUiBackground() {
+        ensureInitialized();
+        return confirmationUiBackground;
+    }
+
+    public static boolean containsConfirmationUiBackground(String text) {
+        ensureInitialized();
+        return text != null && confirmationUiBackground != null && !confirmationUiBackground.isEmpty()
+                && text.contains(confirmationUiBackground);
     }
 
     public static boolean containsFarmzoneQuickTravel(String text) {

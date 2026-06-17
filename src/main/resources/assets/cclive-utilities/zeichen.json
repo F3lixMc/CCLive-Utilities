@@ -39,6 +39,10 @@
     "group": "friends",
     "name": "friends_request_accept_deny"
   },
+  "confirmation_ui_background": {
+    "group": "confirmation",
+    "name": "ui_background"
+  },
   "hunter_ui_background": {
     "group": "hunter",
     "name": "ui_background"

@@ -1,7 +1,7 @@
 package net.felix.utilities.Town;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -14,7 +14,6 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.OverlayType;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
@@ -37,6 +36,10 @@ public class EquipmentDisplayUtility {
 	private static Map<String, Double> percentageStats = new HashMap<>();
 	private static Map<String, Double> absoluteStats = new HashMap<>();
 	private static double totalArmor = 0.0;
+
+	public static double getTotalArmor() {
+		return totalArmor;
+	}
 	private static final int[] EQUIPMENT_SLOTS = {1, 2, 6, 10, 11, 15, 19, 20, 24, 28, 29, 33, 38, 42, 48, 50};
 	// Pattern für Zahlen mit Tausendertrennungen: Kommas als Tausendertrennungen, Punkt als Dezimaltrenner
 	private static final Pattern STAT_PATTERN = Pattern.compile("([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
@@ -108,7 +111,9 @@ public class EquipmentDisplayUtility {
 		// Client-seitige Events registrieren
 		ClientTickEvents.END_CLIENT_TICK.register(EquipmentDisplayUtility::onClientTick);
 		// Registriere HUD-Rendering
-		HudRenderCallback.EVENT.register((drawContext, tickDelta) -> onHudRender(drawContext, tickDelta));
+		HudElementRegistry.addLast(
+				Identifier.of("cclive-utilities", "equipment_display"),
+				EquipmentDisplayUtility::onHudRender);
 		
 		// SearchBar initialisieren
 		SearchBarUtility.initialize();

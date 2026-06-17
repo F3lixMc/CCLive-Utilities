@@ -2,6 +2,7 @@ package net.felix.utilities.Overall;
 
 import net.minecraft.client.MinecraftClient;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +31,12 @@ public final class BossBarHudValueDecoder {
      * @return dekodierte Wert-Strings in Reihenfolge (typisch: Souls, Coins, Cactus)
      */
     public static List<String> extractDecodedValues(String text) {
-        List<String> result = new ArrayList<>();
-        if (text == null || text.isEmpty()) {
-            return result;
-        }
+        return extractDecodedValues(text, getMappingForCurrentDimension());
+    }
 
-        Map<Character, String> mapping = getMappingForCurrentDimension();
-        if (mapping.isEmpty()) {
+    public static List<String> extractDecodedValues(String text, Map<Character, String> mapping) {
+        List<String> result = new ArrayList<>();
+        if (text == null || text.isEmpty() || mapping == null || mapping.isEmpty()) {
             return result;
         }
 
@@ -59,13 +59,75 @@ public final class BossBarHudValueDecoder {
         return result;
     }
 
+    /**
+     * Liest Coins aus der Bossbar ohne Dimensions-Fontwahl – probiert Factory- und Aincraft-Mapping.
+     */
+    public static ParsedValue parseCoinsFromBossBar(String bossBarText) {
+        if (!looksLikeHudStatsBar(bossBarText)) {
+            return ParsedValue.invalid();
+        }
+
+        ParsedValue best = ParsedValue.invalid();
+        int bestScore = -1;
+
+        Map<Character, String> factoryMapping = ZeichenUtility.getFactoryFontFirstLine();
+        Map<Character, String> aincraftMapping = ZeichenUtility.getAincraftFontFirstLine();
+
+        if (factoryMapping != null && !factoryMapping.isEmpty()) {
+            int score = scoreCoinsParse(bossBarText, factoryMapping);
+            if (score >= 0) {
+                ParsedValue candidate = parseCoinsWithMapping(bossBarText, factoryMapping);
+                if (candidate.isValid() && score > bestScore) {
+                    best = candidate;
+                    bestScore = score;
+                }
+            }
+        }
+
+        if (aincraftMapping != null && !aincraftMapping.isEmpty()) {
+            int score = scoreCoinsParse(bossBarText, aincraftMapping);
+            if (score >= 0) {
+                ParsedValue candidate = parseCoinsWithMapping(bossBarText, aincraftMapping);
+                if (candidate.isValid() && score > bestScore) {
+                    best = candidate;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    private static ParsedValue parseCoinsWithMapping(String bossBarText, Map<Character, String> mapping) {
+        List<String> values = extractDecodedValues(bossBarText, mapping);
+        if (values.size() < 2) {
+            return ParsedValue.invalid();
+        }
+        return parseValue(values.get(1));
+    }
+
+    private static int scoreCoinsParse(String bossBarText, Map<Character, String> mapping) {
+        List<String> values = extractDecodedValues(bossBarText, mapping);
+        if (values.size() < 2) {
+            return -1;
+        }
+        ParsedValue coins = parseValue(values.get(1));
+        if (!coins.isValid()) {
+            return -1;
+        }
+        int score = values.size() * 10 + coins.display.length();
+        if (values.size() >= 1 && parseValue(values.get(0)).isValid()) {
+            score += 5;
+        }
+        return score;
+    }
+
     public static long parseNumericValue(String decoded) {
         ParsedValue parsed = parseValue(decoded);
-        return parsed.value;
+        return parsed.toLongOrMax();
     }
 
     /**
-     * Parst einen dekodierten HUD-Wert inkl. optionalem Suffix-Buchstaben (K, M, B, T).
+     * Parst einen dekodierten HUD-Wert inkl. Suffix (K, M, B, T, …, AA, AB, …).
      */
     public static ParsedValue parseValue(String decoded) {
         if (decoded == null || decoded.isEmpty()) {
@@ -77,105 +139,43 @@ public final class BossBarHudValueDecoder {
             return ParsedValue.invalid();
         }
 
-        char lastChar = trimmed.charAt(trimmed.length() - 1);
-        if (Character.isLetter(lastChar)) {
-            String suffix = String.valueOf(lastChar).toUpperCase(java.util.Locale.ROOT);
-            double multiplier = suffixMultiplier(suffix);
-            if (multiplier > 0) {
-                String numberPart = trimmed.substring(0, trimmed.length() - 1).trim();
-                double base = parseDecimalNumber(numberPart);
-                if (base >= 0) {
-                    long value = Math.round(base * multiplier);
-                    return new ParsedValue(value, trimmed, suffix);
-                }
-            }
-        }
-
-        long value = parsePlainNumericValue(trimmed);
-        if (value < 0) {
+        BigDecimal numericValue = HudNumberSuffixUtility.parseSuffixedValue(trimmed);
+        if (numericValue == null || numericValue.signum() < 0) {
             return ParsedValue.invalid();
         }
-        return new ParsedValue(value, trimmed, "");
-    }
-
-    private static long parsePlainNumericValue(String decoded) {
-        if (decoded == null || decoded.isEmpty()) {
-            return -1;
+        String suffix = HudNumberSuffixUtility.extractSuffix(trimmed);
+        if (suffix == null) {
+            suffix = "";
         }
-        String cleaned = decoded.replaceAll("[^0-9.,]", "");
-        if (cleaned.isEmpty()) {
-            return -1;
-        }
-        cleaned = cleaned.replace(".", "").replace(",", "");
-        try {
-            return Long.parseLong(cleaned);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
-
-    private static double parseDecimalNumber(String numberPart) {
-        if (numberPart == null || numberPart.isEmpty()) {
-            return -1;
-        }
-        String normalized = numberPart.replace(" ", "");
-        int lastDot = normalized.lastIndexOf('.');
-        int lastComma = normalized.lastIndexOf(',');
-        int decimalSep = Math.max(lastDot, lastComma);
-
-        if (decimalSep >= 0) {
-            String intPart = normalized.substring(0, decimalSep).replace(".", "").replace(",", "");
-            String fracPart = normalized.substring(decimalSep + 1).replace(".", "").replace(",", "");
-            if (intPart.isEmpty()) {
-                intPart = "0";
-            }
-            try {
-                return Double.parseDouble(intPart + "." + fracPart);
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-
-        String digitsOnly = normalized.replace(".", "").replace(",", "");
-        try {
-            return Double.parseDouble(digitsOnly);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
-
-    private static double suffixMultiplier(String suffix) {
-        return switch (suffix) {
-            case "K" -> 1_000.0;
-            case "M" -> 1_000_000.0;
-            case "B" -> 1_000_000_000.0;
-            case "T" -> 1_000_000_000_000.0;
-            default -> -1;
-        };
+        return new ParsedValue(numericValue, trimmed, suffix);
     }
 
     public static final class ParsedValue {
-        public final long value;
+        public final BigDecimal numericValue;
         /** Anzeige-String wie aus der HUD (z. B. {@code 56,9B}) */
         public final String display;
         public final String suffix;
 
-        public ParsedValue(long value, String display, String suffix) {
-            this.value = value;
+        public ParsedValue(BigDecimal numericValue, String display, String suffix) {
+            this.numericValue = numericValue;
             this.display = display;
             this.suffix = suffix;
         }
 
         public static ParsedValue invalid() {
-            return new ParsedValue(-1, "", "");
+            return new ParsedValue(null, "", "");
         }
 
         public boolean isValid() {
-            return value >= 0;
+            return numericValue != null && numericValue.signum() >= 0;
         }
 
         public boolean hasSuffix() {
             return suffix != null && !suffix.isEmpty();
+        }
+
+        public long toLongOrMax() {
+            return HudNumberSuffixUtility.toLongOrMax(numericValue);
         }
     }
 
@@ -193,13 +193,12 @@ public final class BossBarHudValueDecoder {
             return "";
         }
 
-        char lastChar = trimmed.charAt(trimmed.length() - 1);
-        if (!Character.isLetter(lastChar)) {
+        String suffix = HudNumberSuffixUtility.extractSuffix(trimmed);
+        if (suffix == null) {
             return normalizeFullNumber(trimmed);
         }
 
-        String suffix = String.valueOf(lastChar);
-        String numberPart = trimmed.substring(0, trimmed.length() - 1);
+        String numberPart = trimmed.substring(0, trimmed.length() - suffix.length());
         return normalizeAbbreviatedNumberPart(numberPart) + suffix;
     }
 
@@ -255,21 +254,21 @@ public final class BossBarHudValueDecoder {
         if (values.size() >= 1) {
             ParsedValue souls = parseValue(values.get(0));
             if (souls.isValid()) {
-                stats.souls = souls.value;
+                stats.souls = souls.numericValue;
                 stats.soulsDisplay = souls.display;
             }
         }
         if (values.size() >= 2) {
             ParsedValue coins = parseValue(values.get(1));
             if (coins.isValid()) {
-                stats.coins = coins.value;
+                stats.coins = coins.numericValue;
                 stats.coinsDisplay = coins.display;
             }
         }
         if (floorDimension && values.size() >= 3) {
             ParsedValue floor = parseValue(values.get(2));
             if (floor.isValid()) {
-                stats.floorLevel = floor.value;
+                stats.floorLevel = floor.numericValue;
                 stats.floorDisplay = floor.display;
             }
         }
@@ -278,7 +277,7 @@ public final class BossBarHudValueDecoder {
         if (values.size() > cactusIndex) {
             ParsedValue cactus = parseValue(values.get(cactusIndex));
             if (cactus.isValid()) {
-                stats.cactus = cactus.value;
+                stats.cactus = cactus.numericValue;
                 stats.cactusDisplay = cactus.display;
             }
         }
@@ -373,17 +372,17 @@ public final class BossBarHudValueDecoder {
     }
 
     public static final class HudStats {
-        public long souls = -1;
-        public long coins = -1;
-        public long cactus = -1;
-        public long floorLevel = -1;
+        public BigDecimal souls;
+        public BigDecimal coins;
+        public BigDecimal cactus;
+        public BigDecimal floorLevel;
         public String soulsDisplay = "";
         public String coinsDisplay = "";
         public String cactusDisplay = "";
         public String floorDisplay = "";
 
         public boolean hasCoins() {
-            return coins >= 0;
+            return coins != null && coins.signum() >= 0;
         }
     }
 }

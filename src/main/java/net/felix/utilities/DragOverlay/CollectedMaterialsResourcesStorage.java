@@ -262,6 +262,22 @@ public class CollectedMaterialsResourcesStorage {
         update.put(name, delta);
         addResources(update);
     }
+
+    public static void subtractMaterial(String name, long delta) {
+        if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        long current = getMaterialAmount(name);
+        updateMaterial(name, Math.max(0L, current - delta));
+    }
+
+    public static void subtractResource(String name, long delta) {
+        if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        long current = getResourceAmount(name);
+        updateResource(name, Math.max(0L, current - delta));
+    }
     
     public static void resetAll() {
         ensureInitialized();

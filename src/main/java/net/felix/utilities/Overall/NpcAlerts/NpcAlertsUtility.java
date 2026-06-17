@@ -1,7 +1,7 @@
 package net.felix.utilities.Overall.NpcAlerts;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gl.RenderPipelines;
@@ -341,7 +341,9 @@ public class NpcAlertsUtility {
 			ClientTickEvents.END_CLIENT_TICK.register(NpcAlertsUtility::onClientTick);
 			
 			// Registriere HUD-Rendering
-			HudRenderCallback.EVENT.register((drawContext, tickDelta) -> onHudRender(drawContext, tickDelta));
+			HudElementRegistry.addLast(
+					Identifier.of("cclive-utilities", "npc_alerts"),
+					NpcAlertsUtility::onHudRender);
 			
 			isInitialized = true;
 		} catch (Exception e) {
@@ -2357,8 +2359,6 @@ public class NpcAlertsUtility {
 	 * Rendert separate Overlays für einzelne Informationen
 	 */
 	private static void renderSeparateOverlays(DrawContext context, MinecraftClient client) {
-		final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
-		
 		// Forschung
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
 		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
@@ -2525,7 +2525,6 @@ public class NpcAlertsUtility {
 			// Liste für Slots, die zusammen gerendert werden sollen
 			List<LineWithPercent> mkLines = new ArrayList<>();
 			int yOffset = 0; // Für einzelne Overlays
-			int mkLineHeight = client.textRenderer.fontHeight + 2;
 			
 			for (int i = 0; i < 3; i++) {
 				// Prüfe ob dieser Slot aktiviert ist
@@ -2658,8 +2657,6 @@ public class NpcAlertsUtility {
 			
 			// Liste für Slots, die zusammen gerendert werden sollen
 			List<LineWithPercent> recyclerLines = new ArrayList<>();
-			int yOffset = 0; // Für einzelne Overlays
-			int recyclerLineHeight = client.textRenderer.fontHeight + 2;
 			
 			// Recycler Slot 1
 			if (recyclerSlot1Active) {
@@ -2685,7 +2682,6 @@ public class NpcAlertsUtility {
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1X,
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Y,
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
-					yOffset += recyclerLineHeight;
 				} else {
 					// Füge zur Liste hinzu (wird zusammen gerendert)
 					recyclerLines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot1", showIcon));
@@ -2714,7 +2710,6 @@ public class NpcAlertsUtility {
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2X,
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Y,
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
-					yOffset += recyclerLineHeight;
 				} else {
 					// Füge zur Liste hinzu (wird zusammen gerendert)
 					recyclerLines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot2", showIcon));
@@ -2743,7 +2738,6 @@ public class NpcAlertsUtility {
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3X,
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Y,
 						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
-					yOffset += recyclerLineHeight;
 				} else {
 					// Füge zur Liste hinzu (wird zusammen gerendert)
 					recyclerLines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot3", showIcon));
@@ -2764,63 +2758,6 @@ public class NpcAlertsUtility {
 					"recycler"); // Verwende "recycler" als configKey für Farben
 			}
 		}
-	}
-	
-	/**
-	 * Rendert ein einzelnes Overlay für eine Information
-	 */
-	private static void renderSingleInfoOverlay(DrawContext context, MinecraftClient client, 
-		String text, String percentText, boolean showPercent, boolean showWarning, String configKey,
-		int xPosition, int yPosition) {
-		renderSingleInfoOverlay(context, client, text, percentText, showPercent, showWarning, configKey, false, xPosition, yPosition);
-	}
-	
-	/**
-	 * Rendert ein einzelnes Overlay für eine Information (mit Icon-Support)
-	 */
-	private static void renderSingleInfoOverlay(DrawContext context, MinecraftClient client, 
-		String text, String percentText, boolean showPercent, boolean showWarning, String configKey,
-		boolean showIcon, int xPosition, int yPosition) {
-		// Standardmäßig Hintergrund anzeigen, wenn nicht spezifiziert
-		boolean showBackground = true;
-		if (configKey != null) {
-			switch (configKey) {
-				case "forschung":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground;
-					break;
-				case "amboss":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground;
-					break;
-				case "schmelzofen":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground;
-					break;
-				case "jaeger":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground;
-					break;
-				case "komboKiste":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground;
-					break;
-				case "seelen":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground;
-					break;
-				case "essenzen":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground;
-					break;
-				case "machtkristalle":
-				case "machtkristalleSlot1":
-				case "machtkristalleSlot2":
-				case "machtkristalleSlot3":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground;
-					break;
-				case "recycler":
-				case "recyclerSlot1":
-				case "recyclerSlot2":
-				case "recyclerSlot3":
-					showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground;
-					break;
-			}
-		}
-		renderSingleInfoOverlay(context, client, text, percentText, showPercent, showWarning, configKey, showIcon, xPosition, yPosition, showBackground);
 	}
 	
 	/**

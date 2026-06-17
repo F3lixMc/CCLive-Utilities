@@ -6,8 +6,10 @@ import net.felix.utilities.ItemViewer.PriceData;
 import net.felix.utilities.ItemViewer.BlueprintShopData;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -87,29 +89,17 @@ public class ClipboardUtility {
         // Legend+-Sammler: Ressourcen aus [Sammler]-Tooltip bei Klick
         LegendPlusSammlerCollector.initialize();
 
+        // Kosten-Inventare: Kauf-Abzug wenn kein Tooltip mehr den aktuellen Wert liefert
+        ClipboardCostPurchaseTracker.initialize();
+
         // Farmzone: Ressourcen aus Actionbar (nur bei Scoreboard-Biom)
         ClipboardFarmzoneActionBar.initialize();
 
         // Fisch-Belohnungen aus Server-Chat (Materialien addieren)
         FishingRewardChatCollector.initialize();
         
-        // Registriere Chat-Event für Coin-Updates
-        net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> {
-            String messageText = message.getString();
-            if (messageText != null && !messageText.isEmpty()) {
-                // Ignoriere unsere eigenen CCLive-Nachrichten um Endlosschleifen zu vermeiden
-                if (!messageText.contains("[CCLive-Debug]")) {
-                    boolean shouldSuppress = ClipboardCoinCollector.processChatMessage(messageText);
-                    if (shouldSuppress) {
-                        return false; // Nachricht unterdrücken
-                    }
-                }
-            }
-            return true; // Nachricht anzeigen
-        });
-        
         // Registriere HUD-Rendering für Overlay außerhalb von Inventaren
-        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
+        HudElementRegistry.addLast(Identifier.of("cclive-utilities", "clipboard"), (drawContext, tickDelta) -> {
             net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
             if (client == null) return;
             

@@ -8,7 +8,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.BPViewerUtility;
@@ -136,9 +136,9 @@ public class ItemViewerUtility {
             ClientTickEvents.END_CLIENT_TICK.register(ItemViewerUtility::onClientTick);
             
             // Registriere HUD-Rendering
-            HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
-                onHudRender(drawContext, tickDelta);
-            });
+            HudElementRegistry.addLast(
+                    Identifier.of("cclive-utilities", "item_viewer"),
+                    ItemViewerUtility::onHudRender);
             
             isInitialized = true;
         } catch (Exception e) {
@@ -1121,30 +1121,6 @@ public class ItemViewerUtility {
             return net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData);
         }
         return false;
-    }
-    
-    /**
-     * Prüft ob wir in einem Bauplan-Inventar sind
-     */
-    private static boolean isInBlueprintInventory(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen) {
-        try {
-            net.minecraft.text.Text titleText = screen.getTitle();
-            String title = titleText != null ? titleText.getString() : "";
-            String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "").trim();
-            
-            boolean isBlueprintInventory = cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Blueprints [Weapons]") ||
-                   cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Blueprints [Armor]") ||
-                   cleanTitle.contains("Baupläne [Werkzeuge]") || cleanTitle.contains("Blueprints [Tools]") ||
-                   cleanTitle.contains("Bauplan [Shop]") || cleanTitle.contains("Blueprint Store") ||
-                   cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorited [Armor Blueprints]") ||
-                   cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorited [Weapon Blueprints]") ||
-                   cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") || cleanTitle.contains("Favorited [Tools Blueprints]") ||
-                   cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
-            
-            return isBlueprintInventory;
-        } catch (Exception e) {
-            return false;
-        }
     }
     
     /**

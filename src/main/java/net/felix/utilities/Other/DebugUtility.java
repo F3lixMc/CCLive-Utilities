@@ -1,8 +1,7 @@
-package net.felix.utilities;
+package net.felix.utilities.Other;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.BossBarHud;
 import net.minecraft.client.gui.hud.ClientBossBar;
@@ -21,6 +20,7 @@ import net.minecraft.scoreboard.ScoreboardObjective;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
+import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
 
 import java.util.ArrayList;
@@ -33,8 +33,6 @@ import java.util.UUID;
  * Utility-Klasse für einheitliche Debug-Nachrichten und Item-Logging
  */
 public class DebugUtility {
-    
-    private static final String DEBUG_PREFIX = "§7[§bCCLive-Debug§7]§r ";
     
     // Item Hover Logger fields
     private static boolean isItemLoggerInitialized = false;
@@ -851,9 +849,7 @@ public class DebugUtility {
                             if (java.util.Map.class.isAssignableFrom(field.getType())) {
                                 field.setAccessible(true);
                                 Object fieldValue = field.get(scoreboard);
-                                if (fieldValue instanceof java.util.Map) {
-                                    @SuppressWarnings("unchecked")
-                                    java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
+                                if (fieldValue instanceof java.util.Map<?, ?> map) {
                                     // Prüfe ob dies die Teams-Map ist (Map<String, Team>)
                                     if (!map.isEmpty()) {
                                         Object firstKey = map.keySet().iterator().next();

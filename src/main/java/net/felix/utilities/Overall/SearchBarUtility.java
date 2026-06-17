@@ -10,7 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.component.DataComponentTypes;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.ItemDisplayMode;
+import net.felix.utilities.Town.ItemDisplayMode;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -2098,30 +2098,6 @@ public class SearchBarUtility {
 		}
 		
 		return wordStart;
-	}
-	
-	/**
-	 * Findet das Ende des Wortes an der gegebenen Position
-	 */
-	private static int findWordEnd(String text, int position) {
-		if (position >= text.length()) {
-			return text.length();
-		}
-		
-		// Gehe vorwärts bis zum Ende des Wortes
-		int wordEnd = position;
-		
-		// Überspringe Leerzeichen und Sonderzeichen am Anfang
-		while (wordEnd < text.length() && isWordSeparator(text.charAt(wordEnd))) {
-			wordEnd++;
-		}
-		
-		// Gehe weiter vorwärts bis zum Ende des Wortes
-		while (wordEnd < text.length() && !isWordSeparator(text.charAt(wordEnd))) {
-			wordEnd++;
-		}
-		
-		return wordEnd;
 	}
 	
 	/**

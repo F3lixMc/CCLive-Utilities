@@ -372,7 +372,7 @@ public class KitViewScreen extends Screen {
 				if (!kitIcon.isEmpty()) {
 					context.drawItem(kitIcon, slotX + 1, slotY + 1, 0);
 				}
-				
+
 				// Stufen-Nummer als Overlay rendern (rechts unten im Slot)
 				String levelText = String.valueOf(level);
 				int textX = slotX + SLOT_SIZE - this.textRenderer.getWidth(levelText) - 2;
@@ -382,7 +382,7 @@ public class KitViewScreen extends Screen {
 			}
 		}
 	}
-	
+
 	private void renderNeuKitGrid(DrawContext context, int mouseX, int mouseY) {
 		KitFilterUtility.KitType[] kitTypes = KitFilterUtility.NEU_KIT_TYPES;
 		
@@ -422,7 +422,7 @@ public class KitViewScreen extends Screen {
 				if (!kitIcon.isEmpty()) {
 					context.drawItem(kitIcon, slotX + 1, slotY + 1, 0);
 				}
-				
+
 				String levelText = String.valueOf(level);
 				int textX = slotX + SLOT_SIZE - this.textRenderer.getWidth(levelText) - 2;
 				int textY = slotY + SLOT_SIZE - 8;

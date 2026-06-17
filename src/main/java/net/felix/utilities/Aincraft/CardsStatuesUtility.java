@@ -1,7 +1,7 @@
 package net.felix.utilities.Aincraft;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -19,11 +19,10 @@ import net.minecraft.util.Formatting;
 import net.minecraft.client.gl.RenderPipelines;
 import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.OverlayType;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
-
+import net.felix.utilities.Town.OverlayType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -185,7 +184,9 @@ public class CardsStatuesUtility {
 			ClientTickEvents.END_CLIENT_TICK.register(CardsStatuesUtility::onClientTick);
 			
 			// Registriere HUD-Rendering
-			HudRenderCallback.EVENT.register((drawContext, tickDelta) -> onHudRender(drawContext, tickDelta));
+			HudElementRegistry.addLast(
+					Identifier.of("cclive-utilities", "cards_statues"),
+					CardsStatuesUtility::onHudRender);
 			
 			// Chat-Nachrichten Event registrieren
 			ClientReceiveMessageEvents.GAME.register(CardsStatuesUtility::onChatMessage);

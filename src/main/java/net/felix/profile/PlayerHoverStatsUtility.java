@@ -937,7 +937,6 @@ public class PlayerHoverStatsUtility {
         // Versuche ShowText-Klasse - CRITICAL: In 1.21.7 ist HoverEvent selbst ShowText
         try {
             // Prüfe ob HoverEvent selbst ein ShowText ist
-            String className = hoverEvent.getClass().getName();
             Class<?> actualClass = hoverEvent.getClass();
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: HoverEvent Klasse: " + className);

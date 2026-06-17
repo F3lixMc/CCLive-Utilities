@@ -615,20 +615,8 @@ public class CCLiveCommands {
         };
     }
     
-    /**
-     * Suggestion Provider für Chat-Typen (default/cclive)
-     */
     private static SuggestionProvider<FabricClientCommandSource> chatTypeSuggestions() {
-        return (context, builder) -> {
-            String input = builder.getRemaining().toLowerCase();
-            if ("default".startsWith(input)) {
-                builder.suggest("default");
-            }
-            if ("cclive".startsWith(input)) {
-                builder.suggest("cclive");
-            }
-            return builder.buildFuture();
-        };
+        return chatModeSuggestions();
     }
     
     /**

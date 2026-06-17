@@ -157,8 +157,8 @@ public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
         
         // The overlay is already positioned correctly, so just draw the text at the overlay position
         // Draw background if overlay type is not NONE (same as EquipmentDisplayUtility)
-        net.felix.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
-        if (overlayType != net.felix.OverlayType.NONE) {
+        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
+        if (overlayType != net.felix.utilities.Town.OverlayType.NONE) {
             // The overlay already has the correct size, so just fill it
             context.fill(x, y, x + getWidth(), y + getHeight(), 0x80000000);
         }
@@ -175,19 +175,8 @@ public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
         );
     }
     
-    /**
-     * Get armor value from EquipmentDisplayUtility using reflection
-     */
     private double getArmorValueFromEquipmentDisplay() {
-        try {
-            // Use reflection to access the private totalArmor field
-            java.lang.reflect.Field totalArmorField = EquipmentDisplayUtility.class.getDeclaredField("totalArmor");
-            totalArmorField.setAccessible(true);
-            return (Double) totalArmorField.get(null);
-        } catch (Exception e) {
-            // Fallback to sample value if reflection fails
-            return 100.0;
-        }
+        return EquipmentDisplayUtility.getTotalArmor();
     }
     
     /**

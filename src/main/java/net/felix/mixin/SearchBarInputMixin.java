@@ -89,7 +89,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Item Logger hotkey (works in inventories)
-        if (net.felix.utilities.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
+        if (net.felix.utilities.Other.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
             cir.setReturnValue(true);
             return;
         }

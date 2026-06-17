@@ -15,8 +15,8 @@ import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.leaderboards.collectors.MenuHoverCollector;
 import net.felix.leaderboards.collectors.FloorKillsCollector;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
-import net.felix.utilities.DebugUtility;
 import net.felix.leaderboards.http.HttpClient;
+import net.felix.utilities.Other.DebugUtility;
 import net.felix.leaderboards.config.LeaderboardConfig;
 import net.felix.leaderboards.cooldown.LeaderboardCooldownManager;
 

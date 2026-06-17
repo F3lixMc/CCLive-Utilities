@@ -80,15 +80,6 @@ public class NpcAlertsDetailScreen extends Screen {
         super.render(context, mouseX, mouseY, delta);
     }
     
-    /**
-     * Berechnet die boxY Position des NpcAlertsSettingsScreen Overlays
-     * (11 Zeilen: Overlays Ein/Aus + Gesamt-Overlay-Hintergrund + 9 NPC Alerts-Einträge, je 25px + 40 Kopf, max 500)
-     */
-    private int getSettingsScreenBoxY() {
-        int settingsBoxHeight = Math.min(500, 11 * 25 + 40);
-        return height / 2 - settingsBoxHeight / 2;
-    }
-    
     private void renderSettingsBox(DrawContext context, int mouseX, int mouseY) {
         int boxWidth = 300;
         // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
@@ -1843,26 +1834,6 @@ public class NpcAlertsDetailScreen extends Screen {
     }
     
     /**
-     * Gibt zurück, ob die Machtkristall-spezifische Option aktiviert ist
-     */
-    private boolean getMachtkristalleOption() {
-        if (!configKey.equals("machtkristalle")) {
-            return false;
-        }
-        return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleOption;
-    }
-    
-    /**
-     * Setzt, ob die Machtkristall-spezifische Option aktiviert ist
-     */
-    private void setMachtkristalleOption(boolean value) {
-        if (!configKey.equals("machtkristalle")) {
-            return;
-        }
-        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleOption = value;
-    }
-    
-    /**
      * Gibt zurück, ob ein bestimmter Machtkristall-Slot aktiviert ist
      */
     private boolean getMachtkristalleSlotEnabled(int slotIndex) {
@@ -1903,68 +1874,6 @@ public class NpcAlertsDetailScreen extends Screen {
         // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
         if (parent instanceof OverlayEditorScreen) {
             ((OverlayEditorScreen) parent).refreshOverlays();
-        }
-    }
-    
-    private Color getTextColor() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungTextColor;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossTextColor;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenTextColor;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerTextColor;
-            case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteTextColor;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenTextColor;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenTextColor;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleTextColor;
-            case "recycler":
-                // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
-            case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
-            case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
-            default:
-                return new Color(0xFFFFFFFF);
-        }
-    }
-    
-    private Color getPercentColor() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungPercentColor;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossPercentColor;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenPercentColor;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerPercentColor;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenPercentColor;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenPercentColor;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentColor;
-            case "recycler":
-                // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
-            case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
-            case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
-            default:
-                return new Color(0xFFFFFF00);
         }
     }
     

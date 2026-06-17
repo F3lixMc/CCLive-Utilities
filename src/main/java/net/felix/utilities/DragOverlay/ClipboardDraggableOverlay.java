@@ -3,6 +3,7 @@ package net.felix.utilities.DragOverlay;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.ItemViewer.CostItem;
 import net.felix.utilities.Overall.ActionBarData;
+import net.felix.utilities.Overall.HudNumberSuffixUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.minecraft.client.MinecraftClient;
@@ -13,6 +14,7 @@ import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
 import org.joml.Matrix3x2fStack;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
@@ -1307,60 +1309,31 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             
             // Prüfe ob es Coins oder Pergamentfetzen sind (für Trennzeichen)
             boolean isCoins = "Coins".equalsIgnoreCase(multipliedItem.itemName);
-            // Berechne benötigte Menge
-            double neededAmount = parseAmountToDouble(multipliedItem.amount);
-            
-            // Hole vorhandene Menge aus dem Material-Tracker (für Materialien) oder ClipboardCoinCollector (für Coins)
-            double ownedAmount = 0.0;
+            BigDecimal neededAmount = parseAmountToBigDecimal(multipliedItem.amount);
+
+            BigDecimal ownedAmount;
             if (isCoins) {
                 ownedAmount = ClipboardCoinCollector.getCurrentCoins();
             } else {
-                ownedAmount = getOwnedMaterialAmount(costItem.itemName);
+                ownedAmount = BigDecimal.valueOf(getOwnedMaterialAmount(costItem.itemName));
             }
-            
-            // Bestimme Farbe basierend auf vorhandener vs. benötigter Menge
-            // WICHTIG: Die Farbe bleibt immer gleich, auch wenn das Item fertig ist und ausgeblendet werden soll
+
             int textColor;
-            if (neededAmount == 0) {
-                // Benötigt = 0: immer grün
-                textColor = 0xFF00FF00; // Grün
-            } else if (ownedAmount >= neededAmount) {
-                // Genug vorhanden: grün (immer hell, nie dunkler)
-                textColor = 0xFF00FF00; // Grün
+            if (neededAmount.compareTo(BigDecimal.ZERO) == 0) {
+                textColor = 0xFF00FF00;
+            } else if (ownedAmount.compareTo(neededAmount) >= 0) {
+                textColor = 0xFF00FF00;
             } else {
-                // Nicht genug vorhanden: rot
-                textColor = 0xFFFF5555; // Rot (Minecraft Standard)
+                textColor = 0xFFFF5555;
             }
-            
-            // Formatiere vorhandene und benötigte Menge (immer mit Trennzeichen)
-            String ownedAmountStr = formatAmount(ownedAmount, true);
-            String neededAmountStr = formatAmount(multipliedItem.amount, true);
+
+            String ownedAmountStr = formatAmount(ownedAmount, isCoins);
+            String neededAmountStr = formatAmount(multipliedItem.amount, isCoins);
             String materialLine = ownedAmountStr + " / " + neededAmountStr + " " + costItem.itemName;
-            
-            // Für Coins: Füge abgekürzte Version hinzu (für alle Seiten)
-            // Hinweis: Pergamentfetzen bekommen keine Abkürzung, nur Trennzeichen
+
             String abbreviatedText = "";
-            if (isCoins) {
-                try {
-                    // Konvertiere amount zu long
-                    long coinAmount = 0;
-                    if (multipliedItem.amount instanceof Number) {
-                        coinAmount = ((Number) multipliedItem.amount).longValue();
-                    } else if (multipliedItem.amount instanceof String) {
-                        try {
-                            coinAmount = Long.parseLong(removeThousandSeparators((String) multipliedItem.amount));
-                        } catch (NumberFormatException e) {
-                            // Ignoriere, wenn nicht parsbar
-                        }
-                    }
-                    
-                    if (coinAmount >= 1000) {
-                        String abbreviated = formatNumberAbbreviated(coinAmount);
-                        abbreviatedText = " (" + abbreviated + ")";
-                    }
-                } catch (Exception e) {
-                    // Ignoriere Fehler bei Abkürzung
-                }
+            if (isCoins && neededAmount.compareTo(BigDecimal.valueOf(1000)) >= 0) {
+                abbreviatedText = " (" + formatNumberAbbreviated(neededAmount) + ")";
             }
             
             // Rendere den Material-Text in der entsprechenden Farbe (rot/grün)
@@ -1446,35 +1419,37 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * Formatiert einen Amount-Wert: Ganze Zahlen ohne ".0", andere bleiben wie sie sind
      * Alle Werte werden mit Tausendertrennzeichen formatiert (1.000.000)
      */
-    private static String formatAmount(Object amount, boolean isCoins) {
+    private static String formatAmount(Object amount, boolean useGrouping) {
         if (amount == null) {
             return "0";
         }
-        
-        // Wenn es bereits ein String ist, versuche zu parsen und zu formatieren
+
+        if (amount instanceof BigDecimal bigDecimal) {
+            return HudNumberSuffixUtility.formatWithSeparators(bigDecimal);
+        }
+
         if (amount instanceof String) {
-            // Versuche String zu parsen und zu formatieren
-            // Entferne zuerst Tausendertrennzeichen, falls vorhanden
             try {
                 String cleaned = removeThousandSeparators((String) amount);
+                BigDecimal parsed = HudNumberSuffixUtility.parseSuffixedValue(cleaned);
+                if (parsed != null) {
+                    return HudNumberSuffixUtility.formatWithSeparators(parsed);
+                }
                 double value = Double.parseDouble(cleaned);
                 return formatNumberWithSeparators(value);
             } catch (NumberFormatException e) {
-                // Wenn Parsing fehlschlägt, gib den ursprünglichen String zurück
                 return (String) amount;
             }
         }
-        
-        // Wenn es eine Zahl ist
+
         if (amount instanceof Number) {
             Number num = (Number) amount;
-            double doubleValue = num.doubleValue();
-            
-            // Verwende immer Tausendertrennzeichen
-            return formatNumberWithSeparators(doubleValue);
+            if (num instanceof Long || num instanceof Integer || num instanceof BigDecimal) {
+                return HudNumberSuffixUtility.formatWithSeparators(new BigDecimal(num.toString()));
+            }
+            return formatNumberWithSeparators(num.doubleValue());
         }
-        
-        // Fallback: toString()
+
         return amount.toString();
     }
     
@@ -1501,59 +1476,33 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * @param number Die zu formatierende Zahl
      * @return Formatierter String z.B. "1.5M" für 1.500.000
      */
-    private static String formatNumberAbbreviated(long number) {
+    private static String formatNumberAbbreviated(BigDecimal number) {
         try {
-            if (number < 1000) {
-                return String.valueOf(number);
-            }
-            
-            // Trillion (T): 1.000.000.000.000+
-            if (number >= 1_000_000_000_000L) {
-                double value = number / 1_000_000_000_000.0;
-                return formatAbbreviatedWithSeparator(value, "T");
-            }
-            
-            // Billion (B): 1.000.000.000 - 999.999.999.999
-            if (number >= 1_000_000_000L) {
-                double value = number / 1_000_000_000.0;
-                return formatAbbreviatedWithSeparator(value, "B");
-            }
-            
-            // Million (M): 1.000.000 - 999.999.999
-            if (number >= 1_000_000L) {
-                double value = number / 1_000_000.0;
-                return formatAbbreviatedWithSeparator(value, "M");
-            }
-            
-            // Thousand (K): 1.000 - 999.999
-            if (number >= 1_000L) {
-                double value = (double) number / 1_000.0;
-                return formatAbbreviatedWithSeparator(value, "K");
-            }
-            
-            return String.valueOf(number);
+            return HudNumberSuffixUtility.formatAbbreviated(number);
         } catch (Exception e) {
-            return String.valueOf(number);
+            return number != null ? number.toPlainString() : "0";
         }
     }
-    
-    /**
-     * Formatiert einen Wert mit Tausendertrennzeichen (Punkte) und Suffix
-     * z.B. 1.5M für 1.500.000
-     */
-    private static String formatAbbreviatedWithSeparator(double value, String suffix) {
-        if (Double.isNaN(value) || Double.isInfinite(value) || value < 0) {
-            return "0" + suffix;
+
+    private static BigDecimal parseAmountToBigDecimal(Object amount) {
+        if (amount == null) {
+            return BigDecimal.ZERO;
         }
-        
-        // Runde auf 1 Dezimalstelle
-        double rounded = Math.round(value * 10.0) / 10.0;
-        
-        // Wenn gerundet eine ganze Zahl ist, zeige keine Dezimalstelle
-        if (rounded == Math.floor(rounded)) {
-            return String.format("%.0f%s", rounded, suffix);
-        } else {
-            return String.format("%.1f%s", rounded, suffix);
+        if (amount instanceof BigDecimal bigDecimal) {
+            return bigDecimal;
+        }
+        if (amount instanceof Number number) {
+            return new BigDecimal(number.toString());
+        }
+        String str = removeThousandSeparators(amount.toString());
+        BigDecimal parsed = HudNumberSuffixUtility.parseSuffixedValue(str);
+        if (parsed != null) {
+            return parsed;
+        }
+        try {
+            return new BigDecimal(str);
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
         }
     }
     
@@ -1613,24 +1562,17 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         CostItem multipliedItem = multiplyCostItem(costItem, quantity);
         
         // Berechne benötigte Menge
-        double neededAmount = parseAmountToDouble(multipliedItem.amount);
-        
-        // Wenn needed == 0, ist es immer "fertig" (grün)
-        if (neededAmount == 0) {
+        BigDecimal neededAmount = parseAmountToBigDecimal(multipliedItem.amount);
+        if (neededAmount.compareTo(BigDecimal.ZERO) == 0) {
             return true;
         }
-        
-        // Hole vorhandene Menge
+
         boolean isCoins = "Coins".equalsIgnoreCase(multipliedItem.itemName);
-        double ownedAmount = 0.0;
-        if (isCoins) {
-            ownedAmount = ClipboardCoinCollector.getCurrentCoins();
-        } else {
-            ownedAmount = getOwnedMaterialAmount(costItem.itemName);
-        }
-        
-        // Prüfe ob owned >= needed
-        return ownedAmount >= neededAmount;
+        BigDecimal ownedAmount = isCoins
+                ? ClipboardCoinCollector.getCurrentCoins()
+                : BigDecimal.valueOf(getOwnedMaterialAmount(costItem.itemName));
+
+        return ownedAmount.compareTo(neededAmount) >= 0;
     }
     
     private static double getOwnedMaterialAmount(String materialName) {
@@ -2605,28 +2547,20 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         CostItem multipliedItem = multiplyCostItem(costItem, quantity);
         boolean isCoins = "Coins".equalsIgnoreCase(multipliedItem.itemName);
-        
-        double ownedAmount = isCoins
-            ? ClipboardCoinCollector.getCurrentCoins()
-            : getOwnedMaterialAmount(costItem.itemName);
-        
-        String ownedAmountStr = formatAmount(ownedAmount, true);
-        String neededAmountStr = formatAmount(multipliedItem.amount, true);
+
+        BigDecimal ownedAmount = isCoins
+                ? ClipboardCoinCollector.getCurrentCoins()
+                : BigDecimal.valueOf(getOwnedMaterialAmount(costItem.itemName));
+
+        String ownedAmountStr = formatAmount(ownedAmount, isCoins);
+        String neededAmountStr = formatAmount(multipliedItem.amount, isCoins);
         String materialLine = ownedAmountStr + " / " + neededAmountStr + " " + costItem.itemName;
-        
+
         String abbreviatedText = "";
         if (isCoins) {
-            try {
-                long coinAmount = 0;
-                if (multipliedItem.amount instanceof Number) {
-                    coinAmount = ((Number) multipliedItem.amount).longValue();
-                } else if (multipliedItem.amount instanceof String) {
-                    coinAmount = Long.parseLong(removeThousandSeparators((String) multipliedItem.amount));
-                }
-                if (coinAmount >= 1000) {
-                    abbreviatedText = " (" + formatNumberAbbreviated(coinAmount) + ")";
-                }
-            } catch (Exception ignored) {
+            BigDecimal coinAmount = parseAmountToBigDecimal(multipliedItem.amount);
+            if (coinAmount.compareTo(BigDecimal.valueOf(1000)) >= 0) {
+                abbreviatedText = " (" + formatNumberAbbreviated(coinAmount) + ")";
             }
         }
         

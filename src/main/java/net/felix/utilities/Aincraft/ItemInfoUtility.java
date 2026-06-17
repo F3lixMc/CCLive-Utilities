@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 public class ItemInfoUtility {
 
 	/** Item-Extraktion (Hotkeys, Auto-Klick, Overlays) – derzeit deaktiviert. */
-	private static final boolean ENABLED = false;
+	private static boolean ENABLED = false;
 
 	private static boolean isInitialized = false;
 	private static KeyBinding extractKeyBinding;

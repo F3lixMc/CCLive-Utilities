@@ -15,9 +15,7 @@ import net.felix.utilities.DragOverlay.Farmworld.CollectionDraggableOverlay;
 import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.HideUncraftableButtonDraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.HideWrongClassButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.KitFilterButton1DraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.KitFilterButton2DraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.KitFilterButton3DraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.KitFilterButtonDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.AspectOverlayDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.StarAspectOverlayDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsMainDraggableOverlay;
@@ -169,9 +167,9 @@ public class OverlayEditorScreen extends Screen {
             
             // Check if we're in a Kit Filter relevant inventory
             if (isInKitFilterInventory()) {
-                overlays.add(new KitFilterButton1DraggableOverlay());
-                overlays.add(new KitFilterButton2DraggableOverlay());
-                overlays.add(new KitFilterButton3DraggableOverlay());
+                overlays.add(new KitFilterButtonDraggableOverlay(1));
+                overlays.add(new KitFilterButtonDraggableOverlay(2));
+                overlays.add(new KitFilterButtonDraggableOverlay(3));
             }
         }
         
@@ -370,31 +368,6 @@ public class OverlayEditorScreen extends Screen {
     }
     
     /**
-     * Check if the player is currently in an equipment chest inventory where Equipment Display works
-     */
-    private boolean isInEquipmentChestInventory() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
-            return false;
-        }
-        
-        // Check if the current screen is a HandledScreen (inventory-like screen)
-        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
-            return false;
-        }
-        
-        // Get the screen title to check if it contains the equipment chest Unicode characters
-        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
-        
-        String title = handledScreen.getTitle().getString();
-        
-        // Check if the title contains any of the equipment chest Unicode characters
-        // (same logic as in EquipmentDisplayUtility)
-        return title.contains("㬃") || title.contains("㬄") || title.contains("㬅") || title.contains("㬆");
-    }
-    
-    /**
      * Check if the player is currently in a floor dimension
      */
     private boolean isInFloorDimension() {
@@ -494,7 +467,7 @@ public class OverlayEditorScreen extends Screen {
         if (previousScreen != null) {
             previousScreen.render(context, mouseX, mouseY, delta);
         }
-        
+
         // Render very transparent background overlay
         context.fill(0, 0, width, height, 0x20000000);
         
@@ -1113,9 +1086,7 @@ public class OverlayEditorScreen extends Screen {
             }
             
             // Prüfe ob es ein Kit-Filter-Button ist
-            if (overlay instanceof KitFilterButton1DraggableOverlay ||
-                overlay instanceof KitFilterButton2DraggableOverlay ||
-                overlay instanceof KitFilterButton3DraggableOverlay) {
+            if (overlay instanceof KitFilterButtonDraggableOverlay) {
                 hasKitFilterButtons = true;
                 // Kit-Filter ist enabled wenn mindestens einer der Buttons enabled ist
                 if (overlay.isEnabled()) {
@@ -1280,9 +1251,7 @@ public class OverlayEditorScreen extends Screen {
             boolean newValue = !config.hideWrongClassEnabled;
             config.hideWrongClassEnabled = newValue;
             config.showHideWrongClassButton = newValue; // Synchronisiere mit *Enabled Option
-        } else if (overlay instanceof KitFilterButton1DraggableOverlay || 
-                   overlay instanceof KitFilterButton2DraggableOverlay || 
-                   overlay instanceof KitFilterButton3DraggableOverlay) {
+        } else if (overlay instanceof KitFilterButtonDraggableOverlay) {
             boolean newValue = !config.kitFilterButtonsEnabled;
             config.kitFilterButtonsEnabled = newValue;
             // Kit Filter Buttons haben keine separate show* Option, nur *Enabled Option

@@ -10,7 +10,7 @@ import net.minecraft.client.util.InputUtil;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.DebugUtility;
+import net.felix.utilities.Other.DebugUtility;
 
 import java.util.HashMap;
 import java.util.List;

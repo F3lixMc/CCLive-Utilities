@@ -7,15 +7,12 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * Utility für den Overlay Editor
  */
 public class OverlayEditorUtility {
     
     private static boolean isInitialized = false;
-    private static final AtomicBoolean f6KeyPressed = new AtomicBoolean(false);
     private static boolean isOverlayEditorOpen = false;
     
     // KeyBinding for the overlay editor

@@ -5,6 +5,9 @@ import dev.isxander.yacl3.api.controller.*;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
+import net.felix.utilities.Town.ItemDisplayMode;
+import net.felix.utilities.Town.OverlayType;
+import net.felix.utilities.Town.SchmiedItemDisplayMode;
 import net.minecraft.client.gui.screen.Screen;
 
 import net.minecraft.text.Text;
@@ -14,7 +17,6 @@ import com.google.gson.JsonParser;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import net.felix.OverlayType;
 
 public class CCLiveUtilitiesConfig {
     public static final ConfigClassHandler<CCLiveUtilitiesConfig> HANDLER = ConfigClassHandler.createBuilder(CCLiveUtilitiesConfig.class)
@@ -489,7 +491,7 @@ public class CCLiveUtilitiesConfig {
     public boolean schmiedTrackerShowBackground = true; // Schwarzer Hintergrund für Schmied Tracker
     
     @SerialEntry
-    public net.felix.SchmiedItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.SchmiedItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
+    public net.felix.utilities.Town.SchmiedItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.utilities.Town.SchmiedItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
     
     @SerialEntry
     public boolean hideUncraftableEnabled = true; // Hide Uncraftable Button aktiviert
@@ -1542,7 +1544,7 @@ public class CCLiveUtilitiesConfig {
                                         .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().searchBarItemDisplayMode, newVal -> HANDLER.instance().searchBarItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(ItemDisplayMode.class)
-                                                .valueFormatter(mode -> {
+                                                .formatValue(mode -> {
                                                     if (mode == ItemDisplayMode.BORDER) {
                                                         return Text.literal("Rahmen");
                                                     }
@@ -1678,7 +1680,7 @@ public class CCLiveUtilitiesConfig {
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().equipmentDisplayOverlayType, newVal -> HANDLER.instance().equipmentDisplayOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
-                                            .valueFormatter(v -> switch (v) {
+                                            .formatValue(v -> switch (v) {
                                                 case CUSTOM -> Text.literal("Bild-Overlay");
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
@@ -1708,7 +1710,7 @@ public class CCLiveUtilitiesConfig {
                                         .binding(SchmiedItemDisplayMode.BORDER, () -> HANDLER.instance().schmiedTrackerItemDisplayMode, newVal -> HANDLER.instance().schmiedTrackerItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(SchmiedItemDisplayMode.class)
-                                                .valueFormatter(mode -> {
+                                                .formatValue(mode -> {
                                                     if (mode == SchmiedItemDisplayMode.BORDER) {
                                                         return Text.literal("Rahmen");
                                                     }
@@ -1857,7 +1859,7 @@ public class CCLiveUtilitiesConfig {
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().materialTrackerOverlayType, newVal -> HANDLER.instance().materialTrackerOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
-                                            .valueFormatter(v -> switch (v) {
+                                            .formatValue(v -> switch (v) {
                                                 case CUSTOM -> Text.literal("Bild-Overlay");
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
@@ -1922,7 +1924,7 @@ public class CCLiveUtilitiesConfig {
                                                 newVal -> HANDLER.instance().coinTrackerDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(CoinTrackerDisplayMode.class)
-                                                .valueFormatter(mode -> switch (mode) {
+                                                .formatValue(mode -> switch (mode) {
                                                     case OVERLAY -> Text.literal("Overlay");
                                                     case SCOREBOARD -> Text.literal("Scoreboard");
                                                 }))
@@ -1963,7 +1965,7 @@ public class CCLiveUtilitiesConfig {
                                         })
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
-                                            .valueFormatter(v -> switch (v) {
+                                            .formatValue(v -> switch (v) {
                                                 case CUSTOM -> Text.literal("Bild-Overlay");
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
@@ -1995,7 +1997,7 @@ public class CCLiveUtilitiesConfig {
                                         })
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
-                                            .valueFormatter(v -> switch (v) {
+                                            .formatValue(v -> switch (v) {
                                                 case CUSTOM -> Text.literal("Bild-Overlay");
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
@@ -2033,7 +2035,7 @@ public class CCLiveUtilitiesConfig {
                                         })
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
-                                            .valueFormatter(v -> switch (v) {
+                                            .formatValue(v -> switch (v) {
                                                 case CUSTOM -> Text.literal("Bild-Overlay");
                                                 case BLACK -> Text.literal("Schwarzes Overlay");
                                                 case NONE -> Text.literal("Kein Hintergrund");
@@ -2131,7 +2133,7 @@ public class CCLiveUtilitiesConfig {
                                         .binding(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, () -> HANDLER.instance().hoverStatsChosenStat != null ? HANDLER.instance().hoverStatsChosenStat : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)
-                                                .valueFormatter(value -> value != null ? Text.literal(value.getDisplayName()) : Text.literal("Spielzeit")))
+                                                .formatValue(value -> value != null ? Text.literal(value.getDisplayName()) : Text.literal("Spielzeit")))
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()

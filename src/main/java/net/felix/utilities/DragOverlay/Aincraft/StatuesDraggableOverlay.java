@@ -119,9 +119,9 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         matrices.scale(scale, scale);
         
         // Render background based on overlay type (scaled, relative to matrix)
-        net.felix.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
+        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
         
-        if (overlayType == net.felix.OverlayType.CUSTOM) {
+        if (overlayType == net.felix.utilities.Town.OverlayType.CUSTOM) {
             try {
                 context.drawTexture(
                     RenderPipelines.GUI_TEXTURED,
@@ -134,7 +134,7 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
             } catch (Exception e) {
                 context.fill(-11, -11, -11 + DEFAULT_WIDTH, -11 + DEFAULT_HEIGHT, 0x80000000);
             }
-        } else if (overlayType == net.felix.OverlayType.BLACK) {
+        } else if (overlayType == net.felix.utilities.Town.OverlayType.BLACK) {
             context.fill(-11, -11, -11 + DEFAULT_WIDTH, -11 + DEFAULT_HEIGHT, 0x80000000);
         }
         

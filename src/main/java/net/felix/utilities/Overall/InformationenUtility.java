@@ -6448,206 +6448,6 @@ public class InformationenUtility {
 		return null;
 	}
 	
-	/** {@code [lo, hi]} inclusive, or {@code null}. Supports {@code "1-13"}, {@code "25+30"} (treated as range), or a single level {@code "14"}. */
-	private static int[] mkLevelParseCombinedLevelBounds(String spec) {
-		if (spec == null || spec.isEmpty()) {
-			return null;
-		}
-		String s = spec.trim();
-		try {
-			if (s.contains("-")) {
-				int d = s.indexOf('-');
-				int lo = Integer.parseInt(s.substring(0, d).trim());
-				int hi = Integer.parseInt(s.substring(d + 1).trim());
-				return new int[] { lo, hi };
-			}
-			if (s.contains("+")) {
-				int p = s.indexOf('+');
-				int lo = Integer.parseInt(s.substring(0, p).trim());
-				int hi = Integer.parseInt(s.substring(p + 1).trim());
-				return new int[] { lo, hi };
-			}
-			int n = Integer.parseInt(s);
-			return new int[] { n, n };
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
-	
-	private static boolean mkLevelCombinedLevelSpecContains(String spec, int mkLevel) {
-		int[] b = mkLevelParseCombinedLevelBounds(spec);
-		return b != null && mkLevel >= b[0] && mkLevel <= b[1];
-	}
-	
-	/** Span {@code hi - lo} for picking the tightest matching combined-waves band. */
-	private static int mkLevelCombinedLevelSpecSpan(String spec) {
-		int[] b = mkLevelParseCombinedLevelBounds(spec);
-		if (b == null) {
-			return Integer.MAX_VALUE;
-		}
-		return b[1] - b[0];
-	}
-	
-	private static boolean mkLevelWithoutListExcludesEssence(java.util.List<String> without, String essence) {
-		if (without == null || without.isEmpty() || essence == null) {
-			return false;
-		}
-		String e = essence.trim();
-		for (String w : without) {
-			if (w != null && w.trim().equals(e)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	/**
-	 * Strict match: level lies in a band and essence is not in {@code without}. Narrowest band wins.
-	 */
-	private static Integer findWaveFromMKLevelCombinedBandsStrict(int mkLevel, String essence) {
-		Integer bestWave = null;
-		int bestSpan = Integer.MAX_VALUE;
-		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
-			if (!mkLevelCombinedLevelSpecContains(cw.level, mkLevel)) {
-				continue;
-			}
-			if (mkLevelWithoutListExcludesEssence(cw.without, essence)) {
-				continue;
-			}
-			int span = mkLevelCombinedLevelSpecSpan(cw.level);
-			if (span < bestSpan) {
-				bestSpan = span;
-				bestWave = cw.wave;
-			}
-		}
-		return bestWave;
-	}
-	
-	/**
-	 * When {@code mkLevel} is above every band's hi, use the wave from the highest-ending band that does not exclude this essence
-	 * (narrowest among those with maximal hi).
-	 */
-	private static Integer findWaveFromMKLevelCombinedBandsExtrapolateHigh(int mkLevel, String essence) {
-		int globalMaxHi = Integer.MIN_VALUE;
-		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
-			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
-			if (b != null) {
-				globalMaxHi = Math.max(globalMaxHi, b[1]);
-			}
-		}
-		if (globalMaxHi == Integer.MIN_VALUE || mkLevel <= globalMaxHi) {
-			return null;
-		}
-		Integer bestWave = null;
-		int bestSpan = Integer.MAX_VALUE;
-		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
-			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
-			if (b == null || b[1] != globalMaxHi) {
-				continue;
-			}
-			if (mkLevelWithoutListExcludesEssence(cw.without, essence)) {
-				continue;
-			}
-			int span = b[1] - b[0];
-			if (span < bestSpan) {
-				bestSpan = span;
-				bestWave = cw.wave;
-			}
-		}
-		return bestWave;
-	}
-	
-	/**
-	 * Gaps (e.g. level 14 between 1–13 and 15–20) or excluded in-band essences (e.g. Piglin T1 in 15–20): pick the closest band
-	 * that does not exclude this essence. Tie at same distance: prefer continuing from the band ending nearest below the level,
-	 * else the next band above with smallest span.
-	 */
-	private static Integer findWaveFromMKLevelCombinedBandsNearest(int mkLevel, String essence) {
-		int bestDist = Integer.MAX_VALUE;
-		java.util.ArrayList<CombinedWaveInfo> atBest = new java.util.ArrayList<>();
-		for (CombinedWaveInfo cw : mkLevelCombinedWavesDatabase) {
-			if (mkLevelWithoutListExcludesEssence(cw.without, essence)) {
-				continue;
-			}
-			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
-			if (b == null) {
-				continue;
-			}
-			int lo = b[0];
-			int hi = b[1];
-			int dist = mkLevel < lo ? lo - mkLevel : (mkLevel > hi ? mkLevel - hi : 0);
-			if (dist < bestDist) {
-				bestDist = dist;
-				atBest.clear();
-				atBest.add(cw);
-			} else if (dist == bestDist) {
-				atBest.add(cw);
-			}
-		}
-		if (atBest.isEmpty() || bestDist == Integer.MAX_VALUE) {
-			return null;
-		}
-		if (atBest.size() == 1) {
-			return atBest.get(0).wave;
-		}
-		int bestHiBelow = Integer.MIN_VALUE;
-		for (CombinedWaveInfo cw : atBest) {
-			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
-			if (b[1] <= mkLevel) {
-				bestHiBelow = Math.max(bestHiBelow, b[1]);
-			}
-		}
-		if (bestHiBelow != Integer.MIN_VALUE) {
-			Integer wave = null;
-			int bestSpan = Integer.MAX_VALUE;
-			for (CombinedWaveInfo cw : atBest) {
-				int[] b = mkLevelParseCombinedLevelBounds(cw.level);
-				if (b[1] != bestHiBelow) {
-					continue;
-				}
-				int span = b[1] - b[0];
-				if (span < bestSpan) {
-					bestSpan = span;
-					wave = cw.wave;
-				}
-			}
-			return wave;
-		}
-		int bestLo = Integer.MAX_VALUE;
-		int bestSpanAbove = Integer.MAX_VALUE;
-		Integer waveAbove = null;
-		for (CombinedWaveInfo cw : atBest) {
-			int[] b = mkLevelParseCombinedLevelBounds(cw.level);
-			if (b[0] < mkLevel) {
-				continue;
-			}
-			if (b[0] < bestLo || (b[0] == bestLo && (b[1] - b[0]) < bestSpanAbove)) {
-				bestLo = b[0];
-				bestSpanAbove = b[1] - b[0];
-				waveAbove = cw.wave;
-			}
-		}
-		return waveAbove;
-	}
-	
-	/**
-	 * Wave from {@code combined_waves}: strict containment, then extrapolation above data, then nearest band.
-	 */
-	private static Integer findWaveFromMKLevelCombinedBands(int mkLevel, String essence) {
-		if (mkLevelCombinedWavesDatabase.isEmpty()) {
-			return null;
-		}
-		Integer strict = findWaveFromMKLevelCombinedBandsStrict(mkLevel, essence);
-		if (strict != null) {
-			return strict;
-		}
-		Integer high = findWaveFromMKLevelCombinedBandsExtrapolateHigh(mkLevel, essence);
-		if (high != null) {
-			return high;
-		}
-		return findWaveFromMKLevelCombinedBandsNearest(mkLevel, essence);
-	}
-	
 	/**
 	 * Converts a singular essence name to plural form (matching Essenz.json format)
 	 * @param singular The singular name (e.g., "Pferd")
@@ -6820,9 +6620,10 @@ public class InformationenUtility {
 		
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> {
-				for (MKLevelInfo levelInfo : filterMKLevelEntries(mkLevelSearchText)) {
-					int height = 4 * lineHeight;
-					totalHeight += height;
+				List<MKLevelInfo> entries = filterMKLevelEntries(mkLevelSearchText);
+				int height = 4 * lineHeight;
+				totalHeight += entries.size() * height;
+				if (!entries.isEmpty()) {
 					lastEntryHeight = height;
 				}
 			}
@@ -6838,9 +6639,10 @@ public class InformationenUtility {
 				}
 			}
 			case TOTAL_ESSENCES -> {
-				for (TotalEssenceInfo essenceInfo : filterTotalEssenceEntries(mkLevelSearchText)) {
-					int height = 3 * lineHeight;
-					totalHeight += height;
+				List<TotalEssenceInfo> entries = filterTotalEssenceEntries(mkLevelSearchText);
+				int height = 3 * lineHeight;
+				totalHeight += entries.size() * height;
+				if (!entries.isEmpty()) {
 					lastEntryHeight = height;
 				}
 			}
@@ -6852,11 +6654,7 @@ public class InformationenUtility {
 	private static int calculateMKLevelTotalLineHeight(int lineHeight) {
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> {
-				int totalContentHeight = 0;
-				for (MKLevelInfo levelInfo : filterMKLevelEntries(mkLevelSearchText)) {
-					totalContentHeight += 4 * lineHeight;
-				}
-				return totalContentHeight;
+				return filterMKLevelEntries(mkLevelSearchText).size() * 4 * lineHeight;
 			}
 			case COMBINED -> {
 				int totalContentHeight = 0;

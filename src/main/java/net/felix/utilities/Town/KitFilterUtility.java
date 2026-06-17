@@ -1645,13 +1645,6 @@ public class KitFilterUtility {
 		return name.replaceAll("§[0-9a-fk-or]", "").trim().toLowerCase();
 	}
 
-	private static boolean itemNamesMatch(String a, String b) {
-		if (a == null || b == null) {
-			return false;
-		}
-		return normalizeItemName(a).equals(normalizeItemName(b));
-	}
-
 	public static Set<String> getKitItemNamesForSelection(KitSelection selection) {
 		if (selection == null) {
 			return new HashSet<>();

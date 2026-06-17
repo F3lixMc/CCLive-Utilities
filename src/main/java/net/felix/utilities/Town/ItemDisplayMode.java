@@ -1,4 +1,4 @@
-package net.felix;
+package net.felix.utilities.Town;
 
 public enum ItemDisplayMode {
     BORDER,              // Rahmen um Items

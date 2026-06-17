@@ -3,7 +3,6 @@
 	"package": "net.felix.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin",
 		"BossBarMixin",
 		"HandledScreenMixin",
 		"MouseScrollMixin",

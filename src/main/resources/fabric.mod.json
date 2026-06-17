@@ -27,9 +27,7 @@
 		"modmenu": [
 			"net.felix.ModMenuIntegration"
 		],
-		"fabric-datagen": [
-			"net.felix.CCLiveUtilitiesDataGenerator"
-		]
+		"fabric-datagen": []
 	},
 	"mixins": [
 		"cclive-utilities.mixins.json"

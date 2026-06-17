@@ -1,11 +1,12 @@
 package net.felix.utilities.Factory;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.util.Identifier;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -154,7 +155,9 @@ public class BossHPUtility {
 			ClientTickEvents.END_CLIENT_TICK.register(BossHPUtility::onClientTick);
 			
 			// Registriere HUD-Rendering
-			HudRenderCallback.EVENT.register((drawContext, tickDelta) -> onHudRender(drawContext, tickDelta));
+			HudElementRegistry.addLast(
+					Identifier.of("cclive-utilities", "boss_hp"),
+					BossHPUtility::onHudRender);
 			
 			// Chat-Nachrichten Event registrieren
 			ClientReceiveMessageEvents.GAME.register(BossHPUtility::onChatMessage);

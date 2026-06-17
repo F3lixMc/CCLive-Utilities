@@ -9,7 +9,6 @@ import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
-// import net.felix.utilities.Overall.BossBarDecodeUtility; // Temporarily disabled
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;
@@ -92,11 +91,9 @@ public class BossBarMixin {
                         NpcAlertsUtility.observeKomboKisteBossBarTitle(name, index);
                     }
                     
-                    // Bossbar dekodieren und anzeigen (temporarily disabled)
-                    // BossBarDecodeUtility.processBossBar(name);
-                    
                     // HUD-Statistik (Souls / Coins / Cactus) per Pixel-Font dekodieren
                     CoinTrackerUtility.processBossBar(name);
+                    net.felix.utilities.DragOverlay.ClipboardCoinCollector.processBossBar(name);
 
                     // Fabrik-Wellen (2. Bossbar) verarbeiten
                     WaveUtility.processBossBarWave(name, index);

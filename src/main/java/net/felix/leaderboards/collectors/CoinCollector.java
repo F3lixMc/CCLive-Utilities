@@ -4,7 +4,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.DebugUtility;
+import net.felix.utilities.Other.DebugUtility;
 import net.felix.utilities.Overall.DimensionUtility;
 
 import java.util.Random;
@@ -54,11 +54,6 @@ public class CoinCollector implements DataCollector {
     private void onClientTick(MinecraftClient client) {
         if (!isActive || client.player == null || client.world == null) {
             return;
-        }
-        
-        // Prüfe ob ClipboardCoinCollector aktiv ist - wenn ja, deaktiviere diesen Collector
-        if (net.felix.utilities.DragOverlay.ClipboardCoinCollector.isCollecting()) {
-            return; // ClipboardCoinCollector läuft, dieser Collector soll nicht laufen
         }
         
         // Prüfe ob es Zeit für den nächsten Command ist
@@ -138,11 +133,6 @@ public class CoinCollector implements DataCollector {
      */
     public boolean processChatMessage(String message) {
         if (!isActive) return false;
-        
-        // Prüfe ob ClipboardCoinCollector aktiv ist - wenn ja, lasse diesen Collector die Nachricht nicht verarbeiten
-        if (net.felix.utilities.DragOverlay.ClipboardCoinCollector.isCollecting()) {
-            return false; // ClipboardCoinCollector verarbeitet die Nachricht
-        }
         
         // Debug: Alle Chat-Nachrichten loggen
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {

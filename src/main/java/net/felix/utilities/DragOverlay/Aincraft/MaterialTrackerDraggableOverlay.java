@@ -148,7 +148,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         int unscaledHeight = (int) (height / scale);
         
         // Render background (scaled)
-        net.felix.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerOverlayType;
+        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerOverlayType;
         
         switch (overlayType) {
             case CUSTOM:

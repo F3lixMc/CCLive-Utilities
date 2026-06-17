@@ -1027,32 +1027,6 @@ public class ItemViewerGrid {
     }
     
     /**
-     * Gets the color for a material rarity level (same as InformationenUtility.getRarityColor)
-     */
-    private int getMaterialRarityColor(String rarity) {
-        if (rarity == null) {
-            return 0xFF55FF55; // Default green
-        }
-        
-        switch (rarity.toLowerCase()) {
-            case "common":
-                return 0xFFFFFFFF; // White
-            case "uncommon":
-                return 0xFF1EFC00; // #1EFC00
-            case "rare":
-                return 0xFF006FDA; // #006FDA
-            case "epic":
-                return 0xFFA134EB; // #A134EB
-            case "legendary":
-                return 0xFFFF7E00; // #FC7E00
-            case "mob":
-                return 0xFFFFFFFF; // White for mob names
-            default:
-                return 0xFF808080; // Gray
-        }
-    }
-    
-    /**
      * Formatiert einen Amount-Wert: Ganze Zahlen ohne ".0", andere bleiben wie sie sind
      */
     private String formatAmount(Object amount) {

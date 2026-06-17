@@ -8,7 +8,7 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.DebugUtility;
+import net.felix.utilities.Other.DebugUtility;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;

@@ -437,7 +437,7 @@ public class ItemFilter {
             if (matcher.find()) {
                 String numberStr = matcher.group(1);
                 
-                // Parse die Zahl (gleiche Logik wie in extractStatValue)
+                // Parse die Zahl
                 if (numberStr.contains(",") && numberStr.contains(".")) {
                     numberStr = numberStr.replace(",", "");
                 } else if (numberStr.contains(",")) {
@@ -465,69 +465,6 @@ public class ItemFilter {
         }
         
         return false;
-    }
-    
-    /**
-     * Extrahiert den numerischen Wert aus einem Stat-String
-     * @param statLine Der Stat-String (z.B. "Abbaugeschwindigkeit 11" oder "Schaden 9,011" oder "Schaden 1,234")
-     * @param statName Der Name des Stats (z.B. "Abbaugeschwindigkeit")
-     * @return Der extrahierte Wert oder null wenn nicht gefunden
-     */
-    private static Double extractStatValue(String statLine, String statName) {
-        try {
-            // Entferne Stat-Name und extrahiere den Wert
-            String valuePart = statLine;
-            int statNameIndex = statLine.toLowerCase().indexOf(statName.toLowerCase());
-            if (statNameIndex >= 0) {
-                valuePart = statLine.substring(statNameIndex + statName.length()).trim();
-            }
-            
-            // Entferne Farbcodes
-            valuePart = valuePart.replaceAll("§[0-9a-fk-or]", "");
-            
-            // Suche nach der ersten Zahl im String (unterstützt verschiedene Formate)
-            // Pattern: findet Zahlen mit optionalen Tausendertrennzeichen
-            // Beispiele: "11", "9,011", "1,234", "1234", "1.234", "1,234.56"
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]+)?|[0-9]+(?:[.,][0-9]+)?)");
-            java.util.regex.Matcher matcher = pattern.matcher(valuePart);
-            
-            if (matcher.find()) {
-                String numberStr = matcher.group(1);
-                
-                // Prüfe ob es Tausendertrennzeichen gibt (mehrere Trennzeichen)
-                if (numberStr.contains(",") && numberStr.contains(".")) {
-                    // Beide vorhanden: Punkt ist Dezimaltrennzeichen, Komma ist Tausendertrennzeichen
-                    // Beispiel: "1,234.56" -> "1234.56"
-                    numberStr = numberStr.replace(",", "");
-                } else if (numberStr.contains(",")) {
-                    // Nur Komma: Prüfe ob Tausendertrennzeichen oder Dezimaltrennzeichen
-                    // Wenn nach dem letzten Komma mehr als 2 Ziffern kommen, ist es Tausendertrennzeichen
-                    int lastComma = numberStr.lastIndexOf(',');
-                    if (lastComma >= 0 && numberStr.length() - lastComma - 1 > 2) {
-                        // Tausendertrennzeichen: Entferne alle Kommas
-                        numberStr = numberStr.replace(",", "");
-                    } else {
-                        // Dezimaltrennzeichen: Ersetze durch Punkt
-                        numberStr = numberStr.replace(',', '.');
-                    }
-                } else if (numberStr.contains(".")) {
-                    // Nur Punkt: Prüfe ob Tausendertrennzeichen oder Dezimaltrennzeichen
-                    // Wenn nach dem letzten Punkt mehr als 2 Ziffern kommen, ist es Tausendertrennzeichen
-                    int lastDot = numberStr.lastIndexOf('.');
-                    if (lastDot >= 0 && numberStr.length() - lastDot - 1 > 2) {
-                        // Tausendertrennzeichen: Entferne alle Punkte
-                        numberStr = numberStr.replace(".", "");
-                    }
-                    // Sonst ist es bereits eine Dezimalzahl mit Punkt
-                }
-                
-                return Double.parseDouble(numberStr);
-            }
-            
-            return null;
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
     
     /**

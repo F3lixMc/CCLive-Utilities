@@ -67,13 +67,9 @@ public class ScreenMixin {
     /**
      * Injiziert in render, um Item Viewer auch in nicht-HandledScreen Screens zu rendern (z.B. Spielerinventar)
      */
-    // Debug: Letzter gerenderter Screen (um Logs zu reduzieren)
-    private static String lastRenderedScreen = "";
-    
     @Inject(method = "render", at = @At("TAIL"))
     private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
-        String screenClassName = screen.getClass().getName();
         
         // Prüfe zuerst ob es ein InventoryScreen ist (Spielerinventar)
         // Verwende instanceof für robustere Erkennung (funktioniert auch bei obfuscated class names)
@@ -85,8 +81,6 @@ public class ScreenMixin {
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
-            
-            lastRenderedScreen = screenClassName;
             
             MinecraftClient client = MinecraftClient.getInstance();
             // Update mouse position
