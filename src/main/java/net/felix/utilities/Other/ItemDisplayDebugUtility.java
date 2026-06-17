@@ -152,7 +152,7 @@ public final class ItemDisplayDebugUtility {
         for (Entity e : entities) {
             String type = e.getType().toString();
             String extra = "";
-            if (e instanceof DisplayEntity.ItemDisplayEntity itemDisplay) {
+            if (e instanceof DisplayEntity.ItemDisplayEntity) {
                 extra = " §8[ItemDisplay]";
             } else if (e instanceof DisplayEntity.TextDisplayEntity textDisplay) {
                 extra = " §8[TextDisplay: " + safeText(textDisplay.getText()) + "]";

@@ -10,7 +10,6 @@ import net.minecraft.util.Formatting;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.chat.config.ChatConfig;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -22,7 +21,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ChatManager {
     private static ChatManager instance;
     
-    private final ChatConfig config;
     private final HttpClient httpClient;
     
     // Letzter abgerufener Timestamp (für Polling)
@@ -45,7 +43,6 @@ public class ChatManager {
     }
     
     private ChatManager() {
-        this.config = new ChatConfig();
         // Nutze den HttpClient vom LeaderboardManager
         LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
         this.httpClient = leaderboardManager.getHttpClient();
