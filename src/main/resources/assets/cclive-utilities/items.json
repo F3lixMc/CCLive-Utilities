@@ -183568,7 +183568,7 @@
       "info": {
         "aspect": false,
         "rarity": "",
-        "description": "Hat eine Chance von x% das pro \nerhaltenen Erz das ein Barren hergestellt wird.",
+        "description": "Hat eine Chance von 0.70% das pro \nerhaltenen Erz das ein Barren hergestellt wird.",
         "update_info": "Rohes Kupfer \nRohes Eisen \nRohes Gold",
         "type": "",
         "piece": "",
@@ -184601,7 +184601,7 @@
       "name": "Holzhacker #4",
       "foundAt": [
         {
-          "collection": "Fichtenholz V"
+          "collection": "Bambus VI"
         }
       ],
       "price": {
@@ -187465,7 +187465,7 @@
         "rarity": "",
         "description": "Erhöht die Menge der fallen gelassenen Münzen.",
         "level_info": [
-          "Jedes Level: ≈ 0,2 × Level² + Level"
+          "Jedes Level: ≈ (0,2 x Level^2 + Level) x 0,495"
         ],
         "type": "",
         "piece": "",
