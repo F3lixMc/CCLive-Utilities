@@ -278,6 +278,32 @@ public class CollectedMaterialsResourcesStorage {
         long current = getResourceAmount(name);
         updateResource(name, Math.max(0L, current - delta));
     }
+
+    /**
+     * Besitzmenge für Pinboard-Materialien (materials + resources, normalisierter Lookup).
+     */
+    public static long getSyncedOwnedAmount(String name) {
+        return Math.max(getMaterialAmount(name), getResourceAmount(name));
+    }
+
+    /**
+     * Setzt Material- und Ressourcen-Eintrag konsistent (gleicher Name, z. B. nach Material-Bag / Actionbar).
+     */
+    public static void setSyncedOwnedAmount(String name, long amount) {
+        if (name == null || name.isEmpty()) {
+            return;
+        }
+        updateMaterial(name, amount);
+        updateResource(name, amount);
+    }
+
+    public static void subtractSyncedOwnedAmount(String name, long delta) {
+        if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        long current = getSyncedOwnedAmount(name);
+        setSyncedOwnedAmount(name, Math.max(0L, current - delta));
+    }
     
     public static void resetAll() {
         ensureInitialized();

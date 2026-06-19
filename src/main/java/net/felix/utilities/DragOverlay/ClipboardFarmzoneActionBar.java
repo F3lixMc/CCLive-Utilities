@@ -69,7 +69,7 @@ public final class ClipboardFarmzoneActionBar {
             return false;
         }
 
-        CollectedMaterialsResourcesStorage.updateResource(resourceName, total);
+        CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(resourceName, total);
         return true;
     }
 
