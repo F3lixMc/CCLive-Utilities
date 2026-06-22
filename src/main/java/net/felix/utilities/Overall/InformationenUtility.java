@@ -162,8 +162,10 @@ public class InformationenUtility {
 	private static long lastScoreboardCheck = 0; // Last time we checked the scoreboard
 	private static boolean biomDetected = false; // Whether a biom was detected in the scoreboard
 	private static boolean lastShowCollectionOverlayState = true; // Track previous state of showCollectionOverlay
-	private static int pendingResets = 0; // Number of pending resets after biome change
+	private static int pendingResets = 0; // Legacy (nicht mehr genutzt – Verzögerung über bossBarReadAllowedAfterMs)
 	private static int collectionTickCounter = 0; // Tick counter for collection overlay (runs every 20 ticks)
+	private static long bossBarReadAllowedAfterMs = 0; // Bossbar erst nach Zone-Wechsel lesen (Server braucht ~3s)
+	private static final long ZONE_BOSSBAR_READ_DELAY_MS = 5000L;
 	
 	// Collection hotkey
 	private static KeyBinding collectionResetKeyBinding;
@@ -7744,6 +7746,9 @@ public class InformationenUtility {
 			if (!isTrackingCollections) {
 				return;
 			}
+			if (System.currentTimeMillis() < bossBarReadAllowedAfterMs) {
+				return;
+			}
 			
 			int blocks = decodeChineseNumber(bossBarName);
 			
@@ -7942,10 +7947,8 @@ public class InformationenUtility {
 		sessionBlocks = 0;
 		firstBossBarUpdate = true;
 		blocksPerMinute = 0.0;
-		// Don't reset sessionStartTime here - it's set separately when starting tracking
 		collectionDimension = null;
 		blocksNeededForNextCollection = 0;
-		// Don't reset currentBiomName here - it should persist across resets
 	}
 	
 	/**
@@ -8015,16 +8018,13 @@ public class InformationenUtility {
 			// Check if biom changed
 			if (biomName != null) {
 				boolean wasDetected = biomDetected;
-				biomDetected = true; // Biom was detected
-				if (currentBiomName != null && !currentBiomName.equals(biomName)) {
-					// Biom changed, schedule multiple resets in quick succession
-					pendingResets = 5; // Reset 5 times
+				biomDetected = true;
+				if (currentBiomName == null || !currentBiomName.equals(biomName)) {
 					currentBiomName = biomName;
-				} else if (currentBiomName == null) {
-					// First time setting biom name, just set it without resetting
-					currentBiomName = biomName;
+					bossBarReadAllowedAfterMs = System.currentTimeMillis() + ZONE_BOSSBAR_READ_DELAY_MS;
+					resetCollectionTracking();
+					pendingResets = 0;
 				}
-				// If biom was just detected (wasn't detected before), reactivate overlay if it was enabled
 				if (!wasDetected && CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
 					// Overlay will automatically show because biomDetected is now true
 					// Start timer if we're tracking

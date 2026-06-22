@@ -6,6 +6,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.MaterialRateUtility;
+import net.felix.utilities.DragOverlay.CollectedMaterialsResourcesStorage;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -59,6 +60,7 @@ public class ActionBarData {
             // Update material count and store original Text object with color codes
             materials.put(materialName, count);
             materialTexts.put(materialName, message); // Speichere originale Text-Objekt mit Farbcodes
+            CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(materialName, count);
             updateFilteredTexts();
             if (CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateEnabled) {
                 MaterialRateUtility.updateFromActionBar();
@@ -88,6 +90,7 @@ public class ActionBarData {
             
             // Update material count and store original message with color codes
             materials.put(materialName, count);
+            CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(materialName, count);
             // Für String-Nachrichten können wir keine Farbcodes speichern
             updateFilteredTexts();
         }

@@ -2,7 +2,6 @@ package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.ItemViewer.CostItem;
-import net.felix.utilities.Overall.ActionBarData;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.KeyBindingUtility;
@@ -236,23 +235,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
     
     /**
-     * Aktualisiert die Clipboard-Materialien mit den persistierten Materialien
-     * und synchronisiert ActionBar-Materialien in die persistente Datei.
+     * Material-Sync passiert bei echten Updates (Actionbar-Nachricht, Material-Bag, Kosten-Inventar).
+     * Kein erneutes Überschreiben aus dem ActionBar-Cache pro Frame — der würde Abgaben ignorieren.
      */
     public static void updateClipboardMaterials() {
-        Map<String, Integer> actionBarMaterials = ActionBarData.getMaterials();
-        if (actionBarMaterials != null && !actionBarMaterials.isEmpty()) {
-            Map<String, Long> updates = new HashMap<>();
-            for (Map.Entry<String, Integer> entry : actionBarMaterials.entrySet()) {
-                String name = entry.getKey();
-                Integer value = entry.getValue();
-                if (name == null || name.isEmpty() || value == null) {
-                    continue;
-                }
-                updates.put(name, value.longValue());
-            }
-            CollectedMaterialsResourcesStorage.updateMaterials(updates);
-        }
     }
     
     public static void invalidateMaterialsSyncCache() {
@@ -1532,13 +1518,11 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return 0.0;
         }
         
-        // Prüfe persistierte Ressourcen (Amboss + Ressource) – O(1) über normalisierten Index
-        long storedResourceAmount = CollectedMaterialsResourcesStorage.getResourceAmount(materialName);
-        if (storedResourceAmount > 0) {
-            return storedResourceAmount;
+        long storedAmount = CollectedMaterialsResourcesStorage.getSyncedOwnedAmount(materialName);
+        if (storedAmount > 0) {
+            return storedAmount;
         }
-        
-        // Fallback: Prüfe aktuelle Amboss/Ressource-Collector-Werte
+
         long ambossAmount = ClipboardAmbossRessourceCollector.getAmbossAmount(materialName);
         if (ambossAmount > 0) {
             return ambossAmount;
@@ -1547,8 +1531,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (ressourceAmount > 0) {
             return ressourceAmount;
         }
-        
-        return CollectedMaterialsResourcesStorage.getMaterialAmount(materialName);
+
+        return 0.0;
     }
     
     /**

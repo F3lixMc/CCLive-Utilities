@@ -105,7 +105,9 @@ public class ClipboardMaterialCollector {
         }
         
         if (!collectedMaterials.isEmpty()) {
-            CollectedMaterialsResourcesStorage.updateMaterials(collectedMaterials);
+            for (Map.Entry<String, Long> entry : collectedMaterials.entrySet()) {
+                CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(entry.getKey(), entry.getValue());
+            }
         }
         if (!collectedResources.isEmpty()) {
             CollectedMaterialsResourcesStorage.updateResources(collectedResources);

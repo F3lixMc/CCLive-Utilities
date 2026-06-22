@@ -35,9 +35,10 @@ public class FarmworldCollectionsCollector implements DataCollector {
     
     // Timing-Mechanismus für Zone-Wechsel: Verzögerung beim Lesen des Bossbar-Werts
     private String pendingZone = null; // Zone, die noch initialisiert werden muss
-    private int pendingZoneTicks = 0; // Anzahl Ticks, die seit dem Zone-Wechsel vergangen sind
-    private static final int ZONE_STABLE_DELAY_TICKS = 200; // Warte 200 Ticks (10 Sekunden), bis die Zone stabil im Scoreboard steht, bevor Bossbar-Wert ausgelesen wird
-    private String stableZone = null; // Zone, die bereits 10 Sekunden stabil ist
+    private int pendingZoneTicks = 0; // Ticks seit Zone-Wechsel
+    private static final int ZONE_READ_DELAY_TICKS = 100; // 5 Sekunden (20 TPS), bis Bossbar-Wert gelesen wird
+    private String stableZone = null; // Zone, deren Bossbar-Wert bereits verlässlich gelesen wurde
+    private static boolean bossBarReadingAllowed = false; // Bossbar erst nach Verzögerung auswerten
     
     // Mapping: Scoreboard-Zonenname -> Collection-Name
     private static final Map<String, String> ZONE_TO_COLLECTION = new HashMap<>();
@@ -109,6 +110,14 @@ public class FarmworldCollectionsCollector implements DataCollector {
             cacheUpdateCounter = 0;
             updateCachedCollection();
         }
+
+        // Bossbar-Wert nach Zone-Wechsel erst nach 5 Sekunden lesen
+        if (pendingZone != null) {
+            pendingZoneTicks++;
+            if (pendingZoneTicks >= ZONE_READ_DELAY_TICKS) {
+                completePendingZoneRead(client);
+            }
+        }
         
         // Zone-Wechsel-Erkennung (alle 20 Ticks = 1x pro Sekunde)
         if (tickCounter % 20 == 0) {
@@ -160,8 +169,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
             String currentZone = getCurrentZone(client);
             if (currentZone == null) return;
             
-            // Nur cachen wenn wir noch in der gleichen Zone sind UND die Zone stabil ist (10 Sekunden im Scoreboard)
-            if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone)) {
+            // Nur cachen wenn wir noch in der gleichen Zone sind UND die Zone stabil ist
+            if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 int currentCollection = getCollectionFromBossbar(client);
                 cachedCollectionForCurrentZone = currentCollection;
             }
@@ -177,10 +186,10 @@ public class FarmworldCollectionsCollector implements DataCollector {
         try {
             String currentZone = getCurrentZone(client);
             if (currentZone == null) {
-                // Reset pending zone wenn keine Zone gefunden
                 pendingZone = null;
                 pendingZoneTicks = 0;
                 stableZone = null;
+                bossBarReadingAllowed = false;
                 return;
             }
             
@@ -191,11 +200,10 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 // WICHTIG: Prüfe SOFORT ob die neue Zone gesperrt ist (bevor wir lastZone aktualisieren)
                 // Wenn die Zone gesperrt ist, ignorieren wir sie komplett
                 if (isZoneLocked()) {
-                    // Zone ist nicht freigeschalten - ignoriere diesen Zone-Wechsel komplett
-                    // Setze lastZone NICHT, damit wir beim nächsten Zone-Wechsel die vorherige Zone noch haben
                     pendingZone = null;
                     pendingZoneTicks = 0;
                     stableZone = null;
+                    bossBarReadingAllowed = false;
                     return;
                 }
                 
@@ -212,16 +220,18 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 // (zusätzlich zum 60-Sekunden-Intervall), damit kurze Zonen nicht verloren gehen
                 updateAllCollections();
 
-                // Neue Zone als "pending" markieren - warte auf 10 Sekunden Stabilität
+                // Neue Zone als "pending" markieren - warte 5 Sekunden, bevor Bossbar gelesen wird
                 pendingZone = currentZone;
                 pendingZoneTicks = 0;
-                stableZone = null; // Reset stabile Zone
-                lastZone = currentZone; // Aktualisiere lastZone sofort, damit wir nicht in eine Schleife geraten
+                stableZone = null;
+                bossBarReadingAllowed = false;
+                currentBossbarCollection = 0;
+                lastBossbarUpdate = 0;
+                lastZone = currentZone;
             } else if (pendingZone != null && currentZone.equals(pendingZone)) {
-                // Wir warten noch darauf, dass die Zone 10 Sekunden stabil ist
-                pendingZoneTicks++;
+                // Wartezeit läuft in onClientTick (pendingZoneTicks)
                 
-                // FIX 1: Prüfe ob sich die Zone während der Wartezeit geändert hat
+                // Prüfe ob sich die Zone während der Wartezeit geändert hat
                 // (kann passieren bei Teleportation - Scoreboard aktualisiert sich verzögert)
                 String detectedZone = getCurrentZone(client);
                 if (detectedZone != null && !detectedZone.equals(pendingZone)) {
@@ -231,47 +241,20 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     pendingZone = null;
                     pendingZoneTicks = 0;
                     stableZone = null;
+                    bossBarReadingAllowed = false;
                     return;
                 }
                 
-                // FIX 2: Prüfe ob "Nicht Freigeschalten!" im Title/Subtitle steht
+                // Prüfe ob "Nicht Freigeschalten!" im Title/Subtitle steht
                 if (isZoneLocked()) {
-                    // Zone ist nicht freigeschalten - kein Update senden
-                    // WICHTIG: Setze lastZone zurück, damit wir nicht den falschen Wert senden
                     lastZone = null;
                     pendingZone = null;
                     pendingZoneTicks = 0;
                     stableZone = null;
+                    bossBarReadingAllowed = false;
                     return;
                 }
-                
-                // Prüfe ob die Zone jetzt 10 Sekunden (200 Ticks) stabil ist
-                if (pendingZoneTicks >= ZONE_STABLE_DELAY_TICKS) {
-                    // Zone ist jetzt stabil - markiere sie als stabil und lese Bossbar-Wert
-                    stableZone = pendingZone;
-                    
-                    // Jetzt Bossbar-Wert abrufen (Zone steht seit 10 Sekunden im Scoreboard)
-                    int newZoneCollection = getCollectionFromBossbar(client);
-                    lastTotalCollection = newZoneCollection;
-                    cachedCollectionForCurrentZone = newZoneCollection;
-                    
-                    // Wenn der aktuelle Wert niedriger ist als der gespeicherte Wert,
-                    // bedeutet das, dass wir die Zone neu betreten haben
-                    long cachedCollection = zoneCollections.getOrDefault(pendingZone, 0L);
-                    if (newZoneCollection < cachedCollection) {
-                        zoneCollections.put(pendingZone, (long) newZoneCollection);
-                        
-                        // DEBUG: Nur senden wenn aktiviert
-                        if (ENABLE_SERVER_UPDATES) {
-                            LeaderboardManager.getInstance().updateScore(getCollectionNameForZone(pendingZone), newZoneCollection);
-                        }
-                    }
-                    
-                    // Reset pending zone - Zone ist jetzt stabil
-                    pendingZone = null;
-                    pendingZoneTicks = 0;
-                }
-            } else if (stableZone != null && currentZone.equals(stableZone)) {
+            } else if (stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 // Zone ist bereits stabil - aktualisiere lastTotalCollection kontinuierlich (nur wenn höher)
                 int currentCollection = getCollectionFromBossbar(client);
                 if (currentCollection > lastTotalCollection) {
@@ -287,6 +270,46 @@ public class FarmworldCollectionsCollector implements DataCollector {
     }
     
     /**
+     * Liest nach Ablauf der Zone-Wartezeit den ersten Bossbar-Wert und aktiviert weiteres Tracking.
+     */
+    private void completePendingZoneRead(MinecraftClient client) {
+        if (pendingZone == null) {
+            return;
+        }
+
+        if (isZoneLocked()) {
+            lastZone = null;
+            pendingZone = null;
+            pendingZoneTicks = 0;
+            stableZone = null;
+            bossBarReadingAllowed = false;
+            return;
+        }
+
+        String currentZone = getCurrentZone(client);
+        if (currentZone == null || !currentZone.equals(pendingZone)) {
+            return;
+        }
+
+        stableZone = pendingZone;
+        bossBarReadingAllowed = true;
+        pendingZone = null;
+        pendingZoneTicks = 0;
+
+        int newZoneCollection = getCollectionFromBossbar(client);
+        lastTotalCollection = newZoneCollection;
+        cachedCollectionForCurrentZone = newZoneCollection;
+
+        long cachedCollection = zoneCollections.getOrDefault(stableZone, 0L);
+        if (newZoneCollection < cachedCollection) {
+            zoneCollections.put(stableZone, (long) newZoneCollection);
+            if (ENABLE_SERVER_UPDATES) {
+                LeaderboardManager.getInstance().updateScore(getCollectionNameForZone(stableZone), newZoneCollection);
+            }
+        }
+    }
+    
+    /**
      * Aktualisiert Collection-Daten in der aktuellen Zone (alle 60 Sekunden)
      */
     private void updateCollectionInCurrentZone(MinecraftClient client) {
@@ -297,7 +320,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
             }
             
             // Nur updaten wenn wir noch in der gleichen Zone sind UND die Zone stabil ist (10 Sekunden im Scoreboard)
-            if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone)) {
+            if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 int totalCollection = getCollectionFromBossbar(client);
                 
                 // Aktualisiere lastTotalCollection immer
@@ -1230,6 +1253,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
      * Wird vom BossBarMixin aufgerufen, wenn eine Collection-Bossbar gefunden wird
      */
     public static void processBossBarCollection(String bossBarName) {
+        if (!bossBarReadingAllowed) {
+            return;
+        }
         try {
             int collection = decodeChineseNumber(bossBarName);
             if (collection >= 0) {
