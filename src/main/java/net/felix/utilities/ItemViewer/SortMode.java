@@ -8,8 +8,8 @@ import java.util.List;
  */
 public enum SortMode {
     DEFAULT("Standard", null), // Wird separat behandelt
-    NAME_AZ("Name A-Z", Comparator.comparing(item -> item.name.toLowerCase())),
-    NAME_ZA("Name Z-A", Comparator.comparing((ItemData item) -> item.name.toLowerCase()).reversed()),
+    NAME_AZ("Name A-Z", SortMode::compareNameAz),
+    NAME_ZA("Name Z-A", SortMode::compareNameZa),
     FLOOR_ASC("Ebene 1-100", Comparator.comparing(SortMode::getMinFloor)),
     FLOOR_DESC("Ebene 100-1", Comparator.comparing(SortMode::getMinFloor).reversed()),
     NOT_FOUND("Nicht Gefunden", null);
@@ -47,12 +47,72 @@ public enum SortMode {
             int compare = Integer.compare(categoryIndex1, categoryIndex2);
             if (compare != 0) return compare;
             
-            // Gleiche Kategorie: Fischreusen in Upgrade-Reihenfolge, sonst Name A-Z
-            if ("fish_traps".equalsIgnoreCase(item1.category) && "fish_traps".equalsIgnoreCase(item2.category)) {
-                return Integer.compare(getFishTrapOrderIndex(item1), getFishTrapOrderIndex(item2));
+            // Gleiche Kategorie: spezielle Reihenfolge, sonst Name A-Z
+            int withinCategory = compareWithinCategory(item1, item2);
+            if (withinCategory != 0) {
+                return withinCategory;
             }
             return item1.name.compareToIgnoreCase(item2.name);
         };
+    }
+
+    private static int compareNameAz(ItemData item1, ItemData item2) {
+        int withinCategory = compareWithinCategory(item1, item2);
+        if (withinCategory != 0) {
+            return withinCategory;
+        }
+        String name1 = item1.name != null ? item1.name : "";
+        String name2 = item2.name != null ? item2.name : "";
+        return name1.compareToIgnoreCase(name2);
+    }
+
+    private static int compareNameZa(ItemData item1, ItemData item2) {
+        int withinCategory = compareWithinCategory(item1, item2);
+        if (withinCategory != 0) {
+            return -withinCategory;
+        }
+        String name1 = item1.name != null ? item1.name : "";
+        String name2 = item2.name != null ? item2.name : "";
+        return name2.compareToIgnoreCase(name1);
+    }
+
+    private static int compareWithinCategory(ItemData item1, ItemData item2) {
+        if (item1.category == null || item2.category == null
+                || !item1.category.equalsIgnoreCase(item2.category)) {
+            return 0;
+        }
+        if ("card_slots".equalsIgnoreCase(item1.category)) {
+            return Integer.compare(getCardSlotOrderIndex(item1), getCardSlotOrderIndex(item2));
+        }
+        if ("fish_traps".equalsIgnoreCase(item1.category)) {
+            return Integer.compare(getFishTrapOrderIndex(item1), getFishTrapOrderIndex(item2));
+        }
+        return 0;
+    }
+
+    private static int getCardSlotOrderIndex(ItemData item) {
+        if (item.tags != null) {
+            for (String tag : item.tags) {
+                if (tag != null && tag.startsWith("#")) {
+                    try {
+                        return Integer.parseInt(tag.substring(1).trim());
+                    } catch (NumberFormatException ignored) {
+                        // nächster Tag
+                    }
+                }
+            }
+        }
+        if (item.name != null) {
+            int hashIndex = item.name.lastIndexOf('#');
+            if (hashIndex >= 0 && hashIndex < item.name.length() - 1) {
+                try {
+                    return Integer.parseInt(item.name.substring(hashIndex + 1).trim());
+                } catch (NumberFormatException ignored) {
+                    // Fallback unten
+                }
+            }
+        }
+        return 999;
     }
 
     private static final List<String> FISH_TRAP_ORDER = java.util.Arrays.asList(

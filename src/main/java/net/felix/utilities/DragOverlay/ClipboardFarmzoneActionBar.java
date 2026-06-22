@@ -2,6 +2,7 @@ package net.felix.utilities.DragOverlay;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.InformationenUtility;
 
 import java.util.regex.Matcher;
@@ -45,6 +46,7 @@ public final class ClipboardFarmzoneActionBar {
 
         InformationenUtility.refreshFarmzoneScoreboardCache(client);
         if (!InformationenUtility.isInFarmzone(client)) {
+            FarmzoneResourceRateUtility.resetSession();
             return false;
         }
 
@@ -70,6 +72,9 @@ public final class ClipboardFarmzoneActionBar {
         }
 
         CollectedMaterialsResourcesStorage.updateResource(resourceName, total);
+        if (CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateEnabled) {
+            FarmzoneResourceRateUtility.update(resourceName, total);
+        }
         return true;
     }
 

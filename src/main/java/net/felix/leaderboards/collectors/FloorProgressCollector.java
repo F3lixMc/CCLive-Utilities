@@ -129,7 +129,7 @@ public class FloorProgressCollector implements DataCollector {
                 String[] parts = floorPart.split("_");
                 if (parts.length >= 1) {
                     String floorNumber = parts[0];
-                    // Validiere: Nur floor_1 bis floor_10 sind gültig
+                    // Validiere: Nur floor_1 bis floor_100 sind gültig
                     try {
                         int floorNum = Integer.parseInt(floorNumber);
                         if (floorNum >= 1 && floorNum <= 100) {

@@ -15,7 +15,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     
     private static final int LINE_HEIGHT = 12;
     private static final int PADDING = 5;
-    private static final int LINES = 5; // Header, Last XP, XP/Min, Time to next level, Required XP
+    private static final int LINES = 6; // Header, Last XP, XP/Min, Time to next level, Required XP, Resource rate
     
     @Override
     public String getOverlayName() {
@@ -85,7 +85,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
                 Math.max(client.textRenderer.getWidth(miningTexts[1]),
                     Math.max(client.textRenderer.getWidth(miningTexts[2]),
                         Math.max(client.textRenderer.getWidth(miningTexts[3]),
-                            client.textRenderer.getWidth(miningTexts[4]))))),
+                            Math.max(client.textRenderer.getWidth(miningTexts[4]),
+                                client.textRenderer.getWidth(miningTexts[5])))))),
             minOverlayWidth);
         int miningWidth = miningMaxWidth + padding * 2;
         
@@ -97,7 +98,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
                 Math.max(client.textRenderer.getWidth(lumberjackTexts[1]),
                     Math.max(client.textRenderer.getWidth(lumberjackTexts[2]),
                         Math.max(client.textRenderer.getWidth(lumberjackTexts[3]),
-                            client.textRenderer.getWidth(lumberjackTexts[4]))))),
+                            Math.max(client.textRenderer.getWidth(lumberjackTexts[4]),
+                                client.textRenderer.getWidth(lumberjackTexts[5])))))),
             minOverlayWidth);
         int lumberjackWidth = lumberjackMaxWidth + padding * 2;
         
@@ -222,6 +224,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         displayTexts[2] = texts[2].replaceAll(": .+", ": -"); // "XP/Min: 123.4" -> "XP/Min: -"
         displayTexts[3] = texts[3].replaceAll(": .+", ": -"); // "Zeit bis Level: 12:34" -> "Zeit bis Level: -"
         displayTexts[4] = texts[4].replaceAll(": .+", ": -"); // "Benötigte XP: 12345" -> "Benötigte XP: -"
+        displayTexts[5] = texts[5].replaceAll(": .+", ": -"); // "Ressource: 12/min" -> "Ressource: -"
         
         // Apply matrix transformations for scaling
         var matrices = context.getMatrices();

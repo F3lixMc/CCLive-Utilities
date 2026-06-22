@@ -391,7 +391,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
             int textWidth = client.textRenderer.getWidth(textComponent);
             
             // Add padding (same as MaterialTrackerUtility: 10px left + 5px right)
-            int totalWidth = textWidth + 15;
+            int totalWidth = textWidth + 20; // 10px links + 10px rechts
             
             // Update maximum width
             maxWidth = Math.max(maxWidth, totalWidth);

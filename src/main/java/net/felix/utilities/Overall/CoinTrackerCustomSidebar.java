@@ -2,6 +2,11 @@ package net.felix.utilities.Overall;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.CoinTrackerDisplayMode;
+import net.felix.MaterialTrackerDisplayMode;
+import net.felix.ResourceTrackerDisplayMode;
+import net.felix.utilities.Aincraft.MaterialRateUtility;
+import net.felix.utilities.Aincraft.MaterialTrackerUtility;
+import net.felix.utilities.DragOverlay.FarmzoneResourceRateUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -29,9 +34,17 @@ public final class CoinTrackerCustomSidebar {
 
     public static boolean shouldReplaceVanillaSidebar() {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-        return config.enableMod
-                && config.coinTrackerEnabled
+        if (!config.enableMod) {
+            return false;
+        }
+        boolean coinScoreboard = config.coinTrackerEnabled
                 && config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD;
+        boolean materialScoreboard = config.materialTrackerEnabled
+                && config.materialTrackerRateEnabled
+                && config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.SCOREBOARD;
+        boolean resourceScoreboard = config.resourceTrackerRateEnabled
+                && config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.SCOREBOARD;
+        return coinScoreboard || materialScoreboard || resourceScoreboard;
     }
 
     public static void render(
@@ -51,6 +64,14 @@ public final class CoinTrackerCustomSidebar {
         if (shouldInsertCpmBlock()) {
             insertCpmBeforeMaterialien(rows);
             cpmInserted = true;
+        }
+
+        if (shouldAppendMaterialRates()) {
+            appendMaterialRates(rows);
+        }
+
+        if (shouldAppendResourceRates(client)) {
+            appendResourceRates(rows);
         }
 
         trimExcessLines(rows, cpmInserted ? CUSTOM_MAX_LINES : VANILLA_MAX_LINES);
@@ -101,8 +122,68 @@ public final class CoinTrackerCustomSidebar {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         return config.enableMod
                 && config.coinTrackerEnabled
+                && config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
                 && BossBarHudValueDecoder.isFloorDimension();
     }
+
+    private static boolean shouldAppendMaterialRates() {
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        return config.enableMod
+                && config.materialTrackerEnabled
+                && config.materialTrackerRateEnabled
+                && MaterialTrackerUtility.usesScoreboardRateDisplay()
+                && BossBarHudValueDecoder.isFloorDimension();
+    }
+
+    private static void appendMaterialRates(List<ScoreboardSidebarReader.Row> rows) {
+        int materialienIndex = findMaterialienIndex(rows);
+        if (materialienIndex < 0) {
+            return;
+        }
+
+        for (int i = materialienIndex + 1; i < rows.size(); i++) {
+            ScoreboardSidebarReader.Row row = rows.get(i);
+            String clean = cleanLine(row.name().getString());
+            if (!MaterialRateUtility.isScoreboardMaterialLine(clean)) {
+                break;
+            }
+
+            int materialLineIndex = i - materialienIndex - 1;
+            Text withRate = MaterialRateUtility.appendRateToScoreboardLine(row.name(), materialLineIndex);
+            rows.set(i, ScoreboardSidebarReader.Row.nameOnly(withRate));
+        }
+    }
+
+    private static boolean shouldAppendResourceRates(MinecraftClient client) {
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        return config.enableMod
+                && config.resourceTrackerRateEnabled
+                && config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.SCOREBOARD
+                && InformationenUtility.isInFarmzone(client);
+    }
+
+    private static void appendResourceRates(List<ScoreboardSidebarReader.Row> rows) {
+        int ressourceIndex = findRessourceIndex(rows);
+        if (ressourceIndex < 0) {
+            return;
+        }
+
+        for (int i = ressourceIndex + 1; i < rows.size(); i++) {
+            ScoreboardSidebarReader.Row row = rows.get(i);
+            String clean = cleanLine(row.name().getString());
+            if (!FarmzoneResourceRateUtility.isScoreboardResourceLine(clean)) {
+                break;
+            }
+            if (!FarmzoneResourceRateUtility.matchesTrackedResourceLine(clean)) {
+                continue;
+            }
+
+            Text withRate = FarmzoneResourceRateUtility.appendRateToScoreboardLine(row.name());
+            rows.set(i, ScoreboardSidebarReader.Row.nameOnly(withRate));
+        }
+    }
+
+
 
     /**
      * Layout vor Materialien:
@@ -158,6 +239,15 @@ public final class CoinTrackerCustomSidebar {
         return -1;
     }
 
+    private static int findRessourceIndex(List<ScoreboardSidebarReader.Row> rows) {
+        for (int i = 0; i < rows.size(); i++) {
+            if (isRessourceHeader(cleanLine(rows.get(i).name().getString()))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private static final int CPM_BAR_COLOR = 0x545454;
     private static final int CPM_HEADER_COLOR = 0xFCFC54;
     private static final int CPM_VALUE_COLOR = 0x54FCFC;
@@ -188,6 +278,14 @@ public final class CoinTrackerCustomSidebar {
             return false;
         }
         return cleanLine.contains("▌") || cleanLine.contains("|") || cleanLine.startsWith("Materialien");
+    }
+
+    private static boolean isRessourceHeader(String cleanLine) {
+        String lower = cleanLine.toLowerCase();
+        if (!lower.contains("ressource") || isCpmValueLine(cleanLine)) {
+            return false;
+        }
+        return cleanLine.contains("▌") || cleanLine.contains("|") || cleanLine.startsWith("Ressource");
     }
 
     private static boolean isCpmValueLine(String cleanLine) {

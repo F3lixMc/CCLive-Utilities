@@ -3017,10 +3017,35 @@ public class ItemViewerUtility {
             System.out.println("[ItemViewer] Kategorie '" + categoryName + "' nicht in switch-case gefunden!");
         }
         
-        // Sortiere Tags alphabetisch
+        // Sortiere Tags (Karten-Slots: #1, #2, … numerisch)
         java.util.List<String> sortedTags = new java.util.ArrayList<>(tagSet);
-        sortedTags.sort(String.CASE_INSENSITIVE_ORDER);
+        if ("card_slots".equals(categoryKey)) {
+            sortedTags.sort((a, b) -> {
+                Integer numA = parseHashTagNumber(a);
+                Integer numB = parseHashTagNumber(b);
+                if (numA != null && numB != null) {
+                    int cmp = Integer.compare(numA, numB);
+                    if (cmp != 0) {
+                        return cmp;
+                    }
+                }
+                return String.CASE_INSENSITIVE_ORDER.compare(a, b);
+            });
+        } else {
+            sortedTags.sort(String.CASE_INSENSITIVE_ORDER);
+        }
         return sortedTags;
+    }
+
+    private static Integer parseHashTagNumber(String tag) {
+        if (tag == null || !tag.startsWith("#") || tag.length() < 2) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(tag.substring(1).trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**

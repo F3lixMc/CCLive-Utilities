@@ -1,5 +1,12 @@
 package net.felix.utilities.Overall;
 
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Aincraft.MaterialRateUtility;
+
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9,7 +16,7 @@ public class ActionBarData {
 
     private static final Map<String, Integer> materials = new HashMap<>();
     private static final List<Object> filteredTexts = new ArrayList<>();
-    private static final Map<String, net.minecraft.text.Text> materialTexts = new HashMap<>(); // Speichert originale Text-Objekte mit Farbcodes
+    private static final Map<String, Text> materialTexts = new HashMap<>(); // Speichert originale Text-Objekte mit Farbcodes
     // Pattern für Materialien in der ActionBar: "zahlx material name [zahl]" oder "+zahl material name [zahl]"
     // Format: (optional "+" oder "x" nach Zahl) + Materialname + [Zahl]
     // Unterstützt formatierte Materialnamen und variable Leerzeichen
@@ -53,6 +60,9 @@ public class ActionBarData {
             materials.put(materialName, count);
             materialTexts.put(materialName, message); // Speichere originale Text-Objekt mit Farbcodes
             updateFilteredTexts();
+            if (CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateEnabled) {
+                MaterialRateUtility.updateFromActionBar();
+            }
         }
     }
     
@@ -149,6 +159,29 @@ public class ActionBarData {
     public static Map<String, Integer> getMaterials() {
         return new HashMap<>(materials);
     }
+
+    public static List<String> getSortedMaterialNames() {
+        return materials.entrySet().stream()
+                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    public static Text getMaterialText(String materialName) {
+        return materialTexts.get(materialName);
+    }
+
+    public static Text getMaterialDisplayText(String materialName) {
+        Text originalText = materialTexts.get(materialName);
+        if (originalText != null) {
+            return extractMaterialOnly(originalText, materialName);
+        }
+        Integer count = materials.get(materialName);
+        if (count != null) {
+            return Text.literal(materialName + " [" + count + "]");
+        }
+        return null;
+    }
     
     public static boolean hasMaterials() {
         return !materials.isEmpty();
@@ -178,34 +211,132 @@ public class ActionBarData {
         }
     }
     
-    private static net.minecraft.text.Text extractMaterialOnly(net.minecraft.text.Text originalText, String materialName) {
+    private static final Pattern MULTIPLIER_PREFIX = Pattern.compile("^(?:\\+\\d+|\\d+x)\\s*", Pattern.CASE_INSENSITIVE);
+
+    private static Text extractMaterialOnly(Text originalText, String materialName) {
         try {
-            // Erstelle eine neue leere Text-Komponente
-            net.minecraft.text.MutableText output = net.minecraft.text.Text.literal("");
-            
-            // Über alle Siblings (Kinder) des originalen Text-Objekts iterieren
-            for (net.minecraft.text.Text sibling : originalText.getSiblings()) {
+            MutableText nameColored = Text.empty();
+            Style nameStyle = Style.EMPTY;
+
+            for (Text sibling : originalText.getSiblings()) {
                 String content = sibling.getString();
-                
-                // Überspringe den Multiplikator-Teil (z.B. "3x " oder "+1 ")
-                if (content.matches("^\\d+x\\s?") || content.matches("^\\+\\d+\\s?")) {
-                    continue; // Überspringe diesen Teil
+                if (content.isEmpty() || MULTIPLIER_PREFIX.matcher(content).lookingAt()) {
+                    continue;
                 }
-                
-                // Füge alle anderen Teile hinzu (behält die Formatierung/Farbe)
-                output.append(sibling);
+
+                int bracketIndex = content.indexOf('[');
+                if (bracketIndex >= 0) {
+                    if (bracketIndex > 0) {
+                        String namePart = content.substring(0, bracketIndex).stripTrailing();
+                        if (!namePart.isEmpty()) {
+                            nameStyle = sibling.getStyle();
+                            nameColored.append(Text.literal(namePart).setStyle(nameStyle));
+                        }
+                    }
+                    break;
+                }
+
+                String namePart = content.stripTrailing();
+                if (!namePart.isEmpty()) {
+                    nameStyle = sibling.getStyle();
+                    nameColored.append(Text.literal(namePart).setStyle(nameStyle));
+                }
             }
-            
-            // Wenn wir nichts gefunden haben, verwende Fallback
-            if (output.getString().trim().isEmpty()) {
-                return net.minecraft.text.Text.literal(materialName + " [" + materials.get(materialName) + "]");
+
+            if (nameColored.getString().trim().isEmpty()) {
+                nameColored = Text.literal(materialName);
+                nameStyle = Style.EMPTY;
+            } else {
+                nameStyle = getLastPartStyle(nameColored, nameStyle);
             }
-            
-            return output;
+
+            Integer count = materials.get(materialName);
+            if (count != null) {
+                nameColored.append(Text.literal(" [" + count + "]").setStyle(nameStyle));
+            }
+
+            return nameColored;
         } catch (Exception e) {
-            // Fallback: Verwende den Materialnamen ohne spezielle Farbe
-            return net.minecraft.text.Text.literal(materialName + " [" + materials.get(materialName) + "]");
+            return buildFallbackDisplayText(materialName);
         }
+    }
+
+    private static Style getLastPartStyle(MutableText text, Style fallback) {
+        if (text.getSiblings().isEmpty()) {
+            return text.getStyle();
+        }
+        Text last = text.getSiblings().get(text.getSiblings().size() - 1);
+        return last.getStyle() != null ? last.getStyle() : fallback;
+    }
+
+    public static Integer getMaterialNameColorRgb(String materialName) {
+        Text originalText = materialTexts.get(materialName);
+        if (originalText == null) {
+            return null;
+        }
+
+        for (Text sibling : originalText.getSiblings()) {
+            String content = sibling.getString();
+            if (content.isEmpty() || MULTIPLIER_PREFIX.matcher(content).lookingAt()) {
+                continue;
+            }
+
+            int bracketIndex = content.indexOf('[');
+            if (bracketIndex >= 0) {
+                if (bracketIndex > 0) {
+                    Integer color = colorRgb(sibling.getStyle().getColor());
+                    if (color != null) {
+                        return color;
+                    }
+                }
+                break;
+            }
+
+            Integer color = colorRgb(sibling.getStyle().getColor());
+            if (color != null) {
+                return color;
+            }
+        }
+
+        return findFirstNonWhiteColor(originalText);
+    }
+
+    private static Integer colorRgb(TextColor color) {
+        if (color == null) {
+            return null;
+        }
+        int rgb = color.getRgb() & 0xFFFFFF;
+        if (rgb == 0xFFFFFF) {
+            return null;
+        }
+        return rgb;
+    }
+
+    private static Integer findFirstNonWhiteColor(Text text) {
+        if (text == null) {
+            return null;
+        }
+
+        Integer direct = colorRgb(text.getStyle().getColor());
+        if (direct != null) {
+            return direct;
+        }
+
+        for (Text sibling : text.getSiblings()) {
+            Integer nested = findFirstNonWhiteColor(sibling);
+            if (nested != null) {
+                return nested;
+            }
+        }
+        return null;
+    }
+
+    private static Text buildFallbackDisplayText(String materialName) {
+        Integer count = materials.get(materialName);
+        if (count == null) {
+            return Text.literal(materialName);
+        }
+        return Text.literal(materialName + " [" + count + "]");
     }
     
 

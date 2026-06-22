@@ -16,6 +16,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
 import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.MaterialTrackerDisplayMode;
 import net.felix.utilities.Overall.ActionBarData;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
@@ -31,6 +32,7 @@ public class MaterialTrackerUtility {
 	private static boolean isTrackingMaterials = false;
 	private static boolean showOverlays = true; // Neue Variable für Overlay-Sichtbarkeit
 	private static String lastDimension = null; // Speichert die letzte Dimension für Dimensionswechsel-Erkennung
+	private static String lastRateDimension = null;
 	
 	// Test overlay variables
 	private static boolean showTestOverlay = false;
@@ -46,6 +48,8 @@ public class MaterialTrackerUtility {
 	private static final int OVERLAY_WIDTH = 155;
 	private static final int OVERLAY_HEIGHT = 103;
 	private static final int TEXT_PADDING = 20;
+	private static final int TEXT_LEFT_PADDING = 10;
+	private static final int TEXT_RIGHT_PADDING = 10;
 	private static final int MIN_TEXT_WIDTH = 100; // Minimale Breite für Text
 	
 	// Textur-Identifier für den Materialien-Hintergrund
@@ -126,6 +130,8 @@ public class MaterialTrackerUtility {
 		
 		// Handle hotkey
 		handleHotkey();
+
+		updateMaterialRates(client);
 		
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
@@ -159,6 +165,7 @@ public class MaterialTrackerUtility {
 		if (lastDimension != null && currentDimension != null && !lastDimension.equals(currentDimension)) {
 			// Dimension changed - reset materials for the overlay
 			ActionBarData.reset();
+			MaterialRateUtility.resetSession();
 			isTrackingMaterials = false;
 		}
 		
@@ -166,12 +173,46 @@ public class MaterialTrackerUtility {
 		lastDimension = currentDimension;
 
 		// Only track materials if we're on a floor AND have materials
-		// This ensures the overlay disappears when changing dimensions
 		boolean hasMaterials = ActionBarData.hasMaterials();
 		boolean shouldTrack = isOnFloor && hasMaterials;
 		
 		if (shouldTrack != isTrackingMaterials) {
 			isTrackingMaterials = shouldTrack;
+		}
+	}
+
+	private static void updateMaterialRates(MinecraftClient client) {
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod
+				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled
+				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateEnabled
+				|| client.player == null) {
+			MaterialRateUtility.resetSession();
+			return;
+		}
+
+		ActionBarData.checkDimensionChange();
+
+		boolean isOnFloor = false;
+		String currentDimension = null;
+		try {
+			if (client.world != null) {
+				currentDimension = client.world.getRegistryKey().getValue().toString();
+				isOnFloor = currentDimension.toLowerCase().contains("floor");
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+
+		if (lastRateDimension != null && currentDimension != null && !lastRateDimension.equals(currentDimension)) {
+			ActionBarData.reset();
+			MaterialRateUtility.resetSession();
+		}
+		lastRateDimension = currentDimension;
+
+		if (isOnFloor && ActionBarData.hasMaterials()) {
+			MaterialRateUtility.updateFromActionBar();
+		} else if (!isOnFloor) {
+			MaterialRateUtility.resetSession();
 		}
 	}
 	
@@ -238,9 +279,10 @@ public class MaterialTrackerUtility {
 		
 		// Get materials from ActionBarData
 		List<Object> texts = ActionBarData.getFilteredTexts();
+		List<Text> displayTexts = buildDisplayTexts(texts);
 		
 		// Calculate dynamic width based on text content
-		int dynamicWidth = calculateRequiredWidth(context, texts);
+		int dynamicWidth = calculateRequiredWidth(context, displayTexts);
 		int overlayWidth = Math.max(OVERLAY_WIDTH, dynamicWidth);
 		
 		// Determine if overlay is on left or right side of screen
@@ -304,21 +346,12 @@ public class MaterialTrackerUtility {
 		// Render materials (scaled)
 		int currentY = TEXT_PADDING;
 		
-		for (Object textObj : texts) {
-			Text textComponent;
-			if (textObj instanceof net.minecraft.text.Text) {
-				// Verwende das originale Text-Objekt mit Farbcodes
-				textComponent = (net.minecraft.text.Text) textObj;
-			} else {
-				// Fallback für String-Objekte
-				textComponent = Text.literal(textObj.toString());
-			}
-			
+		for (Text textComponent : displayTexts) {
 			// Draw text (scaled by matrix)
 			context.drawText(
 				MinecraftClient.getInstance().textRenderer, 
 				textComponent, 
-				8, // X position (relative to matrix)
+				TEXT_LEFT_PADDING,
 				currentY - 8, // Y position (relative to matrix)
 				0xFFFFFFFF, // Vollständig weiß mit Alpha
 				true // Mit Schatten
@@ -331,28 +364,51 @@ public class MaterialTrackerUtility {
 		matrices.popMatrix();
 	}
 	
-	private static int calculateRequiredWidth(DrawContext context, List<Object> texts) {
-		int maxWidth = MIN_TEXT_WIDTH;
-		
-		for (Object textObj : texts) {
+	private static List<Text> buildDisplayTexts(List<Object> texts) {
+		List<Text> displayTexts = new ArrayList<>();
+		List<String> materialNames = ActionBarData.getSortedMaterialNames();
+		boolean showRates = usesOverlayRateDisplay();
+
+		for (int i = 0; i < texts.size(); i++) {
+			Object textObj = texts.get(i);
 			Text textComponent;
-			if (textObj instanceof net.minecraft.text.Text) {
-				textComponent = (net.minecraft.text.Text) textObj;
+			if (textObj instanceof Text) {
+				textComponent = (Text) textObj;
 			} else {
 				textComponent = Text.literal(textObj.toString());
 			}
-			
-			// Berechne die Breite des Textes
+
+			if (showRates && i < materialNames.size()) {
+				textComponent = MaterialRateUtility.appendRateForMaterial(materialNames.get(i), textComponent);
+			}
+
+			displayTexts.add(textComponent);
+		}
+		return displayTexts;
+	}
+
+	private static int calculateRequiredWidth(DrawContext context, List<Text> texts) {
+		int maxWidth = MIN_TEXT_WIDTH;
+		
+		for (Text textComponent : texts) {
 			int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(textComponent);
-			
-			// Füge Padding hinzu (links und rechts)
-			int totalWidth = textWidth + 15; // 10 Pixel links + 5 Pixel rechts (5 Pixel weniger)
-			
-			// Aktualisiere die maximale Breite
+			int totalWidth = textWidth + TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING;
 			maxWidth = Math.max(maxWidth, totalWidth);
 		}
 		
 		return maxWidth;
+	}
+
+	public static boolean usesOverlayRateDisplay() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return config.materialTrackerRateEnabled
+				&& config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.OVERLAY;
+	}
+
+	public static boolean usesScoreboardRateDisplay() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return config.materialTrackerRateEnabled
+				&& config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.SCOREBOARD;
 	}
 	
 	private static void renderTestOverlay(DrawContext context, MinecraftClient client) {
@@ -429,7 +485,7 @@ public class MaterialTrackerUtility {
 			context.drawText(
 				MinecraftClient.getInstance().textRenderer, 
 				Text.literal(testLine), 
-				8, // X position (relative to matrix)
+				TEXT_LEFT_PADDING,
 				currentY - 8, // Y position (relative to matrix)
 				0xFFFFFFFF, // Vollständig weiß mit Alpha
 				true // Mit Schatten
@@ -450,7 +506,7 @@ public class MaterialTrackerUtility {
 			int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(text);
 			
 			// Füge Padding hinzu (links und rechts)
-			int totalWidth = textWidth + 15; // 10 Pixel links + 5 Pixel rechts (5 Pixel weniger)
+			int totalWidth = textWidth + TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING;
 			
 			// Aktualisiere die maximale Breite
 			maxWidth = Math.max(maxWidth, totalWidth);

@@ -444,6 +444,12 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean miningLumberjackOverlayEnabled = true; // Holzfäller / Bergbau Overlay ein/aus
 
+    @SerialEntry
+    public ResourceTrackerDisplayMode resourceTrackerDisplayMode = ResourceTrackerDisplayMode.OVERLAY;
+
+    @SerialEntry
+    public boolean resourceTrackerRateEnabled = false;
+
     // Mining & Lumberjack Overlay Settings
     @SerialEntry
     public boolean miningOverlayEnabled = true; // Bergbau Overlay aktivieren
@@ -669,6 +675,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public OverlayType materialTrackerOverlayType = OverlayType.CUSTOM; // Overlay-Typ für Material Tracker
+
+    @SerialEntry
+    public MaterialTrackerDisplayMode materialTrackerDisplayMode = MaterialTrackerDisplayMode.OVERLAY;
+
+    @SerialEntry
+    public boolean materialTrackerRateEnabled = false;
 
     // Collection Overlay Settings
     @SerialEntry
@@ -1518,8 +1530,8 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aspect Overlay im Chat"))
-                                        .description(OptionDescription.of(Text.literal("Aspect Overlay in Chat-Nachrichten ein- oder ausblenden")))
+                                        .name(Text.literal("Aspekt Overlay im Chat"))
+                                        .description(OptionDescription.of(Text.literal("Aspekt Overlay in Chat-Nachrichten ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().chatAspectOverlayEnabled, newVal -> HANDLER.instance().chatAspectOverlayEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
@@ -1539,7 +1551,7 @@ public class CCLiveUtilitiesConfig {
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<ItemDisplayMode>createBuilder()
-                                        .name(Text.literal("Item-Anzeigemodus"))
+                                        .name(Text.literal("Item-Markierungs Art"))
                                         .description(OptionDescription.of(Text.literal("Rahmen, Hintergrund oder nicht passende Items ausblenden")))
                                         .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().searchBarItemDisplayMode, newVal -> HANDLER.instance().searchBarItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
@@ -1705,7 +1717,7 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<SchmiedItemDisplayMode>createBuilder()
-                                        .name(Text.literal("Item-Anzeigemodus"))
+                                        .name(Text.literal("Schmiedezustand Markierungs Art"))
                                         .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für Schmiedezustand Items")))
                                         .binding(SchmiedItemDisplayMode.BORDER, () -> HANDLER.instance().schmiedTrackerItemDisplayMode, newVal -> HANDLER.instance().schmiedTrackerItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
@@ -1865,6 +1877,31 @@ public class CCLiveUtilitiesConfig {
                                                 case NONE -> Text.literal("Kein Hintergrund");
                                             }))
                                         .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Materialien/min aktivieren"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Materialien pro Minute berechnen und anzeigen (Overlay oder Scoreboard)")))
+                                        .binding(false,
+                                                () -> HANDLER.instance().materialTrackerRateEnabled,
+                                                newVal -> HANDLER.instance().materialTrackerRateEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<MaterialTrackerDisplayMode>createBuilder()
+                                        .name(Text.literal("Materialien/min-Anzeige Position"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Wo Materialien pro Minute angezeigt werden:\n"
+                                                        + "• Overlay – hinter der Anzahl im Material Tracker\n"
+                                                        + "• Scoreboard – hinter der Anzahl im Scoreboard")))
+                                        .binding(MaterialTrackerDisplayMode.OVERLAY,
+                                                () -> HANDLER.instance().materialTrackerDisplayMode,
+                                                newVal -> HANDLER.instance().materialTrackerDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(MaterialTrackerDisplayMode.class)
+                                                .formatValue(mode -> switch (mode) {
+                                                    case OVERLAY -> Text.literal("Overlay");
+                                                    case SCOREBOARD -> Text.literal("Scoreboard");
+                                                }))
+                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Kill Tracker"))
@@ -1914,11 +1951,11 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<CoinTrackerDisplayMode>createBuilder()
-                                        .name(Text.literal("CPM-Anzeige"))
+                                        .name(Text.literal("CPM-Anzeige Position"))
                                         .description(OptionDescription.of(Text.literal(
                                                 "Wo Coins pro Minute angezeigt werden:\n"
-                                                        + "• Overlay – Coin Tracker Overlay, Scoreboard-CPM ausgeblendet\n"
-                                                        + "• Scoreboard – CPM im Scoreboard, kein Coin Tracker Overlay")))
+                                                        + "• Overlay – CPM im Coin Tracker Overlay\n"
+                                                        + "• Scoreboard – CPM im Scoreboard")))
                                         .binding(CoinTrackerDisplayMode.OVERLAY,
                                                 () -> HANDLER.instance().coinTrackerDisplayMode,
                                                 newVal -> HANDLER.instance().coinTrackerDisplayMode = newVal)
@@ -2092,6 +2129,31 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Farbe für den normalen Text im Holzfäller/Bergbau Overlay")))
                                         .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().miningLumberjackOverlayTextColor, newVal -> HANDLER.instance().miningLumberjackOverlayTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Ressourcen/min aktivieren"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Ressourcen pro Minute berechnen und anzeigen (Overlay oder Scoreboard)")))
+                                        .binding(false,
+                                                () -> HANDLER.instance().resourceTrackerRateEnabled,
+                                                newVal -> HANDLER.instance().resourceTrackerRateEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<ResourceTrackerDisplayMode>createBuilder()
+                                        .name(Text.literal("Ressourcen/min-Anzeige Position"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Wo Ressourcen pro Minute angezeigt werden:\n"
+                                                        + "• Overlay – im Holzfäller/Bergbau Overlay\n"
+                                                        + "• Scoreboard – hinter dem Ressourcennamen im Scoreboard")))
+                                        .binding(ResourceTrackerDisplayMode.OVERLAY,
+                                                () -> HANDLER.instance().resourceTrackerDisplayMode,
+                                                newVal -> HANDLER.instance().resourceTrackerDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(ResourceTrackerDisplayMode.class)
+                                                .formatValue(mode -> switch (mode) {
+                                                    case OVERLAY -> Text.literal("Overlay");
+                                                    case SCOREBOARD -> Text.literal("Scoreboard");
+                                                }))
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()

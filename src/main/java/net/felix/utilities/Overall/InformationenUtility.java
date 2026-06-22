@@ -19,6 +19,8 @@ import net.minecraft.scoreboard.Team;
 import net.minecraft.client.gui.hud.InGameHud;
 import java.util.Collection;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.ResourceTrackerDisplayMode;
+import net.felix.utilities.DragOverlay.FarmzoneResourceRateUtility;
 import net.felix.utilities.Overall.Aspekte.AspectOverlay;
 import net.felix.utilities.Overall.Aspekte.AspectOverlayRenderer;
 import net.fabricmc.loader.api.FabricLoader;
@@ -202,6 +204,19 @@ public class InformationenUtility {
 	public static String getLumberjackOverlayHeader() {
 		return lumberjackXP.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXP.level) : "Holzfäller";
 	}
+
+	public static String getFarmzoneResourceRateOverlayText(MinecraftClient client) {
+		if (client == null || !isInFarmzone(client) || !usesOverlayResourceRateDisplay()) {
+			return "Ressource: -";
+		}
+		return FarmzoneResourceRateUtility.getOverlayText();
+	}
+
+	public static boolean usesOverlayResourceRateDisplay() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return config.resourceTrackerRateEnabled
+				&& config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.OVERLAY;
+	}
 	
 	/**
 	 * Gets the current overlay width for mining overlay (for use in overlay editor)
@@ -218,13 +233,15 @@ public class InformationenUtility {
 		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
 		int maxWidth = Math.max(
 			Math.max(client.textRenderer.getWidth(header),
 				Math.max(client.textRenderer.getWidth(lastXP),
 					Math.max(client.textRenderer.getWidth(xpPerMin),
 						Math.max(client.textRenderer.getWidth(requiredXP),
-							client.textRenderer.getWidth(timeToNext))))),
+							Math.max(client.textRenderer.getWidth(timeToNext),
+								client.textRenderer.getWidth(resourceRate)))))),
 			100);
 		return maxWidth + padding * 2;
 	}
@@ -234,7 +251,7 @@ public class InformationenUtility {
 	 */
 	public static String[] getMiningOverlayTexts(MinecraftClient client) {
 		if (client == null || client.textRenderer == null) {
-			return new String[]{"Bergbau", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
+			return new String[]{"Bergbau", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0", "Ressource: -"};
 		}
 		
 		String header = getMiningOverlayHeader();
@@ -243,8 +260,9 @@ public class InformationenUtility {
 		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
-		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
+		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP, resourceRate};
 	}
 	
 	/**
@@ -252,7 +270,7 @@ public class InformationenUtility {
 	 */
 	public static String[] getLumberjackOverlayTexts(MinecraftClient client) {
 		if (client == null || client.textRenderer == null) {
-			return new String[]{"Holzfäller", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
+			return new String[]{"Holzfäller", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0", "Ressource: -"};
 		}
 		
 		String header = getLumberjackOverlayHeader();
@@ -261,8 +279,9 @@ public class InformationenUtility {
 		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
-		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
+		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP, resourceRate};
 	}
 	
 	/**
@@ -280,13 +299,15 @@ public class InformationenUtility {
 		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
 		int maxWidth = Math.max(
 			Math.max(client.textRenderer.getWidth(header),
 				Math.max(client.textRenderer.getWidth(lastXP),
 					Math.max(client.textRenderer.getWidth(xpPerMin),
 						Math.max(client.textRenderer.getWidth(requiredXP),
-							client.textRenderer.getWidth(timeToNext))))),
+							Math.max(client.textRenderer.getWidth(timeToNext),
+								client.textRenderer.getWidth(resourceRate)))))),
 			100);
 		return maxWidth + padding * 2;
 	}
@@ -5129,6 +5150,14 @@ public class InformationenUtility {
 		
 		// Check for dimension changes for mining/lumberjack overlays
 		checkMiningLumberjackDimensionChange(client);
+
+		if (CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateEnabled) {
+			if (isInFarmzone(client)) {
+				FarmzoneResourceRateUtility.tick();
+			}
+		} else {
+			FarmzoneResourceRateUtility.resetSession();
+		}
 		
 		// Update XP per minute calculation (only if overlay is currently showing)
 		if (miningXP.shouldShowOverlay && miningXP.sessionStartTime > 0) {
@@ -5872,7 +5901,7 @@ public class InformationenUtility {
 		// Calculate overlay dimensions
 		int padding = 5;
 		int lineHeight = 12;
-		int lines = 5; // Header, Last XP, XP/Min, Required XP, Time to next level
+		int lines = 6; // Header, Last XP, XP/Min, Time to next level, Required XP, Resource rate
 		int overlayHeight = padding * 2 + lineHeight * lines;
 		int minOverlayWidth = 100;
 		
@@ -5883,13 +5912,15 @@ public class InformationenUtility {
 		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
 		int maxWidth = Math.max(
 			Math.max(client.textRenderer.getWidth(header),
 				Math.max(client.textRenderer.getWidth(lastXP),
 					Math.max(client.textRenderer.getWidth(xpPerMin),
 						Math.max(client.textRenderer.getWidth(requiredXP),
-							client.textRenderer.getWidth(timeToNext))))),
+							Math.max(client.textRenderer.getWidth(timeToNext),
+								client.textRenderer.getWidth(resourceRate)))))),
 			minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
 		
@@ -5943,6 +5974,8 @@ public class InformationenUtility {
 		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, resourceRate, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -5965,7 +5998,7 @@ public class InformationenUtility {
 		// Calculate overlay dimensions
 		int padding = 5;
 		int lineHeight = 12;
-		int lines = 5; // Header, Last XP, XP/Min, Required XP, Time to next level
+		int lines = 6; // Header, Last XP, XP/Min, Time to next level, Required XP, Resource rate
 		int overlayHeight = padding * 2 + lineHeight * lines;
 		int minOverlayWidth = 100;
 		
@@ -5976,13 +6009,15 @@ public class InformationenUtility {
 		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
 		int maxWidth = Math.max(
 			Math.max(client.textRenderer.getWidth(header),
 				Math.max(client.textRenderer.getWidth(lastXP),
 					Math.max(client.textRenderer.getWidth(xpPerMin),
 						Math.max(client.textRenderer.getWidth(requiredXP),
-							client.textRenderer.getWidth(timeToNext))))),
+							Math.max(client.textRenderer.getWidth(timeToNext),
+								client.textRenderer.getWidth(resourceRate)))))),
 			minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
 		
@@ -6036,6 +6071,8 @@ public class InformationenUtility {
 		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
+		textY += lineHeight;
+		context.drawText(client.textRenderer, resourceRate, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -7807,6 +7844,8 @@ public class InformationenUtility {
 	 * Resets mining/lumberjack tracking (timer and XP data)
 	 */
 	private static void resetMiningLumberjackTracking() {
+		FarmzoneResourceRateUtility.resetSession();
+
 		// Reset mining XP tracking
 		miningXP.sessionStartTime = 0;
 		miningXP.newXP = 0;

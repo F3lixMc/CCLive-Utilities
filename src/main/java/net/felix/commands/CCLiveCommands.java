@@ -1,6 +1,7 @@
 package net.felix.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -30,6 +31,8 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
  * Vereint Blueprint- und Leaderboard-Commands unter einem Hauptcommand
  */
 public class CCLiveCommands {
+
+    private static final int MAX_FLOOR = 100;
 
     private static boolean wasInClassSelectionInventory = false;
 
@@ -84,78 +87,7 @@ public class CCLiveCommands {
             
             // Leaderboard Commands  
             .then(literal("lb")
-                .then(literal("reset")
-                    .then(literal("all")
-                        .executes(CCLiveCommands::resetAllScores))
-                    .then(literal("current_coins")
-                        .executes(context -> resetBoardScore(context, "current_coins")))
-                    .then(literal("alltime_kills")
-                        .executes(context -> resetBoardScore(context, "alltime_kills")))
-                    .then(literal("playtime")
-                        .executes(context -> resetBoardScore(context, "playtime")))
-                    .then(literal("all_collections")
-                        .executes(context -> resetBoardScore(context, "all_collections")))
-                    .then(literal("oak_collection")
-                        .executes(context -> resetBoardScore(context, "oak_collection")))
-                    .then(literal("sulfur_collection")
-                        .executes(context -> resetBoardScore(context, "sulfur_collection")))
-                    .then(literal("mushroom_collection")
-                        .executes(context -> resetBoardScore(context, "mushroom_collection")))
-                    .then(literal("spruce_collection")
-                        .executes(context -> resetBoardScore(context, "spruce_collection")))
-                    .then(literal("dark_oak_collection")
-                        .executes(context -> resetBoardScore(context, "dark_oak_collection")))
-                    .then(literal("mangrove_collection")
-                        .executes(context -> resetBoardScore(context, "mangrove_collection")))
-                    .then(literal("jungle_collection")
-                        .executes(context -> resetBoardScore(context, "jungle_collection")))
-                    .then(literal("bamboo_collection")
-                        .executes(context -> resetBoardScore(context, "bamboo_collection")))
-                    .then(literal("raw_gold_collection")
-                        .executes(context -> resetBoardScore(context, "raw_gold_collection")))
-                    .then(literal("coal_collection")
-                        .executes(context -> resetBoardScore(context, "coal_collection")))
-                    .then(literal("crimson_collection")
-                        .executes(context -> resetBoardScore(context, "crimson_collection")))
-                    .then(literal("raw_copper_collection")
-                        .executes(context -> resetBoardScore(context, "raw_copper_collection")))
-                    .then(literal("quartz_collection")
-                        .executes(context -> resetBoardScore(context, "quartz_collection")))
-                    .then(literal("warped_collection")
-                        .executes(context -> resetBoardScore(context, "warped_collection")))
-                    .then(literal("diamond_collection")
-                        .executes(context -> resetBoardScore(context, "diamond_collection")))
-                    .then(literal("ancient_debris_collection")
-                        .executes(context -> resetBoardScore(context, "ancient_debris_collection")))
-                    .then(literal("echo_collection")
-                        .executes(context -> resetBoardScore(context, "echo_collection")))
-                    .then(literal("raw_iron_collection")
-                        .executes(context -> resetBoardScore(context, "raw_iron_collection")))
-                    .then(literal("obsidian_collection")
-                        .executes(context -> resetBoardScore(context, "obsidian_collection")))
-                    .then(literal("floor_1")
-                        .executes(context -> resetBoardScore(context, "floor_1")))
-                    .then(literal("floor_2")
-                        .executes(context -> resetBoardScore(context, "floor_2")))
-                    .then(literal("floor_3")
-                        .executes(context -> resetBoardScore(context, "floor_3")))
-                    .then(literal("floor_4")
-                        .executes(context -> resetBoardScore(context, "floor_4")))
-                    .then(literal("floor_5")
-                        .executes(context -> resetBoardScore(context, "floor_5")))
-                    .then(literal("floor_6")
-                        .executes(context -> resetBoardScore(context, "floor_6")))
-                    .then(literal("floor_7")
-                        .executes(context -> resetBoardScore(context, "floor_7")))
-                    .then(literal("floor_8")
-                        .executes(context -> resetBoardScore(context, "floor_8")))
-                    .then(literal("floor_9")
-                        .executes(context -> resetBoardScore(context, "floor_9")))
-                    .then(literal("floor_10")
-                        .executes(context -> resetBoardScore(context, "floor_10")))
-                    .then(argument("board", StringArgumentType.word())
-                        .suggests(leaderboardSuggestions())
-                        .executes(context -> resetBoardScore(context, StringArgumentType.getString(context, "board")))))
+                .then(leaderboardResetCommand())
                 .then(literal("status")
                     .executes(CCLiveCommands::showLeaderboardStatus))
                 .then(literal("refresh")
@@ -541,7 +473,7 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Text.literal("§7/cclive lb reset <board> §f- Spezifischen Score löschen"));
         context.getSource().sendFeedback(Text.literal("§7  Verfügbare Boards: current_coins, alltime_kills, playtime,"));
         context.getSource().sendFeedback(Text.literal("§7  all_collections, *_collection (oak, sulfur, mushroom, etc.),"));
-        context.getSource().sendFeedback(Text.literal("§7  floor_1 bis floor_10"));
+        context.getSource().sendFeedback(Text.literal("§7  floor_1 bis floor_" + MAX_FLOOR));
         context.getSource().sendFeedback(Text.literal("§7  Tab-Completion verfügbar!"));
         context.getSource().sendFeedback(Text.literal(""));
         context.getSource().sendFeedback(Text.literal("§e§lChat Commands:"));
@@ -619,6 +551,68 @@ public class CCLiveCommands {
         return chatModeSuggestions();
     }
     
+    private static LiteralArgumentBuilder<FabricClientCommandSource> leaderboardResetCommand() {
+        LiteralArgumentBuilder<FabricClientCommandSource> reset = literal("reset")
+                    .then(literal("all")
+                        .executes(CCLiveCommands::resetAllScores))
+                    .then(literal("current_coins")
+                        .executes(context -> resetBoardScore(context, "current_coins")))
+                    .then(literal("alltime_kills")
+                        .executes(context -> resetBoardScore(context, "alltime_kills")))
+                    .then(literal("playtime")
+                        .executes(context -> resetBoardScore(context, "playtime")))
+                    .then(literal("all_collections")
+                        .executes(context -> resetBoardScore(context, "all_collections")))
+                    .then(literal("oak_collection")
+                        .executes(context -> resetBoardScore(context, "oak_collection")))
+                    .then(literal("sulfur_collection")
+                        .executes(context -> resetBoardScore(context, "sulfur_collection")))
+                    .then(literal("mushroom_collection")
+                        .executes(context -> resetBoardScore(context, "mushroom_collection")))
+                    .then(literal("spruce_collection")
+                        .executes(context -> resetBoardScore(context, "spruce_collection")))
+                    .then(literal("dark_oak_collection")
+                        .executes(context -> resetBoardScore(context, "dark_oak_collection")))
+                    .then(literal("mangrove_collection")
+                        .executes(context -> resetBoardScore(context, "mangrove_collection")))
+                    .then(literal("jungle_collection")
+                        .executes(context -> resetBoardScore(context, "jungle_collection")))
+                    .then(literal("bamboo_collection")
+                        .executes(context -> resetBoardScore(context, "bamboo_collection")))
+                    .then(literal("raw_gold_collection")
+                        .executes(context -> resetBoardScore(context, "raw_gold_collection")))
+                    .then(literal("coal_collection")
+                        .executes(context -> resetBoardScore(context, "coal_collection")))
+                    .then(literal("crimson_collection")
+                        .executes(context -> resetBoardScore(context, "crimson_collection")))
+                    .then(literal("raw_copper_collection")
+                        .executes(context -> resetBoardScore(context, "raw_copper_collection")))
+                    .then(literal("quartz_collection")
+                        .executes(context -> resetBoardScore(context, "quartz_collection")))
+                    .then(literal("warped_collection")
+                        .executes(context -> resetBoardScore(context, "warped_collection")))
+                    .then(literal("diamond_collection")
+                        .executes(context -> resetBoardScore(context, "diamond_collection")))
+                    .then(literal("ancient_debris_collection")
+                        .executes(context -> resetBoardScore(context, "ancient_debris_collection")))
+                    .then(literal("echo_collection")
+                        .executes(context -> resetBoardScore(context, "echo_collection")))
+                    .then(literal("raw_iron_collection")
+                        .executes(context -> resetBoardScore(context, "raw_iron_collection")))
+                    .then(literal("obsidian_collection")
+                        .executes(context -> resetBoardScore(context, "obsidian_collection")));
+
+        for (int floor = 1; floor <= MAX_FLOOR; floor++) {
+            String floorBoard = "floor_" + floor;
+            reset = reset.then(literal(floorBoard)
+                    .executes(context -> resetBoardScore(context, floorBoard)));
+        }
+
+        return reset.then(argument("board", StringArgumentType.word())
+                .suggests(leaderboardSuggestions())
+                .executes(context -> resetBoardScore(context, StringArgumentType.getString(context, "board"))));
+    }
+
     /**
      * Suggestion Provider für Leaderboard-Namen
      */
@@ -626,7 +620,6 @@ public class CCLiveCommands {
         return (context, builder) -> {
             String input = builder.getRemaining().toLowerCase();
             
-            // Liste aller verfügbaren Leaderboard-Namen
             String[] leaderboards = {
                 "all",
                 "current_coins",
@@ -652,21 +645,17 @@ public class CCLiveCommands {
                 "echo_collection",
                 "raw_iron_collection",
                 "obsidian_collection",
-                "floor_1",
-                "floor_2",
-                "floor_3",
-                "floor_4",
-                "floor_5",
-                "floor_6",
-                "floor_7",
-                "floor_8",
-                "floor_9",
-                "floor_10"
             };
             
-            // Filtere und füge passende Vorschläge hinzu
             for (String board : leaderboards) {
                 if (board.toLowerCase().startsWith(input)) {
+                    builder.suggest(board);
+                }
+            }
+
+            for (int floor = 1; floor <= MAX_FLOOR; floor++) {
+                String board = "floor_" + floor;
+                if (board.startsWith(input)) {
                     builder.suggest(board);
                 }
             }
