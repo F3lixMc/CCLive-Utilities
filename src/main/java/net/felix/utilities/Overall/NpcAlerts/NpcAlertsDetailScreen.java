@@ -29,6 +29,48 @@ public class NpcAlertsDetailScreen extends Screen {
         this.configKey = configKey;
     }
     
+    private boolean isMachtkristalleKey() {
+        return "machtkristalle".equals(configKey);
+    }
+    
+    private String getPercentCheckboxLabel() {
+        return isMachtkristalleKey() ? "Prozentwert über 100%" : "Prozente anzeigen";
+    }
+    
+    private int getWarnInputY(int boxY) {
+        return isMachtkristalleKey() ? boxY + 135 : boxY + 110;
+    }
+    
+    private int getSettingsBlockEndY(int boxY, boolean supportsPercent) {
+        if (isMachtkristalleKey()) {
+            return boxY + 185;
+        }
+        if (supportsPercent) {
+            return boxY + 160;
+        }
+        if ("komboKiste".equals(configKey)) {
+            return boxY + 140;
+        }
+        return boxY + 110;
+    }
+    
+    private void clampMachtkristallWarnPercentIfNeeded() {
+        if (!isMachtkristalleKey()
+            || CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100) {
+            return;
+        }
+        double warn = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
+        if (warn > 100) {
+            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent = 100;
+            warnPercentInput = "100";
+        }
+    }
+    
+    private boolean isMachtkristallWarnCappedAt100() {
+        return isMachtkristalleKey()
+            && !CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100;
+    }
+    
     @Override
     protected void init() {
         super.init();
@@ -51,9 +93,10 @@ public class NpcAlertsDetailScreen extends Screen {
             int warnValue = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
             warnPercentInput = warnValue >= 0 ? String.valueOf(warnValue) : "";
         } else {
+            clampMachtkristallWarnPercentIfNeeded();
             double currentWarnPercent = getWarnPercent();
             if (currentWarnPercent >= 0) {
-                warnPercentInput = String.format("%.1f", currentWarnPercent);
+                warnPercentInput = String.valueOf((int) Math.round(currentWarnPercent));
             } else {
                 warnPercentInput = "";
             }
@@ -97,7 +140,7 @@ public class NpcAlertsDetailScreen extends Screen {
         int baseBoxHeight = hasIconOption ? 275 : 235;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
-            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+            baseBoxHeight += 85; // 3 Slot-Checkboxen + Level-Checkbox
         }
         // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
         if (isRecycler || isRecyclerSlot) {
@@ -279,8 +322,39 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             // Text
-            context.drawText(textRenderer, "Prozente anzeigen", checkboxX + checkboxSize + 5, checkboxY + 1, 
+            context.drawText(textRenderer, getPercentCheckboxLabel(), checkboxX + checkboxSize + 5, checkboxY + 1, 
                 showPercent ? 0xFFFFFFFF : 0xFF808080, false);
+            
+            if (isMachtkristalleKey()) {
+                int levelCheckboxY = boxY + 110;
+                boolean showLevel = getShowMachtkristalleLevel();
+                
+                context.fill(checkboxX, levelCheckboxY, checkboxX + checkboxSize, levelCheckboxY + checkboxSize, 0xFF808080);
+                context.drawBorder(checkboxX, levelCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+                
+                if (showLevel) {
+                    int checkX = checkboxX + 2;
+                    int checkY = levelCheckboxY + 2;
+                    int checkSize = checkboxSize - 4;
+                    for (int i = 0; i < checkSize / 2; i++) {
+                        int px = checkX + i;
+                        int py = checkY + checkSize / 2 + i;
+                        if (px < checkboxX + checkboxSize - 2 && py < levelCheckboxY + checkboxSize - 2) {
+                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                        }
+                    }
+                    for (int i = 0; i < checkSize / 2; i++) {
+                        int px = checkX + checkSize / 2 + i;
+                        int py = checkY + checkSize - 2 - i;
+                        if (px < checkboxX + checkboxSize - 2 && py >= levelCheckboxY + 2) {
+                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                        }
+                    }
+                }
+                
+                context.drawText(textRenderer, "Level anzeigen", checkboxX + checkboxSize + 5, levelCheckboxY + 1,
+                    showLevel ? 0xFFFFFFFF : 0xFF808080, false);
+            }
             
             if ("forschung".equals(configKey)) {
                 int inputY = boxY + 110;
@@ -306,7 +380,7 @@ public class NpcAlertsDetailScreen extends Screen {
                     inputX, inputY + inputHeight + 5, 0xFF808080, false);
             } else {
             // Warn-Eingabe (Prozent)
-            int inputY = boxY + 110;
+            int inputY = getWarnInputY(boxY);
             int inputX = boxX + 10;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -360,7 +434,7 @@ public class NpcAlertsDetailScreen extends Screen {
         }
         
         // Variablen für Icon Button (außerhalb if-Block für Hover-Feedback)
-        int iconButtonY = boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110));
+        int iconButtonY = getSettingsBlockEndY(boxY, supportsPercent);
         int iconButtonX = boxX + 10;
         int iconButtonWidth = 280;
         int iconButtonHeight = 20;
@@ -383,7 +457,7 @@ public class NpcAlertsDetailScreen extends Screen {
         }
         
         // Farben Button (für alle Informationen)
-        int colorButtonY = hasIconOption ? (iconButtonY + iconButtonHeight + 10) : (boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110)));
+        int colorButtonY = hasIconOption ? (iconButtonY + iconButtonHeight + 10) : getSettingsBlockEndY(boxY, supportsPercent);
         int colorButtonX = boxX + 10;
         int colorButtonWidth = 280;
         int colorButtonHeight = 20;
@@ -637,7 +711,7 @@ public class NpcAlertsDetailScreen extends Screen {
         if (supportsPercent) {
             // Prozente Checkbox Hover
             int percentTextX = checkboxX + checkboxSize + 5;
-            int percentTextWidth = textRenderer.getWidth("Prozente anzeigen");
+            int percentTextWidth = textRenderer.getWidth(getPercentCheckboxLabel());
             int percentTextHeight = textRenderer.fontHeight;
             boolean isHoveringPercentCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
                                               mouseY >= checkboxY && mouseY <= checkboxY + checkboxSize;
@@ -647,6 +721,22 @@ public class NpcAlertsDetailScreen extends Screen {
                 int hoverStartX = checkboxX - 2;
                 int hoverEndX = percentTextX + percentTextWidth + 2;
                 context.fill(hoverStartX, checkboxY - 1, hoverEndX, checkboxY + checkboxSize + 1, 0x40FFFFFF);
+            }
+            
+            if (isMachtkristalleKey()) {
+                int levelCheckboxY = boxY + 85 + 25;
+                int levelTextX = checkboxX + checkboxSize + 5;
+                int levelTextWidth = textRenderer.getWidth("Level anzeigen");
+                int levelTextHeight = textRenderer.fontHeight;
+                boolean isHoveringLevelCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
+                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + checkboxSize;
+                boolean isHoveringLevelText = mouseX >= levelTextX && mouseX <= levelTextX + levelTextWidth &&
+                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + levelTextHeight;
+                if (isHoveringLevelCheckbox || isHoveringLevelText) {
+                    int hoverStartX = checkboxX - 2;
+                    int hoverEndX = levelTextX + levelTextWidth + 2;
+                    context.fill(hoverStartX, levelCheckboxY - 1, hoverEndX, levelCheckboxY + checkboxSize + 1, 0x40FFFFFF);
+                }
             }
         }
         
@@ -790,7 +880,7 @@ public class NpcAlertsDetailScreen extends Screen {
             case "essenzen":
                 return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
             case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristallePercent;
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100;
             case "recycler":
             case "recyclerSlot1":
             case "recyclerSlot2":
@@ -822,7 +912,10 @@ public class NpcAlertsDetailScreen extends Screen {
                 CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent = value;
                 break;
             case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristallePercent = value;
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100 = value;
+                if (!value) {
+                    clampMachtkristallWarnPercentIfNeeded();
+                }
                 break;
             case "recycler":
             case "recyclerSlot1":
@@ -831,6 +924,14 @@ public class NpcAlertsDetailScreen extends Screen {
                 CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent = value;
                 break;
         }
+    }
+    
+    private boolean getShowMachtkristalleLevel() {
+        return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleLevel;
+    }
+    
+    private void setShowMachtkristalleLevel(boolean value) {
+        CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleLevel = value;
     }
     
     @Override
@@ -852,7 +953,7 @@ public class NpcAlertsDetailScreen extends Screen {
             boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay();
             int baseBoxHeightClose = hasIconOptionClose ? 275 : 235;
             if (isMachtkristalleClose) {
-                baseBoxHeightClose += 60;
+                baseBoxHeightClose += 85;
             }
             if (isRecyclerClose || isRecyclerSlotClose) {
                 baseBoxHeightClose += 60;
@@ -920,7 +1021,7 @@ public class NpcAlertsDetailScreen extends Screen {
             int baseBoxHeight = hasIconOption ? 275 : 235;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
-            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+            baseBoxHeight += 85; // 3 Slot-Checkboxen + Level-Checkbox
         }
         // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
         if (isRecycler || isRecyclerSlot) {
@@ -1018,7 +1119,7 @@ public class NpcAlertsDetailScreen extends Screen {
             int checkboxY = y;
             int textX = checkboxX + checkboxSize + 5;
             // Verwende die tatsächliche Text-Breite für korrekte Click-Erkennung
-            int textWidth = textRenderer.getWidth("Prozente anzeigen");
+            int textWidth = textRenderer.getWidth(getPercentCheckboxLabel());
             int textHeight = textRenderer.fontHeight;
             
             // Prüfe ob Klick auf Checkbox oder Text
@@ -1035,8 +1136,24 @@ public class NpcAlertsDetailScreen extends Screen {
                 return true;
             }
             
+            if (isMachtkristalleKey()) {
+                int levelCheckboxY = boxY + 110;
+                int levelTextX = checkboxX + checkboxSize + 5;
+                int levelTextWidth = textRenderer.getWidth("Level anzeigen");
+                int levelTextHeight = textRenderer.fontHeight;
+                boolean clickedOnLevelCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
+                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + checkboxSize;
+                boolean clickedOnLevelText = mouseX >= levelTextX && mouseX <= levelTextX + levelTextWidth &&
+                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + levelTextHeight;
+                if (clickedOnLevelCheckbox || clickedOnLevelText) {
+                    setShowMachtkristalleLevel(!getShowMachtkristalleLevel());
+                    CCLiveUtilitiesConfig.HANDLER.save();
+                    return true;
+                }
+            }
+            
             // Warn-Eingabefeld
-            int inputY = boxY + 110;
+            int inputY = getWarnInputY(boxY);
             int fieldX = boxX + 90;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -1073,7 +1190,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
         if (hasIconOptionClick) {
-            int iconButtonY = boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110));
+            int iconButtonY = getSettingsBlockEndY(boxY, supportsPercent);
             int iconButtonX = boxX + 10;
             int iconButtonWidth = 280;
             int iconButtonHeight = 20;
@@ -1092,9 +1209,9 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Farben Button (für alle Informationen)
         // Variablen für Icon Button (außerhalb if-Block für Click-Handler)
-        int iconButtonYClick = boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110));
+        int iconButtonYClick = getSettingsBlockEndY(boxY, supportsPercent);
         int iconButtonHeightClick = 20;
-        int colorButtonY = hasIconOptionClick ? (iconButtonYClick + iconButtonHeightClick + 10) : (boxY + (supportsPercent ? 160 : ("komboKiste".equals(configKey) ? 140 : 110)));
+        int colorButtonY = hasIconOptionClick ? (iconButtonYClick + iconButtonHeightClick + 10) : getSettingsBlockEndY(boxY, supportsPercent);
         int colorButtonX = boxX + 10;
         int colorButtonWidth = 280;
         int colorButtonHeight = 20;
@@ -1474,28 +1591,11 @@ public class NpcAlertsDetailScreen extends Screen {
     @Override
     public boolean charTyped(char chr, int modifiers) {
         if (isEditingWarnPercent) {
-            if ("komboKiste".equals(configKey) || "forschung".equals(configKey)) {
-                if (chr >= '0' && chr <= '9' && warnPercentInput.length() < 12) {
-                    warnPercentInput += chr;
-                    saveWarnPercent();
-                }
-                return true;
+            if (chr >= '0' && chr <= '9' && warnPercentInput.length() < 12) {
+                warnPercentInput += chr;
+                saveWarnPercent();
             }
-            // Erlaube nur Zahlen, Punkt und Komma
-            if ((chr >= '0' && chr <= '9') || chr == '.' || chr == ',') {
-                if (warnPercentInput.length() < 10) { // Maximale Länge
-                    char c = chr;
-                    if (c == ',') c = '.'; // Komma zu Punkt konvertieren
-                    // Prüfe, ob bereits ein Punkt vorhanden ist
-                    if (c == '.' && warnPercentInput.contains(".")) {
-                        return true; // Nur ein Punkt erlaubt
-                    }
-                    warnPercentInput += c;
-                    // Automatisch speichern nach jeder Eingabe
-                    saveWarnPercent();
-                }
-                return true;
-            }
+            return true;
         }
         return super.charTyped(chr, modifiers);
     }
@@ -1562,12 +1662,19 @@ public class NpcAlertsDetailScreen extends Screen {
         try {
             double value = -1.0;
             if (!warnPercentInput.trim().isEmpty()) {
-                value = Double.parseDouble(warnPercentInput.replace(",", "."));
-                // Begrenze auf 0-100 (0 ist erlaubt für Warnung bei 0%)
-                if (value < 0) value = -1.0;
-                if (value > 100) value = 100.0;
+                value = Integer.parseInt(warnPercentInput.trim());
+                if (value < 0) {
+                    value = -1.0;
+                } else if (isMachtkristallWarnCappedAt100() || !isMachtkristalleKey()) {
+                    if (value > 100) {
+                        value = 100.0;
+                    }
+                }
             }
             setWarnPercent(value);
+            if (isMachtkristallWarnCappedAt100() && value == 100.0) {
+                warnPercentInput = "100";
+            }
             CCLiveUtilitiesConfig.HANDLER.save();
         } catch (NumberFormatException e) {
             // Ungültige Eingabe - setze auf -1 (deaktiviert)

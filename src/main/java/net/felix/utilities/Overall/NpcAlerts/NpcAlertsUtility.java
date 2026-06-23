@@ -12,6 +12,7 @@ import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.PowerCrystalLevelUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import org.joml.Matrix3x2fStack;
 
@@ -267,31 +268,65 @@ public class NpcAlertsUtility {
 			if (name != null && !name.isEmpty() && !xpData.isValid()) {
 				return "MK " + name + ": Nicht im Tab-Widget";
 			}
-			// Nur der Text ohne Prozent (Prozent wird separat angezeigt)
 			if (name != null && !name.isEmpty()) {
+				boolean showLevel = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleLevel;
+				if (showLevel) {
+					return "MK " + name + " lvl." + getLevelDisplay() + ":";
+				}
 				return "MK " + name + ":";
 			}
-			// Fallback: sollte nicht passieren
 			return null;
 		}
 		
-		public String getPercentText() {
-			if (isEmpty() || isNotFound()) {
-				return null;
-			}
-			// Wenn Daten nicht gefunden wurden, kein Prozent anzeigen
+		public String getLevelDisplay() {
 			if (!xpData.isValid()) {
+				return "?";
+			}
+			if (PowerCrystalLevelUtility.isUnknownLevel(xpData.required.longValue())) {
+				return "?";
+			}
+			int level = PowerCrystalLevelUtility.levelFromRequiredXp(xpData.required.longValue());
+			return level > 0 ? String.valueOf(level) : "?";
+		}
+		
+		public double getPercentValue() {
+			if (isEmpty() || isNotFound() || !xpData.isValid()) {
+				return -1.0;
+			}
+			return PowerCrystalLevelUtility.calculatePercent(
+				xpData.current.longValue(),
+				xpData.required.longValue()
+			);
+		}
+		
+		public double getDisplayPercentValue() {
+			double percent = getPercentValue();
+			if (percent < 0) {
+				return -1.0;
+			}
+			if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100) {
+				return Math.min(percent, 100.0);
+			}
+			return percent;
+		}
+		
+		public String getPercentText() {
+			double percent = getDisplayPercentValue();
+			if (percent < 0) {
 				return null;
 			}
-			// Verwende extrahierten Prozentwert aus der Tab-Liste, falls verfügbar
-			// Sonst berechne Prozent: aktuell / benötigt * 100
-			if (xpData.percentFormatted != null) {
-				return xpData.percentFormatted;
-			} else if (xpData.isValid()) {
-				return calculatePercent(xpData.current, xpData.required);
-			} else {
-				return "?%";
+			return PowerCrystalLevelUtility.formatPercent(percent);
+		}
+		
+		public static String stripIconPrefix(String displayText) {
+			if (displayText == null) {
+				return null;
 			}
+			String stripped = displayText.replaceFirst("^MK .+ (?=lvl\\.)", "");
+			if (!stripped.equals(displayText)) {
+				return stripped;
+			}
+			return displayText.replaceFirst("^MK [^:]+: ", "");
 		}
 		
 		public String getDisplayTextForEmptySlot(int slotNumber) {
@@ -850,6 +885,28 @@ public class NpcAlertsUtility {
 	}
 	
 	/**
+	 * Liest den vollständigen Tablist-Text inkl. Custom-Font-Glyphen.
+	 */
+	private static String getTablistEntryText(net.minecraft.client.network.PlayerListEntry entry) {
+		if (entry == null) {
+			return null;
+		}
+		net.minecraft.text.Text displayName = entry.getDisplayName();
+		if (displayName != null) {
+			StringBuilder sb = new StringBuilder();
+			displayName.visit((style, asString) -> {
+				sb.append(asString);
+				return java.util.Optional.empty();
+			}, net.minecraft.text.Style.EMPTY);
+			return sb.toString();
+		}
+		if (entry.getProfile() != null) {
+			return entry.getProfile().getName();
+		}
+		return null;
+	}
+	
+	/**
 	 * Parst XP-Daten (Aktuell / Benötigt) aus der Tab-Liste
 	 * Sucht nach dem Header und dann nach der Datenzeile darunter
 	 */
@@ -864,11 +921,15 @@ public class NpcAlertsUtility {
 		// Suche nach der Datenzeile nach dem Header
 		// Es kann sein, dass ein Spielername dazwischen steht, also suchen wir in den nächsten 10 Einträgen
 		for (int j = headerIndex + 1; j < Math.min(headerIndex + 11, entries.size()); j++) {
-			String dataText = getEntryText.apply(j);
+			String dataText = getTablistEntryText(entries.get(j));
+			if (dataText == null) {
+				dataText = getEntryText.apply(j);
+			}
 			if (dataText == null) {
 				continue;
 			}
 			
+			dataText = ZeichenUtility.decodeTabWidgetText(dataText);
 			String cleanDataText = removeFormatting.apply(dataText);
 			if (cleanDataText == null || cleanDataText.trim().isEmpty()) {
 				continue;
@@ -882,25 +943,11 @@ public class NpcAlertsUtility {
 			
 			// Prüfe, ob dies eine XP-Zeile ist (enthält "/")
 			if (cleanDataText.contains("/")) {
-				// Versuche, die formatierten Strings zu extrahieren
-				// Format: "AKTUELL / BENÖTIGT XP [PROZENT%]" oder "AKTUELL/BENÖTIGT[PROZENT%]"
-				// Beispiel: "50/ 500 XP [10%]" oder "1,234 / 5,000[20.5%]"
+				// Format: "AKTUELL / BENÖTIGT XP [PROZENT%]" — Prozent wird für MK nicht verwendet
 				try {
-					// Extrahiere Prozentwert aus eckigen Klammern (z.B. "[10%]" -> "10%")
-					String percentValue = null;
-					java.util.regex.Pattern percentPattern = java.util.regex.Pattern.compile("\\[(\\d+[.,]?\\d*)%\\]");
-					java.util.regex.Matcher percentMatcher = percentPattern.matcher(cleanDataText);
-					if (percentMatcher.find()) {
-						percentValue = percentMatcher.group(1) + "%";
-						// Ersetze Komma durch Punkt für einheitliche Formatierung
-						percentValue = percentValue.replace(",", ".");
-					}
-					
-					// Entferne Prozentzeichen in eckigen Klammern (z.B. "[10%]")
-					// Entferne auch "XP" falls vorhanden (vor oder nach dem Prozentwert)
 					String dataWithoutPercent = cleanDataText
-						.replaceAll("\\[\\d+[.,]?\\d*%\\]", "") // Entferne [10%]
-						.replaceAll("\\s*XP\\s*", " ") // Entferne "XP" mit umgebenden Leerzeichen
+						.replaceAll("\\[[^\\]]*%\\]", "")
+						.replaceAll("\\s*XP\\s*", " ")
 						.trim();
 					
 					// Teile durch "/" auf
@@ -912,7 +959,7 @@ public class NpcAlertsUtility {
 						// Speichere formatierte Strings
 						data.currentFormatted = currentPart;
 						data.requiredFormatted = requiredPart;
-						data.percentFormatted = percentValue; // Speichere extrahierten Prozentwert
+						data.percentFormatted = null;
 						
 						// Extrahiere auch rohe Zahlen für isValid() Prüfung
 						// Entferne alles außer Zahlen, Punkten, Kommas für Parsing
@@ -993,11 +1040,6 @@ public class NpcAlertsUtility {
 		return data.isValid() && data.current <= 0;
 	}
 	
-	private static boolean isMachtkristallFull(MachtkristallSlot slot) {
-		return !slot.isEmpty() && !slot.isNotFound() && slot.xpData.isValid()
-			&& slot.xpData.current.compareTo(slot.xpData.required) >= 0;
-	}
-	
 	private static double getCapacityPercent(CapacityData data) {
 		if (!data.isValid() || data.max <= 0) {
 			return 0;
@@ -1029,18 +1071,21 @@ public class NpcAlertsUtility {
 	}
 	
 	private static boolean shouldShowMachtkristallScreenMessage(MachtkristallSlot slot, double warnPercent) {
-		return isMachtkristallFull(slot) || getMachtkristallShowWarning(slot, warnPercent);
+		return getMachtkristallShowWarning(slot, warnPercent);
+	}
+	
+	public static boolean shouldShowMachtkristallWarning(MachtkristallSlot slot) {
+		return getMachtkristallShowWarning(
+			slot,
+			CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent
+		);
 	}
 	
 	private static boolean getMachtkristallShowWarning(MachtkristallSlot slot, double warnPercent) {
 		if (slot.isEmpty() || slot.isNotFound() || !slot.xpData.isValid()) {
 			return false;
 		}
-		String percentText = slot.getPercentText();
-		if (percentText == null) {
-			return false;
-		}
-		double currentPercent = parsePercentValue(percentText);
+		double currentPercent = slot.getDisplayPercentValue();
 		return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
 	}
 	
@@ -1689,8 +1734,7 @@ public class NpcAlertsUtility {
 						// Fallback: sollte nicht passieren, aber falls doch, zeige Slot-Nummer
 						displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
 					} else if (showIcon) {
-						// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-						displayText = displayText.replaceFirst("^MK [^:]+: ", "");
+						displayText = MachtkristallSlot.stripIconPrefix(displayText);
 					}
 					double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
 					boolean showWarning = getMachtkristallShowWarning(slot, warnPercent);
@@ -1951,8 +1995,7 @@ public class NpcAlertsUtility {
 						// Fallback: sollte nicht passieren, aber falls doch, zeige Slot-Nummer
 						displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
 					} else if (showIcon) {
-						// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-						displayText = displayText.replaceFirst("^MK [^:]+: ", "");
+						displayText = MachtkristallSlot.stripIconPrefix(displayText);
 					}
 					double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
 					boolean showWarning = getMachtkristallShowWarning(slot, warnPercent);
@@ -2571,7 +2614,7 @@ public class NpcAlertsUtility {
 						displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
 					} else if (showIcon) {
 						// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-						displayText = displayText.replaceFirst("^MK [^:]+: ", "");
+						displayText = MachtkristallSlot.stripIconPrefix(displayText);
 					}
 				}
 				

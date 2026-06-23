@@ -177,8 +177,8 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerX = 570;
-        CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerY = 180;
+        CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerX = 734;
+        CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerY = 286;
         CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerScale = 1.0f;
     }
 

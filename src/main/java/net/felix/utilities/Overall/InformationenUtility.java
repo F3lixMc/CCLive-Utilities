@@ -434,16 +434,21 @@ public class InformationenUtility {
 				checkForPondInformation(lines);
 			}
 			
-			if (isSpecialInventory) {
+			if (isSpecialInventory && CCLiveUtilitiesConfig.HANDLER.instance().moblexiconHpEnabled) {
 				addMoblexiconHpToTooltip(lines);
 			}
 			
 			// Check if the respective setting is enabled for this inventory type
-			if (isSpecialInventory && !CCLiveUtilitiesConfig.HANDLER.instance().showEbenenInSpecialInventory) {
-				return; // Special inventory disabled
+			boolean showFloorInfoInCurrentInventory = isSpecialInventory
+					? CCLiveUtilitiesConfig.HANDLER.instance().showEbenenInSpecialInventory
+					: CCLiveUtilitiesConfig.HANDLER.instance().showEbenenInNormalInventories;
+
+			if (isSpecialInventory && !showFloorInfoInCurrentInventory
+					&& !CCLiveUtilitiesConfig.HANDLER.instance().moblexiconCardsStatuesInfoEnabled) {
+				return;
 			}
-			if (!isSpecialInventory && !CCLiveUtilitiesConfig.HANDLER.instance().showEbenenInNormalInventories) {
-				return; // Normal inventories disabled
+			if (!isSpecialInventory && !showFloorInfoInCurrentInventory) {
+				return;
 			}
 			
 			// In special inventory (㬉), check all lines for [Karte]/[Statue] but only first line for material names
@@ -528,7 +533,8 @@ public class InformationenUtility {
 				}
 				
 				// Process lines with [Karte] or [Statue] in Moblexicon to add effect information
-				if ((lineText.contains("[Karte]") || lineText.contains("[Statue]")) && isSpecialInventory) {
+				if ((lineText.contains("[Karte]") || lineText.contains("[Statue]")) && isSpecialInventory
+						&& CCLiveUtilitiesConfig.HANDLER.instance().moblexiconCardsStatuesInfoEnabled) {
 					// Extract the name (text before [Karte] or [Statue])
 					String name = "";
 					String effect = null;
@@ -592,6 +598,10 @@ public class InformationenUtility {
 				
 				// Skip if the line contains [Karte] or [Statue] in non-special inventories
 				if (lineText.contains("[Karte]") || lineText.contains("[Statue]")) {
+					continue;
+				}
+
+				if (!showFloorInfoInCurrentInventory) {
 					continue;
 				}
 				

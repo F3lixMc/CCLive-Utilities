@@ -104,6 +104,24 @@ public class CCLiveUtilitiesConfig {
             HANDLER.save();
         }
     }
+
+    /**
+     * Konvertiert blueprintViewerY von Prozent (0–100) auf Pixel, falls noch nicht migriert.
+     */
+    public static void migrateBlueprintViewerYToPixels() {
+        CCLiveUtilitiesConfig config = HANDLER.instance();
+        if (config.blueprintViewerYStoredAsPixels) {
+            return;
+        }
+        net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+        if (client == null || client.getWindow() == null) {
+            return;
+        }
+        int screenHeight = client.getWindow().getScaledHeight();
+        config.blueprintViewerY = screenHeight * config.blueprintViewerY / 100;
+        config.blueprintViewerYStoredAsPixels = true;
+        HANDLER.save();
+    }
     
     /**
      * Migriert Config-Felder: Fügt fehlende Felder mit Default-Werten hinzu
@@ -366,10 +384,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showCoinTracker = true;
 
     @SerialEntry
-    public int coinTrackerX = 570;
+    public int coinTrackerX = 734;
 
     @SerialEntry
-    public int coinTrackerY = 180;
+    public int coinTrackerY = 285;
 
     @SerialEntry
     public Color coinTrackerHeaderColor = new Color(0xFFFFFF00);
@@ -406,6 +424,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean showEbenenInSpecialInventory = true; // Ebenen in speziellem Inventar "㬉" anzeigen
+
+    @SerialEntry
+    public boolean moblexiconHpEnabled = true; // HP-Anzeige im Moblexicon
+
+    @SerialEntry
+    public boolean moblexiconCardsStatuesInfoEnabled = true; // Karten/Statuen-Effektinfo im Moblexicon
     
     @SerialEntry
     public boolean showEbenenInNormalInventories = true; // Ebenen in normalen Inventaren anzeigen
@@ -925,7 +949,10 @@ public class CCLiveUtilitiesConfig {
     public int blueprintViewerX = 1; // X-Position des Blueprint Viewers (Pixel vom rechten Rand)
     
     @SerialEntry
-    public int blueprintViewerY = 2; // Y-Position des Blueprint Viewers (Prozent vom oberen Rand)
+    public int blueprintViewerY = 199; // Y-Position des Blueprint Viewers (Pixel vom oberen Rand)
+
+    @SerialEntry
+    public boolean blueprintViewerYStoredAsPixels = true;
     
     @SerialEntry
     public OverlayType blueprintViewerOverlayType = OverlayType.CUSTOM; // Overlay-Typ für Blueprint Viewer
@@ -1004,7 +1031,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showNpcAlertsRecyclerPercent = true; // Prozente für Recycler anzeigen (gilt für alle 3 Slots)
     
     @SerialEntry
-    public boolean showNpcAlertsMachtkristallePercent = true; // Prozente für Machtkristalle anzeigen (gilt für alle 3 Slots)
+    public boolean npcAlertsMachtkristallePercentOver100 = true; // Prozent im Overlay über 100 % anzeigen
+    
+    @SerialEntry
+    public boolean showNpcAlertsMachtkristalleLevel = true; // Level im Machtkristall-Overlay anzeigen
     
     // NPC Alerts Separate Overlay Settings
     @SerialEntry
@@ -1479,8 +1509,20 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Materialien Ebenen"))
-                                        .description(OptionDescription.of(Text.literal("Materialien Ebenen anzeigen oder ausblenden")))
+                                        .name(Text.literal("HP-Anzeige im Moblexicon"))
+                                        .description(OptionDescription.of(Text.literal("Mob-HP im Moblexicon anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().moblexiconHpEnabled, newVal -> HANDLER.instance().moblexiconHpEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Karten/Statuen Info im Moblexicon"))
+                                        .description(OptionDescription.of(Text.literal("Effekt-Informationen für Karten und Statuen im Moblexicon anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().moblexiconCardsStatuesInfoEnabled, newVal -> HANDLER.instance().moblexiconCardsStatuesInfoEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Materialien Fundort"))
+                                        .description(OptionDescription.of(Text.literal("Materialien Fundort anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showEbenenInNormalInventories, newVal -> HANDLER.instance().showEbenenInNormalInventories = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())

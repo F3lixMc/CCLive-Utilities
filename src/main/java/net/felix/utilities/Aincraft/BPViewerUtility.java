@@ -165,6 +165,7 @@ public class BPViewerUtility {
         
         // Register HUD render callback
         HudElementRegistry.addLast(Identifier.of("cclive-utilities", "blueprint_viewer"), (context, tickCounter) -> {
+            CCLiveUtilitiesConfig.migrateBlueprintViewerYToPixels();
             if (isVisible && instance.getActiveFloor() != null && showOverlays && !EquipmentDisplayUtility.isEquipmentOverlayActive()) {
                 instance.onHudRender(context, tickCounter);
             }
@@ -537,11 +538,10 @@ public class BPViewerUtility {
             }
             
             int screenWidth = client.getWindow().getScaledWidth();
-            int screenHeight = client.getWindow().getScaledHeight();
             
             // Use config values for positioning
             int x = screenWidth - HUD_WIDTH - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
-            int y = screenHeight * CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY / 100;
+            int y = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY;
             
                            // Debug: Show HUD position (only once per frame)
                if (!debugPrinted) {

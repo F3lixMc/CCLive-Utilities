@@ -38,15 +38,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public int getY() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getWindow() == null) return 0;
-        int screenHeight = client.getWindow().getScaledHeight();
-        int yPercent = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY;
-        int y = screenHeight * yPercent / 100;
-        if (yPercent >= 90) {
-            y = screenHeight - getHeight();
-        }
-        return Math.max(0, y);
+        return CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY;
     }
 
     @Override
@@ -73,9 +65,10 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         } else {
             xOffset = screenWidth - unscaledWidth - x;
         }
-        int yPercent = Math.max(0, Math.min(100, Math.round((float) y * 100.0f / screenHeight)));
+        int clampedY = Math.max(0, Math.min(y, Math.max(0, screenHeight - getHeight())));
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX = xOffset;
-        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = yPercent;
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = clampedY;
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerYStoredAsPixels = true;
     }
 
     @Override
@@ -112,7 +105,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public void savePosition() {
-        // Position is already saved in setPosition()
+        CCLiveUtilitiesConfig.HANDLER.save();
     }
 
     @Override
@@ -128,7 +121,8 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     @Override
     public void resetToDefault() {
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX = 654;
-        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = 44;
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = 199;
+        CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerYStoredAsPixels = true;
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale = 1.0f;
     }
 

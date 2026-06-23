@@ -218,7 +218,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
                     } else if (showIcon) {
                         // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                        displayText = displayText.replaceFirst("^MK [^:]+: ", "");
+                        displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
                     }
                 }
                 width += client.textRenderer.getWidth(displayText);
@@ -371,7 +371,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     displayText = showIcon ? "?" : "MK " + (slotIndex + 1) + ": ?";
                 } else if (showIcon) {
                     // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                    displayText = displayText.replaceFirst("^MK [^:]+: ", "");
+                    displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
                 }
             }
             width += client.textRenderer.getWidth(displayText);
@@ -820,8 +820,17 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
                     } else if (showIcon) {
                         // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                        displayText = displayText.replaceFirst("^MK [^:]+: ", "");
+                        displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
                     }
+                }
+                
+                boolean lineShowWarning = NpcAlertsUtility.shouldShowMachtkristallWarning(slot);
+                int lineTextColor = textColor;
+                int linePercentColor = mkPercentColor;
+                if (lineShowWarning) {
+                    boolean isVisible = (System.currentTimeMillis() / 300) % 2 == 0;
+                    lineTextColor = isVisible ? warningColor : textColor;
+                    linePercentColor = lineTextColor;
                 }
                 
                 // Berechne Text-Y-Position (vertikal zentriert zum Icon, wie im originalen Overlay)
@@ -850,7 +859,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         client.textRenderer,
                         ": ",
                         lineX, textYForIcon,
-                        currentTextColor,
+                        lineTextColor,
                         true
                     );
                     lineX += client.textRenderer.getWidth(": ");
@@ -861,7 +870,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     client.textRenderer,
                     displayText,
                     lineX, textYForIcon,
-                    currentTextColor,
+                    lineTextColor,
                     true
                 );
                 lineX += client.textRenderer.getWidth(displayText);
@@ -872,7 +881,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         client.textRenderer,
                         " " + slotPercentText,
                         lineX, textYForIcon,
-                        mkPercentColor,
+                        linePercentColor,
                         true
                     );
                 }
@@ -1031,7 +1040,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                                                     "machtkristalleSlot2".equals(configKey) || 
                                                     "machtkristalleSlot3".equals(configKey)))) {
                 // Entferne "MK [Name]: " oder "MK X: " Präfix wenn Icon angezeigt wird
-                displayText = displayText.replaceFirst("^MK [^:]+: ", "");
+                displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
             }
             context.drawText(
                 client.textRenderer,
@@ -1780,6 +1789,13 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
+            case "machtkristalle":
+                for (int i = 0; i < 3; i++) {
+                    if (NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[i])) {
+                        return true;
+                    }
+                }
+                break;
             case "recyclerSlot1":
                 if (NpcAlertsUtility.recyclerSlot1.isValid()) {
                     double currentPercent = ((double)NpcAlertsUtility.recyclerSlot1.current / 
@@ -1808,38 +1824,11 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 }
                 break;
             case "machtkristalleSlot1":
-                NpcAlertsUtility.MachtkristallSlot slot1 = NpcAlertsUtility.machtkristallSlots[0];
-                if (!slot1.isNotFound() && !slot1.isEmpty() && slot1.xpData.isValid()) {
-                    String percentText = slot1.getPercentText();
-                    if (percentText != null) {
-                        double currentPercent = parsePercentValue(percentText);
-                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
-                        return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
-                    }
-                }
-                break;
+                return NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[0]);
             case "machtkristalleSlot2":
-                NpcAlertsUtility.MachtkristallSlot slot2 = NpcAlertsUtility.machtkristallSlots[1];
-                if (!slot2.isNotFound() && !slot2.isEmpty() && slot2.xpData.isValid()) {
-                    String percentText = slot2.getPercentText();
-                    if (percentText != null) {
-                        double currentPercent = parsePercentValue(percentText);
-                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
-                        return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
-                    }
-                }
-                break;
+                return NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[1]);
             case "machtkristalleSlot3":
-                NpcAlertsUtility.MachtkristallSlot slot3 = NpcAlertsUtility.machtkristallSlots[2];
-                if (!slot3.isNotFound() && !slot3.isEmpty() && slot3.xpData.isValid()) {
-                    String percentText = slot3.getPercentText();
-                    if (percentText != null) {
-                        double currentPercent = parsePercentValue(percentText);
-                        double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
-                        return currentPercent >= 0 && warnPercent >= 0 && currentPercent >= warnPercent;
-                    }
-                }
-                break;
+                return NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[2]);
         }
         return false;
     }

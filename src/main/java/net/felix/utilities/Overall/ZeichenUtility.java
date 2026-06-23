@@ -1009,6 +1009,30 @@ public class ZeichenUtility {
         return new HashMap<>(factoryBottomFontNumbers);
     }
 
+    /**
+     * Dekodiert Custom-Font-Ziffern in Tab-Widget-Zeilen (Aincraft/Factory bottom font).
+     */
+    public static String decodeTabWidgetText(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        ensureInitialized();
+        StringBuilder sb = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            Integer digit = aincraftBottomFontNumbers.get(c);
+            if (digit == null) {
+                digit = factoryBottomFontNumbers.get(c);
+            }
+            if (digit != null) {
+                sb.append(digit);
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     public static Map<Character, String> getFactoryFontFirstLine() {
         ensureInitialized();
         return new HashMap<>(factoryFontFirstLine);
