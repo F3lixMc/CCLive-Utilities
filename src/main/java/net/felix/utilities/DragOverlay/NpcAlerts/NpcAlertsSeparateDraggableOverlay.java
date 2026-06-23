@@ -1832,21 +1832,5 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         }
         return false;
     }
-    
-    /**
-     * Extrahiert den numerischen Prozentwert aus einem String (z.B. "10%" -> 10.0)
-     */
-    private static double parsePercentValue(String percentText) {
-        if (percentText == null || percentText.trim().isEmpty()) {
-            return -1.0;
-        }
-        try {
-            // Entferne "%" und Leerzeichen, ersetze Komma durch Punkt
-            String cleaned = percentText.replace("%", "").trim().replace(",", ".");
-            return Double.parseDouble(cleaned);
-        } catch (NumberFormatException e) {
-            return -1.0;
-        }
-    }
 }
 
