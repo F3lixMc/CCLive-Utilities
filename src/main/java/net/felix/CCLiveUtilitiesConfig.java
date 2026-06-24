@@ -675,6 +675,12 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public Color sternengeschmiedetColor = new Color(0xFF00FF); // Normale Farbe (wenn Regenbogen aus)
 
+    @SerialEntry
+    public boolean starForgedSoundEnabled = true; // Sound bei Sternengeschmiedet-Schmiedezustand im Chat
+
+    @SerialEntry
+    public boolean starForgedSoundDebugging = false; // Debug-Logs für Sternengeschmiedet-Sound
+
     // Material Tracker Settings
     @SerialEntry
     public boolean materialTrackerEnabled = true;
@@ -724,6 +730,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public Color collectionOverlayTextColor = new Color(0xFFFFFFFF); // Textfarbe (Weiß)
+
+    @SerialEntry
+    public boolean collectionOverlayShowBlocksNeeded = true; // Benötigte Blöcke anzeigen
+
+    @SerialEntry
+    public boolean collectionOverlayShowTimeToNext = true; // Zeit bis zur nächsten Collection anzeigen
 
     // Clipboard Settings
     @SerialEntry
@@ -1894,6 +1906,14 @@ public class CCLiveUtilitiesConfig {
                                         .binding(true, () -> HANDLER.instance().sternengeschmiedetRainbow, newVal -> HANDLER.instance().sternengeschmiedetRainbow = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Schmiedezustand-Sound"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Spielt einen Sound ab, wenn die Chat-Nachricht "
+                                                        + "\"[Legend] Schmiedezustand erhalten: [Sternengeschmiedet]\" erscheint")))
+                                        .binding(true, () -> HANDLER.instance().starForgedSoundEnabled, newVal -> HANDLER.instance().starForgedSoundEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
@@ -2172,31 +2192,6 @@ public class CCLiveUtilitiesConfig {
                                         .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().miningLumberjackOverlayTextColor, newVal -> HANDLER.instance().miningLumberjackOverlayTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Ressourcen/min aktivieren"))
-                                        .description(OptionDescription.of(Text.literal(
-                                                "Ressourcen pro Minute berechnen und anzeigen (Overlay oder Scoreboard)")))
-                                        .binding(false,
-                                                () -> HANDLER.instance().resourceTrackerRateEnabled,
-                                                newVal -> HANDLER.instance().resourceTrackerRateEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<ResourceTrackerDisplayMode>createBuilder()
-                                        .name(Text.literal("Ressourcen/min-Anzeige Position"))
-                                        .description(OptionDescription.of(Text.literal(
-                                                "Wo Ressourcen pro Minute angezeigt werden:\n"
-                                                        + "• Overlay – im Holzfäller/Bergbau Overlay\n"
-                                                        + "• Scoreboard – hinter dem Ressourcennamen im Scoreboard")))
-                                        .binding(ResourceTrackerDisplayMode.OVERLAY,
-                                                () -> HANDLER.instance().resourceTrackerDisplayMode,
-                                                newVal -> HANDLER.instance().resourceTrackerDisplayMode = newVal)
-                                        .controller(opt -> EnumControllerBuilder.create(opt)
-                                                .enumClass(ResourceTrackerDisplayMode.class)
-                                                .formatValue(mode -> switch (mode) {
-                                                    case OVERLAY -> Text.literal("Overlay");
-                                                    case SCOREBOARD -> Text.literal("Scoreboard");
-                                                }))
-                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Collection"))
@@ -2217,6 +2212,43 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Text.literal("Farbe für den normalen Text im Collection Overlay")))
                                         .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().collectionOverlayTextColor, newVal -> HANDLER.instance().collectionOverlayTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Benötigte Blöcke anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Zeigt die noch benötigten Blöcke bis zur nächsten Collection im Overlay")))
+                                        .binding(true, () -> HANDLER.instance().collectionOverlayShowBlocksNeeded, newVal -> HANDLER.instance().collectionOverlayShowBlocksNeeded = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Benötigte Zeit anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Zeigt die geschätzte Zeit bis zur nächsten Collection im Overlay")))
+                                        .binding(true, () -> HANDLER.instance().collectionOverlayShowTimeToNext, newVal -> HANDLER.instance().collectionOverlayShowTimeToNext = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Ressourcen/min aktivieren"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Ressourcen pro Minute berechnen und anzeigen (Collection-Overlay oder Scoreboard)")))
+                                        .binding(false,
+                                                () -> HANDLER.instance().resourceTrackerRateEnabled,
+                                                newVal -> HANDLER.instance().resourceTrackerRateEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<ResourceTrackerDisplayMode>createBuilder()
+                                        .name(Text.literal("Ressourcen/min-Anzeige Position"))
+                                        .description(OptionDescription.of(Text.literal(
+                                                "Wo Ressourcen pro Minute angezeigt werden:\n"
+                                                        + "• Overlay – im Collection-Overlay\n"
+                                                        + "• Scoreboard – hinter dem Ressourcennamen im Scoreboard")))
+                                        .binding(ResourceTrackerDisplayMode.OVERLAY,
+                                                () -> HANDLER.instance().resourceTrackerDisplayMode,
+                                                newVal -> HANDLER.instance().resourceTrackerDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(ResourceTrackerDisplayMode.class)
+                                                .formatValue(mode -> switch (mode) {
+                                                    case OVERLAY -> Text.literal("Overlay");
+                                                    case SCOREBOARD -> Text.literal("Scoreboard");
+                                                }))
                                         .build())
                                 .build())
                         .build())
@@ -2292,6 +2324,14 @@ public class CCLiveUtilitiesConfig {
                                 .name(Text.literal("Debug Funktionen"))
                                 .description(OptionDescription.of(Text.literal("Debug Funktionen\n-ItemHoverLogger (F8)\n-InventoryNameLogger (F9)\n-ScoreboardLogger (F10)\n-BossBarLogger (F12)")))
                                 .binding(false, () -> HANDLER.instance().debugFunctionsEnabled, newVal -> HANDLER.instance().debugFunctionsEnabled = newVal)
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.<Boolean>createBuilder()
+                                .name(Text.literal("Sternengeschmiedet-Sound Debugging"))
+                                .description(OptionDescription.of(Text.literal(
+                                        "Schreibt detaillierte Logs in die Konsole, wenn Chat-Nachrichten "
+                                                + "für den Sternengeschmiedet-Sound verarbeitet werden")))
+                                .binding(false, () -> HANDLER.instance().starForgedSoundDebugging, newVal -> HANDLER.instance().starForgedSoundDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .build())

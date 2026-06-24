@@ -143,7 +143,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            rebuildNormalizedCaches();
+            applyNormalizedMaterialUpdates(updates);
             scheduleSave();
         }
     }
@@ -170,7 +170,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            rebuildNormalizedCaches();
+            applyNormalizedResourceUpdates(updates);
             scheduleSave();
         }
     }
@@ -214,7 +214,13 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            rebuildNormalizedCaches();
+            synchronized (materials) {
+                for (String name : deltas.keySet()) {
+                    if (name != null && !name.isEmpty()) {
+                        applyNormalizedMaterialEntry(name, materials.get(name));
+                    }
+                }
+            }
             scheduleSave();
         }
     }
@@ -249,11 +255,16 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            rebuildNormalizedCaches();
+            synchronized (resources) {
+                for (String name : deltas.keySet()) {
+                    if (name != null && !name.isEmpty()) {
+                        applyNormalizedResourceEntry(name, resources.get(name));
+                    }
+                }
+            }
             scheduleSave();
         }
     }
-
     public static void addResource(String name, long delta) {
         if (name == null || name.isEmpty() || delta <= 0) {
             return;
@@ -293,8 +304,57 @@ public class CollectedMaterialsResourcesStorage {
         if (name == null || name.isEmpty()) {
             return;
         }
-        updateMaterial(name, amount);
-        updateResource(name, amount);
+        Map<String, Long> update = new HashMap<>();
+        update.put(name, amount);
+        setSyncedOwnedAmounts(update);
+    }
+
+    /**
+     * Setzt mehrere Material-/Ressourcen-Einträge in einem Durchgang (ein Cache-Update, ein Save).
+     */
+    public static void setSyncedOwnedAmounts(Map<String, Long> updates) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (updates == null || updates.isEmpty()) {
+            return;
+        }
+        boolean changed = false;
+        synchronized (materials) {
+            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+                String name = entry.getKey();
+                Long amount = entry.getValue();
+                if (name == null || name.isEmpty() || amount == null) {
+                    continue;
+                }
+                Long current = materials.get(name);
+                if (current == null || !current.equals(amount)) {
+                    materials.put(name, amount);
+                    changed = true;
+                }
+            }
+        }
+        synchronized (resources) {
+            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+                String name = entry.getKey();
+                Long amount = entry.getValue();
+                if (name == null || name.isEmpty() || amount == null) {
+                    continue;
+                }
+                Long current = resources.get(name);
+                if (current == null || !current.equals(amount)) {
+                    resources.put(name, amount);
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    applySyncedNormalizedEntry(entry.getKey(), entry.getValue());
+                }
+            }
+            scheduleSave();
+        }
     }
 
     public static void subtractSyncedOwnedAmount(String name, long delta) {
@@ -403,6 +463,38 @@ public class CollectedMaterialsResourcesStorage {
                 }
                 normalizedResources.put(normalizeName(entry.getKey()), entry.getValue());
             }
+        }
+    }
+
+    private static void applyNormalizedMaterialEntry(String name, Long amount) {
+        if (name == null || amount == null) {
+            return;
+        }
+        normalizedMaterials.put(normalizeName(name), amount);
+    }
+
+    private static void applyNormalizedResourceEntry(String name, Long amount) {
+        if (name == null || amount == null) {
+            return;
+        }
+        normalizedResources.put(normalizeName(name), amount);
+    }
+
+    private static void applySyncedNormalizedEntry(String name, long amount) {
+        String normalized = normalizeName(name);
+        normalizedMaterials.put(normalized, amount);
+        normalizedResources.put(normalized, amount);
+    }
+
+    private static void applyNormalizedMaterialUpdates(Map<String, Long> updates) {
+        for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            applyNormalizedMaterialEntry(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private static void applyNormalizedResourceUpdates(Map<String, Long> updates) {
+        for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            applyNormalizedResourceEntry(entry.getKey(), entry.getValue());
         }
     }
     

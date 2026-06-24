@@ -207,8 +207,11 @@ public class InformationenUtility {
 		return lumberjackXP.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXP.level) : "Holzfäller";
 	}
 
-	public static String getFarmzoneResourceRateOverlayText(MinecraftClient client) {
-		if (client == null || !isInFarmzone(client) || !usesOverlayResourceRateDisplay()) {
+	public static String getCollectionResourceRateLine(MinecraftClient client) {
+		if (!usesOverlayResourceRateDisplay()) {
+			return null;
+		}
+		if (client == null || !isInFarmzone(client)) {
 			return "Ressource: -";
 		}
 		return FarmzoneResourceRateUtility.getOverlayText();
@@ -235,16 +238,12 @@ public class InformationenUtility {
 		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
-		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
-		int maxWidth = Math.max(
-			Math.max(client.textRenderer.getWidth(header),
-				Math.max(client.textRenderer.getWidth(lastXP),
-					Math.max(client.textRenderer.getWidth(xpPerMin),
-						Math.max(client.textRenderer.getWidth(requiredXP),
-							Math.max(client.textRenderer.getWidth(timeToNext),
-								client.textRenderer.getWidth(resourceRate)))))),
-			100);
+		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		maxWidth = Math.max(maxWidth, 100);
 		return maxWidth + padding * 2;
 	}
 	
@@ -253,7 +252,7 @@ public class InformationenUtility {
 	 */
 	public static String[] getMiningOverlayTexts(MinecraftClient client) {
 		if (client == null || client.textRenderer == null) {
-			return new String[]{"Bergbau", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0", "Ressource: -"};
+			return new String[]{"Bergbau", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
 		}
 		
 		String header = getMiningOverlayHeader();
@@ -262,9 +261,8 @@ public class InformationenUtility {
 		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
-		String resourceRate = getFarmzoneResourceRateOverlayText(client);
-		
-		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP, resourceRate};
+
+		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
 	}
 	
 	/**
@@ -272,7 +270,7 @@ public class InformationenUtility {
 	 */
 	public static String[] getLumberjackOverlayTexts(MinecraftClient client) {
 		if (client == null || client.textRenderer == null) {
-			return new String[]{"Holzfäller", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0", "Ressource: -"};
+			return new String[]{"Holzfäller", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
 		}
 		
 		String header = getLumberjackOverlayHeader();
@@ -281,9 +279,8 @@ public class InformationenUtility {
 		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
-		String resourceRate = getFarmzoneResourceRateOverlayText(client);
-		
-		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP, resourceRate};
+
+		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
 	}
 	
 	/**
@@ -301,16 +298,12 @@ public class InformationenUtility {
 		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
-		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
-		int maxWidth = Math.max(
-			Math.max(client.textRenderer.getWidth(header),
-				Math.max(client.textRenderer.getWidth(lastXP),
-					Math.max(client.textRenderer.getWidth(xpPerMin),
-						Math.max(client.textRenderer.getWidth(requiredXP),
-							Math.max(client.textRenderer.getWidth(timeToNext),
-								client.textRenderer.getWidth(resourceRate)))))),
-			100);
+		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		maxWidth = Math.max(maxWidth, 100);
 		return maxWidth + padding * 2;
 	}
 
@@ -5913,7 +5906,7 @@ public class InformationenUtility {
 		// Calculate overlay dimensions
 		int padding = 5;
 		int lineHeight = 12;
-		int lines = 6; // Header, Last XP, XP/Min, Time to next level, Required XP, Resource rate
+		int lines = 5;
 		int overlayHeight = padding * 2 + lineHeight * lines;
 		int minOverlayWidth = 100;
 		
@@ -5924,16 +5917,12 @@ public class InformationenUtility {
 		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
-		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
-		int maxWidth = Math.max(
-			Math.max(client.textRenderer.getWidth(header),
-				Math.max(client.textRenderer.getWidth(lastXP),
-					Math.max(client.textRenderer.getWidth(xpPerMin),
-						Math.max(client.textRenderer.getWidth(requiredXP),
-							Math.max(client.textRenderer.getWidth(timeToNext),
-								client.textRenderer.getWidth(resourceRate)))))),
-			minOverlayWidth);
+		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		maxWidth = Math.max(maxWidth, minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
 		
 		// Determine if overlay is on left or right side of screen
@@ -5986,8 +5975,6 @@ public class InformationenUtility {
 		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
-		textY += lineHeight;
-		context.drawText(client.textRenderer, resourceRate, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -6010,7 +5997,7 @@ public class InformationenUtility {
 		// Calculate overlay dimensions
 		int padding = 5;
 		int lineHeight = 12;
-		int lines = 6; // Header, Last XP, XP/Min, Time to next level, Required XP, Resource rate
+		int lines = 5;
 		int overlayHeight = padding * 2 + lineHeight * lines;
 		int minOverlayWidth = 100;
 		
@@ -6021,16 +6008,12 @@ public class InformationenUtility {
 		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
-		String resourceRate = getFarmzoneResourceRateOverlayText(client);
 		
-		int maxWidth = Math.max(
-			Math.max(client.textRenderer.getWidth(header),
-				Math.max(client.textRenderer.getWidth(lastXP),
-					Math.max(client.textRenderer.getWidth(xpPerMin),
-						Math.max(client.textRenderer.getWidth(requiredXP),
-							Math.max(client.textRenderer.getWidth(timeToNext),
-								client.textRenderer.getWidth(resourceRate)))))),
-			minOverlayWidth);
+		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		maxWidth = Math.max(maxWidth, minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
 		
 		// Determine if overlay is on left or right side of screen
@@ -6083,8 +6066,6 @@ public class InformationenUtility {
 		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
-		textY += lineHeight;
-		context.drawText(client.textRenderer, resourceRate, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -8426,21 +8407,30 @@ public class InformationenUtility {
 		String timeLine = timeText; // timeText already contains "Zeit: XX:XX"
 		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
 		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String resourceRateLine = getCollectionResourceRateLine(client);
 		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
 		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
+		boolean showBlocksNeeded = isCollectionBlocksNeededVisible();
+		boolean showTimeToNext = isCollectionTimeToNextVisible();
 		
 		// Calculate overlay width (unscaled)
-		int maxWidth = Math.max(
-			Math.max(client.textRenderer.getWidth(header),
-				Math.max(client.textRenderer.getWidth(timeLine),
-					Math.max(client.textRenderer.getWidth(blocksLine),
-						Math.max(client.textRenderer.getWidth(blocksPerMinLine),
-							Math.max(client.textRenderer.getWidth(blocksNeededLine),
-								client.textRenderer.getWidth(timeToNextLine)))))),
-			100);
+		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(timeLine));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksLine));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksPerMinLine));
+		if (resourceRateLine != null) {
+			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(resourceRateLine));
+		}
+		if (showBlocksNeeded) {
+			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksNeededLine));
+		}
+		if (showTimeToNext) {
+			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNextLine));
+		}
+		maxWidth = Math.max(maxWidth, 100);
 		
+		int lineCount = getCollectionOverlayLineCount();
 		int unscaledWidth = maxWidth + padding * 2;
-		int unscaledHeight = 6 * 11 + padding * 2; // 6 lines with 11px line height
+		int unscaledHeight = lineCount * 11 + padding * 2;
 		
 		// Use Matrix transformations for scaling
 		org.joml.Matrix3x2fStack matrices = context.getMatrices();
@@ -8467,9 +8457,17 @@ public class InformationenUtility {
 		textY += 11;
 		context.drawText(client.textRenderer, blocksPerMinLine, padding, textY, textColor, true);
 		textY += 11;
-		context.drawText(client.textRenderer, blocksNeededLine, padding, textY, textColor, true);
-		textY += 11;
-		context.drawText(client.textRenderer, timeToNextLine, padding, textY, textColor, true);
+		if (showBlocksNeeded) {
+			context.drawText(client.textRenderer, blocksNeededLine, padding, textY, textColor, true);
+			textY += 11;
+		}
+		if (showTimeToNext) {
+			context.drawText(client.textRenderer, timeToNextLine, padding, textY, textColor, true);
+			textY += 11;
+		}
+		if (resourceRateLine != null) {
+			context.drawText(client.textRenderer, resourceRateLine, padding, textY, textColor, true);
+		}
 		
 		matrices.popMatrix();
 	}
@@ -8488,6 +8486,28 @@ public class InformationenUtility {
 	 */
 	public static boolean isBiomDetected() {
 		return biomDetected;
+	}
+
+	public static boolean isCollectionBlocksNeededVisible() {
+		return CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayShowBlocksNeeded;
+	}
+
+	public static boolean isCollectionTimeToNextVisible() {
+		return CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayShowTimeToNext;
+	}
+
+	public static int getCollectionOverlayLineCount() {
+		int lines = 4;
+		if (usesOverlayResourceRateDisplay()) {
+			lines++;
+		}
+		if (isCollectionBlocksNeededVisible()) {
+			lines++;
+		}
+		if (isCollectionTimeToNextVisible()) {
+			lines++;
+		}
+		return lines;
 	}
 	
 	/**
@@ -8512,18 +8532,25 @@ public class InformationenUtility {
 		String timeLine = timeText;
 		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
 		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String resourceRateLine = getCollectionResourceRateLine(client);
 		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
 		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
+		boolean showBlocksNeeded = isCollectionBlocksNeededVisible();
+		boolean showTimeToNext = isCollectionTimeToNextVisible();
 		
-		// Calculate overlay width (same as renderCollectionOverlay)
-		int maxWidth = Math.max(
-			Math.max(client.textRenderer.getWidth(header),
-				Math.max(client.textRenderer.getWidth(timeLine),
-					Math.max(client.textRenderer.getWidth(blocksLine),
-						Math.max(client.textRenderer.getWidth(blocksPerMinLine),
-							Math.max(client.textRenderer.getWidth(blocksNeededLine),
-								client.textRenderer.getWidth(timeToNextLine)))))),
-			100);
+		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(timeLine));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksLine));
+		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksPerMinLine));
+		if (resourceRateLine != null) {
+			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(resourceRateLine));
+		}
+		if (showBlocksNeeded) {
+			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksNeededLine));
+		}
+		if (showTimeToNext) {
+			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNextLine));
+		}
+		maxWidth = Math.max(maxWidth, 100);
 		
 		return maxWidth + padding * 2;
 	}
@@ -8533,7 +8560,7 @@ public class InformationenUtility {
 	 */
 	public static int getCurrentCollectionOverlayHeight() {
 		int padding = 5;
-		return 6 * 11 + padding * 2; // 6 lines with 11px line height
+		return getCollectionOverlayLineCount() * 11 + padding * 2;
 	}
 	
 	/**

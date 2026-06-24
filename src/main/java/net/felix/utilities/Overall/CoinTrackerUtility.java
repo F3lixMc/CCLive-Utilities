@@ -110,9 +110,7 @@ public class CoinTrackerUtility {
                 currentCoins = coins;
                 gainedCoins = BigDecimal.ZERO;
                 firstUpdate = false;
-                if (sessionStartTime == 0) {
-                    sessionStartTime = System.currentTimeMillis();
-                }
+                sessionStartTime = System.currentTimeMillis();
             } else if (coins.compareTo(currentCoins) > 0) {
                 currentCoins = coins;
                 gainedCoins = currentCoins.subtract(initialCoins);
@@ -137,8 +135,11 @@ public class CoinTrackerUtility {
             if (isTracking) {
                 resetSession();
             }
+            currentDimension = null;
             return;
         }
+
+        checkDimensionChange(client);
 
         if (!isActiveOnFloor()) {
             if (isTracking) {
@@ -149,7 +150,6 @@ public class CoinTrackerUtility {
 
         checkTabKey();
         handleResetKey();
-        checkDimensionChange(client);
         checkHudTimeout();
         updateCoinsPerMinute();
     }
@@ -212,7 +212,7 @@ public class CoinTrackerUtility {
         currentCoinsDisplay = "";
         coinsPerMinute = 0.0;
         firstUpdate = true;
-        sessionStartTime = System.currentTimeMillis();
+        sessionStartTime = 0;
         isTracking = false;
         lastHudUpdateTime = 0;
     }

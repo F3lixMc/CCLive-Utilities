@@ -159,24 +159,39 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
             0xFFFFFFFF,
             true
         );
-        
-        currentY += LINE_HEIGHT;
-        context.drawText(
-            client.textRenderer,
-            "Benötigte Blöcke: -",
-            PADDING, currentY,
-            0xFFFFFFFF,
-            true
-        );
-        
-        currentY += LINE_HEIGHT;
-        context.drawText(
-            client.textRenderer,
-            "Nächste Collection: -",
-            PADDING, currentY,
-            0xFFFFFFFF,
-            true
-        );
+
+        if (InformationenUtility.isCollectionBlocksNeededVisible()) {
+            currentY += LINE_HEIGHT;
+            context.drawText(
+                client.textRenderer,
+                "Benötigte Blöcke: -",
+                PADDING, currentY,
+                0xFFFFFFFF,
+                true
+            );
+        }
+
+        if (InformationenUtility.isCollectionTimeToNextVisible()) {
+            currentY += LINE_HEIGHT;
+            context.drawText(
+                client.textRenderer,
+                "Nächste Collection: -",
+                PADDING, currentY,
+                0xFFFFFFFF,
+                true
+            );
+        }
+
+        if (InformationenUtility.usesOverlayResourceRateDisplay()) {
+            currentY += LINE_HEIGHT;
+            context.drawText(
+                client.textRenderer,
+                "Ressource: -",
+                PADDING, currentY,
+                0xFFFFFFFF,
+                true
+            );
+        }
         
         matrices.popMatrix();
     }

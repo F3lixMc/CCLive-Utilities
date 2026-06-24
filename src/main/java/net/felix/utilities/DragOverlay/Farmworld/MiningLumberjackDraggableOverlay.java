@@ -15,7 +15,6 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     
     private static final int LINE_HEIGHT = 12;
     private static final int PADDING = 5;
-    private static final int LINES = 6; // Header, Last XP, XP/Min, Time to next level, Required XP, Resource rate
     
     @Override
     public String getOverlayName() {
@@ -80,27 +79,25 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         // Calculate width for mining overlay (same logic as renderMiningOverlay)
         String miningHeader = InformationenUtility.getMiningOverlayHeader();
         String[] miningTexts = InformationenUtility.getMiningOverlayTexts(client);
-        int miningMaxWidth = Math.max(
-            Math.max(client.textRenderer.getWidth(miningHeader),
-                Math.max(client.textRenderer.getWidth(miningTexts[1]),
-                    Math.max(client.textRenderer.getWidth(miningTexts[2]),
-                        Math.max(client.textRenderer.getWidth(miningTexts[3]),
-                            Math.max(client.textRenderer.getWidth(miningTexts[4]),
-                                client.textRenderer.getWidth(miningTexts[5])))))),
-            minOverlayWidth);
+        int miningMaxWidth = client.textRenderer.getWidth(miningHeader);
+        for (String line : miningTexts) {
+            if (!line.equals(miningHeader)) {
+                miningMaxWidth = Math.max(miningMaxWidth, client.textRenderer.getWidth(line));
+            }
+        }
+        miningMaxWidth = Math.max(miningMaxWidth, minOverlayWidth);
         int miningWidth = miningMaxWidth + padding * 2;
         
         // Calculate width for lumberjack overlay (same logic as renderLumberjackOverlay)
         String lumberjackHeader = InformationenUtility.getLumberjackOverlayHeader();
         String[] lumberjackTexts = InformationenUtility.getLumberjackOverlayTexts(client);
-        int lumberjackMaxWidth = Math.max(
-            Math.max(client.textRenderer.getWidth(lumberjackHeader),
-                Math.max(client.textRenderer.getWidth(lumberjackTexts[1]),
-                    Math.max(client.textRenderer.getWidth(lumberjackTexts[2]),
-                        Math.max(client.textRenderer.getWidth(lumberjackTexts[3]),
-                            Math.max(client.textRenderer.getWidth(lumberjackTexts[4]),
-                                client.textRenderer.getWidth(lumberjackTexts[5])))))),
-            minOverlayWidth);
+        int lumberjackMaxWidth = client.textRenderer.getWidth(lumberjackHeader);
+        for (String line : lumberjackTexts) {
+            if (!line.equals(lumberjackHeader)) {
+                lumberjackMaxWidth = Math.max(lumberjackMaxWidth, client.textRenderer.getWidth(line));
+            }
+        }
+        lumberjackMaxWidth = Math.max(lumberjackMaxWidth, minOverlayWidth);
         int lumberjackWidth = lumberjackMaxWidth + padding * 2;
         
         // Return the width of the overlay that would be displayed, or the maximum if both are enabled
@@ -120,7 +117,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     }
     
     private int calculateUnscaledHeight() {
-        return PADDING * 2 + LINE_HEIGHT * LINES;
+        return PADDING * 2 + LINE_HEIGHT * 5;
     }
     
     @Override
@@ -220,11 +217,9 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         // Replace values with "-" for display in editor
         String[] displayTexts = new String[texts.length];
         displayTexts[0] = texts[0]; // Header stays the same
-        displayTexts[1] = texts[1].replaceAll(": .+", ": -"); // "Letzte XP: 1234" -> "Letzte XP: -"
-        displayTexts[2] = texts[2].replaceAll(": .+", ": -"); // "XP/Min: 123.4" -> "XP/Min: -"
-        displayTexts[3] = texts[3].replaceAll(": .+", ": -"); // "Zeit bis Level: 12:34" -> "Zeit bis Level: -"
-        displayTexts[4] = texts[4].replaceAll(": .+", ": -"); // "Benötigte XP: 12345" -> "Benötigte XP: -"
-        displayTexts[5] = texts[5].replaceAll(": .+", ": -"); // "Ressource: 12/min" -> "Ressource: -"
+        for (int i = 1; i < texts.length; i++) {
+            displayTexts[i] = texts[i].replaceAll(": .+", ": -");
+        }
         
         // Apply matrix transformations for scaling
         var matrices = context.getMatrices();

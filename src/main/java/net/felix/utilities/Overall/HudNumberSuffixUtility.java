@@ -157,7 +157,8 @@ public final class HudNumberSuffixUtility {
         if (value == null) {
             return "0";
         }
-        String plain = value.toPlainString();
+        BigDecimal normalized = value.stripTrailingZeros();
+        String plain = normalized.toPlainString();
         int dotIndex = plain.indexOf('.');
         String intPart = dotIndex >= 0 ? plain.substring(0, dotIndex) : plain;
         String fracPart = dotIndex >= 0 ? plain.substring(dotIndex) : "";

@@ -166,7 +166,9 @@ public final class ClipboardCostTooltipParser {
         String trimmed = name.trim();
         return "Gegner".equalsIgnoreCase(trimmed)
                 || "Blöcke".equalsIgnoreCase(trimmed)
-                || "Bloecke".equalsIgnoreCase(trimmed);
+                || "Bloecke".equalsIgnoreCase(trimmed)
+                || "Kaktus".equalsIgnoreCase(trimmed)
+                || "Seelen".equalsIgnoreCase(trimmed);
     }
 
     private static boolean isCoinsName(String name) {

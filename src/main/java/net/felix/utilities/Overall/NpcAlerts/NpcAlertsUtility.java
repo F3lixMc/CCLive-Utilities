@@ -534,25 +534,19 @@ public class NpcAlertsUtility {
 			// [Recycler Slot 1]
 			if (cleanEntryText.contains("[Recycler Slot 1]")) {
 				foundRecyclerSlot1 = true;
-				System.out.println("[Recycler-DEBUG] ✅ Header '[Recycler Slot 1]' gefunden bei Index " + i + ", Text: '" + entryText + "'");
 				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot1, "Recycler Slot 1");
-				System.out.println("[Recycler-DEBUG] Nach Parsing - Slot 1: current=" + recyclerSlot1.current + ", max=" + recyclerSlot1.max + ", isValid=" + recyclerSlot1.isValid());
 			}
 			
 			// [Recycler Slot 2]
 			if (cleanEntryText.contains("[Recycler Slot 2]")) {
 				foundRecyclerSlot2 = true;
-				System.out.println("[Recycler-DEBUG] ✅ Header '[Recycler Slot 2]' gefunden bei Index " + i + ", Text: '" + entryText + "'");
 				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot2, "Recycler Slot 2");
-				System.out.println("[Recycler-DEBUG] Nach Parsing - Slot 2: current=" + recyclerSlot2.current + ", max=" + recyclerSlot2.max + ", isValid=" + recyclerSlot2.isValid());
 			}
 			
 			// [Recycler Slot 3]
 			if (cleanEntryText.contains("[Recycler Slot 3]")) {
 				foundRecyclerSlot3 = true;
-				System.out.println("[Recycler-DEBUG] ✅ Header '[Recycler Slot 3]' gefunden bei Index " + i + ", Text: '" + entryText + "'");
 				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot3, "Recycler Slot 3");
-				System.out.println("[Recycler-DEBUG] Nach Parsing - Slot 3: current=" + recyclerSlot3.current + ", max=" + recyclerSlot3.max + ", isValid=" + recyclerSlot3.isValid());
 			}
 		}
 		
@@ -704,33 +698,17 @@ public class NpcAlertsUtility {
 		CapacityData data,
 		String debugName
 	) {
-		// Debug: Nur für Recycler-Slots
-		boolean isRecycler = debugName != null && debugName.startsWith("Recycler Slot");
-		if (isRecycler) {
-			System.out.println("[Recycler-DEBUG] 🔍 Suche Datenzeile für " + debugName + " ab Index " + (headerIndex + 1));
-		}
-		
 		// Suche nach der Datenzeile nach dem Header
 		// Es kann sein, dass ein Spielername dazwischen steht, also suchen wir in den nächsten 10 Einträgen
 		for (int j = headerIndex + 1; j < Math.min(headerIndex + 11, entries.size()); j++) {
 			String dataText = getEntryText.apply(j);
 			if (dataText == null) {
-				if (isRecycler) {
-					System.out.println("[Recycler-DEBUG] ⚠️ Index " + j + ": dataText ist null");
-				}
 				continue;
 			}
 			
 			String cleanDataText = removeFormatting.apply(dataText);
 			if (cleanDataText == null || cleanDataText.trim().isEmpty()) {
-				if (isRecycler) {
-					System.out.println("[Recycler-DEBUG] ⚠️ Index " + j + ": cleanDataText ist leer, Original: '" + dataText + "'");
-				}
 				continue;
-			}
-			
-			if (isRecycler) {
-				System.out.println("[Recycler-DEBUG] 📝 Index " + j + ": '" + cleanDataText + "' (Original: '" + dataText + "')");
 			}
 			
 			// Überspringe Spielernamen (wenn der Text wie ein Spielername aussieht)
@@ -738,16 +716,10 @@ public class NpcAlertsUtility {
 			if (!cleanDataText.contains("/") && !cleanDataText.matches(".*\\d+.*")) {
 				// Möglicherweise ein Spielername, aber wir prüfen trotzdem weiter
 				// da manche Einträge auch ohne "/" sein könnten
-				if (isRecycler) {
-					System.out.println("[Recycler-DEBUG] ⏭️ Index " + j + ": Überspringe (kein '/' und keine Zahl)");
-				}
 			}
 			
 			// Prüfe, ob dies eine Kapazitätszeile ist (enthält "/")
 			if (cleanDataText.contains("/")) {
-				if (isRecycler) {
-					System.out.println("[Recycler-DEBUG] ✅ Index " + j + ": Potenzielle Datenzeile gefunden: '" + cleanDataText + "'");
-				}
 				// Versuche, die formatierten Strings zu extrahieren
 				// Format: "AKTUELL / MAXIMAL" oder "AKTUELL/MAXIMAL"
 				// Beispiel: "35,241K / 100K" oder "123 / 500"
@@ -798,9 +770,6 @@ public class NpcAlertsUtility {
 								
 								// Prüfe ob die Werte in int-Bereich passen
 								if (currentLong > Integer.MAX_VALUE || maxLong > Integer.MAX_VALUE) {
-									if (isRecycler) {
-										System.out.println("[Recycler-DEBUG] ⚠️ Werte zu groß für int: current=" + currentLong + ", max=" + maxLong);
-									}
 									// Verwende -1 wenn zu groß (wird als ungültig angezeigt)
 									data.current = -1;
 									data.max = -1;
@@ -809,44 +778,24 @@ public class NpcAlertsUtility {
 								
 								data.current = (int) currentLong;
 								data.max = (int) maxLong;
-								if (isRecycler) {
-									System.out.println("[Recycler-DEBUG] ✅✅✅ Erfolgreich geparst für " + debugName + ": current=" + data.current + ", max=" + data.max);
-								}
 								return; // Erfolgreich geparst
 							} catch (NumberFormatException e) {
 								// Wenn Parsing fehlschlägt, setze trotzdem die formatierten Strings
 								// und verwende -1 für isValid() Prüfung (wird dann als ungültig angezeigt)
 								data.current = -1;
 								data.max = -1;
-								if (isRecycler) {
-									System.out.println("[Recycler-DEBUG] ❌ NumberFormatException beim Parsing: currentNumbersOnly='" + currentNumbersOnly + "', maxNumbersOnly='" + maxNumbersOnly + "', Exception: " + e.getMessage());
-								}
 								return;
 							}
-						} else {
-							if (isRecycler) {
-								System.out.println("[Recycler-DEBUG] ⚠️ Leere Zahlen: currentNumbersOnly='" + currentNumbersOnly + "', maxNumbersOnly='" + maxNumbersOnly + "'");
-							}
-						}
-					} else {
-						if (isRecycler) {
-							System.out.println("[Recycler-DEBUG] ⚠️ Split ergab nicht 2 Teile: parts.length=" + (parts != null ? parts.length : 0));
 						}
 					}
 				} catch (Exception e) {
 					// Weiter suchen
-					if (isRecycler) {
-						System.out.println("[Recycler-DEBUG] ❌ Exception beim Parsing: " + e.getMessage());
-					}
 					continue;
 				}
 			}
 		}
 		
 		// Nicht gefunden - setze auf ungültig
-		if (isRecycler) {
-			System.out.println("[Recycler-DEBUG] ❌❌❌ Keine Datenzeile gefunden für " + debugName + " in den nächsten 10 Einträgen!");
-		}
 		data.current = -1;
 		data.max = -1;
 		data.currentFormatted = null;

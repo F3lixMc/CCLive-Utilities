@@ -55,8 +55,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         if (price.coin != null) list.add(new CostItemWithCategory(price.coin, 0));
-        if (price.cactus != null) list.add(new CostItemWithCategory(price.cactus, 1));
-        if (price.soul != null) list.add(new CostItemWithCategory(price.soul, 1));
         if (price.material1 != null) list.add(new CostItemWithCategory(price.material1, 1));
         if (price.material2 != null) list.add(new CostItemWithCategory(price.material2, 1));
         if (price.material3 != null) list.add(new CostItemWithCategory(price.material3, 1));
@@ -125,8 +123,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         addCostItemToTotal(totalCostsMap, multiplyCostItem(price.coin, quantity));
-        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.cactus, quantity));
-        addCostItemToTotal(totalCostsMap, multiplyCostItem(price.soul, quantity));
         addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material1, quantity));
         addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material2, quantity));
         addCostItemToTotal(totalCostsMap, multiplyCostItem(price.material3, quantity));
@@ -141,7 +137,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         CostItem[] items = {
-            price.coin, price.cactus, price.soul,
+            price.coin,
             price.material1, price.material2, price.material3, price.material4, price.material5,
             resolveAmboss(price), resolveRessource(price)
         };
@@ -1378,10 +1374,14 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
 
         if (amount instanceof Number) {
             Number num = (Number) amount;
-            if (num instanceof Long || num instanceof Integer || num instanceof BigDecimal) {
-                return HudNumberSuffixUtility.formatWithSeparators(new BigDecimal(num.toString()));
+            if (num instanceof Double || num instanceof Float) {
+                double value = num.doubleValue();
+                if (Double.isFinite(value) && value == Math.floor(value)) {
+                    return HudNumberSuffixUtility.formatWithSeparators(BigDecimal.valueOf((long) value));
+                }
+                return formatNumberWithSeparators(value);
             }
-            return formatNumberWithSeparators(num.doubleValue());
+            return HudNumberSuffixUtility.formatWithSeparators(new BigDecimal(num.toString()));
         }
 
         return amount.toString();
@@ -1399,8 +1399,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             DecimalFormat df = new DecimalFormat("#,###", symbols);
             return df.format((long) value);
         } else {
-            // Zahl mit Dezimalstellen
-            DecimalFormat df = new DecimalFormat("#,###.0", symbols);
+            DecimalFormat df = new DecimalFormat("#,###.##", symbols);
+            df.setDecimalSeparatorAlwaysShown(false);
             return df.format(value);
         }
     }

@@ -1,11 +1,10 @@
 package net.felix.utilities.Overall;
 
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.MaterialRateUtility;
 import net.felix.utilities.DragOverlay.CollectedMaterialsResourcesStorage;
 
 import java.util.*;
@@ -18,6 +17,11 @@ public class ActionBarData {
     private static final Map<String, Integer> materials = new HashMap<>();
     private static final List<Object> filteredTexts = new ArrayList<>();
     private static final Map<String, Text> materialTexts = new HashMap<>(); // Speichert originale Text-Objekte mit Farbcodes
+    /** Ausstehende Clipboard-Syncs – werden einmal pro Tick gebündelt. */
+    private static final Map<String, Long> pendingStorageSync = new HashMap<>();
+    private static boolean filteredTextsDirty = false;
+    private static boolean postProcessScheduled = false;
+    private static boolean tickHandlerRegistered = false;
     // Pattern für Materialien in der ActionBar: "zahlx material name [zahl]" oder "+zahl material name [zahl]"
     // Format: (optional "+" oder "x" nach Zahl) + Materialname + [Zahl]
     // Unterstützt formatierte Materialnamen und variable Leerzeichen
@@ -29,7 +33,52 @@ public class ActionBarData {
         materials.clear();
         filteredTexts.clear();
         materialTexts.clear();
+        pendingStorageSync.clear();
+        filteredTextsDirty = false;
+        postProcessScheduled = false;
         cachedIsOnFloor = null; // Cache zurücksetzen
+    }
+
+    private static void ensureTickHandlerRegistered() {
+        if (tickHandlerRegistered) {
+            return;
+        }
+        tickHandlerRegistered = true;
+        ClientTickEvents.END_CLIENT_TICK.register(client -> flushPendingUpdates());
+    }
+
+    /**
+     * Wendet gebündelte Actionbar-Updates an (max. einmal pro Client-Tick).
+     */
+    public static void flushPendingUpdates() {
+        if (!postProcessScheduled) {
+            return;
+        }
+        postProcessScheduled = false;
+
+        if (!pendingStorageSync.isEmpty()) {
+            CollectedMaterialsResourcesStorage.setSyncedOwnedAmounts(pendingStorageSync);
+            pendingStorageSync.clear();
+        }
+        if (filteredTextsDirty) {
+            updateFilteredTexts();
+            filteredTextsDirty = false;
+        }
+    }
+
+    private static void schedulePostProcess() {
+        postProcessScheduled = true;
+        filteredTextsDirty = true;
+        ensureTickHandlerRegistered();
+    }
+
+    private static void recordMaterialDrop(String materialName, int count, Text message) {
+        materials.put(materialName, count);
+        if (message != null) {
+            materialTexts.put(materialName, message);
+        }
+        pendingStorageSync.put(materialName, (long) count);
+        schedulePostProcess();
     }
     
     public static void processActionBarMessage(net.minecraft.text.Text message) {
@@ -56,15 +105,7 @@ public class ActionBarData {
             // Entferne Formatierungscodes auch vom Materialnamen
             materialName = materialName.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "").trim();
             int count = Integer.parseInt(matcher.group(2));
-            
-            // Update material count and store original Text object with color codes
-            materials.put(materialName, count);
-            materialTexts.put(materialName, message); // Speichere originale Text-Objekt mit Farbcodes
-            CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(materialName, count);
-            updateFilteredTexts();
-            if (CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateEnabled) {
-                MaterialRateUtility.updateFromActionBar();
-            }
+            recordMaterialDrop(materialName, count, message);
         }
     }
     
@@ -87,12 +128,7 @@ public class ActionBarData {
             // Entferne Formatierungscodes auch vom Materialnamen
             materialName = materialName.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "").trim();
             int count = Integer.parseInt(matcher.group(2));
-            
-            // Update material count and store original message with color codes
-            materials.put(materialName, count);
-            CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(materialName, count);
-            // Für String-Nachrichten können wir keine Farbcodes speichern
-            updateFilteredTexts();
+            recordMaterialDrop(materialName, count, null);
         }
     }
     
@@ -156,6 +192,7 @@ public class ActionBarData {
     }
     
     public static List<Object> getFilteredTexts() {
+        flushPendingUpdates();
         return new ArrayList<>(filteredTexts);
     }
     

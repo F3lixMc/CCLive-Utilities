@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Town.StarForgedSoundUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
@@ -27,6 +28,10 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         cancellable = true
     )
     private void onGameMessage(GameMessageS2CPacket packet, CallbackInfo ci) {
+        if (packet != null) {
+            StarForgedSoundUtility.handleIncomingMessage(packet.content(), packet.overlay());
+        }
+
         if (packet == null) {
             return;
         }

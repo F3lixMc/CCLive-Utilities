@@ -16,115 +16,144 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
 
 @Mixin(BossBarHud.class)
 public class BossBarMixin {
-    
+
+    private static volatile Field cachedBossBarsField;
+    private static volatile boolean bossBarsFieldLookupFailed;
+
     @Inject(method = "render", at = @At("HEAD"))
     private void onRenderBossBar(DrawContext context, CallbackInfo ci) {
         try {
-            // Get the bossbars from the BossBarHud
             BossBarHud bossBarHud = (BossBarHud) (Object) this;
-            
-            // Try different field names for bossbars - updated for 1.21.7
-            Map<UUID, ClientBossBar> bossBars = null;
-            String[] possibleFieldNames = {
-                "field_2060", "field_2061", "field_2062", // Common obfuscated field names
-                "bossBars", "bossbars", "bossBars", "bars", "bossBarMap",
-                "clientBossBars", "bossBarEntries", "entries", "bossBarList"
-            };
-            
-            // First try to find the field by type
-            java.lang.reflect.Field[] fields = bossBarHud.getClass().getDeclaredFields();
-            for (java.lang.reflect.Field field : fields) {
-                if (Map.class.isAssignableFrom(field.getType())) {
-                    try {
-                        field.setAccessible(true);
-                        Object fieldValue = field.get(bossBarHud);
-                        if (fieldValue instanceof Map) {
-                            @SuppressWarnings("unchecked")
-                            Map<UUID, ClientBossBar> tempBars = (Map<UUID, ClientBossBar>) fieldValue;
-                            if (tempBars != null && !tempBars.isEmpty()) {
-                                bossBars = tempBars;
-                                break;
-                            }
-                        }
-                    } catch (Exception e) {
-                        // Continue trying other fields
-                    }
-                }
+            Map<UUID, ClientBossBar> bossBars = resolveBossBars(bossBarHud);
+            if (bossBars == null || bossBars.isEmpty()) {
+                return;
             }
-            
-            // If we didn't find it by type, try the known field names
-            if (bossBars == null) {
-                for (String fieldName : possibleFieldNames) {
-                    try {
-                        java.lang.reflect.Field bossBarsField = bossBarHud.getClass().getDeclaredField(fieldName);
-                        bossBarsField.setAccessible(true);
-                        Object fieldValue = bossBarsField.get(bossBarHud);
-                        
-                        if (fieldValue instanceof Map) {
-                            @SuppressWarnings("unchecked")
-                            Map<UUID, ClientBossBar> tempBars = (Map<UUID, ClientBossBar>) fieldValue;
-                            if (tempBars != null && !tempBars.isEmpty()) {
-                                bossBars = tempBars;
-                                break;
-                            }
-                        }
-                    } catch (Exception e) {
-                        // Silent error handling
-                    }
-                }
-            }
-            
+
             NpcAlertsUtility.beginKomboKisteBossBarScan();
             MinecraftClient mc = MinecraftClient.getInstance();
             boolean komboKisteDim = NpcAlertsUtility.isKomboKisteReadingDimension(mc);
-            if (bossBars != null) {
-                int index = 0;
-                for (ClientBossBar bossBar : bossBars.values()) {
-                    index++;
-                    String name = bossBar.getName().getString();
-                    if (komboKisteDim) {
-                        NpcAlertsUtility.observeKomboKisteBossBarTitle(name, index);
-                    }
-                    
-                    // HUD-Statistik (Souls / Coins / Cactus) per Pixel-Font dekodieren
-                    CoinTrackerUtility.processBossBar(name);
-                    net.felix.utilities.DragOverlay.ClipboardCoinCollector.processBossBar(name);
+            String aincraftBottomFont = ZeichenUtility.getAincraftBottomFont();
 
-                    // Fabrik-Wellen (2. Bossbar) verarbeiten
-                    WaveUtility.processBossBarWave(name, index);
-                    
-                    // Look for bossbar that contains kill information (Floors)
-                    // Usually it's the top bossbar that shows kills
-                    // Use the same Chinese characters as in KillsUtility
-                    if (name.contains("Kills") || name.contains("Kill") || 
-                        name.matches(".*[" + ZeichenUtility.getAincraftBottomFont() + "].*")) {
-                        
-                        // Process the kill information
-                        KillsUtility.processBossBarKills(name);
-                        // Don't break here - continue checking for collection bossbars
-                    }
-                    
-                    // Look for bossbar that contains collection information (Farmworld)
-                    // Collection bossbars also contain Chinese numbers
-                    // Check if it's not a kills bossbar but contains Chinese numbers
-                    if (!name.contains("Kills") && !name.contains("Kill") && 
-                        name.matches(".*[" + ZeichenUtility.getAincraftBottomFont() + "].*")) {
-                        
-                        // Process the collection information for leaderboard
-                        FarmworldCollectionsCollector.processBossBarCollection(name);
-                        
-                        // Process the collection information for overlay
-                        InformationenUtility.processBossBarCollection(name);
-                    }
+            int index = 0;
+            for (ClientBossBar bossBar : bossBars.values()) {
+                index++;
+                String name = bossBar.getName().getString();
+                if (komboKisteDim) {
+                    NpcAlertsUtility.observeKomboKisteBossBarTitle(name, index);
+                }
+
+                CoinTrackerUtility.processBossBar(name);
+                net.felix.utilities.DragOverlay.ClipboardCoinCollector.processBossBar(name);
+                WaveUtility.processBossBarWave(name, index);
+
+                boolean hasAincraftFont = !aincraftBottomFont.isEmpty()
+                        && name.matches(".*[" + aincraftBottomFont + "].*");
+
+                // Kills-Bossbar (Floors) – auch wenn nur chinesische Ziffern sichtbar sind
+                if (name.contains("Kills") || name.contains("Kill") || hasAincraftFont) {
+                    KillsUtility.processBossBarKills(name);
+                }
+
+                // Collection-Bossbar (Farmwelt) – separat, nicht als else-if (gleiche Schrift-Glyphen)
+                if (!name.contains("Kills") && !name.contains("Kill") && hasAincraftFont) {
+                    FarmworldCollectionsCollector.processBossBarCollection(name);
+                    InformationenUtility.processBossBarCollection(name);
                 }
             }
         } catch (Exception e) {
             // Silent error handling
         }
     }
-} 
+
+    @SuppressWarnings("unchecked")
+    private static Map<UUID, ClientBossBar> resolveBossBars(BossBarHud bossBarHud) {
+        try {
+            Field field = cachedBossBarsField;
+            if (field == null && !bossBarsFieldLookupFailed) {
+                field = findBossBarsField(bossBarHud);
+                if (field != null) {
+                    field.setAccessible(true);
+                    cachedBossBarsField = field;
+                } else {
+                    bossBarsFieldLookupFailed = true;
+                    return null;
+                }
+            }
+            if (field == null) {
+                return null;
+            }
+            Object value = field.get(bossBarHud);
+            if (!(value instanceof Map<?, ?> map)) {
+                cachedBossBarsField = null;
+                return null;
+            }
+            if (!map.isEmpty()) {
+                for (Object entry : map.values()) {
+                    if (!(entry instanceof ClientBossBar)) {
+                        cachedBossBarsField = null;
+                        bossBarsFieldLookupFailed = false;
+                        return null;
+                    }
+                }
+            }
+            return (Map<UUID, ClientBossBar>) map;
+        } catch (Exception e) {
+            cachedBossBarsField = null;
+            return null;
+        }
+    }
+
+    private static Field findBossBarsField(BossBarHud bossBarHud) {
+        Class<?> bossBarHudClass = bossBarHud.getClass();
+        Field mapField = null;
+        for (Field field : bossBarHudClass.getDeclaredFields()) {
+            if (!Map.class.isAssignableFrom(field.getType())) {
+                continue;
+            }
+            try {
+                field.setAccessible(true);
+                Object value = field.get(bossBarHud);
+                if (value instanceof Map<?, ?> map && !map.isEmpty()) {
+                    for (Object entry : map.values()) {
+                        if (entry instanceof ClientBossBar) {
+                            return field;
+                        }
+                    }
+                }
+                if (mapField == null) {
+                    mapField = field;
+                }
+            } catch (Exception ignored) {
+                if (mapField == null) {
+                    mapField = field;
+                }
+            }
+        }
+        if (mapField != null) {
+            return mapField;
+        }
+
+        String[] possibleFieldNames = {
+                "field_2060", "field_2061", "field_2062",
+                "bossBars", "bossbars", "bars", "bossBarMap",
+                "clientBossBars", "bossBarEntries", "entries", "bossBarList"
+        };
+        for (String fieldName : possibleFieldNames) {
+            try {
+                Field field = bossBarHudClass.getDeclaredField(fieldName);
+                if (Map.class.isAssignableFrom(field.getType())) {
+                    return field;
+                }
+            } catch (Exception ignored) {
+                // Try next name
+            }
+        }
+        return null;
+    }
+}

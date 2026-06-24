@@ -1,0 +1,9 @@
+{
+  "misc.starforged": {
+    "sounds": [
+      {
+        "name": "cclive-utilities:misc/starforged"
+      }
+    ]
+  }
+}

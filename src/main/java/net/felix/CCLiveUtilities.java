@@ -15,6 +15,7 @@ import net.felix.utilities.Overall.DamageTrackingUtility;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
+import net.felix.utilities.Town.ModSounds;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.commands.CCLiveCommands;
@@ -49,6 +50,8 @@ public class CCLiveUtilities implements ModInitializer {
 		
 		// Migriere Config-Felder: Füge fehlende Felder mit Default-Werten hinzu
 		CCLiveUtilitiesConfig.migrateConfigFields();
+
+		ModSounds.initialize();
 
 		// Initialisiere ZeichenUtility zuerst (wird von anderen Utilities benötigt)
 		net.felix.utilities.Overall.ZeichenUtility.initialize();

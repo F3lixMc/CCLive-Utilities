@@ -125,6 +125,8 @@ public class MaterialTrackerUtility {
 	}
 
 	private static void onClientTick(MinecraftClient client) {
+		ActionBarData.flushPendingUpdates();
+
 		// Check Tab key for overlay visibility
 		checkTabKey();
 		
