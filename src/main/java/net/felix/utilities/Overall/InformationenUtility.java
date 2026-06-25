@@ -4823,6 +4823,9 @@ public class InformationenUtility {
 		if (hpDisplay == null) {
 			return;
 		}
+
+		long mobHp = MobFloorHpData.getHpValue(floor);
+		Integer opferungLevel = mobHp >= 0 ? OpferungMkDamageData.getMinLevelForHp(mobHp) : null;
 		
 		int insertIndex = findMoblexiconHpInsertIndex(lines);
 		if (insertIndex < 0 || insertIndex == 0) {
@@ -4838,6 +4841,10 @@ public class InformationenUtility {
 		}
 		hpLine.append(net.minecraft.text.Text.literal("HP: " + hpDisplay)
 			.styled(style -> style.withColor(0xFF5555).withItalic(false)));
+		if (opferungLevel != null) {
+			hpLine.append(net.minecraft.text.Text.literal(" -> Opferung lvl: " + opferungLevel)
+				.styled(style -> style.withColor(0xFFAA00).withItalic(false)));
+		}
 		lines.add(insertIndex, hpLine);
 	}
 	

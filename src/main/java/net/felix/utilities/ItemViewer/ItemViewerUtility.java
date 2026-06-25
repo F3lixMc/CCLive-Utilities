@@ -1386,13 +1386,27 @@ public class ItemViewerUtility {
      * @return true wenn der Input behandelt wurde, false sonst
      */
     public static boolean handleSearchFieldKeyPress(int keyCode, int scanCode, int modifiers) {
-        if (!isVisible()) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null || client.currentScreen == null) {
             searchFieldFocused = false;
             return false;
         }
-        
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen == null) {
+
+        // Niemals Tastatureingaben vom Chat oder anderen Screens abfangen
+        if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
+            searchFieldFocused = false;
+            return false;
+        }
+
+        boolean canUseSearchInput = client.currentScreen instanceof HandledScreen<?>
+                || client.currentScreen instanceof InventoryScreen
+                || isKitEditorMode();
+        if (!canUseSearchInput) {
+            searchFieldFocused = false;
+            return false;
+        }
+
+        if (!isVisible()) {
             searchFieldFocused = false;
             return false;
         }
@@ -2112,6 +2126,45 @@ public class ItemViewerUtility {
     
     // Suchfeld-Fokus
     private static boolean searchFieldFocused = false;
+
+    public static boolean isSearchFieldFocused() {
+        return searchFieldFocused;
+    }
+
+    public static void blurSearchFieldFocus() {
+        searchFieldFocused = false;
+        clearSelection();
+    }
+
+    public static void blurSearchFieldFocusUnlessClickOnField(double mouseX, double mouseY, int button) {
+        if (!searchFieldFocused) {
+            return;
+        }
+        if (helpScreenOpen || !isVisible() || isMinimized) {
+            blurSearchFieldFocus();
+            return;
+        }
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) {
+            blurSearchFieldFocus();
+            return;
+        }
+
+        ViewerPosition pos = resolveViewerPositionForMouseInput(client);
+        if (pos == null) {
+            blurSearchFieldFocus();
+            return;
+        }
+
+        int searchX = pos.helpButtonX + HELP_BUTTON_SIZE + 5;
+        int searchY = pos.viewerY + VIEWER_PADDING;
+        boolean onSearchField = mouseX >= searchX && mouseX < searchX + pos.searchWidth
+                && mouseY >= searchY && mouseY < searchY + SEARCH_HEIGHT;
+        if (!onSearchField) {
+            blurSearchFieldFocus();
+        }
+    }
     
     // Favoriten-Modus
     private static boolean favoritesMode = false;
@@ -4378,7 +4431,7 @@ public class ItemViewerUtility {
         if (button == 0 && mouseX >= pos.helpButtonX && mouseX < pos.helpButtonX + HELP_BUTTON_SIZE &&
             mouseY >= pos.helpButtonY && mouseY < pos.helpButtonY + HELP_BUTTON_SIZE) {
             helpScreenOpen = !helpScreenOpen;
-            searchFieldFocused = false; // Fokus entfernen wenn Hilfe geöffnet wird
+            blurSearchFieldFocus();
             return true;
         }
         
@@ -4505,17 +4558,6 @@ public class ItemViewerUtility {
                     && mouseY >= gridY && mouseY < gridY + gridHeight) {
                 kitEditorPickHandler.accept(hoveredItemForClick, kitEditorPickTarget);
                 return true;
-            }
-        }
-        
-        // Wenn Item Viewer sichtbar ist und Suchfeld fokussiert ist,
-        // aber Klick außerhalb des Suchfeldes -> Fokus entfernen
-        if (isVisible() && searchFieldFocused) {
-            // Prüfe ob Klick außerhalb des Suchfeldes ist
-            if (mouseX < searchX || mouseX >= searchX + pos.searchWidth ||
-                mouseY < searchY || mouseY >= searchY + SEARCH_HEIGHT) {
-                searchFieldFocused = false;
-                // Kein return true, damit andere Klicks weiterhin funktionieren
             }
         }
         

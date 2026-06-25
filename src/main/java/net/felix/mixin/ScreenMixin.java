@@ -138,7 +138,9 @@ public class ScreenMixin {
         if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
             ItemViewerUtility.stopKitEditorMode();
         }
+        ItemViewerUtility.blurSearchFieldFocus();
         ItemViewerUtility.closeHelpOverlay();
+        net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocus();
         if (screen instanceof HandledScreen) {
             net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.finalizeQuantityTextField();
         }

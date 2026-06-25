@@ -197,6 +197,9 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
+
+        net.felix.utilities.ItemViewer.ItemViewerUtility.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
+        net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
         
         // Handle clicks on Clipboard Overlay buttons (inkl. Delete-Button)
         if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {

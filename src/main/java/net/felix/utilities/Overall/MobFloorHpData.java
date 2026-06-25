@@ -28,4 +28,16 @@ public final class MobFloorHpData {
         }
         return HP_BY_FLOOR[floor];
     }
+
+    public static long getHpValue(int floor) {
+        String display = getHpDisplay(floor);
+        if (display == null) {
+            return -1;
+        }
+        if (display.endsWith("k")) {
+            String numeric = display.substring(0, display.length() - 1).replace(".", "");
+            return Long.parseLong(numeric);
+        }
+        return Long.parseLong(display);
+    }
 }

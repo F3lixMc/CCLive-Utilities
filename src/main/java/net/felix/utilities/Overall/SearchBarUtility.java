@@ -1248,6 +1248,32 @@ public class SearchBarUtility {
 	public static void setFocused(boolean focused) {
 		isSearchBarFocused = focused;
 	}
+
+	public static boolean isSearchBarFocused() {
+		return isSearchBarFocused;
+	}
+
+	public static void blurSearchBarFocus() {
+		isSearchBarFocused = false;
+		clearSelection();
+		cursorVisible = false;
+	}
+
+	public static void blurSearchBarFocusUnlessClickOnBar(double mouseX, double mouseY, int button) {
+		if (!isSearchBarFocused || !isSearchBarVisible) {
+			return;
+		}
+		if (helpScreenOpen) {
+			blurSearchBarFocus();
+			return;
+		}
+
+		boolean onSearchBar = mouseX >= searchBarX && mouseX <= searchBarX + searchBarWidth
+				&& mouseY >= searchBarY && mouseY <= searchBarY + searchBarHeight;
+		if (!onSearchBar) {
+			blurSearchBarFocus();
+		}
+	}
 	
 	public static boolean isVisible() {
 		return isSearchBarVisible;
@@ -1500,7 +1526,7 @@ public class SearchBarUtility {
 				return true;
 			}
 		} else {
-			isSearchBarFocused = false;
+			blurSearchBarFocus();
 		}
 		
 		return false;
