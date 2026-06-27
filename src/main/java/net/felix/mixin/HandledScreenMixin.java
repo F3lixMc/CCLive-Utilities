@@ -148,8 +148,7 @@ public abstract class HandledScreenMixin {
             
             // Prüfe sowohl "Machtkristalle Verbessern" als auch das Glyph "㮌" (Essence Harvester UI)
             // Verwende titleWithUnicode für die Glyph-Prüfung, da getPlainTextFromText Unicode entfernt
-            if (titlePlain.contains("Machtkristalle Verbessern") || 
-                ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode)) {
+            if (ZeichenUtility.isMkLevelInventoryTitle(titlePlain, titleWithUnicode)) {
                 // Get actual inventory dimensions from the screen using shadow fields
                 net.felix.utilities.Overall.InformationenUtility.renderMKLevelOverlay(context, net.minecraft.client.MinecraftClient.getInstance(), x, y, backgroundWidth, backgroundHeight);
             }

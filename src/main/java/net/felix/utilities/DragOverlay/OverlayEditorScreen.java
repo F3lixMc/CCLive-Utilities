@@ -404,8 +404,9 @@ public class OverlayEditorScreen extends Screen {
         String title = handledScreen.getTitle().getString();
         
         // Check if the title contains "Machtkristalle Verbessern" or the Glyph "㮌" (Essence Harvester UI)
-        return title.contains("Machtkristalle Verbessern") || 
-               ZeichenUtility.containsEssenceHarvesterUi(title);
+        return ZeichenUtility.isMkLevelInventoryTitle(
+                net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(handledScreen.getTitle()),
+                title);
     }
     
     @Override

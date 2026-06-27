@@ -1222,6 +1222,33 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean npcAlertsRecyclerScreenMessage = false;
     
+    @SerialEntry
+    public boolean npcAlertsForschungScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsAmbossScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsSchmelzofenScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsJaegerScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsSeelenScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsEssenzenScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsKomboKisteScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsMachtkristalleScreenMessageWhenOverlayDisabled = false;
+    
+    @SerialEntry
+    public boolean npcAlertsRecyclerScreenMessageWhenOverlayDisabled = false;
+    
     // NPC Alerts Text Colors
     @SerialEntry
     public Color npcAlertsForschungTextColor = new Color(0xFFFFFFFF);

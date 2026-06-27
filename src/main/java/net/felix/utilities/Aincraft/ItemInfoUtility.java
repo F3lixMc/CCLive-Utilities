@@ -1143,7 +1143,13 @@ public class ItemInfoUtility {
 		if (AMBOSS_ITEMS.contains(materialName)) {
 			return "Amboss";
 		}
-		if (fishingComponent || aincraftMaterials.contains(materialName) || isFishingRarityMaterial(materialName)) {
+		if (fishingComponent) {
+			if (isFishingRarityMaterial(materialName) || aincraftMaterials.contains(materialName)) {
+				return nextMaterialKey(priceMap);
+			}
+			return "Ressource";
+		}
+		if (aincraftMaterials.contains(materialName) || isFishingRarityMaterial(materialName)) {
 			return nextMaterialKey(priceMap);
 		}
 		return "Ressource";

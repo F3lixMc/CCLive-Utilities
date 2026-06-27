@@ -5278,8 +5278,7 @@ public class InformationenUtility {
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			boolean wasInMKLevelInventory = isInMKLevelInventory;
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
-			isInMKLevelInventory = title.contains("Machtkristalle Verbessern") || 
-			                        net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode);
+			isInMKLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
 			
 			// Reset search when leaving inventory (nur wenn man wirklich ein anderes Inventar öffnet)
 			// Die Scroll-Position wird NICHT zurückgesetzt, damit sie beim erneuten Öffnen erhalten bleibt
@@ -7081,8 +7080,7 @@ public class InformationenUtility {
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
-			inMKLevelInventory = title.contains("Machtkristalle Verbessern") || 
-			                     net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode);
+			inMKLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
 		}
 		
 		if (!inMKLevelInventory) {
@@ -7382,8 +7380,7 @@ public class InformationenUtility {
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
-			inMKLevelInventory = title.contains("Machtkristalle Verbessern") || 
-			                     net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode);
+			inMKLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
 		}
 		
 		if (!inMKLevelInventory) {
@@ -8022,8 +8019,12 @@ public class InformationenUtility {
 					bossBarReadAllowedAfterMs = System.currentTimeMillis() + ZONE_BOSSBAR_READ_DELAY_MS;
 					resetCollectionTracking();
 					pendingResets = 0;
-				}
-				if (!wasDetected && CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+					if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay && isTrackingCollections) {
+						sessionStartTime = System.currentTimeMillis();
+					} else {
+						sessionStartTime = 0;
+					}
+				} else if (!wasDetected && CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
 					// Overlay will automatically show because biomDetected is now true
 					// Start timer if we're tracking
 					if (isTrackingCollections && sessionStartTime == 0) {

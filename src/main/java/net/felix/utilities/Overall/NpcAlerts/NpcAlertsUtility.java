@@ -1054,8 +1054,52 @@ public class NpcAlertsUtility {
 		};
 	}
 	
+	private static boolean isScreenMessageWhenOverlayDisabledEnabled(String configKey) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return switch (configKey) {
+			case "forschung" -> config.npcAlertsForschungScreenMessageWhenOverlayDisabled;
+			case "amboss" -> config.npcAlertsAmbossScreenMessageWhenOverlayDisabled;
+			case "schmelzofen" -> config.npcAlertsSchmelzofenScreenMessageWhenOverlayDisabled;
+			case "jaeger" -> config.npcAlertsJaegerScreenMessageWhenOverlayDisabled;
+			case "seelen" -> config.npcAlertsSeelenScreenMessageWhenOverlayDisabled;
+			case "essenzen" -> config.npcAlertsEssenzenScreenMessageWhenOverlayDisabled;
+			case "komboKiste" -> config.npcAlertsKomboKisteScreenMessageWhenOverlayDisabled;
+			case "machtkristalle" -> config.npcAlertsMachtkristalleScreenMessageWhenOverlayDisabled;
+			case "recycler", "recyclerSlot1", "recyclerSlot2", "recyclerSlot3" -> config.npcAlertsRecyclerScreenMessageWhenOverlayDisabled;
+			default -> false;
+		};
+	}
+	
+	private static boolean shouldMonitorAlertForScreenMessage(String configKey) {
+		if (isNpcAlertCollectorEnabled(configKey)) {
+			return true;
+		}
+		return isScreenMessageWhenOverlayDisabledEnabled(configKey);
+	}
+	
+	private static boolean shouldMonitorMachtkristallSlotForScreenMessage(int slotIndex) {
+		if (isNpcAlertMachtkristallSlotEnabled(slotIndex)) {
+			return true;
+		}
+		return isScreenMessageWhenOverlayDisabledEnabled("machtkristalle");
+	}
+	
+	private static boolean shouldMonitorRecyclerSlotForScreenMessage(int slotIndex) {
+		if (isNpcAlertRecyclerSlotEnabled(slotIndex)) {
+			return true;
+		}
+		return isScreenMessageWhenOverlayDisabledEnabled("recycler");
+	}
+	
+	private static boolean shouldShowScreenMessageForAlert(String configKey) {
+		if (isNpcAlertCollectorEnabled(configKey)) {
+			return isScreenMessageEnabled(configKey);
+		}
+		return isScreenMessageWhenOverlayDisabledEnabled(configKey);
+	}
+	
 	private static void addScreenMessageIfEnabled(String configKey, boolean condition, String message) {
-		if (condition && isNpcAlertCollectorEnabled(configKey) && isScreenMessageEnabled(configKey)) {
+		if (condition && shouldShowScreenMessageForAlert(configKey)) {
 			activeScreenMessages.add(message);
 		}
 	}
@@ -1063,65 +1107,65 @@ public class NpcAlertsUtility {
 	private static void updateScreenMessages() {
 		activeScreenMessages.clear();
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-		if (!areNpcAlertsOverlaysActive()) {
+		if (!config.npcAlertsUtilityEnabled) {
 			return;
 		}
 		
-		if (isNpcAlertCollectorEnabled("forschung")) {
+		if (shouldMonitorAlertForScreenMessage("forschung")) {
 			addScreenMessageIfEnabled("forschung",
 				shouldShowForschungWarning(config.npcAlertsForschungWarnValue),
 				"Forschungen sind leer");
 		}
-		if (isNpcAlertCollectorEnabled("amboss")) {
+		if (shouldMonitorAlertForScreenMessage("amboss")) {
 			addScreenMessageIfEnabled("amboss",
 				shouldShowHighCapacityScreenMessage(ambossKapazitaet, config.npcAlertsAmbossWarnPercent),
 				"Amboss ist voll");
 		}
-		if (isNpcAlertCollectorEnabled("schmelzofen")) {
+		if (shouldMonitorAlertForScreenMessage("schmelzofen")) {
 			addScreenMessageIfEnabled("schmelzofen",
 				shouldShowHighCapacityScreenMessage(schmelzofenKapazitaet, config.npcAlertsSchmelzofenWarnPercent),
 				"Schmelzofen ist voll");
 		}
-		if (isNpcAlertCollectorEnabled("jaeger")) {
+		if (shouldMonitorAlertForScreenMessage("jaeger")) {
 			addScreenMessageIfEnabled("jaeger",
 				shouldShowHighCapacityScreenMessage(jaegerKapazitaet, config.npcAlertsJaegerWarnPercent),
 				"Jäger ist voll");
 		}
-		if (isNpcAlertCollectorEnabled("seelen")) {
+		if (shouldMonitorAlertForScreenMessage("seelen")) {
 			addScreenMessageIfEnabled("seelen",
 				shouldShowHighCapacityScreenMessage(seelenKapazitaet, config.npcAlertsSeelenWarnPercent),
 				"Seelen sind voll");
 		}
-		if (isNpcAlertCollectorEnabled("essenzen")) {
+		if (shouldMonitorAlertForScreenMessage("essenzen")) {
 			addScreenMessageIfEnabled("essenzen",
 				shouldShowHighCapacityScreenMessage(essenzenKapazitaet, config.npcAlertsEssenzenWarnPercent),
 				"Essenzen sind voll");
 		}
-		if (isNpcAlertCollectorEnabled("komboKiste")) {
+		if (shouldMonitorAlertForScreenMessage("komboKiste")) {
 			addScreenMessageIfEnabled("komboKiste",
 				komboKiste.isValid() && komboKiste.current >= komboKiste.max,
 				"Kombo Kiste ist voll");
 		}
-		if (isNpcAlertCollectorEnabled("machtkristalle")) {
+		if (shouldMonitorAlertForScreenMessage("machtkristalle")) {
 			for (int i = 0; i < 3; i++) {
-				if (isNpcAlertMachtkristallSlotEnabled(i)
+				if (shouldMonitorMachtkristallSlotForScreenMessage(i)
 					&& shouldShowMachtkristallScreenMessage(machtkristallSlots[i], config.npcAlertsMachtkristalleWarnPercent)) {
 					addScreenMessageIfEnabled("machtkristalle", true, "Machtkristall ist voll");
 					break;
 				}
 			}
 		}
-		if (isNpcAlertRecyclerSlotEnabled(0)) {
+		if (shouldMonitorRecyclerSlotForScreenMessage(0)) {
 			addScreenMessageIfEnabled("recycler",
 				shouldShowLowCapacityScreenMessage(recyclerSlot1, config.npcAlertsRecyclerWarnPercent),
 				"Recycler Slot 1 ist leer");
 		}
-		if (isNpcAlertRecyclerSlotEnabled(1)) {
+		if (shouldMonitorRecyclerSlotForScreenMessage(1)) {
 			addScreenMessageIfEnabled("recycler",
 				shouldShowLowCapacityScreenMessage(recyclerSlot2, config.npcAlertsRecyclerWarnPercent),
 				"Recycler Slot 2 ist leer");
 		}
-		if (isNpcAlertRecyclerSlotEnabled(2)) {
+		if (shouldMonitorRecyclerSlotForScreenMessage(2)) {
 			addScreenMessageIfEnabled("recycler",
 				shouldShowLowCapacityScreenMessage(recyclerSlot3, config.npcAlertsRecyclerWarnPercent),
 				"Recycler Slot 3 ist leer");
@@ -1129,7 +1173,7 @@ public class NpcAlertsUtility {
 	}
 	
 	private static void renderScreenMessages(DrawContext context, MinecraftClient client) {
-		if (!areNpcAlertsOverlaysActive() || activeScreenMessages.isEmpty()) {
+		if (activeScreenMessages.isEmpty()) {
 			return;
 		}
 		
@@ -1175,13 +1219,17 @@ public class NpcAlertsUtility {
 			return;
 		}
 		
-		// Bildschirm-Nachrichten nur wenn NPC-Overlays aktiv/sichtbar sind
-		if (!showOverlays || !areNpcAlertsOverlaysActive()) {
+		if (!showOverlays) {
 			return;
 		}
 		
-		renderScreenMessages(context, client);
-		renderNpcAlertsDisplay(context, client);
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (config.npcAlertsUtilityEnabled) {
+			renderScreenMessages(context, client);
+		}
+		if (areNpcAlertsOverlaysActive()) {
+			renderNpcAlertsDisplay(context, client);
+		}
 	}
 	
 	/** NPC Alerts Utility aktiv und Overlays nicht global ausgeblendet („Overlays Ein/Aus“). */

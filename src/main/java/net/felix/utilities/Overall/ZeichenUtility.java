@@ -91,6 +91,7 @@ public class ZeichenUtility {
     /** Glyph aus {@code cactusclicker_furnace} / {@code main_ui} – Schmelzofen-Inventar. */
     private static String furnaceMainUi = "";
     private static String essenceHarvesterUi = "";
+    private static String wavesUiBackground = "";
     private static String essenceBagUi = "";
     private static String essenceSelectionUi = "";
     private static String uiCategoriesFactory = "";
@@ -265,6 +266,7 @@ public class ZeichenUtility {
         anvilMainUi = "";
         furnaceMainUi = "";
         essenceHarvesterUi = "";
+        wavesUiBackground = "";
         essenceBagUi = "";
         essenceSelectionUi = "";
         uiCategoriesFactory = "";
@@ -331,6 +333,7 @@ public class ZeichenUtility {
         furnaceMainUi = singleChar(index, "cactusclicker_furnace", "main_ui");
 
         essenceHarvesterUi = singleChar(index, "cactusclicker_harvesters", "essence_harvester_ui");
+        wavesUiBackground = singleChar(index, "cactusclicker_waves", "waves_ui_background");
         essenceBagUi = singleChar(index, "cactusclicker_essence", "ui_bag");
         essenceSelectionUi = singleChar(index, "cactusclicker_essence", "ui_selection");
         uiCategoriesFactory = singleChar(index, "cc_main_menu", "ui_categories_factory");
@@ -515,6 +518,9 @@ public class ZeichenUtility {
         if (json.has("essence_harvester_ui")) {
             essenceHarvesterUi = json.getAsJsonObject("essence_harvester_ui").get("character").getAsString();
         }
+        if (json.has("waves_ui_background")) {
+            wavesUiBackground = json.getAsJsonObject("waves_ui_background").get("character").getAsString();
+        }
         if (json.has("essence_bag_ui")) {
             essenceBagUi = json.getAsJsonObject("essence_bag_ui").get("character").getAsString();
         }
@@ -658,6 +664,7 @@ public class ZeichenUtility {
         anvilMainUi = "㸒";
         furnaceMainUi = "㷒";
         essenceHarvesterUi = "㸏";
+        wavesUiBackground = "㷐";
         essenceBagUi = "㸊";
         essenceSelectionUi = "㸋";
         uiCategoriesFactory = "㸞";
@@ -925,6 +932,19 @@ public class ZeichenUtility {
         ensureInitialized();
         return text != null && essenceHarvesterUi != null && !essenceHarvesterUi.isEmpty()
                 && text.contains(essenceHarvesterUi);
+    }
+
+    public static boolean containsWavesUiBackground(String text) {
+        ensureInitialized();
+        return text != null && wavesUiBackground != null && !wavesUiBackground.isEmpty()
+                && text.contains(wavesUiBackground);
+    }
+
+    /** Machtkristalle-Verbessern, Essence Harvester oder Waves-UI. */
+    public static boolean isMkLevelInventoryTitle(String titlePlain, String titleWithUnicode) {
+        return (titlePlain != null && titlePlain.contains("Machtkristalle Verbessern"))
+                || containsEssenceHarvesterUi(titleWithUnicode)
+                || containsWavesUiBackground(titleWithUnicode);
     }
 
     public static boolean containsEssenceBagUi(String text) {

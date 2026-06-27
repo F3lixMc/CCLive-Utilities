@@ -146,11 +146,11 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
         int textY = PADDING;
         context.drawText(client.textRenderer, Text.literal("Coin Tracker"), PADDING, textY, headerColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("Coins: 1.256K"), PADDING, textY, textColor, true);
+        context.drawText(client.textRenderer, Text.literal("Coins: 1,256k"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("Gewinn: +12,3K"), PADDING, textY, textColor, true);
+        context.drawText(client.textRenderer, Text.literal("Gewinn: +250"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("CPM: 1,2K"), PADDING, textY, textColor, true);
+        context.drawText(client.textRenderer, Text.literal("CPM: 1,2k"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
         context.drawText(client.textRenderer, Text.literal("Zeit: 05:30"), PADDING, textY, textColor, true);
 

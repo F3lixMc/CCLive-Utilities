@@ -37,21 +37,45 @@ public class NpcAlertsDetailScreen extends Screen {
         return isMachtkristalleKey() ? "Prozentwert über 100%" : "Prozente anzeigen";
     }
     
+    private static final String SCREEN_MESSAGE_WHEN_DISABLED_LABEL =
+        "Bildschirm-Nachricht bei deaktiviertem Alert Overlay";
+    private static final int SETTINGS_ROW_SCREEN_MESSAGE = 60;
+    private static final int SETTINGS_ROW_SCREEN_MESSAGE_WHEN_DISABLED = 75;
+    private static final int SETTINGS_ROW_PERCENT = 100;
+    private static final int SETTINGS_ROW_LEVEL = 125;
+    private static final int SETTINGS_EXTRA_HEIGHT = 15;
+    
+    private int getScreenMessageCheckboxY(int boxY) {
+        return boxY + SETTINGS_ROW_SCREEN_MESSAGE;
+    }
+    
+    private int getScreenMessageWhenDisabledCheckboxY(int boxY) {
+        return boxY + SETTINGS_ROW_SCREEN_MESSAGE_WHEN_DISABLED;
+    }
+    
+    private int getPercentCheckboxY(int boxY) {
+        return boxY + SETTINGS_ROW_PERCENT;
+    }
+    
+    private int getMachtkristalleLevelCheckboxY(int boxY) {
+        return boxY + SETTINGS_ROW_LEVEL;
+    }
+    
     private int getWarnInputY(int boxY) {
-        return isMachtkristalleKey() ? boxY + 135 : boxY + 110;
+        return isMachtkristalleKey() ? boxY + 150 : boxY + 125;
     }
     
     private int getSettingsBlockEndY(int boxY, boolean supportsPercent) {
         if (isMachtkristalleKey()) {
-            return boxY + 185;
+            return boxY + 200;
         }
         if (supportsPercent) {
-            return boxY + 160;
+            return boxY + 175;
         }
         if ("komboKiste".equals(configKey)) {
-            return boxY + 140;
+            return boxY + 155;
         }
-        return boxY + 110;
+        return boxY + 125;
     }
     
     private void clampMachtkristallWarnPercentIfNeeded() {
@@ -137,7 +161,7 @@ public class NpcAlertsDetailScreen extends Screen {
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
         boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
-        int baseBoxHeight = hasIconOption ? 275 : 235;
+        int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
             baseBoxHeight += 85; // 3 Slot-Checkboxen + Level-Checkbox
@@ -250,7 +274,7 @@ public class NpcAlertsDetailScreen extends Screen {
             showBackground ? 0xFFFFFFFF : 0xFF808080, false);
         
         // Bildschirm-Nachricht Checkbox (für alle Informationen)
-        int screenMessageCheckboxY = boxY + 60;
+        int screenMessageCheckboxY = getScreenMessageCheckboxY(boxY);
         int screenMessageCheckboxX = boxX + 10;
         int screenMessageCheckboxSize = 10;
         boolean showScreenMessage = getShowScreenMessage();
@@ -282,10 +306,46 @@ public class NpcAlertsDetailScreen extends Screen {
         context.drawText(textRenderer, "Bildschirm-Nachricht", screenMessageTextX, screenMessageCheckboxY + 1,
             showScreenMessage ? 0xFFFFFFFF : 0xFF808080, false);
         
+        // Bildschirm-Nachricht bei deaktiviertem Alert Overlay
+        int screenMessageWhenDisabledCheckboxY = getScreenMessageWhenDisabledCheckboxY(boxY);
+        boolean showScreenMessageWhenDisabled = getShowScreenMessageWhenOverlayDisabled();
+        
+        context.fill(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
+            screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize, 0xFF808080);
+        context.drawBorder(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
+            screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
+        
+        if (showScreenMessageWhenDisabled) {
+            int checkX = screenMessageCheckboxX + 2;
+            int checkY = screenMessageWhenDisabledCheckboxY + 2;
+            int checkSize = screenMessageCheckboxSize - 4;
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + i;
+                int py = checkY + checkSize / 2 + i;
+                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2
+                    && py < screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize - 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+            for (int i = 0; i < checkSize / 2; i++) {
+                int px = checkX + checkSize / 2 + i;
+                int py = checkY + checkSize - 2 - i;
+                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2
+                    && py >= screenMessageWhenDisabledCheckboxY + 2) {
+                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
+                }
+            }
+        }
+        
+        int screenMessageWhenDisabledTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
+        context.drawText(textRenderer, SCREEN_MESSAGE_WHEN_DISABLED_LABEL, screenMessageWhenDisabledTextX,
+            screenMessageWhenDisabledCheckboxY + 1,
+            showScreenMessageWhenDisabled ? 0xFFFFFFFF : 0xFF808080, false);
+        
         // Variablen für Prozente Checkbox (außerhalb if-Block für Hover-Feedback)
         int checkboxSize = 10;
         int checkboxX = boxX + 10;
-        int checkboxY = boxY + 85;
+        int checkboxY = getPercentCheckboxY(boxY);
         
         if (supportsPercent) {
             // Prozente Checkbox
@@ -326,7 +386,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 showPercent ? 0xFFFFFFFF : 0xFF808080, false);
             
             if (isMachtkristalleKey()) {
-                int levelCheckboxY = boxY + 110;
+                int levelCheckboxY = getMachtkristalleLevelCheckboxY(boxY);
                 boolean showLevel = getShowMachtkristalleLevel();
                 
                 context.fill(checkboxX, levelCheckboxY, checkboxX + checkboxSize, levelCheckboxY + checkboxSize, 0xFF808080);
@@ -357,7 +417,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             if ("forschung".equals(configKey)) {
-                int inputY = boxY + 110;
+                int inputY = getMachtkristalleLevelCheckboxY(boxY);
                 int inputX = boxX + 10;
                 int inputWidth = 100;
                 int inputHeight = 16;
@@ -408,7 +468,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 inputX, inputY + inputHeight + 5, 0xFF808080, false);
             }
         } else if ("komboKiste".equals(configKey)) {
-            int inputY = boxY + 85;
+            int inputY = getPercentCheckboxY(boxY);
             int inputX = boxX + 10;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -430,7 +490,7 @@ public class NpcAlertsDetailScreen extends Screen {
         } else {
             // Diese Information unterstützt keine Prozente
             context.drawText(textRenderer, "Keine zusätzlichen Einstellungen verfügbar", 
-                boxX + 10, boxY + 85, 0xFF808080, false);
+                boxX + 10, getPercentCheckboxY(boxY), 0xFF808080, false);
         }
         
         // Variablen für Icon Button (außerhalb if-Block für Hover-Feedback)
@@ -708,6 +768,23 @@ public class NpcAlertsDetailScreen extends Screen {
             context.fill(hoverStartX, screenMessageCheckboxY - 1, hoverEndX, screenMessageCheckboxY + screenMessageCheckboxSize + 1, 0x40FFFFFF);
         }
         
+        int screenMessageWhenDisabledTextWidth = textRenderer.getWidth(SCREEN_MESSAGE_WHEN_DISABLED_LABEL);
+        int screenMessageWhenDisabledTextHeight = textRenderer.fontHeight;
+        boolean isHoveringScreenMessageWhenDisabledCheckbox = mouseX >= screenMessageCheckboxX
+            && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize
+            && mouseY >= screenMessageWhenDisabledCheckboxY
+            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize;
+        boolean isHoveringScreenMessageWhenDisabledText = mouseX >= screenMessageWhenDisabledTextX
+            && mouseX <= screenMessageWhenDisabledTextX + screenMessageWhenDisabledTextWidth
+            && mouseY >= screenMessageWhenDisabledCheckboxY
+            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageWhenDisabledTextHeight;
+        if (isHoveringScreenMessageWhenDisabledCheckbox || isHoveringScreenMessageWhenDisabledText) {
+            int hoverStartX = screenMessageCheckboxX - 2;
+            int hoverEndX = screenMessageWhenDisabledTextX + screenMessageWhenDisabledTextWidth + 2;
+            context.fill(hoverStartX, screenMessageWhenDisabledCheckboxY - 1, hoverEndX,
+                screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize + 1, 0x40FFFFFF);
+        }
+        
         if (supportsPercent) {
             // Prozente Checkbox Hover
             int percentTextX = checkboxX + checkboxSize + 5;
@@ -724,7 +801,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             if (isMachtkristalleKey()) {
-                int levelCheckboxY = boxY + 85 + 25;
+                int levelCheckboxY = getMachtkristalleLevelCheckboxY(boxY);
                 int levelTextX = checkboxX + checkboxSize + 5;
                 int levelTextWidth = textRenderer.getWidth("Level anzeigen");
                 int levelTextHeight = textRenderer.fontHeight;
@@ -1018,7 +1095,7 @@ public class NpcAlertsDetailScreen extends Screen {
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
         boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
-            int baseBoxHeight = hasIconOption ? 275 : 235;
+            int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
             baseBoxHeight += 85; // 3 Slot-Checkboxen + Level-Checkbox
@@ -1092,7 +1169,7 @@ public class NpcAlertsDetailScreen extends Screen {
             return true;
         }
         
-        int screenMessageCheckboxY = boxY + 60;
+        int screenMessageCheckboxY = getScreenMessageCheckboxY(boxY);
         int screenMessageCheckboxX = boxX + 10;
         int screenMessageCheckboxSize = 10;
         int screenMessageTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
@@ -1111,9 +1188,30 @@ public class NpcAlertsDetailScreen extends Screen {
             return true;
         }
         
+        int screenMessageWhenDisabledCheckboxY = getScreenMessageWhenDisabledCheckboxY(boxY);
+        int screenMessageWhenDisabledTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
+        int screenMessageWhenDisabledTextWidth = textRenderer.getWidth(SCREEN_MESSAGE_WHEN_DISABLED_LABEL);
+        int screenMessageWhenDisabledTextHeight = textRenderer.fontHeight;
+        
+        boolean clickedOnScreenMessageWhenDisabledCheckbox = mouseX >= screenMessageCheckboxX
+            && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize
+            && mouseY >= screenMessageWhenDisabledCheckboxY
+            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize;
+        boolean clickedOnScreenMessageWhenDisabledText = mouseX >= screenMessageWhenDisabledTextX
+            && mouseX <= screenMessageWhenDisabledTextX + screenMessageWhenDisabledTextWidth
+            && mouseY >= screenMessageWhenDisabledCheckboxY
+            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageWhenDisabledTextHeight;
+        
+        if (clickedOnScreenMessageWhenDisabledCheckbox || clickedOnScreenMessageWhenDisabledText) {
+            boolean newValue = !getShowScreenMessageWhenOverlayDisabled();
+            setShowScreenMessageWhenOverlayDisabled(newValue);
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
         if (supportsPercent) {
             // Prozente Checkbox
-            int y = boxY + 85;
+            int y = getPercentCheckboxY(boxY);
             int checkboxSize = 10;
             int checkboxX = boxX + 10;
             int checkboxY = y;
@@ -1137,7 +1235,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             if (isMachtkristalleKey()) {
-                int levelCheckboxY = boxY + 110;
+                int levelCheckboxY = getMachtkristalleLevelCheckboxY(boxY);
                 int levelTextX = checkboxX + checkboxSize + 5;
                 int levelTextWidth = textRenderer.getWidth("Level anzeigen");
                 int levelTextHeight = textRenderer.fontHeight;
@@ -1167,7 +1265,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             isEditingWarnPercent = false;
         } else if ("komboKiste".equals(configKey)) {
-            int inputY = boxY + 85;
+            int inputY = getPercentCheckboxY(boxY);
             int fieldX = boxX + 135;
             int inputWidth = 100;
             int inputHeight = 16;
@@ -1936,6 +2034,69 @@ public class NpcAlertsDetailScreen extends Screen {
             case "recyclerSlot2":
             case "recyclerSlot3":
                 CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessage = value;
+                break;
+        }
+    }
+    
+    private boolean getShowScreenMessageWhenOverlayDisabled() {
+        switch (configKey) {
+            case "forschung":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessageWhenOverlayDisabled;
+            case "amboss":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessageWhenOverlayDisabled;
+            case "schmelzofen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessageWhenOverlayDisabled;
+            case "jaeger":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessageWhenOverlayDisabled;
+            case "komboKiste":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessageWhenOverlayDisabled;
+            case "seelen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessageWhenOverlayDisabled;
+            case "essenzen":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessageWhenOverlayDisabled;
+            case "machtkristalle":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessageWhenOverlayDisabled;
+            case "recycler":
+            case "recyclerSlot1":
+            case "recyclerSlot2":
+            case "recyclerSlot3":
+                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessageWhenOverlayDisabled;
+            default:
+                return false;
+        }
+    }
+    
+    private void setShowScreenMessageWhenOverlayDisabled(boolean value) {
+        switch (configKey) {
+            case "forschung":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "amboss":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "schmelzofen":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "jaeger":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "komboKiste":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "seelen":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "essenzen":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "machtkristalle":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessageWhenOverlayDisabled = value;
+                break;
+            case "recycler":
+            case "recyclerSlot1":
+            case "recyclerSlot2":
+            case "recyclerSlot3":
+                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessageWhenOverlayDisabled = value;
                 break;
         }
     }

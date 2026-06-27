@@ -59,6 +59,10 @@
     "group": "cactusclicker_essence",
     "name": "ui_selection"
   },
+  "waves_ui_background": {
+    "group": "cactusclicker_waves",
+    "name": "waves_ui_background"
+  },
   "ui_categories_factory": {
     "group": "cc_main_menu",
     "name": "ui_categories_factory"

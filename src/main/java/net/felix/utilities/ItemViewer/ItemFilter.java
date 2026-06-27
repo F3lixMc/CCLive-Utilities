@@ -305,9 +305,7 @@ public class ItemFilter {
             if (costItem == null || costItem.itemName == null) {
                 return false;
             }
-            String itemNameLower = costItem.itemName.toLowerCase();
-            String filterNameLower = filter.itemName.toLowerCase();
-            if (!itemNameLower.equals(filterNameLower) && !itemNameLower.contains(filterNameLower)) {
+            if (!ItemViewerUtility.matchesCostItemName(costItem.itemName, filter.itemName)) {
                 return false;
             }
         }

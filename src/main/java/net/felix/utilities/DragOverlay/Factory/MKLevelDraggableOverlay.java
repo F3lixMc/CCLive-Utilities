@@ -2,6 +2,7 @@ package net.felix.utilities.DragOverlay.Factory;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
@@ -110,8 +111,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
                     String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
                     
                     // Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
-                    if (title.contains("Machtkristalle Verbessern") || 
-                        net.felix.utilities.Overall.ZeichenUtility.containsEssenceHarvesterUi(titleWithUnicode)) {
+                    if (ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode)) {
                         screenToCheck = previousScreen;
                     } else {
                         // Not MKLevel inventory, use cached height

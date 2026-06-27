@@ -305,27 +305,55 @@ public class CoinTrackerUtility {
         if (hudDisplay != null && !hudDisplay.isEmpty()) {
             String normalized = BossBarHudValueDecoder.normalizeHudDisplay(hudDisplay);
             if (!normalized.isEmpty()) {
-                return normalized;
+                BigDecimal parsed = HudNumberSuffixUtility.parseSuffixedValue(normalized);
+                if (parsed != null) {
+                    return formatCoinTrackerValue(parsed);
+                }
             }
         }
-        if (fallbackValue == null || fallbackValue.signum() < 0) {
-            return "-";
-        }
-        return formatAbbreviatedDisplay(fallbackValue);
+        return formatCoinTrackerValue(fallbackValue);
     }
 
-    private static String formatAbbreviatedDisplay(BigDecimal number) {
+    /**
+     * Coin-Tracker-Anzeige: Dezimal-Komma (1,25k), kein Tausendertrennzeichen im Koeffizienten.
+     * Werte unter 1000 ohne Suffix (250 statt 250,000 / 250k).
+     */
+    private static String formatCoinTrackerValue(BigDecimal number) {
         if (number == null) {
             return "-";
         }
-        return HudNumberSuffixUtility.formatAbbreviated(number);
+        if (number.signum() < 0) {
+            return "-";
+        }
+
+        BigDecimal abs = number.stripTrailingZeros();
+        if (abs.compareTo(BigDecimal.valueOf(1000)) < 0) {
+            return abs.setScale(0, RoundingMode.HALF_UP).toPlainString();
+        }
+
+        String suffix = HudNumberSuffixUtility.suffixForValue(abs);
+        if (suffix.isEmpty()) {
+            return abs.setScale(0, RoundingMode.HALF_UP).toPlainString();
+        }
+
+        BigDecimal coefficient = HudNumberSuffixUtility.valuePerSuffixUnit(abs, suffix);
+        return formatCoinTrackerCoefficient(coefficient) + suffix.toLowerCase(Locale.ROOT);
+    }
+
+    private static String formatCoinTrackerCoefficient(BigDecimal coefficient) {
+        BigDecimal rounded = coefficient.setScale(3, RoundingMode.HALF_UP).stripTrailingZeros();
+        return rounded.toPlainString().replace('.', ',');
+    }
+
+    private static String formatAbbreviatedDisplay(BigDecimal number) {
+        return formatCoinTrackerValue(number);
     }
 
     private static String formatAbbreviatedDisplay(long number) {
         if (number < 0) {
             return "-";
         }
-        return HudNumberSuffixUtility.formatAbbreviated(BigDecimal.valueOf(number));
+        return formatCoinTrackerValue(BigDecimal.valueOf(number));
     }
 
     private static final int OVERLAY_LINE_COUNT = 5;

@@ -50,6 +50,7 @@ public class ItemViewerUtility {
     private static List<ItemData> filteredItems = new ArrayList<>();
     private static final Map<String, ItemData> itemByName = new HashMap<>();
     private static java.util.Set<String> knownSearchTags = null;
+    private static java.util.Set<String> knownCostItemNames = null;
     
     private static final int FILTER_DEBOUNCE_TICKS = 2;
     private static int filterDebounceTicks = 0;
@@ -203,6 +204,7 @@ public class ItemViewerUtility {
             allItems = new ArrayList<>();
             filteredItems = new ArrayList<>();
             knownSearchTags = null;
+            knownCostItemNames = null;
         }
     }
     
@@ -225,6 +227,7 @@ public class ItemViewerUtility {
                 if (data != null) {
                     allItems = new ArrayList<>();
                     knownSearchTags = null;
+            knownCostItemNames = null;
                     
                     // Unterstütze verschiedene Strukturen:
                     // 1. Alte Struktur: {"items": [...]}
@@ -431,6 +434,7 @@ public class ItemViewerUtility {
                     if (!allItems.isEmpty()) {
                         rebuildItemNameIndex();
                         rebuildKnownSearchTags();
+                        rebuildKnownCostItemNames();
                         ItemViewerGrid.clearItemStackCache();
                     }
                 }
@@ -852,6 +856,55 @@ public class ItemViewerUtility {
         }
         knownSearchTags = java.util.Collections.unmodifiableSet(tags);
     }
+
+    /**
+     * Alle bekannten Kosten-Item-Namen (ressource:, material:, amboss:, etc.).
+     * Vollständiger Name → exakter Match; Prefix → Teilstring (Live-Suche).
+     */
+    public static java.util.Set<String> getKnownCostItemNames() {
+        if (knownCostItemNames == null) {
+            rebuildKnownCostItemNames();
+        }
+        return knownCostItemNames;
+    }
+
+    private static void rebuildKnownCostItemNames() {
+        java.util.Set<String> names = new java.util.HashSet<>();
+        if (allItems != null) {
+            for (ItemData item : allItems) {
+                collectCostItemNamesFromItem(item, names);
+            }
+        }
+        knownCostItemNames = java.util.Collections.unmodifiableSet(names);
+    }
+
+    private static void addCostItemName(java.util.Set<String> names, CostItem costItem) {
+        if (costItem != null && costItem.itemName != null && !costItem.itemName.isEmpty()) {
+            names.add(costItem.itemName.toLowerCase());
+        }
+    }
+
+    private static void collectCostItemNamesFromItem(ItemData item, java.util.Set<String> names) {
+        if (item.price == null) {
+            return;
+        }
+        PriceData price = item.price;
+        addCostItemName(names, price.coin);
+        addCostItemName(names, price.cactus);
+        addCostItemName(names, price.soul);
+        addCostItemName(names, price.material1);
+        addCostItemName(names, price.material2);
+        addCostItemName(names, price.material3);
+        addCostItemName(names, price.material4);
+        addCostItemName(names, price.material5);
+        addCostItemName(names, price.Amboss);
+        addCostItemName(names, price.amboss);
+        addCostItemName(names, price.Ressource);
+        addCostItemName(names, price.ressource);
+        addCostItemName(names, price.Level);
+        addCostItemName(names, price.paper_shreds);
+        addCostItemName(names, price.time);
+    }
     
     private static void collectSearchTagsFromItem(ItemData item, java.util.Set<String> tags) {
         if (item.tags != null) {
@@ -888,6 +941,22 @@ public class ItemViewerUtility {
             return itemTagLower.equals(searchTagLower);
         }
         return itemTagLower.contains(searchTagLower);
+    }
+
+    /**
+     * Prüft ob ein Kosten-Item-Name zur Suche passt (z.B. ressource:Eichenholz).
+     * Vollständiger bekannter Name → exakt; Prefix → Teilstring.
+     */
+    public static boolean matchesCostItemName(String itemCostName, String searchName) {
+        if (itemCostName == null || searchName == null || searchName.isEmpty()) {
+            return false;
+        }
+        String itemNameLower = itemCostName.toLowerCase();
+        String searchNameLower = searchName.toLowerCase();
+        if (getKnownCostItemNames().contains(searchNameLower)) {
+            return itemNameLower.equals(searchNameLower);
+        }
+        return itemNameLower.contains(searchNameLower);
     }
     
     /**
@@ -1437,6 +1506,9 @@ public class ItemViewerUtility {
         if (!searchFieldFocused) {
             return false;
         }
+
+        searchCursorVisible = true;
+        searchCursorBlinkTime = System.currentTimeMillis();
         
         // ESC-Taste
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
@@ -2126,6 +2198,8 @@ public class ItemViewerUtility {
     
     // Suchfeld-Fokus
     private static boolean searchFieldFocused = false;
+    private static long searchCursorBlinkTime = 0;
+    private static boolean searchCursorVisible = true;
 
     public static boolean isSearchFieldFocused() {
         return searchFieldFocused;
@@ -2133,6 +2207,7 @@ public class ItemViewerUtility {
 
     public static void blurSearchFieldFocus() {
         searchFieldFocused = false;
+        searchCursorVisible = false;
         clearSelection();
     }
 
@@ -2720,7 +2795,7 @@ public class ItemViewerUtility {
             "• Operatoren: >, <, =, >=, <=",
             "• +Modifier - Suche nach Modifiern (z.B. +Andere, +Andere:2)",
             "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0, ofen:38)",
-            "• material:Anzahl / material:Name - Ebenen-Material (z.B. material:51, material:Eichenholz)",
+            "• material:Anzahl / material:Name - Ebenen-Material (z.B. material:51, ressource:Eichenholz). Gültige Kategorien: material, ressource, ofen, amboss",
             "• @Aspekt Name - Suche nach Aspekten (z.B. @Aspekt der Flamme)",
             "",
             "Sortierung:",
@@ -3220,6 +3295,16 @@ public class ItemViewerUtility {
      */
     private static void renderSearchField(DrawContext context, int x, int y, int width) {
         MinecraftClient client = MinecraftClient.getInstance();
+
+        if (searchFieldFocused) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - searchCursorBlinkTime > 500) {
+                searchCursorVisible = !searchCursorVisible;
+                searchCursorBlinkTime = currentTime;
+            }
+        } else {
+            searchCursorVisible = false;
+        }
         
         // Hintergrund (heller wenn fokussiert)
         int bgColor = searchFieldFocused ? 0xFF1A1A1A : 0xFF000000;
@@ -3259,12 +3344,11 @@ public class ItemViewerUtility {
         }
         
         // Cursor anzeigen wenn fokussiert (nur wenn keine Selektion)
-        if (searchFieldFocused && !hasSelection()) {
+        if (searchFieldFocused && !hasSelection() && searchCursorVisible) {
             int cursorX = x + 3;
             if (cursorPosition > 0 && cursorPosition <= currentSearch.length()) {
                 cursorX += client.textRenderer.getWidth(currentSearch.substring(0, cursorPosition));
             }
-            // Blinkender Cursor (einfache Version, blinkt nicht)
             context.fill(cursorX, y + 4, cursorX + 1, y + SEARCH_HEIGHT - 4, 0xFFFFFFFF);
         }
         
@@ -4362,6 +4446,8 @@ public class ItemViewerUtility {
             if (button == 0) {
                 // Linksklick: Fokus setzen und Cursor-Position berechnen
                 searchFieldFocused = true;
+                searchCursorVisible = true;
+                searchCursorBlinkTime = System.currentTimeMillis();
                 // Berechne Cursor-Position basierend auf Mausklick-Position
                 int clickX = (int) (mouseX - searchX - 3); // 3px Padding links
                 cursorPosition = calculateCursorPosition(clickX, currentSearch, client.textRenderer);
