@@ -59,7 +59,7 @@ public class WaveUtility {
                 return;
             }
 
-            String playerName = client.player.getGameProfile().getName().toLowerCase();
+            String playerName = client.player.getGameProfile().name().toLowerCase();
             String prefixNoSuffix = "minecraft:" + playerName;
             String prefixWithSuffix = prefixNoSuffix + "_";
 

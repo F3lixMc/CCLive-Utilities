@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.util.Identifier;
 
 public class SchmiedTrackerUtility {
 	
@@ -144,7 +145,7 @@ public class SchmiedTrackerUtility {
 			"key.cclive-utilities.toggle-schmied-frames",
 			InputUtil.Type.KEYSYM,
 			GLFW.GLFW_KEY_F7, // Standard: F7
-			"category.cclive-utilities.schmied"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "schmied"))
 		));
 	}
 	

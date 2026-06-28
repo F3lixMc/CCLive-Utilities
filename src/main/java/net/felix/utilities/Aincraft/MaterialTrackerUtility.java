@@ -87,7 +87,7 @@ public class MaterialTrackerUtility {
 			"key.cclive-utilities.material-toggle",
 			InputUtil.Type.KEYSYM,
 			InputUtil.UNKNOWN_KEY.getCode(), // Unbound key
-			"category.cclive-utilities.material"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "material"))
 		));
 	}
 	

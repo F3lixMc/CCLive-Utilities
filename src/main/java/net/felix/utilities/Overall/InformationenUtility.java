@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.minecraft.util.Identifier;
 
 public class InformationenUtility {
 	
@@ -5655,7 +5656,7 @@ public class InformationenUtility {
 			if (displayName != null) {
 				return displayName.getString();
 			} else if (entry.getProfile() != null) {
-				return entry.getProfile().getName();
+				return entry.getProfile().name();
 			}
 			return null;
 		};
@@ -6154,7 +6155,7 @@ public class InformationenUtility {
 			int buttonBgColor = active ? 0xFF404040 : 0xFF202020;
 			int buttonBorderColor = active ? 0xFFFFFF00 : 0xFF808080;
 			context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + buttonHeight, buttonBgColor);
-			context.drawBorder(buttonX, buttonY, buttonWidth, buttonHeight, buttonBorderColor);
+			context.drawStrokedRectangle(buttonX, buttonY, buttonWidth, buttonHeight, buttonBorderColor);
 			
 			String buttonText = tabLabels[i];
 			int textWidth = client.textRenderer.getWidth(buttonText);
@@ -6171,13 +6172,13 @@ public class InformationenUtility {
 		context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
 		
 		// Draw border (scaled)
-		context.drawBorder(0, 0, unscaledWidth, unscaledHeight, 0xFFFFFFFF);
+		context.drawStrokedRectangle(0, 0, unscaledWidth, unscaledHeight, 0xFFFFFFFF);
 		
 		// Draw search bar background (relative to matrix)
 		int searchBarX = padding;
 		int searchBarWidth = unscaledWidth - padding * 2;
 		context.fill(searchBarX, searchBarY, searchBarX + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
-		context.drawBorder(searchBarX, searchBarY, searchBarWidth, searchBarHeight, mkLevelSearchFocused ? 0xFFFFFF00 : 0xFF808080);
+		context.drawStrokedRectangle(searchBarX, searchBarY, searchBarWidth, searchBarHeight, mkLevelSearchFocused ? 0xFFFFFF00 : 0xFF808080);
 		
 		// Draw search text (vertically centered, relative to matrix)
 		String displayText = mkLevelSearchText.isEmpty() ? "Suchen..." : mkLevelSearchText;
@@ -6223,7 +6224,7 @@ public class InformationenUtility {
 			if (totalContentHeight > availableHeight) {
 				// Draw scrollbar background
 				context.fill(scrollbarX, scrollbarTop, scrollbarX + scrollbarWidth, scrollbarBottom, 0xFF404040);
-				context.drawBorder(scrollbarX, scrollbarTop, scrollbarWidth, scrollbarHeight, 0xFF808080);
+				context.drawStrokedRectangle(scrollbarX, scrollbarTop, scrollbarWidth, scrollbarHeight, 0xFF808080);
 				
 				// Calculate handle size and position
 				float scrollRatio = (float) availableHeight / totalContentHeight;
@@ -6247,7 +6248,7 @@ public class InformationenUtility {
 				// Draw scrollbar handle
 				int handleColor = mkLevelScrollbarDragging ? 0xFF808080 : 0xFF606060;
 				context.fill(scrollbarX + 1, handleY, scrollbarX + scrollbarWidth - 1, handleY + handleHeight, handleColor);
-				context.drawBorder(scrollbarX + 1, handleY, scrollbarWidth - 2, handleHeight, 0xFFC0C0C0);
+				context.drawStrokedRectangle(scrollbarX + 1, handleY, scrollbarWidth - 2, handleHeight, 0xFFC0C0C0);
 			}
 		}
 		
@@ -8301,7 +8302,7 @@ public class InformationenUtility {
 			"key.cclive-utilities.collection-reset",
 			InputUtil.Type.KEYSYM,
 			InputUtil.UNKNOWN_KEY.getCode(), // Unbound by default
-			"category.cclive-utilities.collection"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "collection"))
 		));
 	}
 	

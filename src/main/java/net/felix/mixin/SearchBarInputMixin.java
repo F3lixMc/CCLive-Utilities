@@ -14,7 +14,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class SearchBarInputMixin {
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseClicked(net.minecraft.client.gui.Click click, boolean secondary, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+        int button = click.buttonInfo().button();
         // Blockiere Mausklicks wenn der Hilfe-Screen offen ist
         if (SearchBarUtility.isHelpScreenOpen()) {
             cir.setReturnValue(true);
@@ -69,7 +72,10 @@ public abstract class SearchBarInputMixin {
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+    private void onKeyPressed(net.minecraft.client.input.KeyInput keyInput, CallbackInfoReturnable<Boolean> cir) {
+        int keyCode = keyInput.key();
+        int scanCode = keyInput.scancode();
+        int modifiers = keyInput.modifiers();
         // Handle F6 key for overlay editor (works in inventories)
         if (OverlayEditorUtility.handleKeyPress(keyCode)) {
             cir.setReturnValue(true);

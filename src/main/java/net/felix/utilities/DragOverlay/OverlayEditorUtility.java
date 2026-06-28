@@ -6,6 +6,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
+import net.minecraft.util.Identifier;
 
 /**
  * Utility für den Overlay Editor
@@ -43,7 +44,7 @@ public class OverlayEditorUtility {
             "key.cclive-utilities.overlay-editor",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_F6, // Default to F6
-            "categories.cclive-utilities.overlay"
+            new KeyBinding.Category(Identifier.of("cclive-utilities", "overlay"))
         ));
     }
     
@@ -119,7 +120,7 @@ public class OverlayEditorUtility {
             // This ensures the same key works in inventories as outside
             if (overlayEditorKeyBinding != null) {
                 // Use matchesKey to check if the pressed key matches the configured key binding
-                if (overlayEditorKeyBinding.matchesKey(keyCode, -1)) {
+                if (overlayEditorKeyBinding.matchesKey(new net.minecraft.client.input.KeyInput(keyCode, -1, 0))) {
                     toggleOverlayEditor();
                     return true;
                 }

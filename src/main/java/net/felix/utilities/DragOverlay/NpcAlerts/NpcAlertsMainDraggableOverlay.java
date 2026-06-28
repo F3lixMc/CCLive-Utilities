@@ -224,7 +224,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f;
         
         // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, width, height, 0xFFFF0000);
         
         // Render background (scaled)
         if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {

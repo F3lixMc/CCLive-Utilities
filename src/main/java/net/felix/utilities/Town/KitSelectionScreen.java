@@ -669,7 +669,7 @@ public class KitSelectionScreen extends Screen {
 		context.fill(x, y + TAB_HEIGHT - 1, x + width, y + TAB_HEIGHT, 0xFF1D2F3B);
 		drawCenteredLabel(context, x, y, width, TAB_HEIGHT, label, active);
 		if (hovered) {
-			context.drawBorder(x, y, width, TAB_HEIGHT, 0xFFFFFFFF);
+			context.drawStrokedRectangle(x, y, width, TAB_HEIGHT, 0xFFFFFFFF);
 		}
 	}
 	
@@ -730,7 +730,10 @@ public class KitSelectionScreen extends Screen {
 	}
 	
 	@Override
-	public boolean mouseClicked(double mouseX, double mouseY, int button) {
+	public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean isDoubleClick) {
+		double mouseX = event.x();
+		double mouseY = event.y();
+		int button = event.button();
 		if (button == 0) {
 			int clickedTab = getTabAt(mouseX, mouseY);
 			if (clickedTab == 0) {
@@ -777,7 +780,7 @@ public class KitSelectionScreen extends Screen {
 					}
 				}
 			}
-			return super.mouseClicked(mouseX, mouseY, button);
+			return super.mouseClicked(event, isDoubleClick);
 		}
 		
 		if (activeTab == TAB_EIGENE) {
@@ -816,7 +819,7 @@ public class KitSelectionScreen extends Screen {
 					return true;
 				}
 			}
-			return super.mouseClicked(mouseX, mouseY, button);
+			return super.mouseClicked(event, isDoubleClick);
 		}
 		
 		if (button != 0) {
@@ -846,7 +849,7 @@ public class KitSelectionScreen extends Screen {
 			}
 		}
 		
-		return super.mouseClicked(mouseX, mouseY, button);
+		return super.mouseClicked(event, isDoubleClick);
 	}
 	
 	/**
@@ -888,12 +891,13 @@ public class KitSelectionScreen extends Screen {
 	}
 	
 	@Override
-	public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+	public boolean keyPressed(net.minecraft.client.input.KeyInput event) {
+		int keyCode = event.key();
 		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
 			onCancel();
 			return true;
 		}
-		return super.keyPressed(keyCode, scanCode, modifiers);
+		return super.keyPressed(event);
 	}
 	
 	@Override

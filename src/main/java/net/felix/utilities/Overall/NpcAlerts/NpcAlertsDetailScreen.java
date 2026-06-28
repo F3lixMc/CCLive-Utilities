@@ -202,7 +202,7 @@ public class NpcAlertsDetailScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Titel
         context.drawText(textRenderer, infoName + " - Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
@@ -241,7 +241,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Checkbox-Hintergrund
         context.fill(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxX + backgroundCheckboxSize, backgroundCheckboxYPos + backgroundCheckboxSize, 0xFF808080);
-        context.drawBorder(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxSize, backgroundCheckboxSize, 0xFFFFFFFF);
+        context.drawStrokedRectangle(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxSize, backgroundCheckboxSize, 0xFFFFFFFF);
         
         // Checkmark wenn aktiviert
         if (showBackground) {
@@ -280,7 +280,7 @@ public class NpcAlertsDetailScreen extends Screen {
         boolean showScreenMessage = getShowScreenMessage();
         
         context.fill(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageCheckboxY + screenMessageCheckboxSize, 0xFF808080);
-        context.drawBorder(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
+        context.drawStrokedRectangle(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
         
         if (showScreenMessage) {
             int checkX = screenMessageCheckboxX + 2;
@@ -312,7 +312,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         context.fill(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
             screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize, 0xFF808080);
-        context.drawBorder(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
+        context.drawStrokedRectangle(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
             screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
         
         if (showScreenMessageWhenDisabled) {
@@ -354,7 +354,7 @@ public class NpcAlertsDetailScreen extends Screen {
             
             // Checkbox-Hintergrund
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
-            context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+            context.drawStrokedRectangle(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
             
             // Checkmark wenn aktiviert
             if (showPercent) {
@@ -390,7 +390,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 boolean showLevel = getShowMachtkristalleLevel();
                 
                 context.fill(checkboxX, levelCheckboxY, checkboxX + checkboxSize, levelCheckboxY + checkboxSize, 0xFF808080);
-                context.drawBorder(checkboxX, levelCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+                context.drawStrokedRectangle(checkboxX, levelCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
                 
                 if (showLevel) {
                     int checkX = checkboxX + 2;
@@ -425,7 +425,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 int fieldX = inputX + 80;
                 context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
                     isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
-                context.drawBorder(fieldX, inputY, inputWidth, inputHeight,
+                context.drawStrokedRectangle(fieldX, inputY, inputWidth, inputHeight,
                     isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
                 String displayText = warnPercentInput;
                 int textX = fieldX + 3;
@@ -448,7 +448,7 @@ public class NpcAlertsDetailScreen extends Screen {
             int fieldX = inputX + 80;
             context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight, 
                 isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
-            context.drawBorder(fieldX, inputY, inputWidth, inputHeight, 
+            context.drawStrokedRectangle(fieldX, inputY, inputWidth, inputHeight, 
                 isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
             String displayText = warnPercentInput;
             boolean showCursor = isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500;
@@ -476,7 +476,7 @@ public class NpcAlertsDetailScreen extends Screen {
             context.drawText(textRenderer, "Zielwert (rechts):", inputX, inputY + 3, 0xFFFFFFFF, false);
             context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
                 isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
-            context.drawBorder(fieldX, inputY, inputWidth, inputHeight,
+            context.drawStrokedRectangle(fieldX, inputY, inputWidth, inputHeight,
                 isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
             String zText = warnPercentInput.isEmpty() ? "1" : warnPercentInput;
             int zx = fieldX + 3;
@@ -508,7 +508,7 @@ public class NpcAlertsDetailScreen extends Screen {
             
             // Button Hintergrund
             context.fill(iconButtonX, iconButtonY, iconButtonX + iconButtonWidth, iconButtonY + iconButtonHeight, 0xFF404040);
-            context.drawBorder(iconButtonX, iconButtonY, iconButtonWidth, iconButtonHeight, iconButtonColor);
+            context.drawStrokedRectangle(iconButtonX, iconButtonY, iconButtonWidth, iconButtonHeight, iconButtonColor);
             
             // Button Text
             int iconTextX = iconButtonX + (iconButtonWidth - textRenderer.getWidth(iconButtonText)) / 2;
@@ -524,7 +524,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Button Hintergrund
         context.fill(colorButtonX, colorButtonY, colorButtonX + colorButtonWidth, colorButtonY + colorButtonHeight, 0xFF404040);
-        context.drawBorder(colorButtonX, colorButtonY, colorButtonWidth, colorButtonHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(colorButtonX, colorButtonY, colorButtonWidth, colorButtonHeight, 0xFFFFFFFF);
         
         // Button Text
         String colorButtonText = "Farben";
@@ -544,7 +544,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Button Hintergrund
         context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + buttonHeight, 0xFF404040);
-        context.drawBorder(buttonX, buttonY, buttonWidth, buttonHeight, buttonColor);
+        context.drawStrokedRectangle(buttonX, buttonY, buttonWidth, buttonHeight, buttonColor);
         
         // Button Text
         int textX = buttonX + (buttonWidth - textRenderer.getWidth(buttonText)) / 2;
@@ -568,7 +568,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 
                 // Checkbox-Hintergrund
                 context.fill(mkCheckboxX, mkSlotY, mkCheckboxX + mkCheckboxSize, mkSlotY + mkCheckboxSize, 0xFF808080);
-                context.drawBorder(mkCheckboxX, mkSlotY, mkCheckboxSize, mkCheckboxSize, 0xFFFFFFFF);
+                context.drawStrokedRectangle(mkCheckboxX, mkSlotY, mkCheckboxSize, mkCheckboxSize, 0xFFFFFFFF);
                 
                 // Checkmark wenn aktiviert
                 if (mkSlotEnabled) {
@@ -610,7 +610,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 
                     // Checkbox-Hintergrund
                     context.fill(mkCheckboxX, mkCheckboxY, mkCheckboxX + mkCheckboxSize, mkCheckboxY + mkCheckboxSize, 0xFF808080);
-                    context.drawBorder(mkCheckboxX, mkCheckboxY, mkCheckboxSize, mkCheckboxSize, 0xFFFFFFFF);
+                    context.drawStrokedRectangle(mkCheckboxX, mkCheckboxY, mkCheckboxSize, mkCheckboxSize, 0xFFFFFFFF);
                     
                     // Checkmark wenn aktiviert
                     if (mkSlotSeparate) {
@@ -663,7 +663,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 
                 // Checkbox-Hintergrund
                 context.fill(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxX + recyclerCheckboxSize, recyclerSlotY + recyclerCheckboxSize, 0xFF808080);
-                context.drawBorder(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
+                context.drawStrokedRectangle(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
                 
                 // Checkmark wenn aktiviert
                 if (recyclerSlotEnabled) {
@@ -705,7 +705,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 
                     // Checkbox-Hintergrund
                     context.fill(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxX + recyclerCheckboxSize, recyclerCheckboxY + recyclerCheckboxSize, 0xFF808080);
-                    context.drawBorder(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
+                    context.drawStrokedRectangle(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
                     
                     // Checkmark wenn aktiviert
                     if (recyclerSlotSeparate) {
@@ -1012,7 +1012,10 @@ public class NpcAlertsDetailScreen extends Screen {
     }
     
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean isDoubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0) {
             // Prüfe ob auf das Schließen-Kreuz geklickt wurde
             // Verwende exakt die gleiche Berechnung wie im Rendering
@@ -1074,7 +1077,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isDoubleClick);
     }
     
     private boolean handleSettingsClick(double mouseX, double mouseY, int button) {
@@ -1687,19 +1690,21 @@ public class NpcAlertsDetailScreen extends Screen {
     }
     
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(net.minecraft.client.input.CharInput event) {
         if (isEditingWarnPercent) {
+            char chr = (char) event.codepoint();
             if (chr >= '0' && chr <= '9' && warnPercentInput.length() < 12) {
                 warnPercentInput += chr;
                 saveWarnPercent();
             }
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
     
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyInput event) {
+        int keyCode = event.key();
         if (isEditingWarnPercent) {
             if (keyCode == 259) { // Backspace
                 if (!warnPercentInput.isEmpty()) {
@@ -1717,7 +1722,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
     
     private void saveWarnPercent() {

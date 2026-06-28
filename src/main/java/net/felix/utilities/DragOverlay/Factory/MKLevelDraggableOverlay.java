@@ -277,7 +277,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
                 int buttonBgColor = i == 0 ? 0xFF404040 : 0xFF202020;
                 int buttonBorderColor = i == 0 ? 0xFFFFFF00 : 0xFF808080;
                 context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + unscaledButtonHeight, buttonBgColor);
-                context.drawBorder(buttonX, buttonY, buttonWidth, unscaledButtonHeight, buttonBorderColor);
+                context.drawStrokedRectangle(buttonX, buttonY, buttonWidth, unscaledButtonHeight, buttonBorderColor);
                 
                 String buttonText = tabLabels[i];
                 int textWidth = client.textRenderer.getWidth(buttonText);
@@ -290,7 +290,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
             int searchBarY = padding - contentOffset;
             int searchBarWidth = unscaledWidth - padding * 2;
             context.fill(padding, searchBarY, padding + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
-            context.drawBorder(padding, searchBarY, searchBarWidth, searchBarHeight, 0xFF808080);
+            context.drawStrokedRectangle(padding, searchBarY, searchBarWidth, searchBarHeight, 0xFF808080);
             
             // Draw search text placeholder
             String searchPlaceholder = "Suchen...";
@@ -318,7 +318,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         
         // Render border for edit mode (scaled) - around entire area including buttons
         // Rendered last so it appears on top of the buttons
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, width, height, 0xFFFF0000);
     }
     
     @Override

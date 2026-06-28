@@ -375,9 +375,9 @@ public class AspectOverlay {
         }
         
         // Check if shift is pressed
-        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
+        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow(), 
                                                        InputUtil.GLFW_KEY_LEFT_SHIFT) || 
-                                InputUtil.isKeyPressed(client.getWindow().getHandle(), 
+                                InputUtil.isKeyPressed(client.getWindow(), 
                                                        InputUtil.GLFW_KEY_RIGHT_SHIFT);
         
         if (!isShiftPressed) {
@@ -455,9 +455,9 @@ public class AspectOverlay {
         }
         
         // Check if Shift is pressed
-        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
+        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow(), 
                                                        InputUtil.GLFW_KEY_LEFT_SHIFT) || 
-                                InputUtil.isKeyPressed(client.getWindow().getHandle(), 
+                                InputUtil.isKeyPressed(client.getWindow(), 
                                                        InputUtil.GLFW_KEY_RIGHT_SHIFT);
         
         if (!isShiftPressed) {
@@ -616,9 +616,8 @@ public class AspectOverlay {
         }
         
         // Check if shift is pressed (redundant check, but kept for safety)
-        long windowHandle = client.getWindow().getHandle();
-        boolean leftShift = InputUtil.isKeyPressed(windowHandle, InputUtil.GLFW_KEY_LEFT_SHIFT);
-        boolean rightShift = InputUtil.isKeyPressed(windowHandle, InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        boolean leftShift = InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_LEFT_SHIFT);
+        boolean rightShift = InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_RIGHT_SHIFT);
         boolean isShiftPressed = leftShift || rightShift;
         
         if (!isShiftPressed) {

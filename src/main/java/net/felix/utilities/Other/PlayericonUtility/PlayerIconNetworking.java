@@ -168,8 +168,8 @@ public class PlayerIconNetworking {
                 var playerList = client.getNetworkHandler().getPlayerList();
                 for (var entry : playerList) {
                     if (entry != null && entry.getProfile() != null) {
-                        UUID playerUuid = entry.getProfile().getId();
-                        String playerName = entry.getProfile().getName();
+                        UUID playerUuid = entry.getProfile().id();
+                        String playerName = entry.getProfile().name();
                         
                         // Check if this player is in the API list
                         if (playersWithMod.contains(playerName.toLowerCase())) {

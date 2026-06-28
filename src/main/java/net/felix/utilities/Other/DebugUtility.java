@@ -129,31 +129,31 @@ public class DebugUtility {
         
         // Check hardcoded keys: F8, F9, F10, F12
         if (client.getWindow() != null) {
-            long windowHandle = client.getWindow().getHandle();
+            var window = client.getWindow();
             
             // F8 - ItemHoverLogger
-            boolean f8CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F8);
+            boolean f8CurrentlyPressed = InputUtil.isKeyPressed(window, GLFW.GLFW_KEY_F8);
             if (f8CurrentlyPressed && !f8Pressed) {
                 logHoveredItemInfo(client);
             }
             f8Pressed = f8CurrentlyPressed;
             
             // F9 - InventoryNameLogger
-            boolean f9CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F9);
+            boolean f9CurrentlyPressed = InputUtil.isKeyPressed(window, GLFW.GLFW_KEY_F9);
             if (f9CurrentlyPressed && !f9Pressed) {
                 logInventoryName(client);
             }
             f9Pressed = f9CurrentlyPressed;
             
             // F10 - ScoreboardLogger
-            boolean f10CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F10);
+            boolean f10CurrentlyPressed = InputUtil.isKeyPressed(window, GLFW.GLFW_KEY_F10);
             if (f10CurrentlyPressed && !f10Pressed) {
                 logScoreboard(client);
             }
             f10Pressed = f10CurrentlyPressed;
             
             // F12 - BossBarLogger
-            boolean f12CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F12);
+            boolean f12CurrentlyPressed = InputUtil.isKeyPressed(window, GLFW.GLFW_KEY_F12);
             if (f12CurrentlyPressed && !f12Pressed) {
                 logBossBars(client);
             }

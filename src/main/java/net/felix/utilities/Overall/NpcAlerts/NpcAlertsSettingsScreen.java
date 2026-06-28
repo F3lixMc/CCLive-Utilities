@@ -111,7 +111,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Titel
         context.drawText(textRenderer, "NPC Alerts Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
@@ -141,7 +141,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         boolean overlaysVisible = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible;
         int globalCheckboxY = y;
         context.fill(checkboxX, globalCheckboxY, checkboxX + checkboxSize, globalCheckboxY + checkboxSize, 0xFF808080);
-        context.drawBorder(checkboxX, globalCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+        context.drawStrokedRectangle(checkboxX, globalCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
         if (overlaysVisible) {
             drawCheckboxCheckmark(context, checkboxX, globalCheckboxY, checkboxSize);
         }
@@ -165,7 +165,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         
         // Checkbox-Hintergrund
         context.fill(checkboxX, mainCheckboxY, checkboxX + checkboxSize, mainCheckboxY + checkboxSize, 0xFF808080);
-        context.drawBorder(checkboxX, mainCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+        context.drawStrokedRectangle(checkboxX, mainCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
         
         if (mainOverlayBackground) {
             drawCheckboxCheckmark(context, checkboxX, mainCheckboxY, checkboxSize);
@@ -202,7 +202,7 @@ public class NpcAlertsSettingsScreen extends Screen {
             // Checkbox-Hintergrund
             int checkboxY = y;
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
-            context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+            context.drawStrokedRectangle(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
             
             // Checkmark wenn aktiviert
             if (isEnabled) {
@@ -251,7 +251,7 @@ public class NpcAlertsSettingsScreen extends Screen {
             boolean isHoveringEntry = isHoveringCheckbox || isHoveringText;
             
             // Zeichne weißen Rahmen um das Zahnrad-Icon
-            context.drawBorder(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
+            context.drawStrokedRectangle(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
             
             drawGearIcon(context, gearX, gearY, gearSize);
             
@@ -273,7 +273,10 @@ public class NpcAlertsSettingsScreen extends Screen {
     }
     
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean isDoubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0) {
             // Prüfe zuerst ob auf das Schließen-Kreuz geklickt wurde
             int boxWidth = 300;
@@ -314,7 +317,7 @@ public class NpcAlertsSettingsScreen extends Screen {
                 
                 // Klick ist auf einen Button im Parent-Screen - leite an Parent weiter
                 if (parent != null && parent instanceof OverlayEditorScreen) {
-                    return parent.mouseClicked(mouseX, mouseY, button);
+                    return parent.mouseClicked(new net.minecraft.client.gui.Click(mouseX, mouseY, new net.minecraft.client.input.MouseInput(button, 1)), false);
                 }
             }
             
@@ -322,7 +325,7 @@ public class NpcAlertsSettingsScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isDoubleClick);
     }
     
     private boolean handleSettingsClick(double mouseX, double mouseY, int button) {
@@ -513,7 +516,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         } catch (Exception e) {
             // Fallback: Zeichne ein einfaches Zahnrad-Icon als gefüllte Formen
             // Äußerer Rahmen
-            context.drawBorder(x, y, size, size, 0xFFFFFFFF);
+            context.drawStrokedRectangle(x, y, size, size, 0xFFFFFFFF);
             
             // Diagonale Linien (als gefüllte Rechtecke)
             int lineWidth = 1;

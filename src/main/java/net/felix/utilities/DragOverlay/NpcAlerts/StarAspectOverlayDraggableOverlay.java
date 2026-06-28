@@ -58,7 +58,7 @@ public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
         }
         
         // Render border for edit mode
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, width, height, 0xFFFF0000);
         
         // Render overlay name
         context.drawText(

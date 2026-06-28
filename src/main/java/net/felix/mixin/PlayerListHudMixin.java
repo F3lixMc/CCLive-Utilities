@@ -50,7 +50,7 @@ public abstract class PlayerListHudMixin {
                 return;
             }
             
-            UUID playerUuid = entry.getProfile().getId();
+            UUID playerUuid = entry.getProfile().id();
             
             // Only show icon for players who have the mod installed
             boolean shouldShowIcon = PlayerIconUtility.hasMod(playerUuid);

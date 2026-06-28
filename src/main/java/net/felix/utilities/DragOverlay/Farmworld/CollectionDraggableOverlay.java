@@ -110,7 +110,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         int scaledHeight = (int) (unscaledHeight * scale);
         
         // Render border for edit mode (unscaled, so it's always visible)
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
         
         // Use Matrix transformations for scaling
         Matrix3x2fStack matrices = context.getMatrices();

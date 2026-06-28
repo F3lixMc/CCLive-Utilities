@@ -615,7 +615,10 @@ public class OverlayEditorScreen extends Screen {
     }
     
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean isDoubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         // Handle clipboard settings click
         if (handleClipboardSettingsClick(mouseX, mouseY, button)) {
             return true;
@@ -669,11 +672,14 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isDoubleClick);
     }
     
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(net.minecraft.client.gui.Click event, double offsetX, double offsetY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
                 // Check if dragging is still allowed (might have changed dimension or opened inventory)
@@ -767,11 +773,12 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(event, offsetX, offsetY);
     }
     
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.gui.Click event) {
+        int button = event.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
                 draggingOverlay.savePosition();
@@ -786,11 +793,14 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
     
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyInput event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             close();
             return true;
@@ -799,7 +809,7 @@ public class OverlayEditorScreen extends Screen {
         // Also close with the configured overlay editor key (toggle behavior)
         // Use the same key binding as outside inventories
         if (OverlayEditorUtility.getOverlayEditorKeyBinding() != null) {
-            if (OverlayEditorUtility.getOverlayEditorKeyBinding().matchesKey(keyCode, -1)) {
+            if (OverlayEditorUtility.getOverlayEditorKeyBinding().matchesKey(new net.minecraft.client.input.KeyInput(keyCode, -1, 0))) {
                 close();
                 return true;
             }
@@ -814,8 +824,7 @@ public class OverlayEditorScreen extends Screen {
             }
             
             // Check if left mouse button is still pressed
-            long windowHandle = MinecraftClient.getInstance().getWindow().getHandle();
-            boolean leftMousePressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+            boolean leftMousePressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(MinecraftClient.getInstance().getWindow().getHandle(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
             
             if (leftMousePressed) {
                 int currentX = draggingOverlay.getX();
@@ -847,7 +856,7 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
     
     private void resetAllOverlays() {
@@ -965,7 +974,7 @@ public class OverlayEditorScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Titel
         context.drawText(textRenderer, "Overlay Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
@@ -982,7 +991,7 @@ public class OverlayEditorScreen extends Screen {
             // Checkbox-Hintergrund
             int checkboxY = y;
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
-            context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+            context.drawStrokedRectangle(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
             
             // Checkmark wenn aktiviert
             if (isEnabled) {
@@ -1032,7 +1041,7 @@ public class OverlayEditorScreen extends Screen {
                 boolean isHoveringEntry = isHoveringCheckbox || isHoveringText;
                 
                 // Zeichne weißen Rahmen um das Zahnrad-Icon
-                context.drawBorder(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
+                context.drawStrokedRectangle(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
                 
                 drawGearIcon(context, gearX, gearY, gearSize);
                 
@@ -1285,7 +1294,7 @@ public class OverlayEditorScreen extends Screen {
         } catch (Exception e) {
             // Fallback: Zeichne ein einfaches Zahnrad-Icon als gefüllte Formen
             // Äußerer Rahmen
-            context.drawBorder(x, y, size, size, 0xFFFFFFFF);
+            context.drawStrokedRectangle(x, y, size, size, 0xFFFFFFFF);
             
             // Diagonale Linien (als gefüllte Rechtecke)
             int lineWidth = 1;
@@ -1321,7 +1330,7 @@ public class OverlayEditorScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Titel
         context.drawText(textRenderer, "Clipboard Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
@@ -1339,7 +1348,7 @@ public class OverlayEditorScreen extends Screen {
                                  mouseY >= button1Y && mouseY <= button1Y + buttonHeight;
         int button1Color = button1Hovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, button1Y, boxX + 10 + buttonWidth, button1Y + buttonHeight, button1Color);
-        context.drawBorder(boxX + 10, button1Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX + 10, button1Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button1Text = "Blueprint Shop Kosten: " + (showBPCosts ? "An" : "Aus");
         context.drawText(textRenderer, button1Text, boxX + 15, button1Y + 6, 0xFFFFFFFF, false);
         
@@ -1354,7 +1363,7 @@ public class OverlayEditorScreen extends Screen {
                                  mouseY >= button2Y && mouseY <= button2Y + buttonHeight;
         int button2Color = button2Hovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, button2Y, boxX + 10 + buttonWidth, button2Y + buttonHeight, button2Color);
-        context.drawBorder(boxX + 10, button2Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX + 10, button2Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button2Text = "Material Sortierung: " + (materialSortEnabled ? "An" : "Aus");
         context.drawText(textRenderer, button2Text, boxX + 15, button2Y + 6, 0xFFFFFFFF, false);
         
@@ -1369,7 +1378,7 @@ public class OverlayEditorScreen extends Screen {
             button3Color = 0xFF101010; // Dunkler wenn deaktiviert
         }
         context.fill(boxX + 10, button3Y, boxX + 10 + buttonWidth, button3Y + buttonHeight, button3Color);
-        context.drawBorder(boxX + 10, button3Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX + 10, button3Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button3Text = "Sortierung: " + (materialSortAscending ? "Aufsteigend (1-100)" : "Absteigend (100-1)");
         int button3TextColor = materialSortEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
         context.drawText(textRenderer, button3Text, boxX + 15, button3Y + 6, button3TextColor, false);
@@ -1385,7 +1394,7 @@ public class OverlayEditorScreen extends Screen {
                                  mouseY >= button4Y && mouseY <= button4Y + buttonHeight;
         int button4Color = button4Hovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, button4Y, boxX + 10 + buttonWidth, button4Y + buttonHeight, button4Color);
-        context.drawBorder(boxX + 10, button4Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX + 10, button4Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button4Text = "Fertige Kosten Sortierung: " + (costDisplayEnabled ? "An" : "Aus");
         context.drawText(textRenderer, button4Text, boxX + 15, button4Y + 6, 0xFFFFFFFF, false);
         
@@ -1400,7 +1409,7 @@ public class OverlayEditorScreen extends Screen {
             button5Color = 0xFF101010; // Dunkler wenn deaktiviert
         }
         context.fill(boxX + 10, button5Y, boxX + 10 + buttonWidth, button5Y + buttonHeight, button5Color);
-        context.drawBorder(boxX + 10, button5Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX + 10, button5Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button5Text = costDisplayMode == 1 ? "Ausblenden" : "Ans Ende setzen";
         int button5TextColor = costDisplayEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
         context.drawText(textRenderer, button5Text, boxX + 15, button5Y + 6, button5TextColor, false);

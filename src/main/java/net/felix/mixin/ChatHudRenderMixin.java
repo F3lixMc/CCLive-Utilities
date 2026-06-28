@@ -441,9 +441,9 @@ public abstract class ChatHudRenderMixin {
                     continue;
                 }
                 
-                String entryName = entry.getProfile().getName();
+                String entryName = entry.getProfile().name();
                 if (entryName != null && entryName.equalsIgnoreCase(playerName)) {
-                    return entry.getProfile().getId();
+                    return entry.getProfile().id();
                 }
             }
         } catch (Exception e) {

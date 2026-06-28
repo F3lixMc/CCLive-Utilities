@@ -493,7 +493,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f;
         
         // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, width, height, 0xFFFF0000);
         
         // Render background (scaled)
         context.fill(x, y, x + width, y + height, 0x80000000);
@@ -1126,7 +1126,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Text (in zwei Zeilen)
         String questionText1 = "Sicher das alle Baupläne";
@@ -1973,7 +1973,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         // Prüfe zuerst, ob Bestätigungs-Overlay offen ist - dann prüfe Ja/Nein Buttons
         if (showDeleteConfirmation) {
-            if (confirmationJaButton != null && confirmationJaButton.mouseClicked(mouseX, mouseY, 0)) {
+            if (confirmationJaButton != null && confirmationJaButton.mouseClicked(new net.minecraft.client.gui.Click(mouseX, mouseY, new net.minecraft.client.input.MouseInput(0, 1)), false)) {
                 // Alle Baupläne entfernen
                 ClipboardUtility.clearClipboard();
                 showDeleteConfirmation = false;
@@ -1985,7 +1985,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 return true;
             }
             
-            if (confirmationNeinButton != null && confirmationNeinButton.mouseClicked(mouseX, mouseY, 0)) {
+            if (confirmationNeinButton != null && confirmationNeinButton.mouseClicked(new net.minecraft.client.gui.Click(mouseX, mouseY, new net.minecraft.client.input.MouseInput(0, 1)), false)) {
                 // Bestätigung abbrechen
                 showDeleteConfirmation = false;
                 confirmationButtonsVisible = false;
@@ -1997,7 +1997,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         // Bestätigungs-Overlay ist nicht offen - prüfe auf Haupt-Delete-Button
-        if (deleteButton != null && deleteButton.mouseClicked(mouseX, mouseY, 0)) {
+        if (deleteButton != null && deleteButton.mouseClicked(new net.minecraft.client.gui.Click(mouseX, mouseY, new net.minecraft.client.input.MouseInput(0, 1)), false)) {
             // Bestätigungs-Overlay öffnen (für Seite 1) oder direkt entfernen (für Seiten 2+)
             int buttonPage = ClipboardUtility.getCurrentPage();
             if (buttonPage == 1) {
@@ -2712,7 +2712,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             
             quantityTextField.setFocused(true);
             int clickX = Math.max(unscaledMouseX, textFieldX);
-            quantityTextField.mouseClicked(clickX, unscaledMouseY, button);
+            quantityTextField.mouseClicked(new net.minecraft.client.gui.Click(clickX, unscaledMouseY, new net.minecraft.client.input.MouseInput(button, 1)), false);
             return true;
         }
         
@@ -2735,7 +2735,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     public static boolean handleQuantityTextFieldKeyPress(int keyCode, int scanCode, int modifiers) {
         if (quantityTextField != null && quantityTextField.isFocused()) {
             // Verarbeite normale Tasteneingaben (Backspace, Enter, etc.)
-            if (quantityTextField.keyPressed(keyCode, scanCode, modifiers)) {
+            if (quantityTextField.keyPressed(new net.minecraft.client.input.KeyInput(keyCode, scanCode, modifiers))) {
                 return true;
             }
             
@@ -2781,7 +2781,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             }
             
             if (digit != 0) {
-                return quantityTextField.charTyped(digit, modifiers);
+                return quantityTextField.charTyped(new net.minecraft.client.input.CharInput((int)digit, modifiers));
             }
         }
         return false;
@@ -2792,7 +2792,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      */
     public static boolean handleQuantityTextFieldCharTyped(char chr, int modifiers) {
         if (quantityTextField != null && quantityTextField.isFocused()) {
-            return quantityTextField.charTyped(chr, modifiers);
+            return quantityTextField.charTyped(new net.minecraft.client.input.CharInput((int)chr, modifiers));
         }
         return false;
     }

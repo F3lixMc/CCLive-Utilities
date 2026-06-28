@@ -98,7 +98,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         } else if (overlayType == net.felix.utilities.Town.OverlayType.BLACK) {
             context.fill(x, y, x + width, y + height, 0x80000000);
         }
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, width, height, 0xFFFF0000);
         context.drawText(MinecraftClient.getInstance().textRenderer, getOverlayName(), x + 5, y + 5, 0xFFFFFFFF, true);
         renderBlueprintData(context, x, y, width, height);
     }

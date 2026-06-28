@@ -4,6 +4,7 @@ import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.Aspekte.AspectOverlay;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatHud;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -53,7 +54,10 @@ abstract class ChatHudHoverMixin {
         // even when no world is loaded (e.g., in main menu with chat history visible)
         
         // Check if Shift is pressed
-        boolean isShiftPressed = Screen.hasShiftDown();
+        boolean isShiftPressed = client.getWindow() != null && (
+    InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_LEFT_SHIFT) ||
+    InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_RIGHT_SHIFT)
+);
         
         // Use Minecraft's built-in method to check if a HoverEvent is being rendered
         // This is the same method Minecraft uses internally to determine tooltip hover

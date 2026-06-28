@@ -108,7 +108,7 @@ public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
         renderArmorDisplay(context, x, y);
         
         // Render border for edit mode OUTSIDE the black overlay (1 pixel offset)
-        context.drawBorder(x - 1, y - 1, width + 2, height + 2, 0xFFFF0000);
+        context.drawStrokedRectangle(x - 1, y - 1, width + 2, height + 2, 0xFFFF0000);
         
         // Render overlay name above the overlay (smaller)
         context.drawText(
