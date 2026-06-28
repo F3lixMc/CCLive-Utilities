@@ -468,7 +468,7 @@ public class NpcAlertsUtility {
 			if (displayName != null) {
 				return displayName.getString();
 			} else if (entry.getProfile() != null) {
-				return entry.getProfile().getName();
+				return entry.getProfile().name();
 			}
 			return null;
 		};
@@ -850,7 +850,7 @@ public class NpcAlertsUtility {
 			return sb.toString();
 		}
 		if (entry.getProfile() != null) {
-			return entry.getProfile().getName();
+			return entry.getProfile().name();
 		}
 		return null;
 	}

@@ -129,7 +129,7 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
         int scaledWidth = (int) (unscaledWidth * scale);
         int scaledHeight = (int) (unscaledHeight * scale);
 
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
 
         Matrix3x2fStack matrices = context.getMatrices();
         matrices.pushMatrix();

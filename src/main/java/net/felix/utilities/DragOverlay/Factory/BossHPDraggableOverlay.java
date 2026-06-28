@@ -336,7 +336,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         context.fill(x, y, x + width, y + height, 0x80000000);
         
         // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, width, height, 0xFFFF0000);
         
         // Render preview text "Boss-Name: XXXX" and optionally "DPM: XXXX" with scale
         // Always show "XXXX" in preview, never real HP values

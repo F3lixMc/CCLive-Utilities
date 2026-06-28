@@ -445,28 +445,28 @@ public class BPViewerUtility {
             "key.cclive-utilities.toggle-blueprint-viewer",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_B,
-            "key.categories.cclive-utilities.blueprints"
+            new KeyBinding.Category(Identifier.of("cclive-utilities", "blueprints"))
         );
         
         nextRarityKeyBinding = new KeyBinding(
             "key.cclive-utilities.next-blueprint-rarity",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_RIGHT,
-            "key.categories.cclive-utilities.blueprints"
+            new KeyBinding.Category(Identifier.of("cclive-utilities", "blueprints"))
         );
         
         previousRarityKeyBinding = new KeyBinding(
             "key.cclive-utilities.previous-blueprint-rarity",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_LEFT,
-            "key.categories.cclive-utilities.blueprints"
+            new KeyBinding.Category(Identifier.of("cclive-utilities", "blueprints"))
         );
         
         toggleMissingModeKeyBinding = new KeyBinding(
             "key.cclive-utilities.toggle-blueprint-missing-mode",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_UNKNOWN,
-            "key.categories.cclive-utilities.blueprints"
+            new KeyBinding.Category(Identifier.of("cclive-utilities", "blueprints"))
         );
         
         // Register key bindings

@@ -33,7 +33,8 @@ public abstract class ChatScreenMixin {
      * Handles F6 key press in chat screen to open overlay editor
      */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+    private void onKeyPressed(net.minecraft.client.input.KeyInput keyInput, CallbackInfoReturnable<Boolean> cir) {
+        int keyCode = keyInput.key();
         // Handle F6 key for overlay editor (works in chat)
         if (OverlayEditorUtility.handleKeyPress(keyCode)) {
             cir.setReturnValue(true);

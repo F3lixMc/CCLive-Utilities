@@ -148,7 +148,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         matrices.popMatrix();
         
         // Render border for edit mode AFTER content (so it's always visible on top)
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
     
     @Override

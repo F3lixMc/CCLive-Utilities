@@ -174,7 +174,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         }
         
         // Render border for edit mode (scaled)
-        context.drawBorder(0, 0, unscaledWidth, unscaledHeight, 0xFFFF0000);
+        context.drawStrokedRectangle(0, 0, unscaledWidth, unscaledHeight, 0xFFFF0000);
         
         // Render overlay name (scaled)
         context.drawText(

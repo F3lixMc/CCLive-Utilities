@@ -543,7 +543,7 @@ public class ItemViewerUtility {
             "key.cclive-utilities.itemviewer.toggle",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_I,
-            "categories.cclive-utilities.itemviewer"
+            new KeyBinding.Category(Identifier.of("cclive-utilities", "itemviewer"))
         ));
         
         // Registriere KeyBinding für Bauplan Anpinnen (Clipboard)
@@ -551,7 +551,7 @@ public class ItemViewerUtility {
             "key.cclive-utilities.clipboard.pin",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_P,
-            "categories.cclive-utilities.itemviewer"
+            new KeyBinding.Category(Identifier.of("cclive-utilities", "itemviewer"))
         ));
     }
     
@@ -1083,7 +1083,7 @@ public class ItemViewerUtility {
         MinecraftClient client = MinecraftClient.getInstance();
         
         // Prüfe Clipboard-Pin Hotkey
-        if (clipboardPinKeyBinding != null && clipboardPinKeyBinding.matchesKey(keyCode, scanCode)) {
+        if (clipboardPinKeyBinding != null && clipboardPinKeyBinding.matchesKey(new net.minecraft.client.input.KeyInput(keyCode, scanCode, 0))) {
             // Prüfe ob ein Textfeld fokussiert ist
             if (isTextFieldFocused(client)) {
                 return false; // Ignoriere Hotkey wenn Textfeld fokussiert ist
@@ -1116,7 +1116,7 @@ public class ItemViewerUtility {
         
         // Prüfe ob unser Keybind gedrückt wurde
         // Verwende matchesKey() um zu prüfen ob der Keybind passt
-        if (toggleKeyBinding.matchesKey(keyCode, scanCode)) {
+        if (toggleKeyBinding.matchesKey(new net.minecraft.client.input.KeyInput(keyCode, scanCode, 0))) {
             // Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
             // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler "I" tippt
             if (isTextFieldFocused(client)) {

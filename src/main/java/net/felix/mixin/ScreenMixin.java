@@ -22,8 +22,10 @@ public class ScreenMixin {
      * Injiziert in keyPressed, um unseren Item-Viewer-Keybind auch in Screens zu behandeln
      */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
-        // Prüfe zuerst ESC für Hilfe-Overlay (höchste Priorität)
+    private void onKeyPressed(net.minecraft.client.input.KeyInput event, CallbackInfoReturnable<Boolean> cir) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             if (ItemViewerUtility.handleHelpOverlayEscape()) {
                 cir.setReturnValue(true);

@@ -10,6 +10,7 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.text.StyleSpriteSource;
 import net.minecraft.util.Identifier;
 
 import java.util.List;
@@ -499,7 +500,7 @@ public class PlayerHoverStatsUtility {
                             // Füge Marker hinzu mit expliziter Font-Referenz
                             // Die Font muss explizit gesetzt werden, damit sie verwendet wird
                             // Farbe explizit auf weiß setzen, damit das Icon nicht die Chat-Farbe erbt
-                            Style iconStyle = current.getStyle().withFont(CUSTOM_FONT).withColor(0xFFFFFF);
+                            Style iconStyle = current.getStyle().withFont(new StyleSpriteSource.Font(CUSTOM_FONT)).withColor(0xFFFFFF);
                             MutableText iconMarker = Text.literal(String.valueOf(ICON_MARKER))
                                 .setStyle(iconStyle);
                             newMessage.append(space);

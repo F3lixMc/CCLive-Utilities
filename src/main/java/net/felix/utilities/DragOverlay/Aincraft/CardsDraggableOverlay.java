@@ -165,7 +165,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         int borderHeight = Math.round(DEFAULT_HEIGHT * scale);
         
         // Use drawBorder like all other overlays for consistency
-        context.drawBorder(borderX, borderY, borderWidth, borderHeight, 0xFFFF0000);
+        context.drawStrokedRectangle(borderX, borderY, borderWidth, borderHeight, 0xFFFF0000);
     }
     
     @Override

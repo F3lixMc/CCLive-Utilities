@@ -417,9 +417,12 @@ public class CustomKitEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.gui.Click event, boolean isDoubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (showDeleteConfirmation) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, isDoubleClick);
         }
 
         if (button == 0 && handleIconPickerClick(mouseX, mouseY)) {
@@ -481,7 +484,7 @@ public class CustomKitEditorScreen extends Screen {
             }
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, isDoubleClick);
     }
 
     private void onDone() {
@@ -546,7 +549,7 @@ public class CustomKitEditorScreen extends Screen {
         int boxX = (this.width - boxWidth) / 2;
         int boxY = (this.height - boxHeight) / 2;
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF202020);
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.drawStrokedRectangle(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
 
         String question = "Wirklich Löschen?";
         int textWidth = this.textRenderer.getWidth(question);
@@ -614,7 +617,8 @@ public class CustomKitEditorScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyInput event) {
+        int keyCode = event.key();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             if (showDeleteConfirmation) {
                 closeDeleteConfirmation();
@@ -623,7 +627,7 @@ public class CustomKitEditorScreen extends Screen {
             onCancel();
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override

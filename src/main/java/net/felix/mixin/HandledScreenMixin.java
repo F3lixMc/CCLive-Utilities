@@ -187,7 +187,10 @@ public abstract class HandledScreenMixin {
      * Injects into mouseClicked to handle clicks on the Hide Uncraftable button
      */
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseClicked(net.minecraft.client.gui.Click click, boolean secondary, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+        int button = click.buttonInfo().button();
         // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
         // Dies muss vor allen anderen Klicks geprüft werden
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
@@ -280,7 +283,10 @@ public abstract class HandledScreenMixin {
      * Handles mouse dragging for MKLevel scrollbar
      */
     @Inject(method = "mouseDragged", at = @At("HEAD"), cancellable = true)
-    private void onMouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseDragged(net.minecraft.client.gui.Click click, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+        int button = click.buttonInfo().button();
         if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarDrag(mouseX, mouseY, button, x, y, backgroundHeight)) {
             cir.setReturnValue(true);
         }
@@ -290,7 +296,10 @@ public abstract class HandledScreenMixin {
      * Handles mouse release to stop scrollbar dragging
      */
     @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
-    private void onMouseReleased(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseReleased(net.minecraft.client.gui.Click click, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = click.x();
+        double mouseY = click.y();
+        int button = click.buttonInfo().button();
         if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }

@@ -176,98 +176,11 @@ public class PlayerIconUtility {
     
     /**
      * Initialize world rendering for nametag icons.
-     * This sets up the WorldRenderEvents callback to render icons above player heads.
+     * NOTE: WorldRenderEvents was removed in Fabric API 0.138.4+1.21.10.
+     * World rendering for nametag icons is currently disabled.
      */
     public static void initializeWorldRendering() {
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(context -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.world == null || client.player == null) {
-                return;
-            }
-            
-            // Render icons above player heads
-            for (var entity : client.world.getEntities()) {
-                if (!(entity instanceof net.minecraft.entity.player.PlayerEntity)) {
-                    continue;
-                }
-                
-                net.minecraft.entity.player.PlayerEntity player = (net.minecraft.entity.player.PlayerEntity) entity;
-                UUID playerUuid = player.getUuid();
-                
-                // Check if player has the mod
-                if (!hasMod(playerUuid)) {
-                    continue;
-                }
-                
-                // Only render if player is visible and within render distance
-                if (!player.isInvisible() && client.player.canSee(player)) {
-                    renderNametagIcon(context, player);
-                }
-            }
-        });
-    }
-    
-    /**
-     * Render icon above player head (nametag).
-     * This is a simplified 3D rendering approach.
-     */
-    private static void renderNametagIcon(
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext context,
-        net.minecraft.entity.player.PlayerEntity player
-    ) {
-        try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.textRenderer == null) {
-                return;
-            }
-            
-            // Get player position
-            double x = player.getX();
-            double y = player.getY() + player.getHeight() + 0.5; // Above head
-            double z = player.getZ();
-            
-            // Calculate camera position
-            net.minecraft.util.math.Vec3d cameraPos = context.camera().getPos();
-            double dx = x - cameraPos.x;
-            double dy = y - cameraPos.y;
-            double dz = z - cameraPos.z;
-            
-            // Calculate distance
-            double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (distance > 64.0) {
-                return; // Too far away
-            }
-            
-            // Get the matrix stack
-            net.minecraft.client.util.math.MatrixStack matrices = context.matrixStack();
-            
-            // Push matrix
-            matrices.push();
-            
-            // Translate to player position
-            matrices.translate((float)dx, (float)dy, (float)dz);
-            
-            // Face camera (billboard)
-            matrices.multiplyPositionMatrix(new org.joml.Matrix4f().rotationY(
-                (float)(-Math.atan2(dx, dz))
-            ));
-            matrices.multiplyPositionMatrix(new org.joml.Matrix4f().rotationX(
-                (float)(Math.asin(dy / distance))
-            ));
-            
-            // Scale based on distance (smaller when farther)
-            float scale = (float)(0.02 * (1.0 - distance / 64.0) + 0.01);
-            matrices.scale(scale, scale, scale);
-            
-            // Render icon
-            // Note: This is a simplified approach. For proper 3D rendering,
-            // you'd need to use the texture manager and proper vertex consumers.
-            // For now, we'll skip 3D rendering and focus on 2D (tab list and chat).
-            
-            matrices.pop();
-        } catch (Exception e) {
-            // Silently fail if rendering fails
-        }
+        // WorldRenderEvents removed in Fabric API 0.138.4+1.21.10
     }
 }
 

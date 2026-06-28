@@ -15,7 +15,8 @@ public class MouseClickMixin {
      * (wenn kein Screen offen ist)
      */
     @Inject(method = "onMouseButton", at = @At("HEAD"), cancellable = true)
-    private void onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
+    private void onMouseButton(long window, net.minecraft.client.input.MouseInput mouseInput, int action, CallbackInfo ci) {
+        int button = mouseInput.button();
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.currentScreen != null) {
             return; // Nur behandeln wenn kein Screen offen ist

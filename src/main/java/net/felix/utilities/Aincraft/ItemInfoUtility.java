@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import net.minecraft.util.Identifier;
 
 public class ItemInfoUtility {
 
@@ -121,7 +122,7 @@ public class ItemInfoUtility {
 			"key.cclive-utilities.item-info-extract",
 			InputUtil.Type.KEYSYM,
 			InputUtil.UNKNOWN_KEY.getCode(), // Unbound by default
-			"category.cclive-utilities.item-info"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "item-info"))
 		));
 		
 		// Register auto-click hotkey
@@ -129,7 +130,7 @@ public class ItemInfoUtility {
 			"key.cclive-utilities.item-info-auto-click",
 			InputUtil.Type.KEYSYM,
 			InputUtil.UNKNOWN_KEY.getCode(), // Unbound by default
-			"category.cclive-utilities.item-info"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "item-info"))
 		));
 	}
 	
@@ -194,7 +195,7 @@ public class ItemInfoUtility {
 		try {
 			// Check if the pressed key matches our key binding
 			// Use -1 as scanCode to ignore scanCode comparison (like OverlayEditorUtility)
-			if (extractKeyBinding.matchesKey(keyCode, -1)) {
+			if (extractKeyBinding.matchesKey(new net.minecraft.client.input.KeyInput(keyCode, -1, 0))) {
 				MinecraftClient client = MinecraftClient.getInstance();
 				if (client != null) {
 					extractItemInfo(client);
@@ -222,7 +223,7 @@ public class ItemInfoUtility {
 		try {
 			// Check if the pressed key matches our key binding
 			// Use -1 as scanCode to ignore scanCode comparison (like OverlayEditorUtility)
-			if (autoClickKeyBinding.matchesKey(keyCode, -1)) {
+			if (autoClickKeyBinding.matchesKey(new net.minecraft.client.input.KeyInput(keyCode, -1, 0))) {
 				MinecraftClient client = MinecraftClient.getInstance();
 				if (client != null) {
 					autoRightClickUnregisteredItems(client, screenX, screenY);

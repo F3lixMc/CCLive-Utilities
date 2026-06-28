@@ -190,8 +190,8 @@ public class CollectionCollector implements DataCollector {
         }
         
         // Prüfe beide Shift-Tasten (Links und Rechts)
-        boolean leftShift = InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_LEFT_SHIFT);
-        boolean rightShift = InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        boolean leftShift = InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_LEFT_SHIFT);
+        boolean rightShift = InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_RIGHT_SHIFT);
         
         isShiftPressed = leftShift || rightShift;
         

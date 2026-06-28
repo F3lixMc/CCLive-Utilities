@@ -172,7 +172,7 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
         );
 
         matrices.popMatrix();
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
 
     @Override

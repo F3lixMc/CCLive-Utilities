@@ -259,7 +259,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         matrices.popMatrix();
         
         // Render border after scaling (using scaled dimensions)
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
     
     @Override

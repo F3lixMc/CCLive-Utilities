@@ -29,7 +29,7 @@ public class KeyBindingUtility {
             
             if (playerListKey == null) {
                 // Fallback to TAB if player list key is not available
-                return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                return InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_TAB);
             }
             
             // Check if the actual player list key binding is pressed
@@ -40,7 +40,7 @@ public class KeyBindingUtility {
             try {
                 MinecraftClient client = MinecraftClient.getInstance();
                 if (client != null && client.getWindow() != null) {
-                    return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                    return InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_TAB);
                 }
             } catch (Exception fallbackError) {
                 // Silent error handling
@@ -67,7 +67,7 @@ public class KeyBindingUtility {
             
             if (playerListKey == null) {
                 // Fallback: check if TAB was just pressed
-                return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                return InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_TAB);
             }
             
             // Check if the actual player list key binding was just pressed
@@ -78,7 +78,7 @@ public class KeyBindingUtility {
             try {
                 MinecraftClient client = MinecraftClient.getInstance();
                 if (client != null && client.getWindow() != null) {
-                    return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                    return InputUtil.isKeyPressed(client.getWindow(), InputUtil.GLFW_KEY_TAB);
                 }
             } catch (Exception fallbackError) {
                 // Silent error handling

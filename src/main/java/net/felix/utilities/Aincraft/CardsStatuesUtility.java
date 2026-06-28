@@ -203,7 +203,7 @@ public class CardsStatuesUtility {
 			"key.cclive-utilities.cards-toggle",
 			InputUtil.Type.KEYSYM,
 			InputUtil.UNKNOWN_KEY.getCode(), // Unbound key
-			"category.cclive-utilities.cards"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "cards"))
 		));
 	}
 	

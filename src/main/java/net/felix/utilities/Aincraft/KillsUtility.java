@@ -96,7 +96,7 @@ public class KillsUtility {
 			"key.cclive-utilities.kills-toggle",
 			InputUtil.Type.KEYSYM,
 			GLFW.GLFW_KEY_K, // Default to K key
-			"category.cclive-utilities.kills"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "kills"))
 		));
 		
 		// Register reset hotkey
@@ -104,7 +104,7 @@ public class KillsUtility {
 			"key.cclive-utilities.kills-reset",
 			InputUtil.Type.KEYSYM,
 			GLFW.GLFW_KEY_R, // Default to R key
-			"category.cclive-utilities.kills"
+			new KeyBinding.Category(Identifier.of("cclive-utilities", "kills"))
 		));
 	}
 
@@ -335,7 +335,7 @@ public class KillsUtility {
 				if (displayName != null) {
 					return displayName.getString();
 				} else if (entry.getProfile() != null) {
-					return entry.getProfile().getName();
+					return entry.getProfile().name();
 				}
 				return null;
 			};

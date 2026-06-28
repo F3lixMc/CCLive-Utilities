@@ -641,7 +641,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f;
         
         // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.drawStrokedRectangle(x, y, width, height, 0xFFFF0000);
         
         // Render background (scaled)
         context.fill(x, y, x + width, y + height, 0x80000000);

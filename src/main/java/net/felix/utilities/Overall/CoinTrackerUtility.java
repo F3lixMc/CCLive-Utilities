@@ -57,12 +57,7 @@ public class CoinTrackerUtility {
         }
 
         try {
-            resetKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                    "key.cclive-utilities.coin-tracker-reset",
-                    InputUtil.Type.KEYSYM,
-                    GLFW.GLFW_KEY_UNKNOWN,
-                    "category.cclive-utilities.overall"
-            ));
+            resetKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.cclive-utilities.coin-tracker-reset", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_UNKNOWN, new KeyBinding.Category(Identifier.of("cclive-utilities", "overall"))));
 
             ClientTickEvents.END_CLIENT_TICK.register(CoinTrackerUtility::onClientTick);
             HudElementRegistry.addLast(
