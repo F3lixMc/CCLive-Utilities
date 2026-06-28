@@ -42,6 +42,8 @@ public class ClipboardUtility {
     
     // Liste der Clipboard-Einträge
     private static final List<ClipboardEntry> clipboardEntries = new ArrayList<>();
+    /** Wird bei jeder Änderung der Einträge erhöht – für Render-Cache-Invalidierung. */
+    private static int entriesRevision = 0;
     
     // KeyBinding für das Togglen des Clipboards
     private static KeyBinding toggleClipboardKeyBinding;
@@ -385,6 +387,7 @@ public class ClipboardUtility {
                     // Speichere in Config asynchron
                     saveClipboardEntries();
                     updateTotalPages();
+                    notifyEntriesChanged();
                     return true;
                 }
             }
@@ -397,6 +400,7 @@ public class ClipboardUtility {
         // Speichere in Config asynchron
         saveClipboardEntries();
         updateTotalPages();
+        notifyEntriesChanged();
         
         return true;
     }
@@ -438,6 +442,7 @@ public class ClipboardUtility {
             // Speichere in Config asynchron
             saveClipboardEntries();
             updateTotalPages();
+            notifyEntriesChanged();
             // Entferne nicht mehr benötigte Materialien aus der Clipboard-Speicherung
             ClipboardDraggableOverlay.cleanupUnusedMaterials();
         }
@@ -464,6 +469,7 @@ public class ClipboardUtility {
         // Speichere in Config asynchron
         saveClipboardEntries();
         updateTotalPages();
+        notifyEntriesChanged();
         // Entferne alle Materialien aus der Clipboard-Speicherung
         ClipboardDraggableOverlay.cleanupUnusedMaterials();
     }
@@ -507,6 +513,7 @@ public class ClipboardUtility {
             CCLiveUtilitiesConfig.HANDLER.instance().clipboardEntries;
         
         if (savedEntries == null || savedEntries.isEmpty()) {
+            notifyEntriesChanged();
             return;
         }
         
@@ -551,6 +558,7 @@ public class ClipboardUtility {
             entry.quantity = Math.max(1, savedEntry.quantity); // Mindestens 1
             clipboardEntries.add(entry);
         }
+        notifyEntriesChanged();
     }
     
     /**
@@ -632,6 +640,21 @@ public class ClipboardUtility {
         synchronized (clipboardEntries) {
             return new ArrayList<>(clipboardEntries);
         }
+    }
+
+    public static int getEntriesRevision() {
+        return entriesRevision;
+    }
+
+    public static boolean hasEntries() {
+        synchronized (clipboardEntries) {
+            return !clipboardEntries.isEmpty();
+        }
+    }
+
+    private static synchronized void notifyEntriesChanged() {
+        entriesRevision++;
+        ClipboardDraggableOverlay.invalidateRenderSnapshot();
     }
     
     /**

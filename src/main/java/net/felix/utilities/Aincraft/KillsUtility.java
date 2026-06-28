@@ -12,6 +12,7 @@ import org.lwjgl.glfw.GLFW;
 import net.minecraft.client.render.RenderTickCounter;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.SessionRateUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 
@@ -39,6 +40,8 @@ public class KillsUtility {
 	// Time tracking for KPM calculation
 	private static long sessionStartTime = 0;
 	private static double currentKPM = 0.0;
+	private static long lastKpmUpdateTime = 0;
+	private static int lastKpmKillCount = 0;
 	
 	// Next level tracking
 	private static int killsUntilNextLevel = -1; // -1 means unknown/not found
@@ -141,6 +144,9 @@ public class KillsUtility {
 				newKills = 0;
 				firstBossBarUpdate = true; // Reset first update flag
 				sessionStartTime = System.currentTimeMillis();
+				lastKpmUpdateTime = 0;
+				lastKpmKillCount = 0;
+				currentKPM = 0.0;
 				// Reset cache when entering floor
 				cachedIsOnFloor = null;
 				// Reset next level tracking
@@ -218,6 +224,8 @@ public class KillsUtility {
 		firstBossBarUpdate = true;
 		currentKPM = 0.0;
 		sessionStartTime = System.currentTimeMillis(); // Reset timer to current time
+		lastKpmUpdateTime = 0;
+		lastKpmKillCount = 0;
 		currentDimension = null; // Reset dimension tracking
 		// Reset cache when resetting
 		cachedIsOnFloor = null;
@@ -266,12 +274,20 @@ public class KillsUtility {
 	}
 	
 	private static void updateKPM() {
+		long now = System.currentTimeMillis();
+		boolean killsChanged = newKills != lastKpmKillCount;
+		if (!SessionRateUtility.shouldRecalculate(lastKpmUpdateTime, killsChanged)) {
+			return;
+		}
+
+		lastKpmUpdateTime = now;
+		lastKpmKillCount = newKills;
+
 		if (sessionStartTime != 0 && newKills != 0) {
-			long currentTime = System.currentTimeMillis();
-			long sessionDuration = currentTime - sessionStartTime;
+			long sessionDuration = now - sessionStartTime;
 			if (sessionDuration > 0) {
-				double minutesElapsed = (double)sessionDuration / 60000.0;
-				currentKPM = (double)newKills / minutesElapsed;
+				double minutesElapsed = (double) sessionDuration / 60000.0;
+				currentKPM = (double) newKills / minutesElapsed;
 			}
 		} else {
 			currentKPM = 0.0;

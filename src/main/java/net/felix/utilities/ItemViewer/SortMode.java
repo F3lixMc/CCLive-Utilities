@@ -87,6 +87,9 @@ public enum SortMode {
         if ("fish_traps".equalsIgnoreCase(item1.category)) {
             return Integer.compare(getFishTrapOrderIndex(item1), getFishTrapOrderIndex(item2));
         }
+        if ("licence".equalsIgnoreCase(item1.category)) {
+            return Integer.compare(getLicenseOrderIndex(item1), getLicenseOrderIndex(item2));
+        }
         return 0;
     }
 
@@ -133,6 +136,49 @@ public enum SortMode {
         int index = FISH_TRAP_ORDER.indexOf(item.name);
         return index != -1 ? index : 999;
     }
+
+    private static final List<String> LICENSE_ORDER = java.util.Arrays.asList(
+            "Eichenholz Lizenz",
+            "Smaragdsee",
+            "Kohlemine Lizenz",
+            "Rußwasserteich",
+            "Kupfermine Lizenz",
+            "Erzschimmer See",
+            "Dschungelholz/Strand Lizenz",
+            "Perlenbucht",
+            "Fichtenwald Lizenz",
+            "Nebelsee",
+            "Bambuswald Lizenz",
+            "Eisenmine Lizenz",
+            "Blutwasser See",
+            "Pilzholzwald Lizenz",
+            "Sporenweiher",
+            "Dunkles Eichenholz Lizenz",
+            "Nachtschattensee",
+            "Goldmine Lizenz",
+            "Goldsee",
+            "Mangrovensumpf Lizenz",
+            "Wurzelbucht",
+            "Diamantmine Lizenz",
+            "Schwefelfelder Lizenz",
+            "Schwefeldampfsee",
+            "Quartzmine Lizenz",
+            "Obsidianmine Lizenz",
+            "Karmesinholzwald Lizenz",
+            "Infernoweiher",
+            "Wirrholzwald Lizenz",
+            "Antike Mine Lizenz",
+            "Lavaquellsee",
+            "Echokristallminen Lizenz"
+    );
+
+    private static int getLicenseOrderIndex(ItemData item) {
+        if (item.name == null || item.name.isEmpty()) {
+            return 999;
+        }
+        int index = LICENSE_ORDER.indexOf(item.name);
+        return index != -1 ? index : 999;
+    }
     
     // Kategorien-Reihenfolge für Sortierung
     private static final List<String> CATEGORY_ORDER = java.util.Arrays.asList(
@@ -146,6 +192,7 @@ public enum SortMode {
         "power_crystals",
         "power_crystal_slots",
         "card_slots",
+        "licence",
         "essences",
         "items" // Fallback für alte Struktur
     );

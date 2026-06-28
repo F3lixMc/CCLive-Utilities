@@ -4,6 +4,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -30,7 +31,6 @@ public class ItemViewerGrid {
     
     private static final Map<ItemData, ItemStack> ITEM_STACK_CACHE = new WeakHashMap<>();
     private static final Map<String, Identifier> TEXTURE_ID_CACHE = new HashMap<>();
-    private static java.lang.reflect.Constructor<?> customModelDataConstructor;
     
     private static ItemData lastTooltipItem = null;
     private static List<Text> cachedTooltipLines = null;
@@ -111,25 +111,25 @@ public class ItemViewerGrid {
         
         hoveredItem = null;
         int hoverIndex = resolveHoverIndex(count);
+        if (hoverIndex >= 0) {
+            hoveredItem = items.get(hoverIndex);
+        }
+        
+        renderGridChrome(context, count, usedRows);
+        if (hoverIndex >= 0) {
+            int row = hoverIndex / gridColumns;
+            int col = hoverIndex % gridColumns;
+            int slotX = startX + col * SLOT_SIZE;
+            int slotY = startY + row * SLOT_SIZE;
+            context.fill(slotX, slotY, slotX + SLOT_SIZE, slotY + SLOT_SIZE, 0x80FFFFFF);
+        }
         
         for (int i = 0; i < count; i++) {
             int row = i / gridColumns;
             int col = i % gridColumns;
             int slotX = startX + col * SLOT_SIZE;
             int slotY = startY + row * SLOT_SIZE;
-            boolean isHovered = i == hoverIndex;
-            if (isHovered) {
-                hoveredItem = items.get(i);
-            }
-            renderSlotBackground(context, slotX, slotY, isHovered);
-        }
-        
-        renderSlotGridBorders(context, count, usedRows);
-        
-        for (int i = 0; i < count; i++) {
-            int row = i / gridColumns;
-            int col = i % gridColumns;
-            renderItemIcon(context, items.get(i), startX + col * SLOT_SIZE, startY + row * SLOT_SIZE);
+            renderItemIcon(context, items.get(i), slotX, slotY);
         }
         
         if (hoverIndex >= 0) {
@@ -139,27 +139,19 @@ public class ItemViewerGrid {
         }
     }
     
-    /** Ein Fill pro Slot – günstiger als Hintergrund + 4 Rahmenlinien pro Slot. */
-    private void renderSlotBackground(DrawContext context, int x, int y, boolean isHovered) {
-        int color = isHovered ? 0x80FFFFFF : 0x40000000;
-        context.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, color);
-    }
-    
-    /** Slot-Raster pro Zeile – nur so breit wie Items in der Zeile (keine leeren Slots am Zeilenende). */
-    private void renderSlotGridBorders(DrawContext context, int count, int usedRows) {
+    /** Hintergrund + Raster nur so breit wie Items in jeder Zeile (keine leeren Slots am Zeilenende). */
+    private void renderGridChrome(DrawContext context, int count, int usedRows) {
         int borderColor = 0xFF808080;
         for (int r = 0; r < usedRows; r++) {
             int itemsInRow = Math.min(gridColumns, count - r * gridColumns);
             if (itemsInRow <= 0) {
                 continue;
             }
-            int rowX = startX;
             int rowY = startY + r * SLOT_SIZE;
             int rowWidth = itemsInRow * SLOT_SIZE;
-            
-            context.fill(rowX, rowY, rowX + rowWidth, rowY + 1, borderColor);
-            context.fill(rowX, rowY + SLOT_SIZE - 1, rowX + rowWidth, rowY + SLOT_SIZE, borderColor);
-            
+            context.fill(startX, rowY, startX + rowWidth, rowY + SLOT_SIZE, 0x40000000);
+            context.fill(startX, rowY, startX + rowWidth, rowY + 1, borderColor);
+            context.fill(startX, rowY + SLOT_SIZE - 1, startX + rowWidth, rowY + SLOT_SIZE, borderColor);
             for (int c = 0; c <= itemsInRow; c++) {
                 int x = startX + c * SLOT_SIZE;
                 context.fill(x, rowY, x + 1, rowY + SLOT_SIZE, borderColor);
@@ -213,8 +205,13 @@ public class ItemViewerGrid {
         }
         ItemStack itemStack = getCachedItemStack(item);
         if (!itemStack.isEmpty()) {
-            context.drawItem(itemStack, iconX, iconY, 0);
+            renderItemStackGuiIcon(context, itemStack, iconX, iconY);
         }
+    }
+
+    /** Immer volles {@code drawItem} — flache Sprites zeigen bei CMD-/3D-Modellen oft das Basis-Item (z. B. Buch). */
+    private static void renderItemStackGuiIcon(DrawContext context, ItemStack stack, int x, int y) {
+        context.drawItem(stack, x, y, 0);
     }
     
     private static Identifier getTextureId(String texturePath) {
@@ -230,11 +227,15 @@ public class ItemViewerGrid {
             MinecraftClient client = MinecraftClient.getInstance();
             ItemStack itemStack = getCachedItemStack(hoveredItem);
             if (!itemStack.isEmpty()) {
-                if (hoveredItem != lastTooltipItem) {
-                    lastTooltipItem = hoveredItem;
+                boolean animatedForgingRainbow = ForgingConditionUtility.usesAnimatedRainbow(
+                        resolveForgingCondition(hoveredItem));
+                if (animatedForgingRainbow || hoveredItem != lastTooltipItem) {
+                    if (!animatedForgingRainbow) {
+                        lastTooltipItem = hoveredItem;
+                    }
                     cachedTooltipLines = buildTooltipLines(hoveredItem, itemStack, client, true);
+                    updateItemViewerAspectOverlay(hoveredItem);
                 }
-                updateItemViewerAspectOverlay(hoveredItem);
                 java.util.List<Text> tooltipLines = cachedTooltipLines;
                 if (tooltipLines == null || tooltipLines.isEmpty()) {
                     return;
@@ -761,21 +762,6 @@ public class ItemViewerGrid {
         return stack;
     }
     
-    private static java.lang.reflect.Constructor<?> getCustomModelDataConstructor() {
-        if (customModelDataConstructor != null) {
-            return customModelDataConstructor;
-        }
-        for (java.lang.reflect.Constructor<?> constructor :
-                net.minecraft.component.type.CustomModelDataComponent.class.getDeclaredConstructors()) {
-            if (constructor.getParameterCount() == 4) {
-                constructor.setAccessible(true);
-                customModelDataConstructor = constructor;
-                return constructor;
-            }
-        }
-        return null;
-    }
-    
     /**
      * Erstellt einen ItemStack aus ItemData
      */
@@ -828,20 +814,11 @@ public class ItemViewerGrid {
             // Liste 2: List<String>
             // Liste 3: List<Integer>
             if (itemData.customModelData != null) {
-                try {
-                    java.lang.reflect.Constructor<?> listConstructor = getCustomModelDataConstructor();
-                    if (listConstructor != null) {
-                        java.util.List<?> emptyList = java.util.Collections.emptyList();
-                        java.util.List<Float> floatList = new java.util.ArrayList<>();
-                        floatList.add(itemData.customModelData.floatValue());
-                        var customModelData = (net.minecraft.component.type.CustomModelDataComponent)
-                            listConstructor.newInstance(floatList, emptyList, emptyList, emptyList);
-                        stack.set(DataComponentTypes.CUSTOM_MODEL_DATA, customModelData);
-                    }
-                } catch (Exception e) {
-                    // Fehler beim Setzen von CustomModelData - ignoriere stillschweigend
-                    // Das Item wird ohne CustomModelData gerendert
-                }
+                stack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(
+                        List.of(itemData.customModelData.floatValue()),
+                        List.of(),
+                        List.of(),
+                        List.of()));
             }
             
             return stack;
@@ -1068,22 +1045,109 @@ public class ItemViewerGrid {
         appendFoundAtLocationLines(tooltipLines, hoveredItem, true);
     }
 
+    private static final int ITEM_SCORE_VALUE_COLOR = 0xFF54FCFC;
+
     private void appendFoundAtLocationLines(java.util.List<Text> tooltipLines, ItemData hoveredItem, boolean trailingEmptyLine) {
-        if (hoveredItem.foundAt == null || hoveredItem.foundAt.isEmpty()) {
+        boolean isBlueprint = hoveredItem.info != null && Boolean.TRUE.equals(hoveredItem.info.blueprint);
+        Text itemScoreText = isBlueprint ? buildItemScoreText(hoveredItem.itemScore) : null;
+        Text forgingConditionText = isBlueprint
+                ? buildForgingConditionText(resolveForgingCondition(hoveredItem)) : null;
+        boolean hasLocation = hoveredItem.foundAt != null && !hoveredItem.foundAt.isEmpty();
+        String locationLine = null;
+
+        if (hasLocation) {
+            LocationData firstLocation = hoveredItem.foundAt.get(0);
+            if (firstLocation.floor != null && !firstLocation.floor.isEmpty()) {
+                locationLine = firstLocation.floor;
+            } else if (firstLocation.collection != null && !firstLocation.collection.isEmpty()) {
+                locationLine = firstLocation.collection;
+            }
+        }
+
+        if (itemScoreText == null && forgingConditionText == null && locationLine == null) {
             return;
         }
-        LocationData firstLocation = hoveredItem.foundAt.get(0);
-        if (firstLocation.floor != null && !firstLocation.floor.isEmpty()) {
-            tooltipLines.add(Text.literal(firstLocation.floor)
+
+        if (itemScoreText != null) {
+            tooltipLines.add(Text.empty());
+            tooltipLines.add(itemScoreText);
+        }
+        if (forgingConditionText != null) {
+            tooltipLines.add(forgingConditionText);
+        }
+        if (locationLine != null) {
+            tooltipLines.add(Text.literal(locationLine)
                 .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false)));
-        } else if (firstLocation.collection != null && !firstLocation.collection.isEmpty()) {
-            tooltipLines.add(Text.literal(firstLocation.collection)
-                .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false)));
-        } else {
-            return;
         }
         if (trailingEmptyLine) {
             tooltipLines.add(Text.empty());
+        }
+    }
+
+    private static String resolveForgingCondition(ItemData item) {
+        if (item == null) {
+            return null;
+        }
+        if (item.forgingCondition != null && !item.forgingCondition.isBlank()) {
+            return item.forgingCondition;
+        }
+        return ForgingConditionUtility.resolveMaxForgingCondition(item.itemScore);
+    }
+
+    private static Text buildForgingConditionText(String forgingCondition) {
+        if (forgingCondition == null || forgingCondition.isBlank()) {
+            return null;
+        }
+
+        int conditionColor = ForgingConditionUtility.getDisplayColorArgb(forgingCondition);
+        MutableText text = Text.literal("[")
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false));
+        text.append(Text.literal(forgingCondition)
+            .setStyle(Style.EMPTY.withColor(conditionColor).withItalic(false)));
+        text.append(Text.literal("] möglich")
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+        return text;
+    }
+
+    private static Text buildItemScoreText(String itemScore) {
+        String value = formatItemScoreValue(itemScore);
+        if (value == null) {
+            return null;
+        }
+
+        MutableText text = Text.literal("[")
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false));
+        text.append(Text.literal("ItemScore")
+            .setStyle(Style.EMPTY.withColor(ITEM_SCORE_VALUE_COLOR).withItalic(false)));
+        text.append(Text.literal("] ")
+            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
+        text.append(Text.literal(value)
+            .setStyle(Style.EMPTY.withColor(ITEM_SCORE_VALUE_COLOR).withItalic(false)));
+        return text;
+    }
+
+    private static String formatItemScoreValue(String itemScore) {
+        if (itemScore == null || itemScore.isBlank()) {
+            return null;
+        }
+        if ("NaN".equalsIgnoreCase(itemScore.trim())) {
+            return "NaN";
+        }
+        try {
+            double value = Double.parseDouble(itemScore.trim().replace(',', '.'));
+            if (Double.isNaN(value)) {
+                return "NaN";
+            }
+            if (value == Math.rint(value)) {
+                return String.valueOf((long) value);
+            }
+            String formatted = String.valueOf(value);
+            if (formatted.contains(".") && formatted.endsWith("0")) {
+                formatted = formatted.replaceAll("0+$", "").replaceAll("\\.$", "");
+            }
+            return formatted;
+        } catch (NumberFormatException ignored) {
+            return itemScore.trim();
         }
     }
 

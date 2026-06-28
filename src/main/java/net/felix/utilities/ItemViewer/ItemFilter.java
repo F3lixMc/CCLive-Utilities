@@ -1,7 +1,12 @@
 package net.felix.utilities.ItemViewer;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Filter-Logik für Items
@@ -181,9 +186,17 @@ public class ItemFilter {
             }
         }
         
-        // Kosten-Filter
+        // Kosten-Filter (pro Kategorie kombiniert – z.B. material:Spinnfaden + material:<50 am selben Slot)
+        Map<String, List<CostFilter>> costFiltersByCategory = new LinkedHashMap<>();
         for (CostFilter filter : query.costFilters) {
-            if (!matchesCostFilter(item, filter)) {
+            if (filter.category == null) {
+                continue;
+            }
+            String category = normalizeCostCategory(filter.category);
+            costFiltersByCategory.computeIfAbsent(category, key -> new ArrayList<>()).add(filter);
+        }
+        for (Map.Entry<String, List<CostFilter>> entry : costFiltersByCategory.entrySet()) {
+            if (!matchesCombinedCostFilters(item, entry.getKey(), entry.getValue())) {
                 return false;
             }
         }
@@ -205,17 +218,81 @@ public class ItemFilter {
         return true;
     }
     
-    private static boolean matchesCostFilter(ItemData item, CostFilter filter) {
-        if (filter.category.equalsIgnoreCase("material")) {
-            return matchesMaterialCostFilter(item, filter);
+    private static String normalizeCostCategory(String category) {
+        String normalized = category.toLowerCase(Locale.ROOT);
+        if (normalized.startsWith("material") && !normalized.equals("material")) {
+            return "material";
         }
-        
+        return normalized;
+    }
+
+    private static boolean matchesCombinedCostFilters(ItemData item, String category, List<CostFilter> filters) {
+        if (filters.isEmpty()) {
+            return true;
+        }
+        if ("material".equals(category)) {
+            return matchesCombinedMaterialFilters(item, filters);
+        }
         if (item.price == null) {
             return false;
         }
-        
-        CostItem costItem = getCostItemForCategory(item.price, filter.category.toLowerCase(), item);
-        return matchesSingleCostItem(costItem, filter);
+        CostItem costItem = getCostItemForCategory(item.price, category, item);
+        for (CostFilter filter : filters) {
+            if (!matchesSingleCostItem(costItem, filter)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean matchesCombinedMaterialFilters(ItemData item, List<CostFilter> filters) {
+        if (filters.size() == 1) {
+            CostFilter only = filters.get(0);
+            if (only.amount != null && only.amount == 0 && only.itemName == null && isExactAmountOperator(only)) {
+                return matchesMaterialZeroFilter(item);
+            }
+        }
+        java.util.List<CostItem> materials = getMaterialCostItems(item.price);
+        if (materials.isEmpty()) {
+            for (CostFilter filter : filters) {
+                if (!matchesSingleCostItem(null, filter)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        for (CostItem material : materials) {
+            boolean allMatch = true;
+            for (CostFilter filter : filters) {
+                if (!matchesSingleCostItem(material, filter)) {
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isExactAmountOperator(CostFilter filter) {
+        return filter.amountOperator == null || "=".equals(filter.amountOperator);
+    }
+
+    private static boolean matchesMaterialZeroFilter(ItemData item) {
+        java.util.List<CostItem> materials = getMaterialCostItems(item.price);
+        if (materials.isEmpty()) {
+            return true;
+        }
+        CostFilter zeroFilter = new CostFilter();
+        zeroFilter.amount = 0;
+        for (CostItem material : materials) {
+            if (!matchesSingleCostItem(material, zeroFilter)) {
+                return false;
+            }
+        }
+        return true;
     }
     
     private static CostItem getCostItemForCategory(PriceData price, String category, ItemData item) {
@@ -248,39 +325,9 @@ public class ItemFilter {
         return materials;
     }
     
-    /**
-     * material:ANZAHL oder material:MATERIALNAME – prüft alle Ebenen-Material-Slots (material1–5).
-     */
-    private static boolean matchesMaterialCostFilter(ItemData item, CostFilter filter) {
-        java.util.List<CostItem> materials = getMaterialCostItems(item.price);
-        
-        if (filter.amount != null && filter.amount == 0) {
-            if (materials.isEmpty()) {
-                return true;
-            }
-            for (CostItem material : materials) {
-                if (!matchesSingleCostItem(material, filter)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        if (materials.isEmpty()) {
-            return filter.amount != null && filter.amount == 0;
-        }
-        
-        for (CostItem material : materials) {
-            if (matchesSingleCostItem(material, filter)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     private static boolean matchesSingleCostItem(CostItem costItem, CostFilter filter) {
         if (filter.amount != null) {
-            if (filter.amount == 0) {
+            if (filter.amount == 0 && isExactAmountOperator(filter)) {
                 if (costItem == null) {
                     return true;
                 }
@@ -296,7 +343,12 @@ public class ItemFilter {
             if (costItem == null || costItem.amount == null) {
                 return false;
             }
-            if (!costItem.amount.toString().equals(filter.amount.toString())) {
+            Integer itemAmount = parseCostItemAmount(costItem.amount);
+            if (itemAmount == null) {
+                return false;
+            }
+            String operator = filter.amountOperator != null ? filter.amountOperator : "=";
+            if (!ComparisonUtils.compareInt(itemAmount, filter.amount, operator)) {
                 return false;
             }
         }
@@ -315,6 +367,28 @@ public class ItemFilter {
         }
         
         return true;
+    }
+
+    private static Integer parseCostItemAmount(Object amount) {
+        if (amount == null) {
+            return null;
+        }
+        if (amount instanceof Number number) {
+            return number.intValue();
+        }
+        String amountStr = amount.toString().trim();
+        if (amountStr.isEmpty()) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile("^(\\d+)").matcher(amountStr.replace(",", "").replace(".", ""));
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
     
     private static boolean isOfenMaterial(String itemName) {
@@ -369,6 +443,10 @@ public class ItemFilter {
     }
     
     private static boolean matchesStatFilter(ItemData item, StatFilter filter) {
+        if (filter.statName != null && "itemscore".equalsIgnoreCase(filter.statName.trim())) {
+            return matchesItemScoreFilter(item, filter);
+        }
+
         if (item.info == null || item.info.stats == null) {
             return false;
         }
@@ -463,6 +541,26 @@ public class ItemFilter {
         }
         
         return false;
+    }
+
+    private static boolean matchesItemScoreFilter(ItemData item, StatFilter filter) {
+        if (item.itemScore == null || item.itemScore.isBlank()
+                || "NaN".equalsIgnoreCase(item.itemScore.trim())) {
+            return false;
+        }
+
+        try {
+            double score = Double.parseDouble(item.itemScore.trim().replace(',', '.'));
+            if (Double.isNaN(score)) {
+                return false;
+            }
+            if (filter.operator == null || filter.value == null) {
+                return true;
+            }
+            return compareStatValue(score, filter.value, filter.operator);
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
     
     /**

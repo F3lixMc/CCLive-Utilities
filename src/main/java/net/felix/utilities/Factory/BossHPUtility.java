@@ -13,6 +13,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.SessionRateUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import org.joml.Matrix3x2fStack;
 
@@ -45,6 +46,9 @@ public class BossHPUtility {
 	private BigInteger initialBossHP = null; // Initiale HP beim ersten Erkennen des Bosses
 	private long bossFightStartTime = 0; // Zeitpunkt, wann der Kampf begonnen hat
 	private String lastTrackedBossName = null; // Letzter Boss-Name für Erkennung von Boss-Wechsel
+	private double cachedDpm = 0.0;
+	private long lastDpmUpdateTime = 0;
+	private BigInteger lastDpmDamageDealt = null;
 	
 	// Last-Dmg: HP-Snapshot, nach 2 Sekunden Differenz = Schaden in diesem Fenster
 	private BigInteger lastDmgWindowStartHp = null;
@@ -264,7 +268,47 @@ public class BossHPUtility {
 		if (instance.wavesActive && instance.currentBossText != null && !instance.bossDefeated) {
 			instance.tickLastDamageWindow();
 			instance.tickLastDamageIdleTimeout();
+			instance.updateDpm();
 		}
+	}
+	
+	private void resetDpmCache() {
+		cachedDpm = 0.0;
+		lastDpmUpdateTime = 0;
+		lastDpmDamageDealt = null;
+	}
+	
+	private void updateDpm() {
+		if (initialBossHP == null || bossFightStartTime <= 0 || currentBossText == null) {
+			return;
+		}
+		
+		BigInteger currentHP = parseHpFromBossText(currentBossText);
+		if (currentHP == null) {
+			return;
+		}
+		
+		BigInteger damageDealt = initialBossHP.subtract(currentHP);
+		if (damageDealt.compareTo(BigInteger.ZERO) < 0) {
+			damageDealt = BigInteger.ZERO;
+		}
+		
+		long now = System.currentTimeMillis();
+		boolean damageChanged = lastDpmDamageDealt == null || damageDealt.compareTo(lastDpmDamageDealt) != 0;
+		if (!SessionRateUtility.shouldRecalculate(lastDpmUpdateTime, damageChanged)) {
+			return;
+		}
+		
+		lastDpmUpdateTime = now;
+		lastDpmDamageDealt = damageDealt;
+		
+		long fightDuration = now - bossFightStartTime;
+		if (fightDuration <= 0) {
+			cachedDpm = 0.0;
+			return;
+		}
+		double minutes = fightDuration / 60000.0;
+		cachedDpm = minutes > 0 ? damageDealt.doubleValue() / minutes : 0.0;
 	}
 	
 	/**
@@ -521,11 +565,13 @@ public class BossHPUtility {
 								bossFightStartTime = System.currentTimeMillis();
 								lastTrackedBossName = bossName;
 								resetLastDamageWindow();
+								resetDpmCache();
 							} catch (NumberFormatException e) {
 								// HP konnte nicht geparst werden, ignoriere
 								initialBossHP = null;
 								bossFightStartTime = 0;
 								resetLastDamageWindow();
+								resetDpmCache();
 							}
 						}
 					}
@@ -553,6 +599,7 @@ public class BossHPUtility {
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
 		resetLastDamageWindow();
+		resetDpmCache();
 		// Blockierung wird automatisch nach BOSS_BLOCK_DURATION ablaufen
 	}
 	
@@ -596,6 +643,7 @@ public class BossHPUtility {
 			bossFightStartTime = 0;
 			lastTrackedBossName = null;
 			resetLastDamageWindow();
+			resetDpmCache();
 		}
 	}
 	
@@ -770,26 +818,8 @@ public class BossHPUtility {
 		
 		// Berechne DPM (nur wenn Boss aktiv ist und nicht verschwunden und DPM-Anzeige aktiviert ist)
 		String dpmText = null;
-		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM && 
-			instance.initialBossHP != null && currentHP != null && instance.bossFightStartTime > 0) {
-			long currentTime = System.currentTimeMillis();
-			long fightDuration = currentTime - instance.bossFightStartTime;
-			
-			if (fightDuration > 0) {
-				// Berechne abgezogene HP
-				BigInteger damageDealt = instance.initialBossHP.subtract(currentHP);
-				
-				// Berechne DPM (Damage Per Minute)
-				// fightDuration ist in Millisekunden, also teilen durch 60000 für Minuten
-				double minutes = fightDuration / 60000.0;
-				if (minutes > 0) {
-					// Konvertiere BigInteger zu double für Division
-					double damageDealtDouble = damageDealt.doubleValue();
-					double dpm = damageDealtDouble / minutes;
-					// Formatiere DPM mit Tausendertrennzeichen
-					dpmText = String.format("DPM: %,.0f", dpm);
-				}
-			}
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+			dpmText = getFormattedDpmText();
 		}
 		
 		// Last Dmg: Schaden im letzten 2s-Fenster (siehe tickLastDamageWindow); nach 5s ohne Schaden -> 0
@@ -1000,6 +1030,7 @@ public class BossHPUtility {
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
 		resetLastDamageWindow();
+		resetDpmCache();
 	}
 	
 	/**
@@ -1030,6 +1061,7 @@ public class BossHPUtility {
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
 		resetLastDamageWindow();
+		resetDpmCache();
 	}
 	
 	/**
@@ -1062,6 +1094,7 @@ public class BossHPUtility {
 		bossFightStartTime = 0;
 		lastTrackedBossName = null;
 		resetLastDamageWindow();
+		resetDpmCache();
 	}
 	
 	/**
@@ -1111,6 +1144,23 @@ public class BossHPUtility {
 	public static long getBossFightStartTime() {
 		BossHPUtility instance = getInstance();
 		return instance != null ? instance.bossFightStartTime : 0;
+	}
+	
+	public static String getFormattedDpmText() {
+		BossHPUtility instance = getInstance();
+		if (instance == null || instance.initialBossHP == null || instance.bossFightStartTime <= 0
+				|| instance.lastDpmUpdateTime <= 0) {
+			return null;
+		}
+		long fightDuration = System.currentTimeMillis() - instance.bossFightStartTime;
+		if (fightDuration <= 0) {
+			return null;
+		}
+		double minutes = fightDuration / 60000.0;
+		if (minutes <= 0) {
+			return null;
+		}
+		return String.format(Locale.US, "DPM: %,.0f", instance.cachedDpm);
 	}
 	
 	/**

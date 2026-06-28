@@ -363,8 +363,15 @@ public class OverlayEditorScreen extends Screen {
                                .replaceAll("[\\u3400-\\u4DBF]", "");
         
         // Check if the clean title contains Kit Filter relevant inventory names
-        return cleanTitle.contains("Baupläne [Rüstung]") ||
-               cleanTitle.contains("Bauplan [Shop]");
+        // (same logic as KitFilterUtility.isRelevantInventory())
+        return cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Blueprints [Weapons]") ||
+               cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Blueprints [Armor]") ||
+               cleanTitle.contains("Baupläne [Werkzeuge]") || cleanTitle.contains("Blueprints [Tools]") ||
+               cleanTitle.contains("Bauplan [Shop]") || cleanTitle.contains("Blueprint Store") ||
+               cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorited [Armor Blueprints]") ||
+               cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorited [Weapon Blueprints]") ||
+               cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") || cleanTitle.contains("Favorited [Tools Blueprints]") ||
+               cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
     }
     
     /**

@@ -23,6 +23,7 @@ public abstract class HelpOverlayScreenMixin {
     private void renderHelpOverlayAtReturn(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Rendere Help-Overlay ganz am Ende, damit es über allem liegt
         ItemViewerUtility.renderHelpOverlay(context);
+        ItemViewerUtility.renderFilterOverlay(context);
     }
 }
 

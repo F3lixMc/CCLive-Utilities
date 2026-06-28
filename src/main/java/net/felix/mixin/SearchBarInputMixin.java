@@ -70,6 +70,18 @@ public abstract class SearchBarInputMixin {
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayEscape()) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+            cir.setReturnValue(true);
+            return;
+        }
+
         // Handle F6 key for overlay editor (works in inventories)
         if (OverlayEditorUtility.handleKeyPress(keyCode)) {
             cir.setReturnValue(true);

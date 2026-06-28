@@ -6,6 +6,7 @@ package net.felix.utilities.ItemViewer;
 public class CostFilter {
     public String category;  // "amboss", "ressource", "material", "material1"-"material5", "cactus", "soul", "coin", "ofen"
     public Integer amount;   // Zahl (z.B. 0, 5, 1000)
+    public String amountOperator; // ">", "<", "=", ">=", "<=" (null = exakter Match)
     public String itemName;  // Item-Name (z.B. "Eichenholz", "Diamant")
 }
 

@@ -110,6 +110,7 @@ public class KitSelectionScreen extends Screen {
 	
 	public void switchToCustomTab() {
 		this.activeTab = TAB_EIGENE;
+		tooltipHelper.clear();
 	}
 	
 	@Override

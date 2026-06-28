@@ -47,7 +47,7 @@ public class ItemSearchParser {
     // Kosten-Kategorien: nur als eigenständiges Wort mit Trenner (z.B. "kaktus:0", "ressource:Eichenholz")
     // Wortgrenzen verhindern, dass "Kaktusernter" fälschlich als Kaktus-Kostenfilter gelesen wird
     private static final Pattern COST_CATEGORY_PATTERN = Pattern.compile(
-        "\\b(amboss|ressource|material1|material2|material3|material4|material5|material|kaktus|seele|coin|coins|ofen)\\b(?:\\s*:\\s*|\\s+)([\\p{L}\\p{N}_\\s\\d.,]+)",
+        "\\b(amboss|ressource|material1|material2|material3|material4|material5|material|kaktus|seele|coin|coins|ofen)\\b(?:\\s*:\\s*|\\s+)([\\p{L}\\p{N}_\\s\\d.,<>=]+)",
         Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CHARACTER_CLASS
     );
     private static final Pattern ASPECT_PATTERN = Pattern.compile(
@@ -167,7 +167,7 @@ public class ItemSearchParser {
             String tag = tagMatcher.group(1).toLowerCase();
             // Nur hinzufügen wenn nicht leer (sonst würde @ alleine auch matchen)
             if (!tag.isEmpty()) {
-                query.tags.add(tag);
+                query.tags.add(ItemViewerUtility.normalizeSearchTag(tag));
                 remaining = remaining.replace(tagMatcher.group(0), "").trim();
             }
         }
@@ -203,12 +203,7 @@ public class ItemSearchParser {
             
             CostFilter filter = new CostFilter();
             filter.category = category;
-            
-            try {
-                filter.amount = Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                filter.itemName = value;
-            }
+            applyCostFilterValue(filter, value);
             
             query.costFilters.add(filter);
             remaining = remaining.replace(costMatcher.group(0), "").trim();
@@ -314,7 +309,7 @@ public class ItemSearchParser {
         while (tagMatcher.find()) {
             String tag = tagMatcher.group(1).toLowerCase();
             if (!tag.isEmpty()) {
-                query.tags.add(tag);
+                query.tags.add(ItemViewerUtility.normalizeSearchTag(tag));
                 remaining = remaining.replace(tagMatcher.group(0), "").trim();
             }
         }
@@ -350,12 +345,7 @@ public class ItemSearchParser {
             
             CostFilter filter = new CostFilter();
             filter.category = category;
-            
-            try {
-                filter.amount = Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                filter.itemName = value;
-            }
+            applyCostFilterValue(filter, value);
             
             query.costFilters.add(filter);
             remaining = remaining.replace(costMatcher.group(0), "").trim();
@@ -375,6 +365,29 @@ public class ItemSearchParser {
         query.nameSearch = remaining;
         
         return query;
+    }
+    
+    private static void applyCostFilterValue(CostFilter filter, String rawValue) {
+        String value = rawValue.trim();
+        if (value.isEmpty()) {
+            return;
+        }
+        Matcher opMatcher = Pattern.compile("^(>=|<=|>|<|=)\\s*(\\d+(?:[.,]\\d+)?)$").matcher(value);
+        if (opMatcher.matches()) {
+            filter.amountOperator = ComparisonUtils.normalizeOperator(opMatcher.group(1));
+            filter.amount = parseCostFilterAmount(opMatcher.group(2));
+            return;
+        }
+        try {
+            filter.amount = parseCostFilterAmount(value);
+        } catch (NumberFormatException e) {
+            filter.itemName = value;
+        }
+    }
+
+    private static int parseCostFilterAmount(String value) {
+        String normalized = value.trim().replace(",", "").replace(".", "");
+        return Integer.parseInt(normalized);
     }
     
     private static String parseFloorComparisons(String text, SearchQuery query) {

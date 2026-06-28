@@ -354,7 +354,7 @@ public class SchmiedTrackerUtility {
 				return CCLiveUtilitiesConfig.HANDLER.instance().blitzgeschmiedetColor.getRGB();
 			case "sternengeschmiedet":
 				if (CCLiveUtilitiesConfig.HANDLER.instance().sternengeschmiedetRainbow) {
-					return getRainbowColor();
+					return getRainbowColorArgb();
 				} else {
 					return CCLiveUtilitiesConfig.HANDLER.instance().sternengeschmiedetColor.getRGB();
 				}
@@ -505,7 +505,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Generiert eine gleichmäßige Regenbogen-Farbe basierend auf der Zeit
 	 */
-	private static int getRainbowColor() {
+	public static int getRainbowColorArgb() {
 		long time = System.currentTimeMillis();
 		float hue = (time % 2000) / 2000.0f; // 2 Sekunden Zyklus
 		

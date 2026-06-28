@@ -12,7 +12,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,9 +25,11 @@ public class CollectedMaterialsResourcesStorage {
     private static final String OLD_RESOURCES_FILE = "collected_resources.json";
     private static final Map<String, Long> materials = new HashMap<>();
     private static final Map<String, Long> resources = new HashMap<>();
+    private static final Map<String, Long> other = new HashMap<>();
     /** Normalisierter Name → Menge (O(1)-Lookup statt linearem Scan). */
     private static final Map<String, Long> normalizedMaterials = new HashMap<>();
     private static final Map<String, Long> normalizedResources = new HashMap<>();
+    private static final Map<String, Long> normalizedOther = new HashMap<>();
     private static final AtomicBoolean saveScheduled = new AtomicBoolean(false);
     private static File storageFile;
     private static boolean initialized = false;
@@ -64,6 +68,14 @@ public class CollectedMaterialsResourcesStorage {
             return new HashMap<>(resources);
         }
     }
+
+    public static Map<String, Long> getAllOther() {
+        ensureInitialized();
+        refreshIfChanged();
+        synchronized (other) {
+            return new HashMap<>(other);
+        }
+    }
     
     public static long getMaterialAmount(String materialName) {
         ensureInitialized();
@@ -92,6 +104,22 @@ public class CollectedMaterialsResourcesStorage {
                 return direct;
             }
             return normalizedResources.getOrDefault(normalizeName(resourceName), 0L);
+        }
+    }
+
+    /** Sonstige Pinboard-Werte (z. B. Pergamentfetzen) – Sektion {@code other} in der JSON. */
+    public static long getOtherAmount(String name) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (name == null) {
+            return 0L;
+        }
+        synchronized (other) {
+            Long direct = other.get(name);
+            if (direct != null) {
+                return direct;
+            }
+            return normalizedOther.getOrDefault(normalizeName(name), 0L);
         }
     }
     
@@ -127,9 +155,18 @@ public class CollectedMaterialsResourcesStorage {
         if (updates == null || updates.isEmpty()) {
             return;
         }
+        Map<String, Long> materialUpdates = new HashMap<>();
+        Map<String, Long> otherUpdates = new HashMap<>();
+        partitionUpdates(updates, materialUpdates, otherUpdates);
+        if (!otherUpdates.isEmpty()) {
+            updateOther(otherUpdates);
+        }
+        if (materialUpdates.isEmpty()) {
+            return;
+        }
         boolean changed = false;
         synchronized (materials) {
-            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            for (Map.Entry<String, Long> entry : materialUpdates.entrySet()) {
                 String name = entry.getKey();
                 Long amount = entry.getValue();
                 if (name == null || name.isEmpty() || amount == null) {
@@ -143,7 +180,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            applyNormalizedMaterialUpdates(updates);
+            applyNormalizedMaterialUpdates(materialUpdates);
             scheduleSave();
         }
     }
@@ -154,9 +191,18 @@ public class CollectedMaterialsResourcesStorage {
         if (updates == null || updates.isEmpty()) {
             return;
         }
+        Map<String, Long> resourceUpdates = new HashMap<>();
+        Map<String, Long> otherUpdates = new HashMap<>();
+        partitionUpdates(updates, resourceUpdates, otherUpdates);
+        if (!otherUpdates.isEmpty()) {
+            updateOther(otherUpdates);
+        }
+        if (resourceUpdates.isEmpty()) {
+            return;
+        }
         boolean changed = false;
         synchronized (resources) {
-            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            for (Map.Entry<String, Long> entry : resourceUpdates.entrySet()) {
                 String name = entry.getKey();
                 Long amount = entry.getValue();
                 if (name == null || name.isEmpty() || amount == null) {
@@ -170,7 +216,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            applyNormalizedResourceUpdates(updates);
+            applyNormalizedResourceUpdates(resourceUpdates);
             scheduleSave();
         }
     }
@@ -200,9 +246,18 @@ public class CollectedMaterialsResourcesStorage {
         if (deltas == null || deltas.isEmpty()) {
             return;
         }
+        Map<String, Long> materialDeltas = new HashMap<>();
+        Map<String, Long> otherDeltas = new HashMap<>();
+        partitionUpdates(deltas, materialDeltas, otherDeltas);
+        for (Map.Entry<String, Long> entry : otherDeltas.entrySet()) {
+            addOther(entry.getKey(), entry.getValue());
+        }
+        if (materialDeltas.isEmpty()) {
+            return;
+        }
         boolean changed = false;
         synchronized (materials) {
-            for (Map.Entry<String, Long> entry : deltas.entrySet()) {
+            for (Map.Entry<String, Long> entry : materialDeltas.entrySet()) {
                 String name = entry.getKey();
                 Long delta = entry.getValue();
                 if (name == null || name.isEmpty() || delta == null || delta <= 0) {
@@ -215,7 +270,7 @@ public class CollectedMaterialsResourcesStorage {
         }
         if (changed) {
             synchronized (materials) {
-                for (String name : deltas.keySet()) {
+                for (String name : materialDeltas.keySet()) {
                     if (name != null && !name.isEmpty()) {
                         applyNormalizedMaterialEntry(name, materials.get(name));
                     }
@@ -241,9 +296,18 @@ public class CollectedMaterialsResourcesStorage {
         if (deltas == null || deltas.isEmpty()) {
             return;
         }
+        Map<String, Long> resourceDeltas = new HashMap<>();
+        Map<String, Long> otherDeltas = new HashMap<>();
+        partitionUpdates(deltas, resourceDeltas, otherDeltas);
+        for (Map.Entry<String, Long> entry : otherDeltas.entrySet()) {
+            addOther(entry.getKey(), entry.getValue());
+        }
+        if (resourceDeltas.isEmpty()) {
+            return;
+        }
         boolean changed = false;
         synchronized (resources) {
-            for (Map.Entry<String, Long> entry : deltas.entrySet()) {
+            for (Map.Entry<String, Long> entry : resourceDeltas.entrySet()) {
                 String name = entry.getKey();
                 Long delta = entry.getValue();
                 if (name == null || name.isEmpty() || delta == null || delta <= 0) {
@@ -256,7 +320,7 @@ public class CollectedMaterialsResourcesStorage {
         }
         if (changed) {
             synchronized (resources) {
-                for (String name : deltas.keySet()) {
+                for (String name : resourceDeltas.keySet()) {
                     if (name != null && !name.isEmpty()) {
                         applyNormalizedResourceEntry(name, resources.get(name));
                     }
@@ -274,8 +338,67 @@ public class CollectedMaterialsResourcesStorage {
         addResources(update);
     }
 
+    public static void updateOther(String name, long amount) {
+        if (name == null || name.isEmpty()) {
+            return;
+        }
+        Map<String, Long> update = new HashMap<>();
+        update.put(name, amount);
+        updateOther(update);
+    }
+
+    public static void updateOther(Map<String, Long> updates) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (updates == null || updates.isEmpty()) {
+            return;
+        }
+        boolean changed = false;
+        synchronized (other) {
+            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+                String name = entry.getKey();
+                Long amount = entry.getValue();
+                if (name == null || name.isEmpty() || amount == null) {
+                    continue;
+                }
+                Long current = other.get(name);
+                if (current == null || !current.equals(amount)) {
+                    other.put(name, amount);
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            applyNormalizedOtherUpdates(updates);
+            scheduleSave();
+        }
+    }
+
+    public static void addOther(String name, long delta) {
+        if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        ensureInitialized();
+        refreshIfChanged();
+        boolean changed = false;
+        synchronized (other) {
+            long current = other.getOrDefault(name, 0L);
+            other.put(name, current + delta);
+            changed = true;
+            applyNormalizedOtherEntry(name, other.get(name));
+        }
+        if (changed) {
+            scheduleSave();
+        }
+    }
+
     public static void subtractMaterial(String name, long delta) {
         if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        if (isOtherStorageName(name)) {
+            long current = getOtherAmount(name);
+            updateOther(name, Math.max(0L, current - delta));
             return;
         }
         long current = getMaterialAmount(name);
@@ -284,6 +407,11 @@ public class CollectedMaterialsResourcesStorage {
 
     public static void subtractResource(String name, long delta) {
         if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        if (isOtherStorageName(name)) {
+            long current = getOtherAmount(name);
+            updateOther(name, Math.max(0L, current - delta));
             return;
         }
         long current = getResourceAmount(name);
@@ -318,9 +446,18 @@ public class CollectedMaterialsResourcesStorage {
         if (updates == null || updates.isEmpty()) {
             return;
         }
+        Map<String, Long> syncedUpdates = new HashMap<>();
+        Map<String, Long> otherUpdates = new HashMap<>();
+        partitionUpdates(updates, syncedUpdates, otherUpdates);
+        if (!otherUpdates.isEmpty()) {
+            updateOther(otherUpdates);
+        }
+        if (syncedUpdates.isEmpty()) {
+            return;
+        }
         boolean changed = false;
         synchronized (materials) {
-            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            for (Map.Entry<String, Long> entry : syncedUpdates.entrySet()) {
                 String name = entry.getKey();
                 Long amount = entry.getValue();
                 if (name == null || name.isEmpty() || amount == null) {
@@ -334,7 +471,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         synchronized (resources) {
-            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            for (Map.Entry<String, Long> entry : syncedUpdates.entrySet()) {
                 String name = entry.getKey();
                 Long amount = entry.getValue();
                 if (name == null || name.isEmpty() || amount == null) {
@@ -348,7 +485,7 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            for (Map.Entry<String, Long> entry : syncedUpdates.entrySet()) {
                 if (entry.getKey() != null && entry.getValue() != null) {
                     applySyncedNormalizedEntry(entry.getKey(), entry.getValue());
                 }
@@ -359,6 +496,11 @@ public class CollectedMaterialsResourcesStorage {
 
     public static void subtractSyncedOwnedAmount(String name, long delta) {
         if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        if (isOtherStorageName(name)) {
+            long current = getOtherAmount(name);
+            updateOther(name, Math.max(0L, current - delta));
             return;
         }
         long current = getSyncedOwnedAmount(name);
@@ -372,6 +514,9 @@ public class CollectedMaterialsResourcesStorage {
         }
         synchronized (resources) {
             resources.clear();
+        }
+        synchronized (other) {
+            other.clear();
         }
         rebuildNormalizedCaches();
         save();
@@ -400,6 +545,9 @@ public class CollectedMaterialsResourcesStorage {
             synchronized (resources) {
                 resources.clear();
             }
+            synchronized (other) {
+                other.clear();
+            }
             lastKnownModified = 0L;
             return;
         }
@@ -421,6 +569,9 @@ public class CollectedMaterialsResourcesStorage {
         synchronized (resources) {
             resources.clear();
         }
+        synchronized (other) {
+            other.clear();
+        }
         
         if (!storageFile.exists()) {
             save();
@@ -433,11 +584,13 @@ public class CollectedMaterialsResourcesStorage {
                 JsonObject root = element.getAsJsonObject();
                 readSection(root, "materials", materials);
                 readSection(root, "resources", resources);
+                readSection(root, "other", other);
             }
         } catch (Exception e) {
             // Silent error handling
         }
         
+        migrateLegacyOtherEntries();
         rebuildNormalizedCaches();
         
         if (storageFile.exists()) {
@@ -448,6 +601,7 @@ public class CollectedMaterialsResourcesStorage {
     private static void rebuildNormalizedCaches() {
         normalizedMaterials.clear();
         normalizedResources.clear();
+        normalizedOther.clear();
         synchronized (materials) {
             for (Map.Entry<String, Long> entry : materials.entrySet()) {
                 if (entry.getKey() == null || entry.getValue() == null) {
@@ -464,6 +618,82 @@ public class CollectedMaterialsResourcesStorage {
                 normalizedResources.put(normalizeName(entry.getKey()), entry.getValue());
             }
         }
+        synchronized (other) {
+            for (Map.Entry<String, Long> entry : other.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) {
+                    continue;
+                }
+                normalizedOther.put(normalizeName(entry.getKey()), entry.getValue());
+            }
+        }
+    }
+
+    /** Verschiebt Pergamentfetzen aus materials/resources nach {@code other}. */
+    private static void migrateLegacyOtherEntries() {
+        if (purgeOtherFromLegacySections()) {
+            scheduleSave();
+        }
+    }
+
+    private static boolean purgeOtherFromLegacySections() {
+        String paperShreds = ClipboardPaperShredsCollector.STORAGE_NAME;
+        long fromMaterials = removeLegacyOtherEntry(materials, paperShreds);
+        long fromResources = removeLegacyOtherEntry(resources, paperShreds);
+        if (fromMaterials <= 0 && fromResources <= 0) {
+            return false;
+        }
+        synchronized (other) {
+            long current = other.getOrDefault(paperShreds, 0L);
+            other.put(paperShreds, Math.max(current, Math.max(fromMaterials, fromResources)));
+        }
+        rebuildNormalizedCaches();
+        return true;
+    }
+
+    private static boolean isOtherStorageName(String name) {
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        return normalizeName(name).equals(normalizeName(ClipboardPaperShredsCollector.STORAGE_NAME));
+    }
+
+    private static void partitionUpdates(Map<String, Long> updates,
+                                         Map<String, Long> primaryOut,
+                                         Map<String, Long> otherOut) {
+        for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            String name = entry.getKey();
+            Long amount = entry.getValue();
+            if (name == null || name.isEmpty() || amount == null) {
+                continue;
+            }
+            if (isOtherStorageName(name)) {
+                otherOut.put(name, amount);
+            } else {
+                primaryOut.put(name, amount);
+            }
+        }
+    }
+
+    private static long removeLegacyOtherEntry(Map<String, Long> section, String name) {
+        long found = 0L;
+        synchronized (section) {
+            Long direct = section.remove(name);
+            if (direct != null) {
+                found = Math.max(found, direct);
+            }
+            String normalized = normalizeName(name);
+            List<String> toRemove = new ArrayList<>();
+            for (Map.Entry<String, Long> entry : section.entrySet()) {
+                if (entry.getKey() != null && normalizeName(entry.getKey()).equals(normalized)) {
+                    found = Math.max(found, entry.getValue() != null ? entry.getValue() : 0L);
+                    toRemove.add(entry.getKey());
+                }
+            }
+            for (String key : toRemove) {
+                section.remove(key);
+            }
+        }
+        return found;
     }
 
     private static void applyNormalizedMaterialEntry(String name, Long amount) {
@@ -478,6 +708,19 @@ public class CollectedMaterialsResourcesStorage {
             return;
         }
         normalizedResources.put(normalizeName(name), amount);
+    }
+
+    private static void applyNormalizedOtherEntry(String name, Long amount) {
+        if (name == null || amount == null) {
+            return;
+        }
+        normalizedOther.put(normalizeName(name), amount);
+    }
+
+    private static void applyNormalizedOtherUpdates(Map<String, Long> updates) {
+        for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            applyNormalizedOtherEntry(entry.getKey(), entry.getValue());
+        }
     }
 
     private static void applySyncedNormalizedEntry(String name, long amount) {
@@ -539,6 +782,7 @@ public class CollectedMaterialsResourcesStorage {
         if (storageFile == null) {
             return;
         }
+        purgeOtherFromLegacySections();
         try {
             File parent = storageFile.getParentFile();
             if (parent != null) {
@@ -557,6 +801,7 @@ public class CollectedMaterialsResourcesStorage {
         JsonObject root = new JsonObject();
         root.add("materials", buildSection(materials));
         root.add("resources", buildSection(resources));
+        root.add("other", buildSection(other));
         return root;
     }
     

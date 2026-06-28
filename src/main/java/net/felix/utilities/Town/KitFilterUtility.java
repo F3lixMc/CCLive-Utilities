@@ -1607,6 +1607,7 @@ public class KitFilterUtility {
 
 	private static String customKitCacheKey(CustomKit kit) {
 		StringBuilder key = new StringBuilder(kit.id != null ? kit.id : "");
+		key.append('|').append(kit.name != null ? kit.name : "");
 		for (String itemName : kit.itemNames) {
 			key.append('|').append(itemName);
 		}

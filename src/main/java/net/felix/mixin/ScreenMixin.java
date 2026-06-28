@@ -29,6 +29,15 @@ public class ScreenMixin {
                 cir.setReturnValue(true);
                 return;
             }
+            if (ItemViewerUtility.handleFilterOverlayEscape()) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+
+        if (ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+            cir.setReturnValue(true);
+            return;
         }
         
         // Prüfe dann ob Text-Input für Suchfeld behandelt werden soll (höhere Priorität)
@@ -105,6 +114,9 @@ public class ScreenMixin {
             if (ItemViewerUtility.isHelpOverlayOpen()) {
                 ItemViewerUtility.renderHelpOverlay(context);
             }
+            if (ItemViewerUtility.isOverlayOpen()) {
+                ItemViewerUtility.renderFilterOverlay(context);
+            }
             
             // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
             ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
@@ -140,6 +152,7 @@ public class ScreenMixin {
         }
         ItemViewerUtility.blurSearchFieldFocus();
         ItemViewerUtility.closeHelpOverlay();
+        ItemViewerUtility.closeFilterOverlay();
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocus();
         if (screen instanceof HandledScreen) {
             net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.finalizeQuantityTextField();

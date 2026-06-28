@@ -61,7 +61,7 @@
         },
         {
             "name": "Lohen [Essenz] Tier 12",
-            "wave": "?"
+            "wave": 9933
         },
 
 
@@ -112,7 +112,7 @@
         },
         {
             "name": "Zombie [Essenz] Tier 12",
-            "wave": 8191
+            "wave": 8190
         },
 
 
@@ -179,7 +179,7 @@
         },
         {
             "name": "Ziegen [Essenz] Tier 11",
-            "wave": 8784
+            "wave": 8921
         },
 
 
@@ -279,7 +279,7 @@
 
         {
             "name": "Piglin Grobian [Essenz] Tier 9",
-            "wave": 8332
+            "wave": 8478
         },
 
 
@@ -452,7 +452,7 @@
         },
         {
             "name": "Zombifizierter Piglin [Essenz] Tier 10",
-            "wave": 9689
+            "wave": 9379
         },
 
 
@@ -472,7 +472,7 @@
         },
         {
             "name": "Hoglin [Essenz] Tier 11",
-            "wave": 8902
+            "wave": 9041
         },
 
 
@@ -488,7 +488,7 @@
         },
         {
             "name": "Frosch [Essenz] Tier 10",
-            "wave": "?"
+            "wave": 9855
         },
 
 
@@ -512,7 +512,7 @@
         },
         {
             "name": "Hexen [Essenz] Tier 10",
-            "wave": 8181
+            "wave": 8410
         },
 
 
@@ -600,7 +600,7 @@
         },
         {
             "name": "Zoglin [Essenz] Tier 8",
-            "wave": 8199
+            "wave": 8717
         },
 
 
@@ -615,7 +615,7 @@
         },
         {
             "name": "Panda [Essenz] Tier 9",
-            "wave": "?"
+            "wave": 7969
         },
 
 
@@ -643,7 +643,7 @@
         },
         {
             "name": "Ertrunkener [Essenz] Tier 9",
-            "wave": 9780
+            "wave": 9742
         },
 
 
@@ -666,7 +666,7 @@
 
         {
             "name": "Skelettpferd [Essenz] Tier 9",
-            "wave": "?"
+            "wave": 9309
         },
 
 
@@ -678,7 +678,7 @@
         },
         {
             "name": "Husk [Essenz] Tier 12",
-            "wave": 8421
+            "wave": 8558
         },
 
 
@@ -705,7 +705,7 @@
         },
         {
             "name": "Polarbär [Essenz] Tier 8",
-            "wave": 9152
+            "wave": 9148
         }
         
         

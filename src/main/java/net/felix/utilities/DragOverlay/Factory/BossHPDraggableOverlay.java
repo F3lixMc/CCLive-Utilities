@@ -115,27 +115,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     
                     // Calculate DPM text (exactly like standard overlay)
                     String dpmText = null;
-                    if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM && 
-                        initialBossHP != null && currentHP != null) {
-                        long bossFightStartTime = net.felix.utilities.Factory.BossHPUtility.getBossFightStartTime();
-                        if (bossFightStartTime > 0) {
-                            long currentTime = System.currentTimeMillis();
-                            long fightDuration = currentTime - bossFightStartTime;
-                            
-                            if (fightDuration > 0) {
-                                // Calculate damage dealt
-                                BigInteger damageDealt = initialBossHP.subtract(currentHP);
-                                
-                                // Calculate DPM (Damage Per Minute)
-                                double minutes = fightDuration / 60000.0;
-                                if (minutes > 0) {
-                                    double damageDealtDouble = damageDealt.doubleValue();
-                                    double dpm = damageDealtDouble / minutes;
-                                    // Format DPM with thousand separator
-                                    dpmText = String.format("DPM: %,.0f", dpm);
-                                }
-                            }
-                        }
+                    if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+                        dpmText = net.felix.utilities.Factory.BossHPUtility.getFormattedDpmText();
                     }
                     
                     int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;

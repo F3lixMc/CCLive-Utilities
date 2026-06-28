@@ -147,7 +147,7 @@ public class CustomKitEditorScreen extends Screen {
         nameField = new TextFieldWidget(this.textRenderer, nameFieldX, gridStartY + 1, nameFieldWidth, SLOT_SIZE - 2, Text.literal("Kit-Name"));
         nameField.setMaxLength(64);
         nameField.setText(kit.name);
-        nameField.setFocused(true);
+        nameField.setFocused(false);
         this.addDrawableChild(nameField);
 
         int buttonY = this.height - 30;
@@ -215,6 +215,14 @@ public class CustomKitEditorScreen extends Screen {
                 kit.itemNames.add(item.name);
             }
         }
+    }
+
+    private boolean isMouseOverNameField(double mouseX, double mouseY) {
+        if (nameField == null || !nameField.isVisible()) {
+            return false;
+        }
+        return mouseX >= nameField.getX() && mouseX < nameField.getX() + nameField.getWidth()
+                && mouseY >= nameField.getY() && mouseY < nameField.getY() + nameField.getHeight();
     }
 
     private void renderDimBackground(DrawContext context) {
@@ -422,6 +430,18 @@ public class CustomKitEditorScreen extends Screen {
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
+        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
+            if (ItemViewerUtility.handleFilterOverlayClick(mouseX, mouseY, button)) {
+                return true;
+            }
+        }
+
+        ItemViewerUtility.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
+
+        if (nameField != null && !isMouseOverNameField(mouseX, mouseY)) {
+            nameField.setFocused(false);
+        }
+
         if (button == 0 && handleIconPickerClick(mouseX, mouseY)) {
             return true;
         }
@@ -482,6 +502,24 @@ public class CustomKitEditorScreen extends Screen {
         }
 
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
+            if (ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
+                return true;
+            }
+        }
+        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
     }
 
     private void onDone() {
@@ -621,6 +659,9 @@ public class CustomKitEditorScreen extends Screen {
                 return true;
             }
             onCancel();
+            return true;
+        }
+        if (ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

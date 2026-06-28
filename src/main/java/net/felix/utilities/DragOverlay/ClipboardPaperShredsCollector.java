@@ -1,6 +1,7 @@
 package net.felix.utilities.DragOverlay;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
@@ -13,24 +14,53 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Sammelt Pergamentfetzen-Anzahl aus Slot 10 im "Bauplan [Shop]" Menü
- * Liest die Anzahl aus dem Tooltip des Items in Slot 10
+ * Sammelt Pergamentfetzen für die Pinnwand:
+ * <ul>
+ *   <li>Sektion {@code other} in {@code collected_materials-ressources.json}</li>
+ * </ul>
  */
 public class ClipboardPaperShredsCollector {
-    private static long currentPaperShreds = 0;
+    static final String STORAGE_NAME = "Pergamentfetzen";
     
     // Pattern für die Pergamentfetzen-Zeile im Tooltip: "780,080 / 186 Pergamentfetzen"
     // Format: "vorhandene Anzahl / benötigte Anzahl Pergamentfetzen"
     // Unterstützt Kommas als Tausendertrennzeichen (z.B. 1,000, 1,000,000)
     // Extrahiert die erste Zahl (vorhandene Anzahl) vor dem "/"
     private static final Pattern PAPER_SHREDS_PATTERN = Pattern.compile("(\\d{1,3}(?:,\\d{3})*|\\d+)\\s*/\\s*\\d+(?:[.,]\\d+)*\\s+Pergamentfetzen", Pattern.CASE_INSENSITIVE);
+
+    /** Chat: {@code [Legend] Du erhältst 186 Pergamentfetzen.} */
+    private static final Pattern PAPER_SHREDS_CHAT_PATTERN = Pattern.compile(
+            "Du erhältst\\s+(\\d{1,3}(?:,\\d{3})*|\\d+(?:[.,]\\d+)*)\\s+Pergamentfetzen\\.?",
+            Pattern.CASE_INSENSITIVE);
     
     /**
      * Initialisiert den ClipboardPaperShredsCollector
      */
     public static void initialize() {
-        // Registriere Tick-Event
         ClientTickEvents.END_CLIENT_TICK.register(ClipboardPaperShredsCollector::onClientTick);
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            if (message != null) {
+                processChatMessage(message.getString());
+            }
+        });
+    }
+
+    /**
+     * Verarbeitet Server-Chat: {@code [Legend] Du erhältst ANZAHL Pergamentfetzen.}
+     */
+    public static void processChatMessage(String messageText) {
+        if (messageText == null || messageText.isEmpty() || !shouldCollectPaperShreds()) {
+            return;
+        }
+        String clean = stripFormatting(messageText);
+        Matcher matcher = PAPER_SHREDS_CHAT_PATTERN.matcher(clean);
+        if (!matcher.find()) {
+            return;
+        }
+        long amount = parseAmount(matcher.group(1));
+        if (amount > 0) {
+            addPaperShreds(amount);
+        }
     }
     
     /**
@@ -113,7 +143,7 @@ public class ClipboardPaperShredsCollector {
                         String amountStr = matcher.group(1).replace(",", "");
                         long amount = Long.parseLong(amountStr);
                         
-                        currentPaperShreds = amount;
+                        setPaperShreds(amount);
                         break; // Gefunden, keine weiteren Zeilen prüfen
                     } catch (NumberFormatException e) {
                         // Silent error handling
@@ -144,16 +174,49 @@ public class ClipboardPaperShredsCollector {
     }
     
     /**
-     * Gibt die aktuellen Pergamentfetzen zurück
+     * Addiert erhaltene Pergamentfetzen zur aktuellen Anzahl (z. B. aus Server-Chat).
+     */
+    public static void addPaperShreds(long amount) {
+        if (amount <= 0) {
+            return;
+        }
+        CollectedMaterialsResourcesStorage.addOther(STORAGE_NAME, amount);
+        ClipboardDraggableOverlay.invalidateRenderSnapshot();
+    }
+
+    /**
+     * Gibt die aktuellen Pergamentfetzen zurück (Sektion {@code other}).
      */
     public static long getCurrentPaperShreds() {
-        return currentPaperShreds;
+        return CollectedMaterialsResourcesStorage.getOtherAmount(STORAGE_NAME);
     }
     
     /**
-     * Setzt die Pergamentfetzen manuell (für Testing)
+     * Setzt die Pergamentfetzen (Shop-Tooltip oder Testing).
      */
     public static void setPaperShreds(long amount) {
-        currentPaperShreds = amount;
+        CollectedMaterialsResourcesStorage.updateOther(STORAGE_NAME, Math.max(0L, amount));
+        ClipboardDraggableOverlay.invalidateRenderSnapshot();
+    }
+
+    private static String stripFormatting(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replaceAll("§[0-9a-fk-or]", "")
+                .replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
+                .trim();
+    }
+
+    private static long parseAmount(String amountStr) {
+        if (amountStr == null || amountStr.isEmpty()) {
+            return 0L;
+        }
+        try {
+            String normalized = amountStr.replace(".", "").replace(",", "").trim();
+            return Long.parseLong(normalized);
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
     }
 }

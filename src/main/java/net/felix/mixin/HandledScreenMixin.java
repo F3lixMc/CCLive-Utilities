@@ -114,6 +114,9 @@ public abstract class HandledScreenMixin {
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
             net.felix.utilities.ItemViewer.ItemViewerUtility.renderHelpOverlay(context);
         }
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
+            net.felix.utilities.ItemViewer.ItemViewerUtility.renderFilterOverlay(context);
+        }
         
         // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
         net.felix.utilities.ItemViewer.ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
@@ -163,7 +166,7 @@ public abstract class HandledScreenMixin {
     @Inject(method = "getTooltipFromItem", at = @At("HEAD"), cancellable = true)
     private void blockTooltipsFromItem(net.minecraft.item.ItemStack stack, CallbackInfoReturnable<java.util.List<net.minecraft.text.Text>> cir) {
         // Blockiere Tooltips wenn das Hilfe-Overlay offen ist
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
             cir.setReturnValue(java.util.Collections.emptyList());
         }
     }
@@ -177,7 +180,7 @@ public abstract class HandledScreenMixin {
         HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
         // Blockiere das Rendern der Items nur für InventoryScreen, wenn das Hilfe-Overlay offen ist
         if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen && 
-            net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
             ci.cancel();
         }
     }
@@ -192,6 +195,12 @@ public abstract class HandledScreenMixin {
         // Dies muss vor allen anderen Klicks geprüft werden
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
             if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleHelpOverlayClick(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
             }
@@ -281,6 +290,12 @@ public abstract class HandledScreenMixin {
      */
     @Inject(method = "mouseDragged", at = @At("HEAD"), cancellable = true)
     private void onMouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
+        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
         if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarDrag(mouseX, mouseY, button, x, y, backgroundHeight)) {
             cir.setReturnValue(true);
         }
@@ -291,6 +306,10 @@ public abstract class HandledScreenMixin {
      */
     @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
     private void onMouseReleased(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+            return;
+        }
         if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }

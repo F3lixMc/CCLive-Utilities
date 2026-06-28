@@ -56,6 +56,8 @@ public class InformationenUtility {
 	private static final List<PondInfo> pondsDatabase = new ArrayList<>();
 	private static final Map<String, Set<String>> fishFamilyToPonds = new HashMap<>();
 	private static final List<String> sortedFishFamilies = new ArrayList<>();
+	private static final List<String> fishFamilyDisplayOrder = new ArrayList<>();
+	private static final Map<String, Integer> fishFamilyDisplayOrderIndex = new HashMap<>();
 	private static final String LICENSES_CONFIG_FILE = "assets/cclive-utilities/Farmworld.json";
 
 	/** Fisch-Materialien: „Legendäres Thunfischfleisch“, „Gewöhnliche Oktopuswirbelsäule“, … */
@@ -72,6 +74,21 @@ public class InformationenUtility {
 	);
 	private static final Pattern TRAILING_NUMERIC_AMOUNT_PATTERN = Pattern.compile(
 		"\\s*\\([\\d.,]+\\)\\s*$"
+	);
+
+	private static final java.util.List<String> PRISMARIN_MATERIAL_NAMES = java.util.List.of(
+			"Prismarin-Splitter",
+			"Prismarin-Fragment",
+			"Prismarinplatten",
+			"Prismarin-Muschel",
+			"Herz des Meeres"
+	);
+	private static final java.util.Map<String, String> PRISMARIN_MATERIAL_RARITIES = java.util.Map.of(
+			"Prismarin-Splitter", "common",
+			"Prismarin-Fragment", "uncommon",
+			"Prismarinplatten", "rare",
+			"Prismarin-Muschel", "epic",
+			"Herz des Meeres", "legendary"
 	);
 	
 	// Cards and Statues effects tracking
@@ -179,6 +196,8 @@ public class InformationenUtility {
 		long newXP = 0; // New XP gained since tracking started (current - initial)
 		long sessionStartTime = 0; // When tracking started
 		double xpPerMinute = 0.0; // Average XP per minute (calculated continuously)
+		long lastXpmUpdateTime = 0;
+		long lastXpmNewXp = 0;
 		long lastGainedXP = 0; // Last XP gained in a single update (for display)
 		long lastXPChangeTime = 0; // When XP last changed (for overlay visibility timer)
 		boolean shouldShowOverlay = false; // Whether overlay should be visible
@@ -3128,6 +3147,8 @@ public class InformationenUtility {
 			return;
 		}
 		fishFamilyToPonds.clear();
+		fishFamilyDisplayOrder.clear();
+		fishFamilyDisplayOrderIndex.clear();
 		com.google.gson.JsonArray pondsArray = json.getAsJsonArray("ponds");
 		for (var element : pondsArray) {
 			JsonObject pondData = element.getAsJsonObject();
@@ -3142,6 +3163,10 @@ public class InformationenUtility {
 					String family = familyElement.getAsString().trim();
 					if (!family.isEmpty()) {
 						fishFamilyToPonds.computeIfAbsent(family, key -> new LinkedHashSet<>()).add(pondName);
+						if (!fishFamilyDisplayOrderIndex.containsKey(family)) {
+							fishFamilyDisplayOrderIndex.put(family, fishFamilyDisplayOrder.size());
+							fishFamilyDisplayOrder.add(family);
+						}
 					}
 				}
 			}
@@ -4650,6 +4675,50 @@ public class InformationenUtility {
 		return materialName != null && FISHING_RARITY_MATERIAL_PATTERN.matcher(materialName.trim()).matches();
 	}
 
+	public static boolean isPrismarinMaterial(String materialName) {
+		if (materialName == null || materialName.isEmpty()) {
+			return false;
+		}
+		for (String name : PRISMARIN_MATERIAL_NAMES) {
+			if (name.equalsIgnoreCase(materialName.trim())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static String getFishFamilyFromMaterial(String materialName) {
+		return extractFishFamilyFromMaterial(materialName);
+	}
+
+	public static int getFishFamilyDisplayOrderIndex(String family) {
+		if (family == null || family.isEmpty()) {
+			return Integer.MAX_VALUE;
+		}
+		return fishFamilyDisplayOrderIndex.getOrDefault(family, Integer.MAX_VALUE);
+	}
+
+	public static String getFishPartSuffixFromMaterial(String materialName, String family) {
+		if (materialName == null || materialName.isEmpty()) {
+			return "";
+		}
+		Matcher matcher = FISHING_RARITY_PREFIX_PATTERN.matcher(materialName.trim());
+		if (!matcher.matches()) {
+			return materialName.toLowerCase(java.util.Locale.ROOT);
+		}
+		String materialPart = matcher.group(2);
+		if (family != null && !family.isEmpty()
+				&& materialPart.length() >= family.length()
+				&& materialPart.regionMatches(true, 0, family, 0, family.length())) {
+			return materialPart.substring(family.length()).toLowerCase(java.util.Locale.ROOT);
+		}
+		return materialPart.toLowerCase(java.util.Locale.ROOT);
+	}
+
+	public static String getFishingMaterialRarityKey(String materialName) {
+		return getRarityKeyFromFishingMaterial(materialName);
+	}
+
 	private static String extractFishingMaterialNameFromLine(String cleanLineText) {
 		if (cleanLineText == null || cleanLineText.isEmpty()) {
 			return null;
@@ -4792,7 +4861,21 @@ public class InformationenUtility {
 			return new MaterialFloorInfo(info.floor, info.pond, null, info.rarity, info.color);
 		}
 
+		MaterialFloorInfo prismarinInfo = getPrismarinMaterialFloorInfo(materialName);
+		if (prismarinInfo != null) {
+			return prismarinInfo;
+		}
+
 		return getFishingMaterialFloorInfo(materialName);
+	}
+
+	private static MaterialFloorInfo getPrismarinMaterialFloorInfo(String materialName) {
+		for (java.util.Map.Entry<String, String> entry : PRISMARIN_MATERIAL_RARITIES.entrySet()) {
+			if (entry.getKey().equalsIgnoreCase(materialName.trim())) {
+				return new MaterialFloorInfo(0, entry.getValue(), entry.getValue());
+			}
+		}
+		return null;
 	}
 	
 	private static void addMoblexiconHpToTooltip(List<Text> lines) {
@@ -5488,6 +5571,7 @@ public class InformationenUtility {
 				// Overlay just got hidden - stop timer
 				xpData.sessionStartTime = 0;
 				xpData.xpPerMinute = 0.0;
+				resetXpmTracking(xpData);
 			}
 			
 			// Reset XP calculation 10 seconds after overlay is hidden (20 seconds total)
@@ -5498,6 +5582,7 @@ public class InformationenUtility {
 				xpData.newXP = 0;
 				xpData.xpPerMinute = 0.0;
 				xpData.initialXP = -1;
+				resetXpmTracking(xpData);
 				// Keep lastXPChangeTime for potential future use
 			}
 		} else {
@@ -5506,6 +5591,7 @@ public class InformationenUtility {
 			if (xpData.sessionStartTime > 0) {
 				xpData.sessionStartTime = 0;
 				xpData.xpPerMinute = 0.0;
+				resetXpmTracking(xpData);
 			}
 		}
 	}
@@ -5514,16 +5600,29 @@ public class InformationenUtility {
 	 * Updates XP per minute calculation continuously (like updateKPM in KillsUtility)
 	 */
 	private static void updateXPM(XPData xpData) {
+		long now = System.currentTimeMillis();
+		boolean xpChanged = xpData.newXP != xpData.lastXpmNewXp;
+		if (!SessionRateUtility.shouldRecalculate(xpData.lastXpmUpdateTime, xpChanged)) {
+			return;
+		}
+
+		xpData.lastXpmUpdateTime = now;
+		xpData.lastXpmNewXp = xpData.newXP;
+
 		if (xpData.sessionStartTime != 0 && xpData.newXP > 0) {
-			long currentTime = System.currentTimeMillis();
-			long sessionDuration = currentTime - xpData.sessionStartTime;
+			long sessionDuration = now - xpData.sessionStartTime;
 			if (sessionDuration > 0) {
-				double minutesElapsed = (double)sessionDuration / 60000.0;
-				xpData.xpPerMinute = (double)xpData.newXP / minutesElapsed;
+				double minutesElapsed = (double) sessionDuration / 60000.0;
+				xpData.xpPerMinute = (double) xpData.newXP / minutesElapsed;
 			}
 		} else {
 			xpData.xpPerMinute = 0.0;
 		}
+	}
+
+	private static void resetXpmTracking(XPData xpData) {
+		xpData.lastXpmUpdateTime = 0;
+		xpData.lastXpmNewXp = 0;
 	}
 	
 	/**
@@ -7850,6 +7949,7 @@ public class InformationenUtility {
 		miningXP.sessionStartTime = 0;
 		miningXP.newXP = 0;
 		miningXP.xpPerMinute = 0.0;
+		resetXpmTracking(miningXP);
 		miningXP.initialXP = -1;
 		miningXP.shouldShowOverlay = false;
 		miningXP.lastXPChangeTime = 0;
@@ -7859,6 +7959,7 @@ public class InformationenUtility {
 		lumberjackXP.sessionStartTime = 0;
 		lumberjackXP.newXP = 0;
 		lumberjackXP.xpPerMinute = 0.0;
+		resetXpmTracking(lumberjackXP);
 		lumberjackXP.initialXP = -1;
 		lumberjackXP.shouldShowOverlay = false;
 		lumberjackXP.lastXPChangeTime = 0;

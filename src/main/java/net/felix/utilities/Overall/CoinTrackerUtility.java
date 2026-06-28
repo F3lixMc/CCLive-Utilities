@@ -42,6 +42,8 @@ public class CoinTrackerUtility {
 
     private static long sessionStartTime = 0;
     private static long lastHudUpdateTime = 0;
+    private static long lastCpmUpdateTime = 0;
+    private static BigDecimal lastCpmGainedCoins = null;
     private static String currentDimension = null;
 
     private static KeyBinding resetKeyBinding;
@@ -190,11 +192,20 @@ public class CoinTrackerUtility {
     }
 
     private static void updateCoinsPerMinute() {
+        long now = System.currentTimeMillis();
+        boolean coinsChanged = lastCpmGainedCoins == null || gainedCoins.compareTo(lastCpmGainedCoins) != 0;
+        if (!SessionRateUtility.shouldRecalculate(lastCpmUpdateTime, coinsChanged)) {
+            return;
+        }
+
+        lastCpmUpdateTime = now;
+        lastCpmGainedCoins = gainedCoins;
+
         if (sessionStartTime == 0 || gainedCoins.signum() <= 0) {
             coinsPerMinute = 0.0;
             return;
         }
-        long elapsed = System.currentTimeMillis() - sessionStartTime;
+        long elapsed = now - sessionStartTime;
         if (elapsed <= 0) {
             coinsPerMinute = 0.0;
             return;
@@ -215,6 +226,8 @@ public class CoinTrackerUtility {
         sessionStartTime = 0;
         isTracking = false;
         lastHudUpdateTime = 0;
+        lastCpmUpdateTime = 0;
+        lastCpmGainedCoins = null;
     }
 
     private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {

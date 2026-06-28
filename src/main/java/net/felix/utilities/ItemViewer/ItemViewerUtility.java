@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -51,6 +52,23 @@ public class ItemViewerUtility {
     private static final Map<String, ItemData> itemByName = new HashMap<>();
     private static java.util.Set<String> knownSearchTags = null;
     private static java.util.Set<String> knownCostItemNames = null;
+    private static java.util.List<String> knownMaterialNames = null;
+    private static java.util.List<String> knownResourceNames = null;
+    private static java.util.List<CostNamePickerEntry> knownMaterialPickerEntries = null;
+    private static java.util.List<CostNamePickerEntry> knownResourcePickerEntries = null;
+
+    public record CostNamePickerEntry(String name, int textColor, int floor) {
+        public String floorLabel() {
+            return floor > 0 ? "e" + floor : "";
+        }
+    }
+
+    private static final java.util.List<CostNamePickerEntry> AMBOSS_PICKER_ENTRIES = buildStaticPickerEntries(
+            "Spinnfaden", "Stoff", "Ziegelstein", "Kettenglied", "Leder", "Zahnrad", "Klammer", "Schraube",
+            "Stabile Schnur", "Kupferplatte", "Gehärteter Ziegelstein", "Eisenplatte", "Verstärkte Schraube",
+            "Verbessertes Zahnrad");
+    private static final java.util.List<CostNamePickerEntry> OFEN_PICKER_ENTRIES = buildStaticPickerEntries(
+            "Kupferbarren", "Eisenbarren", "Goldbarren", "Netherite Schrott");
     
     private static final int FILTER_DEBOUNCE_TICKS = 2;
     private static int filterDebounceTicks = 0;
@@ -205,6 +223,10 @@ public class ItemViewerUtility {
             filteredItems = new ArrayList<>();
             knownSearchTags = null;
             knownCostItemNames = null;
+            knownMaterialNames = null;
+            knownResourceNames = null;
+            knownMaterialPickerEntries = null;
+            knownResourcePickerEntries = null;
         }
     }
     
@@ -228,6 +250,10 @@ public class ItemViewerUtility {
                     allItems = new ArrayList<>();
                     knownSearchTags = null;
             knownCostItemNames = null;
+            knownMaterialNames = null;
+            knownResourceNames = null;
+            knownMaterialPickerEntries = null;
+            knownResourcePickerEntries = null;
                     
                     // Unterstütze verschiedene Strukturen:
                     // 1. Alte Struktur: {"items": [...]}
@@ -868,14 +894,174 @@ public class ItemViewerUtility {
         return knownCostItemNames;
     }
 
+    public static java.util.List<CostNamePickerEntry> getKnownMaterialPickerEntries() {
+        if (knownMaterialPickerEntries == null) {
+            rebuildKnownCostItemNames();
+        }
+        return knownMaterialPickerEntries;
+    }
+
+    public static java.util.List<CostNamePickerEntry> getKnownResourcePickerEntries() {
+        if (knownResourcePickerEntries == null) {
+            rebuildKnownCostItemNames();
+        }
+        return knownResourcePickerEntries;
+    }
+
+    public static java.util.List<CostNamePickerEntry> getKnownAmbossPickerEntries() {
+        return AMBOSS_PICKER_ENTRIES;
+    }
+
+    public static java.util.List<CostNamePickerEntry> getKnownOfenPickerEntries() {
+        return OFEN_PICKER_ENTRIES;
+    }
+
+    public static java.util.List<String> getKnownMaterialNames() {
+        if (knownMaterialNames == null) {
+            rebuildKnownCostItemNames();
+        }
+        return knownMaterialNames;
+    }
+
+    public static java.util.List<String> getKnownResourceNames() {
+        if (knownResourceNames == null) {
+            rebuildKnownCostItemNames();
+        }
+        return knownResourceNames;
+    }
+
     private static void rebuildKnownCostItemNames() {
         java.util.Set<String> names = new java.util.HashSet<>();
+        java.util.Map<String, String> materials = new java.util.LinkedHashMap<>();
+        java.util.Map<String, String> resources = new java.util.LinkedHashMap<>();
         if (allItems != null) {
             for (ItemData item : allItems) {
-                collectCostItemNamesFromItem(item, names);
+                collectCostItemNamesFromItem(item, names, materials, resources);
             }
         }
         knownCostItemNames = java.util.Collections.unmodifiableSet(names);
+        knownMaterialPickerEntries = buildMaterialPickerEntries(materials);
+        knownResourcePickerEntries = buildResourcePickerEntries(resources);
+        knownMaterialNames = java.util.Collections.unmodifiableList(
+                knownMaterialPickerEntries.stream().map(CostNamePickerEntry::name).toList());
+        knownResourceNames = java.util.Collections.unmodifiableList(
+                knownResourcePickerEntries.stream().map(CostNamePickerEntry::name).toList());
+    }
+
+    private static final java.util.List<String> FISH_PART_ORDER = java.util.List.of(
+            "fleisch", "schuppen", "flosse", "kopf", "wirbelsäule");
+
+    private static java.util.List<CostNamePickerEntry> buildMaterialPickerEntries(
+            java.util.Map<String, String> materials) {
+        java.util.List<MaterialPickerSortable> dungeonMaterials = new java.util.ArrayList<>();
+        java.util.List<MaterialPickerSortable> prismarinMaterials = new java.util.ArrayList<>();
+        java.util.List<FishingMaterialPickerSortable> fishingMaterials = new java.util.ArrayList<>();
+        for (String name : materials.values()) {
+            net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo info =
+                    net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(name);
+            int color = info != null
+                    ? net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(info)
+                    : 0xFFFFFFFF;
+            if (net.felix.utilities.Overall.InformationenUtility.isFishingRarityMaterial(name)) {
+                String family = net.felix.utilities.Overall.InformationenUtility.getFishFamilyFromMaterial(name);
+                String rarity = info != null && info.rarity != null
+                        ? info.rarity
+                        : net.felix.utilities.Overall.InformationenUtility.getFishingMaterialRarityKey(name);
+                String part = net.felix.utilities.Overall.InformationenUtility.getFishPartSuffixFromMaterial(
+                        name, family);
+                int familyOrder = net.felix.utilities.Overall.InformationenUtility.getFishFamilyDisplayOrderIndex(
+                        family);
+                fishingMaterials.add(new FishingMaterialPickerSortable(name, familyOrder, rarity, part, color));
+            } else if (net.felix.utilities.Overall.InformationenUtility.isPrismarinMaterial(name)) {
+                String rarity = info != null && info.rarity != null ? info.rarity : "common";
+                prismarinMaterials.add(new MaterialPickerSortable(name, 0, rarity, color));
+            } else {
+                int floor = info != null ? info.floor : 9999;
+                String rarity = info != null && info.rarity != null ? info.rarity : "common";
+                dungeonMaterials.add(new MaterialPickerSortable(name, floor, rarity, color));
+            }
+        }
+        dungeonMaterials.sort(java.util.Comparator
+                .<MaterialPickerSortable>comparingInt(entry -> materialFloorSortKey(entry.floor))
+                .thenComparingInt(entry -> raritySortOrder(entry.rarity))
+                .thenComparing(MaterialPickerSortable::name, String.CASE_INSENSITIVE_ORDER));
+        prismarinMaterials.sort(java.util.Comparator
+                .comparingInt((MaterialPickerSortable entry) -> raritySortOrder(entry.rarity))
+                .thenComparing(MaterialPickerSortable::name, String.CASE_INSENSITIVE_ORDER));
+        fishingMaterials.sort(java.util.Comparator
+                .<FishingMaterialPickerSortable>comparingInt(FishingMaterialPickerSortable::familyOrder)
+                .thenComparingInt(entry -> raritySortOrder(entry.rarity))
+                .thenComparingInt(entry -> fishPartSortOrder(entry.part))
+                .thenComparing(FishingMaterialPickerSortable::name, String.CASE_INSENSITIVE_ORDER));
+        java.util.List<CostNamePickerEntry> entries = new java.util.ArrayList<>(
+                dungeonMaterials.size() + prismarinMaterials.size() + fishingMaterials.size());
+        for (MaterialPickerSortable entry : dungeonMaterials) {
+            int displayFloor = entry.floor > 0 && entry.floor < 9999 ? entry.floor : 0;
+            entries.add(new CostNamePickerEntry(entry.name, entry.color, displayFloor));
+        }
+        for (MaterialPickerSortable entry : prismarinMaterials) {
+            entries.add(new CostNamePickerEntry(entry.name, entry.color, 0));
+        }
+        for (FishingMaterialPickerSortable entry : fishingMaterials) {
+            entries.add(new CostNamePickerEntry(entry.name, entry.color, 0));
+        }
+        return java.util.Collections.unmodifiableList(entries);
+    }
+
+    private static java.util.List<CostNamePickerEntry> buildResourcePickerEntries(
+            java.util.Map<String, String> resources) {
+        java.util.List<String> sorted = sortedCostNames(resources);
+        java.util.List<CostNamePickerEntry> entries = new java.util.ArrayList<>(sorted.size());
+        for (String name : sorted) {
+            entries.add(new CostNamePickerEntry(name, 0xFFFFFFFF, 0));
+        }
+        return java.util.Collections.unmodifiableList(entries);
+    }
+
+    private static java.util.List<CostNamePickerEntry> buildStaticPickerEntries(String... names) {
+        java.util.List<CostNamePickerEntry> entries = new java.util.ArrayList<>(names.length);
+        for (String name : names) {
+            entries.add(new CostNamePickerEntry(name, 0xFFFFFFFF, 0));
+        }
+        return java.util.Collections.unmodifiableList(entries);
+    }
+
+    private static int materialFloorSortKey(int floor) {
+        return floor > 0 ? floor : Integer.MAX_VALUE;
+    }
+
+    private static int fishPartSortOrder(String partSuffix) {
+        if (partSuffix == null || partSuffix.isEmpty()) {
+            return 99;
+        }
+        int index = FISH_PART_ORDER.indexOf(partSuffix.toLowerCase(java.util.Locale.ROOT));
+        return index >= 0 ? index : 99;
+    }
+
+    private static int raritySortOrder(String rarity) {
+        if (rarity == null) {
+            return 99;
+        }
+        return switch (rarity.toLowerCase(java.util.Locale.ROOT)) {
+            case "common" -> 0;
+            case "uncommon" -> 1;
+            case "rare" -> 2;
+            case "epic" -> 3;
+            case "legendary" -> 4;
+            default -> 99;
+        };
+    }
+
+    private record MaterialPickerSortable(String name, int floor, String rarity, int color) {
+    }
+
+    private record FishingMaterialPickerSortable(String name, int familyOrder, String rarity, String part, int color) {
+    }
+
+    private static java.util.List<String> sortedCostNames(java.util.Map<String, String> names) {
+        java.util.List<String> sorted = new java.util.ArrayList<>(names.values());
+        sorted.sort(String.CASE_INSENSITIVE_ORDER);
+        return sorted;
     }
 
     private static void addCostItemName(java.util.Set<String> names, CostItem costItem) {
@@ -884,7 +1070,14 @@ public class ItemViewerUtility {
         }
     }
 
-    private static void collectCostItemNamesFromItem(ItemData item, java.util.Set<String> names) {
+    private static void addCostItemName(java.util.Map<String, String> names, CostItem costItem) {
+        if (costItem != null && costItem.itemName != null && !costItem.itemName.isEmpty()) {
+            names.putIfAbsent(costItem.itemName.toLowerCase(java.util.Locale.ROOT), costItem.itemName);
+        }
+    }
+
+    private static void collectCostItemNamesFromItem(ItemData item, java.util.Set<String> names,
+            java.util.Map<String, String> materials, java.util.Map<String, String> resources) {
         if (item.price == null) {
             return;
         }
@@ -892,6 +1085,11 @@ public class ItemViewerUtility {
         addCostItemName(names, price.coin);
         addCostItemName(names, price.cactus);
         addCostItemName(names, price.soul);
+        addCostItemName(materials, price.material1);
+        addCostItemName(materials, price.material2);
+        addCostItemName(materials, price.material3);
+        addCostItemName(materials, price.material4);
+        addCostItemName(materials, price.material5);
         addCostItemName(names, price.material1);
         addCostItemName(names, price.material2);
         addCostItemName(names, price.material3);
@@ -899,6 +1097,8 @@ public class ItemViewerUtility {
         addCostItemName(names, price.material5);
         addCostItemName(names, price.Amboss);
         addCostItemName(names, price.amboss);
+        addCostItemName(resources, price.Ressource);
+        addCostItemName(resources, price.ressource);
         addCostItemName(names, price.Ressource);
         addCostItemName(names, price.ressource);
         addCostItemName(names, price.Level);
@@ -928,6 +1128,20 @@ public class ItemViewerUtility {
     }
     
     /**
+     * Normalisiert Such-Tags (z. B. Plural-Aliase).
+     */
+    public static String normalizeSearchTag(String searchTag) {
+        if (searchTag == null || searchTag.isEmpty()) {
+            return searchTag;
+        }
+        String normalized = searchTag.toLowerCase(Locale.ROOT);
+        if ("werkzeuge".equals(normalized)) {
+            return "werkzeug";
+        }
+        return normalized;
+    }
+
+    /**
      * Prüft ob ein Item-Tag zur #Tag-Suche passt.
      * Vollständiger Tag (z.B. #Schuhe) → exakter Match; Prefix (z.B. #Schuh) → Teilstring.
      */
@@ -935,8 +1149,8 @@ public class ItemViewerUtility {
         if (itemTag == null || searchTag == null || searchTag.isEmpty()) {
             return false;
         }
-        String itemTagLower = itemTag.toLowerCase();
-        String searchTagLower = searchTag.toLowerCase();
+        String itemTagLower = itemTag.toLowerCase(Locale.ROOT);
+        String searchTagLower = normalizeSearchTag(searchTag);
         if (getKnownSearchTags().contains(searchTagLower)) {
             return itemTagLower.equals(searchTagLower);
         }
@@ -1488,7 +1702,7 @@ public class ItemViewerUtility {
             // Für nicht-HandledScreen Screens (z.B. Spielerinventar)
             pos = calculateViewerPositionForScreen(client.currentScreen);
         }
-        int searchX = pos.helpButtonX + HELP_BUTTON_SIZE + 5;
+        int searchX = getSearchFieldX(pos);
         int searchY = pos.viewerY + VIEWER_PADDING;
         
         boolean mouseOverSearch = lastMouseX >= searchX && lastMouseX < searchX + pos.searchWidth &&
@@ -2072,8 +2286,8 @@ public class ItemViewerUtility {
         
         int dropdownWidth = getSortDropdownWidth(client);
         
-        // Suchfeld nutzt volle Breite (minus Hilfe-Button)
-        int searchWidth = viewerWidth - VIEWER_PADDING * 2 - HELP_BUTTON_SIZE - 5;
+        // Suchfeld nutzt volle Breite (minus Hilfe- und Filter-Button)
+        int searchWidth = viewerWidth - VIEWER_PADDING * 2 - HELP_BUTTON_SIZE - 5 - FILTER_BUTTON_SIZE - 5;
         
         // Dropdown wird unter die Suchleiste platziert
         int dropdownX = viewerX + VIEWER_PADDING;
@@ -2082,10 +2296,12 @@ public class ItemViewerUtility {
         // Hilfe-Button Position (2px nach oben verschoben)
         int helpButtonX = viewerX + VIEWER_PADDING;
         int helpButtonY = viewerY + VIEWER_PADDING;
+        int filterButtonX = helpButtonX + HELP_BUTTON_SIZE + 5;
+        int filterButtonY = helpButtonY;
         
-        // Symbol-Button Position (rechts neben dem Dropdown, gleiche Höhe für symmetrisches Aussehen)
-        int searchX = helpButtonX + HELP_BUTTON_SIZE + 5;
-        int symbolButtonX = searchX + searchWidth - SYMBOL_BUTTON_SIZE; // Rechts bündig mit Suchleiste
+        // Symbol-Button Position (rechts bündig mit Suchleiste)
+        int searchX = filterButtonX + FILTER_BUTTON_SIZE + 5;
+        int symbolButtonX = searchX + searchWidth - SYMBOL_BUTTON_SIZE;
         int symbolButtonY = dropdownY; // Gleiche Y-Position wie Dropdown
         
         // Favoriten-Button Position (rechts vom Dropdown, gleiche Höhe)
@@ -2105,7 +2321,11 @@ public class ItemViewerUtility {
             viewerWidth = minButtonRowWidth;
         }
         
-        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY, applyButtonX, applyButtonY, applyButtonWidth);
+        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, filterButtonX, filterButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY, applyButtonX, applyButtonY, applyButtonWidth);
+    }
+    
+    private static int getSearchFieldX(ViewerPosition pos) {
+        return pos.helpButtonX + HELP_BUTTON_SIZE + 5 + FILTER_BUTTON_SIZE + 5;
     }
     
     /**
@@ -2173,6 +2393,7 @@ public class ItemViewerUtility {
     private static final int VIEWER_PADDING = 5;
     private static final int SEARCH_HEIGHT = 20;
     private static final int HELP_BUTTON_SIZE = 20; // Gleiche Höhe wie Suchleiste
+    private static final int FILTER_BUTTON_SIZE = 20;
     private static final int SORT_DROPDOWN_HEIGHT = 20;
     private static final int SORT_OPTION_HEIGHT = 16;
     private static final int SORT_DROPDOWN_PADDING = 6; // Padding links/rechts im Dropdown
@@ -2232,7 +2453,7 @@ public class ItemViewerUtility {
             return;
         }
 
-        int searchX = pos.helpButtonX + HELP_BUTTON_SIZE + 5;
+        int searchX = getSearchFieldX(pos);
         int searchY = pos.viewerY + VIEWER_PADDING;
         boolean onSearchField = mouseX >= searchX && mouseX < searchX + pos.searchWidth
                 && mouseY >= searchY && mouseY < searchY + SEARCH_HEIGHT;
@@ -2313,9 +2534,10 @@ public class ItemViewerUtility {
         
         // Rendere Hilfe-Button (links)
         renderHelpButton(context, pos.helpButtonX, pos.helpButtonY);
+        renderFilterButton(context, pos.filterButtonX, pos.filterButtonY);
         
-        // Rendere Suchfeld (rechts neben Hilfe-Button)
-        int searchX = pos.helpButtonX + HELP_BUTTON_SIZE + 5; // 5px Abstand
+        // Rendere Suchfeld (rechts neben Filter-Button)
+        int searchX = getSearchFieldX(pos); // 5px Abstand
         renderSearchField(context, searchX, currentY, pos.searchWidth);
         
         // Prüfe Hover über Symbol-Button (für Menü-Öffnung)
@@ -2408,6 +2630,9 @@ public class ItemViewerUtility {
         boolean helpHovered = lastMouseX >= pos.helpButtonX && lastMouseX < pos.helpButtonX + HELP_BUTTON_SIZE &&
                              lastMouseY >= pos.helpButtonY && lastMouseY < pos.helpButtonY + HELP_BUTTON_SIZE;
         
+        boolean filterHovered = lastMouseX >= pos.filterButtonX && lastMouseX < pos.filterButtonX + FILTER_BUTTON_SIZE &&
+                                lastMouseY >= pos.filterButtonY && lastMouseY < pos.filterButtonY + FILTER_BUTTON_SIZE;
+        
         // Prüfe Hover über Symbol-Button (nur wenn Menü nicht geöffnet ist, um Konflikte zu vermeiden)
         boolean symbolHovered = !isSymbolMenuOpen && 
                                lastMouseX >= pos.symbolButtonX && lastMouseX < pos.symbolButtonX + SYMBOL_BUTTON_SIZE &&
@@ -2429,6 +2654,12 @@ public class ItemViewerUtility {
             List<Text> tooltip = new ArrayList<>();
             tooltip.add(Text.literal("Hilfs Übersicht"));
             // Minecraft's drawTooltip passt automatisch die Position an, damit der Tooltip nicht aus dem Bildschirm rausgeht
+            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+        }
+        
+        if (filterHovered && !ItemViewerFilterMenu.isOpen()) {
+            List<Text> tooltip = new ArrayList<>();
+            tooltip.add(Text.literal("Filter"));
             context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
         }
         
@@ -2512,6 +2743,14 @@ public class ItemViewerUtility {
         }
     }
     
+    public static void renderFilterOverlay(DrawContext context) {
+        ItemViewerFilterMenu.render(context);
+    }
+    
+    public static boolean isOverlayOpen() {
+        return helpScreenOpen || ItemViewerFilterMenu.isOpen();
+    }
+    
     /**
      * Behandelt ESC-Taste zum Schließen des Hilfe-Overlays
      * @return true wenn ESC behandelt wurde (Overlay war offen und wurde geschlossen)
@@ -2526,6 +2765,10 @@ public class ItemViewerUtility {
         return false;
     }
     
+    public static boolean handleFilterOverlayEscape() {
+        return ItemViewerFilterMenu.handleEscape();
+    }
+    
     /**
      * Schließt das Hilfe-Overlay (wird aufgerufen, wenn das Inventar geschlossen wird)
      */
@@ -2533,6 +2776,10 @@ public class ItemViewerUtility {
         helpScreenOpen = false;
         activeCategoryOverlay = null;
         helpScreenScrollOffset = 0; // Reset scroll when closing
+    }
+    
+    public static void closeFilterOverlay() {
+        ItemViewerFilterMenu.close();
     }
     
     /**
@@ -2680,6 +2927,25 @@ public class ItemViewerUtility {
         return true;
     }
     
+    public static boolean handleFilterOverlayClick(double mouseX, double mouseY, int button) {
+        return ItemViewerFilterMenu.handleClick(mouseX, mouseY, button);
+    }
+
+    public static boolean handleFilterOverlayDrag(double mouseX, double mouseY, int button) {
+        return ItemViewerFilterMenu.handleMouseDrag(mouseX, mouseY, button);
+    }
+
+    public static boolean handleFilterOverlayRelease(double mouseX, double mouseY, int button) {
+        return ItemViewerFilterMenu.handleMouseRelease(mouseX, mouseY, button);
+    }
+
+    public static boolean handleFilterOverlayKeyPress(int keyCode, int scanCode, int modifiers) {
+        if (!ItemViewerFilterMenu.isOpen()) {
+            return false;
+        }
+        return ItemViewerFilterMenu.handleKeyPress(keyCode, scanCode, modifiers);
+    }
+    
     
     /**
      * Zeichnet das Hilfe-Overlay für den Item Viewer
@@ -2794,8 +3060,9 @@ public class ItemViewerUtility {
             "• @Ebene>Wert - Ebenen (z.B. @Ebene>=50, @Ebene<30, >e5, e4)",
             "• Operatoren: >, <, =, >=, <=",
             "• +Modifier - Suche nach Modifiern (z.B. +Andere, +Andere:2)",
-            "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0, ofen:38)",
-            "• material:Anzahl / material:Name - Ebenen-Material (z.B. material:51, ressource:Eichenholz). Gültige Kategorien: material, ressource, ofen, amboss",
+            "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0, material:<50, ressource:>100)",
+            "• material:Anzahl / material:Name - Ebenen-Material (z.B. material:51, material:Spinnfaden, material:<50). Operatoren: >, <, =, >=, <=",
+            "• Gültige Kategorien: material, ressource, ofen, amboss",
             "• @Aspekt Name - Suche nach Aspekten (z.B. @Aspekt der Flamme)",
             "",
             "Sortierung:",
@@ -3217,6 +3484,24 @@ public class ItemViewerUtility {
         int textX = x + (HELP_BUTTON_SIZE - textWidth) / 2;
         int textY = y + (HELP_BUTTON_SIZE - 9) / 2; // 9 ist die Text-Höhe, zentriert vertikal
         context.drawText(client.textRenderer, Text.literal(questionMark), textX, textY, 0xFFFFFFFF, false);
+    }
+    
+    private static void renderFilterButton(DrawContext context, int x, int y) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        boolean isHovered = lastMouseX >= x && lastMouseX < x + FILTER_BUTTON_SIZE
+                && lastMouseY >= y && lastMouseY < y + FILTER_BUTTON_SIZE;
+        boolean active = ItemViewerFilterMenu.isOpen();
+        int bgColor = active ? 0xFF2D4A2D : (isHovered ? 0xFF404040 : 0x80000000);
+        context.fill(x, y, x + FILTER_BUTTON_SIZE, y + FILTER_BUTTON_SIZE, bgColor);
+        int borderColor = active || isHovered ? 0xFFFFFFFF : 0xFF808080;
+        context.fill(x, y, x + FILTER_BUTTON_SIZE, y + 1, borderColor);
+        context.fill(x, y + FILTER_BUTTON_SIZE - 1, x + FILTER_BUTTON_SIZE, y + FILTER_BUTTON_SIZE, borderColor);
+        context.fill(x, y, x + 1, y + FILTER_BUTTON_SIZE, borderColor);
+        context.fill(x + FILTER_BUTTON_SIZE - 1, y, x + FILTER_BUTTON_SIZE, y + FILTER_BUTTON_SIZE, borderColor);
+        String label = "F";
+        int textWidth = client.textRenderer.getWidth(label);
+        context.drawText(client.textRenderer, Text.literal(label),
+                x + (FILTER_BUTTON_SIZE - textWidth) / 2, y + (FILTER_BUTTON_SIZE - 9) / 2, 0xFFFFFFFF, false);
     }
     
     /**
@@ -4173,11 +4458,13 @@ public class ItemViewerUtility {
         
         int helpButtonX = viewerX + VIEWER_PADDING;
         int helpButtonY = viewerY + VIEWER_PADDING;
+        int filterButtonX = helpButtonX + HELP_BUTTON_SIZE + 5;
+        int filterButtonY = helpButtonY;
         
         int symbolButtonX = viewerX + viewerWidth - VIEWER_PADDING - SYMBOL_BUTTON_SIZE;
         int symbolButtonY = viewerY + VIEWER_PADDING;
         
-        int searchX = helpButtonX + HELP_BUTTON_SIZE + 5;
+        int searchX = filterButtonX + FILTER_BUTTON_SIZE + 5;
         int searchWidth = symbolButtonX - searchX - 5;
         
         int dropdownX = viewerX + VIEWER_PADDING;
@@ -4200,7 +4487,7 @@ public class ItemViewerUtility {
             viewerWidth = minButtonRowWidth;
         }
         
-        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY, applyButtonX, applyButtonY, applyButtonWidth);
+        return new ViewerPosition(viewerX, viewerY, viewerWidth, viewerHeight, dropdownX, dropdownY, dropdownWidth, searchWidth, helpButtonX, helpButtonY, filterButtonX, filterButtonY, symbolButtonX, symbolButtonY, favoritesButtonX, favoritesButtonY, kitButtonX, kitButtonY, applyButtonX, applyButtonY, applyButtonWidth);
     }
     
     /**
@@ -4210,6 +4497,7 @@ public class ItemViewerUtility {
         final int viewerX, viewerY, viewerWidth, viewerHeight;
         final int dropdownX, dropdownY, dropdownWidth, searchWidth;
         final int helpButtonX, helpButtonY;
+        final int filterButtonX, filterButtonY;
         final int symbolButtonX, symbolButtonY;
         final int favoritesButtonX, favoritesButtonY;
         final int kitButtonX, kitButtonY;
@@ -4217,7 +4505,8 @@ public class ItemViewerUtility {
         
         ViewerPosition(int viewerX, int viewerY, int viewerWidth, int viewerHeight,
                       int dropdownX, int dropdownY, int dropdownWidth, int searchWidth,
-                      int helpButtonX, int helpButtonY, int symbolButtonX, int symbolButtonY,
+                      int helpButtonX, int helpButtonY, int filterButtonX, int filterButtonY,
+                      int symbolButtonX, int symbolButtonY,
                       int favoritesButtonX, int favoritesButtonY, int kitButtonX, int kitButtonY,
                       int applyButtonX, int applyButtonY, int applyButtonWidth) {
             this.viewerX = viewerX;
@@ -4230,6 +4519,8 @@ public class ItemViewerUtility {
             this.searchWidth = searchWidth;
             this.helpButtonX = helpButtonX;
             this.helpButtonY = helpButtonY;
+            this.filterButtonX = filterButtonX;
+            this.filterButtonY = filterButtonY;
             this.symbolButtonX = symbolButtonX;
             this.symbolButtonY = symbolButtonY;
             this.favoritesButtonX = favoritesButtonX;
@@ -4250,6 +4541,9 @@ public class ItemViewerUtility {
      * @return true wenn das Scroll-Event behandelt wurde, false sonst
      */
     public static boolean handleMouseScroll(double mouseX, double mouseY, double vertical) {
+        if (ItemViewerFilterMenu.handleScroll(mouseX, mouseY, vertical)) {
+            return true;
+        }
         // Prüfe zuerst ob Hilfe-Overlay geöffnet ist und Maus darüber ist
         if (helpScreenOpen && helpScreenHovered) {
             int scrollAmount = (int) (vertical * 12);
@@ -4437,7 +4731,7 @@ public class ItemViewerUtility {
         }
         
         // Berechne Suchfeld-Position (wird mehrfach verwendet)
-        int searchX = pos.helpButtonX + HELP_BUTTON_SIZE + 5;
+        int searchX = getSearchFieldX(pos);
         int searchY = pos.viewerY + VIEWER_PADDING;
         
         // Prüfe Klick auf Suchfeld (setzt Fokus)
@@ -4518,6 +4812,20 @@ public class ItemViewerUtility {
             mouseY >= pos.helpButtonY && mouseY < pos.helpButtonY + HELP_BUTTON_SIZE) {
             helpScreenOpen = !helpScreenOpen;
             blurSearchFieldFocus();
+            if (helpScreenOpen) {
+                ItemViewerFilterMenu.close();
+            }
+            return true;
+        }
+        
+        if (button == 0 && mouseX >= pos.filterButtonX && mouseX < pos.filterButtonX + FILTER_BUTTON_SIZE &&
+            mouseY >= pos.filterButtonY && mouseY < pos.filterButtonY + FILTER_BUTTON_SIZE) {
+            ItemViewerFilterMenu.toggle(allItems, currentSearch);
+            blurSearchFieldFocus();
+            if (ItemViewerFilterMenu.isOpen()) {
+                helpScreenOpen = false;
+                activeCategoryOverlay = null;
+            }
             return true;
         }
         
@@ -4687,6 +4995,22 @@ public class ItemViewerUtility {
     public static void setSearch(String search) {
         currentSearch = search;
         scheduleApplyFilters();
+    }
+    
+    public static void setSearchFromFilterMenu(String search) {
+        currentSearch = search != null ? search : "";
+        cursorPosition = currentSearch.length();
+        clearSelection();
+        searchFieldFocused = false;
+        scheduleApplyFilters();
+    }
+    
+    public static double getLastMouseX() {
+        return lastMouseX;
+    }
+    
+    public static double getLastMouseY() {
+        return lastMouseY;
     }
     
     public static void setSortMode(SortMode mode) {

@@ -44,7 +44,7 @@ public class DrawContextMixin {
     @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;II)V", at = @At("HEAD"), cancellable = true)
     private void blockItemTooltipsWhenHelpOverlayOpen(TextRenderer textRenderer, List<Text> lines, int x, int y, CallbackInfo ci) {
         // Blockiere nur wenn Hilfe-Overlay offen ist
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
             if (lines == null || lines.isEmpty()) {
                 return;
             }
@@ -52,6 +52,7 @@ public class DrawContextMixin {
             // Liste bekannter Button-Tooltip-Texte, die NICHT blockiert werden sollen
             java.util.Set<String> allowedButtonTooltips = java.util.Set.of(
                 "Hilfs Übersicht",
+                "Filter",
                 "Sonderzeichen",
                 "Favoriten",
                 "Linksklick: Nach Kit Suchen",
@@ -81,6 +82,15 @@ public class DrawContextMixin {
                     }
                     // Clipboard-Seiten-Navigation (z.B. "Seite 2")
                     if (cleanText.startsWith("Seite ")) {
+                        isAllowedTooltip = true;
+                        break;
+                    }
+                    // Filter-Menü: Dropdown- und Operator-Tooltips
+                    if (cleanText.startsWith("Klicken um ") && cleanText.endsWith("-Liste zu öffnen")) {
+                        isAllowedTooltip = true;
+                        break;
+                    }
+                    if (cleanText.startsWith("Klicken zum wechseln")) {
                         isAllowedTooltip = true;
                         break;
                     }

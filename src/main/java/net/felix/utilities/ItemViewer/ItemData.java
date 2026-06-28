@@ -10,6 +10,8 @@ public class ItemData {
     public String id;                    // Item-ID für Rendering (z.B. "minecraft:diamond")
     public Integer customModelData;      // CustomModelData für Rendering (null oder Zahl)
     public String name;                  // Anzeigename des Items
+    public String itemScore;             // Item-Score für Baupläne (optional, z. B. "74.5" oder "NaN")
+    public String forgingCondition;      // Maximaler Schmiedezustand (optional, z. B. "Drachengeschmiedet")
     public List<LocationData> foundAt;  // Fundorte
     public PriceData price;             // Kosten
     public BlueprintShopData blueprint_shop; // Blueprint-Shop Preise (optional)
