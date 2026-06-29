@@ -12,6 +12,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.CoinTrackerDisplayMode;
+import net.felix.utilities.DragOverlay.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
@@ -38,6 +39,8 @@ public class CoinTrackerUtility {
     private static long currentSouls = -1;
     private static long currentCactus = -1;
     private static String currentCoinsDisplay = "";
+    private static String currentSoulsDisplay = "";
+    private static String currentCactusDisplay = "";
     private static double coinsPerMinute = 0.0;
 
     private static long sessionStartTime = 0;
@@ -98,9 +101,19 @@ public class CoinTrackerUtility {
 
             if (stats.souls != null && stats.souls.signum() >= 0) {
                 currentSouls = HudNumberSuffixUtility.toLongOrMax(stats.souls);
+                if (stats.soulsDisplay != null && !stats.soulsDisplay.isEmpty()) {
+                    currentSoulsDisplay = BossBarHudValueDecoder.normalizeHudDisplayLowercase(stats.soulsDisplay);
+                }
+                CollectedMaterialsResourcesStorage.updateOtherHudValue(
+                        CollectedMaterialsResourcesStorage.OTHER_SEELEN, stats.souls, currentSoulsDisplay);
             }
             if (stats.cactus != null && stats.cactus.signum() >= 0) {
                 currentCactus = HudNumberSuffixUtility.toLongOrMax(stats.cactus);
+                if (stats.cactusDisplay != null && !stats.cactusDisplay.isEmpty()) {
+                    currentCactusDisplay = BossBarHudValueDecoder.normalizeHudDisplayLowercase(stats.cactusDisplay);
+                }
+                CollectedMaterialsResourcesStorage.updateOtherHudValue(
+                        CollectedMaterialsResourcesStorage.OTHER_KAKTUS, stats.cactus, currentCactusDisplay);
             }
             if (stats.coinsDisplay != null && !stats.coinsDisplay.isEmpty()) {
                 currentCoinsDisplay = stats.coinsDisplay;
@@ -221,6 +234,8 @@ public class CoinTrackerUtility {
         currentSouls = -1;
         currentCactus = -1;
         currentCoinsDisplay = "";
+        currentSoulsDisplay = "";
+        currentCactusDisplay = "";
         coinsPerMinute = 0.0;
         firstUpdate = true;
         sessionStartTime = 0;
@@ -421,6 +436,14 @@ public class CoinTrackerUtility {
 
     public static long getCurrentCactus() {
         return currentCactus;
+    }
+
+    public static String getCurrentSoulsDisplay() {
+        return currentSoulsDisplay;
+    }
+
+    public static String getCurrentCactusDisplay() {
+        return currentCactusDisplay;
     }
 
     public static boolean isAllowedDimension() {

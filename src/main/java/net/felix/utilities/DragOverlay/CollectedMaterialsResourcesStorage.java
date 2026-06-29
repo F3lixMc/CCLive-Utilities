@@ -5,12 +5,16 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import net.fabricmc.loader.api.FabricLoader;
+import net.felix.utilities.Overall.BossBarHudValueDecoder;
+import net.felix.utilities.Overall.HudNumberSuffixUtility;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,15 +25,29 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class CollectedMaterialsResourcesStorage {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String FILE_NAME = "collected_materials-ressources.json";
+    public static final String OTHER_KAKTUS = "Kaktus";
+    public static final String OTHER_SEELEN = "Seelen";
+    private static final String[] OTHER_STORAGE_NAMES = {
+            ClipboardPaperShredsCollector.STORAGE_NAME,
+            OTHER_KAKTUS,
+            OTHER_SEELEN
+    };
+    private static final String[] OTHER_ABBREVIATED_NAMES = {
+            OTHER_KAKTUS,
+            OTHER_SEELEN
+    };
     private static final String OLD_MATERIALS_FILE = "collected_materials.json";
     private static final String OLD_RESOURCES_FILE = "collected_resources.json";
     private static final Map<String, Long> materials = new HashMap<>();
     private static final Map<String, Long> resources = new HashMap<>();
     private static final Map<String, Long> other = new HashMap<>();
+    /** Kaktus/Seelen als HUD-Abkürzung (z. B. {@code 8.542KL}) in der JSON-Sektion {@code other}. */
+    private static final Map<String, String> otherAbbreviated = new HashMap<>();
     /** Normalisierter Name → Menge (O(1)-Lookup statt linearem Scan). */
     private static final Map<String, Long> normalizedMaterials = new HashMap<>();
     private static final Map<String, Long> normalizedResources = new HashMap<>();
     private static final Map<String, Long> normalizedOther = new HashMap<>();
+    private static final Map<String, String> normalizedOtherAbbreviated = new HashMap<>();
     private static final AtomicBoolean saveScheduled = new AtomicBoolean(false);
     private static File storageFile;
     private static boolean initialized = false;
@@ -109,17 +127,90 @@ public class CollectedMaterialsResourcesStorage {
 
     /** Sonstige Pinboard-Werte (z. B. Pergamentfetzen) – Sektion {@code other} in der JSON. */
     public static long getOtherAmount(String name) {
+        return HudNumberSuffixUtility.toLongOrMax(getOtherAmountBigDecimal(name));
+    }
+
+    public static BigDecimal getOtherAmountBigDecimal(String name) {
         ensureInitialized();
         refreshIfChanged();
         if (name == null) {
-            return 0L;
+            return BigDecimal.ZERO;
+        }
+        if (isAbbreviatedOtherName(name)) {
+            return BossBarHudValueDecoder.parseHudAmount(getOtherDisplay(name));
+        }
+        return BigDecimal.valueOf(getOtherNumericAmount(name));
+    }
+
+    /** HUD-Abkürzung für Kaktus/Seelen (z. B. {@code 8.542kl}); sonst formatierte Zahl. */
+    public static String getOtherDisplay(String name) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (name == null) {
+            return "";
+        }
+        if (isAbbreviatedOtherName(name)) {
+            synchronized (otherAbbreviated) {
+                String direct = otherAbbreviated.get(name);
+                if (direct != null && !direct.isBlank()) {
+                    return direct;
+                }
+                return normalizedOtherAbbreviated.getOrDefault(normalizeName(name), "");
+            }
+        }
+        long amount = getOtherNumericAmount(name);
+        if (amount <= 0) {
+            return "";
+        }
+        return HudNumberSuffixUtility.formatWithSeparators(BigDecimal.valueOf(amount));
+    }
+
+    /**
+     * Speichert Kaktus/Seelen mit Bossbar-Abkürzung; andere {@code other}-Einträge als Zahl.
+     */
+    public static void updateOtherHudValue(String name, BigDecimal numericValue, String displayValue) {
+        if (name == null || name.isEmpty() || numericValue == null || numericValue.signum() < 0) {
+            return;
+        }
+        if (isAbbreviatedOtherName(name)) {
+            String display = displayValue != null && !displayValue.isBlank()
+                    ? displayValue
+                    : formatAbbreviatedOtherDisplay(numericValue);
+            updateOtherAbbreviated(name, display);
+            return;
+        }
+        updateOther(name, HudNumberSuffixUtility.toLongOrMax(numericValue));
+    }
+
+    public static void updateOtherAbbreviated(String name, String displayValue) {
+        if (name == null || name.isEmpty() || displayValue == null || displayValue.isBlank()) {
+            return;
+        }
+        String normalizedDisplay = normalizeAbbreviatedDisplayForStorage(displayValue);
+        if (normalizedDisplay.isBlank()) {
+            return;
+        }
+        if (!isAbbreviatedOtherName(name)) {
+            updateOther(name, parseOtherAbbreviatedToLong(normalizedDisplay));
+            return;
+        }
+        ensureInitialized();
+        refreshIfChanged();
+        boolean changed = false;
+        synchronized (otherAbbreviated) {
+            String current = otherAbbreviated.get(name);
+            if (current == null || !current.equals(normalizedDisplay)) {
+                otherAbbreviated.put(name, normalizedDisplay);
+                changed = true;
+            }
         }
         synchronized (other) {
-            Long direct = other.get(name);
-            if (direct != null) {
-                return direct;
-            }
-            return normalizedOther.getOrDefault(normalizeName(name), 0L);
+            other.remove(name);
+            normalizedOther.remove(normalizeName(name));
+        }
+        if (changed) {
+            applyNormalizedOtherAbbreviatedEntry(name, normalizedDisplay);
+            scheduleSave();
         }
     }
     
@@ -342,6 +433,10 @@ public class CollectedMaterialsResourcesStorage {
         if (name == null || name.isEmpty()) {
             return;
         }
+        if (isAbbreviatedOtherName(name)) {
+            updateOtherAbbreviated(name, formatAbbreviatedOtherDisplay(BigDecimal.valueOf(amount)));
+            return;
+        }
         Map<String, Long> update = new HashMap<>();
         update.put(name, amount);
         updateOther(update);
@@ -353,14 +448,43 @@ public class CollectedMaterialsResourcesStorage {
         if (updates == null || updates.isEmpty()) {
             return;
         }
-        boolean changed = false;
+        Map<String, Long> numericOtherUpdates = new HashMap<>();
+        boolean abbreviatedChanged = false;
+        for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            String name = entry.getKey();
+            Long amount = entry.getValue();
+            if (name == null || name.isEmpty() || amount == null) {
+                continue;
+            }
+            if (isAbbreviatedOtherName(name)) {
+                String display = formatAbbreviatedOtherDisplay(BigDecimal.valueOf(amount));
+                synchronized (otherAbbreviated) {
+                    String current = otherAbbreviated.get(name);
+                    if (current == null || !current.equals(display)) {
+                        otherAbbreviated.put(name, display);
+                        abbreviatedChanged = true;
+                    }
+                }
+                synchronized (other) {
+                    other.remove(name);
+                    normalizedOther.remove(normalizeName(name));
+                }
+                applyNormalizedOtherAbbreviatedEntry(name, display);
+            } else {
+                numericOtherUpdates.put(name, amount);
+            }
+        }
+        if (numericOtherUpdates.isEmpty()) {
+            if (abbreviatedChanged) {
+                scheduleSave();
+            }
+            return;
+        }
+        boolean changed = abbreviatedChanged;
         synchronized (other) {
-            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            for (Map.Entry<String, Long> entry : numericOtherUpdates.entrySet()) {
                 String name = entry.getKey();
                 Long amount = entry.getValue();
-                if (name == null || name.isEmpty() || amount == null) {
-                    continue;
-                }
                 Long current = other.get(name);
                 if (current == null || !current.equals(amount)) {
                     other.put(name, amount);
@@ -369,13 +493,18 @@ public class CollectedMaterialsResourcesStorage {
             }
         }
         if (changed) {
-            applyNormalizedOtherUpdates(updates);
+            applyNormalizedOtherUpdates(numericOtherUpdates);
             scheduleSave();
         }
     }
 
     public static void addOther(String name, long delta) {
         if (name == null || name.isEmpty() || delta <= 0) {
+            return;
+        }
+        if (isAbbreviatedOtherName(name)) {
+            long current = getOtherAmount(name);
+            updateOther(name, current + delta);
             return;
         }
         ensureInitialized();
@@ -518,6 +647,9 @@ public class CollectedMaterialsResourcesStorage {
         synchronized (other) {
             other.clear();
         }
+        synchronized (otherAbbreviated) {
+            otherAbbreviated.clear();
+        }
         rebuildNormalizedCaches();
         save();
     }
@@ -548,6 +680,9 @@ public class CollectedMaterialsResourcesStorage {
             synchronized (other) {
                 other.clear();
             }
+            synchronized (otherAbbreviated) {
+                otherAbbreviated.clear();
+            }
             lastKnownModified = 0L;
             return;
         }
@@ -572,6 +707,9 @@ public class CollectedMaterialsResourcesStorage {
         synchronized (other) {
             other.clear();
         }
+        synchronized (otherAbbreviated) {
+            otherAbbreviated.clear();
+        }
         
         if (!storageFile.exists()) {
             save();
@@ -584,7 +722,7 @@ public class CollectedMaterialsResourcesStorage {
                 JsonObject root = element.getAsJsonObject();
                 readSection(root, "materials", materials);
                 readSection(root, "resources", resources);
-                readSection(root, "other", other);
+                readOtherSection(root);
             }
         } catch (Exception e) {
             // Silent error handling
@@ -602,6 +740,7 @@ public class CollectedMaterialsResourcesStorage {
         normalizedMaterials.clear();
         normalizedResources.clear();
         normalizedOther.clear();
+        normalizedOtherAbbreviated.clear();
         synchronized (materials) {
             for (Map.Entry<String, Long> entry : materials.entrySet()) {
                 if (entry.getKey() == null || entry.getValue() == null) {
@@ -626,9 +765,17 @@ public class CollectedMaterialsResourcesStorage {
                 normalizedOther.put(normalizeName(entry.getKey()), entry.getValue());
             }
         }
+        synchronized (otherAbbreviated) {
+            for (Map.Entry<String, String> entry : otherAbbreviated.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) {
+                    continue;
+                }
+                normalizedOtherAbbreviated.put(normalizeName(entry.getKey()), entry.getValue());
+            }
+        }
     }
 
-    /** Verschiebt Pergamentfetzen aus materials/resources nach {@code other}. */
+    /** Verschiebt Pergamentfetzen, Kaktus und Seelen aus materials/resources nach {@code other}. */
     private static void migrateLegacyOtherEntries() {
         if (purgeOtherFromLegacySections()) {
             scheduleSave();
@@ -636,25 +783,59 @@ public class CollectedMaterialsResourcesStorage {
     }
 
     private static boolean purgeOtherFromLegacySections() {
-        String paperShreds = ClipboardPaperShredsCollector.STORAGE_NAME;
-        long fromMaterials = removeLegacyOtherEntry(materials, paperShreds);
-        long fromResources = removeLegacyOtherEntry(resources, paperShreds);
-        if (fromMaterials <= 0 && fromResources <= 0) {
+        boolean changed = false;
+        for (String otherName : OTHER_STORAGE_NAMES) {
+            long fromMaterials = removeLegacyOtherEntry(materials, otherName);
+            long fromResources = removeLegacyOtherEntry(resources, otherName);
+            long legacyOther = removeLegacyOtherEntry(other, otherName);
+            long merged = Math.max(Math.max(fromMaterials, fromResources), legacyOther);
+            if (merged <= 0) {
+                continue;
+            }
+            if (isAbbreviatedOtherName(otherName)) {
+                synchronized (otherAbbreviated) {
+                    long current = parseOtherAbbreviatedToLong(otherAbbreviated.get(otherName));
+                    long updated = Math.max(current, merged);
+                    otherAbbreviated.put(otherName, formatAbbreviatedOtherDisplay(BigDecimal.valueOf(updated)));
+                }
+            } else {
+                synchronized (other) {
+                    long current = other.getOrDefault(otherName, 0L);
+                    other.put(otherName, Math.max(current, merged));
+                }
+            }
+            changed = true;
+        }
+        if (changed) {
+            rebuildNormalizedCaches();
+        }
+        return changed;
+    }
+
+    private static boolean isAbbreviatedOtherName(String name) {
+        if (name == null || name.isEmpty()) {
             return false;
         }
-        synchronized (other) {
-            long current = other.getOrDefault(paperShreds, 0L);
-            other.put(paperShreds, Math.max(current, Math.max(fromMaterials, fromResources)));
+        String normalized = normalizeName(name);
+        for (String abbreviatedName : OTHER_ABBREVIATED_NAMES) {
+            if (normalized.equals(normalizeName(abbreviatedName))) {
+                return true;
+            }
         }
-        rebuildNormalizedCaches();
-        return true;
+        return false;
     }
 
     private static boolean isOtherStorageName(String name) {
         if (name == null || name.isEmpty()) {
             return false;
         }
-        return normalizeName(name).equals(normalizeName(ClipboardPaperShredsCollector.STORAGE_NAME));
+        String normalized = normalizeName(name);
+        for (String otherName : OTHER_STORAGE_NAMES) {
+            if (normalized.equals(normalizeName(otherName))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void partitionUpdates(Map<String, Long> updates,
@@ -708,6 +889,90 @@ public class CollectedMaterialsResourcesStorage {
             return;
         }
         normalizedResources.put(normalizeName(name), amount);
+    }
+
+    private static void applyNormalizedOtherAbbreviatedEntry(String name, String displayValue) {
+        if (name == null || displayValue == null) {
+            return;
+        }
+        normalizedOtherAbbreviated.put(normalizeName(name), displayValue);
+    }
+
+    private static long getOtherNumericAmount(String name) {
+        if (name == null) {
+            return 0L;
+        }
+        synchronized (other) {
+            Long direct = other.get(name);
+            if (direct != null) {
+                return direct;
+            }
+            return normalizedOther.getOrDefault(normalizeName(name), 0L);
+        }
+    }
+
+    private static long parseOtherAbbreviatedToLong(String displayValue) {
+        if (displayValue == null || displayValue.isBlank()) {
+            return 0L;
+        }
+        BigDecimal parsed = HudNumberSuffixUtility.parseSuffixedValue(
+                normalizeAbbreviatedDisplayForStorage(displayValue));
+        if (parsed == null) {
+            return 0L;
+        }
+        return HudNumberSuffixUtility.toLongOrMax(parsed);
+    }
+
+    private static String normalizeAbbreviatedDisplayForStorage(String displayValue) {
+        return BossBarHudValueDecoder.normalizeHudDisplayLowercase(displayValue);
+    }
+
+    private static String formatAbbreviatedOtherDisplay(BigDecimal value) {
+        return normalizeAbbreviatedDisplayForStorage(HudNumberSuffixUtility.formatAbbreviated(value));
+    }
+
+    private static void readOtherSection(JsonObject root) {
+        if (root == null || !root.has("other")) {
+            return;
+        }
+        JsonElement section = root.get("other");
+        if (!section.isJsonObject()) {
+            return;
+        }
+        JsonObject obj = section.getAsJsonObject();
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            String name = entry.getKey();
+            JsonElement value = entry.getValue();
+            if (name == null || name.isEmpty() || value == null || !value.isJsonPrimitive()) {
+                continue;
+            }
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (isAbbreviatedOtherName(name)) {
+                if (primitive.isString()) {
+                    synchronized (otherAbbreviated) {
+                        otherAbbreviated.put(name, normalizeAbbreviatedDisplayForStorage(primitive.getAsString()));
+                    }
+                } else {
+                    try {
+                        long amount = primitive.getAsLong();
+                        synchronized (otherAbbreviated) {
+                            otherAbbreviated.put(name, formatAbbreviatedOtherDisplay(BigDecimal.valueOf(amount)));
+                        }
+                    } catch (Exception ignored) {
+                        // Ignore invalid values
+                    }
+                }
+                continue;
+            }
+            try {
+                long amount = primitive.getAsLong();
+                synchronized (other) {
+                    other.put(name, amount);
+                }
+            } catch (Exception ignored) {
+                // Ignore invalid values
+            }
+        }
     }
 
     private static void applyNormalizedOtherEntry(String name, Long amount) {
@@ -801,8 +1066,27 @@ public class CollectedMaterialsResourcesStorage {
         JsonObject root = new JsonObject();
         root.add("materials", buildSection(materials));
         root.add("resources", buildSection(resources));
-        root.add("other", buildSection(other));
+        root.add("other", buildOtherSection());
         return root;
+    }
+
+    private static JsonObject buildOtherSection() {
+        JsonObject obj = new JsonObject();
+        synchronized (other) {
+            for (Map.Entry<String, Long> entry : other.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null && !isAbbreviatedOtherName(entry.getKey())) {
+                    obj.addProperty(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        synchronized (otherAbbreviated) {
+            for (Map.Entry<String, String> entry : otherAbbreviated.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null && !entry.getValue().isBlank()) {
+                    obj.addProperty(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        return obj;
     }
     
     private static JsonObject buildSection(Map<String, Long> source) {

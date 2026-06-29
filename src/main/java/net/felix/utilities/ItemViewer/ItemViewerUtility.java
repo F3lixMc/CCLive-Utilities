@@ -23,6 +23,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.client.gl.RenderPipelines;
+import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
 import java.lang.reflect.Type;
@@ -2394,6 +2395,7 @@ public class ItemViewerUtility {
     private static final int SEARCH_HEIGHT = 20;
     private static final int HELP_BUTTON_SIZE = 20; // Gleiche Höhe wie Suchleiste
     private static final int FILTER_BUTTON_SIZE = 20;
+    private static final Identifier FILTER_ICON_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/lupe_icon.png");
     private static final int SORT_DROPDOWN_HEIGHT = 20;
     private static final int SORT_OPTION_HEIGHT = 16;
     private static final int SORT_DROPDOWN_PADDING = 6; // Padding links/rechts im Dropdown
@@ -2402,6 +2404,9 @@ public class ItemViewerUtility {
     private static final int VIEWER_GRID_CHROME_HEIGHT =
             VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5 + PAGINATION_HEIGHT + VIEWER_PADDING;
     private static final int MINIMIZE_BUTTON_SIZE = 20; // Größe des Minimierungs-Buttons
+    private static final int SIDE_BUTTON_GAP = 3;
+    private static boolean showOwnedResources = false;
+    private static boolean showCosts = true;
     
     // Maus-Position für Hover-Detection
     private static int lastMouseX = 0;
@@ -2477,6 +2482,10 @@ public class ItemViewerUtility {
     private static boolean isSymbolMenuOpen = false;
     private static boolean isSymbolButtonHovered = false;
     private static final Identifier APPLE_ICON_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/apple_icon_2.png");
+    private static final Identifier VIEWER_SETTINGS_ICON = Identifier.of("cclive-utilities", "textures/alert_icons/alert_icons_settings.png");
+    private static final int VIEWER_SETTINGS_MENU_BUTTON_COUNT = 2;
+    private static boolean isViewerSettingsMenuOpen = false;
+    private static boolean isViewerSettingsButtonHovered = false;
     
     // Kit-Button Variablen
     private static final int KIT_BUTTON_SIZE = 20; // Gleiche Höhe wie andere Buttons
@@ -2606,9 +2615,14 @@ public class ItemViewerUtility {
         
         // Rendere Minimierungs-Button (außerhalb des Overlays, am linken Rand) - nur wenn Item Viewer angezeigt wird
         if (shouldShowItemViewerButtons(client)) {
-            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 3; // 3px Abstand links vom Viewer (2px nach rechts verschoben)
-            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING + 5; // Unten ausgerichtet, 5px tiefer
-            renderMinimizeButton(context, minimizeButtonX, minimizeButtonY);
+            int sideButtonX = getSideButtonX(pos);
+            int settingsButtonY = getViewerSettingsButtonY(pos);
+            checkViewerSettingsButtonHover(sideButtonX, settingsButtonY);
+            renderViewerSettingsButton(context, sideButtonX, settingsButtonY);
+            if (isViewerSettingsMenuOpen) {
+                renderViewerSettingsMenu(context, sideButtonX, settingsButtonY);
+            }
+            renderMinimizeButton(context, sideButtonX, getMinimizeButtonY(pos));
         }
         
         // Rendere Button-Tooltips (am Ende, damit sie über allem liegen)
@@ -2714,11 +2728,42 @@ public class ItemViewerUtility {
             context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
         }
         
+        // Prüfe Hover über Viewer-Einstellungen-Button (über dem Einklappen-Button)
+        int sideButtonX = getSideButtonX(pos);
+        int settingsButtonY = getViewerSettingsButtonY(pos);
+        boolean settingsHovered = !isViewerSettingsMenuOpen
+                && lastMouseX >= sideButtonX && lastMouseX < sideButtonX + MINIMIZE_BUTTON_SIZE
+                && lastMouseY >= settingsButtonY && lastMouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE;
+        if (settingsHovered) {
+            List<Text> tooltip = new ArrayList<>();
+            tooltip.add(Text.literal("Anzeige-Einstellungen"));
+            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+        } else if (isViewerSettingsMenuOpen) {
+            int menuWidth = getViewerSettingsMenuWidth();
+            int menuX = sideButtonX - menuWidth;
+            int menuButtonWidth = MINIMIZE_BUTTON_SIZE;
+            int costsButtonX = getViewerSettingsCostsButtonX(menuX);
+            int ownedButtonX = getViewerSettingsOwnedButtonX(menuX);
+            if (lastMouseX >= costsButtonX && lastMouseX < costsButtonX + menuButtonWidth
+                    && lastMouseY >= settingsButtonY && lastMouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
+                List<Text> tooltip = new ArrayList<>();
+                tooltip.add(Text.literal(showCosts ? "Kosten ausblenden" : "Kosten anzeigen"));
+                context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            } else if (lastMouseX >= ownedButtonX && lastMouseX < ownedButtonX + menuButtonWidth
+                    && lastMouseY >= settingsButtonY && lastMouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
+                List<Text> tooltip = new ArrayList<>();
+                tooltip.add(Text.literal("Gesammelte Materialien/Ressourcen in Kosten und"));
+                tooltip.add(Text.literal(showOwnedResources
+                        ? "Herstellungs-Anzahl ausblenden"
+                        : "Herstellungs-Anzahl einblenden"));
+                context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            }
+        }
+
         // Prüfe Hover über Minimierungs-Button (außerhalb des Overlays, am linken Rand)
-        int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 5; // 5px Abstand links vom Viewer
-        int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING; // Unten ausgerichtet
-        boolean minimizeHovered = lastMouseX >= minimizeButtonX && lastMouseX < minimizeButtonX + MINIMIZE_BUTTON_SIZE &&
-                                  lastMouseY >= minimizeButtonY && lastMouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE;
+        int minimizeButtonY = getMinimizeButtonY(pos);
+        boolean minimizeHovered = lastMouseX >= sideButtonX && lastMouseX < sideButtonX + MINIMIZE_BUTTON_SIZE
+                && lastMouseY >= minimizeButtonY && lastMouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE;
         
         // Rendere Tooltip für Minimierungs-Button
         if (minimizeHovered) {
@@ -3498,39 +3543,207 @@ public class ItemViewerUtility {
         context.fill(x, y + FILTER_BUTTON_SIZE - 1, x + FILTER_BUTTON_SIZE, y + FILTER_BUTTON_SIZE, borderColor);
         context.fill(x, y, x + 1, y + FILTER_BUTTON_SIZE, borderColor);
         context.fill(x + FILTER_BUTTON_SIZE - 1, y, x + FILTER_BUTTON_SIZE, y + FILTER_BUTTON_SIZE, borderColor);
-        String label = "F";
-        int textWidth = client.textRenderer.getWidth(label);
-        context.drawText(client.textRenderer, Text.literal(label),
-                x + (FILTER_BUTTON_SIZE - textWidth) / 2, y + (FILTER_BUTTON_SIZE - 9) / 2, 0xFFFFFFFF, false);
+        try {
+            int iconSize = 16;
+            int iconX = x + (FILTER_BUTTON_SIZE - iconSize) / 2;
+            int iconY = y + (FILTER_BUTTON_SIZE - iconSize) / 2;
+            context.drawTexture(
+                    RenderPipelines.GUI_TEXTURED,
+                    FILTER_ICON_TEXTURE,
+                    iconX, iconY,
+                    0.0f, 0.0f,
+                    iconSize, iconSize,
+                    iconSize, iconSize
+            );
+        } catch (Exception ignored) {
+            String label = "F";
+            int textWidth = client.textRenderer.getWidth(label);
+            context.drawText(client.textRenderer, Text.literal(label),
+                    x + (FILTER_BUTTON_SIZE - textWidth) / 2, y + (FILTER_BUTTON_SIZE - 9) / 2, 0xFFFFFFFF, false);
+        }
     }
     
-    /**
-     * Rendert den Minimierungs-Button (unten links am Viewer)
-     */
-    private static void renderMinimizeButton(DrawContext context, int x, int y) {
+    private static void renderViewerSettingsButton(DrawContext context, int x, int y) {
         MinecraftClient client = MinecraftClient.getInstance();
-        
-        // Prüfe ob Maus über Button ist
-        boolean isHovered = lastMouseX >= x && lastMouseX < x + MINIMIZE_BUTTON_SIZE &&
-                           lastMouseY >= y && lastMouseY < y + MINIMIZE_BUTTON_SIZE;
-        
-        // Button-Hintergrund
-        int bgColor = isHovered ? 0xFF404040 : 0x80000000;
+
+        isViewerSettingsButtonHovered = lastMouseX >= x && lastMouseX < x + MINIMIZE_BUTTON_SIZE
+                && lastMouseY >= y && lastMouseY < y + MINIMIZE_BUTTON_SIZE;
+
+        int bgColor = (isViewerSettingsButtonHovered || isViewerSettingsMenuOpen) ? 0x80FFFF00 : 0x80000000;
         context.fill(x, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, bgColor);
-        
-        // Button-Rahmen
-        int borderColor = isHovered ? 0xFFFFFFFF : 0xFF808080;
-        context.fill(x, y, x + MINIMIZE_BUTTON_SIZE, y + 1, borderColor); // Oben
-        context.fill(x, y + MINIMIZE_BUTTON_SIZE - 1, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor); // Unten
-        context.fill(x, y, x + 1, y + MINIMIZE_BUTTON_SIZE, borderColor); // Links
-        context.fill(x + MINIMIZE_BUTTON_SIZE - 1, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor); // Rechts
-        
-        // Minimierungs-Symbol (Pfeil nach rechts) - "▶" - mittig positioniert
-        String minimizeSymbol = "▶";
-        int textWidth = client.textRenderer.getWidth(minimizeSymbol);
-        int textX = x + (MINIMIZE_BUTTON_SIZE - textWidth) / 2; // Horizontal zentriert
-        int textY = y + (MINIMIZE_BUTTON_SIZE - client.textRenderer.fontHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
-        context.drawText(client.textRenderer, Text.literal(minimizeSymbol), textX, textY, 0xFFFFFFFF, false);
+
+        int borderColor = (isViewerSettingsButtonHovered || isViewerSettingsMenuOpen) ? 0xFFFFFF00 : 0xFF808080;
+        context.fill(x, y, x + MINIMIZE_BUTTON_SIZE, y + 1, borderColor);
+        context.fill(x, y + MINIMIZE_BUTTON_SIZE - 1, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor);
+        context.fill(x, y, x + 1, y + MINIMIZE_BUTTON_SIZE, borderColor);
+        context.fill(x + MINIMIZE_BUTTON_SIZE - 1, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor);
+
+        drawViewerSettingsGearIcon(context, x, y, MINIMIZE_BUTTON_SIZE);
+    }
+
+    private static void drawViewerSettingsGearIcon(DrawContext context, int x, int y, int buttonSize) {
+        try {
+            int iconSize = 16;
+            int iconX = x + (buttonSize - iconSize) / 2;
+            int iconY = y + (buttonSize - iconSize) / 2;
+            context.drawTexture(
+                    RenderPipelines.GUI_TEXTURED,
+                    VIEWER_SETTINGS_ICON,
+                    iconX, iconY,
+                    0.0f, 0.0f,
+                    iconSize, iconSize,
+                    iconSize, iconSize
+            );
+        } catch (Exception ignored) {
+            MinecraftClient client = MinecraftClient.getInstance();
+            context.drawText(client.textRenderer, Text.literal("⚙"),
+                    x + (buttonSize - client.textRenderer.getWidth("⚙")) / 2,
+                    y + (buttonSize - client.textRenderer.fontHeight) / 2 + 1,
+                    0xFFFFFF00, false);
+        }
+    }
+
+    private static void checkViewerSettingsButtonHover(int buttonX, int buttonY) {
+        boolean wasHovered = isViewerSettingsButtonHovered;
+        isViewerSettingsButtonHovered = lastMouseX >= buttonX && lastMouseX <= buttonX + MINIMIZE_BUTTON_SIZE
+                && lastMouseY >= buttonY && lastMouseY <= buttonY + MINIMIZE_BUTTON_SIZE;
+
+        int menuWidth = getViewerSettingsMenuWidth();
+        int menuX = buttonX - menuWidth;
+        int menuHeight = MINIMIZE_BUTTON_SIZE;
+
+        boolean mouseOverMenu = false;
+        if (isViewerSettingsMenuOpen) {
+            mouseOverMenu = lastMouseX >= menuX && lastMouseX <= buttonX + MINIMIZE_BUTTON_SIZE
+                    && lastMouseY >= buttonY && lastMouseY <= buttonY + menuHeight;
+        }
+
+        boolean mouseOverButtonOrMenu = isViewerSettingsButtonHovered || mouseOverMenu;
+
+        if (isViewerSettingsButtonHovered && !wasHovered && !isViewerSettingsMenuOpen) {
+            isViewerSettingsMenuOpen = true;
+        } else if (!mouseOverButtonOrMenu && isViewerSettingsMenuOpen) {
+            isViewerSettingsMenuOpen = false;
+        }
+    }
+
+    private static int getViewerSettingsMenuWidth() {
+        // Linker Rand (1px) + Buttons + Trennlinien dazwischen (wie Symbol-Menü)
+        return MINIMIZE_BUTTON_SIZE * VIEWER_SETTINGS_MENU_BUTTON_COUNT
+                + (VIEWER_SETTINGS_MENU_BUTTON_COUNT - 1) + 1;
+    }
+
+    private static int getViewerSettingsCostsButtonX(int menuX) {
+        return menuX + 1;
+    }
+
+    private static int getViewerSettingsOwnedButtonX(int menuX) {
+        return menuX + MINIMIZE_BUTTON_SIZE + 1;
+    }
+
+    private static void renderViewerSettingsMenu(DrawContext context, int buttonX, int buttonY) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        int menuButtonWidth = MINIMIZE_BUTTON_SIZE;
+        int menuButtonHeight = MINIMIZE_BUTTON_SIZE;
+        int menuWidth = getViewerSettingsMenuWidth();
+        int menuHeight = menuButtonHeight;
+        int menuX = buttonX - menuWidth;
+
+        boolean mouseOverMenu = lastMouseX >= menuX && lastMouseX <= buttonX + MINIMIZE_BUTTON_SIZE
+                && lastMouseY >= buttonY && lastMouseY <= buttonY + menuHeight;
+        boolean mouseOverButtonOrMenu = isViewerSettingsButtonHovered || mouseOverMenu;
+        if (!mouseOverButtonOrMenu && isViewerSettingsMenuOpen) {
+            isViewerSettingsMenuOpen = false;
+            return;
+        }
+
+        context.fill(menuX, buttonY, menuX + menuWidth, buttonY + menuHeight, 0xFF000000);
+        context.fill(menuX, buttonY, menuX + menuWidth, buttonY + 1, 0xFFFFFFFF);
+        context.fill(menuX, buttonY + menuHeight - 1, menuX + menuWidth, buttonY + menuHeight, 0xFFFFFFFF);
+        context.fill(menuX, buttonY, menuX + 1, buttonY + menuHeight, 0xFFFFFFFF);
+        context.fill(menuX + menuWidth - 1, buttonY, menuX + menuWidth, buttonY + menuHeight, 0xFFFFFFFF);
+
+        int costsButtonX = getViewerSettingsCostsButtonX(menuX);
+        renderViewerSettingsMenuToggleButton(context, client, costsButtonX, buttonY, menuButtonWidth, menuButtonHeight, "$", showCosts);
+        context.fill(menuX + MINIMIZE_BUTTON_SIZE, buttonY, menuX + MINIMIZE_BUTTON_SIZE + 1, buttonY + menuHeight, 0xFFFFFFFF);
+        int ownedButtonX = getViewerSettingsOwnedButtonX(menuX);
+        renderViewerSettingsMenuToggleButton(context, client, ownedButtonX, buttonY, menuButtonWidth, menuButtonHeight, "x/x", showOwnedResources);
+    }
+
+    private static void renderViewerSettingsMenuToggleButton(
+            DrawContext context, MinecraftClient client, int x, int y, int width, int height, String label, boolean active) {
+        boolean hovered = lastMouseX >= x && lastMouseX < x + width && lastMouseY >= y && lastMouseY < y + height;
+        int bgColor = active ? 0xFF305030 : (hovered ? 0x80404040 : 0x80202020);
+        context.fill(x, y + 1, x + width, y + height - 1, bgColor);
+        int textColor = active ? 0xFF55FF55 : 0xFFFFFFFF;
+        if ("$".equals(label)) {
+            float scale = 1.5f;
+            Matrix3x2fStack matrices = context.getMatrices();
+            matrices.pushMatrix();
+            matrices.translate(x + width / 2.0f, y + height / 2.0f);
+            matrices.scale(scale, scale);
+            int textWidth = client.textRenderer.getWidth(label);
+            context.drawText(
+                    client.textRenderer,
+                    Text.literal(label),
+                    -textWidth / 2,
+                    -client.textRenderer.fontHeight / 2,
+                    textColor,
+                    false
+            );
+            matrices.popMatrix();
+        } else {
+            int textWidth = client.textRenderer.getWidth(label);
+            int textX = x + (width - textWidth) / 2;
+            int textY = y + (height - client.textRenderer.fontHeight) / 2;
+            context.drawText(client.textRenderer, Text.literal(label), textX, textY, textColor, false);
+        }
+    }
+
+    private static void renderMinimizeButton(DrawContext context, int x, int y) {
+        renderSideButton(context, x, y, "▶", false);
+    }
+
+    private static void renderSideButton(DrawContext context, int x, int y, String label, boolean active) {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        boolean isHovered = lastMouseX >= x && lastMouseX < x + MINIMIZE_BUTTON_SIZE
+                && lastMouseY >= y && lastMouseY < y + MINIMIZE_BUTTON_SIZE;
+
+        int bgColor = active ? 0xFF305030 : (isHovered ? 0xFF404040 : 0x80000000);
+        context.fill(x, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, bgColor);
+
+        int borderColor = active ? 0xFF55FF55 : (isHovered ? 0xFFFFFFFF : 0xFF808080);
+        context.fill(x, y, x + MINIMIZE_BUTTON_SIZE, y + 1, borderColor);
+        context.fill(x, y + MINIMIZE_BUTTON_SIZE - 1, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor);
+        context.fill(x, y, x + 1, y + MINIMIZE_BUTTON_SIZE, borderColor);
+        context.fill(x + MINIMIZE_BUTTON_SIZE - 1, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor);
+
+        int textWidth = client.textRenderer.getWidth(label);
+        int textX = x + (MINIMIZE_BUTTON_SIZE - textWidth) / 2;
+        int textY = y + (MINIMIZE_BUTTON_SIZE - client.textRenderer.fontHeight) / 2 + 1;
+        context.drawText(client.textRenderer, Text.literal(label), textX, textY, 0xFFFFFFFF, false);
+    }
+
+    private static int getSideButtonX(ViewerPosition pos) {
+        return pos.viewerX - MINIMIZE_BUTTON_SIZE - 3;
+    }
+
+    private static int getMinimizeButtonY(ViewerPosition pos) {
+        return pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING + 5;
+    }
+
+    private static int getViewerSettingsButtonY(ViewerPosition pos) {
+        return getMinimizeButtonY(pos) - MINIMIZE_BUTTON_SIZE - SIDE_BUTTON_GAP;
+    }
+
+    public static boolean isShowOwnedResources() {
+        return showOwnedResources;
+    }
+
+    public static boolean isShowCosts() {
+        return showCosts;
     }
     
     /**
@@ -4670,14 +4883,42 @@ public class ItemViewerUtility {
             return false;
         }
         
-        // Prüfe Klick auf Minimierungs-Button (außerhalb des Overlays, am linken Rand, wenn nicht minimiert)
+        // Prüfe Klick auf Viewer-Einstellungen-Menü (vor Einklappen-Button)
         if (!isMinimized && button == 0) {
-            int minimizeButtonX = pos.viewerX - MINIMIZE_BUTTON_SIZE - 3; // 3px Abstand links vom Viewer (2px nach rechts verschoben)
-            int minimizeButtonY = pos.viewerY + pos.viewerHeight - MINIMIZE_BUTTON_SIZE - VIEWER_PADDING + 5; // Unten ausgerichtet, 5px tiefer
-            
-            if (mouseX >= minimizeButtonX && mouseX < minimizeButtonX + MINIMIZE_BUTTON_SIZE &&
-                mouseY >= minimizeButtonY && mouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE) {
-                // Minimieren
+            int sideButtonX = getSideButtonX(pos);
+            int settingsButtonY = getViewerSettingsButtonY(pos);
+            int menuWidth = getViewerSettingsMenuWidth();
+            int menuX = sideButtonX - menuWidth;
+            int menuButtonWidth = MINIMIZE_BUTTON_SIZE;
+            int costsButtonX = getViewerSettingsCostsButtonX(menuX);
+            int ownedButtonX = getViewerSettingsOwnedButtonX(menuX);
+
+            if (isViewerSettingsMenuOpen) {
+                if (mouseX >= costsButtonX && mouseX < costsButtonX + menuButtonWidth
+                        && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
+                    showCosts = !showCosts;
+                    ItemViewerGrid.invalidateTooltipCache();
+                    return true;
+                }
+                if (mouseX >= ownedButtonX && mouseX < ownedButtonX + menuButtonWidth
+                        && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
+                    showOwnedResources = !showOwnedResources;
+                    if (!showOwnedResources) {
+                        ItemViewerHudStatsCollector.clear();
+                    }
+                    ItemViewerGrid.invalidateTooltipCache();
+                    return true;
+                }
+
+                if (mouseX >= menuX && mouseX < sideButtonX + MINIMIZE_BUTTON_SIZE
+                        && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
+                    return true;
+                }
+            }
+
+            int minimizeButtonY = getMinimizeButtonY(pos);
+            if (mouseX >= sideButtonX && mouseX < sideButtonX + MINIMIZE_BUTTON_SIZE
+                    && mouseY >= minimizeButtonY && mouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE) {
                 isMinimized = true;
                 return true;
             }

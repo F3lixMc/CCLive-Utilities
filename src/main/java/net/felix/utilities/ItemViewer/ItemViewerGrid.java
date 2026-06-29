@@ -34,6 +34,11 @@ public class ItemViewerGrid {
     
     private static ItemData lastTooltipItem = null;
     private static List<Text> cachedTooltipLines = null;
+
+    public static void invalidateTooltipCache() {
+        lastTooltipItem = null;
+        cachedTooltipLines = null;
+    }
     
     private static final int SLOT_SIZE = 18; // 16x16 Item + 1px Padding auf jeder Seite
     private static final Identifier PASSIVE_SKILL_SLOT_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/passive_skill_slot.png");
@@ -382,26 +387,7 @@ public class ItemViewerGrid {
                         }
                         
                         // Kosten für Power Crystal Slots (nach first_upgrade)
-                        if (hoveredItem.price != null) {
-                            tooltipLines.add(Text.empty());
-                            tooltipLines.add(Text.literal("Kosten:")
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false))); // yellow
-                            
-                            // Füge alle Kosten hinzu
-                            addCostItem(tooltipLines, hoveredItem.price.coin);
-                            addCostItem(tooltipLines, hoveredItem.price.cactus);
-                            addCostItem(tooltipLines, hoveredItem.price.soul);
-                            addCostItem(tooltipLines, hoveredItem.price.material1);
-                            addCostItem(tooltipLines, hoveredItem.price.material2);
-                            addCostItem(tooltipLines, hoveredItem.price.material3);
-                            addCostItem(tooltipLines, hoveredItem.price.material4);
-                            addCostItem(tooltipLines, hoveredItem.price.material5);
-                            // Amboss: Prüfe beide Varianten (groß- und kleingeschrieben)
-                            addCostItem(tooltipLines, hoveredItem.price.Amboss != null ? hoveredItem.price.Amboss : hoveredItem.price.amboss);
-                            // Ressource: Prüfe beide Varianten (groß- und kleingeschrieben)
-                            addCostItem(tooltipLines, hoveredItem.price.Ressource != null ? hoveredItem.price.Ressource : hoveredItem.price.ressource);
-                            addLevelCostItem(tooltipLines, hoveredItem.price.Level); // Level in gelb
-                        }
+                        appendPriceSection(tooltipLines, hoveredItem, true);
                         
                         // Forschungs Zeit separat anzeigen (gelb Header, dann grün)
                         if (hoveredItem.time != null && hoveredItem.time.hours != null) {
@@ -624,52 +610,13 @@ public class ItemViewerGrid {
                         }
                         tooltipLines.add(statusText);
                         
-                        // Leere Zeile als Trenner
-                        tooltipLines.add(Text.empty());
+                        if (ItemViewerUtility.isShowCosts()) {
+                            tooltipLines.add(Text.empty());
+                        }
                     }
                     
-                    // Kosten (yellow Header, dann green Preise)
-                    if (hoveredItem.price != null) {
-                        tooltipLines.add(Text.literal("Kosten:")
-                            .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false))); // yellow
-                        
-                        // Füge alle Kosten hinzu
-                        addCostItem(tooltipLines, hoveredItem.price.coin);
-                        addCostItem(tooltipLines, hoveredItem.price.cactus);
-                        addCostItem(tooltipLines, hoveredItem.price.soul);
-                        addCostItem(tooltipLines, hoveredItem.price.material1);
-                        addCostItem(tooltipLines, hoveredItem.price.material2);
-                        addCostItem(tooltipLines, hoveredItem.price.material3);
-                        addCostItem(tooltipLines, hoveredItem.price.material4);
-                        addCostItem(tooltipLines, hoveredItem.price.material5);
-                        // Amboss: Prüfe beide Varianten (groß- und kleingeschrieben)
-                        addCostItem(tooltipLines, hoveredItem.price.Amboss != null ? hoveredItem.price.Amboss : hoveredItem.price.amboss);
-                        // Ressource: Prüfe beide Varianten (groß- und kleingeschrieben)
-                        addCostItem(tooltipLines, hoveredItem.price.Ressource != null ? hoveredItem.price.Ressource : hoveredItem.price.ressource);
-                        addLevelCostItem(tooltipLines, hoveredItem.price.Level); // Level in gelb
-                    }
-                    
-                    // Bauplan-Shop (yellow Header, dann green Preise)
-                    if (hoveredItem.blueprint_shop != null && hoveredItem.blueprint_shop.price != null) {
-                        tooltipLines.add(Text.empty());
-                        tooltipLines.add(Text.literal("Bauplan-Shop:")
-                            .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false))); // yellow
-                        
-                        // Füge alle Bauplan-Shop Preise hinzu
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.coin);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.cactus);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.soul);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material1);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material2);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material3);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material4);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.material5);
-                        // Amboss: Prüfe beide Varianten (groß- und kleingeschrieben)
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.Amboss != null ? hoveredItem.blueprint_shop.price.Amboss : hoveredItem.blueprint_shop.price.amboss);
-                        // Ressource: Prüfe beide Varianten (groß- und kleingeschrieben)
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.Ressource != null ? hoveredItem.blueprint_shop.price.Ressource : hoveredItem.blueprint_shop.price.ressource);
-                        addCostItem(tooltipLines, hoveredItem.blueprint_shop.price.paper_shreds);
-                    }
+                    appendPriceSection(tooltipLines, hoveredItem, false);
+                    appendBlueprintShopSection(tooltipLines, hoveredItem);
                     
                     if (includeInteractionHints) {
                         appendInteractionHints(tooltipLines, hoveredItem, info);
@@ -682,13 +629,7 @@ public class ItemViewerGrid {
     public static void clearItemStackCache() {
         ITEM_STACK_CACHE.clear();
         TEXTURE_ID_CACHE.clear();
-        lastTooltipItem = null;
-        cachedTooltipLines = null;
-    }
-    
-    public static void invalidateTooltipCache() {
-        lastTooltipItem = null;
-        cachedTooltipLines = null;
+        invalidateTooltipCache();
     }
     
     private static final ItemViewerGrid TOOLTIP_BUILDER =
@@ -955,31 +896,151 @@ public class ItemViewerGrid {
     /**
      * Fügt eine Kosten-Zeile zum Tooltip hinzu, falls vorhanden
      */
-    private void addCostItem(java.util.List<Text> tooltipLines, CostItem costItem) {
-        if (costItem != null && costItem.itemName != null && costItem.amount != null) {
-            String amountStr = formatAmount(costItem.amount);
-            String materialLine = amountStr + " " + costItem.itemName;
-            
-            // Prüfe ob es ein Aincraft-Material ist und füge Ebene hinzu
-            net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo floorInfo = 
-                net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(costItem.itemName);
-            
-            if (floorInfo != null) {
-                MutableText materialText = Text.literal(materialLine)
-                    .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false));
-                
-                String floorText = net.felix.utilities.Overall.InformationenUtility.formatMaterialLocationSuffix(floorInfo);
-                int rarityColor = net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
-                Text floorTextObj = Text.literal(floorText)
-                    .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false));
-                
-                // Kombiniere beide Texte
-                tooltipLines.add(materialText.append(floorTextObj));
-            } else {
-                // Normale Anzeige ohne Ebene
-                tooltipLines.add(Text.literal(materialLine)
-                    .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false)));
+    private void appendPriceSection(java.util.List<Text> tooltipLines, ItemData hoveredItem, boolean leadingEmptyLine) {
+        if (!ItemViewerUtility.isShowCosts() || hoveredItem == null || hoveredItem.price == null) {
+            return;
+        }
+        if (leadingEmptyLine) {
+            tooltipLines.add(Text.empty());
+        }
+        addCostSectionHeader(tooltipLines, "Kosten:", hoveredItem.price, hoveredItem);
+        addCostItem(tooltipLines, hoveredItem.price.coin);
+        addCostItem(tooltipLines, hoveredItem.price.cactus);
+        addCostItem(tooltipLines, hoveredItem.price.soul);
+        addCostItem(tooltipLines, hoveredItem.price.material1);
+        addCostItem(tooltipLines, hoveredItem.price.material2);
+        addCostItem(tooltipLines, hoveredItem.price.material3);
+        addCostItem(tooltipLines, hoveredItem.price.material4);
+        addCostItem(tooltipLines, hoveredItem.price.material5);
+        addCostItem(tooltipLines, hoveredItem.price.Amboss != null ? hoveredItem.price.Amboss : hoveredItem.price.amboss);
+        addCostItem(tooltipLines, hoveredItem.price.Ressource != null ? hoveredItem.price.Ressource : hoveredItem.price.ressource);
+        addLevelCostItem(tooltipLines, hoveredItem.price.Level);
+    }
+
+    private void appendBlueprintShopSection(java.util.List<Text> tooltipLines, ItemData hoveredItem) {
+        if (!ItemViewerUtility.isShowCosts() || hoveredItem == null
+                || hoveredItem.blueprint_shop == null || hoveredItem.blueprint_shop.price == null) {
+            return;
+        }
+        tooltipLines.add(Text.empty());
+        tooltipLines.add(Text.literal("Bauplan-Shop:")
+                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
+        PriceData shopPrice = hoveredItem.blueprint_shop.price;
+        addCostItem(tooltipLines, shopPrice.coin);
+        addCostItem(tooltipLines, shopPrice.cactus);
+        addCostItem(tooltipLines, shopPrice.soul);
+        addCostItem(tooltipLines, shopPrice.material1);
+        addCostItem(tooltipLines, shopPrice.material2);
+        addCostItem(tooltipLines, shopPrice.material3);
+        addCostItem(tooltipLines, shopPrice.material4);
+        addCostItem(tooltipLines, shopPrice.material5);
+        addCostItem(tooltipLines, shopPrice.Amboss != null ? shopPrice.Amboss : shopPrice.amboss);
+        addCostItem(tooltipLines, shopPrice.Ressource != null ? shopPrice.Ressource : shopPrice.ressource);
+        addCostItem(tooltipLines, shopPrice.paper_shreds);
+    }
+
+    private void addCostSectionHeader(java.util.List<Text> tooltipLines, String label, PriceData price, ItemData item) {
+        if (!ItemViewerUtility.isShowOwnedResources() || !shouldShowCraftableCount(item)) {
+            tooltipLines.add(Text.literal(label)
+                    .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
+            return;
+        }
+        int craftable = ItemViewerOwnedResources.calculateCraftableCount(price);
+        if (craftable < 0) {
+            tooltipLines.add(Text.literal(label)
+                    .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
+            return;
+        }
+        MutableText header = Text.literal(label)
+                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false))
+                .append(Text.literal("     " + craftable + "x Herstellbar")
+                        .setStyle(Style.EMPTY.withColor(ITEM_SCORE_VALUE_COLOR).withItalic(false)));
+        tooltipLines.add(header);
+    }
+
+    private static boolean shouldShowCraftableCount(ItemData item) {
+        if (item == null) {
+            return true;
+        }
+        if (item.category != null) {
+            String category = item.category.toLowerCase(java.util.Locale.ROOT);
+            if ("modules".equals(category) || "module_bags".equals(category) || "licence".equals(category)) {
+                return false;
             }
+        }
+        if (item.info != null) {
+            if (Boolean.TRUE.equals(item.info.module) || Boolean.TRUE.equals(item.info.licence)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Fügt eine Kosten-Zeile zum Tooltip hinzu, falls vorhanden
+     */
+    private void addCostItem(java.util.List<Text> tooltipLines, CostItem costItem) {
+        if (costItem == null || costItem.itemName == null || costItem.amount == null) {
+            return;
+        }
+
+        if (ItemViewerUtility.isShowOwnedResources()) {
+            addCostItemWithOwned(tooltipLines, costItem);
+            return;
+        }
+
+        String amountStr = formatAmount(costItem.amount);
+        String materialLine = amountStr + " " + costItem.itemName;
+        
+        // Prüfe ob es ein Aincraft-Material ist und füge Ebene hinzu
+        net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo floorInfo = 
+            net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(costItem.itemName);
+        
+        if (floorInfo != null) {
+            MutableText materialText = Text.literal(materialLine)
+                .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false));
+            
+            String floorText = net.felix.utilities.Overall.InformationenUtility.formatMaterialLocationSuffix(floorInfo);
+            int rarityColor = net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
+            Text floorTextObj = Text.literal(floorText)
+                .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false));
+            
+            tooltipLines.add(materialText.append(floorTextObj));
+        } else {
+            tooltipLines.add(Text.literal(materialLine)
+                .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false)));
+        }
+    }
+
+    private void addCostItemWithOwned(java.util.List<Text> tooltipLines, CostItem costItem) {
+        java.math.BigDecimal owned = ItemViewerOwnedResources.getOwnedAmount(costItem.itemName);
+        java.math.BigDecimal needed = ItemViewerOwnedResources.parseNeededAmount(costItem.amount);
+        int lineColor;
+        if (needed.signum() == 0) {
+            lineColor = 0xFF00FF00;
+        } else if (owned.compareTo(needed) >= 0) {
+            lineColor = 0xFF00FF00;
+        } else {
+            lineColor = 0xFFFF5555;
+        }
+
+        String ownedStr = ItemViewerOwnedResources.formatOwnedAmountForDisplay(costItem.itemName);
+        String neededStr = ItemViewerOwnedResources.formatNeededAmountForDisplay(costItem.itemName, costItem.amount);
+        String materialLine = ownedStr + " / " + neededStr + " " + costItem.itemName;
+
+        net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo floorInfo =
+            net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(costItem.itemName);
+        if (floorInfo != null) {
+            MutableText materialText = Text.literal(materialLine)
+                .setStyle(Style.EMPTY.withColor(lineColor).withItalic(false));
+            String floorText = net.felix.utilities.Overall.InformationenUtility.formatMaterialLocationSuffix(floorInfo);
+            int rarityColor = net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
+            materialText.append(Text.literal(floorText)
+                .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false)));
+            tooltipLines.add(materialText);
+        } else {
+            tooltipLines.add(Text.literal(materialLine)
+                .setStyle(Style.EMPTY.withColor(lineColor).withItalic(false)));
         }
     }
     
@@ -1200,21 +1261,7 @@ public class ItemViewerGrid {
             tooltipLines.add(statusText);
         }
 
-        if (hoveredItem.price != null) {
-            tooltipLines.add(Text.empty());
-            tooltipLines.add(Text.literal("Kosten:")
-                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
-            addCostItem(tooltipLines, hoveredItem.price.coin);
-            addCostItem(tooltipLines, hoveredItem.price.cactus);
-            addCostItem(tooltipLines, hoveredItem.price.soul);
-            addCostItem(tooltipLines, hoveredItem.price.material1);
-            addCostItem(tooltipLines, hoveredItem.price.material2);
-            addCostItem(tooltipLines, hoveredItem.price.material3);
-            addCostItem(tooltipLines, hoveredItem.price.material4);
-            addCostItem(tooltipLines, hoveredItem.price.material5);
-            addCostItem(tooltipLines, hoveredItem.price.Amboss != null ? hoveredItem.price.Amboss : hoveredItem.price.amboss);
-            addCostItem(tooltipLines, hoveredItem.price.Ressource != null ? hoveredItem.price.Ressource : hoveredItem.price.ressource);
-        }
+        appendPriceSection(tooltipLines, hoveredItem, true);
 
         if (info.prerequisites != null && !info.prerequisites.isEmpty()) {
             tooltipLines.add(Text.empty());

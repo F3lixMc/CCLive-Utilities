@@ -8,6 +8,7 @@ import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.ItemViewer.ItemViewerHudStatsCollector;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -49,6 +50,7 @@ public class BossBarMixin {
                 }
 
                 CoinTrackerUtility.processBossBar(name);
+                ItemViewerHudStatsCollector.processBossBar(name);
                 net.felix.utilities.DragOverlay.ClipboardCoinCollector.processBossBar(name);
                 WaveUtility.processBossBarWave(name, index);
 

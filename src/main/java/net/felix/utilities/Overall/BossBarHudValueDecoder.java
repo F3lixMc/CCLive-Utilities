@@ -202,6 +202,30 @@ public final class BossBarHudValueDecoder {
         return normalizeAbbreviatedNumberPart(numberPart) + suffix;
     }
 
+    /** Wie {@link #normalizeHudDisplay(String)}, Suffix in Kleinbuchstaben (z. B. {@code 4.154fv}). */
+    public static String normalizeHudDisplayLowercase(String display) {
+        String normalized = normalizeHudDisplay(display);
+        if (normalized.isEmpty()) {
+            return normalized;
+        }
+        String suffix = HudNumberSuffixUtility.extractSuffix(normalized);
+        if (suffix == null || suffix.isEmpty()) {
+            return normalized;
+        }
+        return normalized.substring(0, normalized.length() - suffix.length())
+                + suffix.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** Parst HUD-Abkürzungen (z. B. {@code 1.524kg}, {@code 999.999aa}) für Mengenvergleiche. */
+    public static BigDecimal parseHudAmount(String display) {
+        if (display == null || display.isBlank()) {
+            return BigDecimal.ZERO;
+        }
+        String normalized = normalizeHudDisplayLowercase(display);
+        BigDecimal parsed = HudNumberSuffixUtility.parseSuffixedValue(normalized);
+        return parsed != null ? parsed : BigDecimal.ZERO;
+    }
+
     private static String normalizeFullNumber(String numberPart) {
         if (numberPart == null || numberPart.isEmpty()) {
             return "";

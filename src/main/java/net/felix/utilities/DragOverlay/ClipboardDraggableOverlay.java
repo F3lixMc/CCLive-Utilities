@@ -1485,7 +1485,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (materialName == null) {
             return 0.0;
         }
-        if (ClipboardPaperShredsCollector.STORAGE_NAME.equalsIgnoreCase(materialName)) {
+        if (CollectedMaterialsResourcesStorage.OTHER_KAKTUS.equalsIgnoreCase(materialName)
+                || CollectedMaterialsResourcesStorage.OTHER_SEELEN.equalsIgnoreCase(materialName)
+                || ClipboardPaperShredsCollector.STORAGE_NAME.equalsIgnoreCase(materialName)) {
             return CollectedMaterialsResourcesStorage.getOtherAmount(materialName);
         }
         // materials + resources in collected_materials-ressources.json
