@@ -13,7 +13,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
-import net.felix.utilities.Overall.SessionRateUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import org.joml.Matrix3x2fStack;
 
@@ -42,22 +41,19 @@ public class BossHPUtility {
 	private String lastKnownBossName = null;
 	private boolean bossDefeated = false;
 	
-	// DPM-Tracking-Variablen
+	// DPM-Tracking-Variablen (5s-Fenster, hochgerechnet auf 1 Minute)
 	private BigInteger initialBossHP = null; // Initiale HP beim ersten Erkennen des Bosses
 	private long bossFightStartTime = 0; // Zeitpunkt, wann der Kampf begonnen hat
 	private String lastTrackedBossName = null; // Letzter Boss-Name für Erkennung von Boss-Wechsel
 	private double cachedDpm = 0.0;
 	private long lastDpmUpdateTime = 0;
-	private BigInteger lastDpmDamageDealt = null;
+	private static final double DPM_EXTRAPOLATION_FACTOR = 12.0; // 5s -> 60s
 	
-	// Last-Dmg: HP-Snapshot, nach 2 Sekunden Differenz = Schaden in diesem Fenster
+	// Last-Dmg + DPM: HP-Snapshot, nach 5 Sekunden Differenz = Schaden in diesem Fenster
 	private BigInteger lastDmgWindowStartHp = null;
 	private long lastDmgWindowStartMs = 0;
-	private BigInteger displayedLastDamage = null; // null bis Messung; bleibt bei 0 Delta im Fenster; nach 5s ohne neuen Schaden -> 0
-	private static final long LAST_DMG_WINDOW_MS = 2000L;
-	/** Zeitpunkt des letzten echten Schadens (positives Delta im Fenster); für 5s-Timeout. */
-	private long lastDamagePositiveAtMs = 0;
-	private static final long LAST_DMG_IDLE_RESET_MS = 5000L;
+	private BigInteger displayedLastDamage = null; // null bis erste Messung; danach Schaden im letzten 5s-Fenster
+	private static final long LAST_DMG_WINDOW_MS = 5000L;
 	
 	// Validierte Boss-Namen
 	private final Set<String> validBossNames = new HashSet<>();
@@ -264,51 +260,15 @@ public class BossHPUtility {
         
         instance.lastWaveState = instance.wavesActive;
 		
-		// Last-Dmg-Fenster (alle 2s: Delta) + nach 5s ohne neuen Schaden Anzeige auf 0
+		// Last-Dmg- und DPM-Fenster (alle 5s: Schaden messen, DPM hochrechnen)
 		if (instance.wavesActive && instance.currentBossText != null && !instance.bossDefeated) {
 			instance.tickLastDamageWindow();
-			instance.tickLastDamageIdleTimeout();
-			instance.updateDpm();
 		}
 	}
 	
 	private void resetDpmCache() {
 		cachedDpm = 0.0;
 		lastDpmUpdateTime = 0;
-		lastDpmDamageDealt = null;
-	}
-	
-	private void updateDpm() {
-		if (initialBossHP == null || bossFightStartTime <= 0 || currentBossText == null) {
-			return;
-		}
-		
-		BigInteger currentHP = parseHpFromBossText(currentBossText);
-		if (currentHP == null) {
-			return;
-		}
-		
-		BigInteger damageDealt = initialBossHP.subtract(currentHP);
-		if (damageDealt.compareTo(BigInteger.ZERO) < 0) {
-			damageDealt = BigInteger.ZERO;
-		}
-		
-		long now = System.currentTimeMillis();
-		boolean damageChanged = lastDpmDamageDealt == null || damageDealt.compareTo(lastDpmDamageDealt) != 0;
-		if (!SessionRateUtility.shouldRecalculate(lastDpmUpdateTime, damageChanged)) {
-			return;
-		}
-		
-		lastDpmUpdateTime = now;
-		lastDpmDamageDealt = damageDealt;
-		
-		long fightDuration = now - bossFightStartTime;
-		if (fightDuration <= 0) {
-			cachedDpm = 0.0;
-			return;
-		}
-		double minutes = fightDuration / 60000.0;
-		cachedDpm = minutes > 0 ? damageDealt.doubleValue() / minutes : 0.0;
 	}
 	
 	/**
@@ -331,7 +291,7 @@ public class BossHPUtility {
 	
 	/**
 	 * Einmal pro Tick: nach {@link #LAST_DMG_WINDOW_MS} wird die HP-Differenz zum Snapshot ausgewertet.
-	 * Nur bei echtem HP-Verlust wird {@link #displayedLastDamage} aktualisiert; sonst bleibt der zuletzt gezeigte Wert.
+	 * Der Schaden im 5s-Fenster wird als Last Dmg angezeigt und für DPM auf 1 Minute hochgerechnet.
 	 */
 	private void tickLastDamageWindow() {
 		BigInteger hp = parseHpFromBossText(currentBossText);
@@ -348,36 +308,20 @@ public class BossHPUtility {
 			return;
 		}
 		BigInteger delta = lastDmgWindowStartHp.subtract(hp);
-		if (delta.compareTo(BigInteger.ZERO) > 0) {
-			displayedLastDamage = delta;
-			lastDamagePositiveAtMs = now;
+		if (delta.compareTo(BigInteger.ZERO) < 0) {
+			delta = BigInteger.ZERO;
 		}
+		displayedLastDamage = delta;
+		cachedDpm = delta.doubleValue() * DPM_EXTRAPOLATION_FACTOR;
+		lastDpmUpdateTime = now;
 		lastDmgWindowStartHp = hp;
 		lastDmgWindowStartMs = now;
-	}
-	
-	/**
-	 * Wenn seit dem letzten positiven Schaden mindestens {@link #LAST_DMG_IDLE_RESET_MS} vergangen ist, Anzeige auf 0 setzen.
-	 */
-	private void tickLastDamageIdleTimeout() {
-		if (displayedLastDamage == null || displayedLastDamage.compareTo(BigInteger.ZERO) <= 0) {
-			return;
-		}
-		if (lastDamagePositiveAtMs <= 0L) {
-			return;
-		}
-		long now = System.currentTimeMillis();
-		if (now - lastDamagePositiveAtMs >= LAST_DMG_IDLE_RESET_MS) {
-			displayedLastDamage = BigInteger.ZERO;
-			lastDamagePositiveAtMs = 0L;
-		}
 	}
 	
 	private void resetLastDamageWindow() {
 		lastDmgWindowStartHp = null;
 		lastDmgWindowStartMs = 0;
 		displayedLastDamage = null;
-		lastDamagePositiveAtMs = 0L;
 	}
 	
 	/**
@@ -822,7 +766,13 @@ public class BossHPUtility {
 			dpmText = getFormattedDpmText();
 		}
 		
-		// Last Dmg: Schaden im letzten 2s-Fenster (siehe tickLastDamageWindow); nach 5s ohne Schaden -> 0
+		// ETA: geschätzte Restzeit anhand aktueller HP und DPM
+		String etaLine = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta && currentHP != null) {
+			etaLine = getFormattedEtaText(currentHP);
+		}
+		
+		// Last Dmg: Schaden im letzten 5s-Fenster (siehe tickLastDamageWindow)
 		String lastDmgLine = null;
 		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg
 			&& instance.initialBossHP != null && currentHP != null) {
@@ -852,20 +802,24 @@ public class BossHPUtility {
 		int separatorWidth = percentageText != null ? client.textRenderer.getWidth("|") : 0;
 		int percentageWidth = percentageText != null ? client.textRenderer.getWidth(percentageText) : 0;
 		int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
+		int etaWidth = etaLine != null ? client.textRenderer.getWidth(etaLine) : 0;
 		int lastDmgWidth = lastDmgLine != null ? client.textRenderer.getWidth(lastDmgLine) : 0;
 		int overallDmgWidth = overallDmgLine != null ? client.textRenderer.getWidth(overallDmgLine) : 0;
 		int totalWidth = Math.max(
 			nameWidth + (displayHP.isEmpty() ? 0 : 4 + hpWidth + (percentageText != null ? 5 + separatorWidth + 5 + percentageWidth : 0)), // Erste Zeile
-			Math.max(dpmWidth, Math.max(lastDmgWidth, overallDmgWidth))
+			Math.max(dpmWidth, Math.max(etaWidth, Math.max(lastDmgWidth, overallDmgWidth)))
 		);
 		int totalHeight = client.textRenderer.fontHeight + PADDING * 2;
+		if (overallDmgLine != null) {
+			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
+		}
 		if (dpmText != null) {
-			totalHeight += client.textRenderer.fontHeight + LINE_SPACING; // DPM
+			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
 		}
 		if (lastDmgLine != null) {
 			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
 		}
-		if (overallDmgLine != null) {
+		if (etaLine != null) {
 			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
 		}
 		
@@ -931,8 +885,12 @@ public class BossHPUtility {
 			}
 		}
 		
-		// Stat-Zeilen unter der ersten Zeile (DPM, Last Dmg, Overall DMG)
+		// Stat-Zeilen unter der ersten Zeile (Overall DMG, DPM, Last Dmg, Benötigte Zeit)
 		int statLineY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
+		if (overallDmgLine != null) {
+			context.drawText(client.textRenderer, overallDmgLine, PADDING, statLineY, dpmColor, true);
+			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
+		}
 		if (dpmText != null) {
 			context.drawText(client.textRenderer, dpmText, PADDING, statLineY, dpmColor, true);
 			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
@@ -941,8 +899,8 @@ public class BossHPUtility {
 			context.drawText(client.textRenderer, lastDmgLine, PADDING, statLineY, dpmColor, true);
 			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
 		}
-		if (overallDmgLine != null) {
-			context.drawText(client.textRenderer, overallDmgLine, PADDING, statLineY, dpmColor, true);
+		if (etaLine != null) {
+			context.drawText(client.textRenderer, etaLine, PADDING, statLineY, dpmColor, true);
 		}
 
 		matrices.popMatrix();
@@ -1148,45 +1106,62 @@ public class BossHPUtility {
 	
 	public static String getFormattedDpmText() {
 		BossHPUtility instance = getInstance();
-		if (instance == null || instance.initialBossHP == null || instance.bossFightStartTime <= 0
-				|| instance.lastDpmUpdateTime <= 0) {
-			return null;
-		}
-		long fightDuration = System.currentTimeMillis() - instance.bossFightStartTime;
-		if (fightDuration <= 0) {
-			return null;
-		}
-		double minutes = fightDuration / 60000.0;
-		if (minutes <= 0) {
-			return null;
+		if (instance == null || instance.lastDpmUpdateTime <= 0) {
+			return "DPM: -";
 		}
 		return String.format(Locale.US, "DPM: %,.0f", instance.cachedDpm);
 	}
 	
 	/**
-	 * Letzter im 2s-Fenster ermittelter Schaden; null bis die erste Messung; nach 5s ohne neuen Schaden 0.
+	 * Geschätzte Restzeit bis der Boss besiegt ist, basierend auf aktueller HP und DPM.
+	 */
+	public static String getFormattedEtaText(BigInteger currentHP) {
+		BossHPUtility instance = getInstance();
+		if (currentHP == null || currentHP.compareTo(BigInteger.ZERO) <= 0) {
+			return "Benötigte Zeit: 0:00";
+		}
+		if (instance == null || instance.lastDpmUpdateTime <= 0 || instance.cachedDpm <= 0) {
+			return "Benötigte Zeit: -";
+		}
+		double remainingMinutes = currentHP.doubleValue() / instance.cachedDpm;
+		return "Benötigte Zeit: " + formatEtaDuration(remainingMinutes);
+	}
+	
+	private static String formatEtaDuration(double totalMinutes) {
+		if (totalMinutes <= 0) {
+			return "0:00";
+		}
+		long totalSeconds = Math.max(1, Math.round(totalMinutes * 60));
+		long hours = totalSeconds / 3600;
+		long minutes = (totalSeconds % 3600) / 60;
+		long seconds = totalSeconds % 60;
+		if (hours > 0) {
+			return String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds);
+		}
+		return String.format(Locale.US, "%d:%02d", minutes, seconds);
+	}
+	
+	/**
+	 * Schaden im letzten abgeschlossenen 5s-Fenster; null bis die erste Messung.
 	 */
 	public static BigInteger getDisplayedLastDamage() {
 		return getInstance().displayedLastDamage;
 	}
 	
 	/**
-	 * Countdown für die Last-Dmg-Zeile innerhalb jedes 2s-Messfensters: {@code 2}, {@code 1}, {@code 0}.
+	 * Countdown bis zum Ende des aktuellen 5s-Messfensters: {@code 5} bis {@code 0}.
 	 */
 	public static int getLastDmgIntervalCountdown() {
 		BossHPUtility inst = getInstance();
 		if (inst.lastDmgWindowStartMs <= 0L) {
-			return 2;
+			return 5;
 		}
 		long elapsed = System.currentTimeMillis() - inst.lastDmgWindowStartMs;
 		if (elapsed < 0L || elapsed >= LAST_DMG_WINDOW_MS) {
-			return 2;
+			return 5;
 		}
-		int phase = (int) (elapsed * 3L / LAST_DMG_WINDOW_MS);
-		if (phase >= 2) {
-			return 0;
-		}
-		return 2 - phase;
+		int secondsRemaining = (int) Math.ceil((LAST_DMG_WINDOW_MS - elapsed) / 1000.0);
+		return Math.max(0, secondsRemaining);
 	}
 	
 	/**

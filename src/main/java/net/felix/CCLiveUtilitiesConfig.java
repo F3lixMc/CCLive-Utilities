@@ -859,6 +859,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean bossHPShowOverallDmg = true; // Gesamtschaden-Zeile (Overall DMG) im Boss-HP-Overlay
+
+    @SerialEntry
+    public boolean bossHPShowEta = true; // Restzeit-Anzeige (ETA) im Boss-HP-Overlay
     
     // MKLevel Settings
     @SerialEntry
@@ -1740,6 +1743,12 @@ public class CCLiveUtilitiesConfig {
                                         .name(Text.literal("Gesamtschaden anzeigen"))
                                         .description(OptionDescription.of(Text.literal("Zeile „Overall DMG“ (kumulativer Schaden und Prozent) im Boss-HP-Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowOverallDmg, newVal -> HANDLER.instance().bossHPShowOverallDmg = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Text.literal("Restzeit anzeigen"))
+                                        .description(OptionDescription.of(Text.literal("Zeile „Benötigte Zeit“ (geschätzte Restzeit basierend auf DPM und aktueller Boss-HP) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowEta, newVal -> HANDLER.instance().bossHPShowEta = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())

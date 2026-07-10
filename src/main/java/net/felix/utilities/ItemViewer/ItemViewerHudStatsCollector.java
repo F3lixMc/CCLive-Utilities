@@ -7,15 +7,18 @@ import net.felix.utilities.Overall.HudNumberSuffixUtility;
 import java.math.BigDecimal;
 
 /**
- * Liest Kaktus und Seelen aus der HUD-Bossbar, wenn die Besitz-Anzeige im Item Viewer aktiv ist.
+ * Liest Coins, Kaktus und Seelen aus der HUD-Bossbar, wenn die Besitz-Anzeige im Item Viewer aktiv ist.
  * Unabhängig vom Coin-Tracker (Dimension, Einstellungen).
  */
 public final class ItemViewerHudStatsCollector {
 
+    private static BigDecimal currentCoinsAmount = null;
     private static BigDecimal currentSoulsAmount = null;
     private static BigDecimal currentCactusAmount = null;
+    private static long currentCoins = -1;
     private static long currentSouls = -1;
     private static long currentCactus = -1;
+    private static String currentCoinsDisplay = "";
     private static String currentSoulsDisplay = "";
     private static String currentCactusDisplay = "";
 
@@ -31,6 +34,15 @@ public final class ItemViewerHudStatsCollector {
         }
 
         try {
+            BossBarHudValueDecoder.ParsedValue coins = BossBarHudValueDecoder.parseCoinsFromBossBar(bossBarText);
+            if (coins.isValid()) {
+                currentCoinsAmount = coins.numericValue;
+                currentCoins = HudNumberSuffixUtility.toLongOrMax(coins.numericValue);
+                if (coins.display != null && !coins.display.isEmpty()) {
+                    currentCoinsDisplay = coins.display;
+                }
+            }
+
             BossBarHudValueDecoder.HudStats stats = BossBarHudValueDecoder.parseHudStats(bossBarText);
             if (stats.souls != null && stats.souls.signum() >= 0) {
                 currentSoulsAmount = stats.souls;
@@ -56,12 +68,42 @@ public final class ItemViewerHudStatsCollector {
     }
 
     public static void clear() {
+        currentCoinsAmount = null;
         currentSoulsAmount = null;
         currentCactusAmount = null;
+        currentCoins = -1;
         currentSouls = -1;
         currentCactus = -1;
+        currentCoinsDisplay = "";
         currentSoulsDisplay = "";
         currentCactusDisplay = "";
+    }
+
+    public static long getCurrentCoins() {
+        return currentCoins;
+    }
+
+    public static String getCurrentCoinsDisplay() {
+        return currentCoinsDisplay;
+    }
+
+    public static boolean hasCoinsData() {
+        return (currentCoinsAmount != null && currentCoinsAmount.signum() >= 0)
+                || currentCoins >= 0
+                || (currentCoinsDisplay != null && !currentCoinsDisplay.isBlank());
+    }
+
+    public static BigDecimal getCoinsAmount() {
+        if (currentCoinsAmount != null && currentCoinsAmount.signum() >= 0) {
+            return currentCoinsAmount;
+        }
+        if (currentCoinsDisplay != null && !currentCoinsDisplay.isBlank()) {
+            return BossBarHudValueDecoder.parseHudAmount(currentCoinsDisplay);
+        }
+        if (currentCoins >= 0) {
+            return BigDecimal.valueOf(currentCoins);
+        }
+        return BigDecimal.ZERO;
     }
 
     public static long getCurrentSouls() {

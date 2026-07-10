@@ -86,6 +86,9 @@ public final class ItemViewerOwnedResources {
         }
         String trimmed = itemName.trim();
         if ("Coins".equalsIgnoreCase(trimmed)) {
+            if (ItemViewerUtility.isShowOwnedResources() && ItemViewerHudStatsCollector.hasCoinsData()) {
+                return ItemViewerHudStatsCollector.getCoinsAmount();
+            }
             BigDecimal coins = ClipboardCoinCollector.getCurrentCoins();
             if (coins != null && coins.signum() > 0) {
                 return coins;

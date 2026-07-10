@@ -121,6 +121,12 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     
                     int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
                     
+                    String etaLine = null;
+                    if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta && currentHP != null) {
+                        etaLine = net.felix.utilities.Factory.BossHPUtility.getFormattedEtaText(currentHP);
+                    }
+                    int etaWidth = etaLine != null ? client.textRenderer.getWidth(etaLine) : 0;
+                    
                     String lastDmgLine = null;
                     String overallDmgLine = null;
                     if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg && initialBossHP != null && currentHP != null) {
@@ -144,7 +150,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     
                     int totalWidth = Math.max(
                         firstLineWidth,
-                        Math.max(dpmWidth, Math.max(lastDmgWidth, overallDmgWidth))
+                        Math.max(dpmWidth, Math.max(etaWidth, Math.max(lastDmgWidth, overallDmgWidth)))
                     );
                     
                     return totalWidth + PADDING * 2;
@@ -171,11 +177,14 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         }
         
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
-            String dpmText = "DPM: XXXX";
+            String dpmText = "DPM: -";
             previewWidth = Math.max(previewWidth, client.textRenderer.getWidth(dpmText));
         }
+        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta) {
+            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth("Benötigte Zeit: 9:59:59"));
+        }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
-            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth("Last Dmg: 9,999,999 | 2s"));
+            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth("Last Dmg: 9,999,999 | 5s"));
         }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg) {
             previewWidth = Math.max(previewWidth, client.textRenderer.getWidth("Overall DMG: 9,999,999 | 100.0%"));
@@ -196,57 +205,20 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         // Height includes: first line (Boss-Name + HP) + optionally DPM line
         int height = client.textRenderer.fontHeight + PADDING * 2; // First line
         
-        // Check if DPM should be displayed
-        boolean shouldShowDPM = false;
+        boolean shouldShowDPM = CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM;
         
-        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
-            BossData bossData = getCurrentBossData();
-            
-            // If boss data is available, check if DPM should actually be displayed (exactly like standard overlay)
-            if (bossData != null && net.felix.utilities.Factory.BossHPUtility.isBossActive()) {
-                String bossText = bossData.getBossText();
-                if (bossText != null && !bossText.isEmpty()) {
-                    String[] parts = bossText.split("\\|{5}");
-                    if (parts.length >= 2) {
-                        try {
-                            BigInteger currentHP = new BigInteger(parts[1].trim());
-                            BigInteger initialBossHP = net.felix.utilities.Factory.BossHPUtility.getInitialBossHP();
-                            long bossFightStartTime = net.felix.utilities.Factory.BossHPUtility.getBossFightStartTime();
-                            
-                            // DPM is shown if initialBossHP, currentHP, and fightStartTime are available
-                            if (initialBossHP != null && currentHP != null && bossFightStartTime > 0) {
-                                long currentTime = System.currentTimeMillis();
-                                long fightDuration = currentTime - bossFightStartTime;
-                                if (fightDuration > 0) {
-                                    double minutes = fightDuration / 60000.0;
-                                    if (minutes > 0) {
-                                        shouldShowDPM = true;
-                                    }
-                                }
-                            }
-                        } catch (NumberFormatException e) {
-                            // HP could not be parsed, DPM won't be shown
-                        }
-                    }
-                }
-            } else {
-                // No boss data available (preview mode) - show DPM line if option is enabled
-                // This ensures the preview text "DPM: XXXX" is visible in the overlay
-                shouldShowDPM = true;
-            }
-        }
-        
-        if (shouldShowDPM) {
-            height += client.textRenderer.fontHeight + LINE_SPACING; // DPM line
-        }
-        int damageLineCount = 0;
-        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
-            damageLineCount++;
-        }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg) {
-            damageLineCount++;
+            height += client.textRenderer.fontHeight + LINE_SPACING;
         }
-        height += (client.textRenderer.fontHeight + LINE_SPACING) * damageLineCount;
+        if (shouldShowDPM) {
+            height += client.textRenderer.fontHeight + LINE_SPACING;
+        }
+        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
+            height += client.textRenderer.fontHeight + LINE_SPACING;
+        }
+        if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta) {
+            height += client.textRenderer.fontHeight + LINE_SPACING;
+        }
         
         return height;
     }
@@ -342,25 +314,30 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
             context.drawText(client.textRenderer, previewText, textX, textY, 0xFFFFFFFF, false);
             
             int lineY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
-            // Render DPM text (second line) - only if DPM is enabled
-            if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
-                String dpmText = "DPM: XXXX";
-                int dpmTextWidth = client.textRenderer.getWidth(dpmText);
-                int dpmTextX = (unscaledWidth - dpmTextWidth) / 2;
-                
-                context.drawText(client.textRenderer, dpmText, dpmTextX, lineY, 0xFFFFFF00, false); // Gelb für DPM
-                lineY += client.textRenderer.fontHeight + LINE_SPACING;
-            }
-            if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
-                String lastPreview = "Last Dmg: XXXX | 2s";
-                int lw = client.textRenderer.getWidth(lastPreview);
-                context.drawText(client.textRenderer, lastPreview, (unscaledWidth - lw) / 2, lineY, 0xFFFFFF00, false);
-                lineY += client.textRenderer.fontHeight + LINE_SPACING;
-            }
             if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg) {
                 String overallPreview = "Overall DMG: XXXX | XX.X%";
                 int ow = client.textRenderer.getWidth(overallPreview);
                 context.drawText(client.textRenderer, overallPreview, (unscaledWidth - ow) / 2, lineY, 0xFFFFFF00, false);
+                lineY += client.textRenderer.fontHeight + LINE_SPACING;
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+                String dpmText = "DPM: -";
+                int dpmTextWidth = client.textRenderer.getWidth(dpmText);
+                int dpmTextX = (unscaledWidth - dpmTextWidth) / 2;
+                context.drawText(client.textRenderer, dpmText, dpmTextX, lineY, 0xFFFFFF00, false);
+                lineY += client.textRenderer.fontHeight + LINE_SPACING;
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
+                String lastPreview = "Last Dmg: XXXX | 5s";
+                int lw = client.textRenderer.getWidth(lastPreview);
+                context.drawText(client.textRenderer, lastPreview, (unscaledWidth - lw) / 2, lineY, 0xFFFFFF00, false);
+                lineY += client.textRenderer.fontHeight + LINE_SPACING;
+            }
+            if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta) {
+                String etaPreview = "Benötigte Zeit: -";
+                int etaTextWidth = client.textRenderer.getWidth(etaPreview);
+                int etaTextX = (unscaledWidth - etaTextWidth) / 2;
+                context.drawText(client.textRenderer, etaPreview, etaTextX, lineY, 0xFFFFFF00, false);
             }
             
             matrices.popMatrix();
