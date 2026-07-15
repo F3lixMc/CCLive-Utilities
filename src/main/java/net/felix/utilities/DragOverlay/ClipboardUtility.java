@@ -99,6 +99,9 @@ public class ClipboardUtility {
 
         // Fisch-Belohnungen aus Server-Chat (Materialien addieren)
         FishingRewardChatCollector.initialize();
+
+        // Schatz-Funde aus Server-Chat (Prismarin-/Schatz-Materialien addieren)
+        TreasureFoundChatCollector.initialize();
         
         // Registriere HUD-Rendering für Overlay außerhalb von Inventaren
         HudElementRegistry.addLast(Identifier.of("cclive-utilities", "clipboard"), (drawContext, tickDelta) -> {

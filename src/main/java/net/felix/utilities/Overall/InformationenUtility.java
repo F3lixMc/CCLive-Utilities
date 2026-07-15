@@ -90,6 +90,8 @@ public class InformationenUtility {
 			"Prismarin-Muschel", "epic",
 			"Herz des Meeres", "legendary"
 	);
+	/** Lookup ohne Bindestriche/Leerzeichen; "Prismarine" wird wie "Prismarin" behandelt. */
+	private static final java.util.Map<String, String> PRISMARIN_CANONICAL_BY_KEY = buildPrismarinCanonicalLookup();
 	
 	// Cards and Statues effects tracking
 	private static Map<String, String> cardsEffects = new HashMap<>();
@@ -4676,15 +4678,42 @@ public class InformationenUtility {
 	}
 
 	public static boolean isPrismarinMaterial(String materialName) {
+		return resolvePrismarinMaterialName(materialName) != null;
+	}
+
+	/**
+	 * Mappt Chat-/Tooltip-Varianten auf den kanonischen Prismarin-Namen
+	 * (z. B. {@code Prismarine-Splitter} → {@code Prismarin-Splitter},
+	 * {@code Prismarine-Platten}/{@code Prismarineplatten} → {@code Prismarinplatten}).
+	 *
+	 * @return kanonischer Name oder {@code null}
+	 */
+	public static String resolvePrismarinMaterialName(String materialName) {
 		if (materialName == null || materialName.isEmpty()) {
-			return false;
+			return null;
 		}
-		for (String name : PRISMARIN_MATERIAL_NAMES) {
-			if (name.equalsIgnoreCase(materialName.trim())) {
-				return true;
-			}
+		return PRISMARIN_CANONICAL_BY_KEY.get(normalizePrismarinLookupKey(materialName));
+	}
+
+	private static java.util.Map<String, String> buildPrismarinCanonicalLookup() {
+		java.util.Map<String, String> lookup = new java.util.HashMap<>();
+		for (String canonical : PRISMARIN_MATERIAL_NAMES) {
+			lookup.put(normalizePrismarinLookupKey(canonical), canonical);
 		}
-		return false;
+		// Häufige Chat-Varianten (Prismarine vs. Prismarin, Bindestrich bei Platten)
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Splitter"), "Prismarin-Splitter");
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Fragment"), "Prismarin-Fragment");
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Platten"), "Prismarinplatten");
+		lookup.put(normalizePrismarinLookupKey("Prismarineplatten"), "Prismarinplatten");
+		lookup.put(normalizePrismarinLookupKey("Prismarin-Platten"), "Prismarinplatten");
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Muschel"), "Prismarin-Muschel");
+		return java.util.Collections.unmodifiableMap(lookup);
+	}
+
+	private static String normalizePrismarinLookupKey(String name) {
+		String cleaned = name.replaceAll("§[0-9a-fk-or]", "").trim().toLowerCase(java.util.Locale.ROOT);
+		cleaned = cleaned.replace("prismarine", "prismarin");
+		return cleaned.replace("-", "").replace(" ", "");
 	}
 
 	public static String getFishFamilyFromMaterial(String materialName) {
@@ -4870,12 +4899,15 @@ public class InformationenUtility {
 	}
 
 	private static MaterialFloorInfo getPrismarinMaterialFloorInfo(String materialName) {
-		for (java.util.Map.Entry<String, String> entry : PRISMARIN_MATERIAL_RARITIES.entrySet()) {
-			if (entry.getKey().equalsIgnoreCase(materialName.trim())) {
-				return new MaterialFloorInfo(0, entry.getValue(), entry.getValue());
-			}
+		String canonical = resolvePrismarinMaterialName(materialName);
+		if (canonical == null) {
+			return null;
 		}
-		return null;
+		String rarity = PRISMARIN_MATERIAL_RARITIES.get(canonical);
+		if (rarity == null) {
+			return null;
+		}
+		return new MaterialFloorInfo(0, rarity, rarity);
 	}
 	
 	private static void addMoblexiconHpToTooltip(List<Text> lines) {

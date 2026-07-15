@@ -312,7 +312,7 @@ public class CoinTrackerUtility {
 
         int overlayHeight = getCurrentOverlayHeight();
         if (CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerShowBackground) {
-            context.fill(0, 0, overlayWidth, overlayHeight, 0xC0101010);
+            context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
         }
 
         int textY = PADDING;
