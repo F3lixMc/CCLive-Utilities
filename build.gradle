@@ -11,6 +11,12 @@ base {
 }
 
 repositories {
+  // ModMenu über Modrinth (zuverlässiger als maven.terraformersmc.com)
+  maven {
+    name = "Modrinth"
+    url = "https://api.modrinth.com/maven"
+  }
+
   maven {
     name = "Terraformers"
     url = "https://maven.terraformersmc.com/"
@@ -24,8 +30,6 @@ repositories {
     name = "Xander Maven"
     url = "https://maven.isxander.dev/releases"
   }
-  
-	
 }
 
 fabricApi {
@@ -44,7 +48,9 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
 	modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
-	modImplementation "com.terraformersmc:modmenu:15.0.0-beta.3"
+	// Nur Compile-API nötig (Entrypoint); Download über Modrinth statt flaky Terraformers-Maven
+	modCompileOnly "maven.modrinth:modmenu:${project.modmenu_version}"
+	modLocalRuntime "maven.modrinth:modmenu:${project.modmenu_version}"
 	compileOnly "com.mojang:brigadier:1.3.10"
 }
 
