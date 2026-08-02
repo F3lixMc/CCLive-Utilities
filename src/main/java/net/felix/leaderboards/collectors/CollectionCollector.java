@@ -2,21 +2,20 @@ package net.felix.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.Other.DebugUtility;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -119,7 +118,7 @@ public class CollectionCollector implements DataCollector {
             if (!isActive) return;
             
             // Prüfe ob es ein Unterinventar ist
-            if (screen instanceof HandledScreen) {
+            if (screen instanceof AbstractContainerScreen) {
                 String screenTitle = screen.getTitle().getString();
                 if (screenTitle.endsWith(" Collection")) {
                     // Warte kurz bis Inventar geladen ist, dann scanne automatisch
@@ -143,10 +142,10 @@ public class CollectionCollector implements DataCollector {
      * Prüft ob wir uns in einem Collection-Inventar befinden
      */
     private boolean isInCollectionInventory() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen == null) return false;
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen == null) return false;
         
-        String screenTitle = client.currentScreen.getTitle().getString();
+        String screenTitle = client.screen.getTitle().getString();
         
         // Prüfe auf Haupt-Collection-Inventare
         if (screenTitle.equals(WOOD_COLLECTION_TITLE) || screenTitle.equals(ORE_COLLECTION_TITLE)) {
@@ -161,10 +160,10 @@ public class CollectionCollector implements DataCollector {
      * Prüft ob wir uns in einem Haupt-Collection-Inventar befinden
      */
     private boolean isInMainCollectionInventory() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen == null) return false;
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen == null) return false;
         
-        String screenTitle = client.currentScreen.getTitle().getString();
+        String screenTitle = client.screen.getTitle().getString();
         return screenTitle.equals(WOOD_COLLECTION_TITLE) || screenTitle.equals(ORE_COLLECTION_TITLE);
     }
     
@@ -172,10 +171,10 @@ public class CollectionCollector implements DataCollector {
      * Prüft ob wir uns in einem Unter-Collection-Inventar befinden
      */
     private boolean isInSubCollectionInventory() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen == null) return false;
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen == null) return false;
         
-        String screenTitle = client.currentScreen.getTitle().getString();
+        String screenTitle = client.screen.getTitle().getString();
         return screenTitle.endsWith(" Collection");
     }
     
@@ -183,15 +182,15 @@ public class CollectionCollector implements DataCollector {
      * Aktualisiert den Shift-Status für Leaderboard-Overlay
      */
     private void updateShiftStatus() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             isShiftPressed = false;
             return;
         }
         
         // Prüfe beide Shift-Tasten (Links und Rechts)
-        boolean leftShift = InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_LEFT_SHIFT);
-        boolean rightShift = InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        boolean leftShift = InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_LSHIFT);
+        boolean rightShift = InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_RSHIFT);
         
         isShiftPressed = leftShift || rightShift;
         
@@ -203,7 +202,7 @@ public class CollectionCollector implements DataCollector {
     /**
      * Parsed Collection-Daten aus einem Tooltip
      */
-    private void parseCollectionTooltip(List<Text> lines) {
+    private void parseCollectionTooltip(List<Component> lines) {
         if (lines.isEmpty()) return;
         
         // Unterschiedliche Logik für Haupt- vs Unterinventare
@@ -217,12 +216,12 @@ public class CollectionCollector implements DataCollector {
     /**
      * Parsed Collection-Daten aus Hauptinventar-Tooltips (mit Placeholder-System)
      */
-    private void parseMainCollectionTooltip(List<Text> lines) {
+    private void parseMainCollectionTooltip(List<Component> lines) {
         String collectionName = extractCollectionNameFromTooltip(lines);
         if (collectionName == null) return;
         
         // Suche nach dem Placeholder-Wert in der Lore
-        for (Text line : lines) {
+        for (Component line : lines) {
             String lineText = line.getString();
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
@@ -252,7 +251,7 @@ public class CollectionCollector implements DataCollector {
     /**
      * Parsed Collection-Daten aus Unterinventar-Tooltips (Progress-Item)
      */
-    private void parseSubCollectionTooltip(List<Text> lines) {
+    private void parseSubCollectionTooltip(List<Component> lines) {
         // Bestimme Collection-Name aus Screen-Titel
         String collectionName = extractCollectionNameFromScreen();
         if (collectionName == null) return;
@@ -265,7 +264,7 @@ public class CollectionCollector implements DataCollector {
         if (!itemName.endsWith(" I")) return;
         
         // Suche nach Progress-Wert in der Lore
-        for (Text line : lines) {
+        for (Component line : lines) {
             String lineText = line.getString();
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
@@ -296,10 +295,10 @@ public class CollectionCollector implements DataCollector {
      * Extrahiert Collection-Name aus dem aktuellen Screen-Titel
      */
     private String extractCollectionNameFromScreen() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen == null) return null;
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen == null) return null;
         
-        String screenTitle = client.currentScreen.getTitle().getString();
+        String screenTitle = client.screen.getTitle().getString();
         
         // Für Unterinventare: "Mangroven Holz Collection" -> "mangroven holz"
         if (screenTitle.endsWith(" Collection")) {
@@ -447,7 +446,7 @@ public class CollectionCollector implements DataCollector {
     /**
      * Erweitert Collection-Tooltips mit Leaderboard-Informationen
      */
-    private void enhanceCollectionTooltip(List<Text> lines, net.minecraft.item.ItemStack stack) {
+    private void enhanceCollectionTooltip(List<Component> lines, net.minecraft.world.item.ItemStack stack) {
         if (lines.isEmpty()) return;
         
         // Nur in Hauptinventaren Rang zu Tooltip hinzufügen
@@ -461,7 +460,7 @@ public class CollectionCollector implements DataCollector {
     /**
      * Erweitert Hauptinventar-Tooltips mit Rang-Informationen
      */
-    private void enhanceMainCollectionTooltip(List<Text> lines, net.minecraft.item.ItemStack stack) {
+    private void enhanceMainCollectionTooltip(List<Component> lines, net.minecraft.world.item.ItemStack stack) {
         String collectionName = extractCollectionNameFromTooltip(lines);
         if (collectionName == null) return;
         
@@ -480,7 +479,7 @@ public class CollectionCollector implements DataCollector {
     /**
      * Behandelt Unterinventar-Tooltips (Links-Rendering ohne Shift)
      */
-    private void enhanceSubCollectionTooltip(List<Text> lines, net.minecraft.item.ItemStack stack) {
+    private void enhanceSubCollectionTooltip(List<Component> lines, net.minecraft.world.item.ItemStack stack) {
         // Nur bei Progress-Items (enden mit " I")
         if (lines.isEmpty()) return;
         String itemName = lines.get(0).getString();
@@ -536,7 +535,7 @@ public class CollectionCollector implements DataCollector {
     /**
      * Extrahiert Collection-Name aus Tooltip-Zeilen (Alternative Methode)
      */
-    private String extractCollectionNameFromTooltip(List<Text> lines) {
+    private String extractCollectionNameFromTooltip(List<Component> lines) {
         // Verwende Screen-Titel als primäre Quelle
         String screenName = extractCollectionNameFromScreen();
         if (screenName != null) {
@@ -560,7 +559,7 @@ public class CollectionCollector implements DataCollector {
     /**
      * Fügt eigenen Rang zur Tooltip hinzu
      */
-    private void addOwnRankToTooltip(List<Text> lines, String leaderboardName) {
+    private void addOwnRankToTooltip(List<Component> lines, String leaderboardName) {
         // Finde Position über "Click for details" (sollte am Ende sein)
         int insertIndex = lines.size();
         
@@ -583,30 +582,30 @@ public class CollectionCollector implements DataCollector {
         
         if (playerRank > 0) {
             // Füge Leaderboard-Sektion hinzu
-            lines.add(insertIndex++, Text.literal(""));
-            lines.add(insertIndex++, Text.literal("===Collection Leaderboard===").formatted(Formatting.YELLOW));
-            lines.add(insertIndex++, Text.literal("Dein Rang: " + playerRank + ". " + formatNumber(playerScore)).formatted(Formatting.GREEN));
+            lines.add(insertIndex++, Component.literal(""));
+            lines.add(insertIndex++, Component.literal("===Collection Leaderboard===").withStyle(ChatFormatting.YELLOW));
+            lines.add(insertIndex++, Component.literal("Dein Rang: " + playerRank + ". " + formatNumber(playerScore)).withStyle(ChatFormatting.GREEN));
             
             // Countdown-Text (wird nur bei erneutem Hover aktualisiert)
-            lines.add(insertIndex++, Text.literal("Update in: " + countdownText).formatted(Formatting.GRAY));
+            lines.add(insertIndex++, Component.literal("Update in: " + countdownText).withStyle(ChatFormatting.GRAY));
             
-            lines.add(insertIndex++, Text.literal("Shift für Top10 Leaderboard").formatted(Formatting.AQUA));
-            lines.add(insertIndex++, Text.literal("=====================").formatted(Formatting.YELLOW));
+            lines.add(insertIndex++, Component.literal("Shift für Top10 Leaderboard").withStyle(ChatFormatting.AQUA));
+            lines.add(insertIndex++, Component.literal("=====================").withStyle(ChatFormatting.YELLOW));
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
                 // Silent error handling("📊 Rang zu Tooltip hinzugefügt: " + leaderboardName + " #" + playerRank + " (Update in: " + countdownText + ")");
             }
         } else {
             // Zeige "Laden..." wenn noch kein Rang verfügbar
-            lines.add(insertIndex++, Text.literal(""));
-            lines.add(insertIndex++, Text.literal("===Collection Leaderboard===").formatted(Formatting.YELLOW));
-            lines.add(insertIndex++, Text.literal("Lade Rang...").formatted(Formatting.GRAY));
+            lines.add(insertIndex++, Component.literal(""));
+            lines.add(insertIndex++, Component.literal("===Collection Leaderboard===").withStyle(ChatFormatting.YELLOW));
+            lines.add(insertIndex++, Component.literal("Lade Rang...").withStyle(ChatFormatting.GRAY));
             
             // Countdown-Text (wird nur bei erneutem Hover aktualisiert)
-            lines.add(insertIndex++, Text.literal("Update in: " + countdownText).formatted(Formatting.GRAY));
+            lines.add(insertIndex++, Component.literal("Update in: " + countdownText).withStyle(ChatFormatting.GRAY));
             
-            lines.add(insertIndex++, Text.literal("Shift für Top10 Leaderboard").formatted(Formatting.AQUA));
-            lines.add(insertIndex++, Text.literal("=====================").formatted(Formatting.YELLOW));
+            lines.add(insertIndex++, Component.literal("Shift für Top10 Leaderboard").withStyle(ChatFormatting.AQUA));
+            lines.add(insertIndex++, Component.literal("=====================").withStyle(ChatFormatting.YELLOW));
         }
     }
     
@@ -709,12 +708,12 @@ public class CollectionCollector implements DataCollector {
      * Scannt Unterinventar automatisch nach Progress-Items
      */
     private void scanSubInventoryAutomatically() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
             return;
         }
         
-        String screenTitle = client.currentScreen.getTitle().getString();
+        String screenTitle = client.screen.getTitle().getString();
         if (!screenTitle.endsWith(" Collection")) {
             return;
         }
@@ -735,13 +734,13 @@ public class CollectionCollector implements DataCollector {
         }
         
         // Scanne alle Items im Inventar
-        HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
-        if (screen.getScreenHandler() != null) {
-            for (Slot slot : screen.getScreenHandler().slots) {
-                ItemStack stack = slot.getStack();
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+        if (screen.getMenu() != null) {
+            for (Slot slot : screen.getMenu().slots) {
+                ItemStack stack = slot.getItem();
                 if (stack.isEmpty()) continue;
                 
-                String itemName = stack.getName().getString();
+                String itemName = stack.getHoverName().getString();
                 
                 // Prüfe ob es das Progress-Item ist (endet mit " I")
                 if (itemName.endsWith(" I")) {

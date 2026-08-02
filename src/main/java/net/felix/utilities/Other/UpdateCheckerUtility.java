@@ -5,12 +5,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.MutableText;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.config.LeaderboardConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -139,20 +139,20 @@ public class UpdateCheckerUtility {
     }
     
     private static void showUpdateMessage() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
             // Erstelle einfache Nachricht
-            Text updateMessage = Text.literal("§b[CCLive-Utilities] §fNeue Version verfügbar: §a" + latestVersion);
+            Component updateMessage = Component.literal("§b[CCLive-Utilities] §fNeue Version verfügbar: §a" + latestVersion);
             
             // Erstelle klickbare Nachricht
-            MutableText infoMessage = Text.literal("§7Neuste Version hier: §bhttps://modrinth.com/mod/cclive-utilities");
+            MutableComponent infoMessage = Component.literal("§7Neuste Version hier: §bhttps://modrinth.com/mod/cclive-utilities");
             infoMessage.setStyle(infoMessage.getStyle()
                 .withClickEvent(new ClickEvent.OpenUrl(URI.create("https://modrinth.com/mod/cclive-utilities")))
             );
             
             // Sende Nachrichten an den Spieler
-            client.player.sendMessage(updateMessage, false);
-            client.player.sendMessage(infoMessage, false);
+            client.player.sendSystemMessage(updateMessage);
+            client.player.sendSystemMessage(infoMessage);
             
             // Hole zusätzliche Update-Message vom Server (falls vorhanden)
             fetchAndShowServerMessage();
@@ -181,19 +181,19 @@ public class UpdateCheckerUtility {
                         String message = json.get("message").getAsString();
                         if (message != null && !message.trim().isEmpty()) {
                             // Zeige Server-Message im Chat (mehrzeilig unterstützt)
-                            MinecraftClient client = MinecraftClient.getInstance();
+                            Minecraft client = Minecraft.getInstance();
                             if (client.player != null) {
                                 // Splitte nach Zeilenumbrüchen (\n) und sende jede Zeile als separate Nachricht
                                 String[] lines = message.split("\\n");
                                 for (int i = 0; i < lines.length; i++) {
                                     if (i == 0) {
                                         // Erste Zeile: Komplett gelb (Update-Info + Text)
-                                        Text serverMessage = Text.literal("§e[Update-Info] " + lines[i]);
-                                        client.player.sendMessage(serverMessage, false);
+                                        Component serverMessage = Component.literal("§e[Update-Info] " + lines[i]);
+                                        client.player.sendSystemMessage(serverMessage);
                                     } else {
                                         // Weitere Zeilen: Komplett aqua
-                                        Text serverMessage = Text.literal("§b" + lines[i]);
-                                        client.player.sendMessage(serverMessage, false);
+                                        Component serverMessage = Component.literal("§b" + lines[i]);
+                                        client.player.sendSystemMessage(serverMessage);
                                     }
                                 }
                             }

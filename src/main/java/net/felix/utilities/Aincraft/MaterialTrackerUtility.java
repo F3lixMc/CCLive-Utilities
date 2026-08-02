@@ -1,19 +1,14 @@
 package net.felix.utilities.Aincraft;
 
+import net.felix.utilities.Overall.KeyCategories;
+
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.util.Identifier;
-import net.minecraft.client.gl.RenderPipelines;
 import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.MaterialTrackerDisplayMode;
@@ -21,7 +16,13 @@ import net.felix.utilities.Overall.ActionBarData;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.OverlayType;
-
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -39,8 +40,9 @@ public class MaterialTrackerUtility {
 	private static String testText = "Prächtiges Eselhaar [1067]";
 	private static final int TEST_LINES_COUNT = 5;
 	
-	// Hotkey variable
-	private static KeyBinding toggleKeyBinding;
+	// Hotkey variables
+	private static KeyMapping toggleKeyMapping;
+	private static KeyMapping resetRateKeyMapping;
 
 	
 	// Rendering constants
@@ -53,7 +55,7 @@ public class MaterialTrackerUtility {
 	private static final int MIN_TEXT_WIDTH = 100; // Minimale Breite für Text
 	
 	// Textur-Identifier für den Materialien-Hintergrund
-	private static final Identifier MATERIALS_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/materials_background.png");
+	private static final Identifier MATERIALS_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/materials_background.png");
 	
 	public static void initialize() {
 		if (isInitialized) {
@@ -72,7 +74,7 @@ public class MaterialTrackerUtility {
 			
 			// Registriere HUD-Rendering
 			HudElementRegistry.addLast(
-					Identifier.of("cclive-utilities", "material_tracker"),
+					Identifier.fromNamespaceAndPath("cclive-utilities", "material_tracker"),
 					MaterialTrackerUtility::onHudRender);
 			
 			isInitialized = true;
@@ -83,39 +85,46 @@ public class MaterialTrackerUtility {
 	
 	private static void registerHotkey() {
 		// Register toggle hotkey
-		toggleKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.material-toggle",
-			InputUtil.Type.KEYSYM,
-			InputUtil.UNKNOWN_KEY.getCode(), // Unbound key
-			"category.cclive-utilities.material"
+			InputConstants.Type.KEYSYM,
+			InputConstants.UNKNOWN.getValue(), // Unbound key
+			KeyCategories.of("cclive-utilities", "material")
+		));
+
+		resetRateKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+			"key.cclive-utilities.material-rate-reset",
+			InputConstants.Type.KEYSYM,
+			InputConstants.UNKNOWN.getValue(), // Unbound by default
+			KeyCategories.of("cclive-utilities", "material")
 		));
 	}
 	
 	private static void registerCommands() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-			dispatcher.register(ClientCommandManager.literal("mats")
-				.then(ClientCommandManager.literal("test")
-					.then(ClientCommandManager.literal("show")
+			dispatcher.register(ClientCommands.literal("mats")
+				.then(ClientCommands.literal("test")
+					.then(ClientCommands.literal("show")
 						.executes(context -> {
 							showTestOverlay = true;
-							context.getSource().sendFeedback(Text.literal("§aMaterial Tracker Test-Overlay aktiviert!"));
+							context.getSource().sendFeedback(Component.literal("§aMaterial Tracker Test-Overlay aktiviert!"));
 							return 1;
 						})
 					)
-					.then(ClientCommandManager.literal("hide")
+					.then(ClientCommands.literal("hide")
 						.executes(context -> {
 							showTestOverlay = false;
-							context.getSource().sendFeedback(Text.literal("§cMaterial Tracker Test-Overlay deaktiviert!"));
+							context.getSource().sendFeedback(Component.literal("§cMaterial Tracker Test-Overlay deaktiviert!"));
 							return 1;
 						})
 					)
 				)
-				.then(ClientCommandManager.literal("set")
-					.then(ClientCommandManager.argument("text", StringArgumentType.greedyString())
+				.then(ClientCommands.literal("set")
+					.then(ClientCommands.argument("text", StringArgumentType.greedyString())
 						.executes(context -> {
 							String newText = StringArgumentType.getString(context, "text");
 							testText = newText;
-							context.getSource().sendFeedback(Text.literal("§aTest-Text geändert zu: §f" + newText));
+							context.getSource().sendFeedback(Component.literal("§aTest-Text geändert zu: §f" + newText));
 							return 1;
 						})
 					)
@@ -124,7 +133,7 @@ public class MaterialTrackerUtility {
 		});
 	}
 
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		ActionBarData.flushPendingUpdates();
 
 		// Check Tab key for overlay visibility
@@ -154,8 +163,8 @@ public class MaterialTrackerUtility {
 		boolean isOnFloor = false;
 		String currentDimension = null;
 		try {
-			if (client.world != null) {
-				currentDimension = client.world.getRegistryKey().getValue().toString();
+			if (client.level != null) {
+				currentDimension = client.level.dimension().identifier().toString();
 				String dimensionId = currentDimension.toLowerCase();
 				isOnFloor = dimensionId.contains("floor");
 			}
@@ -183,7 +192,7 @@ public class MaterialTrackerUtility {
 		}
 	}
 
-	private static void updateMaterialRates(MinecraftClient client) {
+	private static void updateMaterialRates(Minecraft client) {
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod
 				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled
 				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateEnabled
@@ -197,8 +206,8 @@ public class MaterialTrackerUtility {
 		boolean isOnFloor = false;
 		String currentDimension = null;
 		try {
-			if (client.world != null) {
-				currentDimension = client.world.getRegistryKey().getValue().toString();
+			if (client.level != null) {
+				currentDimension = client.level.dimension().identifier().toString();
 				isOnFloor = currentDimension.toLowerCase().contains("floor");
 			}
 		} catch (Exception e) {
@@ -229,28 +238,37 @@ public class MaterialTrackerUtility {
 	
 	private static void handleHotkey() {
 		// Handle toggle hotkey
-		if (toggleKeyBinding != null && toggleKeyBinding.wasPressed()) {
-			boolean currentShow = CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker;
-			CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker = !currentShow;
+		if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
+			boolean newValue = !(CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled
+					&& CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker);
+			CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled = newValue;
+			CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker = newValue;
 			CCLiveUtilitiesConfig.HANDLER.save();
+		}
+
+		if (resetRateKeyMapping != null && resetRateKeyMapping.consumeClick()) {
+			MaterialRateUtility.resetSession();
 		}
 	}
 	
-	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled || 
 			!CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker) {
 			return;
 		}
+		if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+			return;
+		}
 
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.player == null) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 
@@ -267,12 +285,12 @@ public class MaterialTrackerUtility {
 		}
 	}
 	
-	private static void renderMaterialDisplay(DrawContext context, MinecraftClient client) {
+	private static void renderMaterialDisplay(GuiGraphicsExtractor context, Minecraft client) {
 		if (client.getWindow() == null) {
 			return;
 		}
 		
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Position aus der Konfiguration
 		int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX;
@@ -281,7 +299,7 @@ public class MaterialTrackerUtility {
 		
 		// Get materials from ActionBarData
 		List<Object> texts = ActionBarData.getFilteredTexts();
-		List<Text> displayTexts = buildDisplayTexts(texts);
+		List<Component> displayTexts = buildDisplayTexts(texts);
 		
 		// Calculate dynamic width based on text content
 		int dynamicWidth = calculateRequiredWidth(context, displayTexts);
@@ -306,7 +324,7 @@ public class MaterialTrackerUtility {
 		int yPosition = yOffset;
 		
 		// Use Matrix transformations for scaling (like Blueprint Viewer)
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Scale based on config
@@ -323,7 +341,7 @@ public class MaterialTrackerUtility {
 			case CUSTOM:
 				// Draw texture background
 				try {
-					context.drawTexture(
+					context.blit(
 						RenderPipelines.GUI_TEXTURED,
 						MATERIALS_BACKGROUND_TEXTURE,
 						0, 0, // Position (relative to matrix)
@@ -348,10 +366,10 @@ public class MaterialTrackerUtility {
 		// Render materials (scaled)
 		int currentY = TEXT_PADDING;
 		
-		for (Text textComponent : displayTexts) {
+		for (Component textComponent : displayTexts) {
 			// Draw text (scaled by matrix)
-			context.drawText(
-				MinecraftClient.getInstance().textRenderer, 
+			context.text(
+				Minecraft.getInstance().font, 
 				textComponent, 
 				TEXT_LEFT_PADDING,
 				currentY - 8, // Y position (relative to matrix)
@@ -366,18 +384,18 @@ public class MaterialTrackerUtility {
 		matrices.popMatrix();
 	}
 	
-	private static List<Text> buildDisplayTexts(List<Object> texts) {
-		List<Text> displayTexts = new ArrayList<>();
+	private static List<Component> buildDisplayTexts(List<Object> texts) {
+		List<Component> displayTexts = new ArrayList<>();
 		List<String> materialNames = ActionBarData.getSortedMaterialNames();
 		boolean showRates = usesOverlayRateDisplay();
 
 		for (int i = 0; i < texts.size(); i++) {
 			Object textObj = texts.get(i);
-			Text textComponent;
-			if (textObj instanceof Text) {
-				textComponent = (Text) textObj;
+			Component textComponent;
+			if (textObj instanceof Component) {
+				textComponent = (Component) textObj;
 			} else {
-				textComponent = Text.literal(textObj.toString());
+				textComponent = Component.literal(textObj.toString());
 			}
 
 			if (showRates && i < materialNames.size()) {
@@ -389,11 +407,11 @@ public class MaterialTrackerUtility {
 		return displayTexts;
 	}
 
-	private static int calculateRequiredWidth(DrawContext context, List<Text> texts) {
+	private static int calculateRequiredWidth(GuiGraphicsExtractor context, List<Component> texts) {
 		int maxWidth = MIN_TEXT_WIDTH;
 		
-		for (Text textComponent : texts) {
-			int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(textComponent);
+		for (Component textComponent : texts) {
+			int textWidth = Minecraft.getInstance().font.width(textComponent);
 			int totalWidth = textWidth + TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING;
 			maxWidth = Math.max(maxWidth, totalWidth);
 		}
@@ -413,12 +431,12 @@ public class MaterialTrackerUtility {
 				&& config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.SCOREBOARD;
 	}
 	
-	private static void renderTestOverlay(DrawContext context, MinecraftClient client) {
+	private static void renderTestOverlay(GuiGraphicsExtractor context, Minecraft client) {
 		if (client.getWindow() == null) {
 			return;
 		}
 		
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Position aus der Konfiguration
 		int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX;
@@ -440,7 +458,7 @@ public class MaterialTrackerUtility {
 		int yPosition = yOffset;
 		
 		// Use Matrix transformations for scaling (like Blueprint Viewer)
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Scale based on config
@@ -457,7 +475,7 @@ public class MaterialTrackerUtility {
 			case CUSTOM:
 				// Draw texture background
 				try {
-					context.drawTexture(
+					context.blit(
 						RenderPipelines.GUI_TEXTURED,
 						MATERIALS_BACKGROUND_TEXTURE,
 						0, 0, // Position (relative to matrix)
@@ -484,9 +502,9 @@ public class MaterialTrackerUtility {
 		
 		for (String testLine : testLines) {
 			// Draw test text (scaled by matrix)
-			context.drawText(
-				MinecraftClient.getInstance().textRenderer, 
-				Text.literal(testLine), 
+			context.text(
+				Minecraft.getInstance().font, 
+				Component.literal(testLine), 
 				TEXT_LEFT_PADDING,
 				currentY - 8, // Y position (relative to matrix)
 				0xFFFFFFFF, // Vollständig weiß mit Alpha
@@ -500,12 +518,12 @@ public class MaterialTrackerUtility {
 		matrices.popMatrix();
 	}
 	
-	private static int calculateRequiredWidthForStrings(DrawContext context, List<String> strings) {
+	private static int calculateRequiredWidthForStrings(GuiGraphicsExtractor context, List<String> strings) {
 		int maxWidth = MIN_TEXT_WIDTH;
 		
 		for (String text : strings) {
 			// Berechne die Breite des Textes
-			int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(text);
+			int textWidth = Minecraft.getInstance().font.width(text);
 			
 			// Füge Padding hinzu (links und rechts)
 			int totalWidth = textWidth + TEXT_LEFT_PADDING + TEXT_RIGHT_PADDING;

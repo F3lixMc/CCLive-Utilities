@@ -1,9 +1,5 @@
 package net.felix.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.ChatHud;
-import net.minecraft.client.gui.hud.ChatHudLine;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,18 +11,23 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.ChatComponent;
 
 /**
  * Mixin for ChatHud rendering functionality.
  */
-@Mixin(ChatHud.class)
+@Mixin(ChatComponent.class)
 public abstract class ChatHudRenderMixin {
     
     @Shadow(remap = true)
-    private List<ChatHudLine.Visible> visibleMessages;
+    private List<GuiMessage.Line> trimmedMessages;
     
     @Shadow(remap = true)
-    private List<ChatHudLine> messages;
+    private List<GuiMessage> allMessages;
     
     // Pattern to match player names in chat messages (before >>)
     private static final Pattern PLAYER_NAME_PATTERN = Pattern.compile(
@@ -35,21 +36,23 @@ public abstract class ChatHudRenderMixin {
     );
     
     @Inject(
-        method = "render",
+        method = "extractRenderState",
         at = @At("TAIL"),
         cancellable = false
     )
     private void renderIconsInChat(
-        DrawContext context,
-        int currentTick,
+        GuiGraphicsExtractor context,
+        Font font,
         int mouseX,
         int mouseY,
-        boolean bl,
+        int lineHeight,
+        ChatComponent.DisplayMode displayMode,
+        boolean focused,
         CallbackInfo ci
     ) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.textRenderer == null || client.getWindow() == null) {
+            Minecraft client = Minecraft.getInstance();
+            if (client == null || client.font == null || client.getWindow() == null) {
                 return;
             }
             
@@ -59,26 +62,26 @@ public abstract class ChatHudRenderMixin {
             }
             
             // Don't render if world is not loaded (prevents issues during startup)
-            if (client.world == null) {
+            if (client.level == null) {
                 return;
             }
             
             // Safely access visibleMessages
-            if (visibleMessages == null || visibleMessages.isEmpty()) {
+            if (trimmedMessages == null || trimmedMessages.isEmpty()) {
                 return;
             }
             
-            int screenHeight = client.getWindow().getScaledHeight();
-            int chatLineHeight = client.textRenderer.fontHeight;
+            int screenHeight = client.getWindow().getGuiScaledHeight();
+            int chatLineHeight = client.font.lineHeight;
             int chatBottom = screenHeight - 40;
             int chatLeft = 2; // Left margin of chat
             int iconSize = 6; // Smaller icon for chat
             
             // Render icons for each visible chat message
             // For testing: render icon for ALL visible messages to verify positioning works
-            for (int i = 0; i < visibleMessages.size() && i < 100; i++) { // Limit to 100 messages
+            for (int i = 0; i < trimmedMessages.size() && i < 100; i++) { // Limit to 100 messages
                 try {
-                    ChatHudLine.Visible visibleLine = visibleMessages.get(i);
+                    GuiMessage.Line visibleLine = trimmedMessages.get(i);
                     if (visibleLine == null) {
                         continue;
                     }
@@ -86,8 +89,8 @@ public abstract class ChatHudRenderMixin {
                     // Get the original message text from the messages list
                     // visibleMessages and messages are aligned by index
                     String messageString = null;
-                    if (messages != null && i < messages.size()) {
-                        ChatHudLine originalLine = messages.get(i);
+                    if (allMessages != null && i < allMessages.size()) {
+                        GuiMessage originalLine = allMessages.get(i);
                         if (originalLine != null && originalLine.content() != null) {
                             messageString = originalLine.content().getString();
                         }
@@ -115,7 +118,7 @@ public abstract class ChatHudRenderMixin {
                     if (isCCLiveMessage) {
                         // For CCLive messages, render icon directly after "[CCLive]"
                         // Calculate position for icon
-                        int reversedIndex = visibleMessages.size() - 1 - i;
+                        int reversedIndex = trimmedMessages.size() - 1 - i;
                         int lineY = chatBottom - (reversedIndex * chatLineHeight) - chatLineHeight;
                         
                         // Make sure the icon is within screen bounds
@@ -123,9 +126,9 @@ public abstract class ChatHudRenderMixin {
                             // Calculate X position: after "[CCLive] " text
                             // Need to measure the actual rendered width of "[CCLive] " with color codes
                             // Create a Text object with the same style to measure accurately
-                            net.minecraft.text.Text cclivePrefix = net.minecraft.text.Text.literal("[CCLive] ")
-                                .setStyle(net.minecraft.text.Style.EMPTY.withColor(0xD478F0));
-                            int cclivePrefixWidth = client.textRenderer.getWidth(cclivePrefix);
+                            net.minecraft.network.chat.Component cclivePrefix = net.minecraft.network.chat.Component.literal("[CCLive] ")
+                                .setStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xD478F0));
+                            int cclivePrefixWidth = client.font.width(cclivePrefix);
                             int iconX = chatLeft + cclivePrefixWidth;
                             int iconY = lineY - 1; // Slight offset for alignment (reduced from -2 to -1)
                             
@@ -155,7 +158,7 @@ public abstract class ChatHudRenderMixin {
                     }
                     
                     // Calculate position for icon (zwischen Name und >>)
-                    int reversedIndex = visibleMessages.size() - 1 - i;
+                    int reversedIndex = trimmedMessages.size() - 1 - i;
                     int lineY = chatBottom - (reversedIndex * chatLineHeight) - chatLineHeight;
                     
                     // Make sure the icon is within screen bounds
@@ -167,8 +170,8 @@ public abstract class ChatHudRenderMixin {
                     // Das separate Rendering hier ist nur noch ein Fallback, falls das Resource Pack nicht geladen wird
                     // Suche nach Icon-Marker im Text (wenn vorhanden)
                     int iconPosition = -1;
-                    if (messages != null && i < messages.size()) {
-                        ChatHudLine originalLine = messages.get(i);
+                    if (allMessages != null && i < allMessages.size()) {
+                        GuiMessage originalLine = allMessages.get(i);
                         if (originalLine != null && originalLine.content() != null) {
                             iconPosition = findIconMarkerPosition(originalLine.content(), client);
                         }
@@ -184,8 +187,8 @@ public abstract class ChatHudRenderMixin {
                     } else {
                         // Fallback: Finde Position des Namens und rendere Icon danach
                         int namePosition = -1;
-                        if (messages != null && i < messages.size()) {
-                            ChatHudLine originalLine = messages.get(i);
+                        if (allMessages != null && i < allMessages.size()) {
+                            GuiMessage originalLine = allMessages.get(i);
                             if (originalLine != null && originalLine.content() != null) {
                                 namePosition = findPlayerNamePositionInText(originalLine.content(), playerName, client);
                             }
@@ -197,8 +200,8 @@ public abstract class ChatHudRenderMixin {
                         
                         if (namePosition >= 0) {
                             // Berechne Position nach dem Namen (mit Leerzeichen)
-                            int nameWidth = client.textRenderer.getWidth(playerName);
-                            int spaceWidth = client.textRenderer.getWidth(" ");
+                            int nameWidth = client.font.width(playerName);
+                            int spaceWidth = client.font.width(" ");
                             int iconX = chatLeft + namePosition + nameWidth + spaceWidth;
                             int iconY = lineY - 1;
                             PlayerIconUtility.renderIcon(context, iconX, iconY, iconSize);
@@ -228,8 +231,8 @@ public abstract class ChatHudRenderMixin {
      * @param client Minecraft Client
      * @return Die X-Position des Markers in Pixeln, oder -1 wenn nicht gefunden
      */
-    private int findIconMarkerPosition(net.minecraft.text.Text messageText, MinecraftClient client) {
-        if (messageText == null || client == null || client.textRenderer == null) {
+    private int findIconMarkerPosition(net.minecraft.network.chat.Component messageText, Minecraft client) {
+        if (messageText == null || client == null || client.font == null) {
             return -1;
         }
         
@@ -239,16 +242,16 @@ public abstract class ChatHudRenderMixin {
             if (mainText != null && mainText.indexOf(ICON_MARKER) >= 0) {
                 int markerIndex = mainText.indexOf(ICON_MARKER);
                 String textBeforeMarker = mainText.substring(0, markerIndex);
-                return client.textRenderer.getWidth(textBeforeMarker);
+                return client.font.width(textBeforeMarker);
             }
             
             // Durchsuche die Siblings rekursiv nach dem Icon-Marker
             int position = 0;
-            List<net.minecraft.text.Text> siblings = messageText.getSiblings();
+            List<net.minecraft.network.chat.Component> siblings = messageText.getSiblings();
             
             if (siblings != null && !siblings.isEmpty()) {
                 for (int idx = 0; idx < siblings.size(); idx++) {
-                    net.minecraft.text.Text sibling = siblings.get(idx);
+                    net.minecraft.network.chat.Component sibling = siblings.get(idx);
                     String siblingText = sibling.getString();
                     
                     if (siblingText != null && siblingText.indexOf(ICON_MARKER) >= 0) {
@@ -257,7 +260,7 @@ public abstract class ChatHudRenderMixin {
                         String textBeforeMarker = siblingText.substring(0, markerIndex);
                         
                         // Berechne Breite des Textes vor dem Marker
-                        int textWidth = client.textRenderer.getWidth(textBeforeMarker);
+                        int textWidth = client.font.width(textBeforeMarker);
                         return position + textWidth;
                     }
                     
@@ -268,7 +271,7 @@ public abstract class ChatHudRenderMixin {
                     }
                     
                     // Addiere die Breite dieses Siblings zur Position
-                    position += client.textRenderer.getWidth(sibling);
+                    position += client.font.width(sibling);
                 }
             }
         } catch (Exception e) {
@@ -285,18 +288,18 @@ public abstract class ChatHudRenderMixin {
      * @param client Minecraft Client
      * @return Die X-Position des Namens in Pixeln, oder -1 wenn nicht gefunden
      */
-    private int findPlayerNamePositionInText(net.minecraft.text.Text messageText, String playerName, MinecraftClient client) {
-        if (messageText == null || playerName == null || playerName.isEmpty() || client == null || client.textRenderer == null) {
+    private int findPlayerNamePositionInText(net.minecraft.network.chat.Component messageText, String playerName, Minecraft client) {
+        if (messageText == null || playerName == null || playerName.isEmpty() || client == null || client.font == null) {
             return -1;
         }
         
         try {
             int position = 0;
-            List<net.minecraft.text.Text> siblings = messageText.getSiblings();
+            List<net.minecraft.network.chat.Component> siblings = messageText.getSiblings();
             
             if (siblings != null && !siblings.isEmpty()) {
                 for (int idx = 0; idx < siblings.size(); idx++) {
-                    net.minecraft.text.Text sibling = siblings.get(idx);
+                    net.minecraft.network.chat.Component sibling = siblings.get(idx);
                     String siblingText = sibling.getString();
                     
                     // Prüfe ob dieser Sibling den Namen enthält
@@ -314,7 +317,7 @@ public abstract class ChatHudRenderMixin {
                             if (hasArrowInSibling || hasArrowInNext) {
                                 // Berechne Position bis zum Namen
                                 String textBeforeName = siblingText.substring(0, nameIndex);
-                                return position + client.textRenderer.getWidth(textBeforeName);
+                                return position + client.font.width(textBeforeName);
                             }
                         }
                     }
@@ -326,7 +329,7 @@ public abstract class ChatHudRenderMixin {
                     }
                     
                     // Addiere die Breite dieses Siblings zur Position
-                    position += client.textRenderer.getWidth(sibling);
+                    position += client.font.width(sibling);
                 }
             }
             
@@ -336,7 +339,7 @@ public abstract class ChatHudRenderMixin {
                 int nameIndex = mainText.indexOf(playerName);
                 if (nameIndex >= 0 && mainText.indexOf(">>", nameIndex) >= 0) {
                     String textBeforeName = mainText.substring(0, nameIndex);
-                    return client.textRenderer.getWidth(textBeforeName);
+                    return client.font.width(textBeforeName);
                 }
             }
         } catch (Exception e) {
@@ -353,8 +356,8 @@ public abstract class ChatHudRenderMixin {
      * @param client Minecraft Client
      * @return Die X-Position des Namens in Pixeln, oder -1 wenn nicht gefunden
      */
-    private int findPlayerNamePosition(String messageString, String playerName, MinecraftClient client) {
-        if (messageString == null || playerName == null || playerName.isEmpty() || client == null || client.textRenderer == null) {
+    private int findPlayerNamePosition(String messageString, String playerName, Minecraft client) {
+        if (messageString == null || playerName == null || playerName.isEmpty() || client == null || client.font == null) {
             return -1;
         }
         
@@ -382,7 +385,7 @@ public abstract class ChatHudRenderMixin {
             // Aber für die genaue Breite müssen wir die Original-Nachricht mit Farbcodes verwenden
             // Vereinfachter Ansatz: Berechne Breite basierend auf cleanMessage
             // (Farbcodes ändern die Breite nicht, nur die Darstellung)
-            return client.textRenderer.getWidth(textBeforeName);
+            return client.font.width(textBeforeName);
         } catch (Exception e) {
             // Silent error handling
         }
@@ -425,13 +428,13 @@ public abstract class ChatHudRenderMixin {
     /**
      * Find player UUID by name from the player list.
      */
-    private UUID findPlayerUuidByName(String playerName, MinecraftClient client) {
+    private UUID findPlayerUuidByName(String playerName, Minecraft client) {
         try {
-            if (client == null || client.getNetworkHandler() == null) {
+            if (client == null || client.getConnection() == null) {
                 return null;
             }
             
-            var playerList = client.getNetworkHandler().getPlayerList();
+            var playerList = client.getConnection().getOnlinePlayers();
             if (playerList == null) {
                 return null;
             }
@@ -441,9 +444,9 @@ public abstract class ChatHudRenderMixin {
                     continue;
                 }
                 
-                String entryName = entry.getProfile().getName();
+                String entryName = entry.getProfile().name();
                 if (entryName != null && entryName.equalsIgnoreCase(playerName)) {
-                    return entry.getProfile().getId();
+                    return entry.getProfile().id();
                 }
             }
         } catch (Exception e) {

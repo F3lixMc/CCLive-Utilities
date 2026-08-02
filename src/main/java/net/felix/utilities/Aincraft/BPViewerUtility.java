@@ -1,5 +1,7 @@
 package net.felix.utilities.Aincraft;
 
+import net.felix.utilities.Overall.KeyCategories;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -8,29 +10,29 @@ import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.option.KeyBinding;
 import org.lwjgl.glfw.GLFW;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.OverlayType;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
 import org.joml.Matrix3x2fStack;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
 import java.io.File;
@@ -65,7 +67,7 @@ public class BPViewerUtility {
     private static final String[] RARITY_ORDER = {"common", "uncommon", "rare", "epic", "legendary"};
     private static final int HUD_WIDTH = 200;
     // Background texture for blueprint display
-    private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/blueprint_background.png");
+    private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/blueprint_background.png");
     
     // Patterns for blueprint detection
     // Patterns with format codes (for raw message strings)
@@ -94,10 +96,10 @@ public class BPViewerUtility {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     
     // Key bindings
-    private static KeyBinding toggleKeyBinding;
-    private static KeyBinding nextRarityKeyBinding;
-    private static KeyBinding previousRarityKeyBinding;
-    private static KeyBinding toggleMissingModeKeyBinding;
+    private static KeyMapping toggleKeyMapping;
+    private static KeyMapping nextRarityKeyMapping;
+    private static KeyMapping previousRarityKeyMapping;
+    private static KeyMapping toggleMissingModeKeyMapping;
     
     // Blueprint configuration
     private final BlueprintConfig config = new BlueprintConfig();
@@ -161,10 +163,10 @@ public class BPViewerUtility {
         BPViewerUtility instance = new BPViewerUtility();
         
         // Register key bindings
-        registerKeyBindings();
+        registerKeyMappings();
         
         // Register HUD render callback
-        HudElementRegistry.addLast(Identifier.of("cclive-utilities", "blueprint_viewer"), (context, tickCounter) -> {
+        HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("cclive-utilities", "blueprint_viewer"), (context, tickCounter) -> {
             CCLiveUtilitiesConfig.migrateBlueprintViewerYToPixels();
             if (isVisible && instance.getActiveFloor() != null && showOverlays && !EquipmentDisplayUtility.isEquipmentOverlayActive()) {
                 instance.onHudRender(context, tickCounter);
@@ -173,21 +175,21 @@ public class BPViewerUtility {
         
                        // Register client tick events
                ClientTickEvents.END_CLIENT_TICK.register(client -> {
-                   if (client.world != null) {
+                   if (client.level != null) {
                        // Handle key bindings
-                       if (toggleKeyBinding.wasPressed()) {
+                       if (toggleKeyMapping.consumeClick()) {
                            toggleVisibility();
                        }
 
-                       if (nextRarityKeyBinding.wasPressed()) {
+                       if (nextRarityKeyMapping.consumeClick()) {
                            instance.nextRarity();
                        }
 
-                       if (previousRarityKeyBinding.wasPressed()) {
+                       if (previousRarityKeyMapping.consumeClick()) {
                            instance.previousRarity();
                        }
                        
-                       if (toggleMissingModeKeyBinding.wasPressed()) {
+                       if (toggleMissingModeKeyMapping.consumeClick()) {
                            toggleMissingMode();
                        }
                        
@@ -230,10 +232,10 @@ public class BPViewerUtility {
             // Check if we're hovering over a name_tag item (blueprint items)
             if (stack.getItem().toString().contains("name_tag")) {
                 // Check if we're in the special inventory (the one with 㬉)
-                MinecraftClient mcClient = MinecraftClient.getInstance();
+                Minecraft mcClient = Minecraft.getInstance();
                 boolean isSpecialInventory = false;
-                if (mcClient != null && mcClient.currentScreen != null) {
-                    String screenTitle = mcClient.currentScreen.getTitle().getString();
+                if (mcClient != null && mcClient.screen != null) {
+                    String screenTitle = mcClient.screen.getTitle().getString();
                     if (ZeichenUtility.containsMoblexicon(screenTitle)) { //Moblexicon
                         isSpecialInventory = true;
                     }
@@ -249,10 +251,10 @@ public class BPViewerUtility {
             }
             
             // Check if we're in the blueprint shop - if so, don't show checkmarks for any items
-            MinecraftClient mcClient = MinecraftClient.getInstance();
+            Minecraft mcClient = Minecraft.getInstance();
             boolean isInShop = false;
-            if (mcClient != null && mcClient.currentScreen instanceof HandledScreen) {
-                HandledScreen<?> screen = (HandledScreen<?>) mcClient.currentScreen;
+            if (mcClient != null && mcClient.screen instanceof AbstractContainerScreen) {
+                AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) mcClient.screen;
                 String title = screen.getTitle().getString();
                 String cleanTitle = title.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
                 cleanTitle = cleanTitle.replaceAll("§[0-9a-fk-or]", "");
@@ -270,7 +272,7 @@ public class BPViewerUtility {
             
             // Process blueprint tooltips (we already confirmed it's a name_tag item)
             // Look through the existing tooltip lines to find blueprint names
-            for (net.minecraft.text.Text line : lines) {
+            for (net.minecraft.network.chat.Component line : lines) {
                 String lineText = line.getString();
                 
                 // "Item Name - [Bauplan]" or "Item Name - §3[Bauplan]" (getString may keep § codes)
@@ -343,12 +345,12 @@ public class BPViewerUtility {
                         if (CCLiveUtilitiesConfig.HANDLER.instance().moblexiconBlueprintCheckmarksEnabled) {
                             if (isFound) {
                                 // Replace the current line with the blueprint name + checkmark, preserving original formatting
-                                net.minecraft.text.MutableText coloredText = line.copy();
-                                coloredText.append(net.minecraft.text.Text.literal(" ✓").formatted(net.minecraft.util.Formatting.GREEN));
+                                net.minecraft.network.chat.MutableComponent coloredText = line.copy();
+                                coloredText.append(net.minecraft.network.chat.Component.literal(" ✓").withStyle(net.minecraft.ChatFormatting.GREEN));
                                 lines.set(lineIndex, coloredText);
                             } else {
-                                net.minecraft.text.MutableText coloredText = line.copy();
-                                coloredText.append(net.minecraft.text.Text.literal(" ✗").formatted(net.minecraft.util.Formatting.RED));
+                                net.minecraft.network.chat.MutableComponent coloredText = line.copy();
+                                coloredText.append(net.minecraft.network.chat.Component.literal(" ✗").withStyle(net.minecraft.ChatFormatting.RED));
                                 lines.set(lineIndex, coloredText);
                             }
                         }
@@ -359,9 +361,9 @@ public class BPViewerUtility {
                         // Only auto-mark blueprints if we're not in the shop
                         if (!isInShop) {
                             // Check if we're in the blueprint shop and auto-mark found blueprints
-                            MinecraftClient client = MinecraftClient.getInstance();
-                            if (client != null && client.currentScreen instanceof HandledScreen) {
-                                HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+                            Minecraft client = Minecraft.getInstance();
+                            if (client != null && client.screen instanceof AbstractContainerScreen) {
+                                AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
                                 String title = screen.getTitle().getString();
                                 String cleanTitle = title.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
                                 cleanTitle = cleanTitle.replaceAll("§[0-9a-fk-or]", "");
@@ -424,8 +426,8 @@ public class BPViewerUtility {
                                     instance.scanBlueprintShopSlots(screen);
                                 } else {
                                     // Even if shop detection fails, try slot scanning if we're hovering over a name tag with blueprints
-                                    if (client.currentScreen instanceof HandledScreen) {
-                                        instance.scanBlueprintShopSlots((HandledScreen<?>) client.currentScreen);
+                                    if (client.screen instanceof AbstractContainerScreen) {
+                                        instance.scanBlueprintShopSlots((AbstractContainerScreen<?>) client.screen);
                                     }
                                 }
                             }
@@ -440,40 +442,40 @@ public class BPViewerUtility {
                isInitialized = true;
     }
     
-    private static void registerKeyBindings() {
-        toggleKeyBinding = new KeyBinding(
+    private static void registerKeyMappings() {
+        toggleKeyMapping = new KeyMapping(
             "key.cclive-utilities.toggle-blueprint-viewer",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_B,
-            "key.categories.cclive-utilities.blueprints"
+            KeyCategories.of("cclive-utilities", "blueprints")
         );
         
-        nextRarityKeyBinding = new KeyBinding(
+        nextRarityKeyMapping = new KeyMapping(
             "key.cclive-utilities.next-blueprint-rarity",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_RIGHT,
-            "key.categories.cclive-utilities.blueprints"
+            KeyCategories.of("cclive-utilities", "blueprints")
         );
         
-        previousRarityKeyBinding = new KeyBinding(
+        previousRarityKeyMapping = new KeyMapping(
             "key.cclive-utilities.previous-blueprint-rarity",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_LEFT,
-            "key.categories.cclive-utilities.blueprints"
+            KeyCategories.of("cclive-utilities", "blueprints")
         );
         
-        toggleMissingModeKeyBinding = new KeyBinding(
+        toggleMissingModeKeyMapping = new KeyMapping(
             "key.cclive-utilities.toggle-blueprint-missing-mode",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_UNKNOWN,
-            "key.categories.cclive-utilities.blueprints"
+            KeyCategories.of("cclive-utilities", "blueprints")
         );
         
         // Register key bindings
-        KeyBindingHelper.registerKeyBinding(toggleKeyBinding);
-        KeyBindingHelper.registerKeyBinding(nextRarityKeyBinding);
-        KeyBindingHelper.registerKeyBinding(previousRarityKeyBinding);
-        KeyBindingHelper.registerKeyBinding(toggleMissingModeKeyBinding);
+        KeyMappingHelper.registerKeyMapping(toggleKeyMapping);
+        KeyMappingHelper.registerKeyMapping(nextRarityKeyMapping);
+        KeyMappingHelper.registerKeyMapping(previousRarityKeyMapping);
+        KeyMappingHelper.registerKeyMapping(toggleMissingModeKeyMapping);
     }
     
     private static void toggleMissingMode() {
@@ -484,34 +486,34 @@ public class BPViewerUtility {
     }
     
     private static void showMissingModeActionBar(boolean enabled) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.inGameHud == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.gui == null) {
             return;
         }
         String stateText = enabled ? "§aEin" : "§cAus";
-        client.inGameHud.setOverlayMessage(Text.literal("§fMissing Mode: " + stateText), false);
+        client.gui.setOverlayMessage(Component.literal("§fMissing Mode: " + stateText), false);
     }
            
            private static void registerCommands() {
                ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-                   dispatcher.register(ClientCommandManager.literal("bp")
-                       .then(ClientCommandManager.literal("reset")
+                   dispatcher.register(ClientCommands.literal("bp")
+                       .then(ClientCommands.literal("reset")
                            .executes(context -> {
                                BPViewerUtility instance = getInstance();
                                instance.resetFoundBlueprints();
-                               context.getSource().sendFeedback(Text.literal("§aAlle gefundenen Baupläne und Angel-Komponenten wurden zurückgesetzt!"));
+                               context.getSource().sendFeedback(Component.literal("§aAlle gefundenen Baupläne und Angel-Komponenten wurden zurückgesetzt!"));
                                return 1;
                            })
                        )
-                       .then(ClientCommandManager.literal("set")
-                           .then(ClientCommandManager.literal("floor")
-                               .then(ClientCommandManager.argument("floorNumber", StringArgumentType.string())
+                       .then(ClientCommands.literal("set")
+                           .then(ClientCommands.literal("floor")
+                               .then(ClientCommands.argument("floorNumber", StringArgumentType.string())
                                    .executes(context -> {
                                        String floorNumber = StringArgumentType.getString(context, "floorNumber");
                                        BPViewerUtility instance = getInstance();
                                        instance.setManualFloor(floorNumber);
                                        BPViewerUtility.setVisibility(true, floorNumber);
-                                       context.getSource().sendFeedback(Text.literal("§aBauplan-Anzeige für Ebene " + floorNumber + " aktiviert!"));
+                                       context.getSource().sendFeedback(Component.literal("§aBauplan-Anzeige für Ebene " + floorNumber + " aktiviert!"));
                                        return 1;
                                    })
                                )
@@ -521,13 +523,16 @@ public class BPViewerUtility {
                });
            }
     
-    private void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+    public void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client == null) return;
+            if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+                return;
+            }
             
             // Hide overlay if F1 menu (debug screen) is open
-            if (client.options.hudHidden) {
+            if (client.options.hideGui) {
                 return;
             }
             
@@ -537,7 +542,7 @@ public class BPViewerUtility {
                 return;
             }
             
-            int screenWidth = client.getWindow().getScaledWidth();
+            int screenWidth = client.getWindow().getGuiScaledWidth();
             
             // Use config values for positioning
             int x = screenWidth - HUD_WIDTH - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
@@ -589,7 +594,7 @@ public class BPViewerUtility {
                 }
                 
                 // Verwende Matrix-Transformationen für das gesamte Overlay
-                Matrix3x2fStack matrices = context.getMatrices();
+                Matrix3x2fStack matrices = context.pose();
                 matrices.pushMatrix();
                 
                 // Skaliere basierend auf der Config
@@ -604,7 +609,7 @@ public class BPViewerUtility {
         OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerOverlayType;
         if (overlayType == OverlayType.CUSTOM) {
             // Bild-Overlay mit blueprint_background.png
-            context.drawTexture(
+            context.blit(
                 RenderPipelines.GUI_TEXTURED,
                 BLUEPRINT_BACKGROUND_TEXTURE,
                 0, 0, // Position (0-basiert, da wir bereits übersetzt haben)
@@ -631,10 +636,10 @@ public class BPViewerUtility {
                 renderTitleAndBlueprintList(context, dynamicX + 10, y + 2, rarityData.items, rarityData.color, dynamicWidth);
             } else {
                 // Show error message if no data found
-                context.drawText(client.textRenderer, "No data for floor: " + activeFloor, x + 10, y + 30, 0xFFFF0000, false);
-                context.drawText(client.textRenderer, "Rarity: " + currentRarity, x + 10, y + 45, 0xFFFFFF00, false);
+                context.text(client.font, "No data for floor: " + activeFloor, x + 10, y + 30, 0xFFFF0000, false);
+                context.text(client.font, "Rarity: " + currentRarity, x + 10, y + 45, 0xFFFFFF00, false);
                 if (floorData != null && floorData.blueprints != null) {
-                    context.drawText(client.textRenderer, "Available: " + floorData.blueprints.keySet(), x + 10, y + 60, 0xFFFFFF00, false);
+                    context.text(client.font, "Available: " + floorData.blueprints.keySet(), x + 10, y + 60, 0xFFFFFF00, false);
                 }
             }
             
@@ -657,13 +662,13 @@ public class BPViewerUtility {
     }
     
     private int calculateRequiredWidth(List<String> blueprints) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return HUD_WIDTH;
         
         int maxWidth = HUD_WIDTH;
         for (String blueprint : blueprints) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            int textWidth = client.textRenderer.getWidth(displayText);
+            int textWidth = client.font.width(displayText);
             // Add padding for the text (left margin + right margin) - increased for longer German text
             textWidth += 45;
             if (textWidth > maxWidth) {
@@ -677,12 +682,12 @@ public class BPViewerUtility {
     /**
      * Rendert den Titel und die Bauplan-Liste zusammen im skalierten Bereich
      */
-    private void renderTitleAndBlueprintList(DrawContext context, int x, int y, List<String> blueprints, String rarityColor, int overlayWidth) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void renderTitleAndBlueprintList(GuiGraphicsExtractor context, int x, int y, List<String> blueprints, String rarityColor, int overlayWidth) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Verwende Matrix-Transformationen für Skalierung
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Skaliere basierend auf der Config
@@ -697,7 +702,7 @@ public class BPViewerUtility {
         String rarityDisplay = currentRarity.toUpperCase();
         
         // Überschrift perfekt mittig positionieren
-        int textWidth = client.textRenderer.getWidth(rarityDisplay);
+        int textWidth = client.font.width(rarityDisplay);
         int titleX = -9 + (overlayWidth - textWidth) / 2;
         
         // Get the appropriate color for the rarity - using bright colors
@@ -710,7 +715,7 @@ public class BPViewerUtility {
             case "legendary": titleColor = 0xFFFFFF00; break;   // Bright yellow
             default: titleColor = 0xFFFFFFFF; break;            // Bright white as default
         }
-        context.drawText(client.textRenderer, rarityDisplay, titleX, 5, titleColor, true);
+        context.text(client.font, rarityDisplay, titleX, 5, titleColor, true);
         
         // Render blueprint list - start below the title (moved 3 pixels up)
         int blueprintY = 17; // Start below the title
@@ -759,14 +764,14 @@ public class BPViewerUtility {
             
             // Draw the text with appropriate color based on found status (skaliert)
             int textColor = isFound ? 0xFFFFFFFF : 0xFF888888; // White if found, gray if not found
-            context.drawText(client.textRenderer, displayText, 5, blueprintY, textColor, true);
+            context.text(client.font, displayText, 5, blueprintY, textColor, true);
             
             blueprintY += 12; // Increased spacing for better readability (skaliert)
         }
         
         // Im Missing Mode: Wenn alle Baupläne gefunden wurden, zeige "Alle gefunden"
         if (missingMode && missingCount == 0 && totalCount > 0) {
-            context.drawText(client.textRenderer, "Alle gefunden", 5, blueprintY, 0xFFFFFFFF, true);
+            context.text(client.font, "Alle gefunden", 5, blueprintY, 0xFFFFFFFF, true);
         }
         
         // Matrix-Transformationen wiederherstellen
@@ -783,7 +788,7 @@ public class BPViewerUtility {
 		}
 	}
            
-           public void checkForBlueprint(Text message, String messageText) {
+           public void checkForBlueprint(Component message, String messageText) {
                // Always log when method is called
                
                if (messageText == null || messageText.isEmpty()) {
@@ -1014,9 +1019,9 @@ public class BPViewerUtility {
                }
            }
            
-           private void checkBlueprintShopInventory(MinecraftClient client) {
-               if (client.currentScreen instanceof HandledScreen) {
-                   HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+           private void checkBlueprintShopInventory(Minecraft client) {
+               if (client.screen instanceof AbstractContainerScreen) {
+                   AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
                    String title = screen.getTitle().getString();
                    
 
@@ -1046,27 +1051,27 @@ public class BPViewerUtility {
                }
            }
            
-           private void scanBlueprintShopSlots(HandledScreen<?> screen) {
-               if (screen.getScreenHandler() == null) {
+           private void scanBlueprintShopSlots(AbstractContainerScreen<?> screen) {
+               if (screen.getMenu() == null) {
                    return;
                }
                
 
                
                for (int slotIndex : BLUEPRINT_SHOP_SLOTS) {
-                   if (slotIndex < screen.getScreenHandler().slots.size()) {
-                       Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-                       ItemStack itemStack = slot.getStack();
+                   if (slotIndex < screen.getMenu().slots.size()) {
+                       Slot slot = screen.getMenu().slots.get(slotIndex);
+                       ItemStack itemStack = slot.getItem();
                        
                        if (!itemStack.isEmpty()) {
                            // Get the item name and check if it's a blueprint
-                           String itemName = itemStack.getName().getString();
+                           String itemName = itemStack.getHoverName().getString();
 
                            
                            // Check if the item name contains [Bauplan]
                            if (itemName.contains("[Bauplan]")) {
                                // Extract blueprint name and color from item name
-                               Text itemNameText = itemStack.getName();
+                               Component itemNameText = itemStack.getHoverName();
                                InformationenUtility.BlueprintNameAndColor nameAndColor = 
                                    InformationenUtility.extractBlueprintNameAndColorFromItemName(itemNameText);
                                
@@ -1158,9 +1163,9 @@ public class BPViewerUtility {
            }
     
     private void markBlueprintAsFound(String blueprintName, String rarity, String floor) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         Runnable task = () -> markBlueprintAsFoundOnClient(blueprintName, rarity, floor);
-        if (client != null && !client.isOnThread()) {
+        if (client != null && !client.isSameThread()) {
             client.execute(task);
             return;
         }
@@ -1253,9 +1258,9 @@ public class BPViewerUtility {
     }
     
     private static String getCurrentFloor() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.world != null) {
-            String dimensionId = client.world.getRegistryKey().getValue().toString();
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.level != null) {
+            String dimensionId = client.level.dimension().identifier().toString();
             
             if (dimensionId.startsWith("minecraft:floor_")) {
                 String floorPart = dimensionId.substring("minecraft:floor_".length());
@@ -1365,7 +1370,7 @@ public class BPViewerUtility {
             JsonObject json = new JsonObject();
             json.addProperty("modVersion", "1.0.0");
             
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client != null && client.player != null) {
                 json.addProperty("username", client.player.getName().getString());
             } else {

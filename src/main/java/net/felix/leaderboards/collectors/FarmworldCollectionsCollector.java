@@ -1,13 +1,12 @@
 package net.felix.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
 import net.felix.leaderboards.LeaderboardManager;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.ScoreboardDisplaySlot;
-import net.minecraft.scoreboard.ScoreboardObjective;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.scores.DisplaySlot;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.Scoreboard;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -94,8 +93,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
         // System.out.println("✅ [FarmworldCollectionsCollector] FarmworldCollectionsCollector initialisiert und aktiv");
     }
     
-    private void onClientTick(MinecraftClient client) {
-        if (!isActive || client.player == null || client.world == null) {
+    private void onClientTick(Minecraft client) {
+        if (!isActive || client.player == null || client.level == null) {
             return;
         }
         
@@ -137,14 +136,14 @@ public class FarmworldCollectionsCollector implements DataCollector {
      * Prüft ob wir in der Farmworld-Dimension sind
      * Doppelcheck: Dimension muss minecraft:overworld sein UND eine Zone muss im Scoreboard stehen
      */
-    private boolean isInFarmworldDimension(MinecraftClient client) {
+    private boolean isInFarmworldDimension(Minecraft client) {
         try {
-            if (client.world == null) {
+            if (client.level == null) {
                 return false;
             }
             
             // Erste Bedingung: Dimension muss minecraft:overworld sein
-            String dimensionId = client.world.getRegistryKey().getValue().toString();
+            String dimensionId = client.level.dimension().identifier().toString();
             if (!dimensionId.equals("minecraft:overworld")) {
                 return false;
             }
@@ -163,7 +162,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
      */
     private void updateCachedCollection() {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client == null) return;
             
             String currentZone = getCurrentZone(client);
@@ -182,7 +181,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
     /**
      * Prüft ob sich die Zone geändert hat
      */
-    private void checkZoneChange(MinecraftClient client) {
+    private void checkZoneChange(Minecraft client) {
         try {
             String currentZone = getCurrentZone(client);
             if (currentZone == null) {
@@ -272,7 +271,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
     /**
      * Liest nach Ablauf der Zone-Wartezeit den ersten Bossbar-Wert und aktiviert weiteres Tracking.
      */
-    private void completePendingZoneRead(MinecraftClient client) {
+    private void completePendingZoneRead(Minecraft client) {
         if (pendingZone == null) {
             return;
         }
@@ -312,7 +311,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
     /**
      * Aktualisiert Collection-Daten in der aktuellen Zone (alle 60 Sekunden)
      */
-    private void updateCollectionInCurrentZone(MinecraftClient client) {
+    private void updateCollectionInCurrentZone(Minecraft client) {
         try {
             String currentZone = getCurrentZone(client);
             if (currentZone == null) {
@@ -410,19 +409,19 @@ public class FarmworldCollectionsCollector implements DataCollector {
     /**
      * Ermittelt die aktuelle Zone aus dem Sidebar-Scoreboard (rechts)
      */
-    private String getCurrentZone(MinecraftClient client) {
+    private String getCurrentZone(Minecraft client) {
         try {
-            if (client == null || client.world == null) {
+            if (client == null || client.level == null) {
                 return null;
             }
             
-            Scoreboard scoreboard = client.world.getScoreboard();
+            Scoreboard scoreboard = client.level.getScoreboard();
             if (scoreboard == null) {
                 return null;
             }
             
             // Hole das Sidebar-Objektiv (wird rechts angezeigt)
-            ScoreboardObjective sidebarObjective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+            Objective sidebarObjective = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR);
             if (sidebarObjective == null) {
                 return null;
             }
@@ -439,7 +438,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
             // Ansatz 1: Versuche über getAllPlayerScores (Collection zurück) - OFFIZIELLE API
             java.util.Collection<?> scores = null;
             try {
-                java.lang.reflect.Method getAllPlayerScoresMethod = scoreboard.getClass().getMethod("getAllPlayerScores", ScoreboardObjective.class);
+                java.lang.reflect.Method getAllPlayerScoresMethod = scoreboard.getClass().getMethod("getAllPlayerScores", Objective.class);
                 scores = (java.util.Collection<?>) getAllPlayerScoresMethod.invoke(scoreboard, sidebarObjective);
                 
                 // Durchsuche alle Scores
@@ -469,7 +468,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 
                 // Ansatz 2: Versuche über getPlayerScores (Collection zurück)
                 try {
-                    java.lang.reflect.Method getPlayerScoresMethod = scoreboard.getClass().getMethod("getPlayerScores", ScoreboardObjective.class);
+                    java.lang.reflect.Method getPlayerScoresMethod = scoreboard.getClass().getMethod("getPlayerScores", Objective.class);
                     scores = (java.util.Collection<?>) getPlayerScoresMethod.invoke(scoreboard, sidebarObjective);
                     
                     // Durchsuche alle Scores (gleiche Logik wie oben)
@@ -498,7 +497,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     // Ansatz 3: Versuche playerObjectives direkt zu durchsuchen (Map<String, Map<ScoreboardObjective, ScoreboardPlayerScore>>)
                     // Da das Feld obfuskiert ist, identifizieren wir es durch seine Struktur:
                     // Es ist eine Map<String, Map<ScoreboardObjective, ScoreboardPlayerScore>>
-                    java.util.Map<String, java.util.Map<ScoreboardObjective, ?>> playerObjectives = null;
+                    java.util.Map<String, java.util.Map<Objective, ?>> playerObjectives = null;
                     try {
                         
                         java.lang.reflect.Field[] fields = scoreboard.getClass().getDeclaredFields();
@@ -532,7 +531,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                     
                                     if (isPlayerObjectives) {
                                         @SuppressWarnings("unchecked")
-                                        java.util.Map<String, java.util.Map<ScoreboardObjective, ?>> playerObjectivesMap = (java.util.Map<String, java.util.Map<ScoreboardObjective, ?>>) map;
+                                        java.util.Map<String, java.util.Map<Objective, ?>> playerObjectivesMap = (java.util.Map<String, java.util.Map<Objective, ?>>) map;
                                         playerObjectives = playerObjectivesMap;
                                         break;
                                     }
@@ -569,7 +568,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 }
                                 
                                 // Prüfe auch die Values (Map<ScoreboardObjective, ScoreboardPlayerScore>)
-                                java.util.Map<ScoreboardObjective, ?> playerScores = playerObjectives.get(playerName);
+                                java.util.Map<Objective, ?> playerScores = playerObjectives.get(playerName);
                                 if (playerScores != null && playerScores.containsKey(sidebarObjective)) {
                                     Object scoreObj = playerScores.get(sidebarObjective);
                                     if (scoreObj != null) {
@@ -699,21 +698,21 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 Object value = entry.getValue();
                                 
                                 // Die Zone steht in field_1418 des Team-Objekts
-                                if (value != null && value.getClass().getName().contains("class_268")) {
+                                if (value != null && value.getClass().getName().contains("PlayerTeam")) {
                                     try {
                                         // Direkt field_1418 prüfen (das ist das Feld, das die Zone enthält)
-                                        java.lang.reflect.Field field1418 = value.getClass().getDeclaredField("field_1418");
+                                        java.lang.reflect.Field field1418 = value.getClass().getDeclaredField("displayName");
                                         field1418.setAccessible(true);
                                         Object fieldValue = field1418.get(value);
                                         
                                         if (fieldValue != null) {
                                             String extractedText = null;
-                                            if (fieldValue instanceof Text) {
-                                                extractedText = ((Text) fieldValue).getString();
+                                            if (fieldValue instanceof Component) {
+                                                extractedText = ((Component) fieldValue).getString();
                                             } else if (fieldValue instanceof String) {
                                                 extractedText = (String) fieldValue;
-                                            } else if (fieldValue instanceof net.minecraft.text.MutableText) {
-                                                extractedText = ((net.minecraft.text.MutableText) fieldValue).getString();
+                                            } else if (fieldValue instanceof net.minecraft.network.chat.MutableComponent) {
+                                                extractedText = ((net.minecraft.network.chat.MutableComponent) fieldValue).getString();
                                             }
                                             
                                             if (extractedText != null && !extractedText.isEmpty()) {
@@ -738,12 +737,12 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                     
                                                     if (teamFieldValue != null) {
                                                         String extractedText = null;
-                                                        if (teamFieldValue instanceof Text) {
-                                                            extractedText = ((Text) teamFieldValue).getString();
+                                                        if (teamFieldValue instanceof Component) {
+                                                            extractedText = ((Component) teamFieldValue).getString();
                                                         } else if (teamFieldValue instanceof String) {
                                                             extractedText = (String) teamFieldValue;
-                                                        } else if (teamFieldValue instanceof net.minecraft.text.MutableText) {
-                                                            extractedText = ((net.minecraft.text.MutableText) teamFieldValue).getString();
+                                                        } else if (teamFieldValue instanceof net.minecraft.network.chat.MutableComponent) {
+                                                            extractedText = ((net.minecraft.network.chat.MutableComponent) teamFieldValue).getString();
                                                         }
                                                         
                                                         if (extractedText != null && !extractedText.isEmpty()) {
@@ -796,7 +795,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 }
                                 
                                 // Prüfe andere Team-Objekte (nur als Fallback)
-                                if (value != null && value.getClass().getName().contains("class_268")) {
+                                if (value != null && value.getClass().getName().contains("PlayerTeam")) {
                                     String text = null;
                                     try {
                                         // Versuche verschiedene Methoden/Felder
@@ -806,8 +805,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                 try {
                                                     method.setAccessible(true);
                                                     Object result = method.invoke(value);
-                                                    if (result instanceof Text) {
-                                                        text = ((Text) result).getString();
+                                                    if (result instanceof Component) {
+                                                        text = ((Component) result).getString();
                                                         break;
                                                     } else if (result instanceof String) {
                                                         text = (String) result;
@@ -826,8 +825,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                 try {
                                                     teamField.setAccessible(true);
                                                     Object teamFieldValue = teamField.get(value);
-                                                    if (teamFieldValue instanceof Text) {
-                                                        text = ((Text) teamFieldValue).getString();
+                                                    if (teamFieldValue instanceof Component) {
+                                                        text = ((Component) teamFieldValue).getString();
                                                         break;
                                                     } else if (teamFieldValue instanceof String) {
                                                         text = (String) teamFieldValue;
@@ -861,7 +860,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                 // Methode 1: getDisplayName()
                                                 try {
                                                     java.lang.reflect.Method getDisplayNameMethod = value.getClass().getMethod("getDisplayName");
-                                                    Text displayName = (Text) getDisplayNameMethod.invoke(value);
+                                                    Component displayName = (Component) getDisplayNameMethod.invoke(value);
                                                     if (displayName != null) {
                                                         text = displayName.getString();
                                                     }
@@ -908,7 +907,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                 // Durchsuche alle Felder des Scores-Objekts
                                                 java.lang.reflect.Field[] scoresFields = value.getClass().getDeclaredFields();
                                                 for (java.lang.reflect.Field scoresField : scoresFields) {
-                                                    if (scoresField.getType() == String.class || Text.class.isAssignableFrom(scoresField.getType()) || java.util.Map.class.isAssignableFrom(scoresField.getType())) {
+                                                    if (scoresField.getType() == String.class || Component.class.isAssignableFrom(scoresField.getType()) || java.util.Map.class.isAssignableFrom(scoresField.getType())) {
                                                         try {
                                                             scoresField.setAccessible(true);
                                                             Object scoresFieldValue = scoresField.get(value);
@@ -922,8 +921,8 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                                         return zoneName;
                                                                     }
                                                                 }
-                                                            } else if (scoresFieldValue instanceof Text) {
-                                                                String text = ((Text) scoresFieldValue).getString();
+                                                            } else if (scoresFieldValue instanceof Component) {
+                                                                String text = ((Component) scoresFieldValue).getString();
                                                                 String cleanText = removeFormatting.apply(text);
                                                                 
                                                                 for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
@@ -954,7 +953,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                                                         try {
                                                                             // Versuche Text aus dem ScoreboardPlayerScore zu extrahieren
                                                                             java.lang.reflect.Method getDisplayNameMethod = innerValue.getClass().getMethod("getDisplayName");
-                                                                            Text displayName = (Text) getDisplayNameMethod.invoke(innerValue);
+                                                                            Component displayName = (Component) getDisplayNameMethod.invoke(innerValue);
                                                                             if (displayName != null) {
                                                                                 String text = displayName.getString();
                                                                                 String cleanText = removeFormatting.apply(text);
@@ -993,7 +992,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                         }
                                         
                                         // Prüfe ob der Key das Objective ist und der Value die Scores
-                                        if (key instanceof ScoreboardObjective && value instanceof java.util.Collection<?> tempScores) {
+                                        if (key instanceof Objective && value instanceof java.util.Collection<?> tempScores) {
                                             if (!tempScores.isEmpty()) {
                                                 scores = tempScores;
                                                 
@@ -1050,7 +1049,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                         // Methode 1: getDisplayName()
                         try {
                             java.lang.reflect.Method getDisplayNameMethod = scoreObj.getClass().getMethod("getDisplayName");
-                            Text displayName = (Text) getDisplayNameMethod.invoke(scoreObj);
+                            Component displayName = (Component) getDisplayNameMethod.invoke(scoreObj);
                             if (displayName != null) {
                                 rawText = displayName.getString();
                                 text = rawText;
@@ -1146,11 +1145,11 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     // Versuche für jeden Player-Namen den Score zu holen
                     java.lang.reflect.Method getPlayerScoreMethod = null;
                     try {
-                        getPlayerScoreMethod = scoreboard.getClass().getMethod("getPlayerScore", String.class, ScoreboardObjective.class);
+                        getPlayerScoreMethod = scoreboard.getClass().getMethod("getPlayerScore", String.class, Objective.class);
                     } catch (Exception e) {
                         // Versuche alternative Methoden-Signaturen
                         try {
-                            getPlayerScoreMethod = scoreboard.getClass().getMethod("method_835", String.class, ScoreboardObjective.class);
+                            getPlayerScoreMethod = scoreboard.getClass().getMethod("method_835", String.class, Objective.class);
                         } catch (Exception e2) {
                             // Weitere Versuche...
                         }
@@ -1180,7 +1179,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                                 try {
                                     // Methode 1: getDisplayName()
                                     java.lang.reflect.Method getDisplayNameMethod = scoreObj.getClass().getMethod("getDisplayName");
-                                    Text displayName = (Text) getDisplayNameMethod.invoke(scoreObj);
+                                    Component displayName = (Component) getDisplayNameMethod.invoke(scoreObj);
                                     if (displayName != null) {
                                         rawText = displayName.getString();
                                         text = rawText;
@@ -1270,7 +1269,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
     /**
      * Gibt den aktuellen Collection-Wert aus der Bossbar zurück
      */
-    private int getCollectionFromBossbar(MinecraftClient client) {
+    private int getCollectionFromBossbar(Minecraft client) {
         // Prüfe ob der Wert noch aktuell ist (max. 5 Sekunden alt)
         long currentTime = System.currentTimeMillis();
         long age = currentTime - lastBossbarUpdate;

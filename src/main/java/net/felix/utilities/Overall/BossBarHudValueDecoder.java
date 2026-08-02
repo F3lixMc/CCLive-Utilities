@@ -1,11 +1,10 @@
 package net.felix.utilities.Overall;
 
-import net.minecraft.client.MinecraftClient;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.client.Minecraft;
 
 /**
  * Dekodiert Werte aus der oberen HUD-Bossbar anhand der Pixel-Font-Glyphen.
@@ -309,9 +308,9 @@ public final class BossBarHudValueDecoder {
     }
 
     public static boolean isFloorDimension() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.world != null) {
-            String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.level != null) {
+            String dimensionPath = client.level.dimension().identifier().getPath();
             return dimensionPath.toLowerCase().contains("floor");
         }
         return false;

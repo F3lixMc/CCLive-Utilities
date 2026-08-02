@@ -1,9 +1,9 @@
 package net.felix.utilities.Overall;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.option.GameOptions;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
 
 /**
  * Utility class for handling key bindings in a centralized way.
@@ -19,28 +19,28 @@ public class KeyBindingUtility {
      */
     public static boolean isPlayerListKeyPressed() {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client == null || client.options == null) {
                 return false;
             }
             
-            GameOptions options = client.options;
-            KeyBinding playerListKey = options.playerListKey;
+            Options options = client.options;
+            KeyMapping playerListKey = options.keyPlayerList;
             
             if (playerListKey == null) {
                 // Fallback to TAB if player list key is not available
-                return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                return InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_TAB);
             }
             
             // Check if the actual player list key binding is pressed
-            return playerListKey.isPressed();
+            return playerListKey.isDown();
             
         } catch (Exception e) {
             // Fallback to TAB in case of any errors
             try {
-                MinecraftClient client = MinecraftClient.getInstance();
+                Minecraft client = Minecraft.getInstance();
                 if (client != null && client.getWindow() != null) {
-                    return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                    return InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_TAB);
                 }
             } catch (Exception fallbackError) {
                 // Silent error handling
@@ -57,28 +57,28 @@ public class KeyBindingUtility {
      */
     public static boolean wasPlayerListKeyPressed() {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client == null || client.options == null) {
                 return false;
             }
             
-            GameOptions options = client.options;
-            KeyBinding playerListKey = options.playerListKey;
+            Options options = client.options;
+            KeyMapping playerListKey = options.keyPlayerList;
             
             if (playerListKey == null) {
                 // Fallback: check if TAB was just pressed
-                return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                return InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_TAB);
             }
             
             // Check if the actual player list key binding was just pressed
-            return playerListKey.wasPressed();
+            return playerListKey.consumeClick();
             
         } catch (Exception e) {
             // Fallback to TAB in case of any errors
             try {
-                MinecraftClient client = MinecraftClient.getInstance();
+                Minecraft client = Minecraft.getInstance();
                 if (client != null && client.getWindow() != null) {
-                    return InputUtil.isKeyPressed(client.getWindow().getHandle(), InputUtil.GLFW_KEY_TAB);
+                    return InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_TAB);
                 }
             } catch (Exception fallbackError) {
                 // Silent error handling

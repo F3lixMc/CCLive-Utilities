@@ -1,17 +1,16 @@
 package net.felix.utilities.ItemViewer;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,7 +41,7 @@ public class ItemViewerInventoryFilterUtility {
 
     private static boolean initialized = false;
     private static boolean filterActive = false;
-    private static HandledScreen<?> activeFilteredScreen = null;
+    private static AbstractContainerScreen<?> activeFilteredScreen = null;
 
     private static final Map<Integer, ItemStack> originalItems = new HashMap<>();
     private static final Set<Integer> hiddenSlots = new HashSet<>();
@@ -65,8 +64,8 @@ public class ItemViewerInventoryFilterUtility {
             deactivateFilter();
         } else {
             filterActive = true;
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client != null && client.currentScreen instanceof HandledScreen<?> screen && isFilterableInventory(screen)) {
+            Minecraft client = Minecraft.getInstance();
+            if (client != null && client.screen instanceof AbstractContainerScreen<?> screen && isFilterableInventory(screen)) {
                 enterSmithyInventory(screen);
                 activeFilteredScreen = screen;
                 applyFilter(screen);
@@ -82,14 +81,14 @@ public class ItemViewerInventoryFilterUtility {
         if (!filterActive) {
             return;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.currentScreen instanceof HandledScreen<?> screen && isFilterableInventory(screen)) {
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.screen instanceof AbstractContainerScreen<?> screen && isFilterableInventory(screen)) {
             restoreHiddenItems(screen);
             applyFilter(screen);
         }
     }
 
-    private static void onClientTick(MinecraftClient client) {
+    private static void onClientTick(Minecraft client) {
         if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
             return;
         }
@@ -101,7 +100,7 @@ public class ItemViewerInventoryFilterUtility {
             return;
         }
 
-        if (!(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
+        if (!(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
             if (filterActive || !hiddenSlots.isEmpty()) {
                 resetFilter(activeFilteredScreen);
             }
@@ -137,14 +136,14 @@ public class ItemViewerInventoryFilterUtility {
         applyFilter(handledScreen);
     }
 
-    private static void resetFilter(HandledScreen<?> screen) {
+    private static void resetFilter(AbstractContainerScreen<?> screen) {
         restoreHiddenItems(screen);
         clearState();
         filterActive = false;
         activeFilteredScreen = null;
     }
 
-    private static void enterSmithyInventory(HandledScreen<?> screen) {
+    private static void enterSmithyInventory(AbstractContainerScreen<?> screen) {
         originalItems.clear();
         hiddenSlots.clear();
         lastKnownItems.clear();
@@ -158,7 +157,7 @@ public class ItemViewerInventoryFilterUtility {
         lastKnownItems.clear();
     }
 
-    public static boolean isFilterableInventory(HandledScreen<?> screen) {
+    public static boolean isFilterableInventory(AbstractContainerScreen<?> screen) {
         if (screen == null) {
             return false;
         }
@@ -193,7 +192,7 @@ public class ItemViewerInventoryFilterUtility {
                 || (cleanTitle.contains("Ausrüstung") && cleanTitle.contains("Auswählen"));
     }
 
-    public static int[] getSlotsForMenu(HandledScreen<?> screen) {
+    public static int[] getSlotsForMenu(AbstractContainerScreen<?> screen) {
         String title = screen.getTitle().getString();
         String cleanForGlyphs = stripColorCodes(title);
 
@@ -227,7 +226,7 @@ public class ItemViewerInventoryFilterUtility {
         return DEFAULT_BLUEPRINT_SLOTS;
     }
 
-    private static void applyFilter(HandledScreen<?> screen) {
+    private static void applyFilter(AbstractContainerScreen<?> screen) {
         if (!filterActive || screen == null) {
             return;
         }
@@ -236,12 +235,12 @@ public class ItemViewerInventoryFilterUtility {
         int[] slots = getSlotsForMenu(screen);
 
         for (int slotIndex : slots) {
-            if (slotIndex >= screen.getScreenHandler().slots.size()) {
+            if (slotIndex >= screen.getMenu().slots.size()) {
                 continue;
             }
 
-            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-            ItemStack currentStack = slot.getStack();
+            Slot slot = screen.getMenu().slots.get(slotIndex);
+            ItemStack currentStack = slot.getItem();
             ItemStack itemForMatch = resolveItemForMatching(slotIndex, currentStack);
 
             if (itemForMatch.isEmpty()) {
@@ -306,7 +305,7 @@ public class ItemViewerInventoryFilterUtility {
     }
 
     static String extractNameForMatching(ItemStack itemStack) {
-        String itemName = itemStack.getName().getString();
+        String itemName = itemStack.getHoverName().getString();
         itemName = itemName.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "");
         itemName = itemName.replace(" [Ausgeblendet]", "").trim();
         if (itemName.contains("[Bauplan]")) {
@@ -321,67 +320,67 @@ public class ItemViewerInventoryFilterUtility {
         return itemName.trim();
     }
 
-    private static void hideSlot(HandledScreen<?> screen, int slotIndex, ItemStack originalItem) {
+    private static void hideSlot(AbstractContainerScreen<?> screen, int slotIndex, ItemStack originalItem) {
         if (!originalItems.containsKey(slotIndex)) {
             originalItems.put(slotIndex, originalItem.copy());
         }
 
-        Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+        Slot slot = screen.getMenu().slots.get(slotIndex);
         ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
-        blackConcrete.set(DataComponentTypes.CUSTOM_NAME, originalItem.get(DataComponentTypes.CUSTOM_NAME));
-        blackConcrete.set(DataComponentTypes.LORE, originalItem.get(DataComponentTypes.LORE));
+        blackConcrete.set(DataComponents.CUSTOM_NAME, originalItem.get(DataComponents.CUSTOM_NAME));
+        blackConcrete.set(DataComponents.LORE, originalItem.get(DataComponents.LORE));
 
-        String originalName = blackConcrete.getName().getString();
+        String originalName = blackConcrete.getHoverName().getString();
         if (!originalName.contains("[Ausgeblendet]")) {
-            blackConcrete.set(DataComponentTypes.CUSTOM_NAME, Text.literal(originalName + " §7[Ausgeblendet]"));
+            blackConcrete.set(DataComponents.CUSTOM_NAME, Component.literal(originalName + " §7[Ausgeblendet]"));
         }
 
-        slot.setStack(blackConcrete);
+        slot.setByPlayer(blackConcrete);
         hiddenSlots.add(slotIndex);
     }
 
-    private static void restoreSlot(HandledScreen<?> screen, int slotIndex) {
+    private static void restoreSlot(AbstractContainerScreen<?> screen, int slotIndex) {
         if (!hiddenSlots.contains(slotIndex)) {
             return;
         }
-        Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-        ItemStack currentItem = slot.getStack();
+        Slot slot = screen.getMenu().slots.get(slotIndex);
+        ItemStack currentItem = slot.getItem();
         if (currentItem.getItem() == Items.BLACK_CONCRETE && originalItems.containsKey(slotIndex)) {
-            slot.setStack(originalItems.get(slotIndex).copy());
+            slot.setByPlayer(originalItems.get(slotIndex).copy());
         }
         hiddenSlots.remove(slotIndex);
     }
 
-    private static void restoreHiddenItems(HandledScreen<?> screen) {
+    private static void restoreHiddenItems(AbstractContainerScreen<?> screen) {
         if (screen == null) {
             return;
         }
         for (int slotIndex : new HashSet<>(hiddenSlots)) {
-            if (slotIndex < screen.getScreenHandler().slots.size()) {
+            if (slotIndex < screen.getMenu().slots.size()) {
                 restoreSlot(screen, slotIndex);
             }
         }
     }
 
-    private static void saveOriginalItems(HandledScreen<?> screen) {
+    private static void saveOriginalItems(AbstractContainerScreen<?> screen) {
         for (int slotIndex : getSlotsForMenu(screen)) {
-            if (slotIndex >= screen.getScreenHandler().slots.size()) {
+            if (slotIndex >= screen.getMenu().slots.size()) {
                 continue;
             }
-            ItemStack itemStack = screen.getScreenHandler().slots.get(slotIndex).getStack();
+            ItemStack itemStack = screen.getMenu().slots.get(slotIndex).getItem();
             if (!itemStack.isEmpty() && itemStack.getItem() != Items.BLACK_CONCRETE) {
                 originalItems.put(slotIndex, itemStack.copy());
             }
         }
     }
 
-    private static void updateOriginalItemsAfterChange(HandledScreen<?> screen) {
+    private static void updateOriginalItemsAfterChange(AbstractContainerScreen<?> screen) {
         restoreHiddenItems(screen);
         for (int slotIndex : getSlotsForMenu(screen)) {
-            if (slotIndex >= screen.getScreenHandler().slots.size()) {
+            if (slotIndex >= screen.getMenu().slots.size()) {
                 continue;
             }
-            ItemStack currentItem = screen.getScreenHandler().slots.get(slotIndex).getStack();
+            ItemStack currentItem = screen.getMenu().slots.get(slotIndex).getItem();
             if (currentItem.getItem() == Items.BLACK_CONCRETE) {
                 continue;
             }
@@ -393,12 +392,12 @@ public class ItemViewerInventoryFilterUtility {
         }
     }
 
-    private static void refreshLastKnownItems(HandledScreen<?> screen) {
+    private static void refreshLastKnownItems(AbstractContainerScreen<?> screen) {
         for (int slotIndex : getSlotsForMenu(screen)) {
-            if (slotIndex >= screen.getScreenHandler().slots.size()) {
+            if (slotIndex >= screen.getMenu().slots.size()) {
                 continue;
             }
-            ItemStack itemStack = screen.getScreenHandler().slots.get(slotIndex).getStack();
+            ItemStack itemStack = screen.getMenu().slots.get(slotIndex).getItem();
             ItemStack comparable = itemStack;
             if (itemStack.getItem() == Items.BLACK_CONCRETE && hiddenSlots.contains(slotIndex) && originalItems.containsKey(slotIndex)) {
                 comparable = originalItems.get(slotIndex);
@@ -411,15 +410,15 @@ public class ItemViewerInventoryFilterUtility {
         }
     }
 
-    private static boolean hasInventoryChanged(HandledScreen<?> screen) {
+    private static boolean hasInventoryChanged(AbstractContainerScreen<?> screen) {
         if (lastKnownItems.isEmpty()) {
             return false;
         }
         for (int slotIndex : getSlotsForMenu(screen)) {
-            if (slotIndex >= screen.getScreenHandler().slots.size()) {
+            if (slotIndex >= screen.getMenu().slots.size()) {
                 continue;
             }
-            ItemStack currentItem = screen.getScreenHandler().slots.get(slotIndex).getStack();
+            ItemStack currentItem = screen.getMenu().slots.get(slotIndex).getItem();
             if (currentItem.getItem() == Items.BLACK_CONCRETE && hiddenSlots.contains(slotIndex) && originalItems.containsKey(slotIndex)) {
                 currentItem = originalItems.get(slotIndex);
             }
@@ -441,8 +440,8 @@ public class ItemViewerInventoryFilterUtility {
         if (item1.getItem() != item2.getItem()) {
             return false;
         }
-        Text name1 = item1.get(DataComponentTypes.CUSTOM_NAME);
-        Text name2 = item2.get(DataComponentTypes.CUSTOM_NAME);
+        Component name1 = item1.get(DataComponents.CUSTOM_NAME);
+        Component name2 = item2.get(DataComponents.CUSTOM_NAME);
         if (name1 != null && name2 != null) {
             return name1.getString().equals(name2.getString());
         }
@@ -483,7 +482,7 @@ public class ItemViewerInventoryFilterUtility {
     /**
      * Kategorie aus dem geöffneten Inventar, damit die Filterung auch ohne Suchtext greift.
      */
-    public static String resolveItemCategoryForInventory(HandledScreen<?> screen) {
+    public static String resolveItemCategoryForInventory(AbstractContainerScreen<?> screen) {
         if (screen == null) {
             return null;
         }

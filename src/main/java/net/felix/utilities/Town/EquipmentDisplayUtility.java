@@ -2,22 +2,21 @@ package net.felix.utilities.Town;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
-import net.minecraft.item.ItemStack;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.util.Identifier;
-import net.minecraft.client.gl.RenderPipelines;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
-
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,8 +45,8 @@ public class EquipmentDisplayUtility {
 	private static final Pattern ARMOR_PATTERN = Pattern.compile("Rüstung\\s*([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
 	
 	// Overlay texture identifiers
-	private static final Identifier LEFT_OVERLAY_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/left_overlay.png");
-	private static final Identifier RIGHT_OVERLAY_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/right_overlay.png");
+	private static final Identifier LEFT_OVERLAY_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/left_overlay.png");
+	private static final Identifier RIGHT_OVERLAY_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/right_overlay.png");
 	
 	// Scroll-Variablen
 	private static int leftScrollOffset = 0;
@@ -63,7 +62,7 @@ public class EquipmentDisplayUtility {
 			return;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			return;
 		}
@@ -112,23 +111,23 @@ public class EquipmentDisplayUtility {
 		ClientTickEvents.END_CLIENT_TICK.register(EquipmentDisplayUtility::onClientTick);
 		// Registriere HUD-Rendering
 		HudElementRegistry.addLast(
-				Identifier.of("cclive-utilities", "equipment_display"),
+				Identifier.fromNamespaceAndPath("cclive-utilities", "equipment_display"),
 				EquipmentDisplayUtility::onHudRender);
 		
 		// SearchBar initialisieren
 		SearchBarUtility.initialize();
 	}
 
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Check Tab key for overlay visibility
 		checkTabKey();
-		if (client.player == null || client.currentScreen == null) {
+		if (client.player == null || client.screen == null) {
 			isInEquipmentChest = false;
 			return;
 		}
 
 		// Überprüfe ob wir in einem Kisteninventar sind
-		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+		if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
 			if (ZeichenUtility.containsEquipmentDisplay(title)) { //Equipment Display
@@ -152,27 +151,27 @@ public class EquipmentDisplayUtility {
 		}
 	}
 	
-	private static void handleScrolling(MinecraftClient client) {
+	private static void handleScrolling(Minecraft client) {
 		// Maus-Position abrufen
 		// Add null checks and division by zero protection
 		if (client == null || client.getWindow() == null) {
 			return;
 		}
 		
-		int windowWidth = client.getWindow().getWidth();
-		int windowHeight = client.getWindow().getHeight();
+		int windowWidth = client.getWindow().getScreenWidth();
+		int windowHeight = client.getWindow().getScreenHeight();
 		
 		// Prevent division by zero
 		if (windowWidth <= 0 || windowHeight <= 0) {
 			return;
 		}
 		
-		int mouseX = (int) client.mouse.getX() * client.getWindow().getScaledWidth() / windowWidth;
-		int mouseY = (int) client.mouse.getY() * client.getWindow().getScaledHeight() / windowHeight;
+		int mouseX = (int) client.mouseHandler.xpos() * client.getWindow().getGuiScaledWidth() / windowWidth;
+		int mouseY = (int) client.mouseHandler.ypos() * client.getWindow().getGuiScaledHeight() / windowHeight;
 		
 		// Overlay-Positionen berechnen
-		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int screenHeight = client.getWindow().getGuiScaledHeight();
 		
 		// Additional safety check for scaled dimensions
 		if (screenWidth <= 0 || screenHeight <= 0) {
@@ -203,22 +202,22 @@ public class EquipmentDisplayUtility {
 		// Die eigentliche Scroll-Verarbeitung erfolgt über den MouseScrollMixin
 	}
 
-	private static void updateEquipmentStats(HandledScreen<?> screen, MinecraftClient client) {
+	private static void updateEquipmentStats(AbstractContainerScreen<?> screen, Minecraft client) {
 		// Maps zurücksetzen
 		percentageStats.clear();
 		absoluteStats.clear();
 		totalArmor = 0.0;
 
 		for (int slotIndex : EQUIPMENT_SLOTS) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack itemStack = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
 				
 				if (!itemStack.isEmpty()) {
 					// Hole die echten Tooltip-Daten des Items
-					List<Text> lore = getItemTooltip(itemStack, client.player);
+					List<Component> lore = getItemTooltip(itemStack, client.player);
 					boolean inStatistics = false;
-					for (Text text : lore) {
+					for (Component text : lore) {
 						String line = text.getString();
 						
 						// Prüfe auf Rüstungswert
@@ -330,7 +329,7 @@ public class EquipmentDisplayUtility {
 		return "Unbekannt";
 	}
 
-	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+	private static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayEnabled || 
@@ -342,18 +341,18 @@ public class EquipmentDisplayUtility {
 			return;
 		}
 
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.player == null) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 
-		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int screenHeight = client.getWindow().getGuiScaledHeight();
 
 		// Berechne die Position des Inventars (normalerweise in der Mitte)
 		int inventoryWidth = 176; // Standard Inventar-Breite
@@ -406,7 +405,7 @@ public class EquipmentDisplayUtility {
 			// Zeichne Bild-Overlays
 			try {
 				// Zeichne linkes Overlay mit der left_overlay.png Textur
-				context.drawTexture(
+				context.blit(
 					RenderPipelines.GUI_TEXTURED,
 					LEFT_OVERLAY_TEXTURE,
 					leftOverlayX, overlayY, // Position
@@ -416,7 +415,7 @@ public class EquipmentDisplayUtility {
 				);
 				
 				// Zeichne rechtes Overlay mit der right_overlay.png Textur
-				context.drawTexture(
+				context.blit(
 					RenderPipelines.GUI_TEXTURED,
 					RIGHT_OVERLAY_TEXTURE,
 					rightOverlayX, overlayY, // Position
@@ -441,8 +440,8 @@ public class EquipmentDisplayUtility {
 			// Rüstungswert mittig über dem Inventar
 			if (totalArmor > 0) {
 				String armorText = String.format("Rüstung: %s", formatNumber(totalArmor));
-				int armorTextWidth = client.textRenderer.getWidth(armorText);
-				int textHeight = client.textRenderer.fontHeight;
+				int armorTextWidth = client.font.width(armorText);
+				int textHeight = client.font.lineHeight;
 				int padding = 4;
 				int gapAboveInventory = 40;
 
@@ -458,8 +457,8 @@ public class EquipmentDisplayUtility {
 					context.fill(armorOverlayX, armorOverlayY, armorOverlayX + armorOverlayWidth, armorOverlayY + armorOverlayHeight, 0x80000000);
 				}
 
-				context.drawText(
-					client.textRenderer,
+				context.text(
+					client.font,
 					armorText,
 					armorX,
 					armorY,
@@ -469,10 +468,10 @@ public class EquipmentDisplayUtility {
 			}
 
 			// Zeichne Prozentwerte im linken Overlay
-			drawStatsInOverlay(context, client.textRenderer, percentageStats, leftOverlayX, overlayY, leftOverlayWidth, overlayHeight, true, leftScrollOffset);
+			drawStatsInOverlay(context, client.font, percentageStats, leftOverlayX, overlayY, leftOverlayWidth, overlayHeight, true, leftScrollOffset);
 
 			// Zeichne absolute Werte im rechten Overlay
-			drawStatsInOverlay(context, client.textRenderer, absoluteStats, rightOverlayX, overlayY, rightOverlayWidth, overlayHeight, false, rightScrollOffset);
+			drawStatsInOverlay(context, client.font, absoluteStats, rightOverlayX, overlayY, rightOverlayWidth, overlayHeight, false, rightScrollOffset);
 		}
 	}
 
@@ -498,12 +497,12 @@ public class EquipmentDisplayUtility {
 			return baseWidth;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			return baseWidth;
 		}
 		
-		net.minecraft.client.font.TextRenderer textRenderer = client.textRenderer;
+		net.minecraft.client.gui.Font textRenderer = client.font;
 		int maxTextWidth = 0;
 		
 		// Finde den längsten Text (verwende vollen Text für Breitenberechnung)
@@ -518,14 +517,14 @@ public class EquipmentDisplayUtility {
 			// Verwende den vollen Text für die Breitenberechnung, aber kürze ihn für die Anzeige
 			String displayText = truncateText(text, 32);
 			
-			int textWidth = textRenderer.getWidth(displayText);
+			int textWidth = textRenderer.width(displayText);
 			maxTextWidth = Math.max(maxTextWidth, textWidth);
 		}
 		
 		// Überschrift-Breite hinzufügen (kann auch gekürzt werden)
 		String header = isPercentage ? "Prozentwerte" : "Flatwerte";
 		header = truncateText(header, 32);
-		int headerWidth = textRenderer.getWidth(header);
+		int headerWidth = textRenderer.width(header);
 		maxTextWidth = Math.max(maxTextWidth, headerWidth);
 		
 		// Abstände hinzufügen (11 Pixel links + 12 Pixel rechts = 23 Pixel)
@@ -538,14 +537,14 @@ public class EquipmentDisplayUtility {
 	/**
 	 * Zeichnet Statistiken in einem Overlay mit fester Höhe und dynamischer Breite
 	 */
-	private static void drawStatsInOverlay(DrawContext context, net.minecraft.client.font.TextRenderer textRenderer, Map<String, Double> stats, int overlayX, int overlayY, int overlayWidth, int overlayHeight, boolean isPercentage, int scrollOffset) {
+	private static void drawStatsInOverlay(GuiGraphicsExtractor context, net.minecraft.client.gui.Font textRenderer, Map<String, Double> stats, int overlayX, int overlayY, int overlayWidth, int overlayHeight, boolean isPercentage, int scrollOffset) {
 		int textX = overlayX + 11; // 11 Pixel Abstand vom Rand (3 + 8 Pixel nach rechts)
 		int yOffset = overlayY + 8; // 8 Pixel Abstand vom oberen Rand (5 + 3 Pixel nach unten)
 		int maxY = overlayY + overlayHeight - 10; // Maximale Y-Position
 		
 		// Wenn das Overlay zu schmal ist, zeichne einen Hinweis
 		if (overlayWidth < 80) {
-			context.drawText(textRenderer, "Zu schmal", textX, yOffset, 0xFFFF0000, true);
+			context.text(textRenderer, "Zu schmal", textX, yOffset, 0xFFFF0000, true);
 			return;
 		}
 		
@@ -553,7 +552,7 @@ public class EquipmentDisplayUtility {
 		if (CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType != OverlayType.CUSTOM) {
 			String header = isPercentage ? "Prozentwerte" : "Flatwerte";
 			int headerColor = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayHeaderColor.getRGB();
-			context.drawText(textRenderer, header, textX, yOffset, headerColor, true);
+			context.text(textRenderer, header, textX, yOffset, headerColor, true);
 		}
 		// Immer den gleichen Abstand für konsistente Positionierung
 		yOffset += 15;
@@ -574,7 +573,7 @@ public class EquipmentDisplayUtility {
 			// Zeige Scroll-Indikator wenn nötig
 			if (startIndex > 0) {
 				String moreText = String.format("↑ %d weitere (Scrollen)", startIndex);
-				context.drawText(textRenderer, moreText, textX, yOffset, 0x80FFFFFF, true);
+				context.text(textRenderer, moreText, textX, yOffset, 0x80FFFFFF, true);
 				yOffset += 12;
 			}
 			
@@ -596,7 +595,7 @@ public class EquipmentDisplayUtility {
 			// Zeige Scroll-Indikator wenn nötig
 			if (currentIndex < totalEntries) {
 				String moreText = String.format("↓ %d weitere (Scrollen)", totalEntries - currentIndex);
-				context.drawText(textRenderer, moreText, textX, yOffset, 0x80FFFFFF, true);
+				context.text(textRenderer, moreText, textX, yOffset, 0x80FFFFFF, true);
 			}
 		}
 	}
@@ -614,7 +613,7 @@ public class EquipmentDisplayUtility {
 	/**
 	 * Zeichnet einen einzelnen Statistik-Eintrag ohne Zeilenumbruch mit kleinerer Schrift
 	 */
-	private static void drawStatEntrySimple(DrawContext context, net.minecraft.client.font.TextRenderer textRenderer, Map.Entry<String, Double> entry, int x, int y, boolean isPercentage) {
+	private static void drawStatEntrySimple(GuiGraphicsExtractor context, net.minecraft.client.gui.Font textRenderer, Map.Entry<String, Double> entry, int x, int y, boolean isPercentage) {
 		double value = entry.getValue();
 		String formattedValue = formatNumber(value);
 		if (!isPercentage && value > 0) {
@@ -629,7 +628,7 @@ public class EquipmentDisplayUtility {
 
 		// Zeichne den Text mit konfigurierter Farbe
 		int textColor = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayTextColor.getRGB();
-		context.drawText(textRenderer, text, x, y, textColor, true);
+		context.text(textRenderer, text, x, y, textColor, true);
 	}
 	
 
@@ -639,13 +638,13 @@ public class EquipmentDisplayUtility {
 	/**
 	 * Extrahiert die Tooltip-Daten (Lore) direkt aus den NBT-Daten eines ItemStacks
 	 */
-	private static List<Text> getItemTooltip(ItemStack itemStack, PlayerEntity player) {
-		List<Text> tooltip = new ArrayList<>();
+	private static List<Component> getItemTooltip(ItemStack itemStack, Player player) {
+		List<Component> tooltip = new ArrayList<>();
 		// Füge den Item-Namen hinzu
-		tooltip.add(itemStack.getName());
+		tooltip.add(itemStack.getHoverName());
 
 		// Lese die Lore über die Data Component API (ab 1.21.7)
-		var loreComponent = itemStack.get(DataComponentTypes.LORE);
+		var loreComponent = itemStack.get(DataComponents.LORE);
 		if (loreComponent != null) {
 			tooltip.addAll(loreComponent.lines());
 		}

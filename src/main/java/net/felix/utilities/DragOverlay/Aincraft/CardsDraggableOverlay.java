@@ -2,12 +2,12 @@ package net.felix.utilities.DragOverlay.Aincraft;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.CardsStatuesUtility;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -17,7 +17,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 162;
     private static final int DEFAULT_HEIGHT = 62;
-    private static final Identifier CARDS_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/karten_background.png");
+    private static final Identifier CARDS_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/karten_background.png");
     
     @Override
     public String getOverlayName() {
@@ -31,10 +31,10 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().cardX;
         int baseX = screenWidth - xOffset;
         float scale = getScale();
@@ -43,10 +43,10 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getY() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().cardY;
         int baseY = screenHeight - yOffset;
         float scale = getScale();
@@ -65,11 +65,11 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return;
         
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         float scale = getScale();
         int textureOffset = Math.round(11 * scale);
         
@@ -92,13 +92,13 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // Use the same position calculation as the actual overlay (without -11 offset in position)
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) return;
         
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().cardX;
         int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().cardY;
         
@@ -111,7 +111,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f;
         
         // Use Matrix transformations for scaling (same as CardsStatuesUtility)
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Translate to position and scale from there (same as renderCardBackground line 72-73)
@@ -123,7 +123,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         
         if (overlayType == net.felix.utilities.Town.OverlayType.CUSTOM) {
             try {
-                context.drawTexture(
+                context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     CARDS_BACKGROUND_TEXTURE,
                     -11, -11, // Relative position (same as renderCardBackground line 80)
@@ -140,8 +140,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         
         // Render overlay name (scaled, relative to matrix)
         // Position is relative to the matrix, which is translated to baseX, baseY
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             getOverlayName(),
             -10, -10, // Relative position (for overlay name, approximate)
             0xFFFFFFFF,
@@ -165,7 +165,7 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         int borderHeight = Math.round(DEFAULT_HEIGHT * scale);
         
         // Use drawBorder like all other overlays for consistency
-        context.drawBorder(borderX, borderY, borderWidth, borderHeight, 0xFFFF0000);
+        context.outline(borderX, borderY, borderWidth, borderHeight, 0xFFFF0000);
     }
     
     @Override
@@ -181,8 +181,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Cards - Shows card information and levels");
+    public Component getTooltip() {
+        return Component.literal("Cards - Shows card information and levels");
     }
     
     @Override
@@ -201,8 +201,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
      * Render real card data if available, otherwise sample data
      * Uses scaled positioning with matrix transformations (same as CardsStatuesUtility)
      */
-    private void renderCardData(DrawContext context, float scale) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void renderCardData(GuiGraphicsExtractor context, float scale) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Text positions are relative to the matrix (0-based, same as CardsStatuesUtility line 523-524)
@@ -222,8 +222,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
                 }
                 
                 int textY = -1 + (lineCount * 12); // Same as CardsStatuesUtility line 514
-                context.drawText(
-                    client.textRenderer,
+                context.text(
+                    client.font,
                     cardName,
                     1, textY, // Same as CardsStatuesUtility line 523
                     0xFFFFFFFF,
@@ -233,8 +233,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
                 
                 if (currentCard.getLevel() != null) {
                     textY = -1 + (lineCount * 12);
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         "Stufe: " + currentCard.getLevel(),
                         1, textY, // Same as CardsStatuesUtility line 523
                         0xFFFFFFFF,
@@ -249,8 +249,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
                         effect = effect.substring(0, 22) + "...";
                     }
                     textY = -1 + (lineCount * 12);
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         effect,
                         1, textY, // Same as CardsStatuesUtility line 523
                         0xFF00FF00,
@@ -266,8 +266,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         
         // Render sample data if real data is not available (scaled, relative positions)
         int textY = -1 + (lineCount * 12);
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Kraft Karte",
             1, textY, // Same as CardsStatuesUtility line 523
             0xFFFFFFFF,
@@ -276,8 +276,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         lineCount++;
         
         textY = -1 + (lineCount * 12);
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Stufe: 5",
             1, textY, // Same as CardsStatuesUtility line 523
             0xFFFFFFFF,
@@ -286,8 +286,8 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         lineCount++;
         
         textY = -1 + (lineCount * 12);
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "+10% Schaden",
             1, textY, // Same as CardsStatuesUtility line 523
             0xFF00FF00,

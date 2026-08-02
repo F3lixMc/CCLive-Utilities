@@ -2,18 +2,18 @@ package net.felix.utilities.DragOverlay.Aincraft;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
 
     private static final int DEFAULT_WIDTH = 200;
     private static final int DEFAULT_HEIGHT = 100;
-    private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/blueprint_background.png");
+    private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/blueprint_background.png");
 
     @Override
     public String getOverlayName() {
@@ -22,9 +22,9 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
         int unscaledWidth = calculateUnscaledWidth();
         int baseX = screenWidth - DEFAULT_WIDTH - xOffset;
@@ -53,10 +53,10 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return;
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         int unscaledWidth = calculateUnscaledWidth();
         boolean isOnLeftSide = x < screenWidth / 2;
         int xOffset;
@@ -82,7 +82,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
         int width = getWidth();
@@ -90,7 +90,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerOverlayType;
         if (overlayType == net.felix.utilities.Town.OverlayType.CUSTOM) {
             try {
-                context.drawTexture(RenderPipelines.GUI_TEXTURED, BLUEPRINT_BACKGROUND_TEXTURE,
+                context.blit(RenderPipelines.GUI_TEXTURED, BLUEPRINT_BACKGROUND_TEXTURE,
                     x, y, 0.0f, 0.0f, width, height, width, height);
             } catch (Exception e) {
                 context.fill(x, y, x + width, y + height, 0x80000000);
@@ -98,8 +98,8 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         } else if (overlayType == net.felix.utilities.Town.OverlayType.BLACK) {
             context.fill(x, y, x + width, y + height, 0x80000000);
         }
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
-        context.drawText(MinecraftClient.getInstance().textRenderer, getOverlayName(), x + 5, y + 5, 0xFFFFFFFF, true);
+        context.outline(x, y, width, height, 0xFFFF0000);
+        context.text(Minecraft.getInstance().font, getOverlayName(), x + 5, y + 5, 0xFFFFFFFF, true);
         renderBlueprintData(context, x, y, width, height);
     }
 
@@ -114,8 +114,8 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public Text getTooltip() {
-        return Text.literal("Blueprint Viewer - Shows blueprint information and materials");
+    public Component getTooltip() {
+        return Component.literal("Blueprint Viewer - Shows blueprint information and materials");
     }
 
     @Override
@@ -147,14 +147,14 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     }
 
     private int calculateUnscaledWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return DEFAULT_WIDTH;
         BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
         if (rarityData == null || rarityData.items == null) return DEFAULT_WIDTH;
         int maxWidth = DEFAULT_WIDTH;
         for (String blueprint : rarityData.items) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            int textWidth = client.textRenderer.getWidth(displayText) + 45;
+            int textWidth = client.font.width(displayText) + 45;
             if (textWidth > maxWidth) maxWidth = textWidth;
         }
         return maxWidth - 15;
@@ -167,14 +167,14 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     }
 
     private int calculateDynamicWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return DEFAULT_WIDTH;
         BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
         if (rarityData == null || rarityData.items == null) return DEFAULT_WIDTH;
         int maxWidth = DEFAULT_WIDTH;
         for (String blueprint : rarityData.items) {
             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            int textWidth = client.textRenderer.getWidth(displayText) + 45;
+            int textWidth = client.font.width(displayText) + 45;
             if (textWidth > maxWidth) maxWidth = textWidth;
         }
         int baseWidth = maxWidth - 15;
@@ -192,8 +192,8 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         return (int) (totalHeight * scale);
     }
 
-    private void renderBlueprintData(DrawContext context, int x, int y, int width, int height) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void renderBlueprintData(GuiGraphicsExtractor context, int x, int y, int width, int height) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         try {
             BPViewerUtility instance = BPViewerUtility.getInstance();
@@ -204,7 +204,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
                     String currentRarity = instance.getCurrentRarity();
                     BPViewerUtility.BlueprintConfig.RarityData rarityData = floorData.blueprints.get(currentRarity);
                     if (rarityData != null && rarityData.items != null && !rarityData.items.isEmpty()) {
-                        context.drawText(client.textRenderer, currentRarity.toUpperCase(), x + 8, y + 20, getRarityColor(currentRarity), true);
+                        context.text(client.font, currentRarity.toUpperCase(), x + 8, y + 20, getRarityColor(currentRarity), true);
                         int blueprintY = y + 25;
                         int maxItems = Math.min(3, (height - 30) / 12);
                         int count = 0;
@@ -212,17 +212,17 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
                             if (count >= maxItems) break;
                             String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
                             int availableWidth = width - 16;
-                            int textWidth = client.textRenderer.getWidth(displayText);
+                            int textWidth = client.font.width(displayText);
                             if (textWidth > availableWidth) {
                                 int maxChars = (int) ((double) availableWidth / textWidth * displayText.length());
                                 displayText = maxChars > 3 ? displayText.substring(0, maxChars - 3) + "..." : "...";
                             }
-                            context.drawText(client.textRenderer, displayText, x + 8, blueprintY, 0xFFFFFFFF, true);
+                            context.text(client.font, displayText, x + 8, blueprintY, 0xFFFFFFFF, true);
                             blueprintY += 12;
                             count++;
                         }
                         if (rarityData.items.size() > maxItems) {
-                            context.drawText(client.textRenderer, "... and " + (rarityData.items.size() - maxItems) + " more", x + 8, blueprintY, 0xFF888888, true);
+                            context.text(client.font, "... and " + (rarityData.items.size() - maxItems) + " more", x + 8, blueprintY, 0xFF888888, true);
                         }
                         return;
                     }
@@ -231,23 +231,23 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         } catch (Exception e) {
             // Fall through to sample data
         }
-        context.drawText(client.textRenderer, "COMMON", x + 8, y + 5, 0xFFFFFFFF, true);
+        context.text(client.font, "COMMON", x + 8, y + 5, 0xFFFFFFFF, true);
         int blueprintY = y + 25;
         int maxItems = Math.min(3, (height - 30) / 12);
         String[] samples = {"Anfänger Hacke", "Anfänger Axt"};
         for (int i = 0; i < Math.min(maxItems, samples.length); i++) {
             String text = samples[i];
             int availableWidth = width - 16;
-            int textWidth = client.textRenderer.getWidth(text);
+            int textWidth = client.font.width(text);
             if (textWidth > availableWidth) {
                 int maxChars = (int) ((double) availableWidth / textWidth * text.length());
                 text = maxChars > 3 ? text.substring(0, maxChars - 3) + "..." : "...";
             }
-            context.drawText(client.textRenderer, text, x + 8, blueprintY, 0xFFFFFFFF, true);
+            context.text(client.font, text, x + 8, blueprintY, 0xFFFFFFFF, true);
             blueprintY += 12;
         }
         if (maxItems >= 3) {
-            context.drawText(client.textRenderer, "... and more", x + 8, blueprintY, 0xFF888888, true);
+            context.text(client.font, "... and more", x + 8, blueprintY, 0xFF888888, true);
         }
     }
 

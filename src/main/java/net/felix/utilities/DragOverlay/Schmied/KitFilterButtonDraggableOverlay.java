@@ -1,10 +1,10 @@
 package net.felix.utilities.DragOverlay.Schmied;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
@@ -97,9 +97,9 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
 
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int baseX = screenWidth - DEFAULT_WIDTH - 20;
         return baseX + getConfigX();
     }
@@ -125,9 +125,9 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
 
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return;
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int baseX = screenWidth - DEFAULT_WIDTH - 20;
         setConfigX(x - baseX);
         setConfigY(y - getBaseY());
@@ -142,8 +142,8 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
 
         int x = getX();
@@ -153,7 +153,7 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
         int scaledWidth = (int) (DEFAULT_WIDTH * scale);
         int scaledHeight = (int) (DEFAULT_HEIGHT * scale);
 
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
@@ -161,9 +161,9 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
         context.fill(0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT, 0xFF4B6A69);
 
         String buttonText = "Kit " + buttonIndex;
-        int textWidth = client.textRenderer.getWidth(buttonText);
-        context.drawText(
-            client.textRenderer,
+        int textWidth = client.font.width(buttonText);
+        context.text(
+            client.font,
             buttonText,
             (DEFAULT_WIDTH - textWidth) / 2,
             (DEFAULT_HEIGHT - 8) / 2,
@@ -172,7 +172,7 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
         );
 
         matrices.popMatrix();
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
 
     @Override
@@ -187,8 +187,8 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public Text getTooltip() {
-        return Text.literal("Kit Filter Button " + buttonIndex + " - Filter items by kit type and level");
+    public Component getTooltip() {
+        return Component.literal("Kit Filter Button " + buttonIndex + " - Filter items by kit type and level");
     }
 
     @Override

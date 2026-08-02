@@ -1,7 +1,5 @@
 package net.felix.mixin;
 
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -9,22 +7,24 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.felix.utilities.Overall.ActionBarData;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.network.chat.Component;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Factory.BossHPUtility;
-import net.felix.utilities.DragOverlay.ClipboardFarmzoneActionBar;
+import net.felix.utilities.Other.Clipboard.ClipboardFarmzoneActionBar;
 
 
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public class ActionBarMixin {
     
     @Shadow
-    private Text overlayMessage;
+    private Component overlayMessageString;
     
     @Shadow
-    private int overlayRemaining;
+    private int overlayMessageTime;
     
-    @Inject(at = @At("HEAD"), method = "setOverlayMessage(Lnet/minecraft/text/Text;Z)V")
-    private void onSetOverlayMessage(Text message, boolean animate, CallbackInfo ci) {
+    @Inject(at = @At("HEAD"), method = "setOverlayMessage(Lnet/minecraft/network/chat/Component;Z)V")
+    private void onSetOverlayMessage(Component message, boolean animate, CallbackInfo ci) {
         if (message != null) {
             String content = message.getString();
             

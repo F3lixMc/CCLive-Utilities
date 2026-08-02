@@ -1,10 +1,10 @@
 package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 
 /**
  * Draggable Overlay für das Aspect Overlay
@@ -21,10 +21,10 @@ public class AspectOverlayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX;
         return screenWidth - DEFAULT_WIDTH - xOffset;
     }
@@ -46,10 +46,10 @@ public class AspectOverlayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = screenWidth - DEFAULT_WIDTH - x;
         int yOffset = y;
         
@@ -58,7 +58,7 @@ public class AspectOverlayDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
         int width = getWidth();
@@ -70,11 +70,11 @@ public class AspectOverlayDraggableOverlay implements DraggableOverlay {
         }
         
         // Render border for edit mode
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.outline(x, y, width, height, 0xFFFF0000);
         
         // Render overlay name
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             getOverlayName(),
             x + 5, y + 5,
             0xFFFFFFFF,
@@ -82,24 +82,24 @@ public class AspectOverlayDraggableOverlay implements DraggableOverlay {
         );
         
         // Render sample text
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             "Aspect: Fire",
             x + 8, y + 25,
             0xFFFFFFFF,
             true
         );
         
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             "Description: Burns enemies",
             x + 8, y + 38,
             0xFFFFFFFF,
             true
         );
         
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             "Item: Fire Sword",
             x + 8, y + 51,
             0xFFFFFFFF,
@@ -119,8 +119,8 @@ public class AspectOverlayDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Aspect Overlay - Shows aspect information for blueprint items");
+    public Component getTooltip() {
+        return Component.literal("Aspect Overlay - Shows aspect information for blueprint items");
     }
     
     @Override

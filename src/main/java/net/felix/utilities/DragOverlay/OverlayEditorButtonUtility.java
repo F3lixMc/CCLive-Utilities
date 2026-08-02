@@ -1,11 +1,11 @@
 package net.felix.utilities.DragOverlay;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.text.Text;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
 
 /**
  * Utility für den F6-Button in Inventaren
@@ -23,12 +23,12 @@ public class OverlayEditorButtonUtility {
     /**
      * Rendert den F6-Button unten links im Inventar
      */
-    public static void renderButton(DrawContext context, HandledScreen<?> screen, int mouseX, int mouseY) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public static void renderButton(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int mouseX, int mouseY) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Berechne Position unten links
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         
         buttonX = BUTTON_PADDING;
         buttonY = screenHeight - BUTTON_HEIGHT - BUTTON_PADDING;
@@ -48,25 +48,25 @@ public class OverlayEditorButtonUtility {
         context.fill(buttonX, buttonY, buttonX + 1, buttonY + BUTTON_HEIGHT, borderColor); // Links
         context.fill(buttonX + BUTTON_WIDTH - 1, buttonY, buttonX + BUTTON_WIDTH, buttonY + BUTTON_HEIGHT, borderColor); // Rechts
         
-        // Button-Text: Hole den aktuellen Hotkey aus der KeyBinding
+        // Button-Text: Hole den aktuellen Hotkey aus der KeyMapping
         String hotkeyText = getOverlayEditorHotkeyText();
-        Text buttonText = Text.literal(hotkeyText);
-        int textX = buttonX + (BUTTON_WIDTH - client.textRenderer.getWidth(buttonText)) / 2;
-        int textY = buttonY + (BUTTON_HEIGHT - client.textRenderer.fontHeight) / 2;
-        context.drawText(client.textRenderer, buttonText, textX, textY, 0xFFFFFFFF, true);
+        Component buttonText = Component.literal(hotkeyText);
+        int textX = buttonX + (BUTTON_WIDTH - client.font.width(buttonText)) / 2;
+        int textY = buttonY + (BUTTON_HEIGHT - client.font.lineHeight) / 2;
+        context.text(client.font, buttonText, textX, textY, 0xFFFFFFFF, true);
         
         // Rendere Tooltip wenn Maus über Button ist
         if (isHovered) {
-            List<Text> tooltip = new ArrayList<>();
+            List<Component> tooltip = new ArrayList<>();
             
             // Berechne Breite beider Texte für Zentrierung
             String line1 = "Inventar";
             String line2 = "Overlay Editor";
-            int width1 = client.textRenderer.getWidth(line1);
-            int width2 = client.textRenderer.getWidth(line2);
+            int width1 = client.font.width(line1);
+            int width2 = client.font.width(line2);
             
             // Berechne die Breite eines Leerzeichens
-            int spaceWidth = client.textRenderer.getWidth(" ");
+            int spaceWidth = client.font.width(" ");
             
             // Zentriere "Inventar" über "Overlay Editor"
             // Berechne die Pixel-Differenz und konvertiere zu Leerzeichen
@@ -81,9 +81,9 @@ public class OverlayEditorButtonUtility {
             // Erstelle zentrierten Text mit Leerzeichen am Anfang und Ende
             String centeredLine1 = " ".repeat(Math.max(0, spacesBefore)) + line1 + " ".repeat(Math.max(0, spacesAfter));
             
-            tooltip.add(Text.literal(centeredLine1));
-            tooltip.add(Text.literal(line2));
-            context.drawTooltip(client.textRenderer, tooltip, mouseX, mouseY);
+            tooltip.add(Component.literal(centeredLine1));
+            tooltip.add(Component.literal(line2));
+            context.setComponentTooltipForNextFrame(client.font, tooltip, mouseX, mouseY);
         }
     }
     
@@ -109,13 +109,13 @@ public class OverlayEditorButtonUtility {
     /**
      * Prüft ob der Button sichtbar sein sollte
      */
-    public static boolean shouldShowButton(HandledScreen<?> screen) {
-        // Button wird in allen HandledScreens angezeigt (außer wenn F6-Menü bereits offen ist)
-        MinecraftClient client = MinecraftClient.getInstance();
+    public static boolean shouldShowButton(AbstractContainerScreen<?> screen) {
+        // Button wird in allen AbstractContainerScreens angezeigt (außer wenn F6-Menü bereits offen ist)
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return false;
         
         // Nicht anzeigen wenn F6-Menü bereits offen ist
-        if (client.currentScreen instanceof OverlayEditorScreen) {
+        if (client.screen instanceof OverlayEditorScreen) {
             return false;
         }
         
@@ -127,7 +127,7 @@ public class OverlayEditorButtonUtility {
      * @return Formatierter Hotkey-Text (z.B. "F6")
      */
     private static String getOverlayEditorHotkeyText() {
-        net.minecraft.client.option.KeyBinding keyBinding = OverlayEditorUtility.getOverlayEditorKeyBinding();
+        net.minecraft.client.KeyMapping keyBinding = OverlayEditorUtility.getOverlayEditorKeyMapping();
         if (keyBinding == null) {
             return "F6"; // Fallback
         }
@@ -135,7 +135,7 @@ public class OverlayEditorButtonUtility {
         try {
             // Verwende getBoundKeyLocalizedText() um den aktuellen Hotkey-Text zu bekommen
             // Dies funktioniert auch nach Änderungen in der Config
-            net.minecraft.text.Text localizedText = keyBinding.getBoundKeyLocalizedText();
+            net.minecraft.network.chat.Component localizedText = keyBinding.getTranslatedKeyMessage();
             if (localizedText != null) {
                 String hotkeyString = localizedText.getString();
                 // Entferne mögliche Formatierungs-Codes

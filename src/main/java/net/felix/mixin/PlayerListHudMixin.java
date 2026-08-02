@@ -1,11 +1,11 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.PlayerListHud;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerTabOverlay;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,31 +18,31 @@ import java.util.UUID;
 /**
  * Mixin to add the CCLive-Utilities icon next to player names in the tab list.
  */
-@Mixin(PlayerListHud.class)
+@Mixin(PlayerTabOverlay.class)
 public abstract class PlayerListHudMixin {
     
     @Shadow
     @Final
-    private MinecraftClient client;
+    private Minecraft minecraft;
     
     /**
      * Render icon after the player name text (right side).
      * This uses the renderLatencyIcon method as a hook point and calculates position from name width.
      */
     @Inject(
-        method = "renderLatencyIcon",
+        method = "extractPingIcon",
         at = @At("RETURN")
     )
     private void renderIconAfterPlayerName(
-        DrawContext context,
+        GuiGraphicsExtractor context,
         int width,
         int x,
         int y,
-        PlayerListEntry entry,
+        PlayerInfo entry,
         CallbackInfo ci
     ) {
         try {
-            if (entry == null || client == null || client.player == null || client.textRenderer == null) {
+            if (entry == null || minecraft == null || minecraft.player == null || minecraft.font == null) {
                 return;
             }
             
@@ -50,15 +50,15 @@ public abstract class PlayerListHudMixin {
                 return;
             }
             
-            UUID playerUuid = entry.getProfile().getId();
+            UUID playerUuid = entry.getProfile().id();
             
             // Only show icon for players who have the mod installed
             boolean shouldShowIcon = PlayerIconUtility.hasMod(playerUuid);
             
             if (shouldShowIcon) {
                 // Get player display name to calculate text width
-                Text playerName = entry.getDisplayName();
-                int nameWidth = client.textRenderer.getWidth(playerName);
+                Component playerName = entry.getTabListDisplayName();
+                int nameWidth = minecraft.font.width(playerName);
                 
                 // In the tab list, the name is typically rendered at a fixed x position
                 // The x parameter passed to renderLatencyIcon is where the latency icon is rendered

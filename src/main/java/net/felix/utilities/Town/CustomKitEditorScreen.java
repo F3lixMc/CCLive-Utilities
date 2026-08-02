@@ -3,19 +3,19 @@ package net.felix.utilities.Town;
 import net.felix.utilities.ItemViewer.ItemData;
 import net.felix.utilities.ItemViewer.ItemViewerGrid;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Collections;
@@ -33,9 +33,9 @@ public class CustomKitEditorScreen extends Screen {
     private static final int PADDING = 15;
     private static final int EXTRA_SIZE = 2;
     private static final Identifier KITS_BACKGROUND_TEXTURE =
-            Identifier.of("cclive-utilities", "textures/gui/kits_background.png");
-    private static final Text EMPTY_ITEM_SLOT_TOOLTIP =
-            Text.literal("Klicke mit der linken Maustaste auf ein Item, um es auszuwählen");
+            Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/kits_background.png");
+    private static final Component EMPTY_ITEM_SLOT_TOOLTIP =
+            Component.literal("Klicke mit der linken Maustaste auf ein Item, um es auszuwählen");
     private static final int ICON_PICKER_COLUMNS = 3;
     private static final int ICON_PICKER_ROWS = 5;
     private static final int ICON_PICKER_GAP = 10;
@@ -66,16 +66,16 @@ public class CustomKitEditorScreen extends Screen {
 
     private final int buttonIndex;
     private final Screen returnScreen;
-    private final HandledScreen<?> itemViewerScreen;
+    private final AbstractContainerScreen<?> itemViewerScreen;
     private final CustomKit kit;
     private final boolean editingExisting;
 
-    private TextFieldWidget nameField;
-    private ButtonWidget doneButton;
-    private ButtonWidget cancelButton;
-    private ButtonWidget deleteButton;
-    private ButtonWidget confirmDeleteButton;
-    private ButtonWidget confirmCancelDialogButton;
+    private EditBox nameField;
+    private Button doneButton;
+    private Button cancelButton;
+    private Button deleteButton;
+    private Button confirmDeleteButton;
+    private Button confirmCancelDialogButton;
     private boolean showDeleteConfirmation = false;
 
     private PickTarget pickTarget = PickTarget.ADD_ITEM;
@@ -97,8 +97,8 @@ public class CustomKitEditorScreen extends Screen {
     private boolean hoveredEmptyItemSlot = false;
     private String hoveredPresetIconName = null;
 
-    public CustomKitEditorScreen(int buttonIndex, Screen returnScreen, HandledScreen<?> itemViewerScreen) {
-        super(Text.literal("Eigenes Kit"));
+    public CustomKitEditorScreen(int buttonIndex, Screen returnScreen, AbstractContainerScreen<?> itemViewerScreen) {
+        super(Component.literal("Eigenes Kit"));
         this.buttonIndex = buttonIndex;
         this.returnScreen = returnScreen;
         this.itemViewerScreen = itemViewerScreen;
@@ -106,8 +106,8 @@ public class CustomKitEditorScreen extends Screen {
         this.editingExisting = false;
     }
 
-    public CustomKitEditorScreen(int buttonIndex, Screen returnScreen, HandledScreen<?> itemViewerScreen, CustomKit existing) {
-        super(Text.literal("Eigenes Kit"));
+    public CustomKitEditorScreen(int buttonIndex, Screen returnScreen, AbstractContainerScreen<?> itemViewerScreen, CustomKit existing) {
+        super(Component.literal("Eigenes Kit"));
         this.buttonIndex = buttonIndex;
         this.returnScreen = returnScreen;
         this.itemViewerScreen = itemViewerScreen;
@@ -144,11 +144,11 @@ public class CustomKitEditorScreen extends Screen {
 
         int nameFieldX = gridStartX + GRID_SPACING;
         int nameFieldWidth = (GRID_COLUMNS - 1) * GRID_SPACING - 2;
-        nameField = new TextFieldWidget(this.textRenderer, nameFieldX, gridStartY + 1, nameFieldWidth, SLOT_SIZE - 2, Text.literal("Kit-Name"));
+        nameField = new EditBox(this.font, nameFieldX, gridStartY + 1, nameFieldWidth, SLOT_SIZE - 2, Component.literal("Kit-Name"));
         nameField.setMaxLength(64);
-        nameField.setText(kit.name);
+        nameField.setValue(kit.name);
         nameField.setFocused(false);
-        this.addDrawableChild(nameField);
+        this.addRenderableWidget(nameField);
 
         int buttonY = this.height - 30;
         int buttonWidth = 70;
@@ -157,30 +157,30 @@ public class CustomKitEditorScreen extends Screen {
             int totalWidth = buttonWidth * 3 + buttonGap * 2;
             int startX = (this.width - totalWidth) / 2;
 
-            deleteButton = ButtonWidget.builder(Text.literal("Löschen"), button -> openDeleteConfirmation())
-                    .dimensions(startX, buttonY, buttonWidth, 20)
+            deleteButton = Button.builder(Component.literal("Löschen"), button -> openDeleteConfirmation())
+                    .bounds(startX, buttonY, buttonWidth, 20)
                     .build();
-            this.addDrawableChild(deleteButton);
+            this.addRenderableWidget(deleteButton);
 
-            doneButton = ButtonWidget.builder(Text.literal("Fertig"), button -> onDone())
-                    .dimensions(startX + buttonWidth + buttonGap, buttonY, buttonWidth, 20)
+            doneButton = Button.builder(Component.literal("Fertig"), button -> onDone())
+                    .bounds(startX + buttonWidth + buttonGap, buttonY, buttonWidth, 20)
                     .build();
-            this.addDrawableChild(doneButton);
+            this.addRenderableWidget(doneButton);
 
-            cancelButton = ButtonWidget.builder(Text.literal("Abbrechen"), button -> onCancel())
-                    .dimensions(startX + (buttonWidth + buttonGap) * 2, buttonY, buttonWidth, 20)
+            cancelButton = Button.builder(Component.literal("Abbrechen"), button -> onCancel())
+                    .bounds(startX + (buttonWidth + buttonGap) * 2, buttonY, buttonWidth, 20)
                     .build();
-            this.addDrawableChild(cancelButton);
+            this.addRenderableWidget(cancelButton);
         } else {
-            doneButton = ButtonWidget.builder(Text.literal("Fertig"), button -> onDone())
-                    .dimensions(this.width / 2 - 100, buttonY, 80, 20)
+            doneButton = Button.builder(Component.literal("Fertig"), button -> onDone())
+                    .bounds(this.width / 2 - 100, buttonY, 80, 20)
                     .build();
-            this.addDrawableChild(doneButton);
+            this.addRenderableWidget(doneButton);
 
-            cancelButton = ButtonWidget.builder(Text.literal("Abbrechen"), button -> onCancel())
-                    .dimensions(this.width / 2 + 20, buttonY, 80, 20)
+            cancelButton = Button.builder(Component.literal("Abbrechen"), button -> onCancel())
+                    .bounds(this.width / 2 + 20, buttonY, 80, 20)
                     .build();
-            this.addDrawableChild(cancelButton);
+            this.addRenderableWidget(cancelButton);
         }
 
         ItemViewerUtility.startKitEditorMode(itemViewerScreen, this::onItemPickedFromViewer);
@@ -225,19 +225,19 @@ public class CustomKitEditorScreen extends Screen {
                 && mouseY >= nameField.getY() && mouseY < nameField.getY() + nameField.getHeight();
     }
 
-    private void renderDimBackground(DrawContext context) {
+    private void renderDimBackground(GuiGraphicsExtractor context) {
         context.fill(0, 0, this.width, this.height, 0xA0101010);
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         ItemViewerUtility.updateMousePosition(mouseX, mouseY);
 
         renderDimBackground(context);
 
         try {
-            context.drawTexture(
+            context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     KITS_BACKGROUND_TEXTURE,
                     panelX, panelY,
@@ -249,7 +249,7 @@ public class CustomKitEditorScreen extends Screen {
             context.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xE0202020);
         }
 
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 20, 0xFFFFFF);
+        context.centeredText(this.font, this.title, this.width / 2, 20, 0xFFFFFF);
 
         hoveredSlotItem = null;
         hoveredEmptyItemSlot = false;
@@ -260,7 +260,7 @@ public class CustomKitEditorScreen extends Screen {
         renderSlot(context, iconSlotX, iconSlotY, pickTarget == PickTarget.ICON, iconHovered);
         ItemStack iconStack = kit.createIconStack();
         if (!iconStack.isEmpty()) {
-            context.drawItem(iconStack, iconSlotX + 1, iconSlotY + 1, 0);
+            context.item(iconStack, iconSlotX + 1, iconSlotY + 1, 0);
         }
         if (iconHovered) {
             hoveredSlotItem = resolveItemData(kit.iconItemName);
@@ -276,7 +276,7 @@ public class CustomKitEditorScreen extends Screen {
             renderDeleteConfirmationDialog(context);
         }
 
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         if (!showDeleteConfirmation) {
             ItemViewerUtility.renderKitEditorItemViewer(context, client, mouseX, mouseY);
@@ -286,21 +286,21 @@ public class CustomKitEditorScreen extends Screen {
             ItemViewerGrid.updateAspectOverlayForItem(hoveredSlotItem);
             ItemViewerGrid.renderItemTooltip(context, hoveredSlotItem, mouseX, mouseY);
         } else if (!showDeleteConfirmation && hoveredPresetIconName != null) {
-            context.drawTooltip(
-                    this.textRenderer,
-                    Collections.singletonList(Text.literal(hoveredPresetIconName)),
+            context.setComponentTooltipForNextFrame(
+                    this.font,
+                    Collections.singletonList(Component.literal(hoveredPresetIconName)),
                     mouseX,
                     mouseY
             );
         } else if (!showDeleteConfirmation && hoveredEmptyItemSlot) {
-            context.drawTooltip(this.textRenderer, Collections.singletonList(EMPTY_ITEM_SLOT_TOOLTIP), mouseX, mouseY);
+            context.setComponentTooltipForNextFrame(this.font, Collections.singletonList(EMPTY_ITEM_SLOT_TOOLTIP), mouseX, mouseY);
         }
     }
 
-    private void renderIconPicker(DrawContext context, int mouseX, int mouseY) {
+    private void renderIconPicker(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         hoveredPresetIconName = null;
         try {
-            context.drawTexture(
+            context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     KITS_BACKGROUND_TEXTURE,
                     iconPickerX, iconPickerY,
@@ -323,9 +323,9 @@ public class CustomKitEditorScreen extends Screen {
             renderSlot(context, slotX, slotY, selected, hovered);
 
             ItemStack stack = new ItemStack(PRESET_ICON_ITEMS[i]);
-            context.drawItem(stack, slotX + 1, slotY + 1, 0);
+            context.item(stack, slotX + 1, slotY + 1, 0);
             if (hovered) {
-                hoveredPresetIconName = stack.getName().getString();
+                hoveredPresetIconName = stack.getHoverName().getString();
             }
         }
     }
@@ -334,7 +334,7 @@ public class CustomKitEditorScreen extends Screen {
         if (item == null || kit.iconItemId == null) {
             return false;
         }
-        Identifier presetId = Registries.ITEM.getId(item);
+        Identifier presetId = BuiltInRegistries.ITEM.getKey(item);
         Identifier kitId = Identifier.tryParse(kit.iconItemId);
         if (kitId == null) {
             return false;
@@ -348,7 +348,7 @@ public class CustomKitEditorScreen extends Screen {
         if (item == null) {
             return;
         }
-        kit.iconItemId = Registries.ITEM.getId(item).toString();
+        kit.iconItemId = BuiltInRegistries.ITEM.getKey(item).toString();
         kit.iconItemName = null;
         clearIconFocus();
     }
@@ -385,7 +385,7 @@ public class CustomKitEditorScreen extends Screen {
         return ItemViewerUtility.findItemByNameFuzzy(itemName);
     }
 
-    private void renderItemList(DrawContext context, int mouseX, int mouseY) {
+    private void renderItemList(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         int maxItems = GRID_COLUMNS * (GRID_ROWS - 1);
         int[] pos = new int[2];
         for (int i = 0; i < kit.itemNames.size(); i++) {
@@ -396,7 +396,7 @@ public class CustomKitEditorScreen extends Screen {
 
             ItemStack itemStack = kit.createItemDisplayStack(kit.itemNames.get(i));
             if (!itemStack.isEmpty()) {
-                context.drawItem(itemStack, pos[0] + 1, pos[1] + 1, 0);
+                context.item(itemStack, pos[0] + 1, pos[1] + 1, 0);
             }
             if (hovered) {
                 hoveredSlotItem = resolveItemData(kit.itemNames.get(i));
@@ -414,7 +414,7 @@ public class CustomKitEditorScreen extends Screen {
         }
     }
 
-    private void renderSlot(DrawContext context, int x, int y, boolean selected, boolean hovered) {
+    private void renderSlot(GuiGraphicsExtractor context, int x, int y, boolean selected, boolean hovered) {
         int bg = selected ? 0xFF00AA00 : (hovered ? 0xFFFFFFFF : 0xFF808080);
         context.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, bg);
         int border = selected ? 0xFF006600 : 0xFF000000;
@@ -425,9 +425,12 @@ public class CustomKitEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (showDeleteConfirmation) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubled);
         }
 
         if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
@@ -501,29 +504,35 @@ public class CustomKitEditorScreen extends Screen {
             }
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubled);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double deltaX, double deltaY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
             if (ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 return true;
             }
         }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     private void onDone() {
-        String name = nameField.getText().trim();
+        String name = nameField.getValue().trim();
         kit.name = name.isEmpty() ? "Neues Kit" : name;
 
         if (editingExisting) {
@@ -550,10 +559,10 @@ public class CustomKitEditorScreen extends Screen {
 
     private void initDeleteConfirmationButtons() {
         if (confirmDeleteButton != null) {
-            this.remove(confirmDeleteButton);
+            this.removeWidget(confirmDeleteButton);
         }
         if (confirmCancelDialogButton != null) {
-            this.remove(confirmCancelDialogButton);
+            this.removeWidget(confirmCancelDialogButton);
         }
 
         int boxWidth = 220;
@@ -566,17 +575,17 @@ public class CustomKitEditorScreen extends Screen {
         int buttonsY = boxY + boxHeight - buttonHeight - 12;
         int buttonsStartX = boxX + (boxWidth - (buttonWidth * 2 + buttonGap)) / 2;
 
-        confirmDeleteButton = ButtonWidget.builder(Text.literal("Löschen"), button -> performDelete())
-                .dimensions(buttonsStartX, buttonsY, buttonWidth, buttonHeight)
+        confirmDeleteButton = Button.builder(Component.literal("Löschen"), button -> performDelete())
+                .bounds(buttonsStartX, buttonsY, buttonWidth, buttonHeight)
                 .build();
-        confirmCancelDialogButton = ButtonWidget.builder(Text.literal("Abbrechen"), button -> closeDeleteConfirmation())
-                .dimensions(buttonsStartX + buttonWidth + buttonGap, buttonsY, buttonWidth, buttonHeight)
+        confirmCancelDialogButton = Button.builder(Component.literal("Abbrechen"), button -> closeDeleteConfirmation())
+                .bounds(buttonsStartX + buttonWidth + buttonGap, buttonsY, buttonWidth, buttonHeight)
                 .build();
-        this.addDrawableChild(confirmDeleteButton);
-        this.addDrawableChild(confirmCancelDialogButton);
+        this.addRenderableWidget(confirmDeleteButton);
+        this.addRenderableWidget(confirmCancelDialogButton);
     }
 
-    private void renderDeleteConfirmationDialog(DrawContext context) {
+    private void renderDeleteConfirmationDialog(GuiGraphicsExtractor context) {
         context.fill(0, 0, this.width, this.height, 0xC0000000);
 
         int boxWidth = 220;
@@ -584,23 +593,23 @@ public class CustomKitEditorScreen extends Screen {
         int boxX = (this.width - boxWidth) / 2;
         int boxY = (this.height - boxHeight) / 2;
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF202020);
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.outline(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
 
         String question = "Wirklich Löschen?";
-        int textWidth = this.textRenderer.getWidth(question);
+        int textWidth = this.font.width(question);
         int textX = boxX + (boxWidth - textWidth) / 2;
         int textY = boxY + 14;
-        context.drawText(this.textRenderer, question, textX, textY, 0xFFFFFFFF, true);
+        context.text(this.font, question, textX, textY, 0xFFFFFFFF, true);
     }
 
     private void closeDeleteConfirmation() {
         showDeleteConfirmation = false;
         if (confirmDeleteButton != null) {
-            this.remove(confirmDeleteButton);
+            this.removeWidget(confirmDeleteButton);
             confirmDeleteButton = null;
         }
         if (confirmCancelDialogButton != null) {
-            this.remove(confirmCancelDialogButton);
+            this.removeWidget(confirmCancelDialogButton);
             confirmCancelDialogButton = null;
         }
         setEditorWidgetsVisible(true);
@@ -638,7 +647,7 @@ public class CustomKitEditorScreen extends Screen {
 
     private void closeToReturnScreen() {
         ItemViewerUtility.stopKitEditorMode();
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null && returnScreen != null) {
             if (returnScreen instanceof KitSelectionScreen kitScreen) {
                 kitScreen.switchToCustomTab();
@@ -647,12 +656,15 @@ public class CustomKitEditorScreen extends Screen {
             }
             client.setScreen(returnScreen);
         } else {
-            this.close();
+            this.onClose();
         }
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             if (showDeleteConfirmation) {
                 closeDeleteConfirmation();
@@ -664,17 +676,17 @@ public class CustomKitEditorScreen extends Screen {
         if (ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         ItemViewerUtility.stopKitEditorMode();
-        super.close();
+        super.onClose();
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 

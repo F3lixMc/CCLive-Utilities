@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.minecraft.client.gui.hud.ChatHud;
+import net.minecraft.client.gui.components.ChatComponent;
 import org.spongepowered.asm.mixin.Mixin;
 
 /**
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
  * NOTE: This mixin is currently disabled in mixins.json due to method signature changes in Minecraft 1.21.7.
  * To re-enable, find the correct addMessage method signature and update the @Inject annotation.
  */
-@Mixin(ChatHud.class)
+@Mixin(ChatComponent.class)
 public abstract class ChatHudAddMessageMixin {
     
     /**

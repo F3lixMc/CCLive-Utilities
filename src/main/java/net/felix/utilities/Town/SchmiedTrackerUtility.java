@@ -1,25 +1,29 @@
 package net.felix.utilities.Town;
 
+import net.felix.utilities.Overall.KeyCategories;
+
+import net.minecraft.resources.Identifier;
+
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
-import net.minecraft.item.ItemStack;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +54,7 @@ public class SchmiedTrackerUtility {
 	
 	// Frame Toggle State
 	private static boolean framesVisible = true; // Standardmäßig sichtbar
-	private static KeyBinding toggleFramesKeyBinding;
+	private static KeyMapping toggleFramesKeyMapping;
 	
 	// Schmied-Typen und ihre Konfigurationsschlüssel
 	private static final Map<String, String> SMITHING_CONFIG_KEYS = new HashMap<>();
@@ -140,11 +144,11 @@ public class SchmiedTrackerUtility {
 	 * Registriert den Hotkey zum Togglen der Rahmen
 	 */
 	private static void registerHotkey() {
-		toggleFramesKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		toggleFramesKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.toggle-schmied-frames",
-			InputUtil.Type.KEYSYM,
+			InputConstants.Type.KEYSYM,
 			GLFW.GLFW_KEY_F7, // Standard: F7
-			"category.cclive-utilities.schmied"
+			KeyCategories.of("cclive-utilities", "schmied")
 		));
 	}
 	
@@ -153,10 +157,10 @@ public class SchmiedTrackerUtility {
 	 */
 
 
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Prüfe ob der Hotkey zum Togglen der Rahmen gedrückt wurde
 		// Dies sollte IMMER geprüft werden, unabhängig von der Config, damit der Toggle funktioniert
-		if (toggleFramesKeyBinding != null && toggleFramesKeyBinding.wasPressed()) {
+		if (toggleFramesKeyMapping != null && toggleFramesKeyMapping.consumeClick()) {
 			framesVisible = !framesVisible;
 		}
 		
@@ -167,14 +171,14 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 		
-		if (client.player == null || client.currentScreen == null) {
+		if (client.player == null || client.screen == null) {
 			isInDisassembleChest = false;
 			slotColors.clear();
 			return;
 		}
 
 		// Überprüfe ob wir in einem "Zerlegen" Kisteninventar sind
-		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+		if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			String cleanTitle = cleanInventoryTitle(title);
 			
@@ -242,7 +246,7 @@ public class SchmiedTrackerUtility {
 		wasInBlueprintInventory = isInBlueprintInventory;
 	}
 
-	private static void updateSlotColors(HandledScreen<?> screen, MinecraftClient client) {
+	private static void updateSlotColors(AbstractContainerScreen<?> screen, Minecraft client) {
 		slotColors.clear();
 		
 		// Prüfe ob Schmiedezustände in Ausrüstungs-Menüs angezeigt werden sollen
@@ -268,16 +272,16 @@ public class SchmiedTrackerUtility {
 		
 		// Prüfe die entsprechenden Slots
 		for (int slotIndex = startSlot; slotIndex <= endSlot; slotIndex++) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack itemStack = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
 				
 				if (!itemStack.isEmpty()) {
 					// Hole die Tooltip-Daten des Items
-					List<Text> lore = getItemTooltip(itemStack, client.player);
+					List<Component> lore = getItemTooltip(itemStack, client.player);
 					
 					// Prüfe auf Schmied-Typen
-					for (Text text : lore) {
+					for (Component text : lore) {
 						String line = text.getString();
 						for (Map.Entry<String, String> entry : SMITHING_CONFIG_KEYS.entrySet()) {
 							if (line.contains(entry.getKey())) {
@@ -298,13 +302,13 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Extrahiert die Tooltip-Daten (Lore) direkt aus den NBT-Daten eines ItemStacks
 	 */
-	private static List<Text> getItemTooltip(ItemStack itemStack, PlayerEntity player) {
-		List<Text> tooltip = new ArrayList<>();
+	private static List<Component> getItemTooltip(ItemStack itemStack, Player player) {
+		List<Component> tooltip = new ArrayList<>();
 		// Füge den Item-Namen hinzu
-		tooltip.add(itemStack.getName());
+		tooltip.add(itemStack.getHoverName());
 
 		// Lese die Lore über die Data Component API (ab 1.21.7)
-		var loreComponent = itemStack.get(DataComponentTypes.LORE);
+		var loreComponent = itemStack.get(DataComponents.LORE);
 		if (loreComponent != null) {
 			tooltip.addAll(loreComponent.lines());
 		}
@@ -408,12 +412,12 @@ public class SchmiedTrackerUtility {
 	 * Weiße Unicode-Zeichen 㔞㔟㔠㔡㔢㔣㔤㔥㔦㔧㔨㔩㔪㔫㔬㔭㔮㔯㔰㔱㔲㔳㔴㔵㔶㔷㔸㔹㔺㔻㔼㔽㔾㔿㕀㕁㕂㕃㕄 bedeuten, dass das Item NICHT craftbar ist.
 	 * Diese Items werden vom Hide Uncraftable Button ausgeblendet.
 	 */
-	private static boolean isUnicodeWhite(net.minecraft.text.Style style) {
+	private static boolean isUnicodeWhite(net.minecraft.network.chat.Style style) {
 		if (style == null || style.getColor() == null) {
 			return true; // Keine Farbe = weiß (uncraftbar)
 		}
 		
-		int colorRgb = style.getColor().getRgb();
+		int colorRgb = style.getColor().getValue();
 		
 		// Spezifische Farben die NICHT weiß sind (craftbar)
 		if (colorRgb == 0x00FFFF) { // Türkis
@@ -431,12 +435,12 @@ public class SchmiedTrackerUtility {
 	 * Farbige Unicode-Zeichen 㔞㔟㔠㔡㔢㔣㔤㔥㔦㔧㔨㔩㔪㔫㔬㔭㔮㔯㔰㔱㔲㔳㔴㔵㔶㔷㔸㔹㔺㔻㔼㔽㔾㔿㕀㕁㕂㕃㕄 bedeuten, dass das Item craftbar ist.
 	 * Diese Items werden vom Hide Uncraftable Button NICHT ausgeblendet.
 	 */
-	private static boolean isUnicodeCyan(net.minecraft.text.Style style) {
+	private static boolean isUnicodeCyan(net.minecraft.network.chat.Style style) {
 		if (style == null || style.getColor() == null) {
 			return false; // Keine Farbe = nicht farbig
 		}
 		
-		int colorRgb = style.getColor().getRgb();
+		int colorRgb = style.getColor().getValue();
 		
 		// Spezifische Erkennung für Türkis (0x00FFFF) = craftbar
 		if (colorRgb == 0x00FFFF) {
@@ -459,7 +463,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Findet automatisch die Blueprint-Slots im Inventar
 	 */
-	private static List<Integer> findBlueprintSlots(HandledScreen<?> screen) {
+	private static List<Integer> findBlueprintSlots(AbstractContainerScreen<?> screen) {
 		List<Integer> blueprintSlots = new ArrayList<>();
 		
 		// NEUE LOGIK: Nur Blueprint-Slots (Kisteninventar) berücksichtigen
@@ -476,12 +480,12 @@ public class SchmiedTrackerUtility {
 		
 		// Durchsuche nur die Blueprint-Slots nach Items mit Unicode-Indikatoren
 		for (int slotIndex : blueprintSlotRanges) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack itemStack = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
 				
 				if (!itemStack.isEmpty()) {
-					String itemName = itemStack.getName().getString();
+					String itemName = itemStack.getHoverName().getString();
 					// Prüfe ob das Item Unicode-Indikatoren hat (Blueprint-Item)
 					if (hasCraftingUnicodeIndicators(itemName)) {
 						blueprintSlots.add(slotIndex);
@@ -493,7 +497,7 @@ public class SchmiedTrackerUtility {
 		// Falls keine Blueprint-Items gefunden wurden, verwende alle Standard-Slots
 		if (blueprintSlots.isEmpty()) {
 			for (int slotIndex : blueprintSlotRanges) {
-				if (slotIndex < screen.getScreenHandler().slots.size()) {
+				if (slotIndex < screen.getMenu().slots.size()) {
 					blueprintSlots.add(slotIndex);
 				}
 			}
@@ -548,8 +552,8 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Aktualisiert die Button-Position basierend auf dem Screen
 	 */
-	private static void updateButtonPosition(HandledScreen<?> screen, MinecraftClient client) {
-		int screenWidth = client.getWindow().getScaledWidth();
+	private static void updateButtonPosition(AbstractContainerScreen<?> screen, Minecraft client) {
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Standard-Position in der oberen rechten Ecke des Bildschirms
 		int baseX = screenWidth - buttonWidth - 20;
@@ -563,12 +567,12 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Aktualisiert die Position des Hide Wrong Class Buttons basierend auf der Bildschirmgröße
 	 */
-	private static void updateWrongClassButtonPosition(HandledScreen<?> screen, MinecraftClient client) {
+	private static void updateWrongClassButtonPosition(AbstractContainerScreen<?> screen, Minecraft client) {
 		if (client.getWindow() == null) {
 			return;
 		}
 		
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Standard-Position in der oberen rechten Ecke des Bildschirms
 		int baseX = screenWidth - buttonWidth - 20;
@@ -582,7 +586,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Aktualisiert die Items in den Blueprint-Slots basierend auf dem Hide Uncraftable Status
 	 */
-	private static void updateBlueprintItems(HandledScreen<?> screen, MinecraftClient client) {
+	private static void updateBlueprintItems(AbstractContainerScreen<?> screen, Minecraft client) {
 		if (!hideUncraftableActive) {
 			restoreOriginalItems(screen);
 			return;
@@ -593,9 +597,9 @@ public class SchmiedTrackerUtility {
 		int[] targetSlots = blueprintSlots.stream().mapToInt(Integer::intValue).toArray();
 		
 		for (int slotIndex : targetSlots) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack itemStack = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
 				
 				if (!itemStack.isEmpty()) {
 					// Speichere das originale Item falls noch nicht gespeichert
@@ -611,30 +615,30 @@ public class SchmiedTrackerUtility {
 						ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
 						
 						// Kopiere die ursprünglichen Komponenten für Tooltips
-						blackConcrete.set(DataComponentTypes.CUSTOM_NAME, itemStack.get(DataComponentTypes.CUSTOM_NAME));
-						blackConcrete.set(DataComponentTypes.LORE, itemStack.get(DataComponentTypes.LORE));
+						blackConcrete.set(DataComponents.CUSTOM_NAME, itemStack.get(DataComponents.CUSTOM_NAME));
+						blackConcrete.set(DataComponents.LORE, itemStack.get(DataComponents.LORE));
 						
 					// Füge einen Hinweis zum Custom Name hinzu, dass das Item ausgeblendet wurde
-					var customName = blackConcrete.get(DataComponentTypes.CUSTOM_NAME);
+					var customName = blackConcrete.get(DataComponents.CUSTOM_NAME);
 					if (customName != null) {
 						// Füge den Hinweis zum bestehenden Namen hinzu
 						String originalName = customName.getString();
 						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
 						if (!originalName.contains("[Ausgeblendet]")) {
-							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+							Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
 						}
 					} else {
 						// Erstelle einen neuen Custom Name mit Hinweis
-						String originalName = itemStack.getName().getString();
+						String originalName = itemStack.getHoverName().getString();
 						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
 						if (!originalName.contains("[Ausgeblendet]")) {
-							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+							Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
 						}
 					}
 						
-						slot.setStack(blackConcrete);
+						slot.setByPlayer(blackConcrete);
 					}
 				}
 			}
@@ -646,7 +650,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Stellt die originalen Items wieder her
 	 */
-	private static void restoreOriginalItems(HandledScreen<?> screen) {
+	private static void restoreOriginalItems(AbstractContainerScreen<?> screen) {
 		if (screen == null) {
 			originalItems.clear();
 			return;
@@ -659,12 +663,12 @@ public class SchmiedTrackerUtility {
 			int slotIndex = entry.getKey();
 			ItemStack originalItem = entry.getValue();
 			
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
 				// Prüfe ob der Slot noch den schwarzen Betonblock enthält
-				ItemStack currentItem = slot.getStack();
+				ItemStack currentItem = slot.getItem();
 				if (currentItem.getItem() == Items.BLACK_CONCRETE) {
-					slot.setStack(originalItem);
+					slot.setByPlayer(originalItem);
 				}
 			}
 		}
@@ -676,10 +680,10 @@ public class SchmiedTrackerUtility {
 	 */
 	private static boolean isWrongClass(ItemStack itemStack) {
 		try {
-			var loreComponent = itemStack.get(DataComponentTypes.LORE);
+			var loreComponent = itemStack.get(DataComponents.LORE);
 			if (loreComponent != null) {
-				List<Text> lore = loreComponent.lines();
-				for (Text loreText : lore) {
+				List<Component> lore = loreComponent.lines();
+				for (Component loreText : lore) {
 					String loreString = loreText.getString();
 					// Prüfe ob der Text "Nicht für deine Klasse geeignet!" enthält (Farbe ist egal)
 					if (loreString.contains("Nicht für deine Klasse geeignet!")) {
@@ -696,7 +700,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Aktualisiert die Items in den Blueprint-Slots basierend auf dem Hide Wrong Class Status
 	 */
-	private static void updateBlueprintItemsWrongClass(HandledScreen<?> screen, MinecraftClient client) {
+	private static void updateBlueprintItemsWrongClass(AbstractContainerScreen<?> screen, Minecraft client) {
 		if (!hideWrongClassActive) {
 			restoreOriginalItemsWrongClass(screen);
 			return;
@@ -707,9 +711,9 @@ public class SchmiedTrackerUtility {
 		int[] targetSlots = blueprintSlots.stream().mapToInt(Integer::intValue).toArray();
 		
 		for (int slotIndex : targetSlots) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack itemStack = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
 				
 				if (!itemStack.isEmpty()) {
 					// Speichere das originale Item falls noch nicht gespeichert
@@ -725,26 +729,26 @@ public class SchmiedTrackerUtility {
 						ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
 						
 						// Kopiere die ursprünglichen Komponenten für Tooltips
-						blackConcrete.set(DataComponentTypes.CUSTOM_NAME, itemStack.get(DataComponentTypes.CUSTOM_NAME));
-						blackConcrete.set(DataComponentTypes.LORE, itemStack.get(DataComponentTypes.LORE));
+						blackConcrete.set(DataComponents.CUSTOM_NAME, itemStack.get(DataComponents.CUSTOM_NAME));
+						blackConcrete.set(DataComponents.LORE, itemStack.get(DataComponents.LORE));
 						
 						// Füge einen Hinweis zum Custom Name hinzu, dass das Item ausgeblendet wurde
-						var customName = blackConcrete.get(DataComponentTypes.CUSTOM_NAME);
+						var customName = blackConcrete.get(DataComponents.CUSTOM_NAME);
 						if (customName != null) {
 							String originalName = customName.getString();
 							if (!originalName.contains("[Ausgeblendet]")) {
-								Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-								blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+								Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+								blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
 							}
 						} else {
-							String originalName = itemStack.getName().getString();
+							String originalName = itemStack.getHoverName().getString();
 							if (!originalName.contains("[Ausgeblendet]")) {
-								Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-								blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+								Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+								blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
 							}
 						}
 						
-						slot.setStack(blackConcrete);
+						slot.setByPlayer(blackConcrete);
 					}
 				}
 			}
@@ -754,7 +758,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Stellt die originalen Items wieder her (für Hide Wrong Class)
 	 */
-	private static void restoreOriginalItemsWrongClass(HandledScreen<?> screen) {
+	private static void restoreOriginalItemsWrongClass(AbstractContainerScreen<?> screen) {
 		if (screen == null) {
 			originalItemsWrongClass.clear();
 			return;
@@ -767,12 +771,12 @@ public class SchmiedTrackerUtility {
 			int slotIndex = entry.getKey();
 			ItemStack originalItem = entry.getValue();
 			
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
 				// Prüfe ob der Slot noch den schwarzen Betonblock enthält
-				ItemStack currentItem = slot.getStack();
+				ItemStack currentItem = slot.getItem();
 				if (currentItem.getItem() == Items.BLACK_CONCRETE) {
-					slot.setStack(originalItem);
+					slot.setByPlayer(originalItem);
 				}
 			}
 		}
@@ -789,7 +793,7 @@ public class SchmiedTrackerUtility {
 			// Items ohne Glint Effekt werden ausgeblendet (uncraftbar)
 			
 			// Prüfe ob das Item einen Glint Effekt hat
-			boolean hasGlint = itemStack.hasGlint();
+			boolean hasGlint = itemStack.hasFoil();
 			
 			// true = nicht ausblenden (craftbar), false = ausblenden (uncraftbar)
 			return hasGlint;
@@ -804,7 +808,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Rendert farbige Rahmen oder Hintergrund um Items (wird vom Mixin aufgerufen)
 	 */
-	public static void renderColoredFrames(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
+	public static void renderColoredFrames(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int screenX, int screenY) {
 		if (!isInDisassembleChest) {
 			return;
 		}
@@ -825,8 +829,8 @@ public class SchmiedTrackerUtility {
 			// (inklusive Regenbogen-Effekt für Sternengeschmiedet wenn aktiviert)
 			
 			// Hole die Slot-Position direkt aus dem ScreenHandler
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
 				
 				// Berechne die absolute Position auf dem Bildschirm
 				int slotX = screenX + slot.x;
@@ -851,7 +855,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Prüft ob wir im "Bauplan [Shop]" Menü sind
 	 */
-	private static boolean isInBlueprintShop(HandledScreen<?> screen) {
+	private static boolean isInBlueprintShop(AbstractContainerScreen<?> screen) {
 		if (screen == null) return false;
 		String title = screen.getTitle().getString();
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
@@ -862,7 +866,7 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Rendert den Hide Uncraftable Button (wird vom Mixin aufgerufen)
 	 */
-	public static void renderHideUncraftableButton(DrawContext context, HandledScreen<?> screen) {
+	public static void renderHideUncraftableButton(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen) {
 		if (!isInBlueprintInventory || !CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled) {
 			return;
 		}
@@ -872,7 +876,7 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) return;
 		
 		// Get scale
@@ -883,7 +887,7 @@ public class SchmiedTrackerUtility {
 		int unscaledHeight = buttonHeight;
 		
 		// Use Matrix transformations for scaling
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Translate to position and scale from there
@@ -903,9 +907,9 @@ public class SchmiedTrackerUtility {
 		// Button-Text (scaled, relative to matrix)
 		String buttonText = hideUncraftableActive ? "Show All" : "Hide Uncraftable";
 		int textColor = 0xFF404040; // Dunkelgrau
-		int textX = (unscaledWidth - client.textRenderer.getWidth(buttonText)) / 2;
+		int textX = (unscaledWidth - client.font.width(buttonText)) / 2;
 		int textY = (unscaledHeight - 8) / 2;
-		context.drawText(client.textRenderer, buttonText, textX, textY, textColor, false);
+		context.text(client.font, buttonText, textX, textY, textColor, false);
 		
 		matrices.popMatrix();
 	}
@@ -918,8 +922,8 @@ public class SchmiedTrackerUtility {
 			return false;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 			// Hide Uncraftable Button soll nicht im "Bauplan [Shop]" Menü funktionieren
 			if (isInBlueprintShop(handledScreen)) {
 				return false;
@@ -938,7 +942,7 @@ public class SchmiedTrackerUtility {
 			hideUncraftableActive = !hideUncraftableActive;
 			
 			// Aktualisiere die Items basierend auf dem neuen Status
-			if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+			if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 				if (hideUncraftableActive) {
 					updateBlueprintItems(handledScreen, client);
 				} else {
@@ -955,13 +959,13 @@ public class SchmiedTrackerUtility {
 	/**
 	 * Rendert den Hide Wrong Class Button (wird vom Mixin aufgerufen)
 	 */
-	public static void renderHideWrongClassButton(DrawContext context, HandledScreen<?> screen) {
+	public static void renderHideWrongClassButton(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen) {
 		if (!isInBlueprintInventory || !CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled || 
 		    !CCLiveUtilitiesConfig.HANDLER.instance().showHideWrongClassButton) {
 			return;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) return;
 		
 		// Get scale
@@ -972,7 +976,7 @@ public class SchmiedTrackerUtility {
 		int unscaledHeight = buttonHeight;
 		
 		// Use Matrix transformations for scaling
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Translate to position and scale from there
@@ -992,9 +996,9 @@ public class SchmiedTrackerUtility {
 		// Button-Text (scaled, relative to matrix)
 		String buttonText = hideWrongClassActive ? "Show All" : "Hide wrong class";
 		int textColor = 0xFF404040; // Dunkelgrau
-		int textX = (unscaledWidth - client.textRenderer.getWidth(buttonText)) / 2;
+		int textX = (unscaledWidth - client.font.width(buttonText)) / 2;
 		int textY = (unscaledHeight - 8) / 2;
-		context.drawText(client.textRenderer, buttonText, textX, textY, textColor, false);
+		context.text(client.font, buttonText, textX, textY, textColor, false);
 		
 		matrices.popMatrix();
 	}
@@ -1019,8 +1023,8 @@ public class SchmiedTrackerUtility {
 			hideWrongClassActive = !hideWrongClassActive;
 			
 			// Aktualisiere die Items basierend auf dem neuen Status
-			MinecraftClient client = MinecraftClient.getInstance();
-			if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+			Minecraft client = Minecraft.getInstance();
+			if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 				if (hideWrongClassActive) {
 					updateBlueprintItemsWrongClass(handledScreen, client);
 				} else {
@@ -1057,7 +1061,7 @@ public class SchmiedTrackerUtility {
 		try {
 			// Check if F7 is pressed (default key for toggling frames)
 			// Note: This checks the default key, not the configured key binding
-			// For full support of custom key bindings, we'd need to check the KeyBinding's bound key
+			// For full support of custom key bindings, we'd need to check the KeyMapping's bound key
 			if (keyCode == GLFW.GLFW_KEY_F7) {
 				framesVisible = !framesVisible;
 				return true;
@@ -1073,13 +1077,13 @@ public class SchmiedTrackerUtility {
 	 */
 	public static String debugItemEnchantmentDetection(ItemStack itemStack) {
 		StringBuilder debug = new StringBuilder();
-		debug.append("Item: ").append(Registries.ITEM.getId(itemStack.getItem())).append("\n");
+		debug.append("Item: ").append(BuiltInRegistries.ITEM.getKey(itemStack.getItem())).append("\n");
 		debug.append("Verbesserte Unicode-Erkennung aktiviert: ").append(CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableUseImprovedDetection).append("\n");
 		debug.append("Normale Unicode-Erkennung aktiviert: ").append(CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableUseUnicodeDetection).append("\n");
 		
 		try {
 			// Prüfe auf Enchantment Glint (Glanz-Effekt)
-			boolean hasGlint = itemStack.hasEnchantments();
+			boolean hasGlint = itemStack.isEnchanted();
 			debug.append("hasEnchantments(): ").append(hasGlint).append("\n");
 			
 			// Prüfe auf spezielle Komponenten die auf Verzauberungen hindeuten
@@ -1088,10 +1092,10 @@ public class SchmiedTrackerUtility {
 			debug.append("getEnchantments(): ").append(hasEnchantments).append("\n");
 			
 			// Prüfe auf Lore die Verzauberungen anzeigt
-			var loreComponent = itemStack.get(DataComponentTypes.LORE);
+			var loreComponent = itemStack.get(DataComponents.LORE);
 			if (loreComponent != null) {
 				debug.append("Lore gefunden:\n");
-				for (Text line : loreComponent.lines()) {
+				for (Component line : loreComponent.lines()) {
 					String lineText = line.getString();
 					debug.append("  - ").append(lineText).append("\n");
 				}
@@ -1100,7 +1104,7 @@ public class SchmiedTrackerUtility {
 			}
 			
 			// Prüfe auf Custom Name der auf Verzauberungen hindeutet
-			var customName = itemStack.get(DataComponentTypes.CUSTOM_NAME);
+			var customName = itemStack.get(DataComponents.CUSTOM_NAME);
 			if (customName != null) {
 				String nameText = customName.getString();
 				debug.append("Custom Name: ").append(nameText).append("\n");
@@ -1147,7 +1151,7 @@ public class SchmiedTrackerUtility {
 					// Farberkennung
 					var formatting = customName.getStyle();
 					if (formatting != null && formatting.getColor() != null) {
-						int colorRgb = formatting.getColor().getRgb();
+						int colorRgb = formatting.getColor().getValue();
 						debug.append("Textfarbe: 0x").append(Integer.toHexString(colorRgb).toUpperCase()).append("\n");
 						
 						boolean isWhiteColor = isUnicodeWhite(formatting);

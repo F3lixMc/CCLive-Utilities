@@ -2,10 +2,10 @@ package net.felix.mixin;
 
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Town.StarForgedSoundUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Mixin to intercept GameMessageS2CPacket before it reaches the chat.
  * This allows us to modify messages with hover events and prevent the original from showing.
  */
-@Mixin(ClientPlayNetworkHandler.class)
+@Mixin(ClientPacketListener.class)
 public abstract class ClientPlayNetworkHandlerTestMixin {
     
     /**
@@ -23,11 +23,11 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
      * Cancels the original packet and sends a modified version instead.
      */
     @Inject(
-        method = "onGameMessage",
+        method = "handleSystemChat",
         at = @At("HEAD"),
         cancellable = true
     )
-    private void onGameMessage(GameMessageS2CPacket packet, CallbackInfo ci) {
+    private void onGameMessage(ClientboundSystemChatPacket packet, CallbackInfo ci) {
         if (packet != null) {
             StarForgedSoundUtility.handleIncomingMessage(packet.content(), packet.overlay());
         }
@@ -36,7 +36,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
             return;
         }
         
-        Text originalMessage = packet.content();
+        Component originalMessage = packet.content();
         if (originalMessage == null) {
             return;
         }
@@ -56,7 +56,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         if (originalMessage.getStyle() != null && originalMessage.getStyle().getHoverEvent() != null) {
             hasHover = true;
         }
-        for (Text sibling : originalMessage.getSiblings()) {
+        for (Component sibling : originalMessage.getSiblings()) {
             if (sibling.getStyle() != null && sibling.getStyle().getHoverEvent() != null) {
                 hasHover = true;
                 break;
@@ -75,7 +75,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         }
         
         // Try to modify the message with aspect info
-        Text modified = InformationenUtility.modifyChatMessageForAspectInfo(originalMessage);
+        Component modified = InformationenUtility.modifyChatMessageForAspectInfo(originalMessage);
         
         if (modified == null) {
             return;
@@ -87,12 +87,18 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         
         // Cancel the original packet FIRST to prevent it from being processed
         ci.cancel();
-        
-        // Add our modified message to the chat AFTER cancelling
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.inGameHud != null && client.inGameHud.getChatHud() != null) {
-            client.inGameHud.getChatHud().addMessage(modified);
+
+        // handleSystemChat kann auf dem Netty-Thread laufen – Chat/GUI nur auf dem Render-Thread anfassen
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return;
         }
+        Component messageToAdd = modified;
+        client.execute(() -> {
+            if (client.gui != null && client.gui.getChat() != null) {
+                client.gui.getChat().addClientSystemMessage(messageToAdd);
+            }
+        });
     }
 }
 

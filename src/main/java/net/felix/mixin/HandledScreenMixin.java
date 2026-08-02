@@ -1,10 +1,12 @@
 package net.felix.mixin;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,24 +14,24 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(HandledScreen.class)
+@Mixin(AbstractContainerScreen.class)
 public abstract class HandledScreenMixin {
     
-    @Shadow protected int x;
-    @Shadow protected int y;
-    @Shadow protected int backgroundWidth;
-    @Shadow protected int backgroundHeight;
+    @Shadow protected int leftPos;
+    @Shadow protected int topPos;
+    @Shadow protected int imageWidth;
+    @Shadow protected int imageHeight;
     
     /**
      * Injects at the very end of the render method to ensure our overlays are drawn last
      * This preserves all normal rendering while ensuring our overlays appear above tooltips
      */
-    @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
         
         // Überspringe InventoryScreen - wird im ScreenMixin behandelt, um Doppel-Rendering zu vermeiden
-        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen) {
+        if (screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
             return;
         }
         
@@ -46,10 +48,10 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Other.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Render Clipboard Overlay (wenn aktiviert)
-        net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+        net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
         
         // Render Clipboard Button Tooltips
-        net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
+        net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
         
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
@@ -94,7 +96,7 @@ public abstract class HandledScreenMixin {
         
         // Item-Info-Overlay (nicht registrierte Baupläne / Angel-Komponenten markieren)
         if (net.felix.utilities.Aincraft.ItemInfoUtility.isSupportedInventory(screen)) {
-            net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, x, y);
+            net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, leftPos, topPos);
         }
         
         // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
@@ -110,7 +112,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Rendere Help-Overlay ganz am Ende, damit es über allem liegt (wie im Blueprint Shop)
-        // Wird sowohl hier als auch in InGameHudHelpOverlayMixin gerendert, um sicherzustellen, dass es überall funktioniert
+        // Wird sowohl hier als auch in GuiHelpOverlayMixin gerendert, um sicherzustellen, dass es überall funktioniert
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
             net.felix.utilities.ItemViewer.ItemViewerUtility.renderHelpOverlay(context);
         }
@@ -125,10 +127,10 @@ public abstract class HandledScreenMixin {
     /**
      * Rendert den Item Viewer Overlay
      */
-    private void renderItemViewer(DrawContext context, int mouseX, int mouseY) {
+    private void renderItemViewer(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
-            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
             
             // Rendere Item-Viewer (wird nur gerendert wenn sichtbar)
             net.felix.utilities.ItemViewer.ItemViewerUtility.renderItemViewerInScreen(context, client, screen, mouseX, mouseY);
@@ -140,10 +142,10 @@ public abstract class HandledScreenMixin {
     /**
      * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory or Essence Harvester UI (Glyph "㮌")
      */
-    private void renderMKLevelOverlay(DrawContext context) {
+    private void renderMKLevelOverlay(GuiGraphicsExtractor context) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
-            net.minecraft.text.Text titleText = screen.getTitle();
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
+            net.minecraft.network.chat.Component titleText = screen.getTitle();
             
             // Prüfe direkt auf dem Text-Objekt (bevor getPlainTextFromText Unicode-Zeichen entfernt)
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
@@ -153,7 +155,7 @@ public abstract class HandledScreenMixin {
             // Verwende titleWithUnicode für die Glyph-Prüfung, da getPlainTextFromText Unicode entfernt
             if (ZeichenUtility.isMkLevelInventoryTitle(titlePlain, titleWithUnicode)) {
                 // Get actual inventory dimensions from the screen using shadow fields
-                net.felix.utilities.Overall.InformationenUtility.renderMKLevelOverlay(context, net.minecraft.client.MinecraftClient.getInstance(), x, y, backgroundWidth, backgroundHeight);
+                net.felix.utilities.Overall.InformationenUtility.renderMKLevelOverlay(context, net.minecraft.client.Minecraft.getInstance(), leftPos, topPos, imageWidth, imageHeight);
             }
         } catch (Exception e) {
             // Ignore rendering errors
@@ -163,8 +165,8 @@ public abstract class HandledScreenMixin {
     /**
      * Blockiert Tooltips wenn das Hilfe-Overlay offen ist (wie im Bauplan-Shop)
      */
-    @Inject(method = "getTooltipFromItem", at = @At("HEAD"), cancellable = true)
-    private void blockTooltipsFromItem(net.minecraft.item.ItemStack stack, CallbackInfoReturnable<java.util.List<net.minecraft.text.Text>> cir) {
+    @Inject(method = "getTooltipFromContainerItem", at = @At("HEAD"), cancellable = true)
+    private void blockTooltipsFromItem(net.minecraft.world.item.ItemStack stack, CallbackInfoReturnable<java.util.List<net.minecraft.network.chat.Component>> cir) {
         // Blockiere Tooltips wenn das Hilfe-Overlay offen ist
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
             cir.setReturnValue(java.util.Collections.emptyList());
@@ -175,11 +177,11 @@ public abstract class HandledScreenMixin {
      * Blockiert das Rendern der Items in InventoryScreen, wenn das Hilfe-Overlay offen ist
      * Injiziert in die drawSlot-Methode, um das Rendern der Items zu blockieren
      */
-    @Inject(method = "drawSlot", at = @At("HEAD"), cancellable = true)
-    private void blockSlotRenderingInInventoryScreen(DrawContext context, Slot slot, CallbackInfo ci) {
-        HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+    @Inject(method = "extractSlot", at = @At("HEAD"), cancellable = true)
+    private void blockSlotRenderingInInventoryScreen(GuiGraphicsExtractor context, Slot slot, int x, int y, CallbackInfo ci) {
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
         // Blockiere das Rendern der Items nur für InventoryScreen, wenn das Hilfe-Overlay offen ist
-        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen && 
+        if (screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen && 
             net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
             ci.cancel();
         }
@@ -190,7 +192,10 @@ public abstract class HandledScreenMixin {
      * Injects into mouseClicked to handle clicks on the Hide Uncraftable button
      */
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
         // Dies muss vor allen anderen Klicks geprüft werden
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
@@ -210,7 +215,7 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
         
         // Handle clicks on Clipboard Overlay buttons (inkl. Delete-Button)
-        if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {
+        if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {
             cir.setReturnValue(true);
             return;
         }
@@ -219,7 +224,7 @@ public abstract class HandledScreenMixin {
         // Dies wird bereits in handleButtonClick behandelt, aber wir müssen sicherstellen, dass es auch außerhalb von Screens funktioniert
         
         // Handle clicks on Clipboard quantity text field
-        if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, button)) {
+        if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, button)) {
             cir.setReturnValue(true);
             return;
         }
@@ -262,7 +267,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Handle clicks on MKLevel search bar and scrollbar - pass screen position directly from mixin (@Shadow fields)
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, x, y, backgroundHeight)) {
+        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
         
@@ -272,31 +277,34 @@ public abstract class HandledScreenMixin {
         }
 
         // Legend+-Sammler: Ressourcen vor Linksklick auf [Sammler] merken
-        HandledScreen<?> legendPlusScreen = (HandledScreen<?>) (Object) this;
-        net.felix.utilities.DragOverlay.LegendPlusSammlerCollector.handleMouseClick(
-                legendPlusScreen, mouseX, mouseY, button, x, y);
+        AbstractContainerScreen<?> legendPlusScreen = (AbstractContainerScreen<?>) (Object) this;
+        net.felix.utilities.Other.Clipboard.LegendPlusSammlerCollector.handleMouseClick(
+                legendPlusScreen, mouseX, mouseY, button, leftPos, topPos);
 
         // Amboss/Schmelzofen: Ressourcen aus Lager-Tooltip bei Linksklick addieren
-        net.felix.utilities.DragOverlay.AnvilFurnaceLagerCollector.handleMouseClick(
-                legendPlusScreen, mouseX, mouseY, button, x, y);
+        net.felix.utilities.Other.Clipboard.AnvilFurnaceLagerCollector.handleMouseClick(
+                legendPlusScreen, mouseX, mouseY, button, leftPos, topPos);
 
         // Kosten-Inventare: Kauf-Kosten merken und nach Klick ggf. abziehen
-        net.felix.utilities.DragOverlay.ClipboardCostPurchaseTracker.handleMouseClick(
-                legendPlusScreen, mouseX, mouseY, button, x, y);
+        net.felix.utilities.Other.Clipboard.ClipboardCostPurchaseTracker.handleMouseClick(
+                legendPlusScreen, mouseX, mouseY, button, leftPos, topPos);
     }
     
     /**
      * Handles mouse dragging for MKLevel scrollbar
      */
     @Inject(method = "mouseDragged", at = @At("HEAD"), cancellable = true)
-    private void onMouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseDragged(MouseButtonEvent event, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
             if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
             }
         }
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarDrag(mouseX, mouseY, button, x, y, backgroundHeight)) {
+        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
     }
@@ -305,7 +313,10 @@ public abstract class HandledScreenMixin {
      * Handles mouse release to stop scrollbar dragging
      */
     @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
-    private void onMouseReleased(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseReleased(MouseButtonEvent event, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
             return;
@@ -319,13 +330,13 @@ public abstract class HandledScreenMixin {
     /**
      * Renders colored frames around smithing states
      */
-    private void renderSmithingFrames(DrawContext context) {
+    private void renderSmithingFrames(GuiGraphicsExtractor context) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Call the SchmiedTrackerUtility to render colored frames
             // This will handle all the logic for determining which slots need frames and what colors to use
-            net.felix.utilities.Town.SchmiedTrackerUtility.renderColoredFrames(context, screen, x, y);
+            net.felix.utilities.Town.SchmiedTrackerUtility.renderColoredFrames(context, screen, leftPos, topPos);
             
         } catch (Exception e) {
             // Ignore rendering errors
@@ -335,9 +346,9 @@ public abstract class HandledScreenMixin {
     /**
      * Renders the Hide Uncraftable button
      */
-    private void renderHideUncraftableButton(DrawContext context) {
+    private void renderHideUncraftableButton(GuiGraphicsExtractor context) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Call the SchmiedTrackerUtility to render the Hide Uncraftable button
             net.felix.utilities.Town.SchmiedTrackerUtility.renderHideUncraftableButton(context, screen);
@@ -363,9 +374,9 @@ public abstract class HandledScreenMixin {
     /**
      * Renders the Hide Wrong Class button
      */
-    private void renderHideWrongClassButton(DrawContext context) {
+    private void renderHideWrongClassButton(GuiGraphicsExtractor context) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Call the SchmiedTrackerUtility to render the Hide Wrong Class button
             net.felix.utilities.Town.SchmiedTrackerUtility.renderHideWrongClassButton(context, screen);
@@ -393,41 +404,41 @@ public abstract class HandledScreenMixin {
      */
     private void captureTooltipPosition(int mouseX, int mouseY) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Find the hovered slot
             Slot hoveredSlot = null;
-            for (Slot slot : screen.getScreenHandler().slots) {
-                if (slot.x + x <= mouseX && mouseX < slot.x + x + 16 &&
-                    slot.y + y <= mouseY && mouseY < slot.y + y + 16) {
+            for (Slot slot : screen.getMenu().slots) {
+                if (slot.x + leftPos <= mouseX && mouseX < slot.x + leftPos + 16 &&
+                    slot.y + topPos <= mouseY && mouseY < slot.y + topPos + 16) {
                     hoveredSlot = slot;
                     break;
                 }
             }
             
-            if (hoveredSlot != null && hoveredSlot.hasStack()) {
-                ItemStack stack = hoveredSlot.getStack();
+            if (hoveredSlot != null && hoveredSlot.hasItem()) {
+                ItemStack stack = hoveredSlot.getItem();
                 if (stack != null && !stack.isEmpty()) {
-                    net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-                    if (client != null && client.textRenderer != null) {
+                    net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+                    if (client != null && client.font != null) {
                         // Get tooltip lines using reflection to access protected method
                         try {
-                            java.lang.reflect.Method getTooltipMethod = HandledScreen.class.getDeclaredMethod("getTooltipFromItem", net.minecraft.client.MinecraftClient.class, ItemStack.class);
+                            java.lang.reflect.Method getTooltipMethod = net.minecraft.client.gui.screens.Screen.class.getDeclaredMethod("getTooltipFromItem", net.minecraft.client.Minecraft.class, ItemStack.class);
                             getTooltipMethod.setAccessible(true);
                             @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.text.Text> tooltip = (java.util.List<net.minecraft.text.Text>) getTooltipMethod.invoke(screen, client, stack);
+                            java.util.List<net.minecraft.network.chat.Component> tooltip = (java.util.List<net.minecraft.network.chat.Component>) getTooltipMethod.invoke(screen, client, stack);
                             
                             if (tooltip != null && !tooltip.isEmpty()) {
                                 // Calculate tooltip dimensions
                                 int tooltipWidth = 0;
-                                for (net.minecraft.text.Text line : tooltip) {
-                                    int lineWidth = client.textRenderer.getWidth(line);
+                                for (net.minecraft.network.chat.Component line : tooltip) {
+                                    int lineWidth = client.font.width(line);
                                     tooltipWidth = Math.max(tooltipWidth, lineWidth);
                                 }
                                 
                                 // Add padding (Minecraft uses 3 pixels on each side)
                                 tooltipWidth += 6;
-                                int tooltipHeight = tooltip.size() * (client.textRenderer.fontHeight + 2) + 4;
+                                int tooltipHeight = tooltip.size() * (client.font.lineHeight + 2) + 4;
                                 
                                 // Calculate tooltip position (Minecraft positions it near the mouse)
                                 // Tooltip is typically positioned to the right and above the mouse cursor
@@ -435,8 +446,8 @@ public abstract class HandledScreenMixin {
                                 int tooltipY = mouseY - 12;
                                 
                                 // Adjust if tooltip would go off screen (Minecraft does this automatically)
-                                int screenWidth = client.getWindow().getScaledWidth();
-                                int screenHeight = client.getWindow().getScaledHeight();
+                                int screenWidth = client.getWindow().getGuiScaledWidth();
+                                int screenHeight = client.getWindow().getGuiScaledHeight();
                                 
                                 if (tooltipX + tooltipWidth > screenWidth) {
                                     tooltipX = mouseX - tooltipWidth - 12;
@@ -454,10 +465,10 @@ public abstract class HandledScreenMixin {
                         } catch (Exception e) {
                             // If reflection fails, try alternative approach
                             // Calculate approximate tooltip size based on item name
-                            net.minecraft.text.Text itemName = stack.getName();
+                            net.minecraft.network.chat.Component itemName = stack.getHoverName();
                             if (itemName != null) {
-                                int tooltipWidth = client.textRenderer.getWidth(itemName) + 6;
-                                int tooltipHeight = client.textRenderer.fontHeight + 4;
+                                int tooltipWidth = client.font.width(itemName) + 6;
+                                int tooltipHeight = client.font.lineHeight + 4;
                                 
                                 int tooltipX = mouseX + 12;
                                 int tooltipY = mouseY - 12;
@@ -476,20 +487,20 @@ public abstract class HandledScreenMixin {
     /**
      * Updates the hovered slot for Item Viewer (für Clipboard-Pin-Funktion)
      */
-    private void updateHoveredSlotForItemViewer(HandledScreen<?> screen, int mouseX, int mouseY) {
+    private void updateHoveredSlotForItemViewer(AbstractContainerScreen<?> screen, int mouseX, int mouseY) {
         try {
             // Get the hovered slot by checking all slots manually (gleiche Logik wie updateAspectOverlay)
             Slot hoveredSlot = null;
-            for (Slot slot : screen.getScreenHandler().slots) {
-                if (slot.x + x <= mouseX && mouseX < slot.x + x + 16 &&
-                    slot.y + y <= mouseY && mouseY < slot.y + y + 16) {
+            for (Slot slot : screen.getMenu().slots) {
+                if (slot.x + leftPos <= mouseX && mouseX < slot.x + leftPos + 16 &&
+                    slot.y + topPos <= mouseY && mouseY < slot.y + topPos + 16) {
                     hoveredSlot = slot;
                     break;
                 }
             }
             
             // Debug: Nur wenn in Bauplan-Inventar und Slot gefunden
-            if (hoveredSlot != null && hoveredSlot.hasStack() && isBlueprintInventory()) {
+            if (hoveredSlot != null && hoveredSlot.hasItem() && isBlueprintInventory()) {
                 // System.out.println("[ClipboardPin-DEBUG] 📍 Slot-Tracking: Slot gefunden (Index: " + hoveredSlot.id + ", Maus: " + mouseX + "," + mouseY + ", Screen: " + x + "," + y + ")");
             }
             
@@ -505,39 +516,39 @@ public abstract class HandledScreenMixin {
      */
     private void updateAspectOverlay(int mouseX, int mouseY) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Get the hovered slot by checking all slots manually
             Slot hoveredSlot = null;
-            for (Slot slot : screen.getScreenHandler().slots) {
-                if (slot.x + x <= mouseX && mouseX < slot.x + x + 16 &&
-                    slot.y + y <= mouseY && mouseY < slot.y + y + 16) {
+            for (Slot slot : screen.getMenu().slots) {
+                if (slot.x + leftPos <= mouseX && mouseX < slot.x + leftPos + 16 &&
+                    slot.y + topPos <= mouseY && mouseY < slot.y + topPos + 16) {
                     hoveredSlot = slot;
                     break;
                 }
             }
             
-            // Check if we're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
-            // The tooltip callback manages the lifecycle of "⭐" items
-            boolean isHoveringStarItem = net.felix.utilities.Overall.Aspekte.AspectOverlay.isCurrentlyHovering();
-            
-            // If we're hovering over a "⭐" item, don't override it with blueprint item detection
-            // But we still need to check if we're still hovering over a slot
-            if (isHoveringStarItem) {
-                // If we're not hovering over any slot, clear the overlay immediately
-                // This ensures the overlay disappears as soon as we move away from the item
-                if (hoveredSlot == null || !hoveredSlot.hasStack()) {
+            // Star items (⭐) only — not Item Viewer / blueprint hover (lastTooltipUpdateTime == -1)
+            if (net.felix.utilities.Overall.Aspekte.AspectOverlay.isStarItemHovering()) {
+                if (hoveredSlot == null || !hoveredSlot.hasItem()) {
                     net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
                 }
                 return;
             }
+
+            // Item Viewer owns aspect state while hovering a viewer item (refreshed later this frame).
+            // Clearing here caused a one-frame flicker and then a dead overlay when tooltip caching
+            // skipped re-applying the same hovered ItemData.
+            if (net.felix.utilities.ItemViewer.ItemViewerUtility.hasItemViewerHover()) {
+                return;
+            }
             
             // Handle blueprint items
-            if (hoveredSlot != null && hoveredSlot.hasStack()) {
-                ItemStack itemStack = hoveredSlot.getStack();
+            if (hoveredSlot != null && hoveredSlot.hasItem()) {
+                ItemStack itemStack = hoveredSlot.getItem();
                 if (itemStack != null && !itemStack.isEmpty()) {
                     // Check if the item name contains Epic colors - if so, don't show overlay
-                    net.minecraft.text.Text itemNameText = itemStack.getName();
+                    net.minecraft.network.chat.Component itemNameText = itemStack.getHoverName();
                     if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
                         net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
                         return;
@@ -563,7 +574,7 @@ public abstract class HandledScreenMixin {
     /**
      * Renders the aspect overlay
      */
-    private void renderAspectOverlay(DrawContext context) {
+    private void renderAspectOverlay(GuiGraphicsExtractor context) {
         try {
             net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
         } catch (Exception e) {
@@ -576,7 +587,7 @@ public abstract class HandledScreenMixin {
      */
     private boolean isBlueprintInventory() {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             String title = screen.getTitle().getString();
             
             // Remove Minecraft formatting codes and Unicode characters for comparison
@@ -601,9 +612,9 @@ public abstract class HandledScreenMixin {
     /**
      * Renders the Kit Filter buttons
      */
-    private void renderKitFilterButtons(DrawContext context, int mouseX, int mouseY) {
+    private void renderKitFilterButtons(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Call the KitFilterUtility to render the buttons
             net.felix.utilities.Town.KitFilterUtility.renderKitFilterButtons(context, screen, mouseX, mouseY);
@@ -616,9 +627,9 @@ public abstract class HandledScreenMixin {
     /**
      * Renders the F6 button (bottom left corner)
      */
-    private void renderF6Button(DrawContext context, int mouseX, int mouseY) {
+    private void renderF6Button(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Prüfe ob Button angezeigt werden soll
             if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.shouldShowButton(screen)) {
@@ -636,7 +647,7 @@ public abstract class HandledScreenMixin {
      */
     private boolean isSmithingInventory() {
         try {
-            HandledScreen<?> screen = (HandledScreen<?>) (Object) this;
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             return net.felix.utilities.Town.SchmiedTrackerUtility.isSmithingRelatedInventoryTitle(
                     screen.getTitle().getString());
         } catch (Exception e) {

@@ -1,12 +1,11 @@
 package net.felix.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.Other.DebugUtility;
 import net.felix.utilities.Overall.DimensionUtility;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -47,8 +46,8 @@ public class CoinCollector implements DataCollector {
         isActive = true;
     }
     
-    private void onClientTick(MinecraftClient client) {
-        if (!isActive || client.player == null || client.world == null) {
+    private void onClientTick(Minecraft client) {
+        if (!isActive || client.player == null || client.level == null) {
             return;
         }
         
@@ -69,7 +68,7 @@ public class CoinCollector implements DataCollector {
     /**
      * Führt den /cc coins Command aus
      */
-    private void executeCoinsCommand(MinecraftClient client) {
+    private void executeCoinsCommand(Minecraft client) {
         if (DimensionUtility.isInGeneralLobby(client)) {
             return;
         }
@@ -86,7 +85,7 @@ public class CoinCollector implements DataCollector {
             DebugUtility.debugLeaderboard("Coins werden aufgerufen");
             
             // Sende Command
-            client.player.networkHandler.sendChatCommand("cc coins");
+            client.player.connection.sendCommand("cc coins");
             lastCommandTime = currentTime;
             waitingForResponse = true;
             
@@ -225,7 +224,7 @@ public class CoinCollector implements DataCollector {
      * Führt sofort einen Coins-Command aus (für Testing)
      */
     public void forceCoinsCommand() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null && client.player != null) {
             executeCoinsCommand(client);
         }
@@ -259,11 +258,11 @@ public class CoinCollector implements DataCollector {
      */
     private void sendFeedbackMessage(String message) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client != null && client.player != null) {
                 // Verwende einen speziellen Prefix um Endlosschleifen zu vermeiden
                 String prefixedMessage = "§7[§bCCLive-Debug§7]§r " + message;
-                client.player.sendMessage(Text.literal(prefixedMessage), false);
+                client.player.sendSystemMessage(Component.literal(prefixedMessage));
             }
         } catch (Exception e) {
             // Ignoriere Fehler bei Chat-Ausgabe
@@ -275,9 +274,9 @@ public class CoinCollector implements DataCollector {
      */
     private void sendDebugSeparator(String separator) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client != null && client.player != null) {
-                client.player.sendMessage(Text.literal(separator), false);
+                client.player.sendSystemMessage(Component.literal(separator));
             }
         } catch (Exception e) {
             // Ignoriere Fehler bei Chat-Ausgabe
@@ -311,7 +310,7 @@ public class CoinCollector implements DataCollector {
         if (pendingSuccessFeedback && DebugUtility.isLeaderboardDebuggingEnabled()) {
             // Silent error handling("🔥 DEBUG: Sende Success-Feedback...");
             // Chat-Nachrichten müssen im Main-Thread gesendet werden
-            MinecraftClient.getInstance().execute(() -> {
+            Minecraft.getInstance().execute(() -> {
                 // Leaderboard-Feedback NUR bei Debug-Modus
                 sendFeedbackMessage("§eErfolgreich §aan Server gesendet");
                 sendFeedbackMessage("§aCoins aktualisiert: §e" + formatNumber(coins));
@@ -329,7 +328,7 @@ public class CoinCollector implements DataCollector {
     public void onServerUpdateFailure() {
         if (pendingSuccessFeedback && DebugUtility.isLeaderboardDebuggingEnabled()) {
             // Chat-Nachrichten müssen im Main-Thread gesendet werden
-            MinecraftClient.getInstance().execute(() -> {
+            Minecraft.getInstance().execute(() -> {
                 sendErrorFeedback();
             });
         }

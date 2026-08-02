@@ -1,11 +1,11 @@
 package net.felix.utilities.DragOverlay.Farmworld;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.Overall.InformationenUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -34,7 +34,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             float scale = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayScale;
             if (scale <= 0) scale = 1.0f;
@@ -54,7 +54,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         return (int) (unscaledHeight * scale);
     }
     
-    private int getUnscaledWidth(MinecraftClient client) {
+    private int getUnscaledWidth(Minecraft client) {
         // Use the actual overlay width from InformationenUtility (same as KillsUtility pattern)
         return client != null ? InformationenUtility.getCurrentCollectionOverlayWidth(client) : DEFAULT_WIDTH;
     }
@@ -72,7 +72,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setSize(int width, int height) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Get current unscaled dimensions
@@ -91,8 +91,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Get unscaled dimensions and position
@@ -110,10 +110,10 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         int scaledHeight = (int) (unscaledHeight * scale);
         
         // Render border for edit mode (unscaled, so it's always visible)
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
         
         // Use Matrix transformations for scaling
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Translate to position and scale from there
@@ -124,8 +124,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
         
         // Render overlay name (scaled, relative to matrix)
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             getOverlayName(),
             PADDING, PADDING,
             0xFFFFFFFF,
@@ -134,8 +134,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         
         // Render sample text with "-" instead of example values (scaled, relative positions)
         int currentY = PADDING + 15;
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Zeit: -",
             PADDING, currentY,
             0xFFFFFFFF,
@@ -143,8 +143,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         );
         
         currentY += LINE_HEIGHT;
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Abgebaut: -",
             PADDING, currentY,
             0xFFFFFFFF,
@@ -152,8 +152,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         );
         
         currentY += LINE_HEIGHT;
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Blöcke/min: -",
             PADDING, currentY,
             0xFFFFFFFF,
@@ -162,8 +162,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
 
         if (InformationenUtility.isCollectionBlocksNeededVisible()) {
             currentY += LINE_HEIGHT;
-            context.drawText(
-                client.textRenderer,
+            context.text(
+                client.font,
                 "Benötigte Blöcke: -",
                 PADDING, currentY,
                 0xFFFFFFFF,
@@ -173,8 +173,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
 
         if (InformationenUtility.isCollectionTimeToNextVisible()) {
             currentY += LINE_HEIGHT;
-            context.drawText(
-                client.textRenderer,
+            context.text(
+                client.font,
                 "Nächste Collection: -",
                 PADDING, currentY,
                 0xFFFFFFFF,
@@ -184,8 +184,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
 
         if (InformationenUtility.usesOverlayResourceRateDisplay()) {
             currentY += LINE_HEIGHT;
-            context.drawText(
-                client.textRenderer,
+            context.text(
+                client.font,
                 "Ressource: -",
                 PADDING, currentY,
                 0xFFFFFFFF,
@@ -207,8 +207,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Collection - Shows collection progress and statistics");
+    public Component getTooltip() {
+        return Component.literal("Collection - Shows collection progress and statistics");
     }
     
     @Override

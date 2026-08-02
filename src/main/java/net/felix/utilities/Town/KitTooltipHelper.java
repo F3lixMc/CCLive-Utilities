@@ -1,13 +1,12 @@
 package net.felix.utilities.Town;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Cached layout + render helper for kit tooltips (avoids per-frame sorting, width calculation and BP lookups).
@@ -28,7 +27,7 @@ public final class KitTooltipHelper {
 
 	public CachedTooltip getOrBuild(
 			String key,
-			TextRenderer textRenderer,
+			Font textRenderer,
 			String header,
 			Collection<KitFilterUtility.ItemInfo> rawItems,
 			boolean showSelectActionHint,
@@ -65,26 +64,26 @@ public final class KitTooltipHelper {
 			maxEbeneWidth = Math.max(maxEbeneWidth, calculateEbeneWidth(textRenderer, itemInfo));
 		}
 
-		int bulletWidth = textRenderer.getWidth(BULLET_POINT);
+		int bulletWidth = textRenderer.width(BULLET_POINT);
 		int statusWidth = 0;
 		if (showBpStatus) {
-			statusWidth = textRenderer.getWidth(" ✓") + COLUMN_SPACING;
+			statusWidth = textRenderer.width(" ✓") + COLUMN_SPACING;
 		}
 
-		int headerWidth = textRenderer.getWidth(header);
+		int headerWidth = textRenderer.width(header);
 		int totalWidth = Math.max(
 				headerWidth,
 				bulletWidth + maxItemTypeWidth + COLUMN_SPACING + maxItemNameWidth + COLUMN_SPACING
 						+ maxModifierWidth + COLUMN_SPACING + maxEbeneWidth + statusWidth
 		);
 		if (showSelectActionHint) {
-			totalWidth = Math.max(totalWidth, textRenderer.getWidth("[Linksklick]: Auswählen"));
+			totalWidth = Math.max(totalWidth, textRenderer.width("[Linksklick]: Auswählen"));
 		}
 		if (showEditActionHint) {
-			totalWidth = Math.max(totalWidth, textRenderer.getWidth("[Rechtsklick]: Bearbeiten"));
+			totalWidth = Math.max(totalWidth, textRenderer.width("[Rechtsklick]: Bearbeiten"));
 		}
 
-		int textHeight = textRenderer.fontHeight;
+		int textHeight = textRenderer.lineHeight;
 		int padding = 4;
 		int lineSpacing = 2;
 
@@ -135,8 +134,8 @@ public final class KitTooltipHelper {
 	}
 
 	public static void render(
-			DrawContext context,
-			TextRenderer textRenderer,
+			GuiGraphicsExtractor context,
+			Font textRenderer,
 			CachedTooltip tooltip,
 			int mouseX,
 			int mouseY,
@@ -186,7 +185,7 @@ public final class KitTooltipHelper {
 		context.fill(bgX1, bgY1, bgX1 + 1, bgY2, 0xFFFFFFFF);
 		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF);
 
-		context.drawText(textRenderer, tooltip.header, tooltipX, tooltipY, 0xFFFFFFFF, true);
+		context.text(textRenderer, tooltip.header, tooltipX, tooltipY, 0xFFFFFFFF, true);
 
 		int currentY = tooltipY + tooltip.textHeight;
 		if (!tooltip.items.isEmpty()) {
@@ -197,11 +196,11 @@ public final class KitTooltipHelper {
 			KitFilterUtility.ItemInfo itemInfo = tooltip.items.get(i);
 			int currentX = tooltipX;
 
-			context.drawText(textRenderer, BULLET_POINT, currentX, currentY, 0xFFFFFFFF, true);
+			context.text(textRenderer, BULLET_POINT, currentX, currentY, 0xFFFFFFFF, true);
 			currentX += tooltip.bulletWidth;
 
 			if (itemInfo.itemType != null && !itemInfo.itemType.isEmpty()) {
-				context.drawText(textRenderer, itemInfo.itemType, currentX, currentY, 0xFFFFFFFF, true);
+				context.text(textRenderer, itemInfo.itemType, currentX, currentY, 0xFFFFFFFF, true);
 			}
 			currentX += tooltip.maxItemTypeWidth + COLUMN_SPACING;
 
@@ -209,7 +208,7 @@ public final class KitTooltipHelper {
 				int nameColor = (itemInfo.nameColorString != null && !itemInfo.nameColorString.isEmpty())
 						? itemInfo.nameColor
 						: 0xFFFFFFFF;
-				context.drawText(textRenderer, itemInfo.name, currentX, currentY, nameColor, true);
+				context.text(textRenderer, itemInfo.name, currentX, currentY, nameColor, true);
 			}
 			currentX += tooltip.maxItemNameWidth + COLUMN_SPACING;
 
@@ -217,8 +216,8 @@ public final class KitTooltipHelper {
 			currentX += tooltip.maxModifierWidth + COLUMN_SPACING;
 
 			if (itemInfo.ebene != null && !itemInfo.ebene.isEmpty()) {
-				context.drawText(textRenderer, itemInfo.ebene, currentX, currentY, 0xFFFFFFFF, true);
-				currentX += textRenderer.getWidth(itemInfo.ebene);
+				context.text(textRenderer, itemInfo.ebene, currentX, currentY, 0xFFFFFFFF, true);
+				currentX += textRenderer.width(itemInfo.ebene);
 			} else {
 				currentX += tooltip.maxEbeneWidth;
 			}
@@ -227,7 +226,7 @@ public final class KitTooltipHelper {
 				boolean isFound = tooltip.blueprintFound[i];
 				String statusSymbol = isFound ? " ✓" : " ✗";
 				int statusColor = isFound ? 0xFF00FF00 : 0xFFFF0000;
-				context.drawText(textRenderer, statusSymbol, currentX, currentY, statusColor, true);
+				context.text(textRenderer, statusSymbol, currentX, currentY, statusColor, true);
 			}
 
 			currentY += tooltip.textHeight;
@@ -246,8 +245,8 @@ public final class KitTooltipHelper {
 	}
 
 	private static void renderModifierColumn(
-			DrawContext context,
-			TextRenderer textRenderer,
+			GuiGraphicsExtractor context,
+			Font textRenderer,
 			KitFilterUtility.ItemInfo itemInfo,
 			int x,
 			int y
@@ -262,43 +261,43 @@ public final class KitTooltipHelper {
 			String part = modifierParts[i].trim();
 			if (i > 0) {
 				String separator = ", ";
-				context.drawText(textRenderer, separator, modifierX, y, 0xFFFFFFFF, true);
-				modifierX += textRenderer.getWidth(separator);
+				context.text(textRenderer, separator, modifierX, y, 0xFFFFFFFF, true);
+				modifierX += textRenderer.width(separator);
 			}
 
 			if (part.startsWith("[") && part.endsWith("]")) {
 				String modifierName = part.substring(1, part.length() - 1);
 				int modifierColor = KitFilterUtility.ItemInfo.parseModifierColor(modifierName);
 
-				context.drawText(textRenderer, "[", modifierX, y, 0xFFFFFFFF, true);
-				modifierX += textRenderer.getWidth("[");
-				context.drawText(textRenderer, modifierName, modifierX, y, modifierColor, true);
-				modifierX += textRenderer.getWidth(modifierName);
-				context.drawText(textRenderer, "]", modifierX, y, 0xFFFFFFFF, true);
+				context.text(textRenderer, "[", modifierX, y, 0xFFFFFFFF, true);
+				modifierX += textRenderer.width("[");
+				context.text(textRenderer, modifierName, modifierX, y, modifierColor, true);
+				modifierX += textRenderer.width(modifierName);
+				context.text(textRenderer, "]", modifierX, y, 0xFFFFFFFF, true);
 			} else {
-				context.drawText(textRenderer, part, modifierX, y, 0xFFFFFFFF, true);
+				context.text(textRenderer, part, modifierX, y, 0xFFFFFFFF, true);
 			}
 		}
 	}
 
 	private static void drawActionHintLine(
-			DrawContext context,
-			TextRenderer textRenderer,
+			GuiGraphicsExtractor context,
+			Font textRenderer,
 			int x,
 			int y,
 			String bracketContent,
 			String actionText
 	) {
 		int cursor = x;
-		context.drawText(textRenderer, "[", cursor, y, ACTION_GREEN, true);
-		cursor += textRenderer.getWidth("[");
-		context.drawText(textRenderer, bracketContent, cursor, y, ACTION_GREEN, true);
-		cursor += textRenderer.getWidth(bracketContent);
-		context.drawText(textRenderer, "]", cursor, y, ACTION_GREEN, true);
-		cursor += textRenderer.getWidth("]");
-		context.drawText(textRenderer, ":", cursor, y, ACTION_GREEN, true);
-		cursor += textRenderer.getWidth(":");
-		context.drawText(textRenderer, " " + actionText, cursor, y, 0xFFFFFFFF, true);
+		context.text(textRenderer, "[", cursor, y, ACTION_GREEN, true);
+		cursor += textRenderer.width("[");
+		context.text(textRenderer, bracketContent, cursor, y, ACTION_GREEN, true);
+		cursor += textRenderer.width(bracketContent);
+		context.text(textRenderer, "]", cursor, y, ACTION_GREEN, true);
+		cursor += textRenderer.width("]");
+		context.text(textRenderer, ":", cursor, y, ACTION_GREEN, true);
+		cursor += textRenderer.width(":");
+		context.text(textRenderer, " " + actionText, cursor, y, 0xFFFFFFFF, true);
 	}
 
 	private static int parseEbeneNumber(String ebene) {
@@ -316,28 +315,28 @@ public final class KitTooltipHelper {
 		}
 	}
 
-	private static int calculateItemTypeWidth(TextRenderer textRenderer, KitFilterUtility.ItemInfo itemInfo) {
+	private static int calculateItemTypeWidth(Font textRenderer, KitFilterUtility.ItemInfo itemInfo) {
 		if (itemInfo.itemType != null && !itemInfo.itemType.isEmpty()) {
-			return textRenderer.getWidth(itemInfo.itemType);
+			return textRenderer.width(itemInfo.itemType);
 		}
 		return 0;
 	}
 
-	private static int calculateItemNameWidth(TextRenderer textRenderer, KitFilterUtility.ItemInfo itemInfo) {
+	private static int calculateItemNameWidth(Font textRenderer, KitFilterUtility.ItemInfo itemInfo) {
 		if (itemInfo.name != null && !itemInfo.name.isEmpty()) {
-			return textRenderer.getWidth(itemInfo.name);
+			return textRenderer.width(itemInfo.name);
 		}
 		return 0;
 	}
 
-	private static int calculateEbeneWidth(TextRenderer textRenderer, KitFilterUtility.ItemInfo itemInfo) {
+	private static int calculateEbeneWidth(Font textRenderer, KitFilterUtility.ItemInfo itemInfo) {
 		if (itemInfo.ebene != null && !itemInfo.ebene.isEmpty()) {
-			return textRenderer.getWidth(itemInfo.ebene);
+			return textRenderer.width(itemInfo.ebene);
 		}
 		return 0;
 	}
 
-	private static int calculateModifierWidth(TextRenderer textRenderer, KitFilterUtility.ItemInfo itemInfo) {
+	private static int calculateModifierWidth(Font textRenderer, KitFilterUtility.ItemInfo itemInfo) {
 		if (itemInfo.modifier == null || itemInfo.modifier.isEmpty()) {
 			return 0;
 		}
@@ -347,15 +346,15 @@ public final class KitTooltipHelper {
 		for (int i = 0; i < modifierParts.length; i++) {
 			String part = modifierParts[i].trim();
 			if (i > 0) {
-				width += textRenderer.getWidth(", ");
+				width += textRenderer.width(", ");
 			}
 			if (part.startsWith("[") && part.endsWith("]")) {
 				String modifierName = part.substring(1, part.length() - 1);
-				width += textRenderer.getWidth("[");
-				width += textRenderer.getWidth(modifierName);
-				width += textRenderer.getWidth("]");
+				width += textRenderer.width("[");
+				width += textRenderer.width(modifierName);
+				width += textRenderer.width("]");
 			} else {
-				width += textRenderer.getWidth(part);
+				width += textRenderer.width(part);
 			}
 		}
 		return width;

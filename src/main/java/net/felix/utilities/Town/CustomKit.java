@@ -1,12 +1,11 @@
 package net.felix.utilities.Town;
 
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -52,7 +51,7 @@ public class CustomKit {
         if (id == null) {
             return new ItemStack(Items.GOLD_NUGGET);
         }
-        Item item = Registries.ITEM.get(id);
+        Item item = BuiltInRegistries.ITEM.getValue(id);
         if (item == null || item == Items.AIR) {
             return new ItemStack(Items.GOLD_NUGGET);
         }

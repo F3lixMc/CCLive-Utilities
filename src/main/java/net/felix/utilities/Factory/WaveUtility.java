@@ -1,10 +1,9 @@
 package net.felix.utilities.Factory;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.minecraft.client.MinecraftClient;
 import net.felix.profile.ProfileStatsManager;
 import net.felix.utilities.Overall.ZeichenUtility;
-
+import net.minecraft.client.Minecraft;
 import java.util.Map;
 
 /**
@@ -41,12 +40,12 @@ public class WaveUtility {
         try {
             boolean debug = isDebugEnabled();
 
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.player == null || client.world == null) {
+            Minecraft client = Minecraft.getInstance();
+            if (client == null || client.player == null || client.level == null) {
                 return;
             }
 
-            String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
+            String dimensionId = client.level.dimension().identifier().toString().toLowerCase();
             if (debug) {
                 // Silent error handling("[WaveUtility] Bossbar #" + index + " in Dimension '" + dimensionId + "': '" + bossBarName + "'");
             }
@@ -59,7 +58,7 @@ public class WaveUtility {
                 return;
             }
 
-            String playerName = client.player.getGameProfile().getName().toLowerCase();
+            String playerName = client.player.getGameProfile().name().toLowerCase();
             String prefixNoSuffix = "minecraft:" + playerName;
             String prefixWithSuffix = prefixNoSuffix + "_";
 

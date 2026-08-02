@@ -1,16 +1,15 @@
 package net.felix.utilities.Overall;
 
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.ScoreboardEntry;
-import net.minecraft.scoreboard.ScoreboardObjective;
-import net.minecraft.scoreboard.Team;
-import net.minecraft.text.Text;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.PlayerScoreEntry;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
 
 /** Liest Sidebar-Zeilen vom Server-Scoreboard (sortiert wie Vanilla-HUD). */
 public final class ScoreboardSidebarReader {
@@ -18,56 +17,56 @@ public final class ScoreboardSidebarReader {
     private ScoreboardSidebarReader() {
     }
 
-    public record Row(Text name, Text score, int scoreWidth) {
-        public static Row nameOnly(Text name) {
-            return new Row(name, Text.empty(), 0);
+    public record Row(Component name, Component score, int scoreWidth) {
+        public static Row nameOnly(Component name) {
+            return new Row(name, Component.empty(), 0);
         }
     }
 
-    public static List<Row> readRows(Scoreboard scoreboard, ScoreboardObjective objective) {
+    public static List<Row> readRows(Scoreboard scoreboard, Objective objective) {
         List<Row> rows = new ArrayList<>();
         if (scoreboard == null || objective == null) {
             return rows;
         }
 
-        Collection<ScoreboardEntry> rawEntries = scoreboard.getScoreboardEntries(objective);
+        Collection<PlayerScoreEntry> rawEntries = scoreboard.listPlayerScores(objective);
         if (rawEntries == null || rawEntries.isEmpty()) {
             return rows;
         }
 
-        Comparator<ScoreboardEntry> comparator = resolveComparator();
-        List<ScoreboardEntry> entries = rawEntries.stream()
-                .filter(entry -> !entry.hidden())
+        Comparator<PlayerScoreEntry> comparator = resolveComparator();
+        List<PlayerScoreEntry> entries = rawEntries.stream()
+                .filter(entry -> !entry.isHidden())
                 .sorted(comparator)
                 .limit(CoinTrackerCustomSidebar.VANILLA_MAX_LINES)
                 .toList();
 
-        for (ScoreboardEntry entry : entries) {
+        for (PlayerScoreEntry entry : entries) {
             rows.add(Row.nameOnly(resolveDisplayName(scoreboard, entry)));
         }
         return rows;
     }
 
-    private static Comparator<ScoreboardEntry> resolveComparator() {
+    private static Comparator<PlayerScoreEntry> resolveComparator() {
         try {
             @SuppressWarnings("unchecked")
-            Comparator<ScoreboardEntry> comparator =
-                    (Comparator<ScoreboardEntry>) InGameHud.class.getField("SCOREBOARD_ENTRY_COMPARATOR").get(null);
+            Comparator<PlayerScoreEntry> comparator =
+                    (Comparator<PlayerScoreEntry>) Gui.class.getField("SCOREBOARD_ENTRY_COMPARATOR").get(null);
             return comparator;
         } catch (ReflectiveOperationException ignored) {
             return (a, b) -> Integer.compare(b.value(), a.value());
         }
     }
 
-    private static Text resolveDisplayName(Scoreboard scoreboard, ScoreboardEntry entry) {
-        Text lineText = entry.name();
+    private static Component resolveDisplayName(Scoreboard scoreboard, PlayerScoreEntry entry) {
+        Component lineText = entry.ownerName();
         String owner = entry.owner();
         if (lineText != null && !lineText.getString().equals(owner)) {
             return lineText;
         }
 
-        Team team = scoreboard.getScoreHolderTeam(owner);
-        Text base = Text.literal(owner);
-        return team != null ? Team.decorateName(team, base) : base;
+        PlayerTeam team = scoreboard.getPlayersTeam(owner);
+        Component base = Component.literal(owner);
+        return team != null ? PlayerTeam.formatNameForTeam(team, base) : base;
     }
 }

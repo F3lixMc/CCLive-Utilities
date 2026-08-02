@@ -5,13 +5,12 @@ import com.google.gson.JsonParser;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.Identifier;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
 import java.util.List;
 
 /**
@@ -137,7 +136,7 @@ public class PlayerHoverStatsUtility {
      * @param originalMessage Die ursprüngliche Nachricht
      * @return Die modifizierte Nachricht mit Stats-Hover, oder null wenn keine Modifikation nötig
      */
-    public static Text processChatMessage(Text originalMessage) {
+    public static Component processChatMessage(Component originalMessage) {
         if (originalMessage == null || httpClient == null) {
             return null;
         }
@@ -235,7 +234,7 @@ public class PlayerHoverStatsUtility {
             }
             
             // Erstelle Hover-Text mit Stats (inkl. bestehender Hover-Info)
-            Text hoverText = createStatsHoverText(originalMessage, stats);
+            Component hoverText = createStatsHoverText(originalMessage, stats);
             if (hoverText == null) {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ⚠️ Hover-Text konnte nicht erstellt werden");
@@ -263,7 +262,7 @@ public class PlayerHoverStatsUtility {
             }
             
             // Modifiziere die Nachricht mit dem neuen Hover-Event
-            Text modified = modifyTextWithHoverEvent(originalMessage, newHoverEvent);
+            Component modified = modifyTextWithHoverEvent(originalMessage, newHoverEvent);
             
             if (modified == null) {
                 if (debugging) {
@@ -302,23 +301,23 @@ public class PlayerHoverStatsUtility {
      * Format basierend auf JSON: {color: "#7FE4CA", text: "firestarter03"} " " ">>" ...
      * Unterstützt auch verschachtelte extra-Arrays
      */
-    private static String extractPlayerNameFromText(Text message) {
+    private static String extractPlayerNameFromText(Component message) {
         if (message == null) {
             return null;
         }
         
         // Durchsuche die Siblings rekursiv
-        List<Text> siblings = message.getSiblings();
+        List<Component> siblings = message.getSiblings();
         if (siblings != null && !siblings.isEmpty()) {
             // Suche nach dem Pattern: Text-Element mit Spielername, dann Icon-Marker (optional), dann ">>"
             // Gehe durch alle Siblings und prüfe ob das nächste Element ">>" enthält oder Icon-Marker
             for (int i = 0; i < siblings.size(); i++) {
-                Text current = siblings.get(i);
+                Component current = siblings.get(i);
                 
                 // Prüfe ob das nächste Element ">>" enthält (ignoriere Leerzeichen dazwischen)
                 // Suche in den nächsten Siblings nach ">>" (max. 2 Siblings weiter, um Leerzeichen zu berücksichtigen)
                 for (int j = i + 1; j < siblings.size() && j <= i + 2; j++) {
-                    Text next = siblings.get(j);
+                    Component next = siblings.get(j);
                     String nextText = next.getString();
                     
                     // Prüfe ob next ">>" enthält
@@ -351,7 +350,7 @@ public class PlayerHoverStatsUtility {
                 // Suche nach ">>" in allen nachfolgenden Siblings (auch rekursiv)
                 // Berücksichtige auch Icon-Marker zwischen Name und ">>"
                 for (int j = i + 1; j < siblings.size(); j++) {
-                    Text checkNext = siblings.get(j);
+                    Component checkNext = siblings.get(j);
                     String checkNextText = checkNext.getString();
                     boolean isArrow = checkNextText != null && (checkNextText.contains(">>") || checkNextText.trim().equals(">>"));
                     // Prüfe ob checkNext ein Leerzeichen ist und das nächste Element ">>" enthält
@@ -374,7 +373,7 @@ public class PlayerHoverStatsUtility {
                         }
                         // Also check siblings between current and ">>" (ignoriere Leerzeichen)
                         for (int k = i + 1; k < j; k++) {
-                            Text between = siblings.get(k);
+                            Component between = siblings.get(k);
                             String betweenText = between.getString();
                             if (betweenText != null && !betweenText.trim().isEmpty()) {
                                 String name = betweenText.trim();
@@ -430,7 +429,7 @@ public class PlayerHoverStatsUtility {
     // Glyphe als Marker für das Icon (Cyrillic letter fita - ѳ)
     private static final char ICON_MARKER = 'ѳ';
     // Font-Identifier für die Custom-Font
-    private static final Identifier CUSTOM_FONT = Identifier.of("cclive-utilities", "default");
+    private static final Identifier CUSTOM_FONT = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
     
     /**
      * Fügt das Mod-Icon zwischen Spielername und >> ein
@@ -438,27 +437,27 @@ public class PlayerHoverStatsUtility {
      * @param playerName Der Spielername
      * @return Die Nachricht mit eingefügtem Icon-Marker
      */
-    private static Text insertIconBetweenNameAndArrow(Text message, String playerName) {
+    private static Component insertIconBetweenNameAndArrow(Component message, String playerName) {
         if (message == null || playerName == null || playerName.isEmpty()) {
             return message;
         }
         
         try {
-            List<Text> siblings = message.getSiblings();
+            List<Component> siblings = message.getSiblings();
             if (siblings == null || siblings.isEmpty()) {
                 return message;
             }
             
             // Durchsuche die Siblings und finde den Namen vor ">>"
             for (int i = 0; i < siblings.size(); i++) {
-                Text current = siblings.get(i);
+                Component current = siblings.get(i);
                 String currentText = current.getString();
                 
                 // Prüfe ob current den Spielernamen enthält
                 if (currentText != null && currentText.trim().equals(playerName)) {
                     // Suche nach ">>" in nachfolgenden Siblings (ignoriere Leerzeichen)
                     for (int j = i + 1; j < siblings.size(); j++) {
-                        Text checkNext = siblings.get(j);
+                        Component checkNext = siblings.get(j);
                         String checkNextText = checkNext.getString();
                         
                         // Prüfe ob checkNext ">>" enthält (ignoriere Leerzeichen dazwischen)
@@ -484,7 +483,7 @@ public class PlayerHoverStatsUtility {
                             }
                             
                             // Erstelle neue Struktur mit Leerzeichen zwischen Name und ">>"
-                            MutableText newMessage = message.copy();
+                            MutableComponent newMessage = message.copy();
                             newMessage.getSiblings().clear();
                             
                             // Füge alle Siblings bis current hinzu
@@ -495,12 +494,12 @@ public class PlayerHoverStatsUtility {
                             // Füge Leerzeichen und unsichtbaren Marker hinzu
                             // Der Marker wird durch ein Leerzeichen ersetzt, damit er nicht als Rechteck gerendert wird
                             // Das Icon wird im ChatHudRenderMixin an der Position des Markers gerendert
-                            MutableText space = Text.literal(" ").setStyle(current.getStyle());
+                            MutableComponent space = Component.literal(" ").setStyle(current.getStyle());
                             // Füge Marker hinzu mit expliziter Font-Referenz
                             // Die Font muss explizit gesetzt werden, damit sie verwendet wird
                             // Farbe explizit auf weiß setzen, damit das Icon nicht die Chat-Farbe erbt
-                            Style iconStyle = current.getStyle().withFont(CUSTOM_FONT).withColor(0xFFFFFF);
-                            MutableText iconMarker = Text.literal(String.valueOf(ICON_MARKER))
+                            Style iconStyle = current.getStyle().withFont(new net.minecraft.network.chat.FontDescription.Resource(CUSTOM_FONT)).withColor(0xFFFFFF);
+                            MutableComponent iconMarker = Component.literal(String.valueOf(ICON_MARKER))
                                 .setStyle(iconStyle);
                             newMessage.append(space);
                             newMessage.append(iconMarker);
@@ -517,13 +516,13 @@ public class PlayerHoverStatsUtility {
             }
             
             // Rekursiv in Siblings suchen
-            for (Text sibling : siblings) {
-                Text modified = insertIconBetweenNameAndArrow(sibling, playerName);
+            for (Component sibling : siblings) {
+                Component modified = insertIconBetweenNameAndArrow(sibling, playerName);
                 if (modified != sibling) {
                     // Icon wurde eingefügt - erstelle neue Struktur
-                    MutableText newMessage = message.copy();
+                    MutableComponent newMessage = message.copy();
                     newMessage.getSiblings().clear();
-                    for (Text s : siblings) {
+                    for (Component s : siblings) {
                         if (s == sibling) {
                             newMessage.append(modified);
                         } else {
@@ -545,27 +544,27 @@ public class PlayerHoverStatsUtility {
      * Modifiziert einen Text mit einem neuen Hover-Event
      * Kopiert von InformationenUtility.modifyTextWithHoverEvent
      */
-    private static Text modifyTextWithHoverEvent(Text text, HoverEvent newHoverEvent) {
+    private static Component modifyTextWithHoverEvent(Component text, HoverEvent newHoverEvent) {
         if (text == null || newHoverEvent == null) {
             return text;
         }
         
-        // Copy the text to preserve its structure - copy() returns MutableText which has setStyle()
-        MutableText newText = text.copy();
+        // Copy the text to preserve its structure - copy() returns MutableComponent which has setStyle()
+        MutableComponent newText = text.copy();
         
         // Check if this text component has a hover event that needs to be replaced
-        net.minecraft.text.Style currentStyle = text.getStyle();
+        net.minecraft.network.chat.Style currentStyle = text.getStyle();
         if (currentStyle != null && currentStyle.getHoverEvent() != null) {
             // This text has a hover event - replace it with the new one
-            net.minecraft.text.Style newStyle = currentStyle.withHoverEvent(newHoverEvent);
+            net.minecraft.network.chat.Style newStyle = currentStyle.withHoverEvent(newHoverEvent);
             newText.setStyle(newStyle);
         }
         // If no hover event, the style is already preserved by copy()
         
         // Recursively process all siblings to preserve their formatting
         newText.getSiblings().clear(); // Clear existing siblings to avoid duplication
-        for (Text sibling : text.getSiblings()) {
-            Text modifiedSibling = modifyTextWithHoverEvent(sibling, newHoverEvent);
+        for (Component sibling : text.getSiblings()) {
+            Component modifiedSibling = modifyTextWithHoverEvent(sibling, newHoverEvent);
             newText.getSiblings().add(modifiedSibling);
         }
         
@@ -576,7 +575,7 @@ public class PlayerHoverStatsUtility {
      * Erstellt einen Hover-Text mit Player-Stats
      * Extrahiert Kaktusrang und Seelenrang aus dem bestehenden Hover-Text
      */
-    private static Text createStatsHoverText(Text originalMessage, JsonObject stats) {
+    private static Component createStatsHoverText(Component originalMessage, JsonObject stats) {
         boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
         
         if (stats == null) {
@@ -600,10 +599,10 @@ public class PlayerHoverStatsUtility {
             }
             
             // Erstelle neuen Hover-Text
-            MutableText hoverText = Text.literal("§e=== Spieler Stats ===\n");
+            MutableComponent hoverText = Component.literal("§e=== Spieler Stats ===\n");
             
             // Zeile 1: Kaktusrang | Seelenrang
-            hoverText.append(Text.literal("§a🌵 §f" + kaktusrang + " §7| §d💀 §f" + seelenrang + "\n"));
+            hoverText.append(Component.literal("§a🌵 §f" + kaktusrang + " §7| §d💀 §f" + seelenrang + "\n"));
             
             // Zeile 2: Höchste Ebene | Höchste Welle
             int floor = 0;
@@ -622,7 +621,7 @@ public class PlayerHoverStatsUtility {
             
             if (floor > 0 || wave > 0) {
                 // Verwende ⚔ (U+2694) statt ⚔️ (mit Variation Selector) für bessere Kompatibilität
-                hoverText.append(Text.literal("§7⚔ §f" + floor + " §7| §b🌊 §f" + wave + "\n"));
+                hoverText.append(Component.literal("§7⚔ §f" + floor + " §7| §b🌊 §f" + wave + "\n"));
             }
             
             // Zeile 3: Chosen Stat (vom Server, oder Fallback zu playtime)
@@ -644,7 +643,7 @@ public class PlayerHoverStatsUtility {
                 // Silent error handling("[PlayerHoverStats] 🔍 Stat-Wert (" + chosenStat + "): " + statValue);
             }
             if (statValue != null && !statValue.isEmpty()) {
-                hoverText.append(Text.literal(statValue));
+                hoverText.append(Component.literal(statValue));
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ✅ Stat-Wert zum Hover-Text hinzugefügt");
                 }
@@ -670,7 +669,7 @@ public class PlayerHoverStatsUtility {
      * Extrahiert den Kaktusrang aus dem bestehenden Hover-Text
      * Format: [Kaktusrang]: x
      */
-    private static int extractKaktusrang(Text message) {
+    private static int extractKaktusrang(Component message) {
         if (message == null) {
             return 0;
         }
@@ -679,7 +678,7 @@ public class PlayerHoverStatsUtility {
         
         // Finde Hover-Event
         HoverEvent hoverEvent = findHoverEventInText(message);
-        if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
+        if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: Kein HoverEvent gefunden");
             }
@@ -687,7 +686,7 @@ public class PlayerHoverStatsUtility {
         }
         
         // Extrahiere Hover-Text
-        Text hoverText = extractHoverTextFromEvent(hoverEvent);
+        Component hoverText = extractHoverTextFromEvent(hoverEvent);
         if (hoverText == null) {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] ⚠️ extractKaktusrang: HoverText ist null");
@@ -744,7 +743,7 @@ public class PlayerHoverStatsUtility {
      * Extrahiert den Seelenrang aus dem bestehenden Hover-Text
      * Format: [Seelenrang]: x
      */
-    private static int extractSeelenrang(Text message) {
+    private static int extractSeelenrang(Component message) {
         if (message == null) {
             return 0;
         }
@@ -753,7 +752,7 @@ public class PlayerHoverStatsUtility {
         
         // Finde Hover-Event
         HoverEvent hoverEvent = findHoverEventInText(message);
-        if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
+        if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: Kein HoverEvent gefunden");
             }
@@ -761,7 +760,7 @@ public class PlayerHoverStatsUtility {
         }
         
         // Extrahiere Hover-Text
-        Text hoverText = extractHoverTextFromEvent(hoverEvent);
+        Component hoverText = extractHoverTextFromEvent(hoverEvent);
         if (hoverText == null) {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] ⚠️ extractSeelenrang: HoverText ist null");
@@ -817,7 +816,7 @@ public class PlayerHoverStatsUtility {
     /**
      * Konvertiert einen Text (inklusive aller Siblings) zu einem vollständigen String
      */
-    private static String getFullTextString(Text text) {
+    private static String getFullTextString(Component text) {
         if (text == null) {
             return "";
         }
@@ -831,7 +830,7 @@ public class PlayerHoverStatsUtility {
         }
         
         // Füge alle Siblings hinzu
-        for (Text sibling : text.getSiblings()) {
+        for (Component sibling : text.getSiblings()) {
             String siblingText = getFullTextString(sibling);
             if (siblingText != null && !siblingText.isEmpty()) {
                 sb.append(siblingText);
@@ -844,7 +843,7 @@ public class PlayerHoverStatsUtility {
     /**
      * Findet ein HoverEvent in einem Text rekursiv
      */
-    private static HoverEvent findHoverEventInText(Text text) {
+    private static HoverEvent findHoverEventInText(Component text) {
         if (text == null) {
             return null;
         }
@@ -852,13 +851,13 @@ public class PlayerHoverStatsUtility {
         // Prüfe den Haupttext
         if (text.getStyle() != null) {
             HoverEvent hoverEvent = text.getStyle().getHoverEvent();
-            if (hoverEvent != null && hoverEvent.getAction() == HoverEvent.Action.SHOW_TEXT) {
+            if (hoverEvent != null && hoverEvent.action() == HoverEvent.Action.SHOW_TEXT) {
                 return hoverEvent;
             }
         }
         
         // Rekursiv in Siblings suchen
-        for (Text sibling : text.getSiblings()) {
+        for (Component sibling : text.getSiblings()) {
             HoverEvent found = findHoverEventInText(sibling);
             if (found != null) {
                 return found;
@@ -872,8 +871,8 @@ public class PlayerHoverStatsUtility {
      * Extrahiert Text aus einem HoverEvent
      * Nutzt umfassende Logik ähnlich wie InformationenUtility
      */
-    private static Text extractHoverTextFromEvent(HoverEvent hoverEvent) {
-        if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
+    private static Component extractHoverTextFromEvent(HoverEvent hoverEvent) {
+        if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
             return null;
         }
         
@@ -884,11 +883,11 @@ public class PlayerHoverStatsUtility {
             java.lang.reflect.Method getValueMethod = HoverEvent.class.getDeclaredMethod("getValue", HoverEvent.Action.class);
             getValueMethod.setAccessible(true);
             Object value = getValueMethod.invoke(hoverEvent, HoverEvent.Action.SHOW_TEXT);
-            if (value instanceof Text) {
+            if (value instanceof Component) {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via getValue(Action) gefunden");
                 }
-                return (Text) value;
+                return (Component) value;
             }
         } catch (Exception e) {
             if (debugging) {
@@ -901,11 +900,11 @@ public class PlayerHoverStatsUtility {
             java.lang.reflect.Method valueMethod = HoverEvent.class.getDeclaredMethod("value");
             valueMethod.setAccessible(true);
             Object value = valueMethod.invoke(hoverEvent);
-            if (value instanceof Text) {
+            if (value instanceof Component) {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via value() gefunden");
                 }
-                return (Text) value;
+                return (Component) value;
             }
         } catch (Exception e) {
             if (debugging) {
@@ -917,14 +916,14 @@ public class PlayerHoverStatsUtility {
         try {
             java.lang.reflect.Field[] fields = HoverEvent.class.getDeclaredFields();
             for (java.lang.reflect.Field field : fields) {
-                if (Text.class.isAssignableFrom(field.getType())) {
+                if (Component.class.isAssignableFrom(field.getType())) {
                     field.setAccessible(true);
                     Object value = field.get(hoverEvent);
-                    if (value instanceof Text) {
+                    if (value instanceof Component) {
                         if (debugging) {
                             // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Field gefunden");
                         }
-                        return (Text) value;
+                        return (Component) value;
                     }
                 }
             }
@@ -957,14 +956,14 @@ public class PlayerHoverStatsUtility {
                         if (debugging) {
                             // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Komponente: " + component.getName() + " (" + component.getType().getName() + ")");
                         }
-                        if (Text.class.isAssignableFrom(component.getType())) {
+                        if (Component.class.isAssignableFrom(component.getType())) {
                             try {
                                 Object value = component.getAccessor().invoke(hoverEvent);
-                                if (value instanceof Text) {
+                                if (value instanceof Component) {
                                     if (debugging) {
                                         // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Record-Komponente gefunden: " + component.getName());
                                     }
-                                    return (Text) value;
+                                    return (Component) value;
                                 }
                             } catch (Exception e) {
                                 if (debugging) {
@@ -990,15 +989,15 @@ public class PlayerHoverStatsUtility {
                     if (debugging) {
                         // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Feld: " + field.getName() + " (" + field.getType().getName() + ")");
                     }
-                    if (Text.class.isAssignableFrom(field.getType())) {
+                    if (Component.class.isAssignableFrom(field.getType())) {
                         try {
                             field.setAccessible(true);
                             Object value = field.get(hoverEvent);
-                            if (value instanceof Text) {
+                            if (value instanceof Component) {
                                 if (debugging) {
                                     // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Feld gefunden: " + field.getName());
                                 }
-                                return (Text) value;
+                                return (Component) value;
                             }
                         } catch (Exception e) {
                             if (debugging) {
@@ -1020,18 +1019,18 @@ public class PlayerHoverStatsUtility {
                     // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Methoden in Klasse: " + methods.length);
                 }
                 for (java.lang.reflect.Method method : methods) {
-                    if (Text.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0) {
+                    if (Component.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0) {
                         if (debugging) {
                             // Silent error handling("[PlayerHoverStats] 🔍 extractHoverTextFromEvent: Prüfe Methode: " + method.getName() + " -> " + method.getReturnType().getName());
                         }
                         try {
                             method.setAccessible(true);
                             Object value = method.invoke(hoverEvent);
-                            if (value instanceof Text) {
+                            if (value instanceof Component) {
                                 if (debugging) {
                                     // Silent error handling("[PlayerHoverStats] ✅ extractHoverTextFromEvent: Text via Methode gefunden: " + method.getName());
                                 }
-                                return (Text) value;
+                                return (Component) value;
                             }
                         } catch (Exception e) {
                             if (debugging) {
@@ -1062,7 +1061,7 @@ public class PlayerHoverStatsUtility {
      * Erstellt ein Hover-Event aus einem Text
      * Verwendet umfassende Logik ähnlich wie InformationenUtility.createHoverEventDirect
      */
-    private static HoverEvent createHoverEvent(Text hoverText) {
+    private static HoverEvent createHoverEvent(Component hoverText) {
         if (hoverText == null) {
             return null;
         }
@@ -1082,7 +1081,7 @@ public class PlayerHoverStatsUtility {
                 java.lang.reflect.Constructor<?>[] constructors = innerClass.getDeclaredConstructors();
                 for (java.lang.reflect.Constructor<?> constructor : constructors) {
                     Class<?>[] paramTypes = constructor.getParameterTypes();
-                    if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+                    if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
                         // This looks like ShowText!
                         showTextClass = innerClass;
                         break;
@@ -1099,7 +1098,7 @@ public class PlayerHoverStatsUtility {
                 for (java.lang.reflect.Method method : showTextClass.getDeclaredMethods()) {
                     if (java.lang.reflect.Modifier.isStatic(method.getModifiers()) && method.getReturnType() == HoverEvent.class) {
                         Class<?>[] paramTypes = method.getParameterTypes();
-                        if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+                        if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
                             try {
                                 method.setAccessible(true);
                                 HoverEvent result = (HoverEvent) method.invoke(null, hoverText);
@@ -1120,7 +1119,7 @@ public class PlayerHoverStatsUtility {
                 java.lang.reflect.Constructor<?>[] constructors = showTextClass.getDeclaredConstructors();
                 for (java.lang.reflect.Constructor<?> constructor : constructors) {
                     Class<?>[] paramTypes = constructor.getParameterTypes();
-                    if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+                    if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
                         try {
                             constructor.setAccessible(true);
                             Object showTextInstance = constructor.newInstance(hoverText);
@@ -1174,7 +1173,7 @@ public class PlayerHoverStatsUtility {
             for (java.lang.reflect.Method method : HoverEvent.class.getDeclaredMethods()) {
                 if (java.lang.reflect.Modifier.isStatic(method.getModifiers()) && method.getReturnType() == HoverEvent.class) {
                     Class<?>[] paramTypes = method.getParameterTypes();
-                    if (paramTypes.length == 2 && paramTypes[0] == HoverEvent.Action.class && paramTypes[1] == Text.class) {
+                    if (paramTypes.length == 2 && paramTypes[0] == HoverEvent.Action.class && paramTypes[1] == Component.class) {
                         try {
                             method.setAccessible(true);
                             HoverEvent result = (HoverEvent) method.invoke(null, HoverEvent.Action.SHOW_TEXT, hoverText);
@@ -1187,7 +1186,7 @@ public class PlayerHoverStatsUtility {
                                 // Silent error handling("[PlayerHoverStats] ⚠️ HoverEvent static factory (Action, Text) fehlgeschlagen: " + e.getMessage());
                             }
                         }
-                    } else if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+                    } else if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
                         try {
                             method.setAccessible(true);
                             HoverEvent result = (HoverEvent) method.invoke(null, hoverText);
@@ -1208,7 +1207,7 @@ public class PlayerHoverStatsUtility {
             java.lang.reflect.Constructor<?>[] declaredConstructors = HoverEvent.class.getDeclaredConstructors();
             for (java.lang.reflect.Constructor<?> constructor : declaredConstructors) {
                 Class<?>[] paramTypes = constructor.getParameterTypes();
-                if (paramTypes.length == 2 && paramTypes[0] == HoverEvent.Action.class && paramTypes[1] == Text.class) {
+                if (paramTypes.length == 2 && paramTypes[0] == HoverEvent.Action.class && paramTypes[1] == Component.class) {
                     try {
                         constructor.setAccessible(true);
                         HoverEvent result = (HoverEvent) constructor.newInstance(HoverEvent.Action.SHOW_TEXT, hoverText);

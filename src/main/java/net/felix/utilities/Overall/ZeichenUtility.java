@@ -4,16 +4,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilities;
 import net.felix.utilities.Aincraft.KillsUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -51,7 +50,7 @@ public class ZeichenUtility {
 
     private static final String ZEICHEN_CONFIG_FILE = "assets/cclive-utilities/zeichen.json";
     private static final String LOCAL_ZEICHEN_FILE = "zeichen.json";
-    private static final Identifier RELOAD_LISTENER_ID = Identifier.of("cclive-utilities", "zeichen_font_reload");
+    private static final Identifier RELOAD_LISTENER_ID = Identifier.fromNamespaceAndPath("cclive-utilities", "zeichen_font_reload");
     private static final ZeichenFontLoader.FontProviderKey AINCRAFT_BOTTOM_KEY =
             new ZeichenFontLoader.FontProviderKey("cactusclicker_aincraft_overlay", "font_bottom_line");
 
@@ -119,9 +118,9 @@ public class ZeichenUtility {
         }
         if (!joinReloadRegistered) {
             ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
-                    reloadFromActiveResourcePack("server-join"));
+                    client.execute(() -> reloadFromActiveResourcePack("server-join")));
             ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-                    reloadFromActiveResourcePack("server-disconnect"));
+                    client.execute(() -> reloadFromActiveResourcePack("server-disconnect")));
             ClientLifecycleEvents.CLIENT_STARTED.register(client ->
                     reloadFromActiveResourcePack("client-started"));
             joinReloadRegistered = true;
@@ -180,7 +179,7 @@ public class ZeichenUtility {
     }
 
     private static boolean tryLoadFromResourcePack(String trigger) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             logStatus("[" + trigger + "] Kein MinecraftClient – Resourcepack noch nicht prüfbar.");
             return false;
@@ -220,15 +219,11 @@ public class ZeichenUtility {
     }
 
     private static void registerResourceReloadListener() {
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(
-                new SimpleSynchronousResourceReloadListener() {
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+                RELOAD_LISTENER_ID,
+                new ResourceManagerReloadListener() {
                     @Override
-                    public Identifier getFabricId() {
-                        return RELOAD_LISTENER_ID;
-                    }
-
-                    @Override
-                    public void reload(ResourceManager manager) {
+                    public void onResourceManagerReload(ResourceManager manager) {
                         lastLoadTrigger = "resource-reload";
                         // Immer neu laden (leert zuerst den Cache, dann Pack oder Fallback)
                         loadAllSources();
@@ -397,7 +392,7 @@ public class ZeichenUtility {
         if (!first.has("group") || !first.has("name")) {
             return false;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getResourceManager() == null) {
             return false;
         }

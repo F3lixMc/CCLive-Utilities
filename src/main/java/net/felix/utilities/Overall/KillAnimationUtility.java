@@ -1,8 +1,8 @@
 package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
 import net.felix.CCLiveUtilitiesConfig;
+import net.minecraft.client.Minecraft;
 
 public class KillAnimationUtility {
     
@@ -23,7 +23,7 @@ public class KillAnimationUtility {
         }
     }
     
-    private static void onClientTick(MinecraftClient client) {
+    private static void onClientTick(Minecraft client) {
         // This method is called every tick to check if the utility should be active
         // The actual disabling of death animations is handled in the mixin
     }
@@ -37,8 +37,8 @@ public class KillAnimationUtility {
             return false;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.player == null || client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || client.level == null) {
             return false;
         }
         

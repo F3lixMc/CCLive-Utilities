@@ -2,12 +2,11 @@ package net.felix.utilities.DragOverlay.Overall;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.CoinTrackerDisplayMode;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.felix.utilities.Overall.BossBarHudValueDecoder;
 import net.felix.utilities.Overall.CoinTrackerUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -26,12 +25,12 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) {
             return 0;
         }
 
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerX;
         int unscaledWidth = CoinTrackerUtility.getCurrentOverlayWidth(client);
 
@@ -51,7 +50,7 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public int getWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         int unscaledWidth = client != null ? CoinTrackerUtility.getCurrentOverlayWidth(client) : MIN_OVERLAY_WIDTH;
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerScale;
         if (scale <= 0) {
@@ -71,12 +70,12 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) {
             return;
         }
 
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int unscaledWidth = CoinTrackerUtility.getCurrentOverlayWidth(client);
         boolean isOnLeftSide = x < screenWidth / 2;
 
@@ -93,7 +92,7 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public void setSize(int width, int height) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return;
         }
@@ -110,8 +109,8 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return;
         }
@@ -129,9 +128,9 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
         int scaledWidth = (int) (unscaledWidth * scale);
         int scaledHeight = (int) (unscaledHeight * scale);
 
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
 
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
@@ -144,15 +143,15 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
         int textColor = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerTextColor.getRGB();
 
         int textY = PADDING;
-        context.drawText(client.textRenderer, Text.literal("Coin Tracker"), PADDING, textY, headerColor, true);
+        context.text(client.font, Component.literal("Coin Tracker"), PADDING, textY, headerColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("Coins: 1,256k"), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal("Coins: 1,256k"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("Gewinn: +250"), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal("Gewinn: +250"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("CPM: 1,2k"), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal("CPM: 1,2k"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal("Zeit: 05:30"), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal("Zeit: 05:30"), PADDING, textY, textColor, true);
 
         matrices.popMatrix();
     }
@@ -164,15 +163,20 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerEnabled
-                && CCLiveUtilitiesConfig.HANDLER.instance().showCoinTracker
+        return isConfigEnabled()
                 && CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode == CoinTrackerDisplayMode.OVERLAY
                 && BossBarHudValueDecoder.isFloorDimension();
     }
 
     @Override
-    public Text getTooltip() {
-        return Text.literal("Coin Tracker - Liest Coins aus der HUD-Bossbar und zeigt Session-Statistiken");
+    public boolean isConfigEnabled() {
+        return CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerEnabled
+                && CCLiveUtilitiesConfig.HANDLER.instance().showCoinTracker;
+    }
+
+    @Override
+    public Component getTooltip() {
+        return Component.literal("Coin Tracker - Liest Coins aus der HUD-Bossbar und zeigt Session-Statistiken");
     }
 
     @Override

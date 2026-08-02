@@ -1,7 +1,7 @@
 {
 	"required": true,
 	"package": "net.felix.mixin",
-	"compatibilityLevel": "JAVA_21",
+	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"BossBarMixin",
 		"HandledScreenMixin",
@@ -23,7 +23,8 @@
 		"HelpOverlayScreenMixin",
 		"InGameHudHelpOverlayMixin",
 		"InGameHudScoreboardMixin",
-		"MouseClickMixin"
+		"MouseClickMixin",
+		"YaclTextScaledButtonWidgetMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

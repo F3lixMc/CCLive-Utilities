@@ -1,12 +1,13 @@
 package net.felix.mixin;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.utilities.Overall.InformationenUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.felix.utilities.Overall.Aspekte.AspectOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.hud.ChatHud;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,15 +22,15 @@ abstract class ChatHudHoverMixin {
      * 1. Shift is pressed
      * 2. A HoverEvent is being rendered (detected via ChatHud.getTextStyleAt())
      */
-    @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(net.minecraft.client.gui.DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRender(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // IMPORTANT: Don't clear overlay if we're hovering over an item with "⭐" in tooltip
         // Items with "⭐" are managed by addAspectNameToTooltip, not by this chat hover mixin
         // This mixin is only for chat message hover events
         // Only skip if it's a star item (lastTooltipUpdateTime > 0), not if it's a chat item (lastTooltipUpdateTime == 0)
         if (AspectOverlay.isCurrentlyHovering() && AspectOverlay.isStarItemHovering()) {
             // We're hovering over an item with "⭐" - don't interfere
-            // The overlay will be managed by HandledScreenMixin and the tooltip callback
+            // The overlay will be managed by AbstractContainerScreenMixin and the tooltip callback
             return;
         }
         
@@ -43,7 +44,7 @@ abstract class ChatHudHoverMixin {
             return;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             AspectOverlay.onHoverStopped();
             return;
@@ -53,13 +54,13 @@ abstract class ChatHudHoverMixin {
         // even when no world is loaded (e.g., in main menu with chat history visible)
         
         // Check if Shift is pressed
-        boolean isShiftPressed = Screen.hasShiftDown();
+        boolean isShiftPressed = (InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), InputConstants.KEY_RSHIFT));
         
         // Use Minecraft's built-in method to check if a HoverEvent is being rendered
         // This is the same method Minecraft uses internally to determine tooltip hover
-        ChatHud chatHud = client.inGameHud.getChatHud();
+        ChatComponent chatHud = client.gui.getChat();
         boolean hasHoverEvent = false;
-        Text hoveredMessage = null;
+        Component hoveredMessage = null;
         
         if (chatHud != null) {
             // Convert mouse coordinates to double (as required by getTextStyleAt)
@@ -72,7 +73,7 @@ abstract class ChatHudHoverMixin {
             try {
                 // Find getTextStyleAt method - it takes two double parameters and returns Style
                 java.lang.reflect.Method getTextStyleAtMethod = null;
-                for (java.lang.reflect.Method method : ChatHud.class.getDeclaredMethods()) {
+                for (java.lang.reflect.Method method : ChatComponent.class.getDeclaredMethods()) {
                     if (method.getParameterCount() == 2 &&
                         method.getParameterTypes()[0] == double.class &&
                         method.getParameterTypes()[1] == double.class &&
@@ -84,7 +85,7 @@ abstract class ChatHudHoverMixin {
                 
                 // Also try public methods
                 if (getTextStyleAtMethod == null) {
-                    for (java.lang.reflect.Method method : ChatHud.class.getMethods()) {
+                    for (java.lang.reflect.Method method : ChatComponent.class.getMethods()) {
                         if (method.getParameterCount() == 2 &&
                             method.getParameterTypes()[0] == double.class &&
                             method.getParameterTypes()[1] == double.class &&
@@ -106,11 +107,11 @@ abstract class ChatHudHoverMixin {
                     
                     // Find getTextAt method - it takes two double parameters and returns Text
                     java.lang.reflect.Method getTextAtMethod = null;
-                    for (java.lang.reflect.Method method : ChatHud.class.getDeclaredMethods()) {
+                    for (java.lang.reflect.Method method : ChatComponent.class.getDeclaredMethods()) {
                         if (method.getParameterCount() == 2 &&
                             method.getParameterTypes()[0] == double.class &&
                             method.getParameterTypes()[1] == double.class &&
-                            method.getReturnType() == Text.class) {
+                            method.getReturnType() == Component.class) {
                             getTextAtMethod = method;
                             break;
                         }
@@ -118,11 +119,11 @@ abstract class ChatHudHoverMixin {
                     
                     // Also try public methods
                     if (getTextAtMethod == null) {
-                        for (java.lang.reflect.Method method : ChatHud.class.getMethods()) {
+                        for (java.lang.reflect.Method method : ChatComponent.class.getMethods()) {
                             if (method.getParameterCount() == 2 &&
                                 method.getParameterTypes()[0] == double.class &&
                                 method.getParameterTypes()[1] == double.class &&
-                                method.getReturnType() == Text.class) {
+                                method.getReturnType() == Component.class) {
                                 getTextAtMethod = method;
                                 break;
                             }
@@ -131,7 +132,7 @@ abstract class ChatHudHoverMixin {
                     
                     if (getTextAtMethod != null) {
                         getTextAtMethod.setAccessible(true);
-                        hoveredMessage = (Text) getTextAtMethod.invoke(chatHud, mouseXDouble, mouseYDouble);
+                        hoveredMessage = (Component) getTextAtMethod.invoke(chatHud, mouseXDouble, mouseYDouble);
                     }
                     
                     // If we couldn't get the message via getTextAt, search through chat messages
@@ -174,12 +175,12 @@ abstract class ChatHudHoverMixin {
      * Finds the chat message that has the given HoverEvent
      * Searches through visible chat messages to find the one with matching HoverEvent
      */
-    private Text findChatMessageWithHoverEvent(MinecraftClient client, net.minecraft.text.HoverEvent targetHoverEvent) {
+    private Component findChatMessageWithHoverEvent(Minecraft client, net.minecraft.network.chat.HoverEvent targetHoverEvent) {
         if (client == null || targetHoverEvent == null) {
             return null;
         }
         
-        ChatHud chatHud = client.inGameHud.getChatHud();
+        ChatComponent chatHud = client.gui.getChat();
         if (chatHud == null) {
             return null;
         }
@@ -187,13 +188,13 @@ abstract class ChatHudHoverMixin {
         try {
             // Find the messages field by type (List<ChatHudLine>)
             java.lang.reflect.Field messagesField = null;
-            for (java.lang.reflect.Field field : ChatHud.class.getDeclaredFields()) {
+            for (java.lang.reflect.Field field : ChatComponent.class.getDeclaredFields()) {
                 if (java.util.List.class.isAssignableFrom(field.getType())) {
                     java.lang.reflect.Type genericType = field.getGenericType();
                     if (genericType instanceof java.lang.reflect.ParameterizedType) {
                         java.lang.reflect.ParameterizedType pt = (java.lang.reflect.ParameterizedType) genericType;
                         java.lang.reflect.Type[] actualTypes = pt.getActualTypeArguments();
-                        if (actualTypes.length > 0 && actualTypes[0] == net.minecraft.client.gui.hud.ChatHudLine.class) {
+                        if (actualTypes.length > 0 && actualTypes[0] == net.minecraft.client.multiplayer.chat.GuiMessage.class) {
                             messagesField = field;
                             break;
                         }
@@ -207,8 +208,8 @@ abstract class ChatHudHoverMixin {
             
             messagesField.setAccessible(true);
             @SuppressWarnings("unchecked")
-            java.util.List<net.minecraft.client.gui.hud.ChatHudLine> messages = 
-                (java.util.List<net.minecraft.client.gui.hud.ChatHudLine>) messagesField.get(chatHud);
+            java.util.List<net.minecraft.client.multiplayer.chat.GuiMessage> messages = 
+                (java.util.List<net.minecraft.client.multiplayer.chat.GuiMessage>) messagesField.get(chatHud);
             
             if (messages == null || messages.isEmpty()) {
                 return null;
@@ -216,12 +217,12 @@ abstract class ChatHudHoverMixin {
             
             // Search through messages (newest first) to find one with matching HoverEvent
             for (int i = 0; i < Math.min(messages.size(), 100); i++) { // Check last 100 messages
-                net.minecraft.client.gui.hud.ChatHudLine line = messages.get(i);
+                net.minecraft.client.multiplayer.chat.GuiMessage line = messages.get(i);
                 if (line == null) {
                     continue;
                 }
                 
-                Text message = line.content();
+                Component message = line.content();
                 if (message == null) {
                     continue;
                 }
@@ -241,7 +242,7 @@ abstract class ChatHudHoverMixin {
     /**
      * Checks if a Text component has a HoverEvent that matches the target HoverEvent
      */
-    private boolean hasMatchingHoverEvent(Text text, net.minecraft.text.HoverEvent targetHoverEvent) {
+    private boolean hasMatchingHoverEvent(Component text, net.minecraft.network.chat.HoverEvent targetHoverEvent) {
         if (text == null || targetHoverEvent == null) {
             return false;
         }
@@ -252,7 +253,7 @@ abstract class ChatHudHoverMixin {
         }
         
         // Recursively check siblings
-        for (Text sibling : text.getSiblings()) {
+        for (Component sibling : text.getSiblings()) {
             if (hasMatchingHoverEvent(sibling, targetHoverEvent)) {
                 return true;
             }

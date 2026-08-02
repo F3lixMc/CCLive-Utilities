@@ -1,22 +1,23 @@
 package net.felix.mixin;
 
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.felix.chat.ChatManager;
 import net.felix.profile.ProfileStatsManager;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ChatScreen.class)
 public abstract class ChatScreenMixin {
     
     @Shadow
-    protected TextFieldWidget chatField;
+    protected EditBox input;
     
     /**
      * Zählt gesendete Chat-Nachrichten für Profile-Stats.
@@ -33,9 +34,9 @@ public abstract class ChatScreenMixin {
      * Handles F6 key press in chat screen to open overlay editor
      */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+    private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         // Handle F6 key for overlay editor (works in chat)
-        if (OverlayEditorUtility.handleKeyPress(keyCode)) {
+        if (OverlayEditorUtility.handleKeyPress(event.key())) {
             cir.setReturnValue(true);
         }
     }
@@ -43,7 +44,7 @@ public abstract class ChatScreenMixin {
     /**
      * Interceptiert Chat-Nachrichten und prüft auf @cclive, @default und @lp
      */
-    @Inject(method = "sendMessage", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
     private void onSendMessage(String message, boolean addToHistory, CallbackInfo ci) {
         if (message == null || message.trim().isEmpty()) {
             return;
@@ -75,9 +76,7 @@ public abstract class ChatScreenMixin {
                 // Sende an CCLive Chat
                 chatManager.sendMessage(chatMessage).thenAccept(success -> {
                     if (!success) {
-                        net.minecraft.client.MinecraftClient.getInstance().player.sendMessage(
-                            net.minecraft.text.Text.literal("§cFehler beim Senden der Chat-Nachricht!"), false
-                        );
+                        scheduleChatError("§cFehler beim Senden der Chat-Nachricht!");
                     }
                 });
             } else {
@@ -88,9 +87,7 @@ public abstract class ChatScreenMixin {
                 // Sende die komplette Nachricht (mit @cclive) an CCLIVE Chat
                 chatManager.sendMessage(trimmedMessage).thenAccept(success -> {
                     if (!success) {
-                        net.minecraft.client.MinecraftClient.getInstance().player.sendMessage(
-                            net.minecraft.text.Text.literal("§cFehler beim Senden der Chat-Nachricht!"), false
-                        );
+                        scheduleChatError("§cFehler beim Senden der Chat-Nachricht!");
                     }
                 });
             }
@@ -107,9 +104,9 @@ public abstract class ChatScreenMixin {
                 if (!defaultMessage.isEmpty()) {
                     ci.cancel();
                     // Sende die Nachricht ohne @default direkt an den Server (normale Chat-Nachricht)
-                    net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-                    if (client.player != null && client.getNetworkHandler() != null) {
-                        client.getNetworkHandler().sendChatMessage(defaultMessage);
+                    net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+                    if (client.player != null && client.getConnection() != null) {
+                        client.getConnection().sendChat(defaultMessage);
                     }
                     
                     // Nur echte Chat-Nachrichten (keine Commands) mitzählen
@@ -148,9 +145,7 @@ public abstract class ChatScreenMixin {
             
             chatManager.sendMessage(trimmedMessage).thenAccept(success -> {
                 if (!success) {
-                    net.minecraft.client.MinecraftClient.getInstance().player.sendMessage(
-                        net.minecraft.text.Text.literal("§cFehler beim Senden der Chat-Nachricht!"), false
-                    );
+                    scheduleChatError("§cFehler beim Senden der Chat-Nachricht!");
                 }
             });
             // Kein return; wir wollen unten noch trackMessageSent() aufrufen
@@ -161,6 +156,20 @@ public abstract class ChatScreenMixin {
         if (!trimmedMessage.startsWith("/")) {
             trackMessageSent();
         }
+    }
+
+    private static void scheduleChatError(String message) {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if (client == null) {
+            return;
+        }
+        client.execute(() -> {
+            if (client.player != null) {
+                client.player.sendSystemMessage(
+                    net.minecraft.network.chat.Component.literal(message)
+                );
+            }
+        });
     }
 }
 

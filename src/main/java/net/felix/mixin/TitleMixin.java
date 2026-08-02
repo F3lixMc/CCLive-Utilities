@@ -1,21 +1,21 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.AnimationBlockerUtility;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.network.chat.Component;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public class TitleMixin {
 
     
     @Inject(method = "setTitle", at = @At("HEAD"), cancellable = true)
-    private void onSetTitle(Text title, CallbackInfo ci) {
+    private void onSetTitle(Component title, CallbackInfo ci) {
         // Cache Title für FarmworldCollectionsCollector
         if (title != null) {
             String titleString = title.getString();
@@ -35,7 +35,7 @@ public class TitleMixin {
     }
     
     @Inject(method = "setSubtitle", at = @At("HEAD"), cancellable = true)
-    private void onSetSubtitle(Text subtitle, CallbackInfo ci) {
+    private void onSetSubtitle(Component subtitle, CallbackInfo ci) {
         // Cache Subtitle für FarmworldCollectionsCollector
         if (subtitle != null) {
             String subtitleString = subtitle.getString();

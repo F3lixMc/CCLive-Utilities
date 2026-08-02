@@ -1,10 +1,10 @@
 package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 
 /**
  * Draggable Overlay für das Star Aspect Overlay (für Items mit "⭐" im Tooltip)
@@ -46,7 +46,7 @@ public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
         int width = getWidth();
@@ -58,11 +58,11 @@ public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
         }
         
         // Render border for edit mode
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.outline(x, y, width, height, 0xFFFF0000);
         
         // Render overlay name
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             getOverlayName(),
             x + 5, y + 5,
             0xFFFFFFFF,
@@ -70,16 +70,16 @@ public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
         );
         
         // Render sample text
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             "Aspekt Name",
             x + 8, y + 25,
             0xFFFCA800,
             true
         );
         
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             "Beschreibung des Aspektes",
             x + 8, y + 38,
             0xFF54FC54,
@@ -99,8 +99,8 @@ public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Star Aspect Overlay - Shows aspect information for items with ⭐ in tooltip");
+    public Component getTooltip() {
+        return Component.literal("Star Aspect Overlay - Shows aspect information for items with ⭐ in tooltip");
     }
     
     @Override

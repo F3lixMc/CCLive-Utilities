@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Mixin for InventoryScreen to render aspect overlay in player inventory (survival mode)
- * This is needed because InventoryScreen extends Screen, not HandledScreen
+ * This is needed because InventoryScreen extends Screen, not AbstractContainerScreen
  */
 @Mixin(InventoryScreen.class)
 public abstract class InventoryScreenMixin {
@@ -18,8 +18,8 @@ public abstract class InventoryScreenMixin {
      * Injects at the very end of the render method to ensure our overlays are drawn last
      * This allows the aspect overlay to work in the player inventory (survival mode)
      */
-    @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Show aspect overlay when hovering over items with "⭐" in tooltip
         // This works in the player inventory (survival mode)
         if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {

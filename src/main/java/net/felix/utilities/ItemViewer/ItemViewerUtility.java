@@ -1,28 +1,30 @@
 package net.felix.utilities.ItemViewer;
 
+import net.felix.utilities.Overall.KeyCategories;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
@@ -45,8 +47,8 @@ public class ItemViewerUtility {
     private static boolean isInitialized = false;
     private static boolean isVisible = true; // Standard: sichtbar
     private static boolean isMinimized = false; // Minimiert (rechts unten)
-    private static KeyBinding toggleKeyBinding;
-    private static KeyBinding clipboardPinKeyBinding;
+    private static KeyMapping toggleKeyMapping;
+    private static KeyMapping clipboardPinKeyMapping;
     
     private static List<ItemData> allItems = new ArrayList<>();
     private static List<ItemData> filteredItems = new ArrayList<>();
@@ -82,7 +84,7 @@ public class ItemViewerUtility {
     
     private static int cachedSortDropdownWidth = -1;
     private static ViewerPosition cachedHandledViewerPosition;
-    private static HandledScreen<?> cachedHandledViewerPositionScreen;
+    private static AbstractContainerScreen<?> cachedHandledViewerPositionScreen;
     private static int cachedViewerScreenWidth = -1;
     private static int cachedViewerScreenHeight = -1;
     private static int cachedViewerInventoryX = -1;
@@ -139,8 +141,8 @@ public class ItemViewerUtility {
             }
             
             // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
-            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-            if (client != null && client.player != null && client.getNetworkHandler() != null) {
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+            if (client != null && client.player != null && client.getConnection() != null) {
                 checkAndUpdateItemsConfig();
             }
             
@@ -157,7 +159,7 @@ public class ItemViewerUtility {
             
             // Registriere HUD-Rendering
             HudElementRegistry.addLast(
-                    Identifier.of("cclive-utilities", "item_viewer"),
+                    Identifier.fromNamespaceAndPath("cclive-utilities", "item_viewer"),
                     ItemViewerUtility::onHudRender);
             
             isInitialized = true;
@@ -566,19 +568,19 @@ public class ItemViewerUtility {
     }
     
     private static void registerKeybind() {
-        toggleKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.itemviewer.toggle",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_I,
-            "categories.cclive-utilities.itemviewer"
+            KeyCategories.of("cclive-utilities", "itemviewer")
         ));
         
-        // Registriere KeyBinding für Bauplan Anpinnen (Clipboard)
-        clipboardPinKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        // Registriere KeyMapping für Bauplan Anpinnen (Clipboard)
+        clipboardPinKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.clipboard.pin",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_P,
-            "categories.cclive-utilities.itemviewer"
+            KeyCategories.of("cclive-utilities", "itemviewer")
         ));
     }
     
@@ -588,17 +590,17 @@ public class ItemViewerUtility {
      * Verwendet getBoundKeyLocalizedText() um den aktuellen Hotkey zu bekommen (auch nach Config-Änderungen)
      */
     public static String getToggleHotkeyText() {
-        if (toggleKeyBinding == null) {
+        if (toggleKeyMapping == null) {
             return "I"; // Fallback
         }
         
         try {
             // Verwende getBoundKeyLocalizedText() um den aktuellen Hotkey-Text zu bekommen
             // Dies funktioniert auch nach Änderungen in der Config
-            java.lang.reflect.Method getBoundKeyLocalizedTextMethod = toggleKeyBinding.getClass().getMethod("getBoundKeyLocalizedText");
-            Object localizedText = getBoundKeyLocalizedTextMethod.invoke(toggleKeyBinding);
-            if (localizedText instanceof net.minecraft.text.Text) {
-                String hotkeyString = ((net.minecraft.text.Text) localizedText).getString();
+            java.lang.reflect.Method getBoundKeyLocalizedTextMethod = toggleKeyMapping.getClass().getMethod("getBoundKeyLocalizedText");
+            Object localizedText = getBoundKeyLocalizedTextMethod.invoke(toggleKeyMapping);
+            if (localizedText instanceof net.minecraft.network.chat.Component) {
+                String hotkeyString = ((net.minecraft.network.chat.Component) localizedText).getString();
                 // Entferne mögliche Formatierungs-Codes
                 hotkeyString = hotkeyString.replaceAll("§[0-9a-fk-or]", "");
                 return hotkeyString;
@@ -606,8 +608,8 @@ public class ItemViewerUtility {
         } catch (Exception e) {
             // Fallback: Versuche über getBoundKey() und KeyCode
             try {
-                java.lang.reflect.Method getBoundKeyMethod = toggleKeyBinding.getClass().getMethod("getBoundKey");
-                Object boundKey = getBoundKeyMethod.invoke(toggleKeyBinding);
+                java.lang.reflect.Method getBoundKeyMethod = toggleKeyMapping.getClass().getMethod("getBoundKey");
+                Object boundKey = getBoundKeyMethod.invoke(toggleKeyMapping);
                 
                 // Hole den KeyCode
                 java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getCode");
@@ -640,14 +642,14 @@ public class ItemViewerUtility {
      * Verwendet getBoundKeyLocalizedText() um den aktuellen Hotkey zu bekommen (auch nach Config-Änderungen)
      */
     public static String getClipboardPinHotkeyText() {
-        if (clipboardPinKeyBinding == null) {
+        if (clipboardPinKeyMapping == null) {
             return "P"; // Fallback
         }
         
         try {
             // Verwende getBoundKeyLocalizedText() direkt um den aktuellen Hotkey-Text zu bekommen
             // Dies funktioniert auch nach Änderungen in der Config
-            net.minecraft.text.Text localizedText = clipboardPinKeyBinding.getBoundKeyLocalizedText();
+            net.minecraft.network.chat.Component localizedText = clipboardPinKeyMapping.getTranslatedKeyMessage();
             if (localizedText != null) {
                 String hotkeyString = localizedText.getString();
                 // Entferne mögliche Formatierungs-Codes
@@ -662,8 +664,8 @@ public class ItemViewerUtility {
         
         // Fallback: Versuche über getBoundKey() und KeyCode via Reflection
         try {
-            java.lang.reflect.Method getBoundKeyMethod = clipboardPinKeyBinding.getClass().getMethod("getBoundKey");
-            Object boundKeyObj = getBoundKeyMethod.invoke(clipboardPinKeyBinding);
+            java.lang.reflect.Method getBoundKeyMethod = clipboardPinKeyMapping.getClass().getMethod("getBoundKey");
+            Object boundKeyObj = getBoundKeyMethod.invoke(clipboardPinKeyMapping);
             if (boundKeyObj != null) {
                 // Hole den KeyCode
                 java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getCode");
@@ -714,7 +716,7 @@ public class ItemViewerUtility {
         return "P"; // Fallback
     }
     
-    private static void onClientTick(MinecraftClient client) {
+    private static void onClientTick(Minecraft client) {
         if (filterDebounceTicks > 0) {
             filterDebounceTicks--;
             if (filterDebounceTicks == 0) {
@@ -722,7 +724,7 @@ public class ItemViewerUtility {
             }
         }
         
-        if (toggleKeyBinding != null && toggleKeyBinding.wasPressed()) {
+        if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
             // Performance-Optimierung: Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
             // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler "I" tippt
             if (isTextFieldFocused(client)) {
@@ -742,9 +744,9 @@ public class ItemViewerUtility {
         
         // Prüfe Clipboard-Pin Hotkey (nur wenn kein Screen geöffnet ist)
         // Wenn ein Screen geöffnet ist, wird handleKeyPress verwendet (vom ScreenMixin aufgerufen)
-        if (clipboardPinKeyBinding != null && clipboardPinKeyBinding.wasPressed()) {
+        if (clipboardPinKeyMapping != null && clipboardPinKeyMapping.consumeClick()) {
             // Nur verarbeiten, wenn kein Screen geöffnet ist (sonst wird handleKeyPress verwendet)
-            if (client.currentScreen == null) {
+            if (client.screen == null) {
                 // Prüfe ob ein Textfeld fokussiert ist
                 if (isTextFieldFocused(client)) {
                     return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
@@ -755,8 +757,8 @@ public class ItemViewerUtility {
                     // Hole gehoveres Item aus dem Grid
                     ItemData hoveredItem = getHoveredItemFromGrid();
                     
-                    if (hoveredItem != null && net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
-                        net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem);
+                    if (hoveredItem != null && net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
+                        net.felix.utilities.Other.Clipboard.ClipboardUtility.addBlueprint(hoveredItem);
                     }
                 }
             }
@@ -1251,13 +1253,13 @@ public class ItemViewerUtility {
      * Prüft ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
      * Verhindert, dass Hotkeys aktiviert werden, wenn der Spieler tippt
      */
-    private static boolean isTextFieldFocused(MinecraftClient client) {
-        if (client == null || client.currentScreen == null) {
+    private static boolean isTextFieldFocused(Minecraft client) {
+        if (client == null || client.screen == null) {
             return false;
         }
         
         // Prüfe ob ChatScreen offen ist
-        if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
+        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
             return true;
         }
         
@@ -1270,11 +1272,11 @@ public class ItemViewerUtility {
         // Verwende Reflection um auf fokussierte Widgets zuzugreifen
         try {
             // Prüfe ob Screen ein fokussiertes Widget hat
-            java.lang.reflect.Method getFocusedMethod = client.currentScreen.getClass().getMethod("getFocused");
+            java.lang.reflect.Method getFocusedMethod = client.screen.getClass().getMethod("getFocused");
             if (getFocusedMethod != null) {
-                Object focused = getFocusedMethod.invoke(client.currentScreen);
-                if (focused instanceof net.minecraft.client.gui.widget.TextFieldWidget) {
-                    net.minecraft.client.gui.widget.TextFieldWidget textField = (net.minecraft.client.gui.widget.TextFieldWidget) focused;
+                Object focused = getFocusedMethod.invoke(client.screen);
+                if (focused instanceof net.minecraft.client.gui.components.EditBox) {
+                    net.minecraft.client.gui.components.EditBox textField = (net.minecraft.client.gui.components.EditBox) focused;
                     if (textField.isFocused()) {
                         return true;
                     }
@@ -1295,10 +1297,10 @@ public class ItemViewerUtility {
      * @return true wenn der Keybind behandelt wurde, false sonst
      */
     public static boolean handleKeyPress(int keyCode, int scanCode, int modifiers) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         
         // Prüfe Clipboard-Pin Hotkey
-        if (clipboardPinKeyBinding != null && clipboardPinKeyBinding.matchesKey(keyCode, scanCode)) {
+        if (clipboardPinKeyMapping != null && clipboardPinKeyMapping.matches(new net.minecraft.client.input.KeyEvent(keyCode, scanCode, 0))) {
             // Prüfe ob ein Textfeld fokussiert ist
             if (isTextFieldFocused(client)) {
                 return false; // Ignoriere Hotkey wenn Textfeld fokussiert ist
@@ -1310,14 +1312,14 @@ public class ItemViewerUtility {
                 // Hole gehoveres Item aus dem Grid
                 ItemData hoveredItem = getHoveredItemFromGrid();
                 
-                if (hoveredItem != null && net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
-                    net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(hoveredItem);
+                if (hoveredItem != null && net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
+                    net.felix.utilities.Other.Clipboard.ClipboardUtility.addBlueprint(hoveredItem);
                     return true;
                 }
             }
             
             // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
-            if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+            if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
                 if (tryPinHoveredInventoryItem(handledScreen, client)) {
                     return true;
                 }
@@ -1325,13 +1327,13 @@ public class ItemViewerUtility {
         }
         
         // Prüfe Toggle Hotkey
-        if (toggleKeyBinding == null) {
+        if (toggleKeyMapping == null) {
             return false;
         }
         
         // Prüfe ob unser Keybind gedrückt wurde
         // Verwende matchesKey() um zu prüfen ob der Keybind passt
-        if (toggleKeyBinding.matchesKey(keyCode, scanCode)) {
+        if (toggleKeyMapping.matches(new net.minecraft.client.input.KeyEvent(keyCode, scanCode, 0))) {
             // Prüfe ob ein Textfeld fokussiert ist (Chat, Inventar-Suchfeld, etc.)
             // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler "I" tippt
             if (isTextFieldFocused(client)) {
@@ -1359,39 +1361,39 @@ public class ItemViewerUtility {
     }
     
     /**
-     * Prüft ob ein Inventar geöffnet ist (HandledScreen oder InventoryScreen)
+     * Prüft ob ein Inventar geöffnet ist (AbstractContainerScreen oder InventoryScreen)
      */
-    private static boolean isInventoryOpen(MinecraftClient client) {
-        if (client == null || client.currentScreen == null) {
+    private static boolean isInventoryOpen(Minecraft client) {
+        if (client == null || client.screen == null) {
             return false;
         }
-        return client.currentScreen instanceof HandledScreen<?> || 
-               client.currentScreen instanceof InventoryScreen;
+        return client.screen instanceof AbstractContainerScreen<?> || 
+               client.screen instanceof InventoryScreen;
     }
     
     /**
      * Versucht das aktuell gehoverte Inventar-Item an die Pinnwand anzuheften.
      */
-    private static boolean tryPinHoveredInventoryItem(net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen, MinecraftClient client) {
-        net.minecraft.screen.slot.Slot hoveredSlot = null;
-        if (lastHoveredScreen == handledScreen && lastHoveredSlot != null && lastHoveredSlot.hasStack()) {
+    private static boolean tryPinHoveredInventoryItem(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen, Minecraft client) {
+        net.minecraft.world.inventory.Slot hoveredSlot = null;
+        if (lastHoveredScreen == handledScreen && lastHoveredSlot != null && lastHoveredSlot.hasItem()) {
             hoveredSlot = lastHoveredSlot;
         } else {
             hoveredSlot = getHoveredSlot(handledScreen, client);
         }
         
-        if (hoveredSlot == null || !hoveredSlot.hasStack()) {
+        if (hoveredSlot == null || !hoveredSlot.hasItem()) {
             return false;
         }
         
-        net.minecraft.item.ItemStack stack = hoveredSlot.getStack();
+        net.minecraft.world.item.ItemStack stack = hoveredSlot.getItem();
         if (stack == null || stack.isEmpty()) {
             return false;
         }
         
         String itemName = extractItemNameFromTooltip(handledScreen, client, stack);
         if (itemName == null || itemName.isEmpty()) {
-            itemName = stack.getName().getString();
+            itemName = stack.getHoverName().getString();
         }
         itemName = cleanItemNameForLookup(itemName);
         
@@ -1401,18 +1403,18 @@ public class ItemViewerUtility {
             itemData = findItemByName(itemName);
         }
         
-        if (itemData != null && net.felix.utilities.DragOverlay.ClipboardUtility.isClipboardPinnable(itemData)) {
-            return net.felix.utilities.DragOverlay.ClipboardUtility.addBlueprint(itemData);
+        if (itemData != null && net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
+            return net.felix.utilities.Other.Clipboard.ClipboardUtility.addBlueprint(itemData);
         }
         return false;
     }
     
     /**
-     * Findet den gehoverten Slot in einem HandledScreen
+     * Findet den gehoverten Slot in einem AbstractContainerScreen
      * Verwendet die gespeicherte Mausposition (lastMouseX, lastMouseY) wenn verfügbar
      * Oder berechnet die Mausposition direkt aus client.mouse
      */
-    private static net.minecraft.screen.slot.Slot getHoveredSlot(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, MinecraftClient client) {
+    private static net.minecraft.world.inventory.Slot getHoveredSlot(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen, Minecraft client) {
         try {
             // Hole Mouse-Position - verwende gespeicherte Position wenn verfügbar, sonst berechne direkt
             double mouseX;
@@ -1423,17 +1425,17 @@ public class ItemViewerUtility {
                 mouseY = lastMouseY;
             } else {
                 // Fallback: Berechne Mausposition direkt aus client.mouse
-                // Verwende die gleiche Methode wie in HandledScreenMixin
-                mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
-                mouseY = client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) client.getWindow().getHeight();
+                // Verwende die gleiche Methode wie in AbstractContainerScreenMixin
+                mouseX = client.mouseHandler.xpos() * (double) client.getWindow().getGuiScaledWidth() / (double) client.getWindow().getScreenWidth();
+                mouseY = client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) client.getWindow().getScreenHeight();
             }
             
             // Hole Screen-Position (über Reflection, da @Shadow nicht immer funktioniert)
             int screenX = 0;
             int screenY = 0;
             try {
-                java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
-                java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
+                java.lang.reflect.Field xField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("leftPos");
+                java.lang.reflect.Field yField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("topPos");
                 xField.setAccessible(true);
                 yField.setAccessible(true);
                 screenX = xField.getInt(screen);
@@ -1441,8 +1443,8 @@ public class ItemViewerUtility {
             } catch (NoSuchFieldException e) {
                 // Fallback: Versuche mit getter-Methoden
                 try {
-                    java.lang.reflect.Method getXMethod = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredMethod("getX");
-                    java.lang.reflect.Method getYMethod = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredMethod("getY");
+                    java.lang.reflect.Method getXMethod = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredMethod("getX");
+                    java.lang.reflect.Method getYMethod = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredMethod("getY");
                     getXMethod.setAccessible(true);
                     getYMethod.setAccessible(true);
                     screenX = (Integer) getXMethod.invoke(screen);
@@ -1454,8 +1456,8 @@ public class ItemViewerUtility {
                 // Ignoriere Fehler, verwende 0,0 als Fallback
             }
             
-            // Finde gehoverten Slot (gleiche Logik wie in HandledScreenMixin)
-            for (net.minecraft.screen.slot.Slot slot : screen.getScreenHandler().slots) {
+            // Finde gehoverten Slot (gleiche Logik wie in AbstractContainerScreenMixin)
+            for (net.minecraft.world.inventory.Slot slot : screen.getMenu().slots) {
                 if (slot.x + screenX <= mouseX && mouseX < slot.x + screenX + 16 &&
                     slot.y + screenY <= mouseY && mouseY < slot.y + screenY + 16) {
                     return slot;
@@ -1470,10 +1472,10 @@ public class ItemViewerUtility {
     /**
      * Extrahiert den Item-Namen aus dem Tooltip (erste Zeile: "name - [Bauplan]")
      */
-    private static String extractItemNameFromTooltip(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, MinecraftClient client, net.minecraft.item.ItemStack stack) {
+    private static String extractItemNameFromTooltip(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen, Minecraft client, net.minecraft.world.item.ItemStack stack) {
         try {
             // Hole Tooltip über Reflection (ähnlich wie ClipboardPaperShredsCollector)
-            java.util.List<net.minecraft.text.Text> tooltip = null;
+            java.util.List<net.minecraft.network.chat.Component> tooltip = null;
             
             try {
                 java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
@@ -1488,19 +1490,19 @@ public class ItemViewerUtility {
                     try {
                         // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
                         if (params.length == 2 &&
-                            net.minecraft.client.MinecraftClient.class.isAssignableFrom(params[0]) &&
-                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[1])) {
+                            net.minecraft.client.Minecraft.class.isAssignableFrom(params[0]) &&
+                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[1])) {
                             @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, client, stack);
+                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, client, stack);
                             tooltip = result;
                             break;
                         }
                         
                         // Signatur: getTooltipFromItem(ItemStack)
                         if (params.length == 1 &&
-                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[0])) {
+                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[0])) {
                             @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, stack);
+                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, stack);
                             tooltip = result;
                             break;
                         }
@@ -1541,10 +1543,10 @@ public class ItemViewerUtility {
      * @param stack Der ItemStack
      * @return Floor-Information oder null wenn nicht gefunden
      */
-    private static String extractFoundAtFromTooltip(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, MinecraftClient client, net.minecraft.item.ItemStack stack) {
+    private static String extractFoundAtFromTooltip(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen, Minecraft client, net.minecraft.world.item.ItemStack stack) {
         try {
             // Hole Tooltip über Reflection (ähnlich wie extractItemNameFromTooltip)
-            java.util.List<net.minecraft.text.Text> tooltip = null;
+            java.util.List<net.minecraft.network.chat.Component> tooltip = null;
             
             try {
                 java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
@@ -1559,19 +1561,19 @@ public class ItemViewerUtility {
                     try {
                         // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
                         if (params.length == 2 &&
-                            net.minecraft.client.MinecraftClient.class.isAssignableFrom(params[0]) &&
-                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[1])) {
+                            net.minecraft.client.Minecraft.class.isAssignableFrom(params[0]) &&
+                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[1])) {
                             @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, client, stack);
+                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, client, stack);
                             tooltip = result;
                             break;
                         }
                         
                         // Signatur: getTooltipFromItem(ItemStack)
                         if (params.length == 1 &&
-                            net.minecraft.item.ItemStack.class.isAssignableFrom(params[0])) {
+                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[0])) {
                             @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.text.Text> result = (java.util.List<net.minecraft.text.Text>) method.invoke(screen, stack);
+                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, stack);
                             tooltip = result;
                             break;
                         }
@@ -1587,15 +1589,15 @@ public class ItemViewerUtility {
             if (tooltip != null && !tooltip.isEmpty()) {
                 // Durchsuche alle Tooltip-Zeilen nach Floor-Information
                 // Floor-Informationen sind typischerweise in purple/magenta (0xFFFF00FF)
-                for (net.minecraft.text.Text line : tooltip) {
+                for (net.minecraft.network.chat.Component line : tooltip) {
                     if (line != null) {
                         String lineText = line.getString();
                         if (lineText != null && !lineText.isEmpty()) {
                             // Prüfe ob die Zeile purple/magenta ist (foundAt Information)
                             // Die Farbe wird in ItemViewerGrid als 0xFFFF00FF gesetzt
-                            net.minecraft.text.Style style = line.getStyle();
+                            net.minecraft.network.chat.Style style = line.getStyle();
                             if (style != null && style.getColor() != null) {
-                                int color = style.getColor().getRgb();
+                                int color = style.getColor().getValue();
                                 // Prüfe ob es purple/magenta ist (0xFFFF00FF oder ähnlich)
                                 if (color == 0xFFFF00FF || (color >= 0xFF8000FF && color <= 0xFFFF00FF)) {
                                     // Entferne Formatierungscodes
@@ -1670,20 +1672,20 @@ public class ItemViewerUtility {
      * @return true wenn der Input behandelt wurde, false sonst
      */
     public static boolean handleSearchFieldKeyPress(int keyCode, int scanCode, int modifiers) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             searchFieldFocused = false;
             return false;
         }
 
         // Niemals Tastatureingaben vom Chat oder anderen Screens abfangen
-        if (client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen) {
+        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
             searchFieldFocused = false;
             return false;
         }
 
-        boolean canUseSearchInput = client.currentScreen instanceof HandledScreen<?>
-                || client.currentScreen instanceof InventoryScreen
+        boolean canUseSearchInput = client.screen instanceof AbstractContainerScreen<?>
+                || client.screen instanceof InventoryScreen
                 || isKitEditorMode();
         if (!canUseSearchInput) {
             searchFieldFocused = false;
@@ -1697,11 +1699,11 @@ public class ItemViewerUtility {
         
         // Prüfe ob Maus über Suchfeld ist
         ViewerPosition pos;
-        if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
-            pos = getOrCalculateViewerPosition(handledScreen, client.currentScreen);
+        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+            pos = getOrCalculateViewerPosition(handledScreen, client.screen);
         } else {
-            // Für nicht-HandledScreen Screens (z.B. Spielerinventar)
-            pos = calculateViewerPositionForScreen(client.currentScreen);
+            // Für nicht-AbstractContainerScreen Screens (z.B. Spielerinventar)
+            pos = calculateViewerPositionForScreen(client.screen);
         }
         int searchX = getSearchFieldX(pos);
         int searchY = pos.viewerY + VIEWER_PADDING;
@@ -1745,11 +1747,11 @@ public class ItemViewerUtility {
             switch (keyCode) {
                 case 67: // Strg+C - Kopieren
                     if (!currentSearch.isEmpty()) {
-                        client.keyboard.setClipboard(currentSearch);
+                        client.keyboardHandler.setClipboard(currentSearch);
                     }
                     return true;
                 case 86: // Strg+V - Einfügen
-                    String clipboardText = client.keyboard.getClipboard();
+                    String clipboardText = client.keyboardHandler.getClipboard();
                     if (clipboardText != null && !clipboardText.isEmpty()) {
                         currentSearch += clipboardText;
                         scheduleApplyFilters();
@@ -2156,39 +2158,39 @@ public class ItemViewerUtility {
     /**
      * Rendert Text mit Auswahl-Highlighting
      */
-    private static void renderTextWithSelection(DrawContext context, MinecraftClient client, String text, int x, int y, int textColor, int maxWidth) {
+    private static void renderTextWithSelection(GuiGraphicsExtractor context, Minecraft client, String text, int x, int y, int textColor, int maxWidth) {
         int start = Math.min(selectionStart, selectionEnd);
         int end = Math.max(selectionStart, selectionEnd);
         
         // Zeichne Text vor der Auswahl
         if (start > 0) {
             String beforeSelection = text.substring(0, start);
-            context.drawText(client.textRenderer, Text.literal(beforeSelection), x, y, textColor, false);
+            context.text(client.font, Component.literal(beforeSelection), x, y, textColor, false);
         }
         
         // Berechne Position für die Auswahl
-        int selectionX = x + client.textRenderer.getWidth(text.substring(0, start));
+        int selectionX = x + client.font.width(text.substring(0, start));
         String selectedText = text.substring(start, end);
-        int selectionWidth = client.textRenderer.getWidth(selectedText);
+        int selectionWidth = client.font.width(selectedText);
         
         // Zeichne Auswahl-Hintergrund
         context.fill(selectionX, y - 1, selectionX + selectionWidth, y + 9, 0xFF0078D4); // Blauer Auswahl-Hintergrund
         
         // Zeichne ausgewählten Text (weiß auf blau)
-        context.drawText(client.textRenderer, Text.literal(selectedText), selectionX, y, 0xFFFFFFFF, false);
+        context.text(client.font, Component.literal(selectedText), selectionX, y, 0xFFFFFFFF, false);
         
         // Zeichne Text nach der Auswahl
         if (end < text.length()) {
             String afterSelection = text.substring(end);
             int afterX = selectionX + selectionWidth;
-            context.drawText(client.textRenderer, Text.literal(afterSelection), afterX, y, textColor, false);
+            context.text(client.font, Component.literal(afterSelection), afterX, y, textColor, false);
         }
     }
     
     /**
      * Berechnet die Cursor-Position basierend auf der Mausklick-Position
      */
-    private static int calculateCursorPosition(int clickX, String text, net.minecraft.client.font.TextRenderer textRenderer) {
+    private static int calculateCursorPosition(int clickX, String text, net.minecraft.client.gui.Font textRenderer) {
         if (text.isEmpty()) {
             return 0;
         }
@@ -2198,7 +2200,7 @@ public class ItemViewerUtility {
         int bestDistance = Integer.MAX_VALUE;
         
         for (int i = 0; i <= text.length(); i++) {
-            int textWidth = textRenderer.getWidth(text.substring(0, i));
+            int textWidth = textRenderer.width(text.substring(0, i));
             int distance = Math.abs(clickX - textWidth);
             
             if (distance < bestDistance) {
@@ -2210,17 +2212,17 @@ public class ItemViewerUtility {
         return bestPosition;
     }
     
-    private static void onHudRender(DrawContext context, net.minecraft.client.render.RenderTickCounter tickCounter) {
+    private static void onHudRender(GuiGraphicsExtractor context, net.minecraft.client.DeltaTracker tickCounter) {
         // Rendere minimierten Button (rechts unten), wenn minimiert und kein Screen offen ist
         // (wenn ein Screen offen ist, wird der Button in den Mixins gerendert, damit er über dem dunklen Hintergrund liegt)
         // Buttons werden nur angezeigt, wenn der Item Viewer auch angezeigt werden würde
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (isMinimized && isVisible && shouldShowItemViewerButtons(client)) {
             renderMinimizedButton(context, client);
         }
         // Hilfe-Overlay wird jetzt in den Mixins gerendert (HelpOverlayMixin/HelpOverlayScreenMixin am RETURN-Punkt),
         // damit es wirklich über allen Items liegt (nicht hier im HudRenderCallback)
-        // Rendere Item Viewer für Screens, die keine HandledScreen sind (z.B. Spielerinventar)
+        // Rendere Item Viewer für Screens, die keine AbstractContainerScreen sind (z.B. Spielerinventar)
         // Wird über ScreenMixin.onRender behandelt, daher hier nicht mehr nötig
         // Diese Methode bleibt als Fallback, falls ScreenMixin nicht greift
     }
@@ -2228,9 +2230,9 @@ public class ItemViewerUtility {
     /**
      * Rendert den minimierten Button (wird von Mixins aufgerufen, nach Screen-Rendering)
      */
-    public static void renderMinimizedButtonIfNeeded(DrawContext context) {
+    public static void renderMinimizedButtonIfNeeded(GuiGraphicsExtractor context) {
         if (isMinimized && isVisible) {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client != null && shouldShowItemViewerButtons(client)) {
                 renderMinimizedButton(context, client);
             }
@@ -2238,9 +2240,9 @@ public class ItemViewerUtility {
     }
     
     /**
-     * Rendert den Item Viewer für einen Screen (nicht-HandledScreen)
+     * Rendert den Item Viewer für einen Screen (nicht-AbstractContainerScreen)
      */
-    private static void renderItemViewerForScreen(DrawContext context, MinecraftClient client, Screen screen) {
+    private static void renderItemViewerForScreen(GuiGraphicsExtractor context, Minecraft client, Screen screen) {
         if (!isVisible()) {
             return;
         }
@@ -2253,7 +2255,7 @@ public class ItemViewerUtility {
     }
     
     /**
-     * Berechnet die Viewer-Position für nicht-HandledScreen Screens
+     * Berechnet die Viewer-Position für nicht-AbstractContainerScreen Screens
      */
     /**
      * Viewer-Breite/-Höhe aus maximalem Platz; Grid höchstens laut Config ({@link CCLiveUtilitiesConfig#getItemViewerMaxSlots()} Slots).
@@ -2269,7 +2271,7 @@ public class ItemViewerUtility {
     }
 
     private static ViewerPosition calculateViewerPositionForScreen(Screen screen) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         
         int screenWidth = screen.width;
         int screenHeight = screen.height;
@@ -2330,13 +2332,13 @@ public class ItemViewerUtility {
     }
     
     /**
-     * Wird vom HandledScreenMixin oder ScreenMixin aufgerufen, um den Item Viewer zu rendern
+     * Wird vom AbstractContainerScreenMixin oder ScreenMixin aufgerufen, um den Item Viewer zu rendern
      * Rendert nach dem Screen-Rendering, damit es über dem dunklen Hintergrund liegt
      */
     // Debug: Letzter gerenderter Screen-Typ (um Logs zu reduzieren)
     private static String lastRenderedScreenType = "";
     
-    public static void renderItemViewerInScreen(DrawContext context, MinecraftClient client, HandledScreen<?> screen, int mouseX, int mouseY) {
+    public static void renderItemViewerInScreen(GuiGraphicsExtractor context, Minecraft client, AbstractContainerScreen<?> screen, int mouseX, int mouseY) {
         // Prüfe ob sichtbar (inkl. Dimension-Prüfung)
         if (!isVisible()) {
             return;
@@ -2355,7 +2357,7 @@ public class ItemViewerUtility {
         // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
         // Diese Menüs sollten keine JEI UI anzeigen
         if (screen != null) {
-            net.minecraft.text.Text titleText = screen.getTitle();
+            net.minecraft.network.chat.Component titleText = screen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
@@ -2368,9 +2370,9 @@ public class ItemViewerUtility {
         // DEBUG: Logge UI-Rendering nur wenn sich der Screen-Typ ändert
         String currentScreenType = "";
         if (screen != null) {
-            currentScreenType = "HandledScreen (Kiste) - " + screen.getClass().getSimpleName();
-        } else if (client.currentScreen != null && !(client.currentScreen instanceof HandledScreen<?>)) {
-            currentScreenType = "Spielerinventar - " + client.currentScreen.getClass().getSimpleName();
+            currentScreenType = "AbstractContainerScreen (Kiste) - " + screen.getClass().getSimpleName();
+        } else if (client.screen != null && !(client.screen instanceof AbstractContainerScreen<?>)) {
+            currentScreenType = "Spielerinventar - " + client.screen.getClass().getSimpleName();
         }
         
         if (!currentScreenType.equals(lastRenderedScreenType)) {
@@ -2382,11 +2384,11 @@ public class ItemViewerUtility {
         
         // Rendere Item-Viewer
         if (screen != null) {
-            // HandledScreen (wird im HandledScreenMixin behandelt)
+            // AbstractContainerScreen (wird im AbstractContainerScreenMixin behandelt)
             renderItemViewer(context, client, screen);
-        } else if (client.currentScreen != null && !(client.currentScreen instanceof HandledScreen<?>)) {
-            // Nicht-HandledScreen (z.B. Spielerinventar)
-            renderItemViewerForScreen(context, client, client.currentScreen);
+        } else if (client.screen != null && !(client.screen instanceof AbstractContainerScreen<?>)) {
+            // Nicht-AbstractContainerScreen (z.B. Spielerinventar)
+            renderItemViewerForScreen(context, client, client.screen);
         }
     }
     
@@ -2395,7 +2397,7 @@ public class ItemViewerUtility {
     private static final int SEARCH_HEIGHT = 20;
     private static final int HELP_BUTTON_SIZE = 20; // Gleiche Höhe wie Suchleiste
     private static final int FILTER_BUTTON_SIZE = 20;
-    private static final Identifier FILTER_ICON_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/lupe_icon.png");
+    private static final Identifier FILTER_ICON_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/lupe_icon.png");
     private static final int SORT_DROPDOWN_HEIGHT = 20;
     private static final int SORT_OPTION_HEIGHT = 16;
     private static final int SORT_DROPDOWN_PADDING = 6; // Padding links/rechts im Dropdown
@@ -2413,8 +2415,8 @@ public class ItemViewerUtility {
     private static int lastMouseY = 0;
     
     // Tracke letzten gehoverten Slot für Clipboard-Pin-Funktion
-    private static net.minecraft.screen.slot.Slot lastHoveredSlot = null;
-    private static net.minecraft.client.gui.screen.ingame.HandledScreen<?> lastHoveredScreen = null;
+    private static net.minecraft.world.inventory.Slot lastHoveredSlot = null;
+    private static net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> lastHoveredScreen = null;
     
     // Dropdown-State
     private static boolean sortDropdownOpen = false;
@@ -2446,7 +2448,7 @@ public class ItemViewerUtility {
             return;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             blurSearchFieldFocus();
             return;
@@ -2469,7 +2471,7 @@ public class ItemViewerUtility {
     
     // Favoriten-Modus
     private static boolean favoritesMode = false;
-    private static final Identifier STAR_ICON_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/star_icon.png");
+    private static final Identifier STAR_ICON_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/star_icon.png");
     
     // Map von Blueprint-Namen zu vollständigen JSON-Objekten (für Favoriten)
     private static java.util.Map<String, JsonObject> blueprintJsonMap = new java.util.HashMap<>();
@@ -2481,20 +2483,20 @@ public class ItemViewerUtility {
     private static final int SYMBOL_BUTTON_SIZE = 20; // Gleiche Höhe wie Dropdown für symmetrisches Aussehen
     private static boolean isSymbolMenuOpen = false;
     private static boolean isSymbolButtonHovered = false;
-    private static final Identifier APPLE_ICON_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/apple_icon_2.png");
-    private static final Identifier VIEWER_SETTINGS_ICON = Identifier.of("cclive-utilities", "textures/alert_icons/alert_icons_settings.png");
+    private static final Identifier APPLE_ICON_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/apple_icon_2.png");
+    private static final Identifier VIEWER_SETTINGS_ICON = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/alert_icons/alert_icons_settings.png");
     private static final int VIEWER_SETTINGS_MENU_BUTTON_COUNT = 2;
     private static boolean isViewerSettingsMenuOpen = false;
     private static boolean isViewerSettingsButtonHovered = false;
     
     // Kit-Button Variablen
     private static final int KIT_BUTTON_SIZE = 20; // Gleiche Höhe wie andere Buttons
-    private static final Identifier KIT_ICON_TEXTURE = Identifier.of("cclive-utilities", "textures/icons/kits_icon_2.png");
+    private static final Identifier KIT_ICON_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/kits_icon_2.png");
     private static boolean kitFilterActive = false; // Ob Kit-Filter aktiv ist (Linksklick)
     private static final int KIT_BUTTON_INDEX = 0; // Verwende Kit Button 1 aus KitFilterUtility
     
     // Kit-Editor-Modus (eigenes Kit zusammenstellen)
-    private static HandledScreen<?> kitEditorBackgroundScreen = null;
+    private static AbstractContainerScreen<?> kitEditorBackgroundScreen = null;
     private static java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.CustomKitEditorScreen.PickTarget> kitEditorPickHandler = null;
     private static net.felix.utilities.Town.CustomKitEditorScreen.PickTarget kitEditorPickTarget =
             net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
@@ -2517,7 +2519,7 @@ public class ItemViewerUtility {
     );
     private static CategoryButton activeCategoryOverlay = null;
     
-    private static void renderItemViewer(DrawContext context, MinecraftClient client, HandledScreen<?> handledScreen) {
+    private static void renderItemViewer(GuiGraphicsExtractor context, Minecraft client, AbstractContainerScreen<?> handledScreen) {
         Screen screen = (Screen) handledScreen;
         
         renderItemViewer(context, client, getOrCalculateViewerPosition(handledScreen, screen));
@@ -2526,7 +2528,7 @@ public class ItemViewerUtility {
     /**
      * Rendert den Item Viewer mit einer gegebenen ViewerPosition
      */
-    private static void renderItemViewer(DrawContext context, MinecraftClient client, ViewerPosition pos) {
+    private static void renderItemViewer(GuiGraphicsExtractor context, Minecraft client, ViewerPosition pos) {
         
         // Rendere Hintergrund (sehr transparent, damit Kisten-Hintergrund durchscheint)
         // JEI verwendet keinen Hintergrund oder einen sehr transparenten
@@ -2585,7 +2587,7 @@ public class ItemViewerUtility {
         currentGridAvailableHeight = gridAvailableHeight; // Speichere für Pagination etc.
         
         if (!itemsLoaded) {
-            context.drawText(client.textRenderer, "Items werden geladen...", pos.viewerX + VIEWER_PADDING, currentY, 0xFFAAAAAA, true);
+            context.text(client.font, "Items werden geladen...", pos.viewerX + VIEWER_PADDING, currentY, 0xFFAAAAAA, true);
             hoveredItemForClick = null;
         } else {
         List<ItemData> currentPageItems = getCurrentPageItems();
@@ -2628,7 +2630,7 @@ public class ItemViewerUtility {
         // Rendere Button-Tooltips (am Ende, damit sie über allem liegen)
         renderButtonTooltips(context, pos);
         
-        // Hilfe-Overlay wird jetzt in den Mixins (ScreenMixin/HandledScreenMixin) gerendert,
+        // Hilfe-Overlay wird jetzt in den Mixins (ScreenMixin/AbstractContainerScreenMixin) gerendert,
         // nach dem ItemViewer, damit es über allen Items liegt
         // AspectOverlay wird auch in den Mixins gerendert
     }
@@ -2636,8 +2638,8 @@ public class ItemViewerUtility {
     /**
      * Rendert Tooltips für die Buttons (Hilfe, Symbol, Favoriten)
      */
-    private static void renderButtonTooltips(DrawContext context, ViewerPosition pos) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderButtonTooltips(GuiGraphicsExtractor context, ViewerPosition pos) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Prüfe Hover über Hilfe-Button
@@ -2665,67 +2667,67 @@ public class ItemViewerUtility {
         
         // Rendere Tooltip für Hilfe-Button
         if (helpHovered && !helpScreenOpen) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("Hilfs Übersicht"));
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("Hilfs Übersicht"));
             // Minecraft's drawTooltip passt automatisch die Position an, damit der Tooltip nicht aus dem Bildschirm rausgeht
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
         
         if (filterHovered && !ItemViewerFilterMenu.isOpen()) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("Filter"));
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("Filter"));
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
         
         // Rendere Tooltip für Symbol-Button
         if (symbolHovered) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("Sonderzeichen"));
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("Sonderzeichen"));
             // Berechne Tooltip-Position: Wenn nicht genug Platz rechts ist, verschiebe nach links
             int tooltipX = lastMouseX;
-            int tooltipWidth = client.textRenderer.getWidth("Sonderzeichen") + 10; // Geschätzte Breite
-            int screenWidth = client.getWindow().getScaledWidth();
+            int tooltipWidth = client.font.width("Sonderzeichen") + 10; // Geschätzte Breite
+            int screenWidth = client.getWindow().getGuiScaledWidth();
             
             // Wenn Tooltip rechts rausgehen würde, verschiebe nach links
             if (tooltipX + tooltipWidth > screenWidth - 10) {
                 tooltipX = screenWidth - tooltipWidth - 10;
             }
             
-            context.drawTooltip(client.textRenderer, tooltip, tooltipX, lastMouseY);
+            context.setComponentTooltipForNextFrame(client.font, tooltip, tooltipX, lastMouseY);
         }
         
         // Rendere Tooltip für Favoriten-Button
         if (favoritesHovered) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("Favoriten"));
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("Favoriten"));
             // Minecraft's drawTooltip passt automatisch die Position an
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
         
         // Rendere Tooltip für Kit-Button
         if (kitHovered) {
-            List<Text> tooltip = new ArrayList<>();
+            List<Component> tooltip = new ArrayList<>();
             // Hole aktuelle Kit-Auswahl
             net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection = 
                 net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
             
             if (kitSelection != null) {
-                tooltip.add(Text.literal("Linksklick: Nach Kit Suchen"));
-                tooltip.add(Text.literal("Rechtsklick: Kit auswählen"));
-                tooltip.add(Text.empty());
-                tooltip.add(Text.literal(kitSelection.getDisplayName())); // z.B. "Münz-Kit Stufe 3"
+                tooltip.add(Component.literal("Linksklick: Nach Kit Suchen"));
+                tooltip.add(Component.literal("Rechtsklick: Kit auswählen"));
+                tooltip.add(Component.empty());
+                tooltip.add(Component.literal(kitSelection.getDisplayName())); // z.B. "Münz-Kit Stufe 3"
             } else {
-                tooltip.add(Text.literal("Linksklick: Nach Kit Suchen"));
-                tooltip.add(Text.literal("Rechtsklick: Kit auswählen"));
+                tooltip.add(Component.literal("Linksklick: Nach Kit Suchen"));
+                tooltip.add(Component.literal("Rechtsklick: Kit auswählen"));
             }
             // Minecraft's drawTooltip passt automatisch die Position an
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
         
         if (applyHovered) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("Filterung in geöffnetem Inventar anwenden"));
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("Filterung in geöffnetem Inventar anwenden"));
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
         
         // Prüfe Hover über Viewer-Einstellungen-Button (über dem Einklappen-Button)
@@ -2735,9 +2737,9 @@ public class ItemViewerUtility {
                 && lastMouseX >= sideButtonX && lastMouseX < sideButtonX + MINIMIZE_BUTTON_SIZE
                 && lastMouseY >= settingsButtonY && lastMouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE;
         if (settingsHovered) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("Anzeige-Einstellungen"));
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("Anzeige-Einstellungen"));
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         } else if (isViewerSettingsMenuOpen) {
             int menuWidth = getViewerSettingsMenuWidth();
             int menuX = sideButtonX - menuWidth;
@@ -2746,17 +2748,17 @@ public class ItemViewerUtility {
             int ownedButtonX = getViewerSettingsOwnedButtonX(menuX);
             if (lastMouseX >= costsButtonX && lastMouseX < costsButtonX + menuButtonWidth
                     && lastMouseY >= settingsButtonY && lastMouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
-                List<Text> tooltip = new ArrayList<>();
-                tooltip.add(Text.literal(showCosts ? "Kosten ausblenden" : "Kosten anzeigen"));
-                context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(Component.literal(showCosts ? "Kosten ausblenden" : "Kosten anzeigen"));
+                context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
             } else if (lastMouseX >= ownedButtonX && lastMouseX < ownedButtonX + menuButtonWidth
                     && lastMouseY >= settingsButtonY && lastMouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
-                List<Text> tooltip = new ArrayList<>();
-                tooltip.add(Text.literal("Gesammelte Materialien/Ressourcen in Kosten und"));
-                tooltip.add(Text.literal(showOwnedResources
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(Component.literal("Gesammelte Materialien/Ressourcen in Kosten und"));
+                tooltip.add(Component.literal(showOwnedResources
                         ? "Herstellungs-Anzahl ausblenden"
                         : "Herstellungs-Anzahl einblenden"));
-                context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+                context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
             }
         }
 
@@ -2767,28 +2769,28 @@ public class ItemViewerUtility {
         
         // Rendere Tooltip für Minimierungs-Button
         if (minimizeHovered) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("ItemViewer einklappen"));
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("ItemViewer einklappen"));
             String hotkeyText = getToggleHotkeyText();
-            tooltip.add(Text.literal("(Hotkey: " + hotkeyText + ")"));
+            tooltip.add(Component.literal("(Hotkey: " + hotkeyText + ")"));
             // Minecraft's drawTooltip passt automatisch die Position an
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
     }
     
     /**
      * Rendert das Hilfe-Overlay (wird von den Mixins aufgerufen, damit es über allem liegt)
      */
-    public static void renderHelpOverlay(DrawContext context) {
+    public static void renderHelpOverlay(GuiGraphicsExtractor context) {
         if (helpScreenOpen) {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client != null) {
                 drawHelpScreen(context, client);
             }
         }
     }
     
-    public static void renderFilterOverlay(DrawContext context) {
+    public static void renderFilterOverlay(GuiGraphicsExtractor context) {
         ItemViewerFilterMenu.render(context);
     }
     
@@ -2842,13 +2844,13 @@ public class ItemViewerUtility {
             return false;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return false;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         
         // Berechne boxHeight mit gleicher Logik wie beim Rendering
         int buttonHeight = 16;
@@ -2857,7 +2859,7 @@ public class ItemViewerUtility {
         int numButtonRows = (int) Math.ceil((double) CATEGORY_BUTTON_DEFS.size() / maxButtonsPerRow);
         int baseHeight = 500; // Erhöht von 450 auf 500 für mehr Platz
         // Berechne benötigte Höhe für Button-Bereich (inkl. Header und Abstände)
-        int headerHeight = client.textRenderer.fontHeight;
+        int headerHeight = client.font.lineHeight;
         int spacing = 4;
         // Gesamte Button-Bereich-Höhe: Header + Abstand + (alle Zeilen * Button-Höhe) + (Abstände zwischen Zeilen)
         int buttonAreaHeight = headerHeight + spacing + (numButtonRows * buttonHeight) + ((numButtonRows - 1) * buttonSpacingY);
@@ -2889,7 +2891,7 @@ public class ItemViewerUtility {
         
         // Prüfe Klick auf Tag-Overlay (wenn geöffnet) - VOR Button-Checks, damit Overlay-Klicks nicht Buttons blockieren
         if (activeCategoryOverlay != null && activeCategoryOverlay.tags != null && !activeCategoryOverlay.tags.isEmpty()) {
-            int lineHeight = client.textRenderer.fontHeight + 2;
+            int lineHeight = client.font.lineHeight + 2;
             int maxTagsPerColumn = 10;
             int numTags = activeCategoryOverlay.tags.size();
             
@@ -2907,7 +2909,7 @@ public class ItemViewerUtility {
                 int startIdx = col * maxTagsPerColumn;
                 int endIdx = Math.min(startIdx + maxTagsPerColumn, numTags);
                 for (int i = startIdx; i < endIdx; i++) {
-                    columnWidth = Math.max(columnWidth, client.textRenderer.getWidth(activeCategoryOverlay.tags.get(i)));
+                    columnWidth = Math.max(columnWidth, client.font.width(activeCategoryOverlay.tags.get(i)));
                 }
                 columnWidth += 12; // Padding
                 columnWidths.add(columnWidth);
@@ -2940,7 +2942,7 @@ public class ItemViewerUtility {
         }
         
         // Kategorie-Buttons prüfen (VOR anderen Checks, damit Klicks funktionieren)
-        java.util.List<CategoryButton> buttons = computeCategoryButtons(client.textRenderer, boxX, boxY, boxWidth, boxHeight, buttonY, startX);
+        java.util.List<CategoryButton> buttons = computeCategoryButtons(client.font, boxX, boxY, boxWidth, boxHeight, buttonY, startX);
         for (CategoryButton btn : buttons) {
             if (mouseX >= btn.x && mouseX < btn.x + btn.width &&
                 mouseY >= btn.y && mouseY < btn.y + btn.height) {
@@ -2995,9 +2997,9 @@ public class ItemViewerUtility {
     /**
      * Zeichnet das Hilfe-Overlay für den Item Viewer
      */
-    private static void drawHelpScreen(DrawContext context, MinecraftClient client) {
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+    private static void drawHelpScreen(GuiGraphicsExtractor context, Minecraft client) {
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         
         // Hintergrund-Overlay
         context.fill(0, 0, screenWidth, screenHeight, 0x80000000);
@@ -3012,7 +3014,7 @@ public class ItemViewerUtility {
         // Mindesthöhe: 500px (erhöht für mehr Platz) + zusätzlicher Platz für Button-Zeilen
         int baseHeight = 500; // Erhöht von 450 auf 500 für mehr Platz
         // Berechne benötigte Höhe für Button-Bereich (inkl. Header und Abstände)
-        int headerHeight = client.textRenderer.fontHeight;
+        int headerHeight = client.font.lineHeight;
         int spacing = 4;
         // Gesamte Button-Bereich-Höhe: Header + Abstand + (alle Zeilen * Button-Höhe) + (Abstände zwischen Zeilen)
         int buttonAreaHeight = headerHeight + spacing + (numButtonRows * buttonHeight) + ((numButtonRows - 1) * buttonSpacingY);
@@ -3054,12 +3056,12 @@ public class ItemViewerUtility {
         
         // X-Zeichen im Schließen-Button
         String closeText = "×";
-        int closeTextWidth = client.textRenderer.getWidth(closeText);
-        int closeTextHeight = client.textRenderer.fontHeight;
+        int closeTextWidth = client.font.width(closeText);
+        int closeTextHeight = client.font.lineHeight;
         int closeTextX = closeButtonX + (closeButtonSize - closeTextWidth) / 2 + 1; // Horizontal zentriert (+1 für bessere visuelle Zentrierung)
         int closeTextY = closeButtonY + (closeButtonSize - closeTextHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             closeText,
             closeTextX,
             closeTextY,
@@ -3069,9 +3071,9 @@ public class ItemViewerUtility {
         
         // Titel
         String title = "Item Viewer Hilfe";
-        int titleWidth = client.textRenderer.getWidth(title);
-        context.drawText(
-            client.textRenderer,
+        int titleWidth = client.font.width(title);
+        context.text(
+            client.font,
             title,
             boxX + (boxWidth - titleWidth) / 2,
             boxY + 10,
@@ -3124,12 +3126,12 @@ public class ItemViewerUtility {
         // Berechne Gesamthöhe des Textes (mit Umbrechung)
         java.util.List<String> allTextLines = new java.util.ArrayList<>();
         for (String line : helpText) {
-            if (client.textRenderer.getWidth(line) > maxTextWidth && !line.isEmpty()) {
+            if (client.font.width(line) > maxTextWidth && !line.isEmpty()) {
                 String[] words = line.split(" ");
                 String currentLine = "";
                 for (String word : words) {
                     String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
-                    if (client.textRenderer.getWidth(testLine) > maxTextWidth) {
+                    if (client.font.width(testLine) > maxTextWidth) {
                         if (!currentLine.isEmpty()) {
                             allTextLines.add(currentLine);
                             currentLine = word;
@@ -3163,8 +3165,8 @@ public class ItemViewerUtility {
         for (int i = startLineIndex; i < allTextLines.size() && i < startLineIndex + visibleLines; i++) {
             String line = allTextLines.get(i);
             if (textY >= textStartY - lineHeight && textY < buttonY) {
-                context.drawText(
-                    client.textRenderer,
+                context.text(
+                    client.font,
                     line,
                     textX,
                     textY,
@@ -3178,9 +3180,9 @@ public class ItemViewerUtility {
         // Zeige Scroll-Indikatoren wenn nötig
         if (helpScreenScrollOffset > 0) {
             String moreText = String.format("↑ %d weitere (Scrollen)", startLineIndex);
-            int moreTextWidth = client.textRenderer.getWidth(moreText);
-            context.drawText(
-                client.textRenderer,
+            int moreTextWidth = client.font.width(moreText);
+            context.text(
+                client.font,
                 moreText,
                 boxX + (boxWidth - moreTextWidth) / 2,
                 textStartY - 2,
@@ -3199,7 +3201,7 @@ public class ItemViewerUtility {
         
         if (hasEnoughSpace) {
             // Bei genug Platz (z.B. GUI Scale 3): Buttons immer anzeigen, keine Scroll-Logik
-            renderCategoryButtons(context, client.textRenderer, boxX, boxY, boxWidth, boxHeight, finalButtonY);
+            renderCategoryButtons(context, client.font, boxX, boxY, boxWidth, boxHeight, finalButtonY);
         } else {
             // Bei wenig Platz (z.B. GUI Scale 4): Buttons nur anzeigen, wenn gescrollt wurde
             if (helpScreenScrollOffset > 0) {
@@ -3208,9 +3210,9 @@ public class ItemViewerUtility {
                     int remainingLines = allTextLines.size() - (startLineIndex + visibleLines);
                     if (remainingLines > 0) {
                         String moreText = String.format("↓ %d weitere (Scrollen)", remainingLines);
-                        int moreTextWidth = client.textRenderer.getWidth(moreText);
-                        context.drawText(
-                            client.textRenderer,
+                        int moreTextWidth = client.font.width(moreText);
+                        context.text(
+                            client.font,
                             moreText,
                             boxX + (boxWidth - moreTextWidth) / 2,
                             buttonY - lineHeight - 2,
@@ -3219,14 +3221,14 @@ public class ItemViewerUtility {
                         );
                     }
                 }
-                renderCategoryButtons(context, client.textRenderer, boxX, boxY, boxWidth, boxHeight, finalButtonY);
+                renderCategoryButtons(context, client.font, boxX, boxY, boxWidth, boxHeight, finalButtonY);
             } else {
                 // Zeige Hinweis zum Scrollen in der untersten Zeile (nur wenn noch mehr Text vorhanden ist)
                 String scrollHint = "↓ Scrollen für Kategorien mit Tags";
-                int scrollHintWidth = client.textRenderer.getWidth(scrollHint);
+                int scrollHintWidth = client.font.width(scrollHint);
                 int scrollHintY = buttonY - lineHeight - 2 + 15; // 15px tiefer
-                context.drawText(
-                    client.textRenderer,
+                context.text(
+                    client.font,
                     scrollHint,
                     boxX + (boxWidth - scrollHintWidth) / 2,
                     scrollHintY,
@@ -3240,15 +3242,15 @@ public class ItemViewerUtility {
     /**
      * Rendert die Kategorie-Buttons und ein optionales Tag-Overlay
      */
-    private static void renderCategoryButtons(DrawContext context, net.minecraft.client.font.TextRenderer tr,
+    private static void renderCategoryButtons(GuiGraphicsExtractor context, net.minecraft.client.gui.Font tr,
                                               int boxX, int boxY, int boxWidth, int boxHeight, int buttonY) {
         // Berechne Position: Buttons stehen bei buttonY (bereits berechnet)
-        int headerHeight = tr.fontHeight;
+        int headerHeight = tr.lineHeight;
         int spacing = 4; // Kleiner Abstand zwischen Header und Buttons (Text direkt über Buttons)
         int headerY = buttonY - headerHeight - spacing; // Header steht direkt über den Buttons
         int startX = boxX + 15;
 
-        context.drawText(tr, Text.literal("Kategorien mit Tags"), startX, headerY, 0xFFFFFF00, true);
+        context.text(tr, Component.literal("Kategorien mit Tags"), startX, headerY, 0xFFFFFF00, true);
 
         java.util.List<CategoryButton> buttons = computeCategoryButtons(tr, boxX, boxY, boxWidth, boxHeight, buttonY, startX);
 
@@ -3262,15 +3264,15 @@ public class ItemViewerUtility {
             context.fill(btn.x, btn.y, btn.x + 1, btn.y + btn.height, border);
             context.fill(btn.x + btn.width - 1, btn.y, btn.x + btn.width, btn.y + btn.height, border);
 
-            int textW = tr.getWidth(btn.name);
+            int textW = tr.width(btn.name);
             int textX = btn.x + (btn.width - textW) / 2;
-            int textY = btn.y + (btn.height - tr.fontHeight) / 2;
-            context.drawText(tr, Text.literal(btn.name), textX, textY, 0xFFFFFFFF, false);
+            int textY = btn.y + (btn.height - tr.lineHeight) / 2;
+            context.text(tr, Component.literal(btn.name), textX, textY, 0xFFFFFFFF, false);
         }
 
         // Overlay mit Tags
         if (activeCategoryOverlay != null && activeCategoryOverlay.tags != null && !activeCategoryOverlay.tags.isEmpty()) {
-            int lineHeight = tr.fontHeight + 2;
+            int lineHeight = tr.lineHeight + 2;
             int maxTagsPerColumn = 10;
             int numTags = activeCategoryOverlay.tags.size();
             
@@ -3288,7 +3290,7 @@ public class ItemViewerUtility {
                 int startIdx = col * maxTagsPerColumn;
                 int endIdx = Math.min(startIdx + maxTagsPerColumn, numTags);
                 for (int i = startIdx; i < endIdx; i++) {
-                    columnWidth = Math.max(columnWidth, tr.getWidth(activeCategoryOverlay.tags.get(i)));
+                    columnWidth = Math.max(columnWidth, tr.width(activeCategoryOverlay.tags.get(i)));
                 }
                 columnWidth += 12; // Padding
                 columnWidths.add(columnWidth);
@@ -3339,7 +3341,7 @@ public class ItemViewerUtility {
                 int startIdx = col * maxTagsPerColumn;
                 int endIdx = Math.min(startIdx + maxTagsPerColumn, numTags);
                 for (int i = startIdx; i < endIdx; i++) {
-                    context.drawText(tr, Text.literal(activeCategoryOverlay.tags.get(i)), columnX + 6, ty, 0xFF55FFFF, false);
+                    context.text(tr, Component.literal(activeCategoryOverlay.tags.get(i)), columnX + 6, ty, 0xFF55FFFF, false);
                     ty += lineHeight;
                 }
             }
@@ -3349,7 +3351,7 @@ public class ItemViewerUtility {
     /**
      * Berechnet die Positionen der Kategorie-Buttons
      */
-    private static java.util.List<CategoryButton> computeCategoryButtons(net.minecraft.client.font.TextRenderer tr,
+    private static java.util.List<CategoryButton> computeCategoryButtons(net.minecraft.client.gui.Font tr,
                                                                          int boxX, int boxY, int boxWidth, int boxHeight,
                                                                          int buttonY, int startX) {
         java.util.List<CategoryButton> buttons = new java.util.ArrayList<>();
@@ -3364,7 +3366,7 @@ public class ItemViewerUtility {
             // Hole alle Tags für diese Kategorie dynamisch
             java.util.List<String> allTags = getAllTagsForCategory(def.name);
             
-            int btnW = tr.getWidth(def.name) + 12;
+            int btnW = tr.width(def.name) + 12;
             int btnH = 16;
             CategoryButton btn = new CategoryButton(def.name, allTags);
             
@@ -3505,8 +3507,8 @@ public class ItemViewerUtility {
     /**
      * Rendert den Hilfe-Button
      */
-    private static void renderHelpButton(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderHelpButton(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
         
         // Prüfe ob Maus über Button ist
         boolean isHovered = lastMouseX >= x && lastMouseX < x + HELP_BUTTON_SIZE &&
@@ -3525,14 +3527,14 @@ public class ItemViewerUtility {
         
         // Fragezeichen (zentriert)
         String questionMark = "?";
-        int textWidth = client.textRenderer.getWidth(questionMark);
+        int textWidth = client.font.width(questionMark);
         int textX = x + (HELP_BUTTON_SIZE - textWidth) / 2;
         int textY = y + (HELP_BUTTON_SIZE - 9) / 2; // 9 ist die Text-Höhe, zentriert vertikal
-        context.drawText(client.textRenderer, Text.literal(questionMark), textX, textY, 0xFFFFFFFF, false);
+        context.text(client.font, Component.literal(questionMark), textX, textY, 0xFFFFFFFF, false);
     }
     
-    private static void renderFilterButton(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderFilterButton(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
         boolean isHovered = lastMouseX >= x && lastMouseX < x + FILTER_BUTTON_SIZE
                 && lastMouseY >= y && lastMouseY < y + FILTER_BUTTON_SIZE;
         boolean active = ItemViewerFilterMenu.isOpen();
@@ -3547,7 +3549,7 @@ public class ItemViewerUtility {
             int iconSize = 16;
             int iconX = x + (FILTER_BUTTON_SIZE - iconSize) / 2;
             int iconY = y + (FILTER_BUTTON_SIZE - iconSize) / 2;
-            context.drawTexture(
+            context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     FILTER_ICON_TEXTURE,
                     iconX, iconY,
@@ -3557,14 +3559,14 @@ public class ItemViewerUtility {
             );
         } catch (Exception ignored) {
             String label = "F";
-            int textWidth = client.textRenderer.getWidth(label);
-            context.drawText(client.textRenderer, Text.literal(label),
+            int textWidth = client.font.width(label);
+            context.text(client.font, Component.literal(label),
                     x + (FILTER_BUTTON_SIZE - textWidth) / 2, y + (FILTER_BUTTON_SIZE - 9) / 2, 0xFFFFFFFF, false);
         }
     }
     
-    private static void renderViewerSettingsButton(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderViewerSettingsButton(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
 
         isViewerSettingsButtonHovered = lastMouseX >= x && lastMouseX < x + MINIMIZE_BUTTON_SIZE
                 && lastMouseY >= y && lastMouseY < y + MINIMIZE_BUTTON_SIZE;
@@ -3581,12 +3583,12 @@ public class ItemViewerUtility {
         drawViewerSettingsGearIcon(context, x, y, MINIMIZE_BUTTON_SIZE);
     }
 
-    private static void drawViewerSettingsGearIcon(DrawContext context, int x, int y, int buttonSize) {
+    private static void drawViewerSettingsGearIcon(GuiGraphicsExtractor context, int x, int y, int buttonSize) {
         try {
             int iconSize = 16;
             int iconX = x + (buttonSize - iconSize) / 2;
             int iconY = y + (buttonSize - iconSize) / 2;
-            context.drawTexture(
+            context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     VIEWER_SETTINGS_ICON,
                     iconX, iconY,
@@ -3595,10 +3597,10 @@ public class ItemViewerUtility {
                     iconSize, iconSize
             );
         } catch (Exception ignored) {
-            MinecraftClient client = MinecraftClient.getInstance();
-            context.drawText(client.textRenderer, Text.literal("⚙"),
-                    x + (buttonSize - client.textRenderer.getWidth("⚙")) / 2,
-                    y + (buttonSize - client.textRenderer.fontHeight) / 2 + 1,
+            Minecraft client = Minecraft.getInstance();
+            context.text(client.font, Component.literal("⚙"),
+                    x + (buttonSize - client.font.width("⚙")) / 2,
+                    y + (buttonSize - client.font.lineHeight) / 2 + 1,
                     0xFFFFFF00, false);
         }
     }
@@ -3641,8 +3643,8 @@ public class ItemViewerUtility {
         return menuX + MINIMIZE_BUTTON_SIZE + 1;
     }
 
-    private static void renderViewerSettingsMenu(DrawContext context, int buttonX, int buttonY) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderViewerSettingsMenu(GuiGraphicsExtractor context, int buttonX, int buttonY) {
+        Minecraft client = Minecraft.getInstance();
 
         int menuButtonWidth = MINIMIZE_BUTTON_SIZE;
         int menuButtonHeight = MINIMIZE_BUTTON_SIZE;
@@ -3672,41 +3674,41 @@ public class ItemViewerUtility {
     }
 
     private static void renderViewerSettingsMenuToggleButton(
-            DrawContext context, MinecraftClient client, int x, int y, int width, int height, String label, boolean active) {
+            GuiGraphicsExtractor context, Minecraft client, int x, int y, int width, int height, String label, boolean active) {
         boolean hovered = lastMouseX >= x && lastMouseX < x + width && lastMouseY >= y && lastMouseY < y + height;
         int bgColor = active ? 0xFF305030 : (hovered ? 0x80404040 : 0x80202020);
         context.fill(x, y + 1, x + width, y + height - 1, bgColor);
         int textColor = active ? 0xFF55FF55 : 0xFFFFFFFF;
         if ("$".equals(label)) {
             float scale = 1.5f;
-            Matrix3x2fStack matrices = context.getMatrices();
+            Matrix3x2fStack matrices = context.pose();
             matrices.pushMatrix();
             matrices.translate(x + width / 2.0f, y + height / 2.0f);
             matrices.scale(scale, scale);
-            int textWidth = client.textRenderer.getWidth(label);
-            context.drawText(
-                    client.textRenderer,
-                    Text.literal(label),
+            int textWidth = client.font.width(label);
+            context.text(
+                    client.font,
+                    Component.literal(label),
                     -textWidth / 2,
-                    -client.textRenderer.fontHeight / 2,
+                    -client.font.lineHeight / 2,
                     textColor,
                     false
             );
             matrices.popMatrix();
         } else {
-            int textWidth = client.textRenderer.getWidth(label);
+            int textWidth = client.font.width(label);
             int textX = x + (width - textWidth) / 2;
-            int textY = y + (height - client.textRenderer.fontHeight) / 2;
-            context.drawText(client.textRenderer, Text.literal(label), textX, textY, textColor, false);
+            int textY = y + (height - client.font.lineHeight) / 2;
+            context.text(client.font, Component.literal(label), textX, textY, textColor, false);
         }
     }
 
-    private static void renderMinimizeButton(DrawContext context, int x, int y) {
+    private static void renderMinimizeButton(GuiGraphicsExtractor context, int x, int y) {
         renderSideButton(context, x, y, "▶", false);
     }
 
-    private static void renderSideButton(DrawContext context, int x, int y, String label, boolean active) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderSideButton(GuiGraphicsExtractor context, int x, int y, String label, boolean active) {
+        Minecraft client = Minecraft.getInstance();
 
         boolean isHovered = lastMouseX >= x && lastMouseX < x + MINIMIZE_BUTTON_SIZE
                 && lastMouseY >= y && lastMouseY < y + MINIMIZE_BUTTON_SIZE;
@@ -3720,10 +3722,10 @@ public class ItemViewerUtility {
         context.fill(x, y, x + 1, y + MINIMIZE_BUTTON_SIZE, borderColor);
         context.fill(x + MINIMIZE_BUTTON_SIZE - 1, y, x + MINIMIZE_BUTTON_SIZE, y + MINIMIZE_BUTTON_SIZE, borderColor);
 
-        int textWidth = client.textRenderer.getWidth(label);
+        int textWidth = client.font.width(label);
         int textX = x + (MINIMIZE_BUTTON_SIZE - textWidth) / 2;
-        int textY = y + (MINIMIZE_BUTTON_SIZE - client.textRenderer.fontHeight) / 2 + 1;
-        context.drawText(client.textRenderer, Text.literal(label), textX, textY, 0xFFFFFFFF, false);
+        int textY = y + (MINIMIZE_BUTTON_SIZE - client.font.lineHeight) / 2 + 1;
+        context.text(client.font, Component.literal(label), textX, textY, 0xFFFFFFFF, false);
     }
 
     private static int getSideButtonX(ViewerPosition pos) {
@@ -3749,9 +3751,9 @@ public class ItemViewerUtility {
     /**
      * Rendert den minimierten Button (rechts unten am Screen)
      */
-    private static void renderMinimizedButton(DrawContext context, MinecraftClient client) {
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+    private static void renderMinimizedButton(GuiGraphicsExtractor context, Minecraft client) {
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         int buttonX = screenWidth - MINIMIZE_BUTTON_SIZE - 10; // 10px vom rechten Rand
         int buttonY = screenHeight - MINIMIZE_BUTTON_SIZE - 10; // 10px vom unteren Rand
         
@@ -3772,27 +3774,27 @@ public class ItemViewerUtility {
         
         // Maximierungs-Symbol (Pfeil nach links) - "◀" - mittig positioniert
         String maximizeSymbol = "◀";
-        int textWidth = client.textRenderer.getWidth(maximizeSymbol);
+        int textWidth = client.font.width(maximizeSymbol);
         int textX = buttonX + (MINIMIZE_BUTTON_SIZE - textWidth) / 2; // Horizontal zentriert
-        int textY = buttonY + (MINIMIZE_BUTTON_SIZE - client.textRenderer.fontHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
-        context.drawText(client.textRenderer, Text.literal(maximizeSymbol), textX, textY, 0xFFFFFFFF, false);
+        int textY = buttonY + (MINIMIZE_BUTTON_SIZE - client.font.lineHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
+        context.text(client.font, Component.literal(maximizeSymbol), textX, textY, 0xFFFFFFFF, false);
         
         // Rendere Tooltip für minimierten Button (wenn gehovered)
         if (isHovered) {
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal("ItemViewer ausklappen"));
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("ItemViewer ausklappen"));
             String hotkeyText = getToggleHotkeyText();
-            tooltip.add(Text.literal("(Hotkey: " + hotkeyText + ")"));
+            tooltip.add(Component.literal("(Hotkey: " + hotkeyText + ")"));
             // Minecraft's drawTooltip passt automatisch die Position an
-            context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+            context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
     }
     
     /**
      * Rendert das Suchfeld
      */
-    private static void renderSearchField(DrawContext context, int x, int y, int width) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderSearchField(GuiGraphicsExtractor context, int x, int y, int width) {
+        Minecraft client = Minecraft.getInstance();
 
         if (searchFieldFocused) {
             long currentTime = System.currentTimeMillis();
@@ -3823,10 +3825,10 @@ public class ItemViewerUtility {
         int maxTextWidth = width - 6; // 3px Padding links + 3px rechts
         String displayText = searchText;
         boolean isTextTruncated = false;
-        if (client.textRenderer.getWidth(displayText) > maxTextWidth) {
+        if (client.font.width(displayText) > maxTextWidth) {
             // Kürze Text von hinten
             String originalText = displayText;
-            while (client.textRenderer.getWidth(displayText + "...") > maxTextWidth && displayText.length() > 0) {
+            while (client.font.width(displayText + "...") > maxTextWidth && displayText.length() > 0) {
                 displayText = displayText.substring(0, displayText.length() - 1);
             }
             displayText += "...";
@@ -3838,14 +3840,14 @@ public class ItemViewerUtility {
         if (hasSelection() && searchFieldFocused && !currentSearch.isEmpty()) {
             renderTextWithSelection(context, client, currentSearch, x + 3, y + 6, textColor, width - 6);
         } else {
-            context.drawText(client.textRenderer, Text.literal(displayText), x + 3, y + 6, textColor, false);
+            context.text(client.font, Component.literal(displayText), x + 3, y + 6, textColor, false);
         }
         
         // Cursor anzeigen wenn fokussiert (nur wenn keine Selektion)
         if (searchFieldFocused && !hasSelection() && searchCursorVisible) {
             int cursorX = x + 3;
             if (cursorPosition > 0 && cursorPosition <= currentSearch.length()) {
-                cursorX += client.textRenderer.getWidth(currentSearch.substring(0, cursorPosition));
+                cursorX += client.font.width(currentSearch.substring(0, cursorPosition));
             }
             context.fill(cursorX, y + 4, cursorX + 1, y + SEARCH_HEIGHT - 4, 0xFFFFFFFF);
         }
@@ -3855,10 +3857,10 @@ public class ItemViewerUtility {
             boolean isHovered = lastMouseX >= x && lastMouseX < x + width &&
                                lastMouseY >= y && lastMouseY < y + SEARCH_HEIGHT;
             if (isHovered) {
-                List<Text> tooltip = new ArrayList<>();
-                tooltip.add(Text.literal(currentSearch));
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(Component.literal(currentSearch));
                 // Minecraft's drawTooltip passt automatisch die Position an
-                context.drawTooltip(client.textRenderer, tooltip, lastMouseX, lastMouseY);
+                context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
             }
         }
     }
@@ -3866,8 +3868,8 @@ public class ItemViewerUtility {
     /**
      * Rendert den Favoriten-Button
      */
-    private static void renderFavoritesButton(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderFavoritesButton(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
         
         // Prüfe ob Maus über Button ist
         boolean isHovered = lastMouseX >= x && lastMouseX < x + SORT_DROPDOWN_HEIGHT &&
@@ -3892,7 +3894,7 @@ public class ItemViewerUtility {
             int iconY = y + (SORT_DROPDOWN_HEIGHT - iconSize) / 2;
             
             // Verwende drawTexture mit RenderPipeline
-            context.drawTexture(
+            context.blit(
                 RenderPipelines.GUI_TEXTURED,
                 STAR_ICON_TEXTURE,
                 iconX, iconY,
@@ -3903,20 +3905,20 @@ public class ItemViewerUtility {
         } catch (Exception e) {
             // Fallback: Zeige "★" als Text wenn Textur nicht geladen werden kann
             String starSymbol = "★";
-            int starTextWidth = client.textRenderer.getWidth(starSymbol);
-            int starTextHeight = client.textRenderer.fontHeight;
+            int starTextWidth = client.font.width(starSymbol);
+            int starTextHeight = client.font.lineHeight;
             int starX = x + (SORT_DROPDOWN_HEIGHT - starTextWidth) / 2;
             int starY = y + (SORT_DROPDOWN_HEIGHT - starTextHeight) / 2;
             int starColor = favoritesMode ? 0x80FFFF00 : 0xFFFFFF00; // Gelb, 50% transparenter wenn aktiv
-            context.drawText(client.textRenderer, Text.literal(starSymbol), starX, starY, starColor, false);
+            context.text(client.font, Component.literal(starSymbol), starX, starY, starColor, false);
         }
     }
     
     /**
      * Rendert den Kit-Button
      */
-    private static void renderKitButton(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderKitButton(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
         
         // Prüfe ob Maus über Button ist
         boolean isHovered = lastMouseX >= x && lastMouseX < x + KIT_BUTTON_SIZE &&
@@ -3966,7 +3968,7 @@ public class ItemViewerUtility {
             int iconY = y + (KIT_BUTTON_SIZE - iconSize) / 2;
             
             // Verwende drawTexture mit RenderPipeline
-            context.drawTexture(
+            context.blit(
                 RenderPipelines.GUI_TEXTURED,
                 KIT_ICON_TEXTURE,
                 iconX, iconY,
@@ -3977,20 +3979,20 @@ public class ItemViewerUtility {
         } catch (Exception e) {
             // Fallback: Zeige "K" als Text wenn Textur nicht geladen werden kann
             String kitSymbol = "K";
-            int textWidth = client.textRenderer.getWidth(kitSymbol);
-            int textHeight = client.textRenderer.fontHeight;
+            int textWidth = client.font.width(kitSymbol);
+            int textHeight = client.font.lineHeight;
             int textX = x + (KIT_BUTTON_SIZE - textWidth) / 2;
             int textY = y + (KIT_BUTTON_SIZE - textHeight) / 2;
-            context.drawText(client.textRenderer, Text.literal(kitSymbol), textX, textY, 0xFFFFFFFF, false);
+            context.text(client.font, Component.literal(kitSymbol), textX, textY, 0xFFFFFFFF, false);
         }
     }
     
-    private static int getApplyButtonWidth(MinecraftClient client) {
-        return client.textRenderer.getWidth(APPLY_BUTTON_LABEL) + 10;
+    private static int getApplyButtonWidth(Minecraft client) {
+        return client.font.width(APPLY_BUTTON_LABEL) + 10;
     }
     
-    private static void renderApplyButton(DrawContext context, int x, int y, int width) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderApplyButton(GuiGraphicsExtractor context, int x, int y, int width) {
+        Minecraft client = Minecraft.getInstance();
         boolean isHovered = lastMouseX >= x && lastMouseX < x + width &&
                            lastMouseY >= y && lastMouseY < y + SORT_DROPDOWN_HEIGHT;
         boolean isActive = ItemViewerInventoryFilterUtility.isFilterActive();
@@ -4011,17 +4013,17 @@ public class ItemViewerUtility {
         context.fill(x, y, x + 1, y + SORT_DROPDOWN_HEIGHT, borderColor);
         context.fill(x + width - 1, y, x + width, y + SORT_DROPDOWN_HEIGHT, borderColor);
         
-        int textWidth = client.textRenderer.getWidth(APPLY_BUTTON_LABEL);
+        int textWidth = client.font.width(APPLY_BUTTON_LABEL);
         int textX = x + (width - textWidth) / 2;
-        int textY = y + (SORT_DROPDOWN_HEIGHT - client.textRenderer.fontHeight) / 2;
+        int textY = y + (SORT_DROPDOWN_HEIGHT - client.font.lineHeight) / 2;
         int textColor = isActive ? 0xFFAAFFAA : 0xFFFFFFFF;
-        context.drawText(client.textRenderer, Text.literal(APPLY_BUTTON_LABEL), textX, textY, textColor, false);
+        context.text(client.font, Component.literal(APPLY_BUTTON_LABEL), textX, textY, textColor, false);
     }
     
     /**
      * Gibt die Farbe für ein Kit zurück (basierend auf Kit-Typ)
      */
-    public static void startKitEditorMode(HandledScreen<?> backgroundScreen,
+    public static void startKitEditorMode(AbstractContainerScreen<?> backgroundScreen,
             java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.CustomKitEditorScreen.PickTarget> pickHandler) {
         kitEditorBackgroundScreen = backgroundScreen;
         kitEditorPickHandler = pickHandler;
@@ -4039,7 +4041,7 @@ public class ItemViewerUtility {
         return kitEditorPickHandler != null;
     }
 
-    public static HandledScreen<?> getKitEditorBackgroundScreen() {
+    public static AbstractContainerScreen<?> getKitEditorBackgroundScreen() {
         return kitEditorBackgroundScreen;
     }
 
@@ -4061,24 +4063,24 @@ public class ItemViewerUtility {
         if (!isKitEditorMode()) {
             return null;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             return null;
         }
         if (kitEditorBackgroundScreen != null) {
-            return getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.currentScreen);
+            return getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.screen);
         }
-        return calculateViewerPositionBesideCenteredInventory(client.currentScreen);
+        return calculateViewerPositionBesideCenteredInventory(client.screen);
     }
 
-    private static ViewerPosition resolveViewerPositionForMouseInput(MinecraftClient client) {
+    private static ViewerPosition resolveViewerPositionForMouseInput(Minecraft client) {
         if (isKitEditorMode()) {
             return resolveKitEditorViewerPosition();
         }
-        if (client.currentScreen == null) {
+        if (client.screen == null) {
             return null;
         }
-        HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
+        AbstractContainerScreen<?> handledScreen = resolveAbstractContainerScreenForInput(client);
         if (handledScreen == null) {
             return null;
         }
@@ -4087,7 +4089,7 @@ public class ItemViewerUtility {
                 && !helpScreenOpen) {
             return null;
         }
-        return getOrCalculateViewerPosition(handledScreen, client.currentScreen);
+        return getOrCalculateViewerPosition(handledScreen, client.screen);
     }
 
     public static boolean isMouseOverKitEditorItemViewer(double mouseX, double mouseY) {
@@ -4099,7 +4101,7 @@ public class ItemViewerUtility {
                 && mouseY >= bounds[1] && mouseY < bounds[1] + bounds[3];
     }
 
-    public static void renderKitEditorItemViewer(DrawContext context, MinecraftClient client, int mouseX, int mouseY) {
+    public static void renderKitEditorItemViewer(GuiGraphicsExtractor context, Minecraft client, int mouseX, int mouseY) {
         if (!isKitEditorMode()) {
             return;
         }
@@ -4140,13 +4142,13 @@ public class ItemViewerUtility {
     /**
      * Rendert nur den Sortierungs-Dropdown-Button (ohne Liste)
      */
-    private static void renderSortDropdownButton(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderSortDropdownButton(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
         
         // Berechne Dropdown-Breite dynamisch
         int maxDropdownWidth = 0;
         for (SortMode mode : SortMode.values()) {
-            int textWidth = client.textRenderer.getWidth(mode.getDisplayName());
+            int textWidth = client.font.width(mode.getDisplayName());
             maxDropdownWidth = Math.max(maxDropdownWidth, textWidth);
         }
         int dropdownWidth = maxDropdownWidth + SORT_DROPDOWN_PADDING * 2 + 15; // +15 für Pfeil
@@ -4170,24 +4172,24 @@ public class ItemViewerUtility {
         String buttonText = currentSortMode.getDisplayName();
         int textX = x + SORT_DROPDOWN_PADDING;
         int textColor = 0xFFFFFFFF;
-        context.drawText(client.textRenderer, Text.literal(buttonText), textX, y + 6, textColor, false);
+        context.text(client.font, Component.literal(buttonText), textX, y + 6, textColor, false);
         
         // Dropdown-Pfeil (▼)
         String arrow = sortDropdownOpen ? "▲" : "▼";
-        int arrowX = x + dropdownWidth - client.textRenderer.getWidth(arrow) - SORT_DROPDOWN_PADDING;
-        context.drawText(client.textRenderer, Text.literal(arrow), arrowX, y + 6, 0xFF808080, false);
+        int arrowX = x + dropdownWidth - client.font.width(arrow) - SORT_DROPDOWN_PADDING;
+        context.text(client.font, Component.literal(arrow), arrowX, y + 6, 0xFF808080, false);
     }
     
     /**
      * Rendert die Dropdown-Liste (wird NACH dem Item-Grid gerendert, damit sie darüber liegt)
      */
-    private static void renderSortDropdownList(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderSortDropdownList(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
         
         // Berechne Dropdown-Breite dynamisch
         int maxDropdownWidth = 0;
         for (SortMode mode : SortMode.values()) {
-            int textWidth = client.textRenderer.getWidth(mode.getDisplayName());
+            int textWidth = client.font.width(mode.getDisplayName());
             maxDropdownWidth = Math.max(maxDropdownWidth, textWidth);
         }
         int dropdownWidth = maxDropdownWidth + SORT_DROPDOWN_PADDING * 2 + 15; // +15 für Pfeil
@@ -4221,7 +4223,7 @@ public class ItemViewerUtility {
             String optionText = mode.getDisplayName();
             int optionTextX = x + SORT_DROPDOWN_PADDING;
             int optionTextColor = isSelected ? 0xFFFFFFFF : 0xFFCCCCCC;
-            context.drawText(client.textRenderer, Text.literal(optionText), optionTextX, optionY + 4, optionTextColor, false);
+            context.text(client.font, Component.literal(optionText), optionTextX, optionY + 4, optionTextColor, false);
             
             optionIndex++;
         }
@@ -4267,8 +4269,8 @@ public class ItemViewerUtility {
     /**
      * Rendert den Symbol-Button (Apple-Icon)
      */
-    private static void renderSymbolButton(DrawContext context, int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderSymbolButton(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
         
         // Prüfe ob Maus über Button ist
         isSymbolButtonHovered = lastMouseX >= x && lastMouseX < x + SYMBOL_BUTTON_SIZE &&
@@ -4293,7 +4295,7 @@ public class ItemViewerUtility {
             int iconY = y + (SYMBOL_BUTTON_SIZE - iconSize) / 2;
             
             // Verwende drawTexture mit RenderPipeline
-            context.drawTexture(
+            context.blit(
                 RenderPipelines.GUI_TEXTURED,
                 APPLE_ICON_TEXTURE,
                 iconX, iconY,
@@ -4304,13 +4306,13 @@ public class ItemViewerUtility {
         } catch (Exception e) {
             // Fallback: Zeige "!" als Text wenn Textur nicht geladen werden kann
             String exclamationSymbol = "!";
-            int exclamationTextWidth = client.textRenderer.getWidth(exclamationSymbol);
-            int exclamationTextHeight = client.textRenderer.fontHeight;
+            int exclamationTextWidth = client.font.width(exclamationSymbol);
+            int exclamationTextHeight = client.font.lineHeight;
             int exclamationX = x + (SYMBOL_BUTTON_SIZE - exclamationTextWidth) / 2;
             int exclamationY = y + (SYMBOL_BUTTON_SIZE - exclamationTextHeight) / 2;
-            context.drawText(
-                client.textRenderer,
-                Text.literal(exclamationSymbol),
+            context.text(
+                client.font,
+                Component.literal(exclamationSymbol),
                 exclamationX,
                 exclamationY,
                 0xFFFFFF00,
@@ -4322,8 +4324,8 @@ public class ItemViewerUtility {
     /**
      * Rendert das Symbol-Menü (erscheint beim Hovern über den Stern-Button, nach links)
      */
-    private static void renderSymbolMenu(DrawContext context, int buttonX, int buttonY) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderSymbolMenu(GuiGraphicsExtractor context, int buttonX, int buttonY) {
+        Minecraft client = Minecraft.getInstance();
         
         int menuButtonWidth = 20;
         int menuButtonHeight = SYMBOL_BUTTON_SIZE; // Gleiche Höhe wie Stern-Button
@@ -4363,10 +4365,10 @@ public class ItemViewerUtility {
         context.fill(atButtonX, menuY + 1, atButtonX + menuButtonWidth, menuY + menuButtonHeight - 1, 
                      atHovered ? 0x80404040 : 0x80202020);
         // Zentriere Text vertikal
-        int textY = menuY + (menuButtonHeight - client.textRenderer.fontHeight) / 2;
-        context.drawText(
-            client.textRenderer,
-            Text.literal("@"),
+        int textY = menuY + (menuButtonHeight - client.font.lineHeight) / 2;
+        context.text(
+            client.font,
+            Component.literal("@"),
             atButtonX + 7,
             textY,
             0xFFFFFFFF,
@@ -4383,9 +4385,9 @@ public class ItemViewerUtility {
                               lastMouseY >= menuY && lastMouseY < menuY + menuButtonHeight;
         context.fill(lessButtonX, menuY + 1, lessButtonX + menuButtonWidth, menuY + menuButtonHeight - 1,
                      lessHovered ? 0x80404040 : 0x80202020);
-        context.drawText(
-            client.textRenderer,
-            Text.literal("<"),
+        context.text(
+            client.font,
+            Component.literal("<"),
             lessButtonX + 7,
             textY,
             0xFFFFFFFF,
@@ -4402,9 +4404,9 @@ public class ItemViewerUtility {
                                   lastMouseY >= menuY && lastMouseY < menuY + menuButtonHeight;
         context.fill(greaterButtonX, menuY + 1, greaterButtonX + menuButtonWidth, menuY + menuButtonHeight - 1,
                      greaterHovered ? 0x80404040 : 0x80202020);
-        context.drawText(
-            client.textRenderer,
-            Text.literal(">"),
+        context.text(
+            client.font,
+            Component.literal(">"),
             greaterButtonX + 7,
             textY,
             0xFFFFFFFF,
@@ -4415,8 +4417,8 @@ public class ItemViewerUtility {
     /**
      * Rendert Pagination-Buttons
      */
-    private static void renderPagination(DrawContext context, int x, int y, int width) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private static void renderPagination(GuiGraphicsExtractor context, int x, int y, int width) {
+        Minecraft client = Minecraft.getInstance();
         
         int itemsPerPage = ItemViewerGrid.computeItemsPerPage(currentGridAvailableWidth, currentGridAvailableHeight);
         int totalPages = (int) Math.ceil((double) filteredItems.size() / (double) itemsPerPage);
@@ -4425,8 +4427,8 @@ public class ItemViewerUtility {
         // Berechne Button-Breite dynamisch basierend auf Text
         String prevText = "< Zurück";
         String nextText = "Weiter >";
-        int prevTextWidth = client.textRenderer.getWidth(prevText);
-        int nextTextWidth = client.textRenderer.getWidth(nextText);
+        int prevTextWidth = client.font.width(prevText);
+        int nextTextWidth = client.font.width(nextText);
         int buttonWidth = Math.max(prevTextWidth, nextTextWidth) + 10; // 10px Padding
         int buttonHeight = PAGINATION_HEIGHT;
         
@@ -4442,13 +4444,13 @@ public class ItemViewerUtility {
         
         int prevTextX = prevX + (buttonWidth - prevTextWidth) / 2;
         int prevTextColor = canGoPrevious ? 0xFFFFFFFF : 0xFF808080;
-        context.drawText(client.textRenderer, Text.literal(prevText), prevTextX, y + 6, prevTextColor, false);
+        context.text(client.font, Component.literal(prevText), prevTextX, y + 6, prevTextColor, false);
         
         // Seiten-Info
         String pageText = (currentPage + 1) + " / " + totalPages;
-        int pageTextWidth = client.textRenderer.getWidth(pageText);
+        int pageTextWidth = client.font.width(pageText);
         int pageTextX = x + (width - pageTextWidth) / 2;
-        context.drawText(client.textRenderer, Text.literal(pageText), pageTextX, y + 6, 0xFFFFFFFF, false);
+        context.text(client.font, Component.literal(pageText), pageTextX, y + 6, 0xFFFFFFFF, false);
         
         // Next-Button
         boolean canGoNext = currentPage < totalPages - 1;
@@ -4462,7 +4464,7 @@ public class ItemViewerUtility {
         
         int nextTextX = nextX + (buttonWidth - nextTextWidth) / 2;
         int nextTextColor = canGoNext ? 0xFFFFFFFF : 0xFF808080;
-        context.drawText(client.textRenderer, Text.literal(nextText), nextTextX, y + 6, nextTextColor, false);
+        context.text(client.font, Component.literal(nextText), nextTextX, y + 6, nextTextColor, false);
     }
     
     /**
@@ -4476,13 +4478,13 @@ public class ItemViewerUtility {
     /**
      * Aktualisiert den gehoverten Slot (wird vom Mixin aufgerufen)
      */
-    public static void updateHoveredSlot(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen, net.minecraft.screen.slot.Slot slot) {
+    public static void updateHoveredSlot(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen, net.minecraft.world.inventory.Slot slot) {
         lastHoveredScreen = screen;
         lastHoveredSlot = slot;
         
         // Debug: Zeige nur wenn sich der Slot ändert (reduziere Ausgabe)
-        if (slot != null && slot.hasStack()) {
-            net.minecraft.item.ItemStack stack = slot.getStack();
+        if (slot != null && slot.hasItem()) {
+            net.minecraft.world.item.ItemStack stack = slot.getItem();
             if (stack != null && !stack.isEmpty()) {
                 // Slot wird getrackt
             }
@@ -4504,11 +4506,11 @@ public class ItemViewerUtility {
         currentPage = 0;
     }
 
-    private static ViewerPosition getOrCalculateViewerPosition(HandledScreen<?> handledScreen, Screen screen) {
-        int inventoryX = readHandledScreenInventoryX(handledScreen, screen);
-        int inventoryWidth = readHandledScreenInventoryWidth(handledScreen);
-        int inventoryY = readHandledScreenInventoryY(handledScreen, screen);
-        int inventoryHeight = readHandledScreenInventoryHeight(handledScreen);
+    private static ViewerPosition getOrCalculateViewerPosition(AbstractContainerScreen<?> handledScreen, Screen screen) {
+        int inventoryX = readAbstractContainerScreenInventoryX(handledScreen, screen);
+        int inventoryWidth = readAbstractContainerScreenInventoryWidth(handledScreen);
+        int inventoryY = readAbstractContainerScreenInventoryY(handledScreen, screen);
+        int inventoryHeight = readAbstractContainerScreenInventoryHeight(handledScreen);
         int maxSlots = CCLiveUtilitiesConfig.getItemViewerMaxSlots();
         if (cachedHandledViewerPosition != null
                 && cachedHandledViewerPositionScreen == handledScreen
@@ -4533,47 +4535,47 @@ public class ItemViewerUtility {
         return cachedHandledViewerPosition;
     }
     
-    private static void resolveHandledScreenFields() {
+    private static void resolveAbstractContainerScreenFields() {
         if (handledScreenFieldsResolved) {
             return;
         }
         try {
-            handledScreenXField = HandledScreen.class.getDeclaredField("x");
+            handledScreenXField = AbstractContainerScreen.class.getDeclaredField("leftPos");
             handledScreenXField.setAccessible(true);
         } catch (Exception ignored) {
         }
         try {
-            handledScreenYField = HandledScreen.class.getDeclaredField("y");
+            handledScreenYField = AbstractContainerScreen.class.getDeclaredField("topPos");
             handledScreenYField.setAccessible(true);
         } catch (Exception ignored) {
         }
         try {
-            handledScreenBackgroundWidthField = HandledScreen.class.getDeclaredField("backgroundWidth");
+            handledScreenBackgroundWidthField = AbstractContainerScreen.class.getDeclaredField("imageWidth");
             handledScreenBackgroundWidthField.setAccessible(true);
         } catch (Exception ignored) {
         }
         try {
-            handledScreenBackgroundHeightField = HandledScreen.class.getDeclaredField("backgroundHeight");
+            handledScreenBackgroundHeightField = AbstractContainerScreen.class.getDeclaredField("imageHeight");
             handledScreenBackgroundHeightField.setAccessible(true);
         } catch (Exception ignored) {
         }
         handledScreenFieldsResolved = true;
     }
     
-    private static int readHandledScreenInventoryX(HandledScreen<?> handledScreen, Screen screen) {
-        resolveHandledScreenFields();
+    private static int readAbstractContainerScreenInventoryX(AbstractContainerScreen<?> handledScreen, Screen screen) {
+        resolveAbstractContainerScreenFields();
         if (handledScreenXField != null) {
             try {
                 return handledScreenXField.getInt(handledScreen);
             } catch (Exception ignored) {
             }
         }
-        int width = readHandledScreenInventoryWidth(handledScreen);
+        int width = readAbstractContainerScreenInventoryWidth(handledScreen);
         return (screen.width - width) / 2;
     }
     
-    private static int readHandledScreenInventoryWidth(HandledScreen<?> handledScreen) {
-        resolveHandledScreenFields();
+    private static int readAbstractContainerScreenInventoryWidth(AbstractContainerScreen<?> handledScreen) {
+        resolveAbstractContainerScreenFields();
         if (handledScreenBackgroundWidthField != null) {
             try {
                 return handledScreenBackgroundWidthField.getInt(handledScreen);
@@ -4583,20 +4585,20 @@ public class ItemViewerUtility {
         return 176;
     }
 
-    private static int readHandledScreenInventoryY(HandledScreen<?> handledScreen, Screen screen) {
-        resolveHandledScreenFields();
+    private static int readAbstractContainerScreenInventoryY(AbstractContainerScreen<?> handledScreen, Screen screen) {
+        resolveAbstractContainerScreenFields();
         if (handledScreenYField != null) {
             try {
                 return handledScreenYField.getInt(handledScreen);
             } catch (Exception ignored) {
             }
         }
-        int height = readHandledScreenInventoryHeight(handledScreen);
+        int height = readAbstractContainerScreenInventoryHeight(handledScreen);
         return (screen.height - height) / 2;
     }
 
-    private static int readHandledScreenInventoryHeight(HandledScreen<?> handledScreen) {
-        resolveHandledScreenFields();
+    private static int readAbstractContainerScreenInventoryHeight(AbstractContainerScreen<?> handledScreen) {
+        resolveAbstractContainerScreenFields();
         if (handledScreenBackgroundHeightField != null) {
             try {
                 return handledScreenBackgroundHeightField.getInt(handledScreen);
@@ -4613,22 +4615,22 @@ public class ItemViewerUtility {
         return Math.max(VIEWER_VERTICAL_MARGIN, Math.min(viewerY, maxY));
     }
     
-    private static int getSortDropdownWidth(MinecraftClient client) {
+    private static int getSortDropdownWidth(Minecraft client) {
         if (cachedSortDropdownWidth > 0) {
             return cachedSortDropdownWidth;
         }
         int maxDropdownWidth = 0;
         for (SortMode mode : SortMode.values()) {
-            int textWidth = client.textRenderer.getWidth(mode.getDisplayName());
+            int textWidth = client.font.width(mode.getDisplayName());
             maxDropdownWidth = Math.max(maxDropdownWidth, textWidth);
         }
         cachedSortDropdownWidth = maxDropdownWidth + SORT_DROPDOWN_PADDING * 2 + 15;
         return cachedSortDropdownWidth;
     }
     
-    private static ViewerPosition calculateViewerPosition(HandledScreen<?> handledScreen, Screen screen, int inventoryX, int inventoryWidth) {
-        int inventoryY = readHandledScreenInventoryY(handledScreen, screen);
-        int inventoryHeight = readHandledScreenInventoryHeight(handledScreen);
+    private static ViewerPosition calculateViewerPosition(AbstractContainerScreen<?> handledScreen, Screen screen, int inventoryX, int inventoryWidth) {
+        int inventoryY = readAbstractContainerScreenInventoryY(handledScreen, screen);
+        int inventoryHeight = readAbstractContainerScreenInventoryHeight(handledScreen);
         return buildViewerPositionForInventoryArea(screen, inventoryX, inventoryWidth, inventoryY, inventoryHeight);
     }
 
@@ -4643,7 +4645,7 @@ public class ItemViewerUtility {
 
     private static ViewerPosition buildViewerPositionForInventoryArea(Screen screen, int inventoryX, int inventoryWidth,
             int inventoryY, int inventoryHeight) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
 
         int availableWidthRight = screen.width - (inventoryX + inventoryWidth) - 10;
         int availableWidthLeft = inventoryX - 20;
@@ -4769,7 +4771,7 @@ public class ItemViewerUtility {
             return false;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         ViewerPosition pos = resolveViewerPositionForMouseInput(client);
         if (pos == null) {
             return false;
@@ -4808,12 +4810,12 @@ public class ItemViewerUtility {
      * Behandelt Maus-Klicks (wird vom Mixin aufgerufen)
      */
     public static boolean handleMouseClick(double mouseX, double mouseY, int button) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         
         // Prüfe Klick auf minimierten Button (rechts unten, wenn minimiert) - auch ohne Screen
         if (isMinimized && isVisible && button == 0) {
-            int screenWidth = client.getWindow().getScaledWidth();
-            int screenHeight = client.getWindow().getScaledHeight();
+            int screenWidth = client.getWindow().getGuiScaledWidth();
+            int screenHeight = client.getWindow().getGuiScaledHeight();
             int buttonX = screenWidth - MINIMIZE_BUTTON_SIZE - 10;
             int buttonY = screenHeight - MINIMIZE_BUTTON_SIZE - 10;
             
@@ -4832,7 +4834,7 @@ public class ItemViewerUtility {
         }
         
         if (!isKitEditorMode() || kitEditorBackgroundScreen != null) {
-            HandledScreen<?> handledScreen = resolveHandledScreenForInput(client);
+            AbstractContainerScreen<?> handledScreen = resolveAbstractContainerScreenForInput(client);
             if (handledScreen == null) {
                 return false;
             }
@@ -4842,14 +4844,14 @@ public class ItemViewerUtility {
                     && !helpScreenOpen) {
                 return false;
             }
-        } else if (client.currentScreen == null) {
+        } else if (client.screen == null) {
             return false;
         }
         
         // Prüfe ZUERST Klick auf Hilfe-Overlay Schließen-Button (höchste Priorität wenn geöffnet)
         if (helpScreenOpen) {
-            int screenWidth = client.getWindow().getScaledWidth();
-            int screenHeight = client.getWindow().getScaledHeight();
+            int screenWidth = client.getWindow().getGuiScaledWidth();
+            int screenHeight = client.getWindow().getGuiScaledHeight();
             int boxWidth = Math.min(400, screenWidth - 40);
             int boxHeight = Math.min(450, screenHeight - 40);
             int boxX = (screenWidth - boxWidth) / 2;
@@ -4985,7 +4987,7 @@ public class ItemViewerUtility {
                 searchCursorBlinkTime = System.currentTimeMillis();
                 // Berechne Cursor-Position basierend auf Mausklick-Position
                 int clickX = (int) (mouseX - searchX - 3); // 3px Padding links
-                cursorPosition = calculateCursorPosition(clickX, currentSearch, client.textRenderer);
+                cursorPosition = calculateCursorPosition(clickX, currentSearch, client.font);
                 clearSelection(); // Auswahl löschen beim Klick
                 return true;
             } else if (button == 1) {
@@ -5157,8 +5159,8 @@ public class ItemViewerUtility {
             if (totalPages == 0) totalPages = 1;
             
             // Berechne Button-Breite dynamisch (gleiche Logik wie beim Rendering)
-            int prevTextWidth = client.textRenderer.getWidth("< Zurück");
-            int nextTextWidth = client.textRenderer.getWidth("Weiter >");
+            int prevTextWidth = client.font.width("< Zurück");
+            int nextTextWidth = client.font.width("Weiter >");
             int buttonWidth = Math.max(prevTextWidth, nextTextWidth) + 10; // 10px Padding
             
             // Previous-Button
@@ -5199,14 +5201,14 @@ public class ItemViewerUtility {
         return false;
     }
     
-    private static HandledScreen<?> resolveHandledScreenForInput(MinecraftClient client) {
-        if (client.currentScreen == null) {
+    private static AbstractContainerScreen<?> resolveAbstractContainerScreenForInput(Minecraft client) {
+        if (client.screen == null) {
             return null;
         }
         if (isKitEditorMode() && kitEditorBackgroundScreen != null) {
             return kitEditorBackgroundScreen;
         }
-        if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
             return handledScreen;
         }
         return null;
@@ -5267,7 +5269,7 @@ public class ItemViewerUtility {
     }
     
     private static void scheduleApplyFiltersAfterLoad() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null) {
             client.execute(ItemViewerUtility::applyFilters);
         } else {
@@ -5288,8 +5290,8 @@ public class ItemViewerUtility {
             applyFilters();
             ItemViewerGrid.invalidateTooltipCache();
         };
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.isOnThread()) {
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.isSameThread()) {
             refresh.run();
         } else if (client != null) {
             client.execute(refresh);
@@ -5381,7 +5383,7 @@ public class ItemViewerUtility {
      * Gibt die bereinigten Namen der aktuell gefilterten Item-Viewer-Einträge zurück.
      * Berechnet die Liste frisch, damit z. B. „Nicht Gefunden“ auch ohne Suchtext greift.
      */
-    public static java.util.Set<String> getFilteredItemNamesForInventory(net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen) {
+    public static java.util.Set<String> getFilteredItemNamesForInventory(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen) {
         java.util.Set<String> names = new java.util.HashSet<>();
         String categoryFilter = screen != null
             ? ItemViewerInventoryFilterUtility.resolveItemCategoryForInventory(screen)
@@ -5425,9 +5427,9 @@ public class ItemViewerUtility {
         
         // Deaktiviere in der general_lobby Dimension
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client != null && client.world != null) {
-                String dimensionId = client.world.getRegistryKey().getValue().toString();
+            Minecraft client = Minecraft.getInstance();
+            if (client != null && client.level != null) {
+                String dimensionId = client.level.dimension().identifier().toString();
                 if ("minecraft:general_lobby".equals(dimensionId)) {
                     return false;
                 }
@@ -5437,6 +5439,14 @@ public class ItemViewerUtility {
         }
         
         return isVisible;
+    }
+
+    /**
+     * True while the Item Viewer is showing and the cursor is over an item in the grid
+     * (uses hover from the previous/current render frame).
+     */
+    public static boolean hasItemViewerHover() {
+        return isVisible() && !isMinimized && hoveredItemForClick != null;
     }
     
     /**
@@ -5453,7 +5463,7 @@ public class ItemViewerUtility {
      * @param client MinecraftClient Instanz
      * @return true wenn Buttons angezeigt werden sollen, false sonst
      */
-    private static boolean shouldShowItemViewerButtons(MinecraftClient client) {
+    private static boolean shouldShowItemViewerButtons(Minecraft client) {
         if (client == null) {
             return false;
         }
@@ -5474,8 +5484,8 @@ public class ItemViewerUtility {
         }
         
         // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
-        if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
-            net.minecraft.text.Text titleText = handledScreen.getTitle();
+        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+            net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return false; // KEINE Buttons in diesen speziellen Menüs

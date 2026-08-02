@@ -1,23 +1,26 @@
 package net.felix.utilities.Aincraft;
 
+import net.felix.utilities.Overall.KeyCategories;
+
+import net.minecraft.resources.Identifier;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
-
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,7 +34,7 @@ public class ItemInfoUtility {
 	private static boolean ENABLED = false;
 
 	private static boolean isInitialized = false;
-	private static KeyBinding extractKeyBinding;
+	private static KeyMapping extractKeyMapping;
 	
 	// JSON file paths
 	private static final String BLUEPRINTS_CONFIG_FILE = "assets/cclive-utilities/blueprints.json";
@@ -114,33 +117,33 @@ public class ItemInfoUtility {
 		}
 	}
 	
-	private static KeyBinding autoClickKeyBinding;
+	private static KeyMapping autoClickKeyMapping;
 	
 	private static void registerHotkey() {
-		extractKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		extractKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.item-info-extract",
-			InputUtil.Type.KEYSYM,
-			InputUtil.UNKNOWN_KEY.getCode(), // Unbound by default
-			"category.cclive-utilities.item-info"
+			InputConstants.Type.KEYSYM,
+			InputConstants.UNKNOWN.getValue(), // Unbound by default
+			KeyCategories.of("cclive-utilities", "item-info")
 		));
 		
 		// Register auto-click hotkey
-		autoClickKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		autoClickKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.item-info-auto-click",
-			InputUtil.Type.KEYSYM,
-			InputUtil.UNKNOWN_KEY.getCode(), // Unbound by default
-			"category.cclive-utilities.item-info"
+			InputConstants.Type.KEYSYM,
+			InputConstants.UNKNOWN.getValue(), // Unbound by default
+			KeyCategories.of("cclive-utilities", "item-info")
 		));
 	}
 	
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Check hotkey even when inventory is open (backup check)
-		if (extractKeyBinding != null && extractKeyBinding.wasPressed()) {
+		if (extractKeyMapping != null && extractKeyMapping.consumeClick()) {
 			extractItemInfo(client);
 		}
 		
 		// Check auto-click hotkey
-		if (autoClickKeyBinding != null && autoClickKeyBinding.wasPressed()) {
+		if (autoClickKeyMapping != null && autoClickKeyMapping.consumeClick()) {
 			autoRightClickUnregisteredItems(client);
 		}
 		
@@ -151,13 +154,13 @@ public class ItemInfoUtility {
 	/**
 	 * Processes pending clicks from the queue (called every tick)
 	 */
-	private static void processPendingClicks(MinecraftClient client) {
-		if (pendingClicks.isEmpty() || client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
+	private static void processPendingClicks(Minecraft client) {
+		if (pendingClicks.isEmpty() || client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
 			return;
 		}
 		
-		HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
-		net.minecraft.screen.ScreenHandler handler = screen.getScreenHandler();
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+		net.minecraft.world.inventory.AbstractContainerMenu handler = screen.getMenu();
 		
 		// Process a few clicks per frame
 		int processed = 0;
@@ -165,12 +168,12 @@ public class ItemInfoUtility {
 			Integer slotIndex = pendingClicks.poll();
 			if (slotIndex != null && slotIndex < handler.slots.size()) {
 				try {
-					if (client.player != null && client.interactionManager != null) {
-						client.interactionManager.clickSlot(
-							handler.syncId,
+					if (client.player != null && client.gameMode != null) {
+						client.gameMode.handleContainerInput(
+							handler.containerId,
 							slotIndex,
 							1, // button: 0 = left, 1 = right
-							net.minecraft.screen.slot.SlotActionType.PICKUP,
+							net.minecraft.world.inventory.ContainerInput.PICKUP,
 							client.player
 						);
 					}
@@ -187,15 +190,15 @@ public class ItemInfoUtility {
 	 * Called from SearchBarInputMixin
 	 */
 	public static boolean handleKeyPress(int keyCode) {
-		if (extractKeyBinding == null) {
+		if (extractKeyMapping == null) {
 			return false;
 		}
 		
 		try {
 			// Check if the pressed key matches our key binding
 			// Use -1 as scanCode to ignore scanCode comparison (like OverlayEditorUtility)
-			if (extractKeyBinding.matchesKey(keyCode, -1)) {
-				MinecraftClient client = MinecraftClient.getInstance();
+			if (extractKeyMapping.matches(new net.minecraft.client.input.KeyEvent(keyCode, -1, 0))) {
+				Minecraft client = Minecraft.getInstance();
 				if (client != null) {
 					extractItemInfo(client);
 					return true;
@@ -215,15 +218,15 @@ public class ItemInfoUtility {
 	 * @param screenY Y position of the screen (from mixin)
 	 */
 	public static boolean handleAutoClickKeyPress(int keyCode, int screenX, int screenY) {
-		if (autoClickKeyBinding == null) {
+		if (autoClickKeyMapping == null) {
 			return false;
 		}
 		
 		try {
 			// Check if the pressed key matches our key binding
 			// Use -1 as scanCode to ignore scanCode comparison (like OverlayEditorUtility)
-			if (autoClickKeyBinding.matchesKey(keyCode, -1)) {
-				MinecraftClient client = MinecraftClient.getInstance();
+			if (autoClickKeyMapping.matches(new net.minecraft.client.input.KeyEvent(keyCode, -1, 0))) {
+				Minecraft client = Minecraft.getInstance();
 				if (client != null) {
 					autoRightClickUnregisteredItems(client, screenX, screenY);
 					return true;
@@ -240,15 +243,15 @@ public class ItemInfoUtility {
 	 * Overload without screen position (for backward compatibility)
 	 */
 	public static boolean handleAutoClickKeyPress(int keyCode) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
 			return false;
 		}
 		
-		HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
 		// Try to get position from mixin via reflection
 		try {
-			java.lang.reflect.Field[] fields = HandledScreen.class.getDeclaredFields();
+			java.lang.reflect.Field[] fields = AbstractContainerScreen.class.getDeclaredFields();
 			int screenX = 0, screenY = 0;
 			for (java.lang.reflect.Field field : fields) {
 				if (field.getType() == int.class) {
@@ -282,19 +285,19 @@ public class ItemInfoUtility {
 	 * @param screenX X position of the screen (from mixin)
 	 * @param screenY Y position of the screen (from mixin)
 	 */
-	public static void autoRightClickUnregisteredItems(MinecraftClient client, int screenX, int screenY) {
-		if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
-			client.player.sendMessage(Text.literal("§c[ItemInfo] Kein Inventar geöffnet!"), false);
+	public static void autoRightClickUnregisteredItems(Minecraft client, int screenX, int screenY) {
+		if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Kein Inventar geöffnet!"));
 			return;
 		}
 		
-		HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
 		
 		// Check if we're in a blueprint shop inventory
 		String title = screen.getTitle().getString();
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "").replaceAll("[\\u3400-\\u4DBF]", "");
 		if (!cleanTitle.contains("Bauplan [Shop]") && !cleanTitle.contains("Blueprint Store")) {
-			client.player.sendMessage(Text.literal("§c[ItemInfo] Nicht im Bauplan [Shop] Inventar!"), false);
+			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Nicht im Bauplan [Shop] Inventar!"));
 			return;
 		}
 		
@@ -306,13 +309,13 @@ public class ItemInfoUtility {
 		
 		// Iterate through target slots and queue unregistered items for clicking
 		for (int slotIndex : BLUEPRINT_SHOP_SLOTS) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-			if (slot.hasStack()) {
-				ItemStack stack = slot.getStack();
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			if (slot.hasItem()) {
+				ItemStack stack = slot.getItem();
 				if (stack != null && !stack.isEmpty()) {
 					checkedCount++;
 					
@@ -329,23 +332,23 @@ public class ItemInfoUtility {
 		}
 		
 		if (clickedCount > 0) {
-			client.player.sendMessage(Text.literal("§a[ItemInfo] §f" + clickedCount + " Items automatisch angeklickt!"), false);
+			client.player.sendSystemMessage(Component.literal("§a[ItemInfo] §f" + clickedCount + " Items automatisch angeklickt!"));
 		} else {
-			client.player.sendMessage(Text.literal("§e[ItemInfo] §fKeine nicht registrierten Items gefunden (geprüft: " + checkedCount + ")"), false);
+			client.player.sendSystemMessage(Component.literal("§e[ItemInfo] §fKeine nicht registrierten Items gefunden (geprüft: " + checkedCount + ")"));
 		}
 	}
 	
 	/**
 	 * Overload without screen position (for backward compatibility)
 	 */
-	public static void autoRightClickUnregisteredItems(MinecraftClient client) {
+	public static void autoRightClickUnregisteredItems(Minecraft client) {
 		// Try to get screen position from mixin or use default
-		if (client.currentScreen instanceof HandledScreen) {
-			HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+		if (client.screen instanceof AbstractContainerScreen) {
+			AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
 			// Try to get position from mixin via reflection as fallback
 			try {
-				java.lang.reflect.Field xField = HandledScreen.class.getDeclaredField("field_2776"); // Obfuscated name
-				java.lang.reflect.Field yField = HandledScreen.class.getDeclaredField("field_2777"); // Obfuscated name
+				java.lang.reflect.Field xField = AbstractContainerScreen.class.getDeclaredField("leftPos");
+				java.lang.reflect.Field yField = AbstractContainerScreen.class.getDeclaredField("topPos");
 				xField.setAccessible(true);
 				yField.setAccessible(true);
 				int screenX = xField.getInt(screen);
@@ -355,7 +358,7 @@ public class ItemInfoUtility {
 			} catch (Exception e) {
 				// Try other possible field names
 				try {
-					java.lang.reflect.Field[] fields = HandledScreen.class.getDeclaredFields();
+					java.lang.reflect.Field[] fields = AbstractContainerScreen.class.getDeclaredFields();
 					int screenX = 0, screenY = 0;
 					for (java.lang.reflect.Field field : fields) {
 						if (field.getType() == int.class) {
@@ -385,15 +388,15 @@ public class ItemInfoUtility {
 		autoRightClickUnregisteredItems(client, 0, 0);
 	}
 	
-	private static void extractItemInfo(MinecraftClient client) {
-		if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
-			client.player.sendMessage(Text.literal("§c[ItemInfo] Kein Inventar geöffnet!"), false);
+	private static void extractItemInfo(Minecraft client) {
+		if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Kein Inventar geöffnet!"));
 			return;
 		}
 		
-		HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
 		if (!isSupportedInventory(screen)) {
-			client.player.sendMessage(Text.literal("§c[ItemInfo] Nicht in einem unterstützten Inventar (Bauplan [Shop] oder Angel-Komponenten)!"), false);
+			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Nicht in einem unterstützten Inventar (Bauplan [Shop] oder Angel-Komponenten)!"));
 			return;
 		}
 		
@@ -402,13 +405,13 @@ public class ItemInfoUtility {
 		
 		// Read items from target slots
 		for (int slotIndex : targetSlots) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-			if (slot.hasStack()) {
-				ItemStack stack = slot.getStack();
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			if (slot.hasItem()) {
+				ItemStack stack = slot.getItem();
 				if (stack != null && !stack.isEmpty()) {
 					if (isExtractableItem(stack, client)) {
 						ItemInfoData itemData = parseItem(stack, client);
@@ -421,7 +424,7 @@ public class ItemInfoUtility {
 		}
 		
 		if (items.isEmpty()) {
-			client.player.sendMessage(Text.literal("§c[ItemInfo] Keine extrahierbaren Items in den angegebenen Slots gefunden!"), false);
+			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Keine extrahierbaren Items in den angegebenen Slots gefunden!"));
 			return;
 		}
 		
@@ -429,7 +432,7 @@ public class ItemInfoUtility {
 		writeItemsToFile(items, client);
 	}
 	
-	public static boolean isSupportedInventory(HandledScreen<?> screen) {
+	public static boolean isSupportedInventory(AbstractContainerScreen<?> screen) {
 		if (!ENABLED || !isInitialized || screen == null) {
 			return false;
 		}
@@ -450,7 +453,7 @@ public class ItemInfoUtility {
 		return title.replaceAll("§[0-9a-fk-or]", "");
 	}
 	
-	private static int[] getTargetSlotsForScreen(HandledScreen<?> screen) {
+	private static int[] getTargetSlotsForScreen(AbstractContainerScreen<?> screen) {
 		String cleanTitle = cleanInventoryTitle(screen.getTitle().getString());
 		if (ZeichenUtility.isFishingEquipmentSearchMenu(cleanTitle)) {
 			if (ZeichenUtility.isFishingComponentsCraftedTitle(cleanTitle)
@@ -468,10 +471,10 @@ public class ItemInfoUtility {
 			return "";
 		}
 		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getName());
+			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		String name = nameAndColor != null && nameAndColor.name != null ? nameAndColor.name : "";
 		if (name.isEmpty()) {
-			name = cleanBlueprintName(stack.getName().getString());
+			name = cleanBlueprintName(stack.getHoverName().getString());
 		}
 		return normalizeFishingComponentName(name);
 	}
@@ -482,10 +485,10 @@ public class ItemInfoUtility {
 			return "";
 		}
 		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getName());
+			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		String name = nameAndColor != null && nameAndColor.name != null ? nameAndColor.name : "";
 		if (name.isEmpty()) {
-			name = stack.getName().getString();
+			name = stack.getHoverName().getString();
 		}
 		return normalizeFishTrapName(name);
 	}
@@ -503,26 +506,26 @@ public class ItemInfoUtility {
 	/**
 	 * Checks if the item tooltip is extractable (Bauplan shop items or Angel-Komponenten)
 	 */
-	private static boolean isExtractableItem(ItemStack stack, MinecraftClient client) {
+	private static boolean isExtractableItem(ItemStack stack, Minecraft client) {
 		return isBlueprintShopItem(stack, client) || isFishingComponentItem(stack, client);
 	}
 	
-	private static boolean isBlueprintShopItem(ItemStack stack, MinecraftClient client) {
+	private static boolean isBlueprintShopItem(ItemStack stack, Minecraft client) {
 		return tooltipContains(stack, client, "[Rechtsklick] Kaufkosten");
 	}
 	
-	private static boolean isFishingComponentItem(ItemStack stack, MinecraftClient client) {
+	private static boolean isFishingComponentItem(ItemStack stack, Minecraft client) {
 		return tooltipContains(stack, client, "[Linksklick] um die Komponente herzustellen");
 	}
 	
-	private static boolean tooltipContains(ItemStack stack, MinecraftClient client, String needle) {
+	private static boolean tooltipContains(ItemStack stack, Minecraft client, String needle) {
 		try {
-			List<Text> tooltip = getItemTooltip(stack, client.player);
+			List<Component> tooltip = getItemTooltip(stack, client.player);
 			if (tooltip == null || tooltip.isEmpty()) {
 				return false;
 			}
 			
-			for (Text line : tooltip) {
+			for (Component line : tooltip) {
 				String text = cleanTooltipLine(line.getString());
 				if (text.contains(needle)) {
 					return true;
@@ -544,9 +547,9 @@ public class ItemInfoUtility {
 			.trim();
 	}
 	
-	private static List<String> buildCleanTooltipLines(List<Text> tooltip) {
+	private static List<String> buildCleanTooltipLines(List<Component> tooltip) {
 		List<String> lines = new ArrayList<>();
-		for (Text line : tooltip) {
+		for (Component line : tooltip) {
 			String text = line.getString();
 			if (text != null && !text.trim().isEmpty()) {
 				text = text.replaceAll("[\\u3400-\\u4DBF]", "");
@@ -615,7 +618,7 @@ public class ItemInfoUtility {
 	private static String extractFishingComponentName(ItemStack stack, List<String> lines) {
 		String nameFromTooltip = !lines.isEmpty() ? cleanBlueprintName(lines.get(0)) : "";
 		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getName());
+			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		String nameFromStack = nameAndColor != null && nameAndColor.name != null ? nameAndColor.name : "";
 		
 		String name = !nameFromTooltip.isEmpty() ? nameFromTooltip : nameFromStack;
@@ -625,9 +628,9 @@ public class ItemInfoUtility {
 		return normalizeFishingComponentName(name);
 	}
 	
-	private static String resolveItemDisplayName(ItemStack stack, MinecraftClient client) {
+	private static String resolveItemDisplayName(ItemStack stack, Minecraft client) {
 		try {
-			List<Text> tooltip = getItemTooltip(stack, client.player);
+			List<Component> tooltip = getItemTooltip(stack, client.player);
 			if (tooltip == null || tooltip.isEmpty()) {
 				return "";
 			}
@@ -641,9 +644,9 @@ public class ItemInfoUtility {
 		}
 	}
 	
-	private static ItemInfoData parseItem(ItemStack stack, MinecraftClient client) {
+	private static ItemInfoData parseItem(ItemStack stack, Minecraft client) {
 		// Get tooltip
-		List<Text> tooltip = getItemTooltip(stack, client.player);
+		List<Component> tooltip = getItemTooltip(stack, client.player);
 		if (tooltip == null || tooltip.isEmpty()) {
 			return null;
 		}
@@ -904,14 +907,14 @@ public class ItemInfoUtility {
 		return data;
 	}
 	
-	private static ItemInfoData parseFishingComponent(ItemStack stack, MinecraftClient client, List<String> lines) {
+	private static ItemInfoData parseFishingComponent(ItemStack stack, Minecraft client, List<String> lines) {
 		ItemInfoData data = new ItemInfoData();
 		data.id = stack.getItem().toString();
 		data.customModelData = extractCustomModelData(stack);
 		data.fishingComponent = true;
 		
 		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getName());
+			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		data.name = extractFishingComponentName(stack, lines);
 		if (nameAndColor != null) {
 			data.rarity = nameAndColor.rarity;
@@ -950,7 +953,7 @@ public class ItemInfoUtility {
 	
 	public static Integer extractCustomModelData(ItemStack stack) {
 		try {
-			var customModelData = stack.get(DataComponentTypes.CUSTOM_MODEL_DATA);
+			var customModelData = stack.get(DataComponents.CUSTOM_MODEL_DATA);
 			if (customModelData == null) {
 				return null;
 			}
@@ -1277,13 +1280,13 @@ public class ItemInfoUtility {
 		return tags;
 	}
 	
-	private static List<Text> getItemTooltip(ItemStack itemStack, net.minecraft.entity.player.PlayerEntity player) {
-		List<Text> tooltip = new ArrayList<>();
+	private static List<Component> getItemTooltip(ItemStack itemStack, net.minecraft.world.entity.player.Player player) {
+		List<Component> tooltip = new ArrayList<>();
 		// Add item name
-		tooltip.add(itemStack.getName());
+		tooltip.add(itemStack.getHoverName());
 		
 		// Read lore from Data Component API (1.21.7)
-		var loreComponent = itemStack.get(DataComponentTypes.LORE);
+		var loreComponent = itemStack.get(DataComponents.LORE);
 		if (loreComponent != null) {
 			tooltip.addAll(loreComponent.lines());
 		}
@@ -1546,14 +1549,14 @@ public class ItemInfoUtility {
 	/**
 	 * Checks if an item is already registered in extracted_items.json
 	 */
-	public static boolean isItemRegistered(ItemStack stack, MinecraftClient client) {
+	public static boolean isItemRegistered(ItemStack stack, Minecraft client) {
 		if (stack == null || stack.isEmpty() || client == null || client.player == null) {
 			return false;
 		}
 		
 		try {
 			// Get item name from tooltip (same way as in parseItem)
-			List<Text> tooltip = getItemTooltip(stack, client.player);
+			List<Component> tooltip = getItemTooltip(stack, client.player);
 			if (tooltip == null || tooltip.isEmpty()) {
 				return false;
 			}
@@ -1592,13 +1595,13 @@ public class ItemInfoUtility {
 	
 	/**
 	 * Renders red/green background overlay on items in target slots
-	 * Called from HandledScreenMixin
+	 * Called from AbstractContainerScreenMixin
 	 */
-	public static void renderUnregisteredItemOverlays(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
+	public static void renderUnregisteredItemOverlays(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int screenX, int screenY) {
 		if (!ENABLED || !isInitialized) {
 			return;
 		}
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.player == null) {
 			return;
 		}
@@ -1611,13 +1614,13 @@ public class ItemInfoUtility {
 		
 		// Render background on items in target slots
 		for (int slotIndex : targetSlots) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-			if (slot.hasStack()) {
-				ItemStack stack = slot.getStack();
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			if (slot.hasItem()) {
+				ItemStack stack = slot.getItem();
 				if (stack != null && !stack.isEmpty()) {
 					String itemName = resolveItemDisplayName(stack, client);
 					
@@ -1652,7 +1655,7 @@ public class ItemInfoUtility {
 		
 	}
 	
-	private static void writeItemsToFile(List<ItemInfoData> items, MinecraftClient client) {
+	private static void writeItemsToFile(List<ItemInfoData> items, Minecraft client) {
 		try {
 			ExtractedItemsStorage.WriteResult result = ExtractedItemsStorage.appendItems(items);
 			
@@ -1666,26 +1669,26 @@ public class ItemInfoUtility {
 			
 			if (result.total() > 0) {
 				if (result.newFishingCount > 0 && result.newBlueprintCount > 0) {
-					client.player.sendMessage(Text.literal(
+					client.player.sendSystemMessage(Component.literal(
 						"§a[ItemInfo] §f" + result.newBlueprintCount + " Baupläne + " + result.newFishingCount + " Angel-Komponenten hinzugefügt!"
-					), false);
+					));
 				} else if (result.newFishingCount > 0) {
-					client.player.sendMessage(Text.literal(
+					client.player.sendSystemMessage(Component.literal(
 						"§a[ItemInfo] §f" + result.newFishingCount + " Angel-Komponenten in fishing_components hinzugefügt!"
-					), false);
+					));
 				} else {
-					client.player.sendMessage(Text.literal(
+					client.player.sendSystemMessage(Component.literal(
 						"§a[ItemInfo] §f" + result.newBlueprintCount + " Baupläne in blueprints hinzugefügt!"
-					), false);
+					));
 				}
 			} else {
-				client.player.sendMessage(Text.literal("§e[ItemInfo] §fAlle Items waren bereits vorhanden."), false);
+				client.player.sendSystemMessage(Component.literal("§e[ItemInfo] §fAlle Items waren bereits vorhanden."));
 			}
-			client.player.sendMessage(Text.literal("§7Datei: §f" + ExtractedItemsStorage.getOutputFile().getName()), false);
+			client.player.sendSystemMessage(Component.literal("§7Datei: §f" + ExtractedItemsStorage.getOutputFile().getName()));
 		} catch (Exception e) {
 			if (client.player != null) {
-				client.player.sendMessage(Text.literal("§c[ItemInfo] Fehler beim Speichern der Datei!"), false);
-				client.player.sendMessage(Text.literal("§7Fehler: §f" + e.getMessage()), false);
+				client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Fehler beim Speichern der Datei!"));
+				client.player.sendSystemMessage(Component.literal("§7Fehler: §f" + e.getMessage()));
 			}
 		}
 	}

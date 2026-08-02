@@ -1,11 +1,11 @@
 package net.felix.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.text.Text;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -14,9 +14,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 
 /**
- * Mixin for DrawContext to disable the dark inventory overlay for Equipment Display screens.
+ * Mixin for GuiGraphicsExtractor to disable the dark inventory overlay for Equipment Display screens.
  */
-@Mixin(DrawContext.class)
+@Mixin(GuiGraphicsExtractor.class)
 public class DrawContextMixin {
 
     @Inject(method = "fillGradient", at = @At("HEAD"), cancellable = true)
@@ -26,8 +26,8 @@ public class DrawContextMixin {
         // Prüfen, ob es der dunkle Inventar-Overlay ist (die typischen Farben)
         if (colorTop == 0xC0101010 && colorBottom == 0xD0101010) {
             // Prüfen, ob wir in einem "Ausrüstung" Inventar sind
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+            Minecraft client = Minecraft.getInstance();
+            if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
                 String title = handledScreen.getTitle().getString();
                 if (ZeichenUtility.containsEquipmentDisplay(title)) { //Equipment Display
                     ci.cancel(); // Rendering abbrechen → Overlay wird nicht gezeichnet
@@ -41,8 +41,8 @@ public class DrawContextMixin {
      * Blockiert alle Tooltips außer bekannten Button-Tooltips (z.B. "Hilfs Übersicht", "Favoriten", etc.)
      * Funktioniert für alle Screens, einschließlich InventoryScreen (Spieler-Inventar)
      */
-    @Inject(method = "drawTooltip(Lnet/minecraft/client/font/TextRenderer;Ljava/util/List;II)V", at = @At("HEAD"), cancellable = true)
-    private void blockItemTooltipsWhenHelpOverlayOpen(TextRenderer textRenderer, List<Text> lines, int x, int y, CallbackInfo ci) {
+    @Inject(method = "setComponentTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;II)V", at = @At("HEAD"), cancellable = true)
+    private void blockItemTooltipsWhenHelpOverlayOpen(Font textRenderer, List<Component> lines, int x, int y, CallbackInfo ci) {
         // Blockiere nur wenn Hilfe-Overlay offen ist
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
             if (lines == null || lines.isEmpty()) {
@@ -66,7 +66,7 @@ public class DrawContextMixin {
             
             // Prüfe ob es ein bekannter Button-Tooltip ist
             boolean isAllowedTooltip = false;
-            for (Text line : lines) {
+            for (Component line : lines) {
                 if (line != null) {
                     String text = line.getString().trim();
                     // Entferne Formatierungs-Codes für Vergleich

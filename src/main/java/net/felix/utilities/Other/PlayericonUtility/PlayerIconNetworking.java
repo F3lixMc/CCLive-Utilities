@@ -3,15 +3,14 @@ package net.felix.utilities.Other.PlayericonUtility;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.felix.CCLiveUtilities;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -28,18 +27,18 @@ public class PlayerIconNetworking {
     
     // Custom payload identifier for mod presence synchronization
     // Following Fabric's networking documentation: https://docs.fabricmc.net/develop/networking
-    // Note: Using 1.21.7 API (PacketCodec) instead of 1.21.10 API (StreamCodec)
-    private static final Identifier MOD_PRESENCE_CHANNEL = Identifier.of(CCLiveUtilities.MOD_ID, "mod_presence");
+    // Note: Using 1.21.7 API (StreamCodec) instead of 1.21.10 API (StreamCodec)
+    private static final Identifier MOD_PRESENCE_CHANNEL = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "mod_presence");
     
     // Payload type for sending/receiving mod presence
     // This follows the Fabric networking pattern, adapted for 1.21.7 API
-    public record ModPresencePayload(UUID playerUuid) implements CustomPayload {
-        public static final Id<ModPresencePayload> ID = new Id<>(MOD_PRESENCE_CHANNEL);
+    public record ModPresencePayload(UUID playerUuid) implements CustomPacketPayload {
+        public static final Type<ModPresencePayload> ID = new Type<>(MOD_PRESENCE_CHANNEL);
         
-        // PacketCodec for serialization/deserialization (1.21.7 API)
+        // StreamCodec for serialization/deserialization (1.21.7 API)
         // UUID is encoded as two longs (most significant and least significant bits)
-        public static final PacketCodec<RegistryByteBuf, ModPresencePayload> CODEC = 
-            PacketCodec.of(
+        public static final StreamCodec<RegistryFriendlyByteBuf, ModPresencePayload> CODEC = 
+            StreamCodec.ofMember(
                 (payload, buf) -> {
                     UUID uuid = payload.playerUuid();
                     buf.writeLong(uuid.getMostSignificantBits());
@@ -53,7 +52,7 @@ public class PlayerIconNetworking {
             );
         
         @Override
-        public Id<? extends CustomPayload> getId() {
+        public Type<? extends CustomPacketPayload> type() {
             return ID;
         }
     }
@@ -77,8 +76,8 @@ public class PlayerIconNetworking {
         // S2C: Server-to-Client (for when server forwards to clients)
         // C2S: Client-to-Server (for when client sends to server)
         try {
-            PayloadTypeRegistry.playS2C().register(ModPresencePayload.ID, ModPresencePayload.CODEC);
-            PayloadTypeRegistry.playC2S().register(ModPresencePayload.ID, ModPresencePayload.CODEC);
+            PayloadTypeRegistry.clientboundPlay().register(ModPresencePayload.ID, ModPresencePayload.CODEC);
+            PayloadTypeRegistry.serverboundPlay().register(ModPresencePayload.ID, ModPresencePayload.CODEC);
         } catch (Exception e) {
             // Silent error handling
         }
@@ -104,7 +103,7 @@ public class PlayerIconNetworking {
             
             // Add ourselves to the list (we have the mod)
             if (client.player != null) {
-                UUID ourUuid = client.player.getUuid();
+                UUID ourUuid = client.player.getUUID();
                 PlayerIconUtility.addPlayerWithMod(ourUuid);
             }
         });
@@ -117,12 +116,12 @@ public class PlayerIconNetworking {
         // Periodically fetch list of players with mod from API server
         // This uses the token system - only players who registered have the mod
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null || client.getNetworkHandler() == null) {
+            if (client.player == null || client.getConnection() == null) {
                 return;
             }
             
             // Every 5 seconds (100 ticks), fetch player list from API (asynchron, um Freezes zu vermeiden)
-            if (client.player.age > 0 && client.player.age % 100 == 0) {
+            if (client.player.tickCount > 0 && client.player.tickCount % 100 == 0) {
                 java.util.concurrent.CompletableFuture.runAsync(() -> {
                     updatePlayersWithModFromAPI(client);
                 });
@@ -134,7 +133,7 @@ public class PlayerIconNetworking {
      * Fetches the list of players with mod from the API server and updates the icon list.
      * Uses the token system - only registered players (with tokens) have the mod.
      */
-    private static void updatePlayersWithModFromAPI(MinecraftClient client) {
+    private static void updatePlayersWithModFromAPI(Minecraft client) {
         try {
             // Get HttpClient from LeaderboardManager
             net.felix.leaderboards.LeaderboardManager manager = net.felix.leaderboards.LeaderboardManager.getInstance();
@@ -164,12 +163,12 @@ public class PlayerIconNetworking {
             }
             
             // Match player names with UUIDs from the game's player list
-            if (client.getNetworkHandler() != null) {
-                var playerList = client.getNetworkHandler().getPlayerList();
+            if (client.getConnection() != null) {
+                var playerList = client.getConnection().getOnlinePlayers();
                 for (var entry : playerList) {
                     if (entry != null && entry.getProfile() != null) {
-                        UUID playerUuid = entry.getProfile().getId();
-                        String playerName = entry.getProfile().getName();
+                        UUID playerUuid = entry.getProfile().id();
+                        String playerName = entry.getProfile().name();
                         
                         // Check if this player is in the API list
                         if (playersWithMod.contains(playerName.toLowerCase())) {
@@ -184,7 +183,7 @@ public class PlayerIconNetworking {
             
             // Always add ourselves (we have the mod)
             if (client.player != null) {
-                UUID ourUuid = client.player.getUuid();
+                UUID ourUuid = client.player.getUUID();
                 PlayerIconUtility.addPlayerWithMod(ourUuid);
             }
         } catch (Exception e) {

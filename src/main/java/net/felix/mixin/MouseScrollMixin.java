@@ -2,27 +2,27 @@ package net.felix.mixin;
 
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
 import net.felix.utilities.Overall.InformationenUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(Mouse.class)
+@Mixin(MouseHandler.class)
 public class MouseScrollMixin {
     
-    @Inject(method = "onMouseScroll", at = @At("HEAD"))
+    @Inject(method = "onScroll", at = @At("HEAD"))
     private void onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
         // Prüfe zuerst ob ItemViewer das Scroll-Event behandelt
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.currentScreen != null && client.getWindow() != null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.screen != null && client.getWindow() != null) {
             // Hole aktuelle Mausposition und skaliere auf Screen-Koordinaten
-            int windowWidth = client.getWindow().getWidth();
-            int windowHeight = client.getWindow().getHeight();
-            double mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) windowWidth;
-            double mouseY = client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) windowHeight;
+            int windowWidth = client.getWindow().getScreenWidth();
+            int windowHeight = client.getWindow().getScreenHeight();
+            double mouseX = client.mouseHandler.xpos() * (double) client.getWindow().getGuiScaledWidth() / (double) windowWidth;
+            double mouseY = client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) windowHeight;
             
             if (ItemViewerUtility.handleMouseScroll(mouseX, mouseY, vertical)) {
                 // ItemViewer hat das Event behandelt

@@ -1,10 +1,10 @@
 package net.felix.utilities.DragOverlay.Schmied;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -30,10 +30,10 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX;
         
         // Calculate position based on right edge (same as SchmiedTrackerUtility)
@@ -43,7 +43,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getY() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
         int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY;
@@ -71,10 +71,10 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         
         // Calculate offset from right edge (same as SchmiedTrackerUtility)
         int baseX = screenWidth - DEFAULT_WIDTH - 20;
@@ -105,8 +105,8 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         int unscaledWidth = getUnscaledWidth();
@@ -121,7 +121,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         int scaledHeight = (int) (unscaledHeight * scale);
         
         // Use Matrix transformations for scaling
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Translate to position and scale from there
@@ -133,12 +133,12 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         
         // Render button text (scaled, relative to matrix)
         String buttonText = "Hide wrong class";
-        int textWidth = client.textRenderer.getWidth(buttonText);
+        int textWidth = client.font.width(buttonText);
         int textX = (unscaledWidth - textWidth) / 2;
         int textY = (unscaledHeight - 8) / 2;
         
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             buttonText,
             textX, textY,
             0xFFFFFFFF,
@@ -148,7 +148,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         matrices.popMatrix();
         
         // Render border for edit mode AFTER content (so it's always visible on top)
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
     
     @Override
@@ -158,12 +158,13 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled;
+        return CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled &&
+               CCLiveUtilitiesConfig.HANDLER.instance().showHideWrongClassButton;
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Hide wrong class Button - Toggles visibility of items not suitable for your class");
+    public Component getTooltip() {
+        return Component.literal("Hide wrong class Button - Toggles visibility of items not suitable for your class");
     }
     
     @Override

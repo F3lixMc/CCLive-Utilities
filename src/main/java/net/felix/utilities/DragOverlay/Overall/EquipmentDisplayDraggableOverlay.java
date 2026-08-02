@@ -1,0 +1,196 @@
+package net.felix.utilities.DragOverlay.Overall;
+
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
+/**
+ * Draggable Overlay für die Equipment Display
+ */
+public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
+    
+    private static final int DEFAULT_WIDTH = 80; // Much smaller width for armor display
+    
+    @Override
+    public String getOverlayName() {
+        return "Rüstungs Wert";
+    }
+    
+    @Override
+    public int getX() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getWindow() == null) return 0;
+        
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorX;
+        
+        // Calculate the exact position like in EquipmentDisplayUtility
+        String armorText = String.format("Rüstung: %s", formatNumber(getArmorValueFromEquipmentDisplay()));
+        int armorTextWidth = client.font.width(armorText);
+        int armorX = (screenWidth - armorTextWidth) / 2 + xOffset;
+        
+        // Use the exact same position as the standard overlay
+        return armorX;
+    }
+    
+    @Override
+    public int getY() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getWindow() == null) return 0;
+        
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorY;
+        
+        // Calculate the exact position like in EquipmentDisplayUtility
+        int armorY = screenHeight - yOffset;
+        
+        // Use the exact same position as the standard overlay
+        return armorY;
+    }
+    
+    @Override
+    public int getWidth() {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) return DEFAULT_WIDTH;
+        
+        // Calculate the exact width of the armor text + padding (same as EquipmentDisplayUtility)
+        String armorText = String.format("Rüstung: %s", formatNumber(getArmorValueFromEquipmentDisplay()));
+        int armorTextWidth = client.font.width(armorText);
+        
+        // Add padding like in EquipmentDisplayUtility
+        int padding = 4;
+        return armorTextWidth + (padding * 2);
+    }
+    
+    @Override
+    public int getHeight() {
+        // Calculate the exact height of the armor text + padding (same as EquipmentDisplayUtility)
+        int textHeight = 12; // Standard text height
+        int padding = 4;
+        return textHeight + (padding * 2);
+    }
+    
+    @Override
+    public void setPosition(int x, int y) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getWindow() == null) return;
+        
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+        
+        // Calculate offset like in EquipmentDisplayUtility
+        String armorText = String.format("Rüstung: %s", formatNumber(getArmorValueFromEquipmentDisplay()));
+        int armorTextWidth = client.font.width(armorText);
+        int baseX = (screenWidth - armorTextWidth) / 2;
+        int baseY = screenHeight;
+        
+        int xOffset = x - baseX;
+        int yOffset = baseY - y;
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorX = xOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorY = yOffset;
+    }
+    
+    @Override
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        int x = getX();
+        int y = getY();
+        int width = getWidth();
+        int height = getHeight();
+        
+        // Render the actual armor display first (like in EquipmentDisplayUtility)
+        renderArmorDisplay(context, x, y);
+        
+        // Render border for edit mode OUTSIDE the black overlay (1 pixel offset)
+        context.outline(x - 1, y - 1, width + 2, height + 2, 0xFFFF0000);
+        
+        // Render overlay name above the overlay (smaller)
+        context.text(
+            Minecraft.getInstance().font,
+            getOverlayName(),
+            x + 2, y - 12,
+            0xFFFFFFFF,
+            true
+        );
+    }
+    
+    @Override
+    public void savePosition() {
+        // Position is already saved in setPosition()
+    }
+    
+    @Override
+    public boolean isEnabled() {
+        return CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayEnabled && 
+               CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay;
+    }
+    
+    @Override
+    public Component getTooltip() {
+        return Component.literal("Equipment Display - Shows equipment statistics and armor values");
+    }
+    
+    @Override
+    public void resetToDefault() {
+        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorX = 1;
+        CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayArmorY = 382;
+    }
+    
+    /**
+     * Render the actual armor display (like in EquipmentDisplayUtility)
+     */
+    private void renderArmorDisplay(GuiGraphicsExtractor context, int x, int y) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) return;
+        
+        // Try to get real armor value from EquipmentDisplayUtility using reflection
+        double armorValue = getArmorValueFromEquipmentDisplay();
+        
+        // Render armor text (same format as EquipmentDisplayUtility)
+        String armorText = String.format("Rüstung: %s", formatNumber(armorValue));
+        
+        // The overlay is already positioned correctly, so just draw the text at the overlay position
+        // Draw background if overlay type is not NONE (same as EquipmentDisplayUtility)
+        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
+        if (overlayType != net.felix.utilities.Town.OverlayType.NONE) {
+            // The overlay already has the correct size, so just fill it
+            context.fill(x, y, x + getWidth(), y + getHeight(), 0x80000000);
+        }
+        
+        // Draw the armor text at the correct position (with padding)
+        int padding = 4;
+        context.text(
+            client.font,
+            armorText,
+            x + padding,
+            y + padding,
+            0xFFFFFFFF,
+            true
+        );
+    }
+    
+    private double getArmorValueFromEquipmentDisplay() {
+        return EquipmentDisplayUtility.getTotalArmor();
+    }
+    
+    /**
+     * Format number like in EquipmentDisplayUtility
+     */
+    private String formatNumber(double value) {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+        symbols.setGroupingSeparator(',');
+        symbols.setDecimalSeparator('.');
+
+        if (Math.abs(value - Math.rint(value)) < 1e-9) {
+            DecimalFormat df = new DecimalFormat("#,###", symbols);
+            return df.format(Math.rint(value));
+        }
+        DecimalFormat df = new DecimalFormat("#,##0.##", symbols);
+        return df.format(value);
+    }
+}

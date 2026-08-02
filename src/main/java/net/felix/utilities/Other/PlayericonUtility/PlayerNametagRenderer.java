@@ -1,14 +1,19 @@
 package net.felix.utilities.Other.PlayericonUtility;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.felix.CCLiveUtilities;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
@@ -27,26 +32,26 @@ public class PlayerNametagRenderer {
         }
         
         // Register world render event to render icons above player heads
-        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
+        LevelRenderEvents.END_MAIN.register(context -> {
             try {
-                MinecraftClient client = MinecraftClient.getInstance();
-                if (client == null || client.world == null || client.player == null) {
+                Minecraft client = Minecraft.getInstance();
+                if (client == null || client.level == null || client.player == null) {
                     return;
                 }
                 
                 // Additional safety checks
-                if (client.textRenderer == null || context == null || context.camera() == null) {
+                if (client.font == null || context == null || context.gameRenderer().getMainCamera() == null) {
                     return;
                 }
                 
                 // Render icons for all players
-                for (var entity : client.world.getEntities()) {
+                for (var entity : client.level.entitiesForRendering()) {
                     try {
-                        if (!(entity instanceof PlayerEntity)) {
+                        if (!(entity instanceof Player)) {
                             continue;
                         }
                         
-                        PlayerEntity player = (PlayerEntity) entity;
+                        Player player = (Player) entity;
                         
                         // Skip local player's own rendering to avoid issues
                         if (player.equals(client.player)) {
@@ -54,7 +59,7 @@ public class PlayerNametagRenderer {
                         }
                         
                         // Only render if player is visible and within distance
-                        if (player.isInvisible() || !client.player.canSee(player)) {
+                        if (player.isInvisible() || !client.player.hasLineOfSight(player)) {
                             continue;
                         }
                         
@@ -64,7 +69,7 @@ public class PlayerNametagRenderer {
                         }
                         
                         // Only show icon for players who have the mod installed
-                        boolean shouldShowIcon = PlayerIconUtility.hasMod(player.getUuid());
+                        boolean shouldShowIcon = PlayerIconUtility.hasMod(player.getUUID());
                         
                         if (!shouldShowIcon) {
                             continue;
@@ -88,29 +93,29 @@ public class PlayerNametagRenderer {
     /**
      * Render icon above player head.
      */
-    private static void renderNametagIcon(WorldRenderContext context, PlayerEntity player) {
+    private static void renderNametagIcon(LevelRenderContext context, Player player) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.textRenderer == null) {
+            Minecraft client = Minecraft.getInstance();
+            if (client == null || client.font == null) {
                 return;
             }
             
             // Hide icon if F1 is pressed (HUD hidden)
-            if (client.options.hudHidden) {
+            if (client.options.hideGui) {
                 return;
             }
             
             // Additional safety checks
-            if (context == null || context.camera() == null || context.matrixStack() == null || context.consumers() == null) {
+            if (context == null || context.gameRenderer().getMainCamera() == null || context.poseStack() == null || context.bufferSource() == null) {
                 return;
             }
             
             // Get player position
-            Vec3d cameraPos = context.camera().getPos();
-            Vec3d playerPos = player.getPos();
+            Vec3 cameraPos = context.gameRenderer().getMainCamera().position();
+            Vec3 playerPos = player.position();
             
             // Calculate offset above player head
-            double offsetY = player.getHeight() + 0.5;
+            double offsetY = player.getBbHeight() + 0.5;
             double x = playerPos.x;
             double y = playerPos.y + offsetY;
             double z = playerPos.z;
@@ -127,13 +132,13 @@ public class PlayerNametagRenderer {
             }
             
             // Get the matrix stack
-            MatrixStack matrices = context.matrixStack();
+            PoseStack matrices = context.poseStack();
             if (matrices == null) {
                 return;
             }
             
             // Push matrix
-            matrices.push();
+            matrices.pushPose();
             
             try {
                 // Translate to player position (same as nametag)
@@ -141,12 +146,12 @@ public class PlayerNametagRenderer {
                 
                 // Billboard rotation - face camera exactly like nametags do
                 // Get camera rotation
-                float cameraYaw = context.camera().getYaw();
-                float cameraPitch = context.camera().getPitch();
+                float cameraYaw = context.gameRenderer().getMainCamera().yRot();
+                float cameraPitch = context.gameRenderer().getMainCamera().xRot();
                 
                 // Apply billboard rotation (same as EntityRenderer.renderLabelIfPresent)
-                matrices.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_Y.rotationDegrees(-cameraYaw));
-                matrices.multiply(net.minecraft.util.math.RotationAxis.POSITIVE_X.rotationDegrees(cameraPitch));
+                matrices.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-cameraYaw));
+                matrices.mulPose(com.mojang.math.Axis.XP.rotationDegrees(cameraPitch));
                 
                 // Scale based on distance (same scaling as nametags)
                 // Nametags use a scale factor that makes them appear consistent size
@@ -154,8 +159,8 @@ public class PlayerNametagRenderer {
                 matrices.scale(-baseScale, -baseScale, baseScale); // Negative Y for correct orientation
                 
                 // Get player display name to calculate text width
-                net.minecraft.text.Text playerName = player.getDisplayName();
-                int nameWidth = client.textRenderer.getWidth(playerName);
+                net.minecraft.network.chat.Component playerName = player.getDisplayName();
+                int nameWidth = client.font.width(playerName);
                 
                 // Icon size: approximately 8 pixels in world space
                 // Increase size slightly to keep it sharper at distance
@@ -178,10 +183,10 @@ public class PlayerNametagRenderer {
                 // Render icon as texture
                 // Use full brightness for nametag icons (same as text rendering)
                 int lightLevel = 15728880; // Full brightness
-                renderIconTexture(matrices, context.consumers(), iconSize, lightLevel, context);
+                renderIconTexture(matrices, context.bufferSource(), iconSize, lightLevel, context);
             } finally {
                 // Always pop the matrix, even if there was an error
-                matrices.pop();
+                matrices.popPose();
             }
         } catch (Exception e) {
             // Silently fail
@@ -191,16 +196,16 @@ public class PlayerNametagRenderer {
     /**
      * Render the icon as a texture in 3D space.
      */
-    private static void renderIconTexture(MatrixStack matrices, VertexConsumerProvider vertexConsumers, float size, int light, WorldRenderContext context) {
+    private static void renderIconTexture(PoseStack matrices, MultiBufferSource vertexConsumers, float size, int light, LevelRenderContext context) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client == null || client.getTextureManager() == null) {
                 return;
             }
             
             // Get icon identifier - use the same as PlayerIconUtility
-            Identifier iconId = Identifier.of(CCLiveUtilities.MOD_ID, "textures/icon.png");
-            Identifier iconIdAlt = Identifier.of(CCLiveUtilities.MOD_ID, "icon");
+            Identifier iconId = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/icon.png");
+            Identifier iconIdAlt = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "icon");
             
             // Try to get the texture - verify it exists
             Identifier iconToUse = iconId;
@@ -227,11 +232,11 @@ public class PlayerNametagRenderer {
             }
             
             // Get the matrix
-            Matrix4f matrix = matrices.peek().getPositionMatrix();
+            Matrix4f matrix = matrices.last().pose();
             
             // Create vertex consumer with the correct render layer for text rendering
             // Use the same render layer as text (RenderLayer.getText) for proper blending
-            RenderLayer renderLayer = RenderLayer.getText(iconToUse);
+            RenderType renderLayer = RenderTypes.text(iconToUse);
             VertexConsumer vertexConsumer = vertexConsumers.getBuffer(renderLayer);
             
             // Ensure texture is bound (should be handled by RenderLayer, but just in case)
@@ -256,36 +261,36 @@ public class PlayerNametagRenderer {
             // Using the correct vertex format for Minecraft 1.21.7
             // Since we use negative Y scale, we need to flip the texture coordinates
             // Top-left (will be bottom-left after negative Y scale)
-            vertexConsumer.vertex(matrix, -halfSize, halfSize, 0.0f)
-                .color(255, 255, 255, 255)
-                .texture(0.0f, 1.0f) // Flipped Y coordinate
-                .overlay(OverlayTexture.DEFAULT_UV)
-                .light(light)
-                .normal(0.0f, 0.0f, 1.0f);
+            vertexConsumer.addVertex(matrix, -halfSize, halfSize, 0.0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(0.0f, 1.0f) // Flipped Y coordinate
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(0.0f, 0.0f, 1.0f);
             
             // Top-right (will be bottom-right after negative Y scale)
-            vertexConsumer.vertex(matrix, halfSize, halfSize, 0.0f)
-                .color(255, 255, 255, 255)
-                .texture(1.0f, 1.0f) // Flipped Y coordinate
-                .overlay(OverlayTexture.DEFAULT_UV)
-                .light(light)
-                .normal(0.0f, 0.0f, 1.0f);
+            vertexConsumer.addVertex(matrix, halfSize, halfSize, 0.0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(1.0f, 1.0f) // Flipped Y coordinate
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(0.0f, 0.0f, 1.0f);
             
             // Bottom-right (will be top-right after negative Y scale)
-            vertexConsumer.vertex(matrix, halfSize, -halfSize, 0.0f)
-                .color(255, 255, 255, 255)
-                .texture(1.0f, 0.0f) // Flipped Y coordinate
-                .overlay(OverlayTexture.DEFAULT_UV)
-                .light(light)
-                .normal(0.0f, 0.0f, 1.0f);
+            vertexConsumer.addVertex(matrix, halfSize, -halfSize, 0.0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(1.0f, 0.0f) // Flipped Y coordinate
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(0.0f, 0.0f, 1.0f);
             
             // Bottom-left (will be top-left after negative Y scale)
-            vertexConsumer.vertex(matrix, -halfSize, -halfSize, 0.0f)
-                .color(255, 255, 255, 255)
-                .texture(0.0f, 0.0f) // Flipped Y coordinate
-                .overlay(OverlayTexture.DEFAULT_UV)
-                .light(light)
-                .normal(0.0f, 0.0f, 1.0f);
+            vertexConsumer.addVertex(matrix, -halfSize, -halfSize, 0.0f)
+                .setColor(255, 255, 255, 255)
+                .setUv(0.0f, 0.0f) // Flipped Y coordinate
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(0.0f, 0.0f, 1.0f);
         } catch (Exception e) {
             // Silently fail if texture rendering fails
         }

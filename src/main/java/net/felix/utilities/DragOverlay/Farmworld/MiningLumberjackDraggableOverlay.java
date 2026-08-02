@@ -1,11 +1,11 @@
 package net.felix.utilities.DragOverlay.Farmworld;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.Overall.InformationenUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 
 /**
  * Draggable Overlay für Mining und Lumberjack Overlays
@@ -25,12 +25,12 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     public int getX() {
         // Calculate X position using the same logic as renderMiningOverlay()
         // Use unscaled width for positioning (same as actual overlay)
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             return CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayX;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int baseX = CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayX;
         int overlayWidth = calculateUnscaledWidth(); // Use unscaled width for positioning
         int minOverlayWidth = 100;
@@ -62,8 +62,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     
     private int calculateUnscaledWidth() {
         // Calculate unscaled width using the exact same logic as renderMiningOverlay() and renderLumberjackOverlay()
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.textRenderer == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.font == null) {
             return 200;
         }
         
@@ -79,10 +79,10 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         // Calculate width for mining overlay (same logic as renderMiningOverlay)
         String miningHeader = InformationenUtility.getMiningOverlayHeader();
         String[] miningTexts = InformationenUtility.getMiningOverlayTexts(client);
-        int miningMaxWidth = client.textRenderer.getWidth(miningHeader);
+        int miningMaxWidth = client.font.width(miningHeader);
         for (String line : miningTexts) {
             if (!line.equals(miningHeader)) {
-                miningMaxWidth = Math.max(miningMaxWidth, client.textRenderer.getWidth(line));
+                miningMaxWidth = Math.max(miningMaxWidth, client.font.width(line));
             }
         }
         miningMaxWidth = Math.max(miningMaxWidth, minOverlayWidth);
@@ -91,10 +91,10 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         // Calculate width for lumberjack overlay (same logic as renderLumberjackOverlay)
         String lumberjackHeader = InformationenUtility.getLumberjackOverlayHeader();
         String[] lumberjackTexts = InformationenUtility.getLumberjackOverlayTexts(client);
-        int lumberjackMaxWidth = client.textRenderer.getWidth(lumberjackHeader);
+        int lumberjackMaxWidth = client.font.width(lumberjackHeader);
         for (String line : lumberjackTexts) {
             if (!line.equals(lumberjackHeader)) {
-                lumberjackMaxWidth = Math.max(lumberjackMaxWidth, client.textRenderer.getWidth(line));
+                lumberjackMaxWidth = Math.max(lumberjackMaxWidth, client.font.width(line));
             }
         }
         lumberjackMaxWidth = Math.max(lumberjackMaxWidth, minOverlayWidth);
@@ -138,14 +138,14 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     public void setPosition(int x, int y) {
         // Calculate baseX using the same logic as renderMiningOverlay()
         // We need to reverse the calculation: from the actual x position, calculate baseX
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayX = x;
             CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayY = y;
             return;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int overlayWidth = calculateUnscaledWidth(); // Use unscaled width for positioning
         int minOverlayWidth = 100;
         
@@ -194,7 +194,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
         int scaledWidth = getWidth();
@@ -203,7 +203,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         
         // Get actual texts from the overlays to calculate correct width
         // But replace values with "?" for display in editor
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         String[] miningTexts = InformationenUtility.getMiningOverlayTexts(client);
@@ -222,7 +222,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         }
         
         // Apply matrix transformations for scaling
-        var matrices = context.getMatrices();
+        var matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
@@ -235,8 +235,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         }
         
         // Render header (first text) - scaled
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             displayTexts[0],
             PADDING, PADDING,
             0xFFFFFF00, // Yellow color like in actual overlay
@@ -246,8 +246,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         // Render other texts (lastXP, xpPerMin, timeToNext, requiredXP) - scaled
         int currentY = PADDING + LINE_HEIGHT;
         for (int i = 1; i < displayTexts.length; i++) {
-            context.drawText(
-                client.textRenderer,
+            context.text(
+                client.font,
                 displayTexts[i],
                 PADDING, currentY,
                 0xFFFFFFFF,
@@ -259,7 +259,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         matrices.popMatrix();
         
         // Render border after scaling (using scaled dimensions)
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
     
     @Override
@@ -278,8 +278,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Mining / Holzfäller Overlay - Shows XP information for mining and lumberjack activities");
+    public Component getTooltip() {
+        return Component.literal("Mining / Holzfäller Overlay - Shows XP information for mining and lumberjack activities");
     }
     
     @Override

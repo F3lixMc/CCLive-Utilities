@@ -1,15 +1,15 @@
 package net.felix;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 
 public class HudRenderingEntrypoint implements ClientModInitializer {
-    private static final Identifier FONT_IDENTIFIER = Identifier.of("cclive-utilities", "default");
+    private static final Identifier FONT_IDENTIFIER = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
 
     @Override
     public void onInitializeClient() {
@@ -21,15 +21,11 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
         System.out.println("✅ [CCLive-Utilities] Client initialisiert - Font sollte automatisch geladen werden");
         
         // Registriere Resource-Reload-Listener, um zu prüfen, ob die Font geladen wird
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(
-            new SimpleSynchronousResourceReloadListener() {
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+            Identifier.fromNamespaceAndPath("cclive-utilities", "font_verification"),
+            new ResourceManagerReloadListener() {
                 @Override
-                public Identifier getFabricId() {
-                    return Identifier.of("cclive-utilities", "font_verification");
-                }
-                
-                @Override
-                public void reload(ResourceManager manager) {
+                public void onResourceManagerReload(ResourceManager manager) {
                     // Prüfe, ob die Font-Definition existiert
                     var fontResource = manager.getResource(FONT_IDENTIFIER.withPath("font/default.json"));
                     if (fontResource.isPresent()) {
@@ -39,7 +35,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
                     }
                     
                     // Prüfe, ob die Icon-Textur existiert
-                    var iconResource = manager.getResource(Identifier.of("cclive-utilities", "textures/8_chat_icon.png"));
+                    var iconResource = manager.getResource(Identifier.fromNamespaceAndPath("cclive-utilities", "textures/8_chat_icon.png"));
                     if (iconResource.isPresent()) {
                         System.out.println("✅ [CCLive-Utilities] Icon-Textur gefunden: textures/8_chat_icon.png");
                     } else {

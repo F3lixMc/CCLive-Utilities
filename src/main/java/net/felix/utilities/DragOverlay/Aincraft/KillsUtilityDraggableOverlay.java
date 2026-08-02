@@ -2,10 +2,10 @@ package net.felix.utilities.DragOverlay.Aincraft;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.KillsUtility;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -24,10 +24,10 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityX;
         
         // Use unscaled width for positioning (same as KillsUtility line 557)
@@ -64,7 +64,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     @Override
     public int getWidth() {
         // Use the actual overlay width from KillsUtility and apply scale
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             float scale = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale;
             if (scale <= 0) scale = 1.0f;
@@ -89,10 +89,10 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         
         // Use unscaled width for positioning (same as KillsUtility line 557)
         // getCurrentOverlayWidth() returns unscaled width
@@ -122,7 +122,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setSize(int width, int height) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Get current unscaled dimensions
@@ -141,8 +141,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         // Get unscaled dimensions and position
@@ -160,10 +160,10 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         int scaledHeight = (int) (unscaledHeight * scale);
         
         // Render border for edit mode (unscaled, so it's always visible)
-        context.drawBorder(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
         
         // Use Matrix transformations for scaling (same as KillsUtility line 606-615)
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Translate to position and scale from there (same as KillsUtility line 614-615)
@@ -176,8 +176,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         }
         
         // Render overlay name (scaled, relative to matrix)
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             getOverlayName(),
             PADDING, PADDING, // Relative position (same as KillsUtility line 627)
             0xFFFFFFFF,
@@ -186,8 +186,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         
         // Render sample text with "-" instead of example values (scaled, relative positions)
         int currentY = PADDING + 15; // Same as KillsUtility line 561
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "KPM: -",
             PADDING, currentY, // Relative position
             0xFFFFFFFF,
@@ -195,8 +195,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         );
         
         currentY += LINE_HEIGHT;
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Kills: -",
             PADDING, currentY, // Relative position
             0xFFFFFFFF,
@@ -204,8 +204,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         );
         
         currentY += LINE_HEIGHT;
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Zeit: -",
             PADDING, currentY, // Relative position
             0xFFFFFFFF,
@@ -215,9 +215,9 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         // Only show "Nächste Ebene" if enabled in config
         if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowNextLevel) {
             currentY += LINE_HEIGHT;
-            context.drawText(
-                client.textRenderer,
-                "Nächste Ebene: -",
+            context.text(
+                client.font,
+                "Nächste Ebene: Frei",
                 PADDING, currentY, // Relative position
                 0xFFFFFFFF,
                 true
@@ -227,8 +227,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         // Only show "Benötigte Kills" if enabled in config
         if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowRequiredKills) {
             currentY += LINE_HEIGHT;
-            context.drawText(
-                client.textRenderer,
+            context.text(
+                client.font,
                 "Benötigte Kills: -",
                 PADDING, currentY, // Relative position
                 0xFFFFFFFF,
@@ -251,8 +251,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Kills Utility - Shows kill and death statistics");
+    public Component getTooltip() {
+        return Component.literal("Kills Utility - Shows kill and death statistics");
     }
     
     @Override

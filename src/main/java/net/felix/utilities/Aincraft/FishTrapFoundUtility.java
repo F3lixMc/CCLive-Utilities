@@ -9,11 +9,10 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilities;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -90,8 +89,8 @@ public class FishTrapFoundUtility {
         }
     }
 
-    public static void onClientTick(MinecraftClient client) {
-        if (client == null || !(client.currentScreen instanceof HandledScreen<?> screen)) {
+    public static void onClientTick(Minecraft client) {
+        if (client == null || !(client.screen instanceof AbstractContainerScreen<?> screen)) {
             return;
         }
 
@@ -103,18 +102,18 @@ public class FishTrapFoundUtility {
         getInstance().scanSlots(screen);
     }
 
-    private void scanSlots(HandledScreen<?> screen) {
-        if (screen.getScreenHandler() == null) {
+    private void scanSlots(AbstractContainerScreen<?> screen) {
+        if (screen.getMenu() == null) {
             return;
         }
 
         for (int slotIndex : SCAN_SLOTS) {
-            if (slotIndex >= screen.getScreenHandler().slots.size()) {
+            if (slotIndex >= screen.getMenu().slots.size()) {
                 continue;
             }
 
-            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-            ItemStack stack = slot.getStack();
+            Slot slot = screen.getMenu().slots.get(slotIndex);
+            ItemStack stack = slot.getItem();
             if (stack == null || stack.isEmpty()) {
                 continue;
             }

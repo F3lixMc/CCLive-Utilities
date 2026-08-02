@@ -1,9 +1,5 @@
 package net.felix.utilities.ItemViewer;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -13,6 +9,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 
 /**
  * Checkbox-Filter-Menü für den Item Viewer.
@@ -282,16 +282,16 @@ public final class ItemViewerFilterMenu {
         return true;
     }
 
-    public static void render(DrawContext context) {
+    public static void render(GuiGraphicsExtractor context) {
         if (!open) {
             return;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return;
         }
         PanelLayout layout = computePanelLayout(client);
-        TextRenderer tr = client.textRenderer;
+        Font tr = client.font;
 
         context.fill(0, 0, layout.screenWidth, layout.screenHeight, 0x80000000);
         drawPanel(context, layout.boxX, layout.boxY, layout.boxWidth, layout.boxHeight);
@@ -301,9 +301,9 @@ public final class ItemViewerFilterMenu {
         drawCloseButton(context, layout.closeX, layout.closeY, closeHovered);
 
         String title = "Filter";
-        int titleWidth = tr.getWidth(title);
+        int titleWidth = tr.width(title);
         int titleY = layout.boxY + TITLE_Y;
-        context.drawText(tr, title, layout.boxX + (layout.boxWidth - titleWidth) / 2, titleY, 0xFFFFFF00, true);
+        context.text(tr, title, layout.boxX + (layout.boxWidth - titleWidth) / 2, titleY, 0xFFFFFF00, true);
 
         hovered = ItemViewerUtility.getLastMouseX() >= layout.boxX && ItemViewerUtility.getLastMouseX() < layout.boxX + layout.boxWidth
                 && ItemViewerUtility.getLastMouseY() >= layout.boxY && ItemViewerUtility.getLastMouseY() < layout.boxY + layout.boxHeight;
@@ -317,8 +317,8 @@ public final class ItemViewerFilterMenu {
             for (int i = 0; i < rowGroups.size(); i++) {
                 FilterGroup group = rowGroups.get(i);
                 int headerY = group.headerY - scrollOffset;
-                if (headerY + tr.fontHeight >= layout.contentTop && headerY <= layout.contentBottom) {
-                    context.drawText(tr, displayGroupTitle(group.title), group.columnX, headerY, 0xFFFFFF55, false);
+                if (headerY + tr.lineHeight >= layout.contentTop && headerY <= layout.contentBottom) {
+                    context.text(tr, displayGroupTitle(group.title), group.columnX, headerY, 0xFFFFFF55, false);
                 }
                 if (i < rowGroups.size() - 1) {
                     FilterGroup next = rowGroups.get(i + 1);
@@ -355,7 +355,7 @@ public final class ItemViewerFilterMenu {
         renderHoverTooltips(context, tr);
     }
 
-    private static void renderHoverTooltips(DrawContext context, TextRenderer tr) {
+    private static void renderHoverTooltips(GuiGraphicsExtractor context, Font tr) {
         double mouseX = ItemViewerUtility.getLastMouseX();
         double mouseY = ItemViewerUtility.getLastMouseY();
 
@@ -372,8 +372,8 @@ public final class ItemViewerFilterMenu {
                 if (mouseX >= option.pickerButtonX && mouseX < option.pickerButtonX + PICKER_BUTTON_SIZE
                         && mouseY >= pickerY && mouseY < pickerY + PICKER_BUTTON_SIZE) {
                     String listName = pickerListDisplayName(option.label);
-                    context.drawTooltip(tr,
-                            List.of(Text.literal("Klicken um " + listName + "-Liste zu öffnen")),
+                    context.setComponentTooltipForNextFrame(tr,
+                            List.of(Component.literal("Klicken um " + listName + "-Liste zu öffnen")),
                             (int) mouseX, (int) mouseY);
                     return;
                 }
@@ -381,8 +381,8 @@ public final class ItemViewerFilterMenu {
         }
 
         if (findOperatorFieldAt(mouseX, mouseY) != null) {
-            context.drawTooltip(tr,
-                    List.of(Text.literal("Klicken zum wechseln (=, >=, <=)")),
+            context.setComponentTooltipForNextFrame(tr,
+                    List.of(Component.literal("Klicken zum wechseln (=, >=, <=)")),
                     (int) mouseX, (int) mouseY);
         }
     }
@@ -398,12 +398,12 @@ public final class ItemViewerFilterMenu {
         if (!open) {
             return false;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return false;
         }
         PanelLayout layout = computePanelLayout(client);
-        TextRenderer tr = client.textRenderer;
+        Font tr = client.font;
         finalizeScrollLayout(layout, tr);
 
         if (button == 0 && openPickerKey != null) {
@@ -514,12 +514,12 @@ public final class ItemViewerFilterMenu {
         if (!open) {
             return false;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return false;
         }
         PanelLayout layout = computePanelLayout(client);
-        finalizeScrollLayout(layout, client.textRenderer);
+        finalizeScrollLayout(layout, client.font);
 
         if (openPickerKey != null) {
             boolean overPanel = mouseX >= layout.boxX && mouseX < layout.boxX + layout.boxWidth
@@ -557,12 +557,12 @@ public final class ItemViewerFilterMenu {
         if (!scrollbarDragging) {
             return false;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return false;
         }
         PanelLayout layout = computePanelLayout(client);
-        finalizeScrollLayout(layout, client.textRenderer);
+        finalizeScrollLayout(layout, client.font);
         if (!layout.scrollable) {
             return false;
         }
@@ -621,17 +621,17 @@ public final class ItemViewerFilterMenu {
                 if (state.hasSelection()) {
                     int min = state.selectionMin();
                     int max = state.selectionMax();
-                    MinecraftClient client = MinecraftClient.getInstance();
+                    Minecraft client = Minecraft.getInstance();
                     if (client != null) {
-                        client.keyboard.setClipboard(text.substring(min, max));
+                        client.keyboardHandler.setClipboard(text.substring(min, max));
                     }
                 }
                 return true;
             }
             if (keyCode == GLFW.GLFW_KEY_V) {
-                MinecraftClient client = MinecraftClient.getInstance();
+                Minecraft client = Minecraft.getInstance();
                 if (client != null) {
-                    String clipboard = client.keyboard.getClipboard();
+                    String clipboard = client.keyboardHandler.getClipboard();
                     if (clipboard != null && !clipboard.isEmpty()) {
                         insertAtCursor(clipboard);
                     }
@@ -642,9 +642,9 @@ public final class ItemViewerFilterMenu {
                 if (state.hasSelection()) {
                     int min = state.selectionMin();
                     int max = state.selectionMax();
-                    MinecraftClient client = MinecraftClient.getInstance();
+                    Minecraft client = Minecraft.getInstance();
                     if (client != null) {
-                        client.keyboard.setClipboard(text.substring(min, max));
+                        client.keyboardHandler.setClipboard(text.substring(min, max));
                     }
                     text = deleteSelection(text, state);
                     inputFieldText.put(focusedInputKey, text);
@@ -947,7 +947,7 @@ public final class ItemViewerFilterMenu {
         return Math.max(0, Math.min(offset, maxScroll));
     }
 
-    private static void finalizeScrollLayout(PanelLayout layout, TextRenderer tr) {
+    private static void finalizeScrollLayout(PanelLayout layout, Font tr) {
         layoutGroups(tr, layout.contentX, layout.contentTop, layout.contentWidth);
         viewportHeight = layout.contentBottom - layout.contentTop;
         layout.scrollable = contentHeight > viewportHeight;
@@ -980,7 +980,7 @@ public final class ItemViewerFilterMenu {
         return layout.contentTop + (int) ((long) (trackHeight - thumbHeight) * scrollOffset / maxScroll);
     }
 
-    private static void renderScrollbar(DrawContext context, PanelLayout layout) {
+    private static void renderScrollbar(GuiGraphicsExtractor context, PanelLayout layout) {
         int trackTop = layout.contentTop;
         int trackBottom = layout.contentBottom;
         int barX = layout.scrollBarX;
@@ -991,7 +991,7 @@ public final class ItemViewerFilterMenu {
         context.fill(barX, trackBottom - SCROLLBAR_END_CAP, barX + SCROLLBAR_WIDTH, trackBottom, 0xFF606060);
         context.fill(barX, trackTop, barX + 1, trackBottom, 0xFF606060);
         context.fill(barX + SCROLLBAR_WIDTH - 1, trackTop, barX + SCROLLBAR_WIDTH, trackBottom, 0xFF606060);
-        context.drawBorder(barX, trackTop, SCROLLBAR_WIDTH, trackHeight, 0xFF808080);
+        context.outline(barX, trackTop, SCROLLBAR_WIDTH, trackHeight, 0xFF808080);
 
         int thumbY = computeThumbY(layout);
         int thumbHeight = computeThumbHeight(trackHeight);
@@ -1003,7 +1003,7 @@ public final class ItemViewerFilterMenu {
         context.fill(barX + 1, thumbY, barX + SCROLLBAR_WIDTH - 1, thumbY + thumbHeight, thumbColor);
         context.fill(barX + 1, thumbY, barX + SCROLLBAR_WIDTH - 1, thumbY + SCROLLBAR_END_CAP, 0xFFC8C8C8);
         context.fill(barX + 1, thumbY + thumbHeight - SCROLLBAR_END_CAP, barX + SCROLLBAR_WIDTH - 1, thumbY + thumbHeight, 0xFF707070);
-        context.drawBorder(barX + 1, thumbY, SCROLLBAR_WIDTH - 2, thumbHeight, 0xFFC0C0C0);
+        context.outline(barX + 1, thumbY, SCROLLBAR_WIDTH - 2, thumbHeight, 0xFFC0C0C0);
     }
 
     private static void setScrollFromThumbTop(int thumbTop, PanelLayout layout) {
@@ -1051,12 +1051,12 @@ public final class ItemViewerFilterMenu {
         return true;
     }
 
-    private static void drawCloseButton(DrawContext context, int x, int y, boolean hovered) {
+    private static void drawCloseButton(GuiGraphicsExtractor context, int x, int y, boolean hovered) {
         drawSmallButton(context, x, y, CLOSE_BUTTON_SIZE, hovered);
         drawCloseX(context, x, y, CLOSE_BUTTON_SIZE);
     }
 
-    private static void drawCloseX(DrawContext context, int boxX, int boxY, int size) {
+    private static void drawCloseX(GuiGraphicsExtractor context, int boxX, int boxY, int size) {
         int color = 0xFFFFFFFF;
         int margin = 4;
         int span = size - margin * 2;
@@ -1067,10 +1067,10 @@ public final class ItemViewerFilterMenu {
         }
     }
 
-    private static PanelLayout computePanelLayout(MinecraftClient client) {
-        TextRenderer tr = client.textRenderer;
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+    private static PanelLayout computePanelLayout(Minecraft client) {
+        Font tr = client.font;
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
 
         int maxRowWidth = 0;
         for (List<String> rowTitles : FILTER_ROW_TITLES) {
@@ -1093,7 +1093,7 @@ public final class ItemViewerFilterMenu {
         int boxX = (screenWidth - boxWidth) / 2;
         int boxY = (screenHeight - boxHeight) / 2;
 
-        int clearW = tr.getWidth("Alle löschen") + 12;
+        int clearW = tr.width("Alle löschen") + 12;
         PanelLayout layout = new PanelLayout();
         layout.screenWidth = screenWidth;
         layout.screenHeight = screenHeight;
@@ -1654,18 +1654,18 @@ public final class ItemViewerFilterMenu {
         );
     }
 
-    private static int computeColumnWidth(TextRenderer tr, FilterGroup group) {
-        int width = tr.getWidth(displayGroupTitle(group.title));
+    private static int computeColumnWidth(Font tr, FilterGroup group) {
+        int width = tr.width(displayGroupTitle(group.title));
         for (FilterOption option : group.options) {
             if (option.inputType != RowInputType.NONE) {
                 int fieldWidth = inputFieldWidth(tr, option.inputType);
                 int pickerExtra = hasItemPicker(option.inputType, group.title)
                         ? PICKER_BUTTON_SIZE + PICKER_BUTTON_GAP : 0;
-                int rowWidth = CHECKBOX_SIZE + 4 + tr.getWidth(option.label) + tr.getWidth(":")
+                int rowWidth = CHECKBOX_SIZE + 4 + tr.width(option.label) + tr.width(":")
                         + 2 + fieldWidth + pickerExtra;
                 width = Math.max(width, rowWidth);
             } else {
-                width = Math.max(width, CHECKBOX_SIZE + 4 + tr.getWidth(option.label));
+                width = Math.max(width, CHECKBOX_SIZE + 4 + tr.width(option.label));
             }
         }
         return width + 4;
@@ -1675,12 +1675,12 @@ public final class ItemViewerFilterMenu {
         return inputType == RowInputType.COST_ITEM && "Item".equals(groupTitle);
     }
 
-    private static int inputFieldWidth(TextRenderer tr, RowInputType inputType) {
+    private static int inputFieldWidth(Font tr, RowInputType inputType) {
         return switch (inputType) {
-            case MODIFIER_DIGIT -> tr.getWidth("0");
-            case COST_OPERATOR -> tr.getWidth(">=");
-            case COST_AMOUNT -> tr.getWidth("0".repeat(COST_AMOUNT_FIELD_CHARS));
-            case COST_ITEM -> tr.getWidth("0".repeat(COST_ITEM_FIELD_CHARS));
+            case MODIFIER_DIGIT -> tr.width("0");
+            case COST_OPERATOR -> tr.width(">=");
+            case COST_AMOUNT -> tr.width("0".repeat(COST_AMOUNT_FIELD_CHARS));
+            case COST_ITEM -> tr.width("0".repeat(COST_ITEM_FIELD_CHARS));
             default -> 0;
         };
     }
@@ -1712,7 +1712,7 @@ public final class ItemViewerFilterMenu {
         draftSelectedOptionKeys.clear();
     }
 
-    private static void layoutGroups(TextRenderer tr, int contentX, int contentTop, int contentWidth) {
+    private static void layoutGroups(Font tr, int contentX, int contentTop, int contentWidth) {
         if (groups.isEmpty()) {
             contentHeight = 0;
             return;
@@ -1728,7 +1728,7 @@ public final class ItemViewerFilterMenu {
             }
 
             int headerY = rowY;
-            int optionsStartY = rowY + tr.fontHeight + HEADER_GAP;
+            int optionsStartY = rowY + tr.lineHeight + HEADER_GAP;
             int rowMaxBottom = optionsStartY;
             int columnX = contentX;
 
@@ -1744,9 +1744,9 @@ public final class ItemViewerFilterMenu {
                     option.y = optionY;
                     if (option.inputType != RowInputType.NONE) {
                         int labelX = columnX + CHECKBOX_SIZE + 4;
-                        int colonX = labelX + tr.getWidth(option.label);
+                        int colonX = labelX + tr.width(option.label);
                         int fieldWidth = inputFieldWidth(tr, option.inputType);
-                        option.countFieldX = colonX + tr.getWidth(":") + 2;
+                        option.countFieldX = colonX + tr.width(":") + 2;
                         option.countFieldW = fieldWidth;
                         option.pickerButtonX = hasItemPicker(option.inputType, group.title)
                                 ? option.countFieldX + fieldWidth + PICKER_BUTTON_GAP : -1;
@@ -1769,11 +1769,11 @@ public final class ItemViewerFilterMenu {
         contentHeight = contentBottomY - contentTop;
     }
 
-    private static void drawCheckbox(DrawContext context, TextRenderer tr, FilterGroup group, FilterOption option, int rowY) {
+    private static void drawCheckbox(GuiGraphicsExtractor context, Font tr, FilterGroup group, FilterOption option, int rowY) {
         boolean selected = isOptionSelected(group, option);
         int boxX = option.x;
         int boxY = rowY + (ROW_HEIGHT - CHECKBOX_SIZE) / 2;
-        int labelY = rowY + (ROW_HEIGHT - tr.fontHeight) / 2;
+        int labelY = rowY + (ROW_HEIGHT - tr.lineHeight) / 2;
 
         context.fill(boxX, boxY, boxX + CHECKBOX_SIZE, boxY + CHECKBOX_SIZE, selected ? 0xFF2D6A2D : 0xFF202020);
         int border = selected ? 0xFF55FF55 : 0xFF808080;
@@ -1787,14 +1787,14 @@ public final class ItemViewerFilterMenu {
         }
 
         int labelX = boxX + CHECKBOX_SIZE + 4;
-        context.drawText(tr, option.label, labelX, labelY, 0xFFFFFFFF, false);
+        context.text(tr, option.label, labelX, labelY, 0xFFFFFFFF, false);
 
         if (option.inputType != RowInputType.NONE) {
-            int colonX = labelX + tr.getWidth(option.label);
-            context.drawText(tr, ":", colonX, labelY, 0xFFFFFFFF, false);
+            int colonX = labelX + tr.width(option.label);
+            context.text(tr, ":", colonX, labelY, 0xFFFFFFFF, false);
 
             int fieldX = option.countFieldX;
-            int underlineY = labelY + tr.fontHeight;
+            int underlineY = labelY + tr.lineHeight;
             String fieldKey = optionKey(group.title, option.label);
             boolean fieldFocused = fieldKey.equals(focusedInputKey);
             String fieldText = inputFieldText.getOrDefault(fieldKey, "");
@@ -1813,22 +1813,22 @@ public final class ItemViewerFilterMenu {
                         && ItemViewerUtility.getLastMouseY() < pickerY + PICKER_BUTTON_SIZE;
                 boolean pickerOpen = fieldKey.equals(openPickerKey);
                 drawSmallButton(context, option.pickerButtonX, pickerY, PICKER_BUTTON_SIZE, pickerHovered || pickerOpen);
-                int arrowX = option.pickerButtonX + (PICKER_BUTTON_SIZE - tr.getWidth("v")) / 2;
-                int arrowY = pickerY + (PICKER_BUTTON_SIZE - tr.fontHeight) / 2;
-                context.drawText(tr, "\u25BC", arrowX, arrowY, 0xFFFFFFFF, false);
+                int arrowX = option.pickerButtonX + (PICKER_BUTTON_SIZE - tr.width("v")) / 2;
+                int arrowY = pickerY + (PICKER_BUTTON_SIZE - tr.lineHeight) / 2;
+                context.text(tr, "\u25BC", arrowX, arrowY, 0xFFFFFFFF, false);
             }
         }
     }
 
-    private static void drawOperatorField(DrawContext context, TextRenderer tr, int fieldX, int labelY, int underlineY,
+    private static void drawOperatorField(GuiGraphicsExtractor context, Font tr, int fieldX, int labelY, int underlineY,
             int fieldW, String operatorText) {
         String display = COST_MENU_OPERATORS.contains(operatorText) ? operatorText : "=";
         context.fill(fieldX, underlineY, fieldX + fieldW, underlineY + 1, 0xFFAAAAAA);
-        int textX = fieldX + (fieldW - tr.getWidth(display)) / 2;
-        context.drawText(tr, display, textX, labelY, 0xFFFFFFFF, false);
+        int textX = fieldX + (fieldW - tr.width(display)) / 2;
+        context.text(tr, display, textX, labelY, 0xFFFFFFFF, false);
     }
 
-    private static void drawInputField(DrawContext context, TextRenderer tr, int fieldX, int labelY, int underlineY,
+    private static void drawInputField(GuiGraphicsExtractor context, Font tr, int fieldX, int labelY, int underlineY,
             int fieldW, String fieldKey, String fieldText, RowInputType inputType, boolean fieldFocused) {
         InputFieldState state = getOrCreateState(fieldKey);
         state.cursor = clampCursor(state.cursor, fieldText.length());
@@ -1843,17 +1843,17 @@ public final class ItemViewerFilterMenu {
         VisibleFieldSlice slice = computeVisibleSlice(tr, fieldText, fieldW, state, fieldFocused, inputType);
         int textX = fieldX;
         if (slice.centered()) {
-            textX = fieldX + (fieldW - tr.getWidth(slice.display())) / 2;
+            textX = fieldX + (fieldW - tr.width(slice.display())) / 2;
         }
 
         if (fieldFocused && slice.displaySelStart() >= 0 && slice.displaySelEnd() > slice.displaySelStart()) {
-            int selStartX = textX + tr.getWidth(slice.display().substring(0, slice.displaySelStart()));
-            int selEndX = textX + tr.getWidth(slice.display().substring(0, slice.displaySelEnd()));
-            context.fill(selStartX, labelY, selEndX, labelY + tr.fontHeight, 0xFF2A5080);
+            int selStartX = textX + tr.width(slice.display().substring(0, slice.displaySelStart()));
+            int selEndX = textX + tr.width(slice.display().substring(0, slice.displaySelEnd()));
+            context.fill(selStartX, labelY, selEndX, labelY + tr.lineHeight, 0xFF2A5080);
         }
 
         if (!slice.display().isEmpty()) {
-            context.drawText(tr, slice.display(), textX, labelY, 0xFFFFFFFF, false);
+            context.text(tr, slice.display(), textX, labelY, 0xFFFFFFFF, false);
         }
 
         if (fieldFocused) {
@@ -1861,13 +1861,13 @@ public final class ItemViewerFilterMenu {
             if (inputCursorVisible) {
                 int caretIndex = fieldText.isEmpty() ? 0 : Math.max(0, slice.displayCursor());
                 String beforeCaret = slice.display().isEmpty() ? "" : slice.display().substring(0, caretIndex);
-                int caretX = textX + tr.getWidth(beforeCaret);
-                context.fill(caretX, labelY, caretX + 1, labelY + tr.fontHeight, 0xFFFFFFFF);
+                int caretX = textX + tr.width(beforeCaret);
+                context.fill(caretX, labelY, caretX + 1, labelY + tr.lineHeight, 0xFFFFFFFF);
             }
         }
     }
 
-    private static VisibleFieldSlice computeVisibleSlice(TextRenderer tr, String text, int maxWidth,
+    private static VisibleFieldSlice computeVisibleSlice(Font tr, String text, int maxWidth,
             InputFieldState state, boolean focused, RowInputType inputType) {
         int cursor = clampCursor(state.cursor, text.length());
         if (text.isEmpty()) {
@@ -1884,7 +1884,7 @@ public final class ItemViewerFilterMenu {
         int selMin = state.hasSelection() ? state.selectionMin() : -1;
         int selMax = state.hasSelection() ? state.selectionMax() : -1;
 
-        if (tr.getWidth(text) <= maxWidth) {
+        if (tr.width(text) <= maxWidth) {
             boolean centered = inputType == RowInputType.MODIFIER_DIGIT || inputType == RowInputType.COST_AMOUNT;
             return new VisibleFieldSlice(text, cursor, selMin, selMax, centered);
         }
@@ -1902,7 +1902,7 @@ public final class ItemViewerFilterMenu {
     private record VisibleWindow(int start, int end, String display, int prefixLength) {
     }
 
-    private static VisibleWindow findVisibleWindow(TextRenderer tr, String text, int maxWidth, int cursor,
+    private static VisibleWindow findVisibleWindow(Font tr, String text, int maxWidth, int cursor,
             int selMin, int selMax) {
         String ellipsis = "...";
         int textLength = text.length();
@@ -1917,7 +1917,7 @@ public final class ItemViewerFilterMenu {
                 String left = start > 0 ? ellipsis : "";
                 String right = end < textLength ? ellipsis : "";
                 String display = left + text.substring(start, end) + right;
-                if (tr.getWidth(display) > maxWidth) {
+                if (tr.width(display) > maxWidth) {
                     continue;
                 }
 
@@ -1937,7 +1937,7 @@ public final class ItemViewerFilterMenu {
         if (showEnd) {
             int start = 0;
             for (int candidateStart = 0; candidateStart < textLength; candidateStart++) {
-                if (tr.getWidth(ellipsis + text.substring(candidateStart)) <= maxWidth) {
+                if (tr.width(ellipsis + text.substring(candidateStart)) <= maxWidth) {
                     start = candidateStart;
                     break;
                 }
@@ -1945,7 +1945,7 @@ public final class ItemViewerFilterMenu {
             return new VisibleWindow(start, textLength, display, start > 0 ? ellipsis.length() : 0);
         }
         int end = textLength;
-        while (end > 0 && tr.getWidth(text.substring(0, end) + ellipsis) > maxWidth) {
+        while (end > 0 && tr.width(text.substring(0, end) + ellipsis) > maxWidth) {
             end--;
         }
         return new VisibleWindow(0, end, display, 0);
@@ -1995,28 +1995,28 @@ public final class ItemViewerFilterMenu {
         return prefixLen + (index - textStart);
     }
 
-    private static String truncateToFieldWidth(TextRenderer tr, String text, int maxWidth, boolean showEnd) {
-        if (text.isEmpty() || tr.getWidth(text) <= maxWidth) {
+    private static String truncateToFieldWidth(Font tr, String text, int maxWidth, boolean showEnd) {
+        if (text.isEmpty() || tr.width(text) <= maxWidth) {
             return text;
         }
         if (showEnd) {
             String ellipsis = "...";
             for (int start = 0; start < text.length(); start++) {
                 String candidate = ellipsis + text.substring(start);
-                if (tr.getWidth(candidate) <= maxWidth) {
+                if (tr.width(candidate) <= maxWidth) {
                     return candidate;
                 }
             }
             for (int start = 0; start < text.length(); start++) {
                 String candidate = text.substring(start);
-                if (tr.getWidth(candidate) <= maxWidth) {
+                if (tr.width(candidate) <= maxWidth) {
                     return candidate;
                 }
             }
             return text.substring(text.length() - 1);
         }
         String display = text;
-        while (!display.isEmpty() && tr.getWidth(display + "...") > maxWidth) {
+        while (!display.isEmpty() && tr.width(display + "...") > maxWidth) {
             display = display.substring(0, display.length() - 1);
         }
         return display + "...";
@@ -2036,7 +2036,7 @@ public final class ItemViewerFilterMenu {
         return null;
     }
 
-    private static void focusInputFieldAtMouse(TextRenderer tr, String inputKey, double mouseX) {
+    private static void focusInputFieldAtMouse(Font tr, String inputKey, double mouseX) {
         InputFieldState state = getOrCreateState(inputKey);
         String text = inputFieldText.getOrDefault(inputKey, "");
         FieldLayout layout = findFieldLayout(inputKey);
@@ -2049,7 +2049,7 @@ public final class ItemViewerFilterMenu {
         state.clearSelection();
     }
 
-    private static int resolveCursorIndexAtX(TextRenderer tr, String text, FieldLayout layout, double mouseX,
+    private static int resolveCursorIndexAtX(Font tr, String text, FieldLayout layout, double mouseX,
             InputFieldState referenceState) {
         if (text.isEmpty()) {
             return 0;
@@ -2068,11 +2068,11 @@ public final class ItemViewerFilterMenu {
             VisibleFieldSlice slice = computeVisibleSlice(tr, text, layout.fieldW(), probe, true, layout.inputType());
             int textX = layout.fieldX();
             if (slice.centered()) {
-                textX = layout.fieldX() + (layout.fieldW() - tr.getWidth(slice.display())) / 2;
+                textX = layout.fieldX() + (layout.fieldW() - tr.width(slice.display())) / 2;
             }
 
             int caretIndex = Math.max(0, Math.min(slice.displayCursor(), slice.display().length()));
-            int caretX = textX + tr.getWidth(slice.display().substring(0, caretIndex));
+            int caretX = textX + tr.width(slice.display().substring(0, caretIndex));
             double distance = Math.abs(mouseX - caretX);
             if (distance < bestDistance) {
                 bestDistance = distance;
@@ -2161,7 +2161,7 @@ public final class ItemViewerFilterMenu {
                 && mouseY >= pickerDropdownY && mouseY < pickerDropdownY + pickerDropdownH;
     }
 
-    private static void renderOpenItemPicker(DrawContext context, TextRenderer tr, PanelLayout layout) {
+    private static void renderOpenItemPicker(GuiGraphicsExtractor context, Font tr, PanelLayout layout) {
         pickerScrollbarVisible = false;
         if (openPickerKey == null) {
             pickerDropdownEntries = List.of();
@@ -2178,7 +2178,7 @@ public final class ItemViewerFilterMenu {
             int rowY = option.y - scrollOffset;
             int listX = option.pickerButtonX;
             int listY = rowY + ROW_HEIGHT;
-            int listW = Math.max(80, tr.getWidth("Keine Einträge") + PICKER_PADDING * 2);
+            int listW = Math.max(80, tr.width("Keine Einträge") + PICKER_PADDING * 2);
             int listH = PICKER_OPTION_HEIGHT;
             pickerDropdownX = listX;
             pickerDropdownY = listY;
@@ -2189,7 +2189,7 @@ public final class ItemViewerFilterMenu {
             context.fill(listX, listY + listH - 1, listX + listW, listY + listH, 0xFF808080);
             context.fill(listX, listY, listX + 1, listY + listH, 0xFF808080);
             context.fill(listX + listW - 1, listY, listX + listW, listY + listH, 0xFF808080);
-            context.drawText(tr, "Keine Einträge", listX + PICKER_PADDING, listY + 3, 0xFFAAAAAA, false);
+            context.text(tr, "Keine Einträge", listX + PICKER_PADDING, listY + 3, 0xFFAAAAAA, false);
             return;
         }
 
@@ -2197,10 +2197,10 @@ public final class ItemViewerFilterMenu {
         boolean scrollable = entries.size() > PICKER_MAX_VISIBLE;
         int maxRowWidth = 0;
         for (ItemViewerUtility.CostNamePickerEntry entry : entries) {
-            int rowWidth = tr.getWidth(entry.name());
+            int rowWidth = tr.width(entry.name());
             String floorLabel = entry.floorLabel();
             if (!floorLabel.isEmpty()) {
-                rowWidth += PICKER_FLOOR_LABEL_GAP + tr.getWidth(floorLabel);
+                rowWidth += PICKER_FLOOR_LABEL_GAP + tr.width(floorLabel);
             }
             maxRowWidth = Math.max(maxRowWidth, rowWidth);
         }
@@ -2245,11 +2245,11 @@ public final class ItemViewerFilterMenu {
             if (hovered) {
                 context.fill(listX + 1, optionY, contentRight - 1, optionY + PICKER_OPTION_HEIGHT, 0xFF335588);
             }
-            context.drawText(tr, entry.name(), listX + PICKER_PADDING, optionY + 3, entry.textColor(), false);
+            context.text(tr, entry.name(), listX + PICKER_PADDING, optionY + 3, entry.textColor(), false);
             String floorLabel = entry.floorLabel();
             if (!floorLabel.isEmpty()) {
-                int floorWidth = tr.getWidth(floorLabel);
-                context.drawText(tr, floorLabel, contentRight - PICKER_PADDING - floorWidth, optionY + 3,
+                int floorWidth = tr.width(floorLabel);
+                context.text(tr, floorLabel, contentRight - PICKER_PADDING - floorWidth, optionY + 3,
                         PICKER_FLOOR_LABEL_COLOR, false);
             }
         }
@@ -2361,7 +2361,7 @@ public final class ItemViewerFilterMenu {
     }
 
     /** Kleines Häkchen per Pixel – zuverlässiger als Unicode-Zeichen in der MC-Schrift. */
-    private static void drawCheckmark(DrawContext context, int boxX, int boxY) {
+    private static void drawCheckmark(GuiGraphicsExtractor context, int boxX, int boxY) {
         int color = 0xFFFFFFFF;
         context.fill(boxX + 2, boxY + 5, boxX + 3, boxY + 6, color);
         context.fill(boxX + 3, boxY + 6, boxX + 4, boxY + 7, color);
@@ -2371,15 +2371,15 @@ public final class ItemViewerFilterMenu {
         context.fill(boxX + 7, boxY + 2, boxX + 8, boxY + 3, color);
     }
 
-    private static void drawCenteredButtonLabel(DrawContext context, TextRenderer tr, String label, int x, int y, int width, int height) {
-        int textWidth = tr.getWidth(label);
-        int textHeight = tr.fontHeight;
+    private static void drawCenteredButtonLabel(GuiGraphicsExtractor context, Font tr, String label, int x, int y, int width, int height) {
+        int textWidth = tr.width(label);
+        int textHeight = tr.lineHeight;
         int textX = x + (width - textWidth) / 2;
         int textY = y + (height - textHeight) / 2;
-        context.drawText(tr, label, textX, textY, 0xFFFFFFFF, false);
+        context.text(tr, label, textX, textY, 0xFFFFFFFF, false);
     }
 
-    private static void drawPanel(DrawContext context, int x, int y, int width, int height) {
+    private static void drawPanel(GuiGraphicsExtractor context, int x, int y, int width, int height) {
         context.fill(x, y, x + width, y + height, 0xFF000000);
         context.fill(x, y, x + width, y + 1, 0xFFFFFFFF);
         context.fill(x, y + height - 1, x + width, y + height, 0xFFFFFFFF);
@@ -2387,7 +2387,7 @@ public final class ItemViewerFilterMenu {
         context.fill(x + width - 1, y, x + width, y + height, 0xFFFFFFFF);
     }
 
-    private static void drawSmallButton(DrawContext context, int x, int y, int width, int height, boolean hovered) {
+    private static void drawSmallButton(GuiGraphicsExtractor context, int x, int y, int width, int height, boolean hovered) {
         context.fill(x, y, x + width, y + height, hovered ? 0xFF404040 : 0x80000000);
         context.fill(x, y, x + width, y + 1, 0xFFFFFFFF);
         context.fill(x, y + height - 1, x + width, y + height, 0xFFFFFFFF);
@@ -2395,7 +2395,7 @@ public final class ItemViewerFilterMenu {
         context.fill(x + width - 1, y, x + width, y + height, 0xFFFFFFFF);
     }
 
-    private static void drawSmallButton(DrawContext context, int x, int y, int size, boolean hovered) {
+    private static void drawSmallButton(GuiGraphicsExtractor context, int x, int y, int size, boolean hovered) {
         drawSmallButton(context, x, y, size, size, hovered);
     }
 

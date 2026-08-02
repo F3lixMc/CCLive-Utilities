@@ -1,13 +1,12 @@
 package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Box;
-import net.minecraft.text.Text;
 import net.felix.profile.ProfileStatsManager;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.phys.AABB;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -47,8 +46,8 @@ public class DamageTrackingUtility {
     /**
      * Wird in jedem Client-Tick aufgerufen
      */
-    private static void onClientTick(MinecraftClient client) {
-        if (client.world == null || client.player == null) {
+    private static void onClientTick(Minecraft client) {
+        if (client.level == null || client.player == null) {
             return;
         }
         
@@ -66,29 +65,29 @@ public class DamageTrackingUtility {
     /**
      * Scannt alle ArmorStands im Umkreis und extrahiert Damage-Werte
      */
-    private static void scanForDamageHolograms(MinecraftClient client) {
-        if (client.world == null || client.player == null) {
+    private static void scanForDamageHolograms(Minecraft client) {
+        if (client.level == null || client.player == null) {
             return;
         }
         
         // Erstelle Bounding Box um den Spieler
-        Box scanBox = client.player.getBoundingBox().expand(SCAN_RADIUS);
+        AABB scanBox = client.player.getBoundingBox().inflate(SCAN_RADIUS);
         
         // Sammle alle Damage-Werte (Set verhindert Duplikate)
         Set<Integer> damageValues = new HashSet<>();
         
         // Iteriere durch alle Entities im Umkreis
-        for (Entity entity : client.world.getOtherEntities(client.player, scanBox, 
-                e -> e instanceof ArmorStandEntity)) {
+        for (Entity entity : client.level.getEntities(client.player, scanBox, 
+                e -> e instanceof ArmorStand)) {
             
-            if (entity instanceof ArmorStandEntity armorStand) {
+            if (entity instanceof ArmorStand armorStand) {
                 // Prüfe ob ArmorStand einen CustomName hat
                 if (!armorStand.hasCustomName()) {
                     continue;
                 }
                 
                 // Extrahiere CustomName-Text
-                Text customNameText = armorStand.getCustomName();
+                Component customNameText = armorStand.getCustomName();
                 if (customNameText == null) {
                     continue;
                 }

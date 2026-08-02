@@ -1,8 +1,8 @@
 package net.felix.utilities.ItemViewer;
 
-import net.felix.utilities.DragOverlay.ClipboardAmbossRessourceCollector;
-import net.felix.utilities.DragOverlay.ClipboardCoinCollector;
-import net.felix.utilities.DragOverlay.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
+import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.BossBarHudValueDecoder;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;

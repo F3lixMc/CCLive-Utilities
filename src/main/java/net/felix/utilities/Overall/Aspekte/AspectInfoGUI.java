@@ -1,14 +1,13 @@
 package net.felix.utilities.Overall.Aspekte;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemStack;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 public class AspectInfoGUI extends Screen {
     
@@ -23,7 +22,7 @@ public class AspectInfoGUI extends Screen {
     private static final String ASPECTS_CONFIG_FILE = "assets/cclive-utilities/Aspekte.json";
     
     public AspectInfoGUI() {
-        super(Text.literal("Aspect Info"));
+        super(Component.literal("Aspect Info"));
     }
     
     public static void initialize() {
@@ -43,11 +42,11 @@ public class AspectInfoGUI extends Screen {
         }
         
         // Check if shift is pressed
-        MinecraftClient client = MinecraftClient.getInstance();
-        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_LEFT_SHIFT) || 
-                                InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        Minecraft client = Minecraft.getInstance();
+        boolean isShiftPressed = InputConstants.isKeyDown(client.getWindow(), 
+                                                       InputConstants.KEY_LSHIFT) || 
+                                InputConstants.isKeyDown(client.getWindow(), 
+                                                       InputConstants.KEY_RSHIFT);
         
         if (!isShiftPressed) {
             shouldShow = false;
@@ -99,7 +98,7 @@ public class AspectInfoGUI extends Screen {
         }
     }
     
-    private static ItemStack getHoveredItem(MinecraftClient client, int mouseX, int mouseY) {
+    private static ItemStack getHoveredItem(Minecraft client, int mouseX, int mouseY) {
         // This is a simplified approach - in a real implementation you'd need to
         // check the actual GUI elements and their item stacks
         // For now, we'll return null to indicate no item found
@@ -112,7 +111,7 @@ public class AspectInfoGUI extends Screen {
         }
         
         // Get the display name
-        Text displayName = itemStack.getName();
+        Component displayName = itemStack.getHoverName();
         if (displayName != null) {
             return displayName.getString();
         }
@@ -121,7 +120,7 @@ public class AspectInfoGUI extends Screen {
     }
     
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (!shouldShow) {
             return;
         }
@@ -131,8 +130,8 @@ public class AspectInfoGUI extends Screen {
         int guiY = y;
         
         // Ensure GUI doesn't go off screen
-        int screenWidth = MinecraftClient.getInstance().getWindow().getScaledWidth();
-        int screenHeight = MinecraftClient.getInstance().getWindow().getScaledHeight();
+        int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
         
         if (guiX + 200 > screenWidth) {
             guiX = mouseX - 210;
@@ -152,15 +151,15 @@ public class AspectInfoGUI extends Screen {
         context.fill(guiX, guiY + 79, guiX + 200, guiY + 80, 0xFFFFFFFF);
         
         // Draw title
-        context.drawTextWithShadow(textRenderer, "Aspekt Information", guiX + 5, guiY + 5, 0x000000);
+        context.text(font, "Aspekt Information", guiX + 5, guiY + 5, 0x000000);
         
         // Draw aspect name
-        context.drawTextWithShadow(textRenderer, "Aspekt: " + currentAspectName, guiX + 5, guiY + 25, 0x00FF00);
+        context.text(font, "Aspekt: " + currentAspectName, guiX + 5, guiY + 25, 0x00FF00);
         
         // Draw aspect description (wrapped to fit)
         String[] descriptionLines = wrapText(currentAspectDescription, 30);
         for (int i = 0; i < descriptionLines.length; i++) {
-            context.drawTextWithShadow(textRenderer, descriptionLines[i], guiX + 5, guiY + 45 + (i * 12), 0xFFFFFF);
+            context.text(font, descriptionLines[i], guiX + 5, guiY + 45 + (i * 12), 0xFFFFFF);
         }
     }
     
@@ -172,22 +171,22 @@ public class AspectInfoGUI extends Screen {
             return;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.textRenderer == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.font == null) {
             return;
         }
         
         // Get current mouse position
-        double mouseX = client.mouse.getX() * client.getWindow().getScaledWidth() / client.getWindow().getWidth();
-        double mouseY = client.mouse.getY() * client.getWindow().getScaledHeight() / client.getWindow().getHeight();
+        double mouseX = client.mouseHandler.xpos() * client.getWindow().getGuiScaledWidth() / client.getWindow().getScreenWidth();
+        double mouseY = client.mouseHandler.ypos() * client.getWindow().getGuiScaledHeight() / client.getWindow().getScreenHeight();
         
         // Set position relative to mouse
         int guiX = x;
         int guiY = y;
         
         // Ensure GUI doesn't go off screen
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         
         if (guiX + 200 > screenWidth) {
             guiX = (int) mouseX - 210;
@@ -196,7 +195,7 @@ public class AspectInfoGUI extends Screen {
             guiY = (int) mouseY - 90;
         }
         
-        // Create a temporary DrawContext for rendering
+        // Create a temporary GuiGraphicsExtractor for rendering
         // Note: This is a simplified approach - in a real implementation you'd need to
         // properly integrate with the rendering pipeline
     }
@@ -234,7 +233,7 @@ public class AspectInfoGUI extends Screen {
     }
     
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
     

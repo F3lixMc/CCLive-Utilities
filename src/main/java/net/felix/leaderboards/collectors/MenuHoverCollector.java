@@ -1,15 +1,14 @@
 package net.felix.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.Other.DebugUtility;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +46,8 @@ public class MenuHoverCollector implements DataCollector {
         // Silent error handling("✅ MenuHoverCollector initialisiert");
     }
     
-    private void onClientTick(MinecraftClient client) {
-        if (!isActive || client.player == null || client.world == null) {
+    private void onClientTick(Minecraft client) {
+        if (!isActive || client.player == null || client.level == null) {
             return;
         }
         
@@ -62,8 +61,8 @@ public class MenuHoverCollector implements DataCollector {
     /**
      * Prüft den aktuellen Screen auf relevante Hover-Texte
      */
-    private void checkCurrentScreen(MinecraftClient client) {
-        Screen currentScreen = client.currentScreen;
+    private void checkCurrentScreen(Minecraft client) {
+        Screen currentScreen = client.screen;
         
         if (currentScreen == null) {
             return; // Kein Screen geöffnet
@@ -73,41 +72,41 @@ public class MenuHoverCollector implements DataCollector {
             DebugUtility.debugLeaderboard("📋 Screen geöffnet: " + currentScreen.getClass().getSimpleName());
         }
         
-        if (currentScreen instanceof HandledScreen<?> handledScreen) {
+        if (currentScreen instanceof AbstractContainerScreen<?> handledScreen) {
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                DebugUtility.debugLeaderboard("📋 HandledScreen erkannt, prüfe Slot unter Maus...");
+                DebugUtility.debugLeaderboard("📋 AbstractContainerScreen erkannt, prüfe Slot unter Maus...");
             }
             // Generische Hover-Auswertung für alle Menüs
             checkHoveredSlot(handledScreen, client);
         } else if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-            // Debug: Zeige Screen-Typ wenn kein HandledScreen
-            DebugUtility.debugLeaderboard("📋 Screen geöffnet (kein HandledScreen): " + currentScreen.getClass().getSimpleName());
+            // Debug: Zeige Screen-Typ wenn kein AbstractContainerScreen
+            DebugUtility.debugLeaderboard("📋 Screen geöffnet (kein AbstractContainerScreen): " + currentScreen.getClass().getSimpleName());
         }
     }
     
     /**
      * Prüft den Slot unter der Maus auf relevante Informationen
      */
-    private void checkHoveredSlot(HandledScreen<?> screen, MinecraftClient client) {
+    private void checkHoveredSlot(AbstractContainerScreen<?> screen, Minecraft client) {
         try {
             // Hole Mausposition
-            double mouseX = client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) client.getWindow().getWidth();
-            double mouseY = client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) client.getWindow().getHeight();
+            double mouseX = client.mouseHandler.xpos() * (double) client.getWindow().getGuiScaledWidth() / (double) client.getWindow().getScreenWidth();
+            double mouseY = client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) client.getWindow().getScreenHeight();
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
                 DebugUtility.debugLeaderboard("📋 Mausposition: X=" + mouseX + ", Y=" + mouseY);
-                DebugUtility.debugLeaderboard("📋 Anzahl Slots: " + screen.getScreenHandler().slots.size());
+                DebugUtility.debugLeaderboard("📋 Anzahl Slots: " + screen.getMenu().slots.size());
             }
             
-            // Finde Slot unter der Maus (wie in HandledScreenMixin)
+            // Finde Slot unter der Maus (wie in AbstractContainerScreenMixin)
             Slot hoveredSlot = null;
             int slotCount = 0;
-            for (Slot slot : screen.getScreenHandler().slots) {
+            for (Slot slot : screen.getMenu().slots) {
                 slotCount++;
                 // Hole Screen-Position (x, y) via Reflection
                 try {
-                    java.lang.reflect.Field xField = HandledScreen.class.getDeclaredField("x");
-                    java.lang.reflect.Field yField = HandledScreen.class.getDeclaredField("y");
+                    java.lang.reflect.Field xField = AbstractContainerScreen.class.getDeclaredField("leftPos");
+                    java.lang.reflect.Field yField = AbstractContainerScreen.class.getDeclaredField("topPos");
                     xField.setAccessible(true);
                     yField.setAccessible(true);
                     int x = xField.getInt(screen);
@@ -115,7 +114,7 @@ public class MenuHoverCollector implements DataCollector {
                     
                     if (DebugUtility.isLeaderboardDebuggingEnabled() && slotCount <= 5) {
                         // Zeige erste 5 Slots für Debug
-                        DebugUtility.debugLeaderboard("📋 Slot #" + slotCount + ": x=" + (slot.x + x) + ", y=" + (slot.y + y) + ", hasStack=" + slot.hasStack());
+                        DebugUtility.debugLeaderboard("📋 Slot #" + slotCount + ": x=" + (slot.x + x) + ", y=" + (slot.y + y) + ", hasStack=" + slot.hasItem());
                     }
                     
                     if (slot.x + x <= mouseX && mouseX < slot.x + x + 16 &&
@@ -131,7 +130,7 @@ public class MenuHoverCollector implements DataCollector {
                         DebugUtility.debugLeaderboard("⚠️ Fehler beim Prüfen von Slot #" + slotCount + ": " + e.getMessage());
                     }
                     // Fallback: Prüfe einfach alle Slots mit Items (nur wenn kein Slot gefunden wurde)
-                    if (hoveredSlot == null && slot.hasStack()) {
+                    if (hoveredSlot == null && slot.hasItem()) {
                         hoveredSlot = slot;
                         if (DebugUtility.isLeaderboardDebuggingEnabled()) {
                             DebugUtility.debugLeaderboard("📋 Fallback: Verwende Slot #" + slotCount + " (hat Item)");
@@ -147,14 +146,14 @@ public class MenuHoverCollector implements DataCollector {
                 return;
             }
             
-            if (!hoveredSlot.hasStack()) {
+            if (!hoveredSlot.hasItem()) {
                 if (DebugUtility.isLeaderboardDebuggingEnabled()) {
                     DebugUtility.debugLeaderboard("❌ Slot hat kein Item");
                 }
                 return;
             }
             
-            ItemStack stack = hoveredSlot.getStack();
+            ItemStack stack = hoveredSlot.getItem();
             if (stack == null || stack.isEmpty()) {
                 if (DebugUtility.isLeaderboardDebuggingEnabled()) {
                     DebugUtility.debugLeaderboard("❌ ItemStack ist leer");
@@ -163,11 +162,11 @@ public class MenuHoverCollector implements DataCollector {
             }
             
             if (DebugUtility.isLeaderboardDebuggingEnabled()) {
-                DebugUtility.debugLeaderboard("📋 Item gefunden: " + stack.getName().getString());
+                DebugUtility.debugLeaderboard("📋 Item gefunden: " + stack.getHoverName().getString());
             }
             
             // Tooltip über Helper-Methode via Reflection auslesen
-            List<Text> tooltip = getTooltipFromItem(screen, client, stack);
+            List<Component> tooltip = getTooltipFromItem(screen, client, stack);
             
             if (tooltip == null || tooltip.isEmpty()) {
                 if (DebugUtility.isLeaderboardDebuggingEnabled()) {
@@ -194,13 +193,13 @@ public class MenuHoverCollector implements DataCollector {
     }
     
     /**
-     * Liest den Tooltip eines Items aus einem HandledScreen via Reflection aus.
+     * Liest den Tooltip eines Items aus einem AbstractContainerScreen via Reflection aus.
      * Robust gegen unterschiedliche Methodensignaturen von getTooltipFromItem.
      */
     @SuppressWarnings("unchecked")
-    private List<Text> getTooltipFromItem(HandledScreen<?> screen, MinecraftClient client, ItemStack stack) {
+    private List<Component> getTooltipFromItem(AbstractContainerScreen<?> screen, Minecraft client, ItemStack stack) {
         try {
-            Method[] methods = HandledScreen.class.getDeclaredMethods();
+            Method[] methods = AbstractContainerScreen.class.getDeclaredMethods();
             for (Method method : methods) {
                 if (!"getTooltipFromItem".equals(method.getName())) {
                     continue;
@@ -212,15 +211,15 @@ public class MenuHoverCollector implements DataCollector {
                 try {
                     // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
                     if (params.length == 2 &&
-                        MinecraftClient.class.isAssignableFrom(params[0]) &&
+                        Minecraft.class.isAssignableFrom(params[0]) &&
                         ItemStack.class.isAssignableFrom(params[1])) {
-                        return (List<Text>) method.invoke(screen, client, stack);
+                        return (List<Component>) method.invoke(screen, client, stack);
                     }
                     
                     // Signatur: getTooltipFromItem(ItemStack)
                     if (params.length == 1 &&
                         ItemStack.class.isAssignableFrom(params[0])) {
-                        return (List<Text>) method.invoke(screen, stack);
+                        return (List<Component>) method.invoke(screen, stack);
                     }
                 } catch (Exception inner) {
                     // Versuche andere Overloads weiter
@@ -242,11 +241,11 @@ public class MenuHoverCollector implements DataCollector {
     /**
      * Verarbeitet einen Tooltip auf relevante Informationen
      */
-    private void processTooltip(List<Text> tooltip) {
+    private void processTooltip(List<Component> tooltip) {
         if (tooltip == null || tooltip.isEmpty()) return;
         
         StringBuilder fullTooltip = new StringBuilder();
-        for (Text line : tooltip) {
+        for (Component line : tooltip) {
             fullTooltip.append(extractTextContent(line)).append("\n");
         }
         
@@ -387,13 +386,13 @@ public class MenuHoverCollector implements DataCollector {
     /**
      * Extrahiert den Text-Inhalt aus einer Text-Komponente
      */
-    private String extractTextContent(Text text) {
+    private String extractTextContent(Component text) {
         if (text == null) return "";
         
         StringBuilder content = new StringBuilder();
         content.append(text.getString());
         
-        for (Text sibling : text.getSiblings()) {
+        for (Component sibling : text.getSiblings()) {
             content.append(extractTextContent(sibling));
         }
         

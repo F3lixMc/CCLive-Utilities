@@ -3,18 +3,23 @@ package net.felix.mixin;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(HandledScreen.class)
+@Mixin(AbstractContainerScreen.class)
 public abstract class SearchBarInputMixin {
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void onMouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         // Blockiere Mausklicks wenn der Hilfe-Screen offen ist
         if (SearchBarUtility.isHelpScreenOpen()) {
             cir.setReturnValue(true);
@@ -47,12 +52,12 @@ public abstract class SearchBarInputMixin {
         
         // Handle MKLevel search bar clicks - need to get position from screen
         // We can't use @Shadow here, so we'll use reflection as fallback
-        net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-        if (client != null && client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if (client != null && client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
             try {
-                java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
-                java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
-                java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
+                java.lang.reflect.Field xField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("leftPos");
+                java.lang.reflect.Field yField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("topPos");
+                java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageHeight");
                 xField.setAccessible(true);
                 yField.setAccessible(true);
                 bgHeightField.setAccessible(true);
@@ -69,7 +74,11 @@ public abstract class SearchBarInputMixin {
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+    private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
+
         if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayEscape()) {
                 cir.setReturnValue(true);
@@ -107,24 +116,24 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Clipboard toggle hotkey (works in inventories)
-        if (net.felix.utilities.DragOverlay.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Other.Clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }
         
         // Handle ItemInfo auto-click hotkey (works in inventories)
         // Get screen position using reflection (same pattern as MKLevel)
-        net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-        if (client != null && client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if (client != null && client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
             try {
                 // Try to get x and y fields (may be obfuscated)
                 java.lang.reflect.Field xField = null;
                 java.lang.reflect.Field yField = null;
                 
                 // Try common field names first
-                for (String fieldName : new String[]{"x", "field_2776", "field_2777"}) {
+                for (String fieldName : new String[]{"leftPos", "topPos", "x", "field_2776", "field_2777"}) {
                     try {
-                        java.lang.reflect.Field field = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField(fieldName);
+                        java.lang.reflect.Field field = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField(fieldName);
                         field.setAccessible(true);
                         if (field.getType() == int.class) {
                             if (xField == null) {
@@ -149,7 +158,7 @@ public abstract class SearchBarInputMixin {
                     }
                 } else {
                     // Fallback: search all int fields
-                    java.lang.reflect.Field[] fields = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredFields();
+                    java.lang.reflect.Field[] fields = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredFields();
                     int inventoryX = 0, inventoryY = 0;
                     for (java.lang.reflect.Field field : fields) {
                         if (field.getType() == int.class) {

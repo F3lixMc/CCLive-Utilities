@@ -1,11 +1,11 @@
 package net.felix.utilities.Town;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.sound.WeightedSoundSet;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.sounds.WeighedSoundEvents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 
 public class StarForgedSoundUtility {
 
@@ -15,7 +15,7 @@ public class StarForgedSoundUtility {
 	private static String lastTriggeredMessage = "";
 	private static long lastTriggeredAtMs = 0L;
 
-	public static void handleIncomingMessage(Text message, boolean overlay) {
+	public static void handleIncomingMessage(Component message, boolean overlay) {
 		if (isDebugEnabled()) {
 			String preview = message != null ? truncate(message.getString(), 160) : "null";
 			debug("Paket empfangen | overlay=" + overlay + " | raw='" + preview + "'");
@@ -55,7 +55,7 @@ public class StarForgedSoundUtility {
 			return;
 		}
 
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			debugSkip("MinecraftClient ist null");
 			return;
@@ -73,7 +73,7 @@ public class StarForgedSoundUtility {
 	}
 
 	private static void playStarForgedSound() {
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			debugSkip("playStarForgedSound: MinecraftClient ist null");
 			return;
@@ -83,15 +83,15 @@ public class StarForgedSoundUtility {
 			return;
 		}
 
-		boolean registryLoaded = Registries.SOUND_EVENT.containsId(ModSounds.STARFORGED_ID);
-		WeightedSoundSet soundSet = client.getSoundManager().get(ModSounds.STARFORGED_ID);
+		boolean registryLoaded = BuiltInRegistries.SOUND_EVENT.containsKey(ModSounds.STARFORGED_ID);
+		WeighedSoundEvents soundSet = client.getSoundManager().getSoundEvent(ModSounds.STARFORGED_ID);
 		boolean soundDataLoaded = soundSet != null && soundSet.getWeight() > 0;
 
 		if (isDebugEnabled()) {
 			debug("Sound-Registry | id=" + ModSounds.STARFORGED_ID + " | registriert=" + registryLoaded);
 			debug("SoundManager | soundSet=" + (soundSet != null ? "vorhanden" : "null")
 					+ " | weight=" + (soundSet != null ? soundSet.getWeight() : 0)
-					+ " | masterVolume=" + client.options.getSoundVolume(net.minecraft.sound.SoundCategory.MASTER));
+					+ " | masterVolume=" + client.options.getFinalSoundSourceVolume(net.minecraft.sounds.SoundSource.MASTER));
 		}
 
 		if (!registryLoaded) {
@@ -104,11 +104,11 @@ public class StarForgedSoundUtility {
 			return;
 		}
 
-		client.getSoundManager().play(PositionedSoundInstance.master(ModSounds.STARFORGED, 1.0f, 1.0f));
+		client.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.STARFORGED, 1.0f, 1.0f));
 		debug("Sound abgespielt: " + ModSounds.STARFORGED_ID);
 	}
 
-	private static String normalizeMessageText(Text message) {
+	private static String normalizeMessageText(Component message) {
 		return message.getString()
 				.replaceAll("§[0-9a-fk-or]", "")
 				.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")

@@ -1,6 +1,6 @@
 package net.felix.utilities.Overall;
 
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 /**
  * Hilfen für die aktuelle Client-Welt / Dimension.
@@ -13,10 +13,10 @@ public final class DimensionUtility {
     /**
      * @return true wenn der Spieler in {@code minecraft:general_lobby} ist (Pfad {@code general_lobby})
      */
-    public static boolean isInGeneralLobby(MinecraftClient client) {
-        if (client == null || client.world == null) {
+    public static boolean isInGeneralLobby(Minecraft client) {
+        if (client == null || client.level == null) {
             return false;
         }
-        return "general_lobby".equals(client.world.getRegistryKey().getValue().getPath());
+        return "general_lobby".equals(client.level.dimension().identifier().getPath());
     }
 }

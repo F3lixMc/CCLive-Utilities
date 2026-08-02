@@ -4,10 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
-
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -16,6 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 /**
  * Liest CactusClicker-Font-Provider aus {@code minecraft:font/default.json}
@@ -23,7 +22,7 @@ import java.util.Optional;
  */
 final class ZeichenFontLoader {
 
-    static final Identifier MINECRAFT_DEFAULT_FONT = Identifier.of("minecraft", "font/default.json");
+    static final Identifier MINECRAFT_DEFAULT_FONT = Identifier.fromNamespaceAndPath("minecraft", "font/default.json");
 
     /** Reihenfolge der Glyphen in font_bottom_line / font_first_line */
     static final String STANDARD_LINE_DECODE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ+.[]ÄÖÜß0123456789:-(),!";
@@ -41,7 +40,7 @@ final class ZeichenFontLoader {
         if (resource.isEmpty()) {
             return index;
         }
-        try (var reader = new InputStreamReader(resource.get().getInputStream(), StandardCharsets.UTF_8)) {
+        try (var reader = new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8)) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             if (!root.has("providers")) {
                 return index;

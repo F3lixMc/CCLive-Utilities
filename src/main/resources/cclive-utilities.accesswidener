@@ -1,8 +1,8 @@
-accessWidener v1 named
+accessWidener v1 official
 
 # Access Widener für Item Viewer
 accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen hoveredSlot Lnet/minecraft/world/inventory/Slot;
-accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen x I
-accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen y I
-accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen backgroundWidth I
-accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen backgroundHeight I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen leftPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen topPos I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen imageWidth I
+accessible field net/minecraft/client/gui/screens/inventory/AbstractContainerScreen imageHeight I

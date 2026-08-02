@@ -1,10 +1,14 @@
 package net.felix.utilities.DragOverlay;
 
+import net.felix.utilities.Overall.KeyCategories;
+
+import net.minecraft.resources.Identifier;
+
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -15,8 +19,8 @@ public class OverlayEditorUtility {
     private static boolean isInitialized = false;
     private static boolean isOverlayEditorOpen = false;
     
-    // KeyBinding for the overlay editor
-    private static KeyBinding overlayEditorKeyBinding;
+    // KeyMapping for the overlay editor
+    private static KeyMapping overlayEditorKeyMapping;
     
     
     public static void initialize() {
@@ -26,7 +30,7 @@ public class OverlayEditorUtility {
         
         try {
             // Register key binding
-            registerKeyBinding();
+            registerKeyMapping();
             
             // Register client tick events
             ClientTickEvents.END_CLIENT_TICK.register(OverlayEditorUtility::onClientTick);
@@ -37,30 +41,30 @@ public class OverlayEditorUtility {
         }
     }
     
-    private static void registerKeyBinding() {
+    private static void registerKeyMapping() {
         // Register overlay editor key binding
-        overlayEditorKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        overlayEditorKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.overlay-editor",
-            InputUtil.Type.KEYSYM,
+            InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F6, // Default to F6
-            "categories.cclive-utilities.overlay"
+            KeyCategories.of("cclive-utilities", "overlay")
         ));
     }
     
-    private static void onClientTick(MinecraftClient client) {
+    private static void onClientTick(Minecraft client) {
         if (client.player == null || client.getWindow() == null) {
             return;
         }
         
-        // Use the registered KeyBinding instead of hardcoded key detection
-        if (overlayEditorKeyBinding != null && overlayEditorKeyBinding.wasPressed()) {
+        // Use the registered KeyMapping instead of hardcoded key detection
+        if (overlayEditorKeyMapping != null && overlayEditorKeyMapping.consumeClick()) {
             // Overlay Editor is always enabled
                 toggleOverlayEditor();
         }
     }
     
     public static void toggleOverlayEditor() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null) {
             if (isOverlayEditorOpen) {
                 // Close the overlay editor
@@ -73,7 +77,7 @@ public class OverlayEditorUtility {
     }
     
     public static void openOverlayEditor() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null) {
             try {
             // Don't replace the current screen, render the overlay editor as an overlay
@@ -87,10 +91,10 @@ public class OverlayEditorUtility {
     }
     
     public static void closeOverlayEditor() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null) {
-            if (client.currentScreen instanceof OverlayEditorScreen) {
-                client.currentScreen.close();
+            if (client.screen instanceof OverlayEditorScreen) {
+                client.screen.onClose();
             }
             isOverlayEditorOpen = false;
         }
@@ -102,10 +106,10 @@ public class OverlayEditorUtility {
     
     /**
      * Get the overlay editor key binding (for use in screens)
-     * @return The KeyBinding instance, or null if not initialized
+     * @return The KeyMapping instance, or null if not initialized
      */
-    public static KeyBinding getOverlayEditorKeyBinding() {
-        return overlayEditorKeyBinding;
+    public static KeyMapping getOverlayEditorKeyMapping() {
+        return overlayEditorKeyMapping;
     }
     
     /**
@@ -117,9 +121,9 @@ public class OverlayEditorUtility {
         try {
             // Check if the pressed key matches the configured key binding
             // This ensures the same key works in inventories as outside
-            if (overlayEditorKeyBinding != null) {
+            if (overlayEditorKeyMapping != null) {
                 // Use matchesKey to check if the pressed key matches the configured key binding
-                if (overlayEditorKeyBinding.matchesKey(keyCode, -1)) {
+                if (overlayEditorKeyMapping.matches(new net.minecraft.client.input.KeyEvent(keyCode, -1, 0))) {
                     toggleOverlayEditor();
                     return true;
                 }

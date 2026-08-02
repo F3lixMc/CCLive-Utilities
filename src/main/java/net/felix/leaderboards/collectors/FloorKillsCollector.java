@@ -1,9 +1,9 @@
 package net.felix.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.Aincraft.KillsUtility;
+import net.minecraft.client.Minecraft;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 
 import java.util.HashMap;
@@ -47,8 +47,8 @@ public class FloorKillsCollector implements DataCollector {
         System.out.println("✅ [FloorKillsCollector] FloorKillsCollector initialisiert und aktiv");
     }
     
-    private void onClientTick(MinecraftClient client) {
-        if (!isActive || client.player == null || client.world == null) {
+    private void onClientTick(Minecraft client) {
+        if (!isActive || client.player == null || client.level == null) {
             return;
         }
         
@@ -258,9 +258,9 @@ public class FloorKillsCollector implements DataCollector {
      */
     private String getCurrentFloorDirect() {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client != null && client.world != null) {
-                String dimensionId = client.world.getRegistryKey().getValue().toString();
+            Minecraft client = Minecraft.getInstance();
+            if (client != null && client.level != null) {
+                String dimensionId = client.level.dimension().identifier().toString();
                 
                 if (dimensionId.startsWith("minecraft:floor_")) {
                     String floorPart = dimensionId.substring("minecraft:floor_".length());

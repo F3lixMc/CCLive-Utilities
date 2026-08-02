@@ -1,13 +1,12 @@
 package net.felix.utilities.Aincraft;
 
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
 import net.felix.utilities.Overall.ActionBarData;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;
-import net.minecraft.util.Formatting;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -25,30 +24,38 @@ public final class MaterialRateUtility {
     private static final Pattern SCOREBOARD_MATERIAL_COUNT =
             Pattern.compile("➥\\s*(\\d+)");
     private static final int RATE_SUFFIX_COLOR = 0xAAAAAA;
+    /** Rate wird nur einmal pro Sekunde neu berechnet. */
+    private static final long UPDATE_INTERVAL_MS = 1000L;
 
     private static final Map<String, MaterialSession> sessions = new HashMap<>();
+    private static long lastUpdateMs = 0L;
 
     private MaterialRateUtility() {
     }
 
     public static void resetSession() {
         sessions.clear();
+        lastUpdateMs = 0L;
     }
 
     public static void updateFromActionBar() {
+        long now = System.currentTimeMillis();
+        if (lastUpdateMs > 0L && now - lastUpdateMs < UPDATE_INTERVAL_MS) {
+            return;
+        }
+        lastUpdateMs = now;
+
         Map<String, Integer> materials = ActionBarData.getMaterials();
         if (materials.isEmpty()) {
             return;
         }
-
-        long now = System.currentTimeMillis();
 
         for (Map.Entry<String, Integer> entry : materials.entrySet()) {
             String cleanName = entry.getKey();
             int count = entry.getValue();
             Integer nameColorRgb = ActionBarData.getMaterialNameColorRgb(cleanName);
             if (nameColorRgb == null) {
-                Text original = ActionBarData.getMaterialText(cleanName);
+                Component original = ActionBarData.getMaterialText(cleanName);
                 if (original != null) {
                     nameColorRgb = extractLegacyColorRgb(original.getString());
                 }
@@ -71,9 +78,9 @@ public final class MaterialRateUtility {
         }
     }
 
-    public static Text appendRateForMaterial(String materialName, Text baseText) {
+    public static Component appendRateForMaterial(String materialName, Component baseText) {
         if (baseText == null) {
-            return Text.empty();
+            return Component.empty();
         }
 
         MaterialSession session = findSessionByNormalizedName(materialName);
@@ -81,9 +88,9 @@ public final class MaterialRateUtility {
         return appendRateSuffix(baseText, rate);
     }
 
-    public static Text appendRateToScoreboardLine(Text lineText, int sortedMaterialIndex) {
+    public static Component appendRateToScoreboardLine(Component lineText, int sortedMaterialIndex) {
         if (lineText == null) {
-            return Text.empty();
+            return Component.empty();
         }
 
         MaterialSession session = findSessionForScoreboardLine(lineText, sortedMaterialIndex);
@@ -117,9 +124,9 @@ public final class MaterialRateUtility {
                 .toPlainString() + "/min";
     }
 
-    private static MutableText appendRateSuffix(Text baseText, double rate) {
-        MutableText result = baseText.copy();
-        result.append(Text.literal(" -> " + formatRate(rate))
+    private static MutableComponent appendRateSuffix(Component baseText, double rate) {
+        MutableComponent result = baseText.copy();
+        result.append(Component.literal(" -> " + formatRate(rate))
                 .setStyle(Style.EMPTY.withColor(RATE_SUFFIX_COLOR)));
         return result;
     }
@@ -129,7 +136,7 @@ public final class MaterialRateUtility {
         return session != null ? session.perMinute : 0.0;
     }
 
-    private static MaterialSession findSessionForScoreboardLine(Text lineText, int sortedMaterialIndex) {
+    private static MaterialSession findSessionForScoreboardLine(Component lineText, int sortedMaterialIndex) {
         String clean = cleanDisplayText(lineText.getString());
         if (!isScoreboardMaterialLine(clean)) {
             return null;
@@ -194,9 +201,9 @@ public final class MaterialRateUtility {
     }
 
     private static Integer toLegacyFormattingRgb(int rgb) {
-        for (Formatting formatting : Formatting.values()) {
-            if (formatting.getColorValue() != null && (formatting.getColorValue() & 0xFFFFFF) == rgb) {
-                return formatting.getColorValue() & 0xFFFFFF;
+        for (ChatFormatting formatting : ChatFormatting.values()) {
+            if (formatting.getColor() != null && (formatting.getColor() & 0xFFFFFF) == rgb) {
+                return formatting.getColor() & 0xFFFFFF;
             }
         }
         return rgb;
@@ -244,13 +251,13 @@ public final class MaterialRateUtility {
         return null;
     }
 
-    private static Integer extractLastNonWhiteColorRgb(Text text) {
+    private static Integer extractLastNonWhiteColorRgb(Component text) {
         if (text == null) {
             return null;
         }
 
         Integer last = colorRgb(text.getStyle().getColor());
-        for (Text sibling : text.getSiblings()) {
+        for (Component sibling : text.getSiblings()) {
             Integer nested = extractLastNonWhiteColorRgb(sibling);
             if (nested != null) {
                 last = nested;
@@ -263,7 +270,7 @@ public final class MaterialRateUtility {
         if (color == null) {
             return null;
         }
-        int rgb = color.getRgb() & 0xFFFFFF;
+        int rgb = color.getValue() & 0xFFFFFF;
         if (rgb == 0xFFFFFF) {
             return null;
         }
@@ -280,9 +287,9 @@ public final class MaterialRateUtility {
             if (raw.charAt(i) != '\u00A7') {
                 continue;
             }
-            Formatting formatting = Formatting.byCode(raw.charAt(i + 1));
-            if (formatting != null && formatting.getColorValue() != null) {
-                lastColor = formatting.getColorValue() & 0xFFFFFF;
+            ChatFormatting formatting = ChatFormatting.getByCode(raw.charAt(i + 1));
+            if (formatting != null && formatting.getColor() != null) {
+                lastColor = formatting.getColor() & 0xFFFFFF;
             }
         }
         return lastColor;

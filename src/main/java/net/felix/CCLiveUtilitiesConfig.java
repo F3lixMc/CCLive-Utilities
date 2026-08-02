@@ -8,10 +8,9 @@ import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import net.felix.utilities.Town.ItemDisplayMode;
 import net.felix.utilities.Town.OverlayType;
 import net.felix.utilities.Town.SchmiedItemDisplayMode;
-import net.minecraft.client.gui.screen.Screen;
-
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.awt.Color;
@@ -20,7 +19,7 @@ import java.util.List;
 
 public class CCLiveUtilitiesConfig {
     public static final ConfigClassHandler<CCLiveUtilitiesConfig> HANDLER = ConfigClassHandler.createBuilder(CCLiveUtilitiesConfig.class)
-            .id(Identifier.of(CCLiveUtilities.MOD_ID, "config"))
+            .id(Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "config"))
             .serializer(config -> GsonConfigSerializerBuilder.create(config)
                     .setPath(CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve("cclive-utilities.json"))
                     .build())
@@ -113,11 +112,11 @@ public class CCLiveUtilitiesConfig {
         if (config.blueprintViewerYStoredAsPixels) {
             return;
         }
-        net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             return;
         }
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         config.blueprintViewerY = screenHeight * config.blueprintViewerY / 100;
         config.blueprintViewerYStoredAsPixels = true;
         HANDLER.save();
@@ -167,38 +166,40 @@ public class CCLiveUtilitiesConfig {
 
     public static void migrateConfigFields() {
         migrateTabInfoToNpcAlerts();
+        boolean configChanged = false;
         try {
             CCLiveUtilitiesConfig loadedConfig = HANDLER.instance();
             CCLiveUtilitiesConfig defaultConfig = new CCLiveUtilitiesConfig(); // Neue Instanz = alle Default-Werte
             JsonObject rawConfig = readRawConfigJson();
-            if (rawConfig == null) {
-                return;
-            }
-            boolean configChanged = false;
-            
-            // Durchlaufe alle Felder der Config-Klasse
-            java.lang.reflect.Field[] fields = CCLiveUtilitiesConfig.class.getDeclaredFields();
-            for (java.lang.reflect.Field field : fields) {
-                // Prüfe ob das Feld mit @SerialEntry annotiert ist
-                if (field.isAnnotationPresent(SerialEntry.class)) {
-                    field.setAccessible(true);
-                    
-                    try {
-                        Object defaultValue = field.get(defaultConfig);
-                        String fieldName = field.getName();
-                        
-                        // Nur migrieren, wenn das Feld in der Datei fehlt oder null ist
-                        boolean missingInFile = !rawConfig.has(fieldName) || rawConfig.get(fieldName).isJsonNull();
-                        if (missingInFile && defaultValue != null) {
-                            field.set(loadedConfig, defaultValue);
-                            configChanged = true;
+            if (rawConfig != null) {
+                // Durchlaufe alle Felder der Config-Klasse
+                java.lang.reflect.Field[] fields = CCLiveUtilitiesConfig.class.getDeclaredFields();
+                for (java.lang.reflect.Field field : fields) {
+                    // Prüfe ob das Feld mit @SerialEntry annotiert ist
+                    if (field.isAnnotationPresent(SerialEntry.class)) {
+                        field.setAccessible(true);
+
+                        try {
+                            Object defaultValue = field.get(defaultConfig);
+                            String fieldName = field.getName();
+
+                            // Nur migrieren, wenn das Feld in der Datei fehlt oder null ist
+                            boolean missingInFile = !rawConfig.has(fieldName) || rawConfig.get(fieldName).isJsonNull();
+                            if (missingInFile && defaultValue != null) {
+                                field.set(loadedConfig, defaultValue);
+                                configChanged = true;
+                            }
+                        } catch (IllegalAccessException e) {
+                            // Feld konnte nicht gelesen/geschrieben werden, überspringe
                         }
-                    } catch (IllegalAccessException e) {
-                        // Feld konnte nicht gelesen/geschrieben werden, überspringe
                     }
                 }
             }
-            
+
+            if (repairOverlayFlagDesync(loadedConfig)) {
+                configChanged = true;
+            }
+
             // Speichere Config nur wenn Änderungen vorgenommen wurden
             if (configChanged) {
                 HANDLER.save();
@@ -206,6 +207,76 @@ public class CCLiveUtilitiesConfig {
         } catch (Exception e) {
             // Silent error handling - Migration schlägt fehl, aber Mod funktioniert weiter
         }
+    }
+
+    /**
+     * Repariert aus dem Sync geratene *Enabled / show*-Flags, die Overlays im Picker
+     * dauerhaft deaktiviert erscheinen lassen (bis die Config gelöscht wird).
+     */
+    private static boolean repairOverlayFlagDesync(CCLiveUtilitiesConfig c) {
+        boolean changed = false;
+        changed |= alignBoolPair(v -> c.bossHPEnabled = v, () -> c.bossHPEnabled,
+                v -> c.showBossHP = v, () -> c.showBossHP);
+        changed |= alignBoolPair(v -> c.materialTrackerEnabled = v, () -> c.materialTrackerEnabled,
+                v -> c.showMaterialTracker = v, () -> c.showMaterialTracker);
+        changed |= alignBoolPair(v -> c.killsUtilityEnabled = v, () -> c.killsUtilityEnabled,
+                v -> c.showKillsUtility = v, () -> c.showKillsUtility);
+        changed |= alignBoolPair(v -> c.coinTrackerEnabled = v, () -> c.coinTrackerEnabled,
+                v -> c.showCoinTracker = v, () -> c.showCoinTracker);
+        changed |= alignBoolPair(v -> c.clipboardEnabled = v, () -> c.clipboardEnabled,
+                v -> c.showClipboard = v, () -> c.showClipboard);
+        changed |= alignBoolPair(v -> c.aspectOverlayEnabled = v, () -> c.aspectOverlayEnabled,
+                v -> c.showAspectOverlay = v, () -> c.showAspectOverlay);
+        changed |= alignBoolPair(v -> c.hideWrongClassEnabled = v, () -> c.hideWrongClassEnabled,
+                v -> c.showHideWrongClassButton = v, () -> c.showHideWrongClassButton);
+        changed |= alignBoolPair(v -> c.cardEnabled = v, () -> c.cardEnabled,
+                v -> c.showCard = v, () -> c.showCard);
+        changed |= alignBoolPair(v -> c.statueEnabled = v, () -> c.statueEnabled,
+                v -> c.showStatue = v, () -> c.showStatue);
+        changed |= alignBoolPair(v -> c.miningOverlayEnabled = v, () -> c.miningOverlayEnabled,
+                v -> c.showMiningOverlay = v, () -> c.showMiningOverlay);
+        changed |= alignBoolPair(v -> c.lumberjackOverlayEnabled = v, () -> c.lumberjackOverlayEnabled,
+                v -> c.showLumberjackOverlay = v, () -> c.showLumberjackOverlay);
+
+        // Parent-Flag für Karten/Statuen wiederherstellen
+        boolean anyCardsStatues = c.cardEnabled || c.showCard || c.statueEnabled || c.showStatue;
+        if (anyCardsStatues && !c.cardsStatuesEnabled) {
+            c.cardsStatuesEnabled = true;
+            changed = true;
+        }
+
+        // Mining/Lumberjack-Hauptflag vs. Kind-Flags
+        boolean anyMiningChild = (c.miningOverlayEnabled && c.showMiningOverlay)
+                || (c.lumberjackOverlayEnabled && c.showLumberjackOverlay);
+        if (c.miningLumberjackOverlayEnabled && !anyMiningChild) {
+            c.miningOverlayEnabled = true;
+            c.showMiningOverlay = true;
+            c.lumberjackOverlayEnabled = true;
+            c.showLumberjackOverlay = true;
+            changed = true;
+        } else if (!c.miningLumberjackOverlayEnabled && anyMiningChild) {
+            c.miningLumberjackOverlayEnabled = true;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static boolean alignBoolPair(
+            java.util.function.Consumer<Boolean> setA,
+            java.util.function.BooleanSupplier getA,
+            java.util.function.Consumer<Boolean> setB,
+            java.util.function.BooleanSupplier getB) {
+        boolean a = getA.getAsBoolean();
+        boolean b = getB.getAsBoolean();
+        if (a == b) {
+            return false;
+        }
+        // OR: wenn eines an ist, beide an → Overlay wieder klickbar/aktivierbar
+        boolean synced = a || b;
+        setA.accept(synced);
+        setB.accept(synced);
+        return true;
     }
 
     /**
@@ -1538,54 +1609,54 @@ public class CCLiveUtilitiesConfig {
 
     public static Screen createConfigScreen(Screen parent) {
         return YetAnotherConfigLib.createBuilder()
-                .title(Text.literal("CCLive Utilities Configuration"))
+                .title(Component.literal("CCLive Utilities Configuration"))
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Overall"))
-                        .tooltip(Text.literal("Allgemeine Einstellungen für verschiedene Utilities"))
+                        .name(Component.literal("Overall"))
+                        .tooltip(Component.literal("Allgemeine Einstellungen für verschiedene Utilities"))
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Informationen Anzeige"))
+                                .name(Component.literal("Informationen Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Ebenen Nummer im Moblexicon "))
-                                        .description(OptionDescription.of(Text.literal("Ebenen Nummer im Moblexicon anzeigen oder ausblenden")))
+                                        .name(Component.literal("Ebenen Nummer im Moblexicon "))
+                                        .description(OptionDescription.of(Component.literal("Ebenen Nummer im Moblexicon anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showEbenenInSpecialInventory, newVal -> HANDLER.instance().showEbenenInSpecialInventory = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("HP-Anzeige im Moblexicon"))
-                                        .description(OptionDescription.of(Text.literal("Mob-HP im Moblexicon anzeigen oder ausblenden")))
+                                        .name(Component.literal("HP-Anzeige im Moblexicon"))
+                                        .description(OptionDescription.of(Component.literal("Mob-HP im Moblexicon anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().moblexiconHpEnabled, newVal -> HANDLER.instance().moblexiconHpEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Karten/Statuen Info im Moblexicon"))
-                                        .description(OptionDescription.of(Text.literal("Effekt-Informationen für Karten und Statuen im Moblexicon anzeigen oder ausblenden")))
+                                        .name(Component.literal("Karten/Statuen Info im Moblexicon"))
+                                        .description(OptionDescription.of(Component.literal("Effekt-Informationen für Karten und Statuen im Moblexicon anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().moblexiconCardsStatuesInfoEnabled, newVal -> HANDLER.instance().moblexiconCardsStatuesInfoEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Materialien Fundort"))
-                                        .description(OptionDescription.of(Text.literal("Materialien Fundort anzeigen oder ausblenden")))
+                                        .name(Component.literal("Materialien Fundort"))
+                                        .description(OptionDescription.of(Component.literal("Materialien Fundort anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showEbenenInNormalInventories, newVal -> HANDLER.instance().showEbenenInNormalInventories = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Bauplan Ebene"))
-                                        .description(OptionDescription.of(Text.literal("Ebenen-Nummer bei Bauplänen anzeigen oder ausblenden")))
+                                        .name(Component.literal("Bauplan Ebene"))
+                                        .description(OptionDescription.of(Component.literal("Ebenen-Nummer bei Bauplänen anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showBlueprintFloorNumber, newVal -> HANDLER.instance().showBlueprintFloorNumber = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("ItemViewer"))
+                                .name(Component.literal("ItemViewer"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Item Viewer anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Item Viewer in Inventaren anzeigen oder ausblenden")))
+                                        .name(Component.literal("Item Viewer anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Item Viewer in Inventaren anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showItemViewer, newVal -> HANDLER.instance().showItemViewer = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<String>createBuilder()
-                                        .name(Text.literal("Maximale Slot-Anzahl"))
-                                        .description(OptionDescription.of(Text.literal(
+                                        .name(Component.literal("Maximale Slot-Anzahl"))
+                                        .description(OptionDescription.of(Component.literal(
                                                 "Maximale Anzahl an Slots pro Seite (Standard: 360). Spalten und Zeilen passen sich an verfügbaren Platz an.")))
                                         .binding("360",
                                                 () -> HANDLER.instance().itemViewerMaxSlots,
@@ -1597,354 +1668,363 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Wellen Anzeige"))
+                                .name(Component.literal("Wellen Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Wellen Anzeige bei Essenzen"))
-                                        .description(OptionDescription.of(Text.literal("Zeigt die Wellen-Nummer bei Essenz-Items in Tooltips an")))
+                                        .name(Component.literal("Wellen Anzeige bei Essenzen"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt die Wellen-Nummer bei Essenz-Items in Tooltips an")))
                                         .binding(true, () -> HANDLER.instance().showWaveDisplay, newVal -> HANDLER.instance().showWaveDisplay = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Aspekt Anzeige"))
+                                .name(Component.literal("Aspekt Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aspekt Anzeige aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Aspekt Anzeige aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().aspectOverlayEnabled, newVal -> HANDLER.instance().aspectOverlayEnabled = newVal)
+                                        .name(Component.literal("Aspekt Anzeige aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Aspekt Anzeige aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().aspectOverlayEnabled && HANDLER.instance().showAspectOverlay, newVal -> {
+                                            HANDLER.instance().aspectOverlayEnabled = newVal;
+                                            HANDLER.instance().showAspectOverlay = newVal;
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aspekt Overlay im Chat"))
-                                        .description(OptionDescription.of(Text.literal("Aspekt Overlay in Chat-Nachrichten ein- oder ausblenden")))
+                                        .name(Component.literal("Aspekt Overlay im Chat"))
+                                        .description(OptionDescription.of(Component.literal("Aspekt Overlay in Chat-Nachrichten ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().chatAspectOverlayEnabled, newVal -> HANDLER.instance().chatAspectOverlayEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Suchleiste"))
+                                .name(Component.literal("Suchleiste"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Suchleiste Ein/Aus"))
-                                        .description(OptionDescription.of(Text.literal("Suchleiste aktivieren oder deaktivieren")))
+                                        .name(Component.literal("Suchleiste Ein/Aus"))
+                                        .description(OptionDescription.of(Component.literal("Suchleiste aktivieren oder deaktivieren")))
                                         .binding(true, () -> HANDLER.instance().searchBarEnabled, newVal -> HANDLER.instance().searchBarEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Rahmenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe der Rahmen um gefilterte Items in der Suchleiste")))
+                                        .name(Component.literal("Rahmenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe der Rahmen um gefilterte Items in der Suchleiste")))
                                         .binding(new Color(0xFFFF0000), () -> HANDLER.instance().searchBarFrameColor, newVal -> HANDLER.instance().searchBarFrameColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<ItemDisplayMode>createBuilder()
-                                        .name(Text.literal("Item-Markierungs Art"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen, Hintergrund oder nicht passende Items ausblenden")))
+                                        .name(Component.literal("Item-Markierungs Art"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen, Hintergrund oder nicht passende Items ausblenden")))
                                         .binding(ItemDisplayMode.BORDER, () -> HANDLER.instance().searchBarItemDisplayMode, newVal -> HANDLER.instance().searchBarItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(ItemDisplayMode.class)
                                                 .formatValue(mode -> {
                                                     if (mode == ItemDisplayMode.BORDER) {
-                                                        return Text.literal("Rahmen");
+                                                        return Component.literal("Rahmen");
                                                     }
                                                     if (mode == ItemDisplayMode.BACKGROUND) {
-                                                        return Text.literal("Hintergrund");
+                                                        return Component.literal("Hintergrund");
                                                     }
-                                                    return Text.literal("Falsche Ausblenden");
+                                                    return Component.literal("Falsche Ausblenden");
                                                 }))
                                         .build())
 
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Animation Blocker"))
+                                .name(Component.literal("Animation Blocker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Epic Drops blockieren"))
-                                        .description(OptionDescription.of(Text.literal("Epic Drops Animationen blockieren")))
+                                        .name(Component.literal("Epic Drops blockieren"))
+                                        .description(OptionDescription.of(Component.literal("Epic Drops Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().epicDropsBlockingEnabled, newVal -> HANDLER.instance().epicDropsBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Legendary Drops blockieren"))
-                                        .description(OptionDescription.of(Text.literal("Legendary Drops Animationen blockieren")))
+                                        .name(Component.literal("Legendary Drops blockieren"))
+                                        .description(OptionDescription.of(Component.literal("Legendary Drops Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().legendaryDropsBlockingEnabled, newVal -> HANDLER.instance().legendaryDropsBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Holzfäller Level Up blockieren"))
-                                        .description(OptionDescription.of(Text.literal("Holzfäller Level Up Animationen blockieren")))
+                                        .name(Component.literal("Holzfäller Level Up blockieren"))
+                                        .description(OptionDescription.of(Component.literal("Holzfäller Level Up Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().loggingLevelUpBlockingEnabled, newVal -> HANDLER.instance().loggingLevelUpBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())   
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Bergbau Level Up blockieren"))
-                                        .description(OptionDescription.of(Text.literal("Bergbau Level Up Animationen blockieren")))
+                                        .name(Component.literal("Bergbau Level Up blockieren"))
+                                        .description(OptionDescription.of(Component.literal("Bergbau Level Up Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().miningLevelUpBlockingEnabled, newVal -> HANDLER.instance().miningLevelUpBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Angeln Level Up blockieren"))
-                                        .description(OptionDescription.of(Text.literal("Angeln Level Up Animationen blockieren")))
+                                        .name(Component.literal("Angeln Level Up blockieren"))
+                                        .description(OptionDescription.of(Component.literal("Angeln Level Up Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().fishingLevelUpBlockingEnabled, newVal -> HANDLER.instance().fishingLevelUpBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Moblexicon blockieren"))
-                                        .description(OptionDescription.of(Text.literal("Moblexicon Animationen blockieren")))
+                                        .name(Component.literal("Moblexicon blockieren"))
+                                        .description(OptionDescription.of(Component.literal("Moblexicon Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().moblexiconBlockingEnabled, newVal -> HANDLER.instance().moblexiconBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Luftschiff blockieren"))
-                                        .description(OptionDescription.of(Text.literal("Luftschiff Animationen blockieren")))
+                                        .name(Component.literal("Luftschiff blockieren"))
+                                        .description(OptionDescription.of(Component.literal("Luftschiff Animationen blockieren")))
                                         .binding(false, () -> HANDLER.instance().airshipBlockingEnabled, newVal -> HANDLER.instance().airshipBlockingEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())  
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Monster Todesanimationen Ein/Aus"))
-                                        .description(OptionDescription.of(Text.literal("Monster Todesanimationen aktivieren oder deaktivieren")))
+                                        .name(Component.literal("Monster Todesanimationen Ein/Aus"))
+                                        .description(OptionDescription.of(Component.literal("Monster Todesanimationen aktivieren oder deaktivieren")))
                                         .binding(false, () -> HANDLER.instance().killAnimationUtilityEnabled, newVal -> HANDLER.instance().killAnimationUtilityEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Fabrik"))
-                        .tooltip(Text.literal("Einstellungen für Fabrik-bezogene Utilities"))
+                        .name(Component.literal("Fabrik"))
+                        .tooltip(Component.literal("Einstellungen für Fabrik-bezogene Utilities"))
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Boss HP"))
+                                .name(Component.literal("Boss HP"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Boss HP aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Boss-HP Anzeige aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().bossHPEnabled, newVal -> HANDLER.instance().bossHPEnabled = newVal)
+                                        .name(Component.literal("Boss HP aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Boss-HP Anzeige aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().bossHPEnabled && HANDLER.instance().showBossHP, newVal -> {
+                                            HANDLER.instance().bossHPEnabled = newVal;
+                                            HANDLER.instance().showBossHP = newVal;
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den Text in der Boss-HP Anzeige")))
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den Text in der Boss-HP Anzeige")))
                                         .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().bossHPTextColor, newVal -> HANDLER.instance().bossHPTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hintergrund anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter der Boss HP Anzeige anzeigen oder ausblenden")))
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter der Boss HP Anzeige anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowBackground, newVal -> HANDLER.instance().bossHPShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("DPM anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("DPM (Damage Per Minute) Anzeige im Boss HP Overlay ein- oder ausblenden")))
+                                        .name(Component.literal("DPM anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("DPM (Damage Per Minute) Anzeige im Boss HP Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowDPM, newVal -> HANDLER.instance().bossHPShowDPM = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Last Dmg anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Zeile „Last Dmg“ (Schaden im letzten Messfenster) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .name(Component.literal("Last Dmg anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Last Dmg“ (Schaden im letzten Messfenster) im Boss-HP-Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowLastDmg, newVal -> HANDLER.instance().bossHPShowLastDmg = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Gesamtschaden anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Zeile „Overall DMG“ (kumulativer Schaden und Prozent) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .name(Component.literal("Gesamtschaden anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Overall DMG“ (kumulativer Schaden und Prozent) im Boss-HP-Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowOverallDmg, newVal -> HANDLER.instance().bossHPShowOverallDmg = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Restzeit anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Zeile „Benötigte Zeit“ (geschätzte Restzeit basierend auf DPM und aktueller Boss-HP) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .name(Component.literal("Restzeit anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Benötigte Zeit“ (geschätzte Restzeit basierend auf DPM und aktueller Boss-HP) im Boss-HP-Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowEta, newVal -> HANDLER.instance().bossHPShowEta = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Stadt"))
-                        .tooltip(Text.literal("Einstellungen für Stadt-bezogene Utilities"))
+                        .name(Component.literal("Stadt"))
+                        .tooltip(Component.literal("Einstellungen für Stadt-bezogene Utilities"))
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Ausrüstungsanzeige"))
+                                .name(Component.literal("Ausrüstungsanzeige"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Ausrüstungsanzeige Ein/Aus"))
-                                        .description(OptionDescription.of(Text.literal("Ausrüstungsanzeige aktivieren oder deaktivieren")))
+                                        .name(Component.literal("Ausrüstungsanzeige Ein/Aus"))
+                                        .description(OptionDescription.of(Component.literal("Ausrüstungsanzeige aktivieren oder deaktivieren")))
                                         .binding(true, () -> HANDLER.instance().equipmentDisplayEnabled, newVal -> HANDLER.instance().equipmentDisplayEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den normalen Text in der Ausrüstungsanzeige")))
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den normalen Text in der Ausrüstungsanzeige")))
                                         .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().equipmentDisplayTextColor, newVal -> HANDLER.instance().equipmentDisplayTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Überschriftenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschriften (Prozentwerte/Flatwerte) in der Ausrüstungsanzeige")))
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschriften (Prozentwerte/Flatwerte) in der Ausrüstungsanzeige")))
                                         .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().equipmentDisplayHeaderColor, newVal -> HANDLER.instance().equipmentDisplayHeaderColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
-                                        .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Ausrüstungsanzeige:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für die Ausrüstungsanzeige:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().equipmentDisplayOverlayType, newVal -> HANDLER.instance().equipmentDisplayOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .formatValue(v -> switch (v) {
-                                                case CUSTOM -> Text.literal("Bild-Overlay");
-                                                case BLACK -> Text.literal("Schwarzes Overlay");
-                                                case NONE -> Text.literal("Kein Hintergrund");
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
                                             }))
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("KitFilter"))
+                                .name(Component.literal("KitFilter"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Kit Filter Buttons Ein/Aus"))
-                                        .description(OptionDescription.of(Text.literal("Kit Filter Buttons in Baupläne Inventaren ein- oder ausblenden")))
+                                        .name(Component.literal("Kit Filter Buttons Ein/Aus"))
+                                        .description(OptionDescription.of(Component.literal("Kit Filter Buttons in Baupläne Inventaren ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().kitFilterButtonsEnabled, newVal -> HANDLER.instance().kitFilterButtonsEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Schmied Tracker"))
+                                .name(Component.literal("Schmied Tracker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Schmied Tracker aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Schmied Tracker aktivieren oder deaktivieren")))
+                                        .name(Component.literal("Schmied Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Schmied Tracker aktivieren oder deaktivieren")))
                                         .binding(true, () -> HANDLER.instance().schmiedTrackerEnabled, newVal -> HANDLER.instance().schmiedTrackerEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<SchmiedItemDisplayMode>createBuilder()
-                                        .name(Text.literal("Schmiedezustand Markierungs Art"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen oder Hintergrund für Schmiedezustand Items")))
+                                        .name(Component.literal("Schmiedezustand Markierungs Art"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen oder Hintergrund für Schmiedezustand Items")))
                                         .binding(SchmiedItemDisplayMode.BORDER, () -> HANDLER.instance().schmiedTrackerItemDisplayMode, newVal -> HANDLER.instance().schmiedTrackerItemDisplayMode = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(SchmiedItemDisplayMode.class)
                                                 .formatValue(mode -> {
                                                     if (mode == SchmiedItemDisplayMode.BORDER) {
-                                                        return Text.literal("Rahmen");
+                                                        return Component.literal("Rahmen");
                                                     }
-                                                    return Text.literal("Hintergrund");
+                                                    return Component.literal("Hintergrund");
                                                 }))
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hide Uncraftable Button"))
-                                        .description(OptionDescription.of(Text.literal("Hide Uncraftable Button in Baupläne Inventaren aktivieren")))
+                                        .name(Component.literal("Hide Uncraftable Button"))
+                                        .description(OptionDescription.of(Component.literal("Hide Uncraftable Button in Baupläne Inventaren aktivieren")))
                                         .binding(true, () -> HANDLER.instance().hideUncraftableEnabled, newVal -> HANDLER.instance().hideUncraftableEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hide Wrong Class Button"))
-                                        .description(OptionDescription.of(Text.literal("Hide Wrong Class Button in Baupläne Inventaren ein- oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().showHideWrongClassButton, newVal -> HANDLER.instance().showHideWrongClassButton = newVal)
+                                        .name(Component.literal("Hide Wrong Class Button"))
+                                        .description(OptionDescription.of(Component.literal("Hide Wrong Class Button in Baupläne Inventaren ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().hideWrongClassEnabled && HANDLER.instance().showHideWrongClassButton, newVal -> {
+                                            HANDLER.instance().hideWrongClassEnabled = newVal;
+                                            HANDLER.instance().showHideWrongClassButton = newVal;
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Frostgeschmiedet"))
+                                .name(Component.literal("Frostgeschmiedet"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen für Frostgeschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen für Frostgeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().frostgeschmiedetEnabled, newVal -> HANDLER.instance().frostgeschmiedetEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für Frostgeschmiedete Items")))
+                                        .name(Component.literal("Farbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für Frostgeschmiedete Items")))
                                         .binding(new Color(0x0066FF), () -> HANDLER.instance().frostgeschmiedetColor, newVal -> HANDLER.instance().frostgeschmiedetColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Lavageschmiedet"))
+                                .name(Component.literal("Lavageschmiedet"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen für Lavageschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen für Lavageschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().lavageschmiedetEnabled, newVal -> HANDLER.instance().lavageschmiedetEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für Lavageschmiedete Items")))
+                                        .name(Component.literal("Farbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für Lavageschmiedete Items")))
                                         .binding(new Color(0xcb0e0e), () -> HANDLER.instance().lavageschmiedetColor, newVal -> HANDLER.instance().lavageschmiedetColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Titangeschmiedet"))
+                                .name(Component.literal("Titangeschmiedet"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen für Titangeschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen für Titangeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().titangeschmiedetEnabled, newVal -> HANDLER.instance().titangeschmiedetEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für Titangeschmiedete Items")))
+                                        .name(Component.literal("Farbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für Titangeschmiedete Items")))
                                         .binding(new Color(0x0FD456), () -> HANDLER.instance().titangeschmiedetColor, newVal -> HANDLER.instance().titangeschmiedetColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Drachengeschmiedet"))
+                                .name(Component.literal("Drachengeschmiedet"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen für Drachengeschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen für Drachengeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().drachengeschmiedetEnabled, newVal -> HANDLER.instance().drachengeschmiedetEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für Drachengeschmiedete Items")))
+                                        .name(Component.literal("Farbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für Drachengeschmiedete Items")))
                                         .binding(new Color(0xFF6600), () -> HANDLER.instance().drachengeschmiedetColor, newVal -> HANDLER.instance().drachengeschmiedetColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Dämonengeschmiedet"))
+                                .name(Component.literal("Dämonengeschmiedet"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen für Dämonengeschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen für Dämonengeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().daemonengeschmiedetEnabled, newVal -> HANDLER.instance().daemonengeschmiedetEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für Dämonengeschmiedete Items")))
+                                        .name(Component.literal("Farbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für Dämonengeschmiedete Items")))
                                         .binding(new Color(0xcf22c9), () -> HANDLER.instance().daemonengeschmiedetColor, newVal -> HANDLER.instance().daemonengeschmiedetColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Blitzgeschmiedet"))
+                                .name(Component.literal("Blitzgeschmiedet"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen für Blitzgeschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen für Blitzgeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().blitzgeschmiedetEnabled, newVal -> HANDLER.instance().blitzgeschmiedetEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für Blitzgeschmiedete Items")))
+                                        .name(Component.literal("Farbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für Blitzgeschmiedete Items")))
                                         .binding(new Color(0xFFD700), () -> HANDLER.instance().blitzgeschmiedetColor, newVal -> HANDLER.instance().blitzgeschmiedetColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Sternengeschmiedet"))
+                                .name(Component.literal("Sternengeschmiedet"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Rahmen für Sternengeschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Rahmen für Sternengeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().sternengeschmiedetEnabled, newVal -> HANDLER.instance().sternengeschmiedetEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Farbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für Sternengeschmiedete Items")))
+                                        .name(Component.literal("Farbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für Sternengeschmiedete Items")))
                                         .binding(new Color(0xFF00FF), () -> HANDLER.instance().sternengeschmiedetColor, newVal -> HANDLER.instance().sternengeschmiedetColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Regenbogen"))
-                                        .description(OptionDescription.of(Text.literal("Regenbogen-Animation für Sternengeschmiedete Items Ein/Aus")))
+                                        .name(Component.literal("Regenbogen"))
+                                        .description(OptionDescription.of(Component.literal("Regenbogen-Animation für Sternengeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().sternengeschmiedetRainbow, newVal -> HANDLER.instance().sternengeschmiedetRainbow = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Schmiedezustand-Sound"))
-                                        .description(OptionDescription.of(Text.literal(
+                                        .name(Component.literal("Schmiedezustand-Sound"))
+                                        .description(OptionDescription.of(Component.literal(
                                                 "Spielt einen Sound ab, wenn die Chat-Nachricht "
                                                         + "\"[Legend] Schmiedezustand erhalten: [Sternengeschmiedet]\" erscheint")))
                                         .binding(true, () -> HANDLER.instance().starForgedSoundEnabled, newVal -> HANDLER.instance().starForgedSoundEnabled = newVal)
@@ -1953,31 +2033,34 @@ public class CCLiveUtilitiesConfig {
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Aincraft"))
-                        .tooltip(Text.literal("Einstellungen für Aincraft-bezogene Utilities"))
+                        .name(Component.literal("Aincraft"))
+                        .tooltip(Component.literal("Einstellungen für Aincraft-bezogene Utilities"))
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Material Tracker"))
+                                .name(Component.literal("Material Tracker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Material Tracker aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Material Tracker aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().materialTrackerEnabled, newVal -> HANDLER.instance().materialTrackerEnabled = newVal)
+                                        .name(Component.literal("Material Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Material Tracker aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().materialTrackerEnabled && HANDLER.instance().showMaterialTracker, newVal -> {
+                                            HANDLER.instance().materialTrackerEnabled = newVal;
+                                            HANDLER.instance().showMaterialTracker = newVal;
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
-                                        .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für den Material Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für den Material Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().materialTrackerOverlayType, newVal -> HANDLER.instance().materialTrackerOverlayType = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .formatValue(v -> switch (v) {
-                                                case CUSTOM -> Text.literal("Bild-Overlay");
-                                                case BLACK -> Text.literal("Schwarzes Overlay");
-                                                case NONE -> Text.literal("Kein Hintergrund");
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
                                             }))
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Materialien/min aktivieren"))
-                                        .description(OptionDescription.of(Text.literal(
+                                        .name(Component.literal("Materialien/min aktivieren"))
+                                        .description(OptionDescription.of(Component.literal(
                                                 "Materialien pro Minute berechnen und anzeigen (Overlay oder Scoreboard)")))
                                         .binding(false,
                                                 () -> HANDLER.instance().materialTrackerRateEnabled,
@@ -1985,8 +2068,8 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<MaterialTrackerDisplayMode>createBuilder()
-                                        .name(Text.literal("Materialien/min-Anzeige Position"))
-                                        .description(OptionDescription.of(Text.literal(
+                                        .name(Component.literal("Materialien/min-Anzeige Position"))
+                                        .description(OptionDescription.of(Component.literal(
                                                 "Wo Materialien pro Minute angezeigt werden:\n"
                                                         + "• Overlay – hinter der Anzahl im Material Tracker\n"
                                                         + "• Scoreboard – hinter der Anzahl im Scoreboard")))
@@ -1996,61 +2079,67 @@ public class CCLiveUtilitiesConfig {
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(MaterialTrackerDisplayMode.class)
                                                 .formatValue(mode -> switch (mode) {
-                                                    case OVERLAY -> Text.literal("Overlay");
-                                                    case SCOREBOARD -> Text.literal("Scoreboard");
+                                                    case OVERLAY -> Component.literal("Overlay");
+                                                    case SCOREBOARD -> Component.literal("Scoreboard");
                                                 }))
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Kill Tracker"))
+                                .name(Component.literal("Kill Tracker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Kill Tracker aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Kill Tracker aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().killsUtilityEnabled, newVal -> HANDLER.instance().killsUtilityEnabled = newVal)
+                                        .name(Component.literal("Kill Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Kill Tracker aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().killsUtilityEnabled && HANDLER.instance().showKillsUtility, newVal -> {
+                                            HANDLER.instance().killsUtilityEnabled = newVal;
+                                            HANDLER.instance().showKillsUtility = newVal;
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Überschriftenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschrift in der Kills-Anzeige")))
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschrift in der Kills-Anzeige")))
                                         .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().killsUtilityHeaderColor, newVal -> HANDLER.instance().killsUtilityHeaderColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den Text in der Kills-Anzeige")))
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den Text in der Kills-Anzeige")))
                                         .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().killsUtilityTextColor, newVal -> HANDLER.instance().killsUtilityTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hintergrund anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Kill Tracker anzeigen oder ausblenden")))
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter dem Kill Tracker anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().killsUtilityShowBackground, newVal -> HANDLER.instance().killsUtilityShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Benötigte Kills anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Zeile 'Benötigte Kills' im Kill Tracker anzeigen oder ausblenden")))
+                                        .name(Component.literal("Benötigte Kills anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile 'Benötigte Kills' im Kill Tracker anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().killsUtilityShowRequiredKills, newVal -> HANDLER.instance().killsUtilityShowRequiredKills = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Nächste Ebene anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Zeile 'Nächste Ebene' im Kill Tracker anzeigen oder ausblenden")))
+                                        .name(Component.literal("Nächste Ebene anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile 'Nächste Ebene' im Kill Tracker anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().killsUtilityShowNextLevel, newVal -> HANDLER.instance().killsUtilityShowNextLevel = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Coin Tracker"))
+                                .name(Component.literal("Coin Tracker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Coin Tracker aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Liest Coins aus der HUD-Bossbar in Aincraft-Ebenen (floor_X) und zeigt Session-Statistiken an")))
-                                        .binding(true, () -> HANDLER.instance().coinTrackerEnabled, newVal -> HANDLER.instance().coinTrackerEnabled = newVal)
+                                        .name(Component.literal("Coin Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Liest Coins aus der HUD-Bossbar in Aincraft-Ebenen (floor_X) und zeigt Session-Statistiken an")))
+                                        .binding(true, () -> HANDLER.instance().coinTrackerEnabled && HANDLER.instance().showCoinTracker, newVal -> {
+                                            HANDLER.instance().coinTrackerEnabled = newVal;
+                                            HANDLER.instance().showCoinTracker = newVal;
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<CoinTrackerDisplayMode>createBuilder()
-                                        .name(Text.literal("CPM-Anzeige Position"))
-                                        .description(OptionDescription.of(Text.literal(
+                                        .name(Component.literal("CPM-Anzeige Position"))
+                                        .description(OptionDescription.of(Component.literal(
                                                 "Wo Coins pro Minute angezeigt werden:\n"
                                                         + "• Overlay – CPM im Coin Tracker Overlay\n"
                                                         + "• Scoreboard – CPM im Scoreboard")))
@@ -2060,40 +2149,46 @@ public class CCLiveUtilitiesConfig {
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(CoinTrackerDisplayMode.class)
                                                 .formatValue(mode -> switch (mode) {
-                                                    case OVERLAY -> Text.literal("Overlay");
-                                                    case SCOREBOARD -> Text.literal("Scoreboard");
+                                                    case OVERLAY -> Component.literal("Overlay");
+                                                    case SCOREBOARD -> Component.literal("Scoreboard");
                                                 }))
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Überschriftenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschrift im Coin Tracker")))
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschrift im Coin Tracker")))
                                         .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().coinTrackerHeaderColor, newVal -> HANDLER.instance().coinTrackerHeaderColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den Text im Coin Tracker")))
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den Text im Coin Tracker")))
                                         .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().coinTrackerTextColor, newVal -> HANDLER.instance().coinTrackerTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Hintergrund anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Schwarzen Hintergrund hinter dem Coin Tracker anzeigen oder ausblenden")))
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter dem Coin Tracker anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().coinTrackerShowBackground, newVal -> HANDLER.instance().coinTrackerShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Karten"))
+                                .name(Component.literal("Karten"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Karten anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Karten Overlay anzeigen oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().showCard, newVal -> HANDLER.instance().showCard = newVal)
+                                        .name(Component.literal("Karten anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Karten Overlay anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().cardsStatuesEnabled && HANDLER.instance().cardEnabled && HANDLER.instance().showCard, newVal -> {
+                                            HANDLER.instance().showCard = newVal;
+                                            HANDLER.instance().cardEnabled = newVal;
+                                            if (newVal) {
+                                                HANDLER.instance().cardsStatuesEnabled = true;
+                                            }
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
-                                        .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Karten:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für die Karten:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().cardOverlayType, newVal -> {
                                             HANDLER.instance().cardOverlayType = newVal;
                                             HANDLER.save();
@@ -2101,14 +2196,14 @@ public class CCLiveUtilitiesConfig {
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .formatValue(v -> switch (v) {
-                                                case CUSTOM -> Text.literal("Bild-Overlay");
-                                                case BLACK -> Text.literal("Schwarzes Overlay");
-                                                case NONE -> Text.literal("Kein Hintergrund");
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
                                             }))
                                         .build())
                                 .option(Option.<Float>createBuilder()
-                                        .name(Text.literal("Text-Größe"))
-                                        .description(OptionDescription.of(Text.literal("Text-Größe für Karten-Overlay (1.0 = normal, 1.5 = 50% größer)")))
+                                        .name(Component.literal("Text-Größe"))
+                                        .description(OptionDescription.of(Component.literal("Text-Größe für Karten-Overlay (1.0 = normal, 1.5 = 50% größer)")))
                                         .binding(1.0f, () -> HANDLER.instance().cardTextScale, newVal -> HANDLER.instance().cardTextScale = newVal)
                                         .controller(opt -> FloatSliderControllerBuilder.create(opt)
                                                 .range(1.0f, 1.5f)
@@ -2116,16 +2211,22 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                                 .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Statuen"))        
+                                .name(Component.literal("Statuen"))        
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Statuen anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Statuen Overlay anzeigen oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().showStatue, newVal -> HANDLER.instance().showStatue = newVal)
+                                        .name(Component.literal("Statuen anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Statuen Overlay anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().cardsStatuesEnabled && HANDLER.instance().statueEnabled && HANDLER.instance().showStatue, newVal -> {
+                                            HANDLER.instance().showStatue = newVal;
+                                            HANDLER.instance().statueEnabled = newVal;
+                                            if (newVal) {
+                                                HANDLER.instance().cardsStatuesEnabled = true;
+                                            }
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
-                                        .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für die Statuen:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für die Statuen:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().statueOverlayType, newVal -> {
                                             HANDLER.instance().statueOverlayType = newVal;
                                             HANDLER.save();
@@ -2133,14 +2234,14 @@ public class CCLiveUtilitiesConfig {
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .formatValue(v -> switch (v) {
-                                                case CUSTOM -> Text.literal("Bild-Overlay");
-                                                case BLACK -> Text.literal("Schwarzes Overlay");
-                                                case NONE -> Text.literal("Kein Hintergrund");
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
                                             }))
                                         .build())
                                 .option(Option.<Float>createBuilder()
-                                        .name(Text.literal("Text-Größe"))
-                                        .description(OptionDescription.of(Text.literal("Text-Größe für Statuen-Overlay (1.0 = normal, 1.5 = 50% größer)")))
+                                        .name(Component.literal("Text-Größe"))
+                                        .description(OptionDescription.of(Component.literal("Text-Größe für Statuen-Overlay (1.0 = normal, 1.5 = 50% größer)")))
                                         .binding(1.0f, () -> HANDLER.instance().statueTextScale, newVal -> HANDLER.instance().statueTextScale = newVal)
                                         .controller(opt -> FloatSliderControllerBuilder.create(opt)
                                                 .range(1.0f, 1.5f)
@@ -2148,22 +2249,22 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Blueprint Tracker"))
+                                .name(Component.literal("Blueprint Tracker"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Blueprint Tracker aktivieren"))
-                                        .description(OptionDescription.of(Text.literal("Blueprint Tracker aktivieren oder deaktivieren")))
+                                        .name(Component.literal("Blueprint Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Blueprint Tracker aktivieren oder deaktivieren")))
                                         .binding(true, () -> HANDLER.instance().blueprintViewerEnabled, newVal -> HANDLER.instance().blueprintViewerEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Blueprint Tracker Overlay anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Blueprint Tracker Overlay anzeigen oder ausblenden")))
+                                        .name(Component.literal("Blueprint Tracker Overlay anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Blueprint Tracker Overlay anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showBlueprintViewer, newVal -> HANDLER.instance().showBlueprintViewer = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<OverlayType>createBuilder()
-                                        .name(Text.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Text.literal("Wähle den Hintergrund-Typ für den Blueprint Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für den Blueprint Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
                                         .binding(OverlayType.CUSTOM, () -> HANDLER.instance().blueprintViewerOverlayType, newVal -> {
                                             HANDLER.instance().blueprintViewerOverlayType = newVal;
                                             HANDLER.save();
@@ -2171,99 +2272,111 @@ public class CCLiveUtilitiesConfig {
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                             .enumClass(OverlayType.class)
                                             .formatValue(v -> switch (v) {
-                                                case CUSTOM -> Text.literal("Bild-Overlay");
-                                                case BLACK -> Text.literal("Schwarzes Overlay");
-                                                case NONE -> Text.literal("Kein Hintergrund");
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
                                             }))
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Missing Mode"))
-                                        .description(OptionDescription.of(Text.literal("Im Missing Mode werden nur fehlende Baupläne angezeigt. Gefundene Baupläne werden ausgeblendet.")))
+                                        .name(Component.literal("Missing Mode"))
+                                        .description(OptionDescription.of(Component.literal("Im Missing Mode werden nur fehlende Baupläne angezeigt. Gefundene Baupläne werden ausgeblendet.")))
                                         .binding(false, () -> HANDLER.instance().blueprintViewerMissingMode, newVal -> HANDLER.instance().blueprintViewerMissingMode = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Haken im Moblexicon"))
-                                        .description(OptionDescription.of(Text.literal("Zeigt im Moblexicon grüne Haken bzw. rote Kreuze bei Bauplan-Tooltips (nur dort, keine anderen Menüs).")))
+                                        .name(Component.literal("Haken im Moblexicon"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt im Moblexicon grüne Haken bzw. rote Kreuze bei Bauplan-Tooltips (nur dort, keine anderen Menüs).")))
                                         .binding(false, () -> HANDLER.instance().moblexiconBlueprintCheckmarksEnabled, newVal -> HANDLER.instance().moblexiconBlueprintCheckmarksEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Farmwelt"))
-                        .tooltip(Text.literal("Einstellungen für Farmwelt-bezogene Utilities"))
+                        .name(Component.literal("Farmwelt"))
+                        .tooltip(Component.literal("Einstellungen für Farmwelt-bezogene Utilities"))
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Informations Anzeige"))
+                                .name(Component.literal("Informations Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Informationen für Module"))
-                                        .description(OptionDescription.of(Text.literal("Informationen für Module in Inventaren anzeigen oder ausblenden")))
+                                        .name(Component.literal("Informationen für Module"))
+                                        .description(OptionDescription.of(Component.literal("Informationen für Module in Inventaren anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showModuleInformation, newVal -> HANDLER.instance().showModuleInformation = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Informationen für Lizenzen"))
-                                        .description(OptionDescription.of(Text.literal("Informationen für Lizenzen in Inventaren anzeigen oder ausblenden")))
+                                        .name(Component.literal("Informationen für Lizenzen"))
+                                        .description(OptionDescription.of(Component.literal("Informationen für Lizenzen in Inventaren anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().showLicenseInformation, newVal -> HANDLER.instance().showLicenseInformation = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Holzfäller/Bergbau"))
+                                .name(Component.literal("Holzfäller/Bergbau"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Holzfäller/Bergbau Overlay ein/aus"))
-                                        .description(OptionDescription.of(Text.literal("Aktiviert oder deaktiviert sowohl das Holzfäller- als auch das Bergbau-Overlay")))
-                                        .binding(true, () -> HANDLER.instance().miningLumberjackOverlayEnabled, newVal -> HANDLER.instance().miningLumberjackOverlayEnabled = newVal)
+                                        .name(Component.literal("Holzfäller/Bergbau Overlay ein/aus"))
+                                        .description(OptionDescription.of(Component.literal("Aktiviert oder deaktiviert sowohl das Holzfäller- als auch das Bergbau-Overlay")))
+                                        .binding(true, () -> {
+                                            var c = HANDLER.instance();
+                                            return c.miningLumberjackOverlayEnabled
+                                                    && ((c.miningOverlayEnabled && c.showMiningOverlay)
+                                                    || (c.lumberjackOverlayEnabled && c.showLumberjackOverlay));
+                                        }, newVal -> {
+                                            var c = HANDLER.instance();
+                                            c.miningLumberjackOverlayEnabled = newVal;
+                                            c.miningOverlayEnabled = newVal;
+                                            c.lumberjackOverlayEnabled = newVal;
+                                            c.showMiningOverlay = newVal;
+                                            c.showLumberjackOverlay = newVal;
+                                        })
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Überschriftenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschriften (Bergbau/Holzfäller)")))
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschriften (Bergbau/Holzfäller)")))
                                         .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().miningLumberjackOverlayHeaderColor, newVal -> HANDLER.instance().miningLumberjackOverlayHeaderColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den normalen Text im Holzfäller/Bergbau Overlay")))
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den normalen Text im Holzfäller/Bergbau Overlay")))
                                         .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().miningLumberjackOverlayTextColor, newVal -> HANDLER.instance().miningLumberjackOverlayTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Collection"))
+                                .name(Component.literal("Collection"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Collection Overlay ein/aus"))
-                                        .description(OptionDescription.of(Text.literal("Collection Overlay aktivieren oder deaktivieren")))
+                                        .name(Component.literal("Collection Overlay ein/aus"))
+                                        .description(OptionDescription.of(Component.literal("Collection Overlay aktivieren oder deaktivieren")))
                                         .binding(true, () -> HANDLER.instance().showCollectionOverlay, newVal -> HANDLER.instance().showCollectionOverlay = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Überschriftenfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für die Überschrift (Collection:)")))
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschrift (Collection:)")))
                                         .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().collectionOverlayHeaderColor, newVal -> HANDLER.instance().collectionOverlayHeaderColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Color>createBuilder()
-                                        .name(Text.literal("Textfarbe"))
-                                        .description(OptionDescription.of(Text.literal("Farbe für den normalen Text im Collection Overlay")))
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den normalen Text im Collection Overlay")))
                                         .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().collectionOverlayTextColor, newVal -> HANDLER.instance().collectionOverlayTextColor = newVal)
                                         .controller(ColorControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Benötigte Blöcke anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Zeigt die noch benötigten Blöcke bis zur nächsten Collection im Overlay")))
+                                        .name(Component.literal("Benötigte Blöcke anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt die noch benötigten Blöcke bis zur nächsten Collection im Overlay")))
                                         .binding(true, () -> HANDLER.instance().collectionOverlayShowBlocksNeeded, newVal -> HANDLER.instance().collectionOverlayShowBlocksNeeded = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Benötigte Zeit anzeigen"))
-                                        .description(OptionDescription.of(Text.literal("Zeigt die geschätzte Zeit bis zur nächsten Collection im Overlay")))
+                                        .name(Component.literal("Benötigte Zeit anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt die geschätzte Zeit bis zur nächsten Collection im Overlay")))
                                         .binding(true, () -> HANDLER.instance().collectionOverlayShowTimeToNext, newVal -> HANDLER.instance().collectionOverlayShowTimeToNext = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Ressourcen/min aktivieren"))
-                                        .description(OptionDescription.of(Text.literal(
+                                        .name(Component.literal("Ressourcen/min aktivieren"))
+                                        .description(OptionDescription.of(Component.literal(
                                                 "Ressourcen pro Minute berechnen und anzeigen (Collection-Overlay oder Scoreboard)")))
                                         .binding(false,
                                                 () -> HANDLER.instance().resourceTrackerRateEnabled,
@@ -2271,8 +2384,8 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<ResourceTrackerDisplayMode>createBuilder()
-                                        .name(Text.literal("Ressourcen/min-Anzeige Position"))
-                                        .description(OptionDescription.of(Text.literal(
+                                        .name(Component.literal("Ressourcen/min-Anzeige Position"))
+                                        .description(OptionDescription.of(Component.literal(
                                                 "Wo Ressourcen pro Minute angezeigt werden:\n"
                                                         + "• Overlay – im Collection-Overlay\n"
                                                         + "• Scoreboard – hinter dem Ressourcennamen im Scoreboard")))
@@ -2282,89 +2395,89 @@ public class CCLiveUtilitiesConfig {
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(ResourceTrackerDisplayMode.class)
                                                 .formatValue(mode -> switch (mode) {
-                                                    case OVERLAY -> Text.literal("Overlay");
-                                                    case SCOREBOARD -> Text.literal("Scoreboard");
+                                                    case OVERLAY -> Component.literal("Overlay");
+                                                    case SCOREBOARD -> Component.literal("Scoreboard");
                                                 }))
                                         .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Verschiedenes"))
-                        .tooltip(Text.literal("Verschiedene Einstellungen"))
+                        .name(Component.literal("Verschiedenes"))
+                        .tooltip(Component.literal("Verschiedene Einstellungen"))
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Leaderboards"))
+                                .name(Component.literal("Leaderboards"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Tracker Aktivität"))
-                                        .description(OptionDescription.of(Text.literal("Tracker-Updates an den Server senden und Trackings von anderen Spielern anzeigen")))
+                                        .name(Component.literal("Tracker Aktivität"))
+                                        .description(OptionDescription.of(Component.literal("Tracker-Updates an den Server senden und Trackings von anderen Spielern anzeigen")))
                                         .binding(true, () -> HANDLER.instance().trackerActivityEnabled, newVal -> HANDLER.instance().trackerActivityEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build()) 
                                 .option(Option.<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
-                                        .name(Text.literal("Hover Stats: Chosen Stat"))
-                                        .description(OptionDescription.of(Text.literal("Welcher Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?\n\n-Spielzeit\n-Max Coins\n-Gesendete Nachrichten\n-Gefundene Baupläne\n-Max Schaden")))
+                                        .name(Component.literal("Hover Stats: Chosen Stat"))
+                                        .description(OptionDescription.of(Component.literal("Welcher Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?\n\n-Spielzeit\n-Max Coins\n-Gesendete Nachrichten\n-Gefundene Baupläne\n-Max Schaden")))
                                         .binding(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, () -> HANDLER.instance().hoverStatsChosenStat != null ? HANDLER.instance().hoverStatsChosenStat : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
                                         .controller(opt -> EnumControllerBuilder.create(opt)
                                                 .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)
-                                                .formatValue(value -> value != null ? Text.literal(value.getDisplayName()) : Text.literal("Spielzeit")))
+                                                .formatValue(value -> value != null ? Component.literal(value.getDisplayName()) : Component.literal("Spielzeit")))
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Icon"))
+                                .name(Component.literal("Icon"))
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Mod-Icon im Chat"))
-                                        .description(OptionDescription.of(Text.literal("Mod-Icon hinter Spielernamen im Chat anzeigen oder ausblenden")))
+                                        .name(Component.literal("Mod-Icon im Chat"))
+                                        .description(OptionDescription.of(Component.literal("Mod-Icon hinter Spielernamen im Chat anzeigen oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().chatIconEnabled, newVal -> HANDLER.instance().chatIconEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Text.literal("Mod-Icon über Spielernamen"))
-                                        .description(OptionDescription.of(Text.literal("Zeigt das Mod-Icon über dem Namen von Spielern an, die die Mod installiert haben")))
+                                        .name(Component.literal("Mod-Icon über Spielernamen"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt das Mod-Icon über dem Namen von Spielern an, die die Mod installiert haben")))
                                         .binding(true, () -> HANDLER.instance().showPlayerNametagIcon, newVal -> HANDLER.instance().showPlayerNametagIcon = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.literal("Update Checker"))
+                                .name(Component.literal("Update Checker"))
                                 .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Update Checker aktivieren"))
-                                .description(OptionDescription.of(Text.literal("Automatische Update-Prüfung beim Server-Beitritt aktivieren oder deaktivieren")))
+                                .name(Component.literal("Update Checker aktivieren"))
+                                .description(OptionDescription.of(Component.literal("Automatische Update-Prüfung beim Server-Beitritt aktivieren oder deaktivieren")))
                                 .binding(true, () -> HANDLER.instance().updateCheckerEnabled, newVal -> HANDLER.instance().updateCheckerEnabled = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("Debug"))
-                        .tooltip(Text.literal("Debug-Einstellungen für Entwickler und fortgeschrittene Benutzer"))
+                        .name(Component.literal("Debug"))
+                        .tooltip(Component.literal("Debug-Einstellungen für Entwickler und fortgeschrittene Benutzer"))
                         
                         .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Blueprint Debugging"))
-                                .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten und -Commands für das Blueprint-System")))
+                                .name(Component.literal("Blueprint Debugging"))
+                                .description(OptionDescription.of(Component.literal("Aktiviert Debug-Nachrichten und -Commands für das Blueprint-System")))
                                 .binding(false, () -> HANDLER.instance().blueprintDebugging, newVal -> HANDLER.instance().blueprintDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Leaderboard Debugging"))
-                                .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten und -Commands für das Leaderboard-System")))
+                                .name(Component.literal("Leaderboard Debugging"))
+                                .description(OptionDescription.of(Component.literal("Aktiviert Debug-Nachrichten und -Commands für das Leaderboard-System")))
                                 .binding(false, () -> HANDLER.instance().leaderboardDebugging, newVal -> HANDLER.instance().leaderboardDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Player Stats Debugging"))
-                                .description(OptionDescription.of(Text.literal("Aktiviert Debug-Nachrichten für das Senden von Player-Stats")))
+                                .name(Component.literal("Player Stats Debugging"))
+                                .description(OptionDescription.of(Component.literal("Aktiviert Debug-Nachrichten für das Senden von Player-Stats")))
                                 .binding(false, () -> HANDLER.instance().playerStatsDebugging, newVal -> HANDLER.instance().playerStatsDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
 
                         .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Debug Funktionen"))
-                                .description(OptionDescription.of(Text.literal("Debug Funktionen\n-ItemHoverLogger (F8)\n-InventoryNameLogger (F9)\n-ScoreboardLogger (F10)\n-BossBarLogger (F12)")))
+                                .name(Component.literal("Debug Funktionen"))
+                                .description(OptionDescription.of(Component.literal("Debug Funktionen\n-ItemHoverLogger (F8)\n-InventoryNameLogger (F9)\n-ScoreboardLogger (F10)\n-BossBarLogger (F12)")))
                                 .binding(false, () -> HANDLER.instance().debugFunctionsEnabled, newVal -> HANDLER.instance().debugFunctionsEnabled = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .option(Option.<Boolean>createBuilder()
-                                .name(Text.literal("Sternengeschmiedet-Sound Debugging"))
-                                .description(OptionDescription.of(Text.literal(
+                                .name(Component.literal("Sternengeschmiedet-Sound Debugging"))
+                                .description(OptionDescription.of(Component.literal(
                                         "Schreibt detaillierte Logs in die Konsole, wenn Chat-Nachrichten "
                                                 + "für den Sternengeschmiedet-Sound verarbeitet werden")))
                                 .binding(false, () -> HANDLER.instance().starForgedSoundDebugging, newVal -> HANDLER.instance().starForgedSoundDebugging = newVal)

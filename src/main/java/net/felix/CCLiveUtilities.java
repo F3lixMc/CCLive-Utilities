@@ -79,7 +79,7 @@ public class CCLiveUtilities implements ModInitializer {
 		net.felix.utilities.Overall.CoinTrackerUtility.initialize();
 		NpcAlertsUtility.initialize();
 		net.felix.utilities.Other.DebugUtility.initializeItemLogger();
-		net.felix.utilities.DragOverlay.ClipboardUtility.initialize();
+		net.felix.utilities.Other.Clipboard.ClipboardUtility.initialize();
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
 		

@@ -1,23 +1,23 @@
 package net.felix.utilities.Aincraft;
 
+import net.felix.utilities.Overall.KeyCategories;
+
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.util.Identifier;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import org.lwjgl.glfw.GLFW;
-import net.minecraft.client.render.RenderTickCounter;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.SessionRateUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
-
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.Map;
 
 public class KillsUtility {
@@ -27,8 +27,8 @@ public class KillsUtility {
 	private static boolean showOverlays = true;
 	
 	// Hotkey variables
-	private static KeyBinding toggleKeyBinding;
-	private static KeyBinding resetKeyBinding;
+	private static KeyMapping toggleKeyMapping;
+	private static KeyMapping resetKeyMapping;
 	
 	// Bossbar tracking variables
 	private static int initialKills = -1; // Kills when entering the floor
@@ -44,7 +44,11 @@ public class KillsUtility {
 	private static int lastKpmKillCount = 0;
 	
 	// Next level tracking
-	private static int killsUntilNextLevel = -1; // -1 means unknown/not found
+	/** Nächste Ebene ist freigeschaltet. */
+	private static final int NEXT_LEVEL_FREE = -1;
+	/** "[Nächste Ebene]" / Kills nicht im Tab-Widget gefunden. */
+	private static final int NEXT_LEVEL_NOT_FOUND = -2;
+	private static int killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 	private static long lastTabListCheck = 0; // Cache for tab list checks (every 1 second)
 	
 	// Chinese character mapping for numbers - loaded from ZeichenUtility
@@ -84,7 +88,7 @@ public class KillsUtility {
 			ClientTickEvents.END_CLIENT_TICK.register(KillsUtility::onClientTick);
 			// Registriere HUD-Rendering
 			HudElementRegistry.addLast(
-					Identifier.of("cclive-utilities", "kills"),
+					Identifier.fromNamespaceAndPath("cclive-utilities", "kills"),
 					KillsUtility::onHudRender);
 			
 			isInitialized = true;
@@ -95,23 +99,23 @@ public class KillsUtility {
 	
 	private static void registerHotkeys() {
 		// Register toggle hotkey
-		toggleKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.kills-toggle",
-			InputUtil.Type.KEYSYM,
+			InputConstants.Type.KEYSYM,
 			GLFW.GLFW_KEY_K, // Default to K key
-			"category.cclive-utilities.kills"
+			KeyCategories.of("cclive-utilities", "kills")
 		));
 		
 		// Register reset hotkey
-		resetKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		resetKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.kills-reset",
-			InputUtil.Type.KEYSYM,
+			InputConstants.Type.KEYSYM,
 			GLFW.GLFW_KEY_R, // Default to R key
-			"category.cclive-utilities.kills"
+			KeyCategories.of("cclive-utilities", "kills")
 		));
 	}
 
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Handle hotkeys first
 		handleHotkeys();
 		
@@ -125,7 +129,7 @@ public class KillsUtility {
 			return;
 		}
 		
-		if (client.player == null || client.world == null) {
+		if (client.player == null || client.level == null) {
 			isTrackingKills = false;
 			return;
 		}
@@ -150,7 +154,7 @@ public class KillsUtility {
 				// Reset cache when entering floor
 				cachedIsOnFloor = null;
 				// Reset next level tracking
-				killsUntilNextLevel = -1;
+				killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 				lastTabListCheck = 0; // Force immediate check
 			}
 		}
@@ -184,22 +188,24 @@ public class KillsUtility {
 	
 	private static void handleHotkeys() {
 		// Handle toggle hotkey
-		if (toggleKeyBinding != null && toggleKeyBinding.wasPressed()) {
-			boolean currentShow = CCLiveUtilitiesConfig.HANDLER.instance().showKillsUtility;
-			CCLiveUtilitiesConfig.HANDLER.instance().showKillsUtility = !currentShow;
+		if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
+			boolean newValue = !(CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled
+					&& CCLiveUtilitiesConfig.HANDLER.instance().showKillsUtility);
+			CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled = newValue;
+			CCLiveUtilitiesConfig.HANDLER.instance().showKillsUtility = newValue;
 			CCLiveUtilitiesConfig.HANDLER.save();
 		}
 		
 		// Handle reset hotkey
-		if (resetKeyBinding != null && resetKeyBinding.wasPressed()) {
+		if (resetKeyMapping != null && resetKeyMapping.consumeClick()) {
 			reset();
 		}
 	}
 	
-	private static void checkDimensionChange(MinecraftClient client) {
+	private static void checkDimensionChange(Minecraft client) {
 		try {
-			if (client.world != null && client.player != null) {
-				String newDimension = client.world.getRegistryKey().getValue().toString();
+			if (client.level != null && client.player != null) {
+				String newDimension = client.level.dimension().identifier().toString();
 				
 				if (currentDimension != null && !currentDimension.equals(newDimension)) {
 					reset();
@@ -230,11 +236,11 @@ public class KillsUtility {
 		// Reset cache when resetting
 		cachedIsOnFloor = null;
 		// Reset next level tracking
-		killsUntilNextLevel = -1;
+		killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 		lastTabListCheck = 0;
 	}
 	
-	private static void readKillsFromBossbar(MinecraftClient client) {
+	private static void readKillsFromBossbar(Minecraft client) {
 		try {
 			// Bossbar reading is now handled by BossBarMixin
 			// This method is kept for potential fallback or future use
@@ -298,11 +304,11 @@ public class KillsUtility {
 	 * Reads the kills needed until next level from the tab list.
 	 * Searches for "[Nächste Ebene]" and reads the number from the line below.
 	 */
-	private static void updateKillsUntilNextLevel(MinecraftClient client) {
+	private static void updateKillsUntilNextLevel(Minecraft client) {
 		try {
 			// Check if player is in a floor dimension
 			if (!isInFloorDimension(client)) {
-				killsUntilNextLevel = -1;
+				killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 				return;
 			}
 			
@@ -315,19 +321,19 @@ public class KillsUtility {
 			}
 			lastTabListCheck = currentTime;
 			
-			if (client == null || client.getNetworkHandler() == null) {
-				killsUntilNextLevel = -1;
+			if (client == null || client.getConnection() == null) {
+				killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 				return;
 			}
 			
-			var playerList = client.getNetworkHandler().getPlayerList();
+			var playerList = client.getConnection().getOnlinePlayers();
 			if (playerList == null) {
-				killsUntilNextLevel = -1;
+				killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 				return;
 			}
 			
 			// Convert to list to iterate with index
-			java.util.List<net.minecraft.client.network.PlayerListEntry> entries = 
+			java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries = 
 				new java.util.ArrayList<>(playerList);
 			
 			// Helper method to remove Minecraft formatting codes (§ codes)
@@ -347,11 +353,11 @@ public class KillsUtility {
 					return null;
 				}
 				
-				net.minecraft.text.Text displayName = entry.getDisplayName();
+				net.minecraft.network.chat.Component displayName = entry.getTabListDisplayName();
 				if (displayName != null) {
 					return displayName.getString();
 				} else if (entry.getProfile() != null) {
-					return entry.getProfile().getName();
+					return entry.getProfile().name();
 				}
 				return null;
 			};
@@ -398,8 +404,8 @@ public class KillsUtility {
 					String lowerCheckText = cleanCheckText.toLowerCase();
 					if (lowerCheckText.contains("freigeschaltet") || 
 					    lowerCheckText.contains("nächste ebene freigeschaltet")) {
-						// Next level is already unlocked, no kills needed
-						killsUntilNextLevel = -1;
+						// Next level is already unlocked
+						killsUntilNextLevel = NEXT_LEVEL_FREE;
 						return; // Stop searching
 					}
 					
@@ -432,28 +438,28 @@ public class KillsUtility {
 				}
 				
 				// If we found "[Nächste Ebene]" but couldn't find valid kills below, set to -1
-				killsUntilNextLevel = -1;
+				killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 				return;
 			}
 			
-			// Not found
-			killsUntilNextLevel = -1;
+			// Not found in tab widget
+			killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 		} catch (Exception e) {
 			// Silent error handling
-			killsUntilNextLevel = -1;
+			killsUntilNextLevel = NEXT_LEVEL_NOT_FOUND;
 		}
 	}
 	
 	/**
 	 * Check if the player is currently in a floor dimension
 	 */
-	private static boolean isInFloorDimension(MinecraftClient client) {
-		if (client == null || client.world == null) {
+	private static boolean isInFloorDimension(Minecraft client) {
+		if (client == null || client.level == null) {
 			return false;
 		}
 		
 		try {
-			String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
+			String dimensionId = client.level.dimension().identifier().toString().toLowerCase();
 			// Check if dimension contains "floor" (e.g., "minecraft:floor_1", "minecraft:floor_2", etc.)
 			return dimensionId.contains("floor");
 		} catch (Exception e) {
@@ -473,8 +479,41 @@ public class KillsUtility {
 		double time = (double)killsUntilNextLevel / currentKPM;
 		return time;
 	}
+
+	/**
+	 * Text für die Zeile „Nächste Ebene“ (Frei / nicht im Tab / Zeitangabe).
+	 */
+	private static String formatNextLevelText() {
+		if (killsUntilNextLevel == NEXT_LEVEL_FREE) {
+			return "Nächste Ebene: Frei";
+		}
+		if (killsUntilNextLevel == NEXT_LEVEL_NOT_FOUND) {
+			return "Nächste Ebene: Nicht im Tab Widget";
+		}
+
+		double timeUntilNextLevel = calculateTimeUntilNextLevel();
+		if (timeUntilNextLevel < 0 || killsUntilNextLevel < 0) {
+			// Kills bekannt, aber noch keine sinnvolle Zeit (z.B. KPM = 0)
+			return "Nächste Ebene: -";
+		}
+
+		long totalMinutes = (long) timeUntilNextLevel;
+		long hours = totalMinutes / 60;
+		long minutes = totalMinutes % 60;
+
+		if (hours > 0) {
+			if (minutes > 0) {
+				return String.format("Nächste Ebene: %dh %dmin", hours, minutes);
+			}
+			return String.format("Nächste Ebene: %dh", hours);
+		}
+		if (minutes > 0) {
+			return String.format("Nächste Ebene: %dmin", minutes);
+		}
+		return "Nächste Ebene: <1min";
+	}
 	
-	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
 			return;
@@ -489,14 +528,17 @@ public class KillsUtility {
 		if (!isTrackingKills) {
 			return;
 		}
+		if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+			return;
+		}
 
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.player == null) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 
@@ -506,12 +548,12 @@ public class KillsUtility {
 		}
 	}
 	
-	private static void renderKillsDisplay(DrawContext context, MinecraftClient client) {
+	private static void renderKillsDisplay(GuiGraphicsExtractor context, Minecraft client) {
 		if (client.getWindow() == null) {
 			return;
 		}
 		
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Position aus der Konfiguration
 		int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityX;
@@ -534,25 +576,7 @@ public class KillsUtility {
 		// Calculate time until next level - only show if enabled in config
 		String nextLevelText = "";
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowNextLevel) {
-			nextLevelText = "Nächste Ebene: -";
-			double timeUntilNextLevel = calculateTimeUntilNextLevel();
-			if (timeUntilNextLevel >= 0 && killsUntilNextLevel >= 0) {
-				long totalMinutes = (long)timeUntilNextLevel;
-				long hours = totalMinutes / 60;
-				long minutes = totalMinutes % 60;
-				
-				if (hours > 0) {
-					if (minutes > 0) {
-						nextLevelText = String.format("Nächste Ebene: %dh %dmin", hours, minutes);
-					} else {
-						nextLevelText = String.format("Nächste Ebene: %dh", hours);
-					}
-				} else if (minutes > 0) {
-					nextLevelText = String.format("Nächste Ebene: %dmin", minutes);
-				} else {
-					nextLevelText = String.format("Nächste Ebene: <1min");
-				}
-			}
+			nextLevelText = formatNextLevelText();
 		}
 		
 		// Calculate required kills text - only show if enabled in config
@@ -565,12 +589,12 @@ public class KillsUtility {
 		}
 		
 		// Calculate dynamic overlay size based on text content
-		int titleWidth = client.textRenderer.getWidth(title);
-		int kpmWidth = client.textRenderer.getWidth(kpmText);
-		int newKillsWidth = client.textRenderer.getWidth(newKillsText);
-		int timeWidth = timeText.isEmpty() ? 0 : client.textRenderer.getWidth(timeText);
-		int nextLevelWidth = nextLevelText.isEmpty() ? 0 : client.textRenderer.getWidth(nextLevelText);
-		int requiredKillsWidth = requiredKillsText.isEmpty() ? 0 : client.textRenderer.getWidth(requiredKillsText);
+		int titleWidth = client.font.width(title);
+		int kpmWidth = client.font.width(kpmText);
+		int newKillsWidth = client.font.width(newKillsText);
+		int timeWidth = timeText.isEmpty() ? 0 : client.font.width(timeText);
+		int nextLevelWidth = nextLevelText.isEmpty() ? 0 : client.font.width(nextLevelText);
+		int requiredKillsWidth = requiredKillsText.isEmpty() ? 0 : client.font.width(requiredKillsText);
 		
 		// Find the widest text
 		int maxTextWidth = Math.max(Math.max(titleWidth, kpmWidth), 
@@ -599,7 +623,7 @@ public class KillsUtility {
 		if (!requiredKillsText.isEmpty()) {
 			lastTextY += LINE_HEIGHT; // Benötigte Kills line (only if enabled)
 		}
-		int textHeight = client.textRenderer.fontHeight; // Use actual text height
+		int textHeight = client.font.lineHeight; // Use actual text height
 		int overlayHeight = Math.max(MIN_OVERLAY_HEIGHT, lastTextY + textHeight + PADDING); // Last text Y position + text height + bottom padding (same as top)
 		
 		// Determine if overlay is on left or right side of screen
@@ -626,7 +650,7 @@ public class KillsUtility {
 		int yPosition = yOffset;
 		
 		// Verwende Matrix-Transformationen für Skalierung
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Skaliere basierend auf der Config
@@ -644,8 +668,8 @@ public class KillsUtility {
 		
 		// Draw title (skaliert)
 		int titleColor = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityHeaderColor.getRGB();
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			title,
 			PADDING,
 			PADDING,
@@ -656,8 +680,8 @@ public class KillsUtility {
 		// Draw KPM (skaliert)
 		int currentY = PADDING + 15;
 		int textColor = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityTextColor.getRGB();
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			kpmText,
 			PADDING,
 			currentY,
@@ -668,8 +692,8 @@ public class KillsUtility {
 		currentY += LINE_HEIGHT;
 		
 		// Draw new kills (skaliert)
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			newKillsText,
 			PADDING,
 			currentY,
@@ -680,8 +704,8 @@ public class KillsUtility {
 		// Draw session time if available (skaliert)
 		if (!timeText.isEmpty()) {
 			currentY += LINE_HEIGHT;
-			context.drawText(
-				client.textRenderer,
+			context.text(
+				client.font,
 				timeText,
 				PADDING,
 				currentY,
@@ -693,8 +717,8 @@ public class KillsUtility {
 		// Draw time until next level (only if enabled in config)
 		if (!nextLevelText.isEmpty()) {
 			currentY += LINE_HEIGHT;
-			context.drawText(
-				client.textRenderer,
+			context.text(
+				client.font,
 				nextLevelText,
 				PADDING,
 				currentY,
@@ -706,8 +730,8 @@ public class KillsUtility {
 		// Draw required kills (only if enabled in config)
 		if (!requiredKillsText.isEmpty()) {
 			currentY += LINE_HEIGHT;
-			context.drawText(
-				client.textRenderer,
+			context.text(
+				client.font,
 				requiredKillsText,
 				PADDING,
 				currentY,
@@ -728,9 +752,9 @@ public class KillsUtility {
 		
 		// Nur berechnen, wenn der Cache leer ist (beim ersten Aufruf)
 		try {
-			var client = MinecraftClient.getInstance();
-			if (client != null && client.world != null) {
-				String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
+			var client = Minecraft.getInstance();
+			if (client != null && client.level != null) {
+				String dimensionId = client.level.dimension().identifier().toString().toLowerCase();
 				boolean isFloor = dimensionId.contains("floor");
 				cachedIsOnFloor = isFloor; // Cache den Wert
 				return isFloor;
@@ -772,8 +796,8 @@ public class KillsUtility {
 	/**
 	 * Get current overlay width based on actual text content
 	 */
-	public static int getCurrentOverlayWidth(MinecraftClient client) {
-		if (client == null || client.textRenderer == null) {
+	public static int getCurrentOverlayWidth(Minecraft client) {
+		if (client == null || client.font == null) {
 			return MIN_OVERLAY_WIDTH;
 		}
 		
@@ -794,25 +818,7 @@ public class KillsUtility {
 		// Calculate time until next level - only show if enabled in config
 		String nextLevelText = "";
 		if (CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityShowNextLevel) {
-			nextLevelText = "Nächste Ebene: -";
-			double timeUntilNextLevel = calculateTimeUntilNextLevel();
-			if (timeUntilNextLevel >= 0 && killsUntilNextLevel >= 0) {
-				long totalMinutes = (long)timeUntilNextLevel;
-				long hours = totalMinutes / 60;
-				long minutes = totalMinutes % 60;
-				
-				if (hours > 0) {
-					if (minutes > 0) {
-						nextLevelText = String.format("Nächste Ebene: %dh %dmin", hours, minutes);
-					} else {
-						nextLevelText = String.format("Nächste Ebene: %dh", hours);
-					}
-				} else if (minutes > 0) {
-					nextLevelText = String.format("Nächste Ebene: %dmin", minutes);
-				} else {
-					nextLevelText = String.format("Nächste Ebene: <1min");
-				}
-			}
+			nextLevelText = formatNextLevelText();
 		}
 		
 		// Calculate required kills text - only show if enabled in config
@@ -825,12 +831,12 @@ public class KillsUtility {
 		}
 		
 		// Calculate widths
-		int titleWidth = client.textRenderer.getWidth(title);
-		int kpmWidth = client.textRenderer.getWidth(kpmText);
-		int newKillsWidth = client.textRenderer.getWidth(newKillsText);
-		int timeWidth = timeText.isEmpty() ? 0 : client.textRenderer.getWidth(timeText);
-		int nextLevelWidth = nextLevelText.isEmpty() ? 0 : client.textRenderer.getWidth(nextLevelText);
-		int requiredKillsWidth = requiredKillsText.isEmpty() ? 0 : client.textRenderer.getWidth(requiredKillsText);
+		int titleWidth = client.font.width(title);
+		int kpmWidth = client.font.width(kpmText);
+		int newKillsWidth = client.font.width(newKillsText);
+		int timeWidth = timeText.isEmpty() ? 0 : client.font.width(timeText);
+		int nextLevelWidth = nextLevelText.isEmpty() ? 0 : client.font.width(nextLevelText);
+		int requiredKillsWidth = requiredKillsText.isEmpty() ? 0 : client.font.width(requiredKillsText);
 		
 		// Find the widest text
 		int maxTextWidth = Math.max(Math.max(titleWidth, kpmWidth), 
@@ -873,8 +879,8 @@ public class KillsUtility {
 		}
 		
 		// Get actual text height from client
-		MinecraftClient client = MinecraftClient.getInstance();
-		int textHeight = (client != null && client.textRenderer != null) ? client.textRenderer.fontHeight : 9;
+		Minecraft client = Minecraft.getInstance();
+		int textHeight = (client != null && client.font != null) ? client.font.lineHeight : 9;
 		
 		// Height = last text Y position + actual text height + bottom padding (same as top padding)
 		return Math.max(MIN_OVERLAY_HEIGHT, lastTextY + textHeight + PADDING);

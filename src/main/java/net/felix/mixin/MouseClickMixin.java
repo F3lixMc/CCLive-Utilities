@@ -1,23 +1,25 @@
 package net.felix.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.input.MouseButtonInfo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(Mouse.class)
+@Mixin(MouseHandler.class)
 public class MouseClickMixin {
     
     /**
      * Injiziert in onMouseButton, um Clipboard-Button-Klicks im HUD zu behandeln
      * (wenn kein Screen offen ist)
      */
-    @Inject(method = "onMouseButton", at = @At("HEAD"), cancellable = true)
-    private void onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen != null) {
+    @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
+    private void onMouseButton(long window, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
+        int button = buttonInfo.button();
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen != null) {
             return; // Nur behandeln wenn kein Screen offen ist
         }
         
@@ -25,13 +27,13 @@ public class MouseClickMixin {
         if (button == 0 && action == 1) {
             // Hole aktuelle Mausposition und skaliere auf Screen-Koordinaten
             if (client.getWindow() != null) {
-                int windowWidth = client.getWindow().getWidth();
-                int windowHeight = client.getWindow().getHeight();
-                int mouseX = (int) (client.mouse.getX() * (double) client.getWindow().getScaledWidth() / (double) windowWidth);
-                int mouseY = (int) (client.mouse.getY() * (double) client.getWindow().getScaledHeight() / (double) windowHeight);
+                int windowWidth = client.getWindow().getScreenWidth();
+                int windowHeight = client.getWindow().getScreenHeight();
+                int mouseX = (int) (client.mouseHandler.xpos() * (double) client.getWindow().getGuiScaledWidth() / (double) windowWidth);
+                int mouseY = (int) (client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) windowHeight);
                 
                 // Handle clicks on Clipboard Overlay buttons
-                if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleButtonClick(mouseX, mouseY)) {
+                if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleButtonClick(mouseX, mouseY)) {
                     // Button wurde geklickt - verhindere weitere Verarbeitung
                     ci.cancel();
                 }

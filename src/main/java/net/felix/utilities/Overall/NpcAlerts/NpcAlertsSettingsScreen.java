@@ -3,13 +3,12 @@ package net.felix.utilities.Overall.NpcAlerts;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,14 +22,14 @@ public class NpcAlertsSettingsScreen extends Screen {
     private static final String OVERLAYS_MASTER_TOGGLE_LABEL = "Overlays Ein/Aus";
     
     // Settings Icon Identifier
-    private static final Identifier SETTINGS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_settings.png");
+    private static final Identifier SETTINGS_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_settings.png");
     
     private final Screen parent;
-    private TextWidget titleWidget;
+    private StringWidget titleWidget;
     private List<NpcAlertsEntry> entries;
     
     public NpcAlertsSettingsScreen(Screen parent) {
-        super(Text.literal("NPC Alerts Settings"));
+        super(Component.literal("NPC Alerts Settings"));
         this.parent = parent;
     }
     
@@ -67,14 +66,14 @@ public class NpcAlertsSettingsScreen extends Screen {
                 CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 = val;
             }));
 
-        titleWidget = new TextWidget(
-            Text.literal("NPC Alerts Settings"),
-            textRenderer
+        titleWidget = new StringWidget(
+            Component.literal("NPC Alerts Settings"),
+            font
         );
         int boxHeight = computeSettingsBoxHeight();
         int boxY = height / 2 - boxHeight / 2;
         titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, boxY - 24);
-        addDrawableChild(titleWidget);
+        addRenderableWidget(titleWidget);
     }
 
     private int computeSettingsBoxHeight() {
@@ -82,26 +81,26 @@ public class NpcAlertsSettingsScreen extends Screen {
     }
     
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // Render the previous screen in the background if it exists
         if (parent != null) {
-            parent.render(context, mouseX, mouseY, delta);
+            parent.extractRenderState(context, mouseX, mouseY, delta);
         }
         
         // Render very transparent background overlay
         context.fill(0, 0, width, height, 0x20000000);
         
         // Render title
-        titleWidget.render(context, mouseX, mouseY, delta);
+        titleWidget.extractRenderState(context, mouseX, mouseY, delta);
         
         // Render settings box
         renderSettingsBox(context, mouseX, mouseY);
         
         // Render buttons
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
     }
     
-    private void renderSettingsBox(DrawContext context, int mouseX, int mouseY) {
+    private void renderSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         int boxWidth = 300;
         int boxHeight = computeSettingsBoxHeight();
         int boxX = width / 2 - boxWidth / 2;
@@ -111,10 +110,10 @@ public class NpcAlertsSettingsScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.outline(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Titel
-        context.drawText(textRenderer, "NPC Alerts Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
+        context.text(font, "NPC Alerts Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
         
         // Rotes Kreuz oben rechts zum Schließen
         int closeButtonSize = 12;
@@ -141,14 +140,14 @@ public class NpcAlertsSettingsScreen extends Screen {
         boolean overlaysVisible = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible;
         int globalCheckboxY = y;
         context.fill(checkboxX, globalCheckboxY, checkboxX + checkboxSize, globalCheckboxY + checkboxSize, 0xFF808080);
-        context.drawBorder(checkboxX, globalCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+        context.outline(checkboxX, globalCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
         if (overlaysVisible) {
             drawCheckboxCheckmark(context, checkboxX, globalCheckboxY, checkboxSize);
         }
         int globalTextX = checkboxX + checkboxSize + 5;
-        int globalTextWidth = textRenderer.getWidth(OVERLAYS_MASTER_TOGGLE_LABEL);
-        int globalTextHeight = textRenderer.fontHeight;
-        context.drawText(textRenderer, OVERLAYS_MASTER_TOGGLE_LABEL, globalTextX, globalCheckboxY + 1, overlaysVisible ? 0xFFFFFFFF : 0xFF808080, false);
+        int globalTextWidth = font.width(OVERLAYS_MASTER_TOGGLE_LABEL);
+        int globalTextHeight = font.lineHeight;
+        context.text(font, OVERLAYS_MASTER_TOGGLE_LABEL, globalTextX, globalCheckboxY + 1, overlaysVisible ? 0xFFFFFFFF : 0xFF808080, false);
         boolean hoverGlobalBox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
             mouseY >= globalCheckboxY && mouseY <= globalCheckboxY + checkboxSize;
         boolean hoverGlobalText = mouseX >= globalTextX && mouseX <= globalTextX + globalTextWidth &&
@@ -165,7 +164,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         
         // Checkbox-Hintergrund
         context.fill(checkboxX, mainCheckboxY, checkboxX + checkboxSize, mainCheckboxY + checkboxSize, 0xFF808080);
-        context.drawBorder(checkboxX, mainCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+        context.outline(checkboxX, mainCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
         
         if (mainOverlayBackground) {
             drawCheckboxCheckmark(context, checkboxX, mainCheckboxY, checkboxSize);
@@ -174,9 +173,9 @@ public class NpcAlertsSettingsScreen extends Screen {
         // Eintrags-Name
         String mainEntryName = "Gesamt Overlay Hintergrund";
         int mainTextX = checkboxX + checkboxSize + 5;
-        int mainTextWidth = textRenderer.getWidth(mainEntryName);
-        int mainTextHeight = textRenderer.fontHeight;
-        context.drawText(textRenderer, mainEntryName, mainTextX, mainCheckboxY + 1, mainOverlayBackground ? 0xFFFFFFFF : 0xFF808080, false);
+        int mainTextWidth = font.width(mainEntryName);
+        int mainTextHeight = font.lineHeight;
+        context.text(font, mainEntryName, mainTextX, mainCheckboxY + 1, mainOverlayBackground ? 0xFFFFFFFF : 0xFF808080, false);
         
         // Prüfe ob Maus über Checkbox oder Text ist
         boolean isHoveringMainCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
@@ -202,7 +201,7 @@ public class NpcAlertsSettingsScreen extends Screen {
             // Checkbox-Hintergrund
             int checkboxY = y;
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
-            context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+            context.outline(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
             
             // Checkmark wenn aktiviert
             if (isEnabled) {
@@ -232,9 +231,9 @@ public class NpcAlertsSettingsScreen extends Screen {
             // Eintrags-Name
             String entryName = entry.displayName;
             int textX = checkboxX + checkboxSize + 5;
-            int textWidth = textRenderer.getWidth(entryName);
-            int textHeight = textRenderer.fontHeight;
-            context.drawText(textRenderer, entryName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
+            int textWidth = font.width(entryName);
+            int textHeight = font.lineHeight;
+            context.text(font, entryName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
             
             // Zahnrad-Icon am Ende der Zeile
             int gearSize = 12;
@@ -251,7 +250,7 @@ public class NpcAlertsSettingsScreen extends Screen {
             boolean isHoveringEntry = isHoveringCheckbox || isHoveringText;
             
             // Zeichne weißen Rahmen um das Zahnrad-Icon
-            context.drawBorder(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
+            context.outline(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
             
             drawGearIcon(context, gearX, gearY, gearSize);
             
@@ -273,7 +272,10 @@ public class NpcAlertsSettingsScreen extends Screen {
     }
     
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0) {
             // Prüfe zuerst ob auf das Schließen-Kreuz geklickt wurde
             int boxWidth = 300;
@@ -287,7 +289,7 @@ public class NpcAlertsSettingsScreen extends Screen {
             
             if (mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonSize &&
                 mouseY >= closeButtonY && mouseY <= closeButtonY + closeButtonSize) {
-                close();
+                onClose();
                 return true;
             }
             
@@ -309,12 +311,12 @@ public class NpcAlertsSettingsScreen extends Screen {
                 // Wenn es nicht der "NPC Alerts" Button ist, schließe diesen Screen
                 if (mouseX < button2X || mouseX > button2X + buttonWidth) {
                     // Schließe den NpcAlertsSettingsScreen, bevor der Klick weitergeleitet wird
-                    close();
+                    onClose();
                 }
                 
                 // Klick ist auf einen Button im Parent-Screen - leite an Parent weiter
                 if (parent != null && parent instanceof OverlayEditorScreen) {
-                    return parent.mouseClicked(mouseX, mouseY, button);
+                    return parent.mouseClicked(event, doubled);
                 }
             }
             
@@ -322,7 +324,7 @@ public class NpcAlertsSettingsScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubled);
     }
     
     private boolean handleSettingsClick(double mouseX, double mouseY, int button) {
@@ -351,8 +353,8 @@ public class NpcAlertsSettingsScreen extends Screen {
         
         int globalCheckboxY = y;
         int globalTextX = checkboxX + checkboxSize + 5;
-        int globalTextWidth = textRenderer.getWidth(OVERLAYS_MASTER_TOGGLE_LABEL);
-        int globalTextHeight = textRenderer.fontHeight;
+        int globalTextWidth = font.width(OVERLAYS_MASTER_TOGGLE_LABEL);
+        int globalTextHeight = font.lineHeight;
         boolean clickedGlobalBox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
             mouseY >= globalCheckboxY && mouseY <= globalCheckboxY + checkboxSize;
         boolean clickedGlobalText = mouseX >= globalTextX && mouseX <= globalTextX + globalTextWidth &&
@@ -372,8 +374,8 @@ public class NpcAlertsSettingsScreen extends Screen {
         int mainCheckboxY = y;
         String mainEntryName = "Gesamt Overlay Hintergrund";
         int mainTextX = checkboxX + checkboxSize + 5;
-        int mainTextWidth = textRenderer.getWidth(mainEntryName);
-        int mainTextHeight = textRenderer.fontHeight;
+        int mainTextWidth = font.width(mainEntryName);
+        int mainTextHeight = font.lineHeight;
         
         boolean clickedOnMainCheckbox = (mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
                                        mouseY >= mainCheckboxY && mouseY <= mainCheckboxY + checkboxSize);
@@ -401,8 +403,8 @@ public class NpcAlertsSettingsScreen extends Screen {
             int textY = checkboxY;
             // Verwende die tatsächliche Text-Breite für korrekte Click-Erkennung
             String entryName = entry.displayName;
-            int textWidth = textRenderer.getWidth(entryName);
-            int textHeight = textRenderer.fontHeight;
+            int textWidth = font.width(entryName);
+            int textHeight = font.lineHeight;
             int gearX = boxX + boxWidth - gearSize - 10;
             int gearY = checkboxY - 1;
             
@@ -432,8 +434,8 @@ public class NpcAlertsSettingsScreen extends Screen {
                 return true;
             } else if (clickedOnGear) {
                 // Öffne Detail-Screen für diese Information
-                if (client != null) {
-                    client.setScreen(new NpcAlertsDetailScreen(this, entry.displayName, entry.configKey));
+                if (minecraft != null) {
+                    minecraft.setScreen(new NpcAlertsDetailScreen(this, entry.displayName, entry.configKey));
                 }
                 return true;
             }
@@ -445,18 +447,18 @@ public class NpcAlertsSettingsScreen extends Screen {
     }
     
     @Override
-    public void close() {
+    public void onClose() {
         // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
         if (parent instanceof OverlayEditorScreen) {
             ((OverlayEditorScreen) parent).refreshOverlays();
         }
         
-        if (client != null) {
-            client.setScreen(parent);
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
         }
     }
     
-    private static void drawCheckboxCheckmark(DrawContext context, int checkboxX, int topY, int checkboxSize) {
+    private static void drawCheckboxCheckmark(GuiGraphicsExtractor context, int checkboxX, int topY, int checkboxSize) {
         int checkX = checkboxX + 2;
         int checkY = topY + 2;
         int checkSize = checkboxSize - 4;
@@ -479,7 +481,7 @@ public class NpcAlertsSettingsScreen extends Screen {
     /**
      * Zeichnet eine diagonale Linie
      */
-    private void drawDiagonalLine(DrawContext context, int x1, int y1, int x2, int y2, int color, int width) {
+    private void drawDiagonalLine(GuiGraphicsExtractor context, int x1, int y1, int x2, int y2, int color, int width) {
         // Einfache Implementierung: Zeichne mehrere Pixel entlang der Diagonale
         int steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
         for (int i = 0; i <= steps; i++) {
@@ -499,10 +501,10 @@ public class NpcAlertsSettingsScreen extends Screen {
     /**
      * Zeichnet das Settings-Icon (Zahnräder)
      */
-    private void drawGearIcon(DrawContext context, int x, int y, int size) {
+    private void drawGearIcon(GuiGraphicsExtractor context, int x, int y, int size) {
         try {
             // Zeichne das Settings-Icon aus der Textur
-            context.drawTexture(
+            context.blit(
                 RenderPipelines.GUI_TEXTURED,
                 SETTINGS_ICON,
                 x, y,
@@ -513,7 +515,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         } catch (Exception e) {
             // Fallback: Zeichne ein einfaches Zahnrad-Icon als gefüllte Formen
             // Äußerer Rahmen
-            context.drawBorder(x, y, size, size, 0xFFFFFFFF);
+            context.outline(x, y, size, size, 0xFFFFFFFF);
             
             // Diagonale Linien (als gefüllte Rechtecke)
             int lineWidth = 1;

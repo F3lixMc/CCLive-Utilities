@@ -1,32 +1,36 @@
 package net.felix.utilities.Overall;
 
+import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
+import net.felix.utilities.Overall.KeyCategories;
+
+import net.minecraft.resources.Identifier;
+
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.text.Text;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemStack;
-import net.minecraft.scoreboard.ScoreboardEntry;
-import net.minecraft.scoreboard.Team;
-import net.minecraft.client.gui.hud.InGameHud;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import java.util.Collection;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.ResourceTrackerDisplayMode;
-import net.felix.utilities.DragOverlay.FarmzoneResourceRateUtility;
 import net.felix.utilities.Overall.Aspekte.AspectOverlay;
 import net.felix.utilities.Overall.Aspekte.AspectOverlayRenderer;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.scores.PlayerScoreEntry;
+import net.minecraft.world.scores.PlayerTeam;
 import net.fabricmc.loader.api.FabricLoader;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,6 +94,8 @@ public class InformationenUtility {
 			"Prismarin-Muschel", "epic",
 			"Herz des Meeres", "legendary"
 	);
+	/** Lookup ohne Bindestriche/Leerzeichen; "Prismarine" wird wie "Prismarin" behandelt. */
+	private static final java.util.Map<String, String> PRISMARIN_CANONICAL_BY_KEY = buildPrismarinCanonicalLookup();
 	
 	// Cards and Statues effects tracking
 	private static Map<String, String> cardsEffects = new HashMap<>();
@@ -185,7 +191,7 @@ public class InformationenUtility {
 	private static final long ZONE_BOSSBAR_READ_DELAY_MS = 5000L;
 	
 	// Collection hotkey
-	private static KeyBinding collectionResetKeyBinding;
+	private static KeyMapping collectionResetKeyMapping;
 	
 	// Mining & Lumberjack XP Tracking
 	private static class XPData {
@@ -226,7 +232,7 @@ public class InformationenUtility {
 		return lumberjackXP.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXP.level) : "Holzfäller";
 	}
 
-	public static String getCollectionResourceRateLine(MinecraftClient client) {
+	public static String getCollectionResourceRateLine(Minecraft client) {
 		if (!usesOverlayResourceRateDisplay()) {
 			return null;
 		}
@@ -245,8 +251,8 @@ public class InformationenUtility {
 	/**
 	 * Gets the current overlay width for mining overlay (for use in overlay editor)
 	 */
-	public static int getMiningOverlayWidth(MinecraftClient client) {
-		if (client == null || client.textRenderer == null) {
+	public static int getMiningOverlayWidth(Minecraft client) {
+		if (client == null || client.font == null) {
 			return 200;
 		}
 		
@@ -258,10 +264,10 @@ public class InformationenUtility {
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
 		
-		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, 100);
 		return maxWidth + padding * 2;
 	}
@@ -269,8 +275,8 @@ public class InformationenUtility {
 	/**
 	 * Gets the actual text strings for mining overlay (for use in overlay editor)
 	 */
-	public static String[] getMiningOverlayTexts(MinecraftClient client) {
-		if (client == null || client.textRenderer == null) {
+	public static String[] getMiningOverlayTexts(Minecraft client) {
+		if (client == null || client.font == null) {
 			return new String[]{"Bergbau", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
 		}
 		
@@ -287,8 +293,8 @@ public class InformationenUtility {
 	/**
 	 * Gets the actual text strings for lumberjack overlay (for use in overlay editor)
 	 */
-	public static String[] getLumberjackOverlayTexts(MinecraftClient client) {
-		if (client == null || client.textRenderer == null) {
+	public static String[] getLumberjackOverlayTexts(Minecraft client) {
+		if (client == null || client.font == null) {
 			return new String[]{"Holzfäller", "Letzte XP: 0", "XP/Min: -", "Zeit bis Level: Unbekannt", "Benötigte XP: 0"};
 		}
 		
@@ -305,8 +311,8 @@ public class InformationenUtility {
 	/**
 	 * Gets the current overlay width for lumberjack overlay (for use in overlay editor)
 	 */
-	public static int getLumberjackOverlayWidth(MinecraftClient client) {
-		if (client == null || client.textRenderer == null) {
+	public static int getLumberjackOverlayWidth(Minecraft client) {
+		if (client == null || client.font == null) {
 			return 200;
 		}
 		
@@ -318,10 +324,10 @@ public class InformationenUtility {
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
 		
-		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, 100);
 		return maxWidth + padding * 2;
 	}
@@ -370,8 +376,7 @@ public class InformationenUtility {
 		ClientTickEvents.END_CLIENT_TICK.register(InformationenUtility::onClientTick);
 		
 		// Register HUD render callback for mining and lumberjack overlays
-		HudRenderCallback.EVENT.register((drawContext, tickDelta) -> 
-			onHudRender(drawContext, tickDelta));
+		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("cclive-utilities", "informationen"), InformationenUtility::onHudRender);
 		
 		
 		// Register tooltip callback for material information
@@ -381,7 +386,7 @@ public class InformationenUtility {
 				return;
 			}
 			
-			MinecraftClient client = MinecraftClient.getInstance();
+			Minecraft client = Minecraft.getInstance();
 			if (client == null) {
 				return;
 			}
@@ -412,8 +417,8 @@ public class InformationenUtility {
 			boolean isMaterialBagInventory = false;
 			boolean hideFloorNumbersInEssenceMenu = false;
 			String screenTitle = "";
-			if (client.currentScreen != null) {
-				screenTitle = client.currentScreen.getTitle().getString();
+			if (client.screen != null) {
+				screenTitle = client.screen.getTitle().getString();
 				if (ZeichenUtility.containsMoblexicon(screenTitle)) {
 					isSpecialInventory = true;
 				}
@@ -432,7 +437,7 @@ public class InformationenUtility {
 			if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
 				CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled &&
 				CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay &&
-				client.currentScreen != null &&
+				client.screen != null &&
 				ZeichenUtility.containsEssenceBagUi(screenTitle)) {
 				addEssenceBagWaveDisplayToTooltip(lines, stack);
 			}
@@ -469,7 +474,7 @@ public class InformationenUtility {
 			int endIndex = lines.size(); // Always check all lines to find [Karte] or [Statue]
 			
 			for (int i = startIndex; i < endIndex; i++) {
-				Text line = lines.get(i);
+				Component line = lines.get(i);
 				String lineText = line.getString();
 				
 				// Skip if lineText is null or empty
@@ -504,10 +509,10 @@ public class InformationenUtility {
 					
 					if (CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay) {
 						String waveText = getWaveDisplayForEssenceName(essenceNameToSearch);
-						Text essenceInfoText = Text.literal(" -> Welle: ")
-							.styled(style -> style.withColor(0xC0C0C0)) // Light gray
-							.append(Text.literal(waveText)
-								.styled(style -> style.withColor(0x55FF55))); // Light green
+						Component essenceInfoText = Component.literal(" -> Welle: ")
+							.withStyle(style -> style.withColor(0xC0C0C0)) // Light gray
+							.append(Component.literal(waveText)
+								.withStyle(style -> style.withColor(0x55FF55))); // Light green
 						
 						// Add the essence info line after the current line
 						lines.add(i + 1, essenceInfoText);
@@ -598,9 +603,9 @@ public class InformationenUtility {
 						int effectColor = isCard ? 0x55FF55 : 0x55FFFF; // Green for cards, Aqua for statues
 						
 						// Create new text: original line (with preserved formatting) + " - " + effect
-						MutableText newLine = line.copy() // Preserve original formatting and style
-							.append(Text.literal(" - ").styled(style -> style.withColor(0xC0C0C0))) // Light gray separator
-							.append(Text.literal(effect).styled(style -> style.withColor(effectColor))); // Green for cards, Aqua for statues
+						MutableComponent newLine = line.copy() // Preserve original formatting and style
+							.append(Component.literal(" - ").withStyle(style -> style.withColor(0xC0C0C0))) // Light gray separator
+							.append(Component.literal(effect).withStyle(style -> style.withColor(effectColor))); // Green for cards, Aqua for statues
 						
 						// Replace the line
 						lines.set(i, newLine);
@@ -667,20 +672,20 @@ public class InformationenUtility {
 						String locationSuffix = formatMaterialLocationSuffix(locationInfo);
 						int color = getMaterialLocationRarityColor(locationInfo);
 
-						Text materialInfo;
+						Component materialInfo;
 						if (!locationSuffix.isEmpty()) {
-							materialInfo = Text.literal(locationSuffix)
-								.styled(style -> style.withColor(color));
+							materialInfo = Component.literal(locationSuffix)
+								.withStyle(style -> style.withColor(color));
 						} else if (isSpecialInventory) {
-							materialInfo = Text.literal(" [" + info.floor + "]")
-								.styled(style -> style.withColor(color));
+							materialInfo = Component.literal(" [" + info.floor + "]")
+								.withStyle(style -> style.withColor(color));
 						} else {
-							materialInfo = Text.literal(" [Ebene " + info.floor + "]")
-								.styled(style -> style.withColor(color));
+							materialInfo = Component.literal(" [Ebene " + info.floor + "]")
+								.withStyle(style -> style.withColor(color));
 						}
 						
 						// Combine original line with material info
-						Text combinedText = line.copy().append(materialInfo);
+						Component combinedText = line.copy().append(materialInfo);
 						
 						// Replace the original line
 						lines.set(i, combinedText);
@@ -707,7 +712,7 @@ public class InformationenUtility {
 			if (CCLiveUtilitiesConfig.HANDLER.instance().showModuleInformation) {
 				boolean isModuleUpgradeInventory = false;
 				boolean isEngineerInventory = false;
-				if (client.currentScreen != null) {
+				if (client.screen != null) {
 					String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
 						.replaceAll("[\\u3400-\\u4DBF]", "");
 					if (cleanScreenTitle.contains("Module [Upgraden]")) {
@@ -735,7 +740,7 @@ public class InformationenUtility {
 	/**
 	 * Adds aspect name to tooltip (in blueprint inventories only)
 	 */
-	public static void addAspectNameToTooltip(List<Text> lines, MinecraftClient client, ItemStack stack) {
+	public static void addAspectNameToTooltip(List<Component> lines, Minecraft client, ItemStack stack) {
 		// Performance-Optimierung: Frühe Returns
 		if (lines == null || client == null || stack == null) {
 			return;
@@ -747,7 +752,7 @@ public class InformationenUtility {
 		}
 		
 		// Performance-Optimierung: Prüfe Screen früher
-		if (client.currentScreen == null) {
+		if (client.screen == null) {
 			return;
 		}
 		
@@ -756,7 +761,7 @@ public class InformationenUtility {
 		
 		// Check for lines containing "⭐" (star symbol) - this is for items with aspect info in tooltip
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			String lineText = line.getString();
 			
 			// Skip if lineText is null or empty
@@ -781,7 +786,7 @@ public class InformationenUtility {
 			}
 
 			if (aspectInfo != null && !aspectInfo.aspectName.equals("-") && itemName != null && !itemName.isEmpty()) {
-				Text modifiedLine = modifyStarLineWithShiftInfo(line, aspectInfo, itemName);
+				Component modifiedLine = modifyStarLineWithShiftInfo(line, aspectInfo, itemName);
 				if (modifiedLine != null) {
 					lines.set(i, modifiedLine);
 					net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromName(itemName, aspectInfo);
@@ -795,7 +800,7 @@ public class InformationenUtility {
 		boolean isInBlueprintInventory = false;
 		
 		// Check if we're in a blueprint inventory
-		String screenTitle = client.currentScreen.getTitle().getString();
+		String screenTitle = client.screen.getTitle().getString();
 		
 		// Remove Minecraft formatting codes and Unicode characters for comparison
 		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
@@ -819,9 +824,9 @@ public class InformationenUtility {
 		
 		// Check tooltip lines for inventory tooltips (they contain "[Bauplan]")
 		String itemNameToCheck = null;
-		Text blueprintLine = null;
+		Component blueprintLine = null;
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			String lineText = line.getString();
 			
 			// Skip if lineText is null or empty
@@ -873,7 +878,7 @@ public class InformationenUtility {
 				// Find the position of "Benötigt" line
 				int benötigtPosition = -1;
 				for (int i = 0; i < lines.size(); i++) {
-					Text line = lines.get(i);
+					Component line = lines.get(i);
 					String lineText = line.getString();
 					if (lineText != null && lineText.contains("Benötigt")) {
 						benötigtPosition = i;
@@ -892,22 +897,22 @@ public class InformationenUtility {
 				}
 					
 					// Create aspect name text without "(Shift)" suffix
-					Text aspectNameText = Text.literal("Enthält: ")
-						.styled(style -> style.withColor(0xFFFFFFFF)) // White color
-						.append(Text.literal(aspectInfo.aspectName)
-							.styled(style -> style.withColor(0xFFFCA800))); // Same color as overlay (#FCA800)
+					Component aspectNameText = Component.literal("Enthält: ")
+						.withStyle(style -> style.withColor(0xFFFFFFFF)) // White color
+						.append(Component.literal(aspectInfo.aspectName)
+							.withStyle(style -> style.withColor(0xFFFCA800))); // Same color as overlay (#FCA800)
 					
 					// Insert aspect name at the target position
 					lines.add(targetPosition, aspectNameText);
 					
 					// Add "(Shift für mehr Info)" on the next line
-					Text shiftInfoText = Text.literal("(Shift für mehr Info)")
-						.styled(style -> style.withColor(0xFFCCCCCC)); // Light gray color
+					Component shiftInfoText = Component.literal("(Shift für mehr Info)")
+						.withStyle(style -> style.withColor(0xFFCCCCCC)); // Light gray color
 					lines.add(targetPosition + 1, shiftInfoText);
 					
 				// Add empty line after shift info (only if we're not inserting before "Benötigt")
 				if (benötigtPosition < 0) {
-					Text emptyLineText = Text.literal(" ");
+					Component emptyLineText = Component.literal(" ");
 					lines.add(targetPosition + 2, emptyLineText);
 				}
 			}
@@ -944,14 +949,14 @@ public class InformationenUtility {
 	 * @param stack The item stack (as fallback)
 	 * @return The cleaned item name, or null if not found
 	 */
-	private static String extractItemNameFromTooltip(List<Text> lines, ItemStack stack) {
+	private static String extractItemNameFromTooltip(List<Component> lines, ItemStack stack) {
 		if (lines == null || lines.isEmpty()) {
 			return null;
 		}
 		
 		// Try to get item name from first line (usually the item name)
 		if (lines.size() > 0) {
-			Text firstLine = lines.get(0);
+			Component firstLine = lines.get(0);
 			if (firstLine != null) {
 				String itemName = firstLine.getString();
 				if (itemName != null && !itemName.isEmpty()) {
@@ -987,7 +992,7 @@ public class InformationenUtility {
 		
 		// Fallback: try to get name from ItemStack
 		if (stack != null && !stack.isEmpty()) {
-			Text displayName = stack.getName();
+			Component displayName = stack.getHoverName();
 			if (displayName != null) {
 				String itemName = displayName.getString();
 				if (itemName != null && !itemName.isEmpty()) {
@@ -1163,7 +1168,7 @@ public class InformationenUtility {
 	 * @param itemName The item name
 	 * @return The modified Text line, or null if modification failed
 	 */
-	private static Text modifyStarLineWithShiftInfo(Text originalLine, AspectInfo aspectInfo, String itemName) {
+	private static Component modifyStarLineWithShiftInfo(Component originalLine, AspectInfo aspectInfo, String itemName) {
 		if (originalLine == null || aspectInfo == null || itemName == null) {
 			return null;
 		}
@@ -1186,13 +1191,13 @@ public class InformationenUtility {
 		}
 		
 		// Create the shift info text in italic and gray
-		net.minecraft.text.MutableText shiftInfoText = Text.literal(" (Shift für Info)")
-			.styled(style -> style
+		net.minecraft.network.chat.MutableComponent shiftInfoText = Component.literal(" (Shift für Info)")
+			.withStyle(style -> style
 				.withColor(0xFF808080) // Gray color
 				.withItalic(true)); // Italic
 		
 		// Copy the original line to preserve its format and structure
-		net.minecraft.text.MutableText result = originalLine.copy();
+		net.minecraft.network.chat.MutableComponent result = originalLine.copy();
 		
 		// Simply append the shift info text as a sibling
 		// This preserves the original format while adding the new text
@@ -1225,7 +1230,7 @@ public class InformationenUtility {
 	 * @param itemNameText Optional Text object for color detection (for "Drachenzahn")
 	 * @return The floor number, or null if not found
 	 */
-	public static Integer getFloorNumberForBlueprint(String blueprintName, Text itemNameText) {
+	public static Integer getFloorNumberForBlueprint(String blueprintName, Component itemNameText) {
 		if (blueprintName == null || blueprintName.isEmpty()) {
 			return null;
 		}
@@ -1297,10 +1302,10 @@ public class InformationenUtility {
 	}
 	
 	private static String extractCardOrStatueNameFromStack(ItemStack stack) {
-		StringBuilder textBuilder = new StringBuilder(stack.getName().getString());
-		var loreComponent = stack.get(net.minecraft.component.DataComponentTypes.LORE);
+		StringBuilder textBuilder = new StringBuilder(stack.getHoverName().getString());
+		var loreComponent = stack.get(net.minecraft.core.component.DataComponents.LORE);
 		if (loreComponent != null) {
-			for (Text line : loreComponent.lines()) {
+			for (Component line : loreComponent.lines()) {
 				textBuilder.append(' ').append(line.getString());
 			}
 		}
@@ -1322,18 +1327,18 @@ public class InformationenUtility {
 			}
 		}
 		
-		String name = stack.getName().getString().replaceAll("§[0-9a-fk-or]", "").trim();
+		String name = stack.getHoverName().getString().replaceAll("§[0-9a-fk-or]", "").trim();
 		name = name.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "").trim();
 		return name.isEmpty() ? null : name;
 	}
 	
 	/**
 	 * Modifies chat messages to add aspect information to hover events
-	 * Called from ClientPlayNetworkHandlerTestMixin
+	 * Called from ClientPacketListenerTestMixin
 	 * Adds aspect info and "Shift für Info" to blueprint hover events
 	 * If chat aspect overlay is enabled, no lines are added to hover events
 	 */
-	public static Text modifyChatMessageForAspectInfo(Text message) {
+	public static Component modifyChatMessageForAspectInfo(Component message) {
 		if (message == null) {
 			return null;
 		}
@@ -1369,37 +1374,37 @@ public class InformationenUtility {
 		
 		// Find hover event in message
 		HoverEvent hoverEvent = findHoverEventInText(message);
-		if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
+		if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
 			return null; // No hover event found
 		}
 		
 		// Extract original hover text
-		Text originalHoverText = extractHoverTextFromEvent(hoverEvent, message);
+		Component originalHoverText = extractHoverTextFromEvent(hoverEvent, message);
 		
 		// Ensure aspectInfo.aspectName is not null or empty
 		String aspectName = aspectInfo.aspectName != null && !aspectInfo.aspectName.isEmpty() ? aspectInfo.aspectName : "-";
 		
 		// Create new hover text with aspect info inserted above "Benötigt:" line
-		Text newHoverText;
+		Component newHoverText;
 		try {
 			if (originalHoverText != null) {
 				// Create aspect info text with the same color as the original text
-				Text aspectNameText = Text.literal("Enthält: ")
-					.styled(style -> style.withColor(0xFFFFFFFF)) // White color
-					.append(Text.literal(aspectName)
-						.styled(style -> style.withColor(0xFFFCA800))); // Aspect name in overlay color
+				Component aspectNameText = Component.literal("Enthält: ")
+					.withStyle(style -> style.withColor(0xFFFFFFFF)) // White color
+					.append(Component.literal(aspectName)
+						.withStyle(style -> style.withColor(0xFFFCA800))); // Aspect name in overlay color
 				
-				Text shiftInfoText = Text.literal("(Shift für mehr Info)")
-					.styled(style -> style.withColor(0xFFCCCCCC)); // Light gray
+				Component shiftInfoText = Component.literal("(Shift für mehr Info)")
+					.withStyle(style -> style.withColor(0xFFCCCCCC)); // Light gray
 				
 				// Build the new text by iterating through OrderedText and inserting before "Benötigt:"
 				// This preserves all formatting from the original text character by character
-				net.minecraft.text.MutableText result = Text.empty();
+				net.minecraft.network.chat.MutableComponent result = Component.empty();
 				final boolean[] inserted = {false};
 				java.util.List<Integer> currentLine = new java.util.ArrayList<>();
-				final java.util.List<net.minecraft.text.Style> lineStyles = new java.util.ArrayList<>();
+				final java.util.List<net.minecraft.network.chat.Style> lineStyles = new java.util.ArrayList<>();
 				
-				net.minecraft.text.OrderedText orderedText = originalHoverText.asOrderedText();
+				net.minecraft.util.FormattedCharSequence orderedText = originalHoverText.getVisualOrderText();
 				orderedText.accept((index, style, codePoint) -> {
 					char ch = (char) codePoint;
 					
@@ -1414,23 +1419,23 @@ public class InformationenUtility {
 						if (!inserted[0] && lineText.contains("Benötigt")) {
 							// Insert aspect info before this line
 							result.append(aspectNameText);
-							result.append(Text.literal("\n"));
+							result.append(Component.literal("\n"));
 							result.append(shiftInfoText);
-							result.append(Text.literal("\n"));
+							result.append(Component.literal("\n"));
 							inserted[0] = true;
 						}
 						
 						// Append the line character by character with formatting preserved
 						for (int i = 0; i < currentLine.size(); i++) {
 							int cp = currentLine.get(i);
-							net.minecraft.text.Style charStyle = i < lineStyles.size() ? lineStyles.get(i) : style;
-							net.minecraft.text.MutableText charText = Text.literal(new String(Character.toChars(cp)));
+							net.minecraft.network.chat.Style charStyle = i < lineStyles.size() ? lineStyles.get(i) : style;
+							net.minecraft.network.chat.MutableComponent charText = Component.literal(new String(Character.toChars(cp)));
 							if (charStyle != null) {
-								charText = charText.styled(s -> charStyle);
+								charText = charText.withStyle(s -> charStyle);
 							}
 							result.append(charText);
 						}
-						result.append(Text.literal("\n"));
+						result.append(Component.literal("\n"));
 						currentLine.clear();
 						lineStyles.clear();
 					} else {
@@ -1444,35 +1449,35 @@ public class InformationenUtility {
 				// Handle the last line
 				for (int i = 0; i < currentLine.size(); i++) {
 					int cp = currentLine.get(i);
-					net.minecraft.text.Style charStyle = i < lineStyles.size() ? lineStyles.get(i) : null;
-					net.minecraft.text.MutableText charText = Text.literal(new String(Character.toChars(cp)));
+					net.minecraft.network.chat.Style charStyle = i < lineStyles.size() ? lineStyles.get(i) : null;
+					net.minecraft.network.chat.MutableComponent charText = Component.literal(new String(Character.toChars(cp)));
 					if (charStyle != null) {
-						charText = charText.styled(s -> charStyle);
+						charText = charText.withStyle(s -> charStyle);
 					}
 					result.append(charText);
 				}
 				
 				// If "Benötigt:" was not found, append at the end
 				if (inserted[0] == false) {
-					result.append(Text.literal("\n"));
+					result.append(Component.literal("\n"));
 					result.append(aspectNameText);
-					result.append(Text.literal("\n"));
+					result.append(Component.literal("\n"));
 					result.append(shiftInfoText);
 				}
 				
 				newHoverText = result;
 			} else {
 				// Could not extract original text, create new one with just aspect info
-				Text aspectNameText = Text.literal("Enthält: ")
-					.styled(style -> style.withColor(0xFFFFFFFF)) // White color
-					.append(Text.literal(aspectName)
-						.styled(style -> style.withColor(0xFFFCA800))); // Same color as overlay (#FCA800)
+				Component aspectNameText = Component.literal("Enthält: ")
+					.withStyle(style -> style.withColor(0xFFFFFFFF)) // White color
+					.append(Component.literal(aspectName)
+						.withStyle(style -> style.withColor(0xFFFCA800))); // Same color as overlay (#FCA800)
 				
-				Text shiftInfoText = Text.literal("(Shift für mehr Info)")
-					.styled(style -> style.withColor(0xFFCCCCCC)); // Light gray color
+				Component shiftInfoText = Component.literal("(Shift für mehr Info)")
+					.withStyle(style -> style.withColor(0xFFCCCCCC)); // Light gray color
 				
 				newHoverText = aspectNameText.copy()
-					.append(Text.literal("\n"))
+					.append(Component.literal("\n"))
 					.append(shiftInfoText);
 			}
 			
@@ -1491,7 +1496,7 @@ public class InformationenUtility {
 		}
 		
 		// Modify message with new hover event (preserving all formatting)
-		Text modified = modifyTextWithHoverEvent(message, newHoverEvent);
+		Component modified = modifyTextWithHoverEvent(message, newHoverEvent);
 		return modified;
 	}
 	
@@ -1537,7 +1542,7 @@ public class InformationenUtility {
 	/**
 	 * Updates aspect overlay from blueprint name with Text object (for color checking)
 	 */
-	public static void updateAspectOverlayFromBlueprintName(String blueprintName, Text textWithColor) {
+	public static void updateAspectOverlayFromBlueprintName(String blueprintName, Component textWithColor) {
 		// Check if the text contains Epic colors - if so, don't show overlay
 		if (textWithColor != null && hasEpicColor(textWithColor)) {
 			AspectOverlay.onHoverStopped();
@@ -1553,19 +1558,19 @@ public class InformationenUtility {
 	 * Works for all items, not just blueprints
 	 * Returns the first line of the hover event text, which is typically the item name
 	 */
-	public static String extractItemNameFromHoverEvent(Text message) {
+	public static String extractItemNameFromHoverEvent(Component message) {
 		if (message == null) {
 			return null;
 		}
 		
 		// Find hover event in message
 		HoverEvent hoverEvent = findHoverEventInText(message);
-		if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
+		if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
 			return null;
 		}
 		
 		// Extract hover text from event
-		Text hoverText = extractHoverTextFromEvent(hoverEvent, message);
+		Component hoverText = extractHoverTextFromEvent(hoverEvent, message);
 		if (hoverText == null) {
 			return null;
 		}
@@ -1637,7 +1642,7 @@ public class InformationenUtility {
 	 * Returns the name and rarity (epic or legendary) based on color
 	 * Epic: #A134EB, Legendary: #FC7E00
 	 */
-	public static BlueprintNameAndColor extractBlueprintNameAndColorFromChatMessage(Text message) {
+	public static BlueprintNameAndColor extractBlueprintNameAndColorFromChatMessage(Component message) {
 		if (message == null) {
 			return null;
 		}
@@ -1660,13 +1665,13 @@ public class InformationenUtility {
 		final String[] detectedRarity = {null};
 		
 		// Convert to OrderedText to iterate through styled parts
-		net.minecraft.text.OrderedText orderedText = message.asOrderedText();
+		net.minecraft.util.FormattedCharSequence orderedText = message.getVisualOrderText();
 		orderedText.accept((index, style, codePoint) -> {
 			// Check if this style has one of the target colors
 			boolean hasTargetColor = false;
 			String currentRarity = null;
 			if (style != null && style.getColor() != null) {
-				int styleColor = style.getColor().getRgb();
+				int styleColor = style.getColor().getValue();
 				int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
 				
 				// Check for Epic color (both variants)
@@ -1751,7 +1756,7 @@ public class InformationenUtility {
 	 * rare (#0070DD), epic (#A134EB / #A335EE), legendary (#FC7E00 / #FF8000).
 	 * Only considers the blueprint name (before " - " and "[Bauplan]").
 	 */
-	public static BlueprintNameAndColor extractBlueprintNameAndColorFromItemName(Text itemNameText) {
+	public static BlueprintNameAndColor extractBlueprintNameAndColorFromItemName(Component itemNameText) {
 		if (itemNameText == null) {
 			return null;
 		}
@@ -1771,11 +1776,11 @@ public class InformationenUtility {
 		int commonWhiteRGB = 0x00FFFFFF;
 		
 		// First, collect all text with their styles to find the blueprint name section
-		final java.util.List<net.minecraft.text.Style> styles = new java.util.ArrayList<>();
+		final java.util.List<net.minecraft.network.chat.Style> styles = new java.util.ArrayList<>();
 		final java.util.List<Integer> codePoints = new java.util.ArrayList<>();
 		final StringBuilder fullText = new StringBuilder();
 		
-		net.minecraft.text.OrderedText orderedText = itemNameText.asOrderedText();
+		net.minecraft.util.FormattedCharSequence orderedText = itemNameText.getVisualOrderText();
 		orderedText.accept((index, style, codePoint) -> {
 			styles.add(style);
 			codePoints.add(codePoint);
@@ -1817,7 +1822,7 @@ public class InformationenUtility {
 		int stringPos = 0;
 		for (int i = 0; i < codePoints.size(); i++) {
 			int codePoint = codePoints.get(i);
-			net.minecraft.text.Style style = styles.get(i);
+			net.minecraft.network.chat.Style style = styles.get(i);
 			
 			// Check if this codePoint is in the blueprint name section (BEFORE the dash)
 			if (stringPos < dashIndex) {
@@ -1825,7 +1830,7 @@ public class InformationenUtility {
 				
 				// First matching tier wins (prefix glyphs before the colored name are skipped if still null)
 				if (detectedRarity[0] == null && style != null && style.getColor() != null) {
-					int styleColor = style.getColor().getRgb();
+					int styleColor = style.getColor().getValue();
 					int styleColorRGB = styleColor & 0x00FFFFFF;
 					if (styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) {
 						detectedRarity[0] = "epic";
@@ -1877,7 +1882,7 @@ public class InformationenUtility {
 	 * Checks if a Text object contains any of the Epic colors (#A134EB or #A335EE)
 	 * Returns true if any part of the text has one of these colors
 	 */
-	public static boolean hasEpicColor(Text text) {
+	public static boolean hasEpicColor(Component text) {
 		if (text == null) {
 			return false;
 		}
@@ -1889,12 +1894,12 @@ public class InformationenUtility {
 		int epicColor2RGB = epicColor2 & 0x00FFFFFF;
 		
 		// Convert to OrderedText to iterate through styled parts
-		net.minecraft.text.OrderedText orderedText = text.asOrderedText();
+		net.minecraft.util.FormattedCharSequence orderedText = text.getVisualOrderText();
 		final boolean[] hasEpicColor = {false};
 		
 		orderedText.accept((index, style, codePoint) -> {
 			if (style != null && style.getColor() != null) {
-				int styleColor = style.getColor().getRgb();
+				int styleColor = style.getColor().getValue();
 				int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
 				
 				if (styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) {
@@ -1913,7 +1918,7 @@ public class InformationenUtility {
 	 * Looks for text with color #FC7E00 or #FF8000, but ignores "ZAHL x" patterns
 	 * Works for all items with this color, not just blueprints
 	 */
-	public static String extractBlueprintNameFromChatMessage(Text message) {
+	public static String extractBlueprintNameFromChatMessage(Component message) {
 		if (message == null) {
 			return null;
 		}
@@ -1929,12 +1934,12 @@ public class InformationenUtility {
 		final StringBuilder[] currentSection = {new StringBuilder()};
 		
 		// Convert to OrderedText to iterate through styled parts
-		net.minecraft.text.OrderedText orderedText = message.asOrderedText();
+		net.minecraft.util.FormattedCharSequence orderedText = message.getVisualOrderText();
 		orderedText.accept((index, style, codePoint) -> {
 			// Check if this style has one of the target colors
 			boolean hasTargetColor = false;
 			if (style != null && style.getColor() != null) {
-				int styleColor = style.getColor().getRgb();
+				int styleColor = style.getColor().getValue();
 				int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
 				if (styleColorRGB == targetColor1RGB || styleColorRGB == targetColor2RGB) {
 					hasTargetColor = true;
@@ -2015,7 +2020,7 @@ public class InformationenUtility {
 	/**
 	 * Recursively searches for a HoverEvent in a Text component and its siblings
 	 */
-	private static HoverEvent findHoverEventInText(Text text) {
+	private static HoverEvent findHoverEventInText(Component text) {
 		if (text == null) {
 			return null;
 		}
@@ -2025,14 +2030,14 @@ public class InformationenUtility {
 			HoverEvent hoverEvent = text.getStyle().getHoverEvent();
 			if (hoverEvent != null) {
 				// Accept both SHOW_TEXT and SHOW_ITEM
-				if (hoverEvent.getAction() == HoverEvent.Action.SHOW_TEXT || hoverEvent.getAction() == HoverEvent.Action.SHOW_ITEM) {
+				if (hoverEvent.action() == HoverEvent.Action.SHOW_TEXT || hoverEvent.action() == HoverEvent.Action.SHOW_ITEM) {
 					return hoverEvent;
 				}
 			}
 		}
 		
 		// Recursively check siblings
-		for (Text sibling : text.getSiblings()) {
+		for (Component sibling : text.getSiblings()) {
 			HoverEvent siblingHoverEvent = findHoverEventInText(sibling);
 			if (siblingHoverEvent != null) {
 				return siblingHoverEvent;
@@ -2047,9 +2052,9 @@ public class InformationenUtility {
 	 * Note: In Minecraft 1.21.7, the text is not stored in the HoverEvent itself,
 	 * but is generated dynamically. We try to extract it from the ShowText object.
 	 */
-	private static Text extractHoverTextFromEvent(HoverEvent hoverEvent, Text message) {
+	private static Component extractHoverTextFromEvent(HoverEvent hoverEvent, Component message) {
 		// Try to extract from HoverEvent first (this is what we want - the actual tooltip text)
-		Text result = extractHoverTextFromEvent(hoverEvent);
+		Component result = extractHoverTextFromEvent(hoverEvent);
 		if (result != null) {
 			return result;
 		}
@@ -2057,7 +2062,7 @@ public class InformationenUtility {
 		// Fallback: If we can't extract from HoverEvent, try to extract from the message itself
 		// (but this is NOT what we want - we want the tooltip text, not the chat message text)
 		if (message != null) {
-			Text textWithHover = findTextComponentWithHoverEvent(message, hoverEvent);
+			Component textWithHover = findTextComponentWithHoverEvent(message, hoverEvent);
 			if (textWithHover != null) {
 				return textWithHover.copy();
 			}
@@ -2069,7 +2074,7 @@ public class InformationenUtility {
 	/**
 	 * Finds the Text component in a message that has the specified HoverEvent
 	 */
-	private static Text findTextComponentWithHoverEvent(Text message, HoverEvent targetHoverEvent) {
+	private static Component findTextComponentWithHoverEvent(Component message, HoverEvent targetHoverEvent) {
 		if (message == null || targetHoverEvent == null) {
 			return null;
 		}
@@ -2080,8 +2085,8 @@ public class InformationenUtility {
 		}
 		
 		// Recursively check siblings
-		for (Text sibling : message.getSiblings()) {
-			Text result = findTextComponentWithHoverEvent(sibling, targetHoverEvent);
+		for (Component sibling : message.getSiblings()) {
+			Component result = findTextComponentWithHoverEvent(sibling, targetHoverEvent);
 			if (result != null) {
 				return result;
 			}
@@ -2095,12 +2100,12 @@ public class InformationenUtility {
 	 * Note: In Minecraft 1.21.7, the text is not stored in the HoverEvent itself,
 	 * but is generated dynamically. We try to extract it from the ShowText object.
 	 */
-	private static Text extractHoverTextFromEvent(HoverEvent hoverEvent) {
+	private static Component extractHoverTextFromEvent(HoverEvent hoverEvent) {
 		if (hoverEvent == null) {
 			return null;
 		}
 		
-		HoverEvent.Action action = hoverEvent.getAction();
+		HoverEvent.Action action = hoverEvent.action();
 		
 		// Only handle SHOW_TEXT for now
 		if (action != HoverEvent.Action.SHOW_TEXT) {
@@ -2112,8 +2117,8 @@ public class InformationenUtility {
 			java.lang.reflect.Method getValueMethod = HoverEvent.class.getDeclaredMethod("getValue", HoverEvent.Action.class);
 			getValueMethod.setAccessible(true);
 			Object value = getValueMethod.invoke(hoverEvent, HoverEvent.Action.SHOW_TEXT);
-			if (value instanceof Text) {
-				return (Text) value;
+			if (value instanceof Component) {
+				return (Component) value;
 			}
 		} catch (Exception e) {
 			// Ignore
@@ -2124,8 +2129,8 @@ public class InformationenUtility {
 			java.lang.reflect.Method getValueMethod = HoverEvent.class.getDeclaredMethod("getValue");
 			getValueMethod.setAccessible(true);
 			Object value = getValueMethod.invoke(hoverEvent);
-			if (value instanceof Text) {
-				return (Text) value;
+			if (value instanceof Component) {
+				return (Component) value;
 			}
 		} catch (Exception e) {
 			// Ignore
@@ -2136,8 +2141,8 @@ public class InformationenUtility {
 			java.lang.reflect.Method valueMethod = HoverEvent.class.getDeclaredMethod("value");
 			valueMethod.setAccessible(true);
 			Object value = valueMethod.invoke(hoverEvent);
-			if (value instanceof Text) {
-				return (Text) value;
+			if (value instanceof Component) {
+				return (Component) value;
 			}
 		} catch (Exception e) {
 			// Ignore
@@ -2153,12 +2158,12 @@ public class InformationenUtility {
 				}
 				
 				Class<?> fieldType = field.getType();
-				if (fieldType == Text.class || fieldType == Object.class) {
+				if (fieldType == Component.class || fieldType == Object.class) {
 					try {
 						field.setAccessible(true);
 						Object value = field.get(hoverEvent);
-						if (value instanceof Text) {
-							return (Text) value;
+						if (value instanceof Component) {
+							return (Component) value;
 						}
 					} catch (Exception e) {
 						// Ignore
@@ -2177,7 +2182,7 @@ public class InformationenUtility {
 			if (showTextValue == hoverEvent) {
 				// Continue with extraction below
 			} else if (showTextValue instanceof HoverEvent) {
-				Text recursiveResult = extractHoverTextFromEvent((HoverEvent) showTextValue);
+				Component recursiveResult = extractHoverTextFromEvent((HoverEvent) showTextValue);
 				if (recursiveResult != null) {
 					return recursiveResult;
 				}
@@ -2193,15 +2198,15 @@ public class InformationenUtility {
 						for (java.lang.reflect.RecordComponent component : components) {
 							try {
 								Object value = component.getAccessor().invoke(showTextValue);
-								if (value instanceof Text) {
+								if (value instanceof Component) {
 									// Found a Text object! Copy it to create a fresh instance
 									try {
-										Text textValue = (Text) value;
-										Text copiedText = textValue.copy();
+										Component textValue = (Component) value;
+										Component copiedText = textValue.copy();
 										return copiedText;
 									} catch (Exception e) {
 										// If copy fails, return the original
-										return (Text) value;
+										return (Component) value;
 									}
 								}
 							} catch (Exception e) {
@@ -2226,21 +2231,21 @@ public class InformationenUtility {
 						
 						Class<?> fieldType = field.getType();
 						// Look for fields that might contain a Component (Text or Object that could be Text)
-						if (fieldType == Text.class || fieldType == Object.class || 
+						if (fieldType == Component.class || fieldType == Object.class || 
 						    (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
 							try {
 								field.setAccessible(true);
 								Object value = field.get(showTextValue);
 								
-								if (value instanceof Text) {
+								if (value instanceof Component) {
 									// Found a Text object! Copy it to create a fresh instance
 									try {
-										Text textValue = (Text) value;
-										Text copiedText = textValue.copy();
+										Component textValue = (Component) value;
+										Component copiedText = textValue.copy();
 										return copiedText;
 									} catch (Exception e) {
 										// If copy fails, return the original
-										return (Text) value;
+										return (Component) value;
 									}
 								}
 							} catch (Exception e) {
@@ -2257,8 +2262,8 @@ public class InformationenUtility {
 					java.lang.reflect.Method method10893 = showTextClass.getDeclaredMethod("method_10893");
 					method10893.setAccessible(true);
 					Object textValue = method10893.invoke(showTextValue);
-					if (textValue instanceof Text) {
-						return (Text) textValue;
+					if (textValue instanceof Component) {
+						return (Component) textValue;
 					}
 				} catch (Exception e) {
 					// Ignore
@@ -2269,8 +2274,8 @@ public class InformationenUtility {
 					java.lang.reflect.Method valueMethod = showTextClass.getDeclaredMethod("value");
 					valueMethod.setAccessible(true);
 					Object textValue = valueMethod.invoke(showTextValue);
-					if (textValue instanceof Text) {
-						return (Text) textValue;
+					if (textValue instanceof Component) {
+						return (Component) textValue;
 					}
 				} catch (Exception e) {
 					// Ignore
@@ -2281,8 +2286,8 @@ public class InformationenUtility {
 					java.lang.reflect.Method textMethod = showTextClass.getDeclaredMethod("text");
 					textMethod.setAccessible(true);
 					Object textValue = textMethod.invoke(showTextValue);
-					if (textValue instanceof Text) {
-						return (Text) textValue;
+					if (textValue instanceof Component) {
+						return (Component) textValue;
 					}
 				} catch (Exception e) {
 					// Try getText()
@@ -2290,8 +2295,8 @@ public class InformationenUtility {
 						java.lang.reflect.Method getTextMethod = showTextClass.getDeclaredMethod("getText");
 						getTextMethod.setAccessible(true);
 						Object textValue = getTextMethod.invoke(showTextValue);
-						if (textValue instanceof Text) {
-							return (Text) textValue;
+						if (textValue instanceof Component) {
+							return (Component) textValue;
 						}
 					} catch (Exception e2) {
 						// Ignore
@@ -2312,10 +2317,10 @@ public class InformationenUtility {
 						Object value = field.get(showTextValue);
 						
 						// Check if it's Text directly
-						if (value instanceof Text) {
-							Text textValue = (Text) value;
+						if (value instanceof Component) {
+							Component textValue = (Component) value;
 							try {
-								Text copiedText = textValue.copy();
+								Component copiedText = textValue.copy();
 								return copiedText;
 							} catch (Exception e) {
 								return textValue;
@@ -2333,12 +2338,12 @@ public class InformationenUtility {
 					}
 					
 					Class<?> fieldType = field.getType();
-					if (fieldType == Text.class || (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
+					if (fieldType == Component.class || (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
 						try {
 							field.setAccessible(true);
 							Object value = field.get(showTextValue);
-							if (value instanceof Text) {
-								return (Text) value;
+							if (value instanceof Component) {
+								return (Component) value;
 							}
 						} catch (Exception e) {
 							// Ignore
@@ -2356,7 +2361,7 @@ public class InformationenUtility {
 					Class<?> fieldType = field.getType();
 					
 					// Skip if already checked in first pass
-					if (fieldType == Text.class || (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
+					if (fieldType == Component.class || (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
 						continue;
 					}
 					
@@ -2367,8 +2372,8 @@ public class InformationenUtility {
 							Object value = field.get(showTextValue);
 							
 							// Check if it's Text directly
-							if (value instanceof Text) {
-								return (Text) value;
+							if (value instanceof Component) {
+								return (Component) value;
 							}
 							
 							// Check if it's a String (but skip action names)
@@ -2377,19 +2382,19 @@ public class InformationenUtility {
 								if (!stringValue.equals("show_text") && !stringValue.equals("<action show_text>") && 
 								    !stringValue.equals("SHOW_TEXT") && !stringValue.isEmpty()) {
 									// Use as literal text
-									return Text.literal(stringValue);
+									return Component.literal(stringValue);
 								}
 							}
 							
 							// Check if it's a List of Text components
 							if (value instanceof java.util.List) {
 								java.util.List<?> list = (java.util.List<?>) value;
-								if (!list.isEmpty() && list.get(0) instanceof Text) {
+								if (!list.isEmpty() && list.get(0) instanceof Component) {
 									// Combine all Text components into one
-									net.minecraft.text.MutableText combined = Text.empty();
+									net.minecraft.network.chat.MutableComponent combined = Component.empty();
 									for (Object item : list) {
-										if (item instanceof Text) {
-											combined.append((Text) item);
+										if (item instanceof Component) {
+											combined.append((Component) item);
 										}
 									}
 									return combined;
@@ -2406,12 +2411,12 @@ public class InformationenUtility {
 										if (java.lang.reflect.Modifier.isStatic(nestedField.getModifiers())) {
 											continue;
 										}
-										if (nestedField.getType() == Text.class) {
+										if (nestedField.getType() == Component.class) {
 											try {
 												nestedField.setAccessible(true);
 												Object nestedValue = nestedField.get(value);
-												if (nestedValue instanceof Text) {
-													return (Text) nestedValue;
+												if (nestedValue instanceof Component) {
+													return (Component) nestedValue;
 												}
 											} catch (Exception e) {
 												// Continue
@@ -2442,25 +2447,25 @@ public class InformationenUtility {
 						try {
 							method.setAccessible(true);
 							Object textValue = method.invoke(showTextValue);
-							if (textValue instanceof Text) {
-								return (Text) textValue;
+							if (textValue instanceof Component) {
+								return (Component) textValue;
 							} else if (textValue instanceof String) {
 								// Maybe the text is stored as a String? Use it as literal (but skip action names)
 								String stringValue = (String) textValue;
 								if (!stringValue.equals("show_text") && !stringValue.equals("<action show_text>") && 
 								    !stringValue.equals("SHOW_TEXT") && !stringValue.isEmpty()) {
 									// Use as literal text
-									return Text.literal(stringValue);
+									return Component.literal(stringValue);
 								}
 							} else if (textValue instanceof java.util.List) {
 								// Maybe it's a list of Text components?
 								java.util.List<?> list = (java.util.List<?>) textValue;
-								if (!list.isEmpty() && list.get(0) instanceof Text) {
+								if (!list.isEmpty() && list.get(0) instanceof Component) {
 									// Combine all Text components into one
-									net.minecraft.text.MutableText combined = Text.empty();
+									net.minecraft.network.chat.MutableComponent combined = Component.empty();
 									for (Object item : list) {
-										if (item instanceof Text) {
-											combined.append((Text) item);
+										if (item instanceof Component) {
+											combined.append((Component) item);
 										}
 									}
 									return combined;
@@ -2493,25 +2498,25 @@ public class InformationenUtility {
 						try {
 							method.setAccessible(true);
 							Object textValue = method.invoke(showTextValue);
-							if (textValue instanceof Text) {
-								return (Text) textValue;
+							if (textValue instanceof Component) {
+								return (Component) textValue;
 							} else if (textValue instanceof String) {
 								// Maybe the text is stored as a String? Use it as literal (but skip action names)
 								String stringValue = (String) textValue;
 								if (!stringValue.equals("show_text") && !stringValue.equals("<action show_text>") && 
 								    !stringValue.equals("SHOW_TEXT") && !stringValue.isEmpty()) {
 									// Use as literal text
-									return Text.literal(stringValue);
+									return Component.literal(stringValue);
 								}
 							} else if (textValue instanceof java.util.List) {
 								// Maybe it's a list of Text components?
 								java.util.List<?> list = (java.util.List<?>) textValue;
-								if (!list.isEmpty() && list.get(0) instanceof Text) {
+								if (!list.isEmpty() && list.get(0) instanceof Component) {
 									// Combine all Text components into one
-									net.minecraft.text.MutableText combined = Text.empty();
+									net.minecraft.network.chat.MutableComponent combined = Component.empty();
 									for (Object item : list) {
-										if (item instanceof Text) {
-											combined.append((Text) item);
+										if (item instanceof Component) {
+											combined.append((Component) item);
 										}
 									}
 									return combined;
@@ -2538,7 +2543,7 @@ public class InformationenUtility {
 		try {
 			// CRITICAL: In Minecraft 1.21.7, HoverEvent is a sealed interface/class
 			// If the action is SHOW_TEXT, the HoverEvent itself IS the ShowText object!
-			HoverEvent.Action action = hoverEvent.getAction();
+			HoverEvent.Action action = hoverEvent.action();
 			if (action == HoverEvent.Action.SHOW_TEXT) {
 				// Check if the HoverEvent itself is a ShowText instance
 				String className = hoverEvent.getClass().getName();
@@ -2555,7 +2560,7 @@ public class InformationenUtility {
 						java.lang.reflect.Constructor<?>[] constructors = hoverEventClass.getDeclaredConstructors();
 						for (java.lang.reflect.Constructor<?> constructor : constructors) {
 							Class<?>[] paramTypes = constructor.getParameterTypes();
-							if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+							if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 								return hoverEvent;
 							}
 						}
@@ -2619,7 +2624,7 @@ public class InformationenUtility {
 											java.lang.reflect.Constructor<?>[] constructors = valueClass.getDeclaredConstructors();
 											for (java.lang.reflect.Constructor<?> constructor : constructors) {
 												Class<?>[] paramTypes = constructor.getParameterTypes();
-												if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+												if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 													isShowText = true;
 													break;
 												}
@@ -2710,7 +2715,7 @@ public class InformationenUtility {
 											java.lang.reflect.Constructor<?>[] constructors = valueClass.getDeclaredConstructors();
 											for (java.lang.reflect.Constructor<?> constructor : constructors) {
 												Class<?>[] paramTypes = constructor.getParameterTypes();
-												if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+												if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 													isShowText = true;
 													break;
 												}
@@ -2741,7 +2746,7 @@ public class InformationenUtility {
 	 * Creates a HoverEvent for aspect information
 	 * Uses the same approach as TestUtility.createHoverEvent
 	 */
-	private static HoverEvent createHoverEventForAspect(Text hoverText) {
+	private static HoverEvent createHoverEventForAspect(Component hoverText) {
 		if (hoverText == null) {
 			return null;
 		}
@@ -2754,7 +2759,7 @@ public class InformationenUtility {
 		
 		// Try HoverEvent.showText() static factory method first
 		try {
-			java.lang.reflect.Method showTextMethod = HoverEvent.class.getDeclaredMethod("showText", Text.class);
+			java.lang.reflect.Method showTextMethod = HoverEvent.class.getDeclaredMethod("showText", Component.class);
 			showTextMethod.setAccessible(true);
 			HoverEvent result2 = (HoverEvent) showTextMethod.invoke(null, hoverText);
 			return result2;
@@ -2767,7 +2772,7 @@ public class InformationenUtility {
 			for (java.lang.reflect.Method method : HoverEvent.class.getDeclaredMethods()) {
 				if (java.lang.reflect.Modifier.isStatic(method.getModifiers()) && method.getReturnType() == HoverEvent.class) {
 					Class<?>[] paramTypes = method.getParameterTypes();
-					if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+					if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 						try {
 							method.setAccessible(true);
 							HoverEvent result3 = (HoverEvent) method.invoke(null, hoverText);
@@ -2790,7 +2795,7 @@ public class InformationenUtility {
 			java.lang.reflect.Constructor<?>[] constructors = showTextClass.getDeclaredConstructors();
 			for (java.lang.reflect.Constructor<?> constructor : constructors) {
 				Class<?>[] paramTypes = constructor.getParameterTypes();
-				if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+				if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 					try {
 						constructor.setAccessible(true);
 						Object showTextInstance = constructor.newInstance(hoverText);
@@ -2815,7 +2820,7 @@ public class InformationenUtility {
 	 * Creates a HoverEvent directly using the constructor
 	 * In Minecraft 1.21.7, the constructor works at runtime even if not visible at compile time
 	 */
-	private static HoverEvent createHoverEventDirect(Text hoverText) {
+	private static HoverEvent createHoverEventDirect(Component hoverText) {
 		if (hoverText == null) {
 			return null;
 		}
@@ -2833,7 +2838,7 @@ public class InformationenUtility {
 				java.lang.reflect.Constructor<?>[] constructors = innerClass.getDeclaredConstructors();
 				for (java.lang.reflect.Constructor<?> constructor : constructors) {
 					Class<?>[] paramTypes = constructor.getParameterTypes();
-					if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+					if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 						// This looks like ShowText!
 						showTextClass = innerClass;
 						break;
@@ -2851,7 +2856,7 @@ public class InformationenUtility {
 			for (java.lang.reflect.Method method : showTextClass.getDeclaredMethods()) {
 				if (java.lang.reflect.Modifier.isStatic(method.getModifiers()) && method.getReturnType() == HoverEvent.class) {
 					Class<?>[] paramTypes = method.getParameterTypes();
-					if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+					if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 						try {
 							method.setAccessible(true);
 							HoverEvent result = (HoverEvent) method.invoke(null, hoverText);
@@ -2868,7 +2873,7 @@ public class InformationenUtility {
 			
 			for (java.lang.reflect.Constructor<?> constructor : constructors) {
 				Class<?>[] paramTypes = constructor.getParameterTypes();
-				if (paramTypes.length == 1 && paramTypes[0] == Text.class) {
+				if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
 					try {
 						constructor.setAccessible(true);
 						Object showTextInstance = constructor.newInstance(hoverText);
@@ -2990,7 +2995,7 @@ public class InformationenUtility {
 	 * In 1.21.7, HoverEvent can be created with: new HoverEvent(Action, Text)
 	 * We use reflection since the constructor may not be visible at compile time
 	 */
-	private static HoverEvent createHoverEventWithReflection(Text hoverText) {
+	private static HoverEvent createHoverEventWithReflection(Component hoverText) {
 		
 		java.lang.reflect.Constructor<?>[] declaredConstructors = HoverEvent.class.getDeclaredConstructors();
 		java.lang.reflect.Constructor<?>[] publicConstructors = HoverEvent.class.getConstructors();
@@ -3047,11 +3052,11 @@ public class InformationenUtility {
 	 * Recursively modifies a Text component to replace hover events while preserving all formatting.
 	 * Only replaces hover events where they exist (SHOW_TEXT action).
 	 */
-	private static Text modifyTextWithHoverEvent(Text text, HoverEvent newHoverEvent) {
+	private static Component modifyTextWithHoverEvent(Component text, HoverEvent newHoverEvent) {
 		if (text == null) return text;
 		
-		// Copy the text to preserve its structure - copy() returns MutableText which has setStyle()
-		net.minecraft.text.MutableText newText = text.copy();
+		// Copy the text to preserve its structure - copy() returns MutableComponent which has setStyle()
+		net.minecraft.network.chat.MutableComponent newText = text.copy();
 		
 		// Check if this text component has a hover event that needs to be replaced
 		Style currentStyle = text.getStyle();
@@ -3064,8 +3069,8 @@ public class InformationenUtility {
 		
 		// Recursively process all siblings to preserve their formatting
 		newText.getSiblings().clear(); // Clear existing siblings to avoid duplication
-		for (Text sibling : text.getSiblings()) {
-			Text modifiedSibling = modifyTextWithHoverEvent(sibling, newHoverEvent);
+		for (Component sibling : text.getSiblings()) {
+			Component modifiedSibling = modifyTextWithHoverEvent(sibling, newHoverEvent);
 			newText.getSiblings().add(modifiedSibling);
 		}
 		
@@ -3380,19 +3385,19 @@ public class InformationenUtility {
 	/**
 	 * Checks if the hovered item is in one of the license slots
 	 */
-	private static boolean isItemInLicenseSlot(ItemStack stack, MinecraftClient client) {
-		if (client.currentScreen == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+	private static boolean isItemInLicenseSlot(ItemStack stack, Minecraft client) {
+		if (client.screen == null || !(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
 			return false;
 		}
 		
-		net.minecraft.client.gui.screen.ingame.HandledScreen<?> screen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
-		net.minecraft.screen.ScreenHandler handler = screen.getScreenHandler();
+		net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
+		net.minecraft.world.inventory.AbstractContainerMenu handler = screen.getMenu();
 		
 		// Check if the hovered item is in one of the license slots
 		for (int slotIndex : LICENSE_SLOTS) {
 			if (slotIndex < handler.slots.size()) {
-				net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
-				if (slot.hasStack() && slot.getStack() == stack) {
+				net.minecraft.world.inventory.Slot slot = handler.slots.get(slotIndex);
+				if (slot.hasItem() && slot.getItem() == stack) {
 					return true;
 				}
 			}
@@ -3401,10 +3406,10 @@ public class InformationenUtility {
 		// Also check by comparing item stacks (in case of reference mismatch)
 		for (int slotIndex : LICENSE_SLOTS) {
 			if (slotIndex < handler.slots.size()) {
-				net.minecraft.screen.slot.Slot slot = handler.slots.get(slotIndex);
-				if (slot.hasStack()) {
-					ItemStack slotStack = slot.getStack();
-					if (ItemStack.areEqual(stack, slotStack)) {
+				net.minecraft.world.inventory.Slot slot = handler.slots.get(slotIndex);
+				if (slot.hasItem()) {
+					ItemStack slotStack = slot.getItem();
+					if (ItemStack.matches(stack, slotStack)) {
 						return true;
 					}
 				}
@@ -3417,14 +3422,14 @@ public class InformationenUtility {
 	/**
 	 * Checks for license information in tooltip lines and adds location information
 	 */
-	private static void checkForLicenseInformation(List<Text> lines, MinecraftClient client) {
+	private static void checkForLicenseInformation(List<Component> lines, Minecraft client) {
 		// Check if database is loaded
 		if (licensesDatabase.isEmpty()) {
 			return;
 		}
 		
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			String lineText = line.getString();
 			
 			// Skip if lineText is null or empty
@@ -3481,8 +3486,8 @@ public class InformationenUtility {
 					
 					if (lowerAfterColon.contains(lowerSearchTerm)) {
 						// Add location information as a new line with format: → Location
-						Text locationText = Text.literal(" → " + licenseInfo.location)
-							.styled(style -> style.withColor(0xC0C0C0)); // Light gray
+						Component locationText = Component.literal(" → " + licenseInfo.location)
+							.withStyle(style -> style.withColor(0xC0C0C0)); // Light gray
 						
 						// Insert after the current line
 						lines.add(i + 1, locationText);
@@ -3514,8 +3519,8 @@ public class InformationenUtility {
 					
 					if (lowerCleanLine.contains(lowerSearchTerm)) {
 						// Add location information as a new line with format: → Location
-						Text locationText = Text.literal(" → " + licenseInfo.location)
-							.styled(style -> style.withColor(0xC0C0C0)); // Light gray
+						Component locationText = Component.literal(" → " + licenseInfo.location)
+							.withStyle(style -> style.withColor(0xC0C0C0)); // Light gray
 						
 						// Insert after the current line
 						lines.add(i + 1, locationText);
@@ -3534,7 +3539,7 @@ public class InformationenUtility {
 	 * @param lines The tooltip lines
 	 * @param isEngineerInventory If true, reads level from line 3 with format "[Stufe]: "LEVEL"", otherwise from "Stufe: [LEVEL]"
 	 */
-	private static void checkForGadgetInformation(List<Text> lines, boolean isEngineerInventory) {
+	private static void checkForGadgetInformation(List<Component> lines, boolean isEngineerInventory) {
 		if (gadgetsDatabase.isEmpty()) {
 			return;
 		}
@@ -3546,7 +3551,7 @@ public class InformationenUtility {
 		
 		// First pass: identify the item by checking all lines for gadget names/aliases
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			String lineText = line.getString();
 			
 			if (lineText == null || lineText.isEmpty()) {
@@ -3586,7 +3591,7 @@ public class InformationenUtility {
 		if (isEngineerInventory) {
 			// For Engineer inventory: search all lines for "[Stufe]: "LEVEL"" pattern
 			for (int i = 0; i < lines.size(); i++) {
-				Text line = lines.get(i);
+				Component line = lines.get(i);
 				String lineText = line.getString();
 				
 				if (lineText == null || lineText.isEmpty()) {
@@ -3632,7 +3637,7 @@ public class InformationenUtility {
 		} else {
 			// For Module [Upgraden] inventory: find the "Stufe: [" line
 			for (int i = 0; i < lines.size(); i++) {
-				Text line = lines.get(i);
+				Component line = lines.get(i);
 				String lineText = line.getString();
 				
 				if (lineText == null || lineText.isEmpty()) {
@@ -3687,8 +3692,8 @@ public class InformationenUtility {
 				if (location != null && !location.isEmpty()) {
 					// Add location information as a new line after the level line
 					// Format: " → Nächstes Level: location" (without quotes)
-					Text locationText = Text.literal(" → Nächstes Level: " + location)
-						.styled(style -> style.withColor(0xC0C0C0)); // Light gray
+					Component locationText = Component.literal(" → Nächstes Level: " + location)
+						.withStyle(style -> style.withColor(0xC0C0C0)); // Light gray
 					
 					lines.add(stufeLineIndex + 1, locationText);
 				}
@@ -3821,7 +3826,7 @@ public class InformationenUtility {
 	/**
 	 * Sucht in Tooltip-Zeilen nach Biom-Namen und fügt die Teich-Zuordnung hinzu.
 	 */
-	private static void checkForPondInformation(List<Text> lines) {
+	private static void checkForPondInformation(List<Component> lines) {
 		if (pondsDatabase.isEmpty()) {
 			return;
 		}
@@ -3846,8 +3851,8 @@ public class InformationenUtility {
 				}
 
 				int rareColor = getRarityColor("rare");
-				Text pondText = Text.literal(pondDisplay)
-						.styled(style -> style.withColor(rareColor));
+				Component pondText = Component.literal(pondDisplay)
+						.withStyle(style -> style.withColor(rareColor));
 				lines.add(i + 1, pondText);
 				return;
 			}
@@ -3887,8 +3892,8 @@ public class InformationenUtility {
 		return text.replaceAll("\\s+", " ").trim().toLowerCase();
 	}
 
-	private static boolean tooltipAlreadyContainsPondLine(List<Text> lines, String pondName) {
-		for (Text line : lines) {
+	private static boolean tooltipAlreadyContainsPondLine(List<Component> lines, String pondName) {
+		for (Component line : lines) {
 			String text = cleanTooltipLineForMatching(line.getString());
 			if (text.contains("-> " + pondName)) {
 				return true;
@@ -4069,18 +4074,18 @@ public class InformationenUtility {
 	 * Wird über "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen" eingefügt
 	 * Verwendet den gleichen Text wie im ItemViewer-Tooltip
 	 */
-	private static void addClipboardPinTextToTooltip(List<Text> lines, MinecraftClient client) {
+	private static void addClipboardPinTextToTooltip(List<Component> lines, Minecraft client) {
 		// Performance-Optimierung: Frühe Returns
 		if (lines == null || lines.isEmpty() || client == null) {
 			return;
 		}
 		
-		if (client.currentScreen == null) {
+		if (client.screen == null) {
 			return;
 		}
 		
 		// Prüfe ob wir in einem Bauplan-Inventar sind (Baupläne [Waffen], Bauplan [Shop], etc.)
-		String screenTitle = client.currentScreen.getTitle().getString();
+		String screenTitle = client.screen.getTitle().getString();
 		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
 											.replaceAll("[\\u3400-\\u4DBF]", "");
 		
@@ -4105,7 +4110,7 @@ public class InformationenUtility {
 		
 		// Durchsuche Tooltip-Zeilen nach "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen"
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			String lineText = line.getString();
 			
 			if (lineText == null) {
@@ -4121,15 +4126,15 @@ public class InformationenUtility {
 			
 			if (hasHerstellen || hasKaufen) {
 				// Füge leere Zeile und "Bauplan Anpinnen mit Hotkey: [Hotkey]" in grau hinzu, direkt vor dieser Zeile
-				lines.add(i, Text.empty()); // Leere Zeile
-				lines.add(i + 1, Text.literal(clipboardText)
+				lines.add(i, Component.empty()); // Leere Zeile
+				lines.add(i + 1, Component.literal(clipboardText)
 					.setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false))); // Grau
 				return; // Nur einmal einfügen
 			}
 		}
 	}
 	
-	private static void addFloorNumberToBlueprintNames(List<Text> lines, MinecraftClient client) {
+	private static void addFloorNumberToBlueprintNames(List<Component> lines, Minecraft client) {
 		// Performance-Optimierung: Frühe Returns
 		if (lines == null || lines.isEmpty() || client == null) {
 			return;
@@ -4140,12 +4145,12 @@ public class InformationenUtility {
 			return;
 		}
 		
-		if (client.currentScreen == null) {
+		if (client.screen == null) {
 			return;
 		}
 		
 		// Check if we're in a blueprint inventory
-		String screenTitle = client.currentScreen.getTitle().getString();
+		String screenTitle = client.screen.getTitle().getString();
 		
 		if (ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle)) {
 			return;
@@ -4170,7 +4175,7 @@ public class InformationenUtility {
 		
 		// Look for lines containing "[Bauplan]"
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			String lineText = line.getString();
 			
 			if (lineText == null || !lineText.contains("[Bauplan]")) {
@@ -4240,7 +4245,7 @@ public class InformationenUtility {
 			
 			// Simply append the floor tag at the end of the text
 			// We need to preserve the original styling
-			Text newLine = appendFloorNumberToText(line, floorTag);
+			Component newLine = appendFloorNumberToText(line, floorTag);
 			if (newLine != null) {
 				lines.set(i, newLine);
 			}
@@ -4251,13 +4256,13 @@ public class InformationenUtility {
 	 * Adds floor numbers to cards and statues names in inventories
 	 * Only works in inventories that contain the cards/statues characters (㭆 or 㭂)
 	 */
-	private static void addFloorNumberToCardsStatuesNames(List<Text> lines, MinecraftClient client) {
-		if (client == null || client.currentScreen == null) {
+	private static void addFloorNumberToCardsStatuesNames(List<Component> lines, Minecraft client) {
+		if (client == null || client.screen == null) {
 			return;
 		}
 		
 		// Check if we're in a cards/statues inventory
-		String screenTitle = client.currentScreen.getTitle().getString();
+		String screenTitle = client.screen.getTitle().getString();
 		if (screenTitle == null) {
 			return;
 		}
@@ -4272,7 +4277,7 @@ public class InformationenUtility {
 		
 		// Look for lines containing "[Karte]" or "[Statue]"
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			String lineText = line.getString();
 			
 			if (lineText == null) {
@@ -4375,7 +4380,7 @@ public class InformationenUtility {
 			}
 			
 			// Append the floor tag at the end of the text, preserving styling
-			Text newLine = appendFloorNumberToText(line, floorTag);
+			Component newLine = appendFloorNumberToText(line, floorTag);
 			if (newLine != null) {
 				lines.set(i, newLine);
 			}
@@ -4387,7 +4392,7 @@ public class InformationenUtility {
 	 * Epic color (#A134EB or #A335EE) = floor 1
 	 * Legendary color (#FC7E00 or #FF8000) = floor 85
 	 */
-	private static Integer getDrachenzahnFloorFromColor(Text itemNameText) {
+	private static Integer getDrachenzahnFloorFromColor(Component itemNameText) {
 		if (itemNameText == null) {
 			return null;
 		}
@@ -4405,9 +4410,9 @@ public class InformationenUtility {
 		int legendaryColor2RGB = legendaryColor2 & 0x00FFFFFF;
 		
 		// Convert to OrderedText to iterate through styled parts
-		net.minecraft.text.OrderedText orderedText = itemNameText.asOrderedText();
+		net.minecraft.util.FormattedCharSequence orderedText = itemNameText.getVisualOrderText();
 		final StringBuilder fullText = new StringBuilder();
-		final java.util.List<net.minecraft.text.Style> styles = new java.util.ArrayList<>();
+		final java.util.List<net.minecraft.network.chat.Style> styles = new java.util.ArrayList<>();
 		final java.util.List<Integer> codePoints = new java.util.ArrayList<>();
 		
 		orderedText.accept((index, style, codePoint) -> {
@@ -4444,13 +4449,13 @@ public class InformationenUtility {
 		int stringPos = 0;
 		for (int i = 0; i < codePoints.size(); i++) {
 			int codePoint = codePoints.get(i);
-			net.minecraft.text.Style style = styles.get(i);
+			net.minecraft.network.chat.Style style = styles.get(i);
 			
 			// Check if this codePoint is in the blueprint name section (BEFORE the dash)
 			if (stringPos < dashIndex) {
 				// Check the color only for the blueprint name section
 				if (style != null && style.getColor() != null) {
-					int styleColor = style.getColor().getRgb();
+					int styleColor = style.getColor().getValue();
 					int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
 					
 					// Check for Epic color (floor 1)
@@ -4483,11 +4488,11 @@ public class InformationenUtility {
 	/**
 	 * Appends the floor number tag at the end of the text (after "[Bauplan]")
 	 */
-	private static Text appendFloorNumberToText(Text originalText, String floorTag) {
+	private static Component appendFloorNumberToText(Component originalText, String floorTag) {
 		try {
 			// Convert to OrderedText to preserve styling
-			net.minecraft.text.OrderedText orderedText = originalText.asOrderedText();
-			final java.util.List<net.minecraft.text.Style> styles = new java.util.ArrayList<>();
+			net.minecraft.util.FormattedCharSequence orderedText = originalText.getVisualOrderText();
+			final java.util.List<net.minecraft.network.chat.Style> styles = new java.util.ArrayList<>();
 			final java.util.List<Integer> codePoints = new java.util.ArrayList<>();
 			
 			orderedText.accept((index, style, codePoint) -> {
@@ -4497,20 +4502,20 @@ public class InformationenUtility {
 			});
 			
 			// Build new text: original text + floor tag at the end
-			net.minecraft.text.MutableText result = Text.empty().copy();
+			net.minecraft.network.chat.MutableComponent result = Component.empty().copy();
 			
 			// Add all original text - group consecutive characters with same style
-			net.minecraft.text.Style currentStyle = null;
+			net.minecraft.network.chat.Style currentStyle = null;
 			StringBuilder currentSegment = new StringBuilder();
 			
 			for (int i = 0; i < codePoints.size(); i++) {
 				int codePoint = codePoints.get(i);
-				net.minecraft.text.Style style = styles.get(i);
+				net.minecraft.network.chat.Style style = styles.get(i);
 				
 				if (currentStyle == null || !currentStyle.equals(style)) {
 					// Flush current segment
 					if (currentSegment.length() > 0) {
-						result.append(Text.literal(currentSegment.toString()).setStyle(currentStyle));
+						result.append(Component.literal(currentSegment.toString()).setStyle(currentStyle));
 						currentSegment = new StringBuilder();
 					}
 					currentStyle = style;
@@ -4520,19 +4525,19 @@ public class InformationenUtility {
 			
 			// Flush remaining segment
 			if (currentSegment.length() > 0) {
-				result.append(Text.literal(currentSegment.toString()).setStyle(currentStyle));
+				result.append(Component.literal(currentSegment.toString()).setStyle(currentStyle));
 			}
 			
 			// Add floor tag at the end with white color
-			net.minecraft.text.Style floorStyle = net.minecraft.text.Style.EMPTY.withColor(0xFFFFFF);
-			result.append(Text.literal(floorTag).setStyle(floorStyle));
+			net.minecraft.network.chat.Style floorStyle = net.minecraft.network.chat.Style.EMPTY.withColor(0xFFFFFF);
+			result.append(Component.literal(floorTag).setStyle(floorStyle));
 			
 			return result;
 		} catch (Exception e) {
 			// Fallback: simple string append
 			String originalString = originalText.getString();
 			String newString = originalString + floorTag;
-			return Text.literal(newString);
+			return Component.literal(newString);
 		}
 	}
 	
@@ -4676,15 +4681,42 @@ public class InformationenUtility {
 	}
 
 	public static boolean isPrismarinMaterial(String materialName) {
+		return resolvePrismarinMaterialName(materialName) != null;
+	}
+
+	/**
+	 * Mappt Chat-/Tooltip-Varianten auf den kanonischen Prismarin-Namen
+	 * (z. B. {@code Prismarine-Splitter} → {@code Prismarin-Splitter},
+	 * {@code Prismarine-Platten}/{@code Prismarineplatten} → {@code Prismarinplatten}).
+	 *
+	 * @return kanonischer Name oder {@code null}
+	 */
+	public static String resolvePrismarinMaterialName(String materialName) {
 		if (materialName == null || materialName.isEmpty()) {
-			return false;
+			return null;
 		}
-		for (String name : PRISMARIN_MATERIAL_NAMES) {
-			if (name.equalsIgnoreCase(materialName.trim())) {
-				return true;
-			}
+		return PRISMARIN_CANONICAL_BY_KEY.get(normalizePrismarinLookupKey(materialName));
+	}
+
+	private static java.util.Map<String, String> buildPrismarinCanonicalLookup() {
+		java.util.Map<String, String> lookup = new java.util.HashMap<>();
+		for (String canonical : PRISMARIN_MATERIAL_NAMES) {
+			lookup.put(normalizePrismarinLookupKey(canonical), canonical);
 		}
-		return false;
+		// Häufige Chat-Varianten (Prismarine vs. Prismarin, Bindestrich bei Platten)
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Splitter"), "Prismarin-Splitter");
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Fragment"), "Prismarin-Fragment");
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Platten"), "Prismarinplatten");
+		lookup.put(normalizePrismarinLookupKey("Prismarineplatten"), "Prismarinplatten");
+		lookup.put(normalizePrismarinLookupKey("Prismarin-Platten"), "Prismarinplatten");
+		lookup.put(normalizePrismarinLookupKey("Prismarine-Muschel"), "Prismarin-Muschel");
+		return java.util.Collections.unmodifiableMap(lookup);
+	}
+
+	private static String normalizePrismarinLookupKey(String name) {
+		String cleaned = name.replaceAll("§[0-9a-fk-or]", "").trim().toLowerCase(java.util.Locale.ROOT);
+		cleaned = cleaned.replace("prismarine", "prismarin");
+		return cleaned.replace("-", "").replace(" ", "");
 	}
 
 	public static String getFishFamilyFromMaterial(String materialName) {
@@ -4813,9 +4845,9 @@ public class InformationenUtility {
 	}
 
 	private static void appendFishingMaterialLocationToLine(
-			List<Text> lines,
+			List<Component> lines,
 			int lineIndex,
-			Text line,
+			Component line,
 			String cleanLineText,
 			boolean isSpecialInventory,
 			boolean isMaterialBagInventory) {
@@ -4842,7 +4874,7 @@ public class InformationenUtility {
 		}
 
 		int color = getFishMaterialRarityColor(info.rarity);
-		Text locationText = Text.literal(suffix).styled(style -> style.withColor(color));
+		Component locationText = Component.literal(suffix).withStyle(style -> style.withColor(color));
 		lines.set(lineIndex, line.copy().append(locationText));
 	}
 	
@@ -4870,15 +4902,18 @@ public class InformationenUtility {
 	}
 
 	private static MaterialFloorInfo getPrismarinMaterialFloorInfo(String materialName) {
-		for (java.util.Map.Entry<String, String> entry : PRISMARIN_MATERIAL_RARITIES.entrySet()) {
-			if (entry.getKey().equalsIgnoreCase(materialName.trim())) {
-				return new MaterialFloorInfo(0, entry.getValue(), entry.getValue());
-			}
+		String canonical = resolvePrismarinMaterialName(materialName);
+		if (canonical == null) {
+			return null;
 		}
-		return null;
+		String rarity = PRISMARIN_MATERIAL_RARITIES.get(canonical);
+		if (rarity == null) {
+			return null;
+		}
+		return new MaterialFloorInfo(0, rarity, rarity);
 	}
 	
-	private static void addMoblexiconHpToTooltip(List<Text> lines) {
+	private static void addMoblexiconHpToTooltip(List<Component> lines) {
 		if (lines == null || lines.isEmpty()) {
 			return;
 		}
@@ -4887,7 +4922,7 @@ public class InformationenUtility {
 			return;
 		}
 		
-		for (Text line : lines) {
+		for (Component line : lines) {
 			if (line != null) {
 				String withoutFormatting = line.getString().replaceAll("§[0-9a-fk-or]", "");
 				int hpIndex = withoutFormatting.indexOf("HP:");
@@ -4918,15 +4953,15 @@ public class InformationenUtility {
 		String dropLineText = lines.get(insertIndex - 1).getString();
 		String prefix = extractMoblexiconDropLinePrefix(dropLineText);
 		
-		net.minecraft.text.MutableText hpLine = net.minecraft.text.Text.empty();
+		net.minecraft.network.chat.MutableComponent hpLine = net.minecraft.network.chat.Component.empty();
 		if (!prefix.isEmpty()) {
-			hpLine.append(net.minecraft.text.Text.literal(prefix));
+			hpLine.append(net.minecraft.network.chat.Component.literal(prefix));
 		}
-		hpLine.append(net.minecraft.text.Text.literal("HP: " + hpDisplay)
-			.styled(style -> style.withColor(0xFF5555).withItalic(false)));
+		hpLine.append(net.minecraft.network.chat.Component.literal("HP: " + hpDisplay)
+			.withStyle(style -> style.withColor(0xFF5555).withItalic(false)));
 		if (opferungLevel != null) {
-			hpLine.append(net.minecraft.text.Text.literal(" -> Opferung lvl: " + opferungLevel)
-				.styled(style -> style.withColor(0xFFAA00).withItalic(false)));
+			hpLine.append(net.minecraft.network.chat.Component.literal(" -> Opferung lvl: " + opferungLevel)
+				.withStyle(style -> style.withColor(0xFFAA00).withItalic(false)));
 		}
 		lines.add(insertIndex, hpLine);
 	}
@@ -4958,7 +4993,7 @@ public class InformationenUtility {
 		return withoutFormatting.substring(0, nameStart);
 	}
 	
-	private static boolean hasGreenAllgemeinInFirstLine(Text firstLine) {
+	private static boolean hasGreenAllgemeinInFirstLine(Component firstLine) {
 		if (firstLine == null) {
 			return false;
 		}
@@ -4967,7 +5002,7 @@ public class InformationenUtility {
 		final Style[] currentStyle = {Style.EMPTY};
 		final boolean[] found = {false};
 		
-		firstLine.asOrderedText().accept((index, style, codePoint) -> {
+		firstLine.getVisualOrderText().accept((index, style, codePoint) -> {
 			if (found[0]) {
 				return false;
 			}
@@ -5001,18 +5036,18 @@ public class InformationenUtility {
 		if (a.getColor() == null || b.getColor() == null) {
 			return false;
 		}
-		return (a.getColor().getRgb() & 0x00FFFFFF) == (b.getColor().getRgb() & 0x00FFFFFF);
+		return (a.getColor().getValue() & 0x00FFFFFF) == (b.getColor().getValue() & 0x00FFFFFF);
 	}
 	
 	private static boolean isMoblexiconGreenStyle(Style style) {
 		if (style == null || style.getColor() == null) {
 			return false;
 		}
-		int rgb = style.getColor().getRgb() & 0x00FFFFFF;
+		int rgb = style.getColor().getValue() & 0x00FFFFFF;
 		return rgb == 0x55FF55 || rgb == 0x00FF00;
 	}
 	
-	private static Integer resolveMobFloorFromMoblexiconTooltip(List<Text> lines) {
+	private static Integer resolveMobFloorFromMoblexiconTooltip(List<Component> lines) {
 		if (lines.isEmpty()) {
 			return null;
 		}
@@ -5051,7 +5086,7 @@ public class InformationenUtility {
 		return null;
 	}
 	
-	private static int findMoblexiconHpInsertIndex(List<Text> lines) {
+	private static int findMoblexiconHpInsertIndex(List<Component> lines) {
 		for (int i = 0; i < lines.size(); i++) {
 			String cleanLineText = cleanTooltipText(lines.get(i).getString());
 			if (cleanLineText.isEmpty()) {
@@ -5227,13 +5262,13 @@ public class InformationenUtility {
 	/**
 	 * Client tick callback for continuous XP calculation (like KillsUtility)
 	 */
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Performance-Optimierung: Frühe Returns wenn Mod deaktiviert
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
 			return;
 		}
 		
-		if (client == null || client.world == null || client.player == null) {
+		if (client == null || client.level == null || client.player == null) {
 			return;
 		}
 		
@@ -5355,8 +5390,8 @@ public class InformationenUtility {
 		}
 		
 		// Check if we're in MKLevel inventory
-		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-			Text titleText = handledScreen.getTitle();
+		if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			boolean wasInMKLevelInventory = isInMKLevelInventory;
@@ -5386,10 +5421,10 @@ public class InformationenUtility {
 				}
 				// Get actual inventory dimensions using reflection
 				try {
-					java.lang.reflect.Field xField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("x");
-					java.lang.reflect.Field yField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("y");
-					java.lang.reflect.Field bgWidthField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundWidth");
-					java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
+					java.lang.reflect.Field xField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("leftPos");
+					java.lang.reflect.Field yField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("topPos");
+					java.lang.reflect.Field bgWidthField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageWidth");
+					java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageHeight");
 					
 					xField.setAccessible(true);
 					yField.setAccessible(true);
@@ -5406,8 +5441,8 @@ public class InformationenUtility {
 					// Fallback to default values
 					int inventoryWidth = 176;
 					int inventoryHeight = 166;
-					int inventoryX = (client.getWindow().getScaledWidth() - inventoryWidth) / 2;
-					int inventoryY = (client.getWindow().getScaledHeight() - inventoryHeight) / 2;
+					int inventoryX = (client.getWindow().getGuiScaledWidth() - inventoryWidth) / 2;
+					int inventoryY = (client.getWindow().getGuiScaledHeight() - inventoryHeight) / 2;
 					handleMKLevelScrolling(client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
 				}
 			}
@@ -5419,23 +5454,23 @@ public class InformationenUtility {
 	/**
 	 * Handles scrolling for MKLevel overlay
 	 */
-	private static void handleMKLevelScrolling(MinecraftClient client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
+	private static void handleMKLevelScrolling(Minecraft client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
 		if (client == null || client.getWindow() == null) {
 			return;
 		}
 		
-		int windowWidth = client.getWindow().getWidth();
-		int windowHeight = client.getWindow().getHeight();
+		int windowWidth = client.getWindow().getScreenWidth();
+		int windowHeight = client.getWindow().getScreenHeight();
 		
 		if (windowWidth <= 0 || windowHeight <= 0) {
 			return;
 		}
 		
-		int mouseX = (int) client.mouse.getX() * client.getWindow().getScaledWidth() / windowWidth;
-		int mouseY = (int) client.mouse.getY() * client.getWindow().getScaledHeight() / windowHeight;
+		int mouseX = (int) client.mouseHandler.xpos() * client.getWindow().getGuiScaledWidth() / windowWidth;
+		int mouseY = (int) client.mouseHandler.ypos() * client.getWindow().getGuiScaledHeight() / windowHeight;
 		
 		// Calculate overlay position using config (same as renderMKLevelOverlay)
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		if (screenWidth <= 0) {
 			return;
@@ -5504,13 +5539,13 @@ public class InformationenUtility {
 			setMKLevelScrollOffset(currentOffset);
 			
 			// Limit scroll offset based on actual entry heights (including spacing)
-			MinecraftClient client = MinecraftClient.getInstance();
-			if (client != null && client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+			Minecraft client = Minecraft.getInstance();
+			if (client != null && client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 				try {
-					java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
+					java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageHeight");
 					bgHeightField.setAccessible(true);
 					int inventoryHeight = bgHeightField.getInt(handledScreen);
-					
+
 					int padding = 5;
 					int searchBarHeight = 16;
 					int contentOffset = 3; // Same as in render
@@ -5628,14 +5663,17 @@ public class InformationenUtility {
 	/**
 	 * HUD Render callback for mining and lumberjack overlays
 	 */
-	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.world == null || client.player == null) {
+	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.level == null || client.player == null) {
+			return;
+		}
+		if (!HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 		
@@ -5655,9 +5693,9 @@ public class InformationenUtility {
 		// or in a dimension that contains "floor"
 		// If so, don't show overlays
 		boolean shouldHideOverlays = false;
-		if (client.player != null && client.world != null) {
+		if (client.player != null && client.level != null) {
 			String playerName = client.player.getName().getString().toLowerCase();
-			String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+			String dimensionPath = client.level.dimension().identifier().getPath();
 			boolean isInPlayerNameDimension = dimensionPath.equals(playerName);
 			boolean isInFloorDimension = dimensionPath.toLowerCase().contains("floor");
 			shouldHideOverlays = isInPlayerNameDimension || isInFloorDimension;
@@ -5698,10 +5736,10 @@ public class InformationenUtility {
 	 * Updates XP data from tab list for both mining and lumberjack
 	 * Works even when the tab list is closed - the player list is always available
 	 */
-	private static void updateXPFromTabList(MinecraftClient client) {
+	private static void updateXPFromTabList(Minecraft client) {
 		// Check for dimension change and reset initialization flags
-		if (client.world != null) {
-			String newDimension = client.world.getRegistryKey().getValue().getPath();
+		if (client.level != null) {
+			String newDimension = client.level.dimension().identifier().getPath();
 			if (currentDimension == null || !currentDimension.equals(newDimension)) {
 				// Dimension changed - reset initialization flags
 				miningXP.isInitializedInCurrentDimension = false;
@@ -5718,19 +5756,19 @@ public class InformationenUtility {
 		}
 		lastTabListCheck = currentTime;
 		
-		if (client == null || client.getNetworkHandler() == null) {
+		if (client == null || client.getConnection() == null) {
 			return;
 		}
 		
 		// Get player list - this works even when tab list is closed
 		// The player list is always available in the network handler
-		var playerList = client.getNetworkHandler().getPlayerList();
+		var playerList = client.getConnection().getOnlinePlayers();
 		if (playerList == null) {
 			return;
 		}
 		
 		// Convert to list to iterate with index
-		java.util.List<net.minecraft.client.network.PlayerListEntry> entries = 
+		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries = 
 			new java.util.ArrayList<>(playerList);
 		
 		// Helper method to remove Minecraft formatting codes (§ codes)
@@ -5750,11 +5788,11 @@ public class InformationenUtility {
 				return null;
 			}
 			
-			net.minecraft.text.Text displayName = entry.getDisplayName();
+			net.minecraft.network.chat.Component displayName = entry.getTabListDisplayName();
 			if (displayName != null) {
 				return displayName.getString();
 			} else if (entry.getProfile() != null) {
-				return entry.getProfile().getName();
+				return entry.getProfile().name();
 			}
 			return null;
 		};
@@ -5996,13 +6034,13 @@ public class InformationenUtility {
 	/**
 	 * Renders mining overlay
 	 */
-	private static void renderMiningOverlay(DrawContext context, MinecraftClient client) {
+	private static void renderMiningOverlay(GuiGraphicsExtractor context, Minecraft client) {
 		if (client.getWindow() == null) {
 			return;
 		}
 		
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Base position from config
 		int baseX = config.miningOverlayX;
@@ -6023,10 +6061,10 @@ public class InformationenUtility {
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
 		
-		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
 		
@@ -6055,7 +6093,7 @@ public class InformationenUtility {
 		if (scale <= 0) scale = 1.0f;
 		
 		// Apply matrix transformations for scaling
-		var matrices = context.getMatrices();
+		var matrices = context.pose();
 		matrices.pushMatrix();
 		matrices.translate(x, y);
 		matrices.scale(scale, scale);
@@ -6071,15 +6109,15 @@ public class InformationenUtility {
 		
 		// Draw text (scaled, relative to matrix)
 		int textY = padding;
-		context.drawText(client.textRenderer, header, padding, textY, headerColor, true);
+		context.text(client.font, header, padding, textY, headerColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, lastXP, padding, textY, textColor, true);
+		context.text(client.font, lastXP, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, xpPerMin, padding, textY, textColor, true);
+		context.text(client.font, xpPerMin, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
+		context.text(client.font, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
+		context.text(client.font, requiredXP, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -6087,13 +6125,13 @@ public class InformationenUtility {
 	/**
 	 * Renders lumberjack overlay
 	 */
-	private static void renderLumberjackOverlay(DrawContext context, MinecraftClient client) {
+	private static void renderLumberjackOverlay(GuiGraphicsExtractor context, Minecraft client) {
 		if (client.getWindow() == null) {
 			return;
 		}
 		
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Base position from config (same as mining overlay)
 		int baseX = config.miningOverlayX;
@@ -6114,10 +6152,10 @@ public class InformationenUtility {
 		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
 		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
 		
-		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(lastXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(requiredXP));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNext));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
 		
@@ -6146,7 +6184,7 @@ public class InformationenUtility {
 		if (scale <= 0) scale = 1.0f;
 		
 		// Apply matrix transformations for scaling
-		var matrices = context.getMatrices();
+		var matrices = context.pose();
 		matrices.pushMatrix();
 		matrices.translate(x, y);
 		matrices.scale(scale, scale);
@@ -6162,15 +6200,15 @@ public class InformationenUtility {
 		
 		// Draw text (scaled, relative to matrix)
 		int textY = padding;
-		context.drawText(client.textRenderer, header, padding, textY, headerColor, true);
+		context.text(client.font, header, padding, textY, headerColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, lastXP, padding, textY, textColor, true);
+		context.text(client.font, lastXP, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, xpPerMin, padding, textY, textColor, true);
+		context.text(client.font, xpPerMin, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, timeToNext, padding, textY, textColor, true);
+		context.text(client.font, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.drawText(client.textRenderer, requiredXP, padding, textY, textColor, true);
+		context.text(client.font, requiredXP, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -6178,7 +6216,7 @@ public class InformationenUtility {
 	/**
 	 * Renders MKLevel overlay
 	 */
-	public static void renderMKLevelOverlay(DrawContext context, MinecraftClient client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
+	public static void renderMKLevelOverlay(GuiGraphicsExtractor context, Minecraft client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
 		if (client == null || client.getWindow() == null || !isInMKLevelInventory) {
 			return;
 		}
@@ -6188,7 +6226,7 @@ public class InformationenUtility {
 			return;
 		}
 		
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		if (screenWidth <= 0) {
 			return;
@@ -6228,7 +6266,7 @@ public class InformationenUtility {
 		int buttonHeight = 20;
 		
 		// Apply matrix transformation for scaling
-		org.joml.Matrix3x2fStack matrices = context.getMatrices();
+		org.joml.Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		matrices.translate(overlayX, overlayY);
 		matrices.scale(scale, scale);
@@ -6253,13 +6291,13 @@ public class InformationenUtility {
 			int buttonBgColor = active ? 0xFF404040 : 0xFF202020;
 			int buttonBorderColor = active ? 0xFFFFFF00 : 0xFF808080;
 			context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + buttonHeight, buttonBgColor);
-			context.drawBorder(buttonX, buttonY, buttonWidth, buttonHeight, buttonBorderColor);
+			context.outline(buttonX, buttonY, buttonWidth, buttonHeight, buttonBorderColor);
 			
 			String buttonText = tabLabels[i];
-			int textWidth = client.textRenderer.getWidth(buttonText);
+			int textWidth = client.font.width(buttonText);
 			int textXButton = buttonX + (buttonWidth - textWidth) / 2;
-			int textYButton = buttonY + (buttonHeight - client.textRenderer.fontHeight) / 2;
-			context.drawText(client.textRenderer, buttonText, textXButton, textYButton, 0xFFFFFFFF, false);
+			int textYButton = buttonY + (buttonHeight - client.font.lineHeight) / 2;
+			context.text(client.font, buttonText, textXButton, textYButton, 0xFFFFFFFF, false);
 		}
 		
 		int searchBarY = padding - contentOffset; // Shift search bar 3px up
@@ -6270,28 +6308,28 @@ public class InformationenUtility {
 		context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
 		
 		// Draw border (scaled)
-		context.drawBorder(0, 0, unscaledWidth, unscaledHeight, 0xFFFFFFFF);
+		context.outline(0, 0, unscaledWidth, unscaledHeight, 0xFFFFFFFF);
 		
 		// Draw search bar background (relative to matrix)
 		int searchBarX = padding;
 		int searchBarWidth = unscaledWidth - padding * 2;
 		context.fill(searchBarX, searchBarY, searchBarX + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
-		context.drawBorder(searchBarX, searchBarY, searchBarWidth, searchBarHeight, mkLevelSearchFocused ? 0xFFFFFF00 : 0xFF808080);
+		context.outline(searchBarX, searchBarY, searchBarWidth, searchBarHeight, mkLevelSearchFocused ? 0xFFFFFF00 : 0xFF808080);
 		
 		// Draw search text (vertically centered, relative to matrix)
 		String displayText = mkLevelSearchText.isEmpty() ? "Suchen..." : mkLevelSearchText;
 		int textColor = mkLevelSearchText.isEmpty() ? 0xFF808080 : 0xFFFFFFFF;
 		// Calculate text height and center it vertically
-		int textHeight = client.textRenderer.fontHeight; // Usually 9 pixels
+		int textHeight = client.font.lineHeight; // Usually 9 pixels
 		int searchTextY = searchBarY + (searchBarHeight - textHeight) / 2;
-		context.drawText(client.textRenderer, displayText, searchBarX + 2, searchTextY, textColor, false);
+		context.text(client.font, displayText, searchBarX + 2, searchTextY, textColor, false);
 		
 		// Draw cursor if focused (vertically centered, relative to matrix)
 		if (mkLevelSearchFocused && mkLevelSearchCursorVisible) {
 			int cursorX = searchBarX + 2;
 			if (!mkLevelSearchText.isEmpty() && mkLevelSearchCursorPosition > 0) {
 				String textBeforeCursor = mkLevelSearchText.substring(0, Math.min(mkLevelSearchCursorPosition, mkLevelSearchText.length()));
-				cursorX += client.textRenderer.getWidth(textBeforeCursor);
+				cursorX += client.font.width(textBeforeCursor);
 			}
 			// Center cursor vertically
 			int cursorY = searchBarY + (searchBarHeight - textHeight) / 2;
@@ -6322,7 +6360,7 @@ public class InformationenUtility {
 			if (totalContentHeight > availableHeight) {
 				// Draw scrollbar background
 				context.fill(scrollbarX, scrollbarTop, scrollbarX + scrollbarWidth, scrollbarBottom, 0xFF404040);
-				context.drawBorder(scrollbarX, scrollbarTop, scrollbarWidth, scrollbarHeight, 0xFF808080);
+				context.outline(scrollbarX, scrollbarTop, scrollbarWidth, scrollbarHeight, 0xFF808080);
 				
 				// Calculate handle size and position
 				float scrollRatio = (float) availableHeight / totalContentHeight;
@@ -6346,7 +6384,7 @@ public class InformationenUtility {
 				// Draw scrollbar handle
 				int handleColor = mkLevelScrollbarDragging ? 0xFF808080 : 0xFF606060;
 				context.fill(scrollbarX + 1, handleY, scrollbarX + scrollbarWidth - 1, handleY + handleHeight, handleColor);
-				context.drawBorder(scrollbarX + 1, handleY, scrollbarWidth - 2, handleHeight, 0xFFC0C0C0);
+				context.outline(scrollbarX + 1, handleY, scrollbarWidth - 2, handleHeight, 0xFFC0C0C0);
 			}
 		}
 		
@@ -6449,7 +6487,7 @@ public class InformationenUtility {
 	 * Appends perfect wave info to tier lines in the essence bag UI tooltip.
 	 * Format: {@code Tier X - amount -> Welle: NNN} (wave number in green).
 	 */
-	private static void addEssenceBagWaveDisplayToTooltip(List<Text> lines, ItemStack stack) {
+	private static void addEssenceBagWaveDisplayToTooltip(List<Component> lines, ItemStack stack) {
 		if (lines == null || lines.isEmpty()) {
 			return;
 		}
@@ -6463,7 +6501,7 @@ public class InformationenUtility {
 				"Tier\\s+(\\d+)\\s*-\\s*.+", java.util.regex.Pattern.CASE_INSENSITIVE);
 		
 		for (int i = 0; i < lines.size(); i++) {
-			Text line = lines.get(i);
+			Component line = lines.get(i);
 			if (line == null) {
 				continue;
 			}
@@ -6484,15 +6522,15 @@ public class InformationenUtility {
 				continue;
 			}
 			
-			MutableText newLine = line.copy()
-					.append(Text.literal(" -> Welle: ").styled(style -> style.withColor(0xC0C0C0)))
-					.append(Text.literal(waveText).styled(style -> style.withColor(0x55FF55)));
+			MutableComponent newLine = line.copy()
+					.append(Component.literal(" -> Welle: ").withStyle(style -> style.withColor(0xC0C0C0)))
+					.append(Component.literal(waveText).withStyle(style -> style.withColor(0x55FF55)));
 			lines.set(i, newLine);
 		}
 	}
 	
-	private static String extractEssenceMobBaseFromTooltip(List<Text> lines, ItemStack stack) {
-		for (Text line : lines) {
+	private static String extractEssenceMobBaseFromTooltip(List<Component> lines, ItemStack stack) {
+		for (Component line : lines) {
 			if (line == null) {
 				continue;
 			}
@@ -6503,7 +6541,7 @@ public class InformationenUtility {
 		}
 		
 		if (stack != null && !stack.isEmpty()) {
-			String clean = cleanTooltipLineForMatching(stack.getName().getString());
+			String clean = cleanTooltipLineForMatching(stack.getHoverName().getString());
 			if (clean.contains("[Essenz]")) {
 				return clean.substring(0, clean.indexOf("[Essenz]")).trim();
 			}
@@ -6814,7 +6852,7 @@ public class InformationenUtility {
 		}
 	}
 	
-	private static List<RenderLine> buildMKLevelRenderLines(MinecraftClient client) {
+	private static List<RenderLine> buildMKLevelRenderLines(Minecraft client) {
 		List<RenderLine> allLines = new ArrayList<>();
 		
 		switch (mkLevelActiveTab) {
@@ -6825,7 +6863,7 @@ public class InformationenUtility {
 					String waveDisplay = getWaveDisplayForMKLevelEssence(levelInfo.essence);
 					if (waveDisplay != null) {
 						String wavePrefix = "-> Welle: ";
-						allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.textRenderer.getWidth(wavePrefix)));
+						allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.font.width(wavePrefix)));
 					}
 					allLines.add(new RenderLine("", 0xFFFFFFFF));
 				}
@@ -6835,19 +6873,19 @@ public class InformationenUtility {
 					allLines.add(new RenderLine("-Level (" + waveInfo.level + ")", 0xFFFFFF00));
 					String wavePrefix = "-> Welle: ";
 					String waveNumber = String.valueOf(waveInfo.wave);
-					allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveNumber, 0xFF55FF55, client.textRenderer.getWidth(wavePrefix)));
+					allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveNumber, 0xFF55FF55, client.font.width(wavePrefix)));
 					
 					if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
 						String withoutHeader = "Ohne: ";
-						int withoutHeaderWidth = client.textRenderer.getWidth(withoutHeader);
+						int withoutHeaderWidth = client.font.width(withoutHeader);
 						
 						String firstEssence = waveInfo.without.get(0).trim();
 						String essenceWaveDisplay = getWaveDisplayForMKLevelEssence(firstEssence);
 						if (essenceWaveDisplay != null) {
 							String wavePrefixText = " -> Welle: ";
-							int essenceNameWidth = client.textRenderer.getWidth(firstEssence);
+							int essenceNameWidth = client.font.width(firstEssence);
 							int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
-							int waveNumX = wavePrefixX + client.textRenderer.getWidth(wavePrefixText);
+							int waveNumX = wavePrefixX + client.font.width(wavePrefixText);
 							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555, 0, wavePrefixText, 0xFFC0C0C0, wavePrefixX, essenceWaveDisplay, 0xFF55FF55, waveNumX));
 						} else {
 							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555));
@@ -6858,9 +6896,9 @@ public class InformationenUtility {
 							String waveDisplay = getWaveDisplayForMKLevelEssence(essenceName);
 							if (waveDisplay != null) {
 								String wavePrefixText = " -> Welle: ";
-								int essenceNameWidth = client.textRenderer.getWidth(essenceName);
+								int essenceNameWidth = client.font.width(essenceName);
 								int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
-								int waveNumX = wavePrefixX + client.textRenderer.getWidth(wavePrefixText);
+								int waveNumX = wavePrefixX + client.font.width(wavePrefixText);
 								allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, wavePrefixText, 0xFFC0C0C0, wavePrefixX, waveDisplay, 0xFF55FF55, waveNumX));
 							} else {
 								allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, "", 0, 0));
@@ -6877,7 +6915,7 @@ public class InformationenUtility {
 					String waveDisplay = getWaveDisplayForMKLevelEssence(essenceInfo.essence);
 					if (waveDisplay != null) {
 						String wavePrefix = "-> Welle: ";
-						allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.textRenderer.getWidth(wavePrefix)));
+						allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.font.width(wavePrefix)));
 					}
 					allLines.add(new RenderLine("", 0xFFFFFFFF));
 				}
@@ -6887,7 +6925,7 @@ public class InformationenUtility {
 		return allLines;
 	}
 	
-	private static void renderMKLevelScrollableLines(DrawContext context, MinecraftClient client, List<RenderLine> allLines,
+	private static void renderMKLevelScrollableLines(GuiGraphicsExtractor context, Minecraft client, List<RenderLine> allLines,
 			int textX, int contentY, int maxY, int availableHeight, int lineHeight) {
 		int totalHeight = allLines.size() * lineHeight;
 		int maxScrollOffset = Math.max(0, totalHeight - availableHeight);
@@ -6906,7 +6944,7 @@ public class InformationenUtility {
 			String moreText = mkLevelActiveTab == MKLevelOverlayTab.TOTAL_ESSENCES
 				? "↑ Weitere Essenzen (Scrollen)"
 				: "↑ Weitere Level (Scrollen)";
-			context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+			context.text(client.font, moreText, textX, textY, 0x80FFFFFF, true);
 			textY += lineHeight;
 		}
 		
@@ -6922,13 +6960,13 @@ public class InformationenUtility {
 			if (textY + lineHeight > minRenderY) {
 				RenderLine line = allLines.get(i);
 				if (line.hasSecondPart) {
-					context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
-					context.drawText(client.textRenderer, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
+					context.text(client.font, line.text, textX + line.xOffset, textY, line.color, true);
+					context.text(client.font, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
 					if (line.hasThirdPart) {
-						context.drawText(client.textRenderer, line.thirdPartText, textX + line.thirdPartXOffset, textY, line.thirdPartColor, true);
+						context.text(client.font, line.thirdPartText, textX + line.thirdPartXOffset, textY, line.thirdPartColor, true);
 					}
 				} else {
-					context.drawText(client.textRenderer, line.text, textX + line.xOffset, textY, line.color, true);
+					context.text(client.font, line.text, textX + line.xOffset, textY, line.color, true);
 				}
 			}
 			textY += lineHeight;
@@ -6939,7 +6977,7 @@ public class InformationenUtility {
 			String moreText = mkLevelActiveTab == MKLevelOverlayTab.TOTAL_ESSENCES
 				? "↓ Weitere Essenzen (Scrollen)"
 				: "↓ Weitere Level (Scrollen)";
-			context.drawText(client.textRenderer, moreText, textX, textY, 0x80FFFFFF, true);
+			context.text(client.font, moreText, textX, textY, 0x80FFFFFF, true);
 		}
 	}
 	
@@ -7136,7 +7174,7 @@ public class InformationenUtility {
 	/**
 	 * Extracts plain text from Text component, removing all formatting codes
 	 */
-	public static String getPlainTextFromText(Text text) {
+	public static String getPlainTextFromText(Component text) {
 		if (text == null) {
 			return "";
 		}
@@ -7166,7 +7204,7 @@ public class InformationenUtility {
 	 * @param inventoryHeight Height of the inventory (from mixin shadow field)
 	 */
 	public static boolean handleMKLevelSearchClick(double mouseX, double mouseY, int button, int inventoryX, int inventoryY, int inventoryHeight) {
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.getWindow() == null) {
 			return false;
 		}
@@ -7174,8 +7212,8 @@ public class InformationenUtility {
 		// Check if we're in the MKLevel inventory - check directly instead of relying on isInMKLevelInventory
 		// This ensures it works even if onClientTick hasn't run yet
 		boolean inMKLevelInventory = false;
-		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-			Text titleText = handledScreen.getTitle();
+		if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
@@ -7191,7 +7229,7 @@ public class InformationenUtility {
 			return false;
 		}
 		
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
 		if (scale <= 0) scale = 1.0f;
@@ -7331,7 +7369,7 @@ public class InformationenUtility {
 			return false;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.getWindow() == null) {
 			return false;
 		}
@@ -7392,18 +7430,18 @@ public class InformationenUtility {
 	/**
 	 * Finds cursor position based on click X position
 	 */
-	private static int findCursorPosition(MinecraftClient client, String text, int clickX) {
+	private static int findCursorPosition(Minecraft client, String text, int clickX) {
 		if (text.isEmpty()) {
 			return 0;
 		}
 		
 		for (int i = 0; i <= text.length(); i++) {
 			String substring = text.substring(0, i);
-			int width = client.textRenderer.getWidth(substring);
+			int width = client.font.width(substring);
 			if (width >= clickX) {
 				// Check if we're closer to this position or the previous one
 				if (i > 0) {
-					int prevWidth = client.textRenderer.getWidth(text.substring(0, i - 1));
+					int prevWidth = client.font.width(text.substring(0, i - 1));
 					if (clickX - prevWidth < width - clickX) {
 						return i - 1;
 					}
@@ -7467,15 +7505,15 @@ public class InformationenUtility {
 			return false;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			return false;
 		}
 		
 		// Double-check that we're still in the MKLevel inventory
 		boolean inMKLevelInventory = false;
-		if (client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
-			Text titleText = handledScreen.getTitle();
+		if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
@@ -7556,11 +7594,11 @@ public class InformationenUtility {
 			switch (keyCode) {
 				case 67: // Strg+C - Kopieren
 					if (!mkLevelSearchText.isEmpty()) {
-						client.keyboard.setClipboard(mkLevelSearchText);
+						client.keyboardHandler.setClipboard(mkLevelSearchText);
 					}
 					return true;
 				case 86: // Strg+V - Einfügen
-					String clipboardText = client.keyboard.getClipboard();
+					String clipboardText = client.keyboardHandler.getClipboard();
 					if (clipboardText != null && !clipboardText.isEmpty()) {
 						mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
 											clipboardText +
@@ -7922,10 +7960,10 @@ public class InformationenUtility {
 	/**
 	 * Checks for dimension changes for mining/lumberjack overlays and resets tracking if necessary
 	 */
-	private static void checkMiningLumberjackDimensionChange(MinecraftClient client) {
+	private static void checkMiningLumberjackDimensionChange(Minecraft client) {
 		try {
-			if (client.world != null && client.player != null) {
-				String newDimension = client.world.getRegistryKey().getValue().toString();
+			if (client.level != null && client.player != null) {
+				String newDimension = client.level.dimension().identifier().toString();
 				
 				if (miningLumberjackDimension != null && !miningLumberjackDimension.equals(newDimension)) {
 					// Dimension changed, reset mining/lumberjack tracking
@@ -7970,15 +8008,16 @@ public class InformationenUtility {
 	 * Farmzone = Farmwelt ({@code minecraft:overworld}) + Cactus-Clicker-Scoreboard mit erkanntem Biom.
 	 * Gleiche Logik wie beim Collection-Overlay.
 	 */
-	public static boolean isInFarmzone(MinecraftClient client) {
+	public static boolean isInFarmzone(Minecraft client) {
 		return isInFarmworldDimension(client) && biomDetected;
 	}
 
 	/**
-	 * Aktualisiert den Biom-Cache vom Scoreboard (rate-limited, wie {@link #checkCollectionBiomChange}).
+	 * Aktualisiert den Biom-Cache vom Scoreboard (sofort, ohne Rate-Limit).
 	 */
-	public static void refreshFarmzoneScoreboardCache(MinecraftClient client) {
+	public static void refreshFarmzoneScoreboardCache(Minecraft client) {
 		if (client != null && isInFarmworldDimension(client)) {
+			lastScoreboardCheck = 0L;
 			checkCollectionBiomChange(client);
 		}
 	}
@@ -7986,13 +8025,13 @@ public class InformationenUtility {
 	/**
 	 * Checks if player is in farmworld dimension
 	 */
-	private static boolean isInFarmworldDimension(MinecraftClient client) {
+	private static boolean isInFarmworldDimension(Minecraft client) {
 		try {
-			if (client == null || client.world == null) {
+			if (client == null || client.level == null) {
 				return false;
 			}
 			
-			String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
+			String dimensionId = client.level.dimension().identifier().toString().toLowerCase();
 			// Farmworld is usually minecraft:overworld
 			return dimensionId.equals("minecraft:overworld");
 		} catch (Exception e) {
@@ -8003,10 +8042,10 @@ public class InformationenUtility {
 	/**
 	 * Checks for dimension changes and resets collection tracking if necessary
 	 */
-	private static void checkCollectionDimensionChange(MinecraftClient client) {
+	private static void checkCollectionDimensionChange(Minecraft client) {
 		try {
-			if (client.world != null && client.player != null) {
-				String newDimension = client.world.getRegistryKey().getValue().toString();
+			if (client.level != null && client.player != null) {
+				String newDimension = client.level.dimension().identifier().toString();
 				
 				if (collectionDimension != null && !collectionDimension.equals(newDimension)) {
 					// Dimension changed, reset collection tracking
@@ -8045,12 +8084,13 @@ public class InformationenUtility {
 		blocksPerMinute = 0.0;
 		collectionDimension = null;
 		blocksNeededForNextCollection = 0;
+		FarmzoneResourceRateUtility.resetSession();
 	}
 	
 	/**
 	 * Checks for biom changes in scoreboard and resets collection tracking if necessary
 	 */
-	private static void checkCollectionBiomChange(MinecraftClient client) {
+	private static void checkCollectionBiomChange(Minecraft client) {
 		try {
 			// Only check every 500ms (0.5 seconds) to avoid performance issues
 			long currentTime = System.currentTimeMillis();
@@ -8061,48 +8101,32 @@ public class InformationenUtility {
 			}
 			lastScoreboardCheck = currentTime;
 			
-			if (client == null || client.world == null) {
-				// Scoreboard disappeared - hide overlay temporarily
-				if (biomDetected) {
-					biomDetected = false;
-					sessionStartTime = 0;
-				}
+			if (client == null || client.level == null) {
+				clearBiomDetection();
 				return;
 			}
 			
 			// Get scoreboard
-			net.minecraft.scoreboard.Scoreboard scoreboard = client.world.getScoreboard();
+			net.minecraft.world.scores.Scoreboard scoreboard = client.level.getScoreboard();
 			if (scoreboard == null) {
-				// Scoreboard disappeared - hide overlay temporarily
-				if (biomDetected) {
-					biomDetected = false;
-					sessionStartTime = 0;
-				}
+				clearBiomDetection();
 				return;
 			}
 			
 			// Get sidebar objective
-			net.minecraft.scoreboard.ScoreboardObjective sidebarObjective = 
-				scoreboard.getObjectiveForSlot(net.minecraft.scoreboard.ScoreboardDisplaySlot.SIDEBAR);
+			net.minecraft.world.scores.Objective sidebarObjective = 
+				scoreboard.getDisplayObjective(net.minecraft.world.scores.DisplaySlot.SIDEBAR);
 			if (sidebarObjective == null) {
-				// Scoreboard disappeared - hide overlay temporarily
-				if (biomDetected) {
-					biomDetected = false;
-					sessionStartTime = 0;
-				}
+				clearBiomDetection();
 				return;
 			}
 			
-			// Check if title is "Cactus Clicker"
+			// Check if title is "Cactus Clicker" (Unicode-/Format-Glyphen vom Resourcepack entfernen)
 			String titleStr = sidebarObjective.getDisplayName().getString();
-			String cleanTitle = titleStr.replaceAll("§[0-9a-fk-or]", "").trim();
+			String cleanTitle = stripScoreboardDisplayText(titleStr);
 			
 			if (!cleanTitle.equalsIgnoreCase("Cactus Clicker")) {
-				// Scoreboard disappeared (wrong scoreboard) - hide overlay temporarily
-				if (biomDetected) {
-					biomDetected = false;
-					sessionStartTime = 0;
-				}
+				clearBiomDetection();
 				return; // Not the right scoreboard
 			}
 			
@@ -8119,6 +8143,7 @@ public class InformationenUtility {
 					currentBiomName = biomName;
 					bossBarReadAllowedAfterMs = System.currentTimeMillis() + ZONE_BOSSBAR_READ_DELAY_MS;
 					resetCollectionTracking();
+					FarmzoneResourceRateUtility.resetSession();
 					pendingResets = 0;
 					if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay && isTrackingCollections) {
 						sessionStartTime = System.currentTimeMillis();
@@ -8133,176 +8158,66 @@ public class InformationenUtility {
 					}
 				}
 			} else {
-				// No biom detected - hide overlay temporarily
-				if (biomDetected) {
-					biomDetected = false;
-					sessionStartTime = 0;
-				}
+				clearBiomDetection();
 			}
 		} catch (Exception e) {
 			// Silent error handling
 		}
 	}
+
+	/** Biom verloren / Scoreboard weg → Overlay aus und Ressourcen/Min zurücksetzen. */
+	private static void clearBiomDetection() {
+		if (!biomDetected) {
+			return;
+		}
+		biomDetected = false;
+		sessionStartTime = 0;
+		FarmzoneResourceRateUtility.resetSession();
+	}
 	
 	/**
-	 * Reads all scoreboard lines from sidebar in order (top to bottom)
-	 * Uses the official 1.21.x API: getScoreboardEntries(ScoreboardObjective)
-	 * No Reflection - uses direct Minecraft classes
+	 * Reads all scoreboard lines from sidebar in order (top to bottom).
+	 * Nutzt dieselbe Team-/Display-Auflösung wie {@link ScoreboardSidebarReader} (26.1 API).
 	 */
-	private static List<String> readScoreboardLines(net.minecraft.scoreboard.Scoreboard scoreboard, 
-			net.minecraft.scoreboard.ScoreboardObjective sidebarObjective) {
+	private static List<String> readScoreboardLines(net.minecraft.world.scores.Scoreboard scoreboard, 
+			net.minecraft.world.scores.Objective sidebarObjective) {
 		List<String> lines = new ArrayList<>();
-		
 		try {
-			// Helper method to remove Minecraft formatting codes (§ codes)
-			java.util.function.Function<String, String> removeFormatting = (text) -> {
-				if (text == null) return "";
-				return text.replaceAll("§[0-9a-fk-or]", "").trim();
-			};
-			
-			// Use official 1.21.x API: getScoreboardEntries(ScoreboardObjective)
-			Collection<ScoreboardEntry> rawEntries = scoreboard.getScoreboardEntries(sidebarObjective);
-			
-			if (rawEntries == null || rawEntries.isEmpty()) {
-				return lines;
-			}
-			
-			// Filter hidden entries and sort like in HUD
-			List<ScoreboardEntry> filteredEntries = rawEntries.stream()
-					.filter(e -> !e.hidden())
-					.toList();
-			
-			// Try to sort with InGameHud.SCOREBOARD_ENTRY_COMPARATOR (via reflection if needed)
-			List<ScoreboardEntry> entries;
-			try {
-				java.lang.reflect.Field comparatorField = InGameHud.class.getField("SCOREBOARD_ENTRY_COMPARATOR");
-				@SuppressWarnings("unchecked")
-				java.util.Comparator<ScoreboardEntry> comparator = (java.util.Comparator<ScoreboardEntry>) comparatorField.get(null);
-				entries = filteredEntries.stream()
-						.sorted(comparator)
-						.toList();
-			} catch (Exception e) {
-				// Fallback: sort by score value (descending)
-				entries = filteredEntries.stream()
-						.sorted((a, b) -> Integer.compare(b.value(), a.value()))
-						.toList();
-			}
-			
-			// Extract text from each entry
-			for (int i = 0; i < entries.size(); i++) {
-				ScoreboardEntry entry = entries.get(i);
-				
-				String owner = entry.owner();
-				
-				// Get the team for this owner using getScoreHolderTeam
-				Team team = null;
-				try {
-					java.lang.reflect.Method getScoreHolderTeamMethod = scoreboard.getClass().getMethod("getScoreHolderTeam", String.class);
-					team = (Team) getScoreHolderTeamMethod.invoke(scoreboard, owner);
-				} catch (Exception e) {
-					// Try alternative method names
-					try {
-						java.lang.reflect.Method method = scoreboard.getClass().getMethod("method_1164", String.class);
-						team = (Team) method.invoke(scoreboard, owner);
-					} catch (Exception e2) {
-						// Ignore
-					}
+			for (ScoreboardSidebarReader.Row row : ScoreboardSidebarReader.readRows(scoreboard, sidebarObjective)) {
+				if (row == null || row.name() == null) {
+					continue;
 				}
-				
-				// WICHTIG: sichtbarer Text kommt aus entry.name()
-				// Aber wenn entry.name() nur den Owner zurückgibt, müssen wir Team.decorateName() manuell verwenden
-				Text lineText = entry.name();
-				String nameString = lineText != null ? lineText.getString() : "";
-				
-				// Prüfe ob entry.name() nur den Owner zurückgibt (dann ist Team.decorateName() nötig)
-				if (nameString.equals(owner)) {
-					// entry.name() hat nur den Owner zurückgegeben - versuche Teams zu finden
-					
-					// Versuche alle Teams im Scoreboard zu durchsuchen
-					try {
-						java.lang.reflect.Field[] fields = scoreboard.getClass().getDeclaredFields();
-						for (java.lang.reflect.Field field : fields) {
-							if (java.util.Map.class.isAssignableFrom(field.getType())) {
-								field.setAccessible(true);
-								Object fieldValue = field.get(scoreboard);
-								if (fieldValue instanceof java.util.Map) {
-									java.util.Map<?, ?> map = (java.util.Map<?, ?>) fieldValue;
-									// Prüfe ob dies die Teams-Map ist (Map<String, Team>)
-									if (!map.isEmpty()) {
-										Object firstKey = map.keySet().iterator().next();
-										Object firstValue = map.get(firstKey);
-										if (firstKey instanceof String && firstValue instanceof Team) {
-										@SuppressWarnings("unchecked")
-											java.util.Map<String, Team> teamsMap = (java.util.Map<String, Team>) map;
-											
-											// Suche nach einem Team, das diesen Owner enthält
-											for (java.util.Map.Entry<String, Team> teamEntry : teamsMap.entrySet()) {
-												Team t = teamEntry.getValue();
-												if (t != null) {
-													// Prüfe ob dieses Team den Owner als Mitglied hat
-													try {
-														java.lang.reflect.Method getMembersMethod = t.getClass().getMethod("getMembers");
-														java.util.Collection<?> members = (java.util.Collection<?>) getMembersMethod.invoke(t);
-														if (members != null && members.contains(owner)) {
-															team = t;
-															break;
-														}
-													} catch (Exception ex) {
-														// Ignoriere Fehler
-													}
-												}
-											}
-											
-											// Wenn kein Team über Members gefunden wurde, versuche über Team-Name zu suchen
-											if (team == null) {
-												// Versuche Team-Name, der dem Owner entspricht (z.B. Team "§e" für Owner "§e")
-												Team possibleTeam = teamsMap.get(owner);
-												if (possibleTeam != null) {
-													team = possibleTeam;
-												}
-											}
-											
-											if (team != null) {
-												Text base = Text.literal(owner);
-												lineText = Team.decorateName(team, base);
-											}
-											break;
-										}
-									}
-								}
-							}
-						}
-					} catch (Exception e) {
-						// Silent error handling
-					}
-				}
-				
-				if (lineText != null) {
-					String rawText = lineText.getString();   // z.B. "Biom", "-> Kohle", "[Kohle Mine]"
-					String cleanText = removeFormatting.apply(rawText);
-					
-					lines.add(cleanText);
-				}
+				lines.add(stripScoreboardDisplayText(row.name().getString()));
 			}
 		} catch (Exception e) {
 			// Silent error handling
 		}
-		
 		return lines;
+	}
+
+	/** Entfernt §-Codes und Resourcepack-Glyphs (CJK/PUA), die im Scoreboard-Text stecken können. */
+	private static String stripScoreboardDisplayText(String text) {
+		if (text == null) {
+			return "";
+		}
+		return text
+				.replaceAll("§[0-9a-fk-or]", "")
+				.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uE000-\\uF8FF]", "")
+				.trim();
 	}
 	
 	/**
 	 * Sidebar-Zeilen wie im HUD (ohne §-Codes), für andere Utilities (z. B. npcAlerts Kombo-Kiste).
 	 */
-	public static List<String> readCleanSidebarLines(MinecraftClient client) {
+	public static List<String> readCleanSidebarLines(Minecraft client) {
 		List<String> out = new ArrayList<>();
-		if (client == null || client.world == null) {
+		if (client == null || client.level == null) {
 			return out;
 		}
 		try {
-			net.minecraft.scoreboard.Scoreboard scoreboard = client.world.getScoreboard();
-			net.minecraft.scoreboard.ScoreboardObjective sidebarObjective =
-				scoreboard.getObjectiveForSlot(net.minecraft.scoreboard.ScoreboardDisplaySlot.SIDEBAR);
+			net.minecraft.world.scores.Scoreboard scoreboard = client.level.getScoreboard();
+			net.minecraft.world.scores.Objective sidebarObjective =
+				scoreboard.getDisplayObjective(net.minecraft.world.scores.DisplaySlot.SIDEBAR);
 			if (sidebarObjective == null) {
 				return out;
 			}
@@ -8317,8 +8232,7 @@ public class InformationenUtility {
 	 */
 	private static boolean isEmptyLine(String s) {
 		if (s == null) return true;
-		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
-		return clean.isEmpty();
+		return stripScoreboardDisplayText(s).isEmpty();
 	}
 	
 	/**
@@ -8327,9 +8241,9 @@ public class InformationenUtility {
 	 */
 	private static boolean isBiomLabel(String s) {
 		if (s == null) return false;
-		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
-		// Remove the ▌ symbol if present
-		clean = clean.replace("▌", "").trim();
+		String clean = stripScoreboardDisplayText(s);
+		// Remove common prefix symbols if present
+		clean = clean.replace("▌", "").replace("|", "").trim();
 		return clean.equalsIgnoreCase("Biom");
 	}
 	
@@ -8338,7 +8252,7 @@ public class InformationenUtility {
 	 */
 	private static boolean isArrowLine(String s) {
 		if (s == null) return false;
-		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
+		String clean = stripScoreboardDisplayText(s);
 		return clean.startsWith("->") || clean.startsWith("➥");
 	}
 	
@@ -8348,7 +8262,7 @@ public class InformationenUtility {
 	 */
 	private static String extractAfterArrow(String s) {
 		if (s == null) return null;
-		String clean = s.replaceAll("§[0-9a-fk-or]", "").trim();
+		String clean = stripScoreboardDisplayText(s);
 		
 		// Find arrow position
 		int arrowIdx = -1;
@@ -8398,11 +8312,11 @@ public class InformationenUtility {
 	 */
 	private static void registerCollectionHotkeys() {
 		// Register reset hotkey
-		collectionResetKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		collectionResetKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.collection-reset",
-			InputUtil.Type.KEYSYM,
-			InputUtil.UNKNOWN_KEY.getCode(), // Unbound by default
-			"category.cclive-utilities.collection"
+			InputConstants.Type.KEYSYM,
+			InputConstants.UNKNOWN.getValue(), // Unbound by default
+			KeyCategories.of("cclive-utilities", "collection")
 		));
 	}
 	
@@ -8411,7 +8325,7 @@ public class InformationenUtility {
 	 */
 	private static void handleCollectionHotkeys() {
 		// Handle reset hotkey
-		if (collectionResetKeyBinding != null && collectionResetKeyBinding.wasPressed()) {
+		if (collectionResetKeyMapping != null && collectionResetKeyMapping.consumeClick()) {
 			resetCollectionTracking();
 			// Restart timer if overlay is enabled and we're tracking
 			if (CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay && isTrackingCollections) {
@@ -8472,13 +8386,13 @@ public class InformationenUtility {
 	/**
 	 * Renders the collection overlay
 	 */
-	private static void renderCollectionOverlay(DrawContext context, MinecraftClient client) {
+	private static void renderCollectionOverlay(GuiGraphicsExtractor context, Minecraft client) {
 		if (!isTrackingCollections || client.player == null) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 		
@@ -8523,17 +8437,17 @@ public class InformationenUtility {
 		boolean showTimeToNext = isCollectionTimeToNextVisible();
 		
 		// Calculate overlay width (unscaled)
-		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(timeLine));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksLine));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksPerMinLine));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(timeLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksPerMinLine));
 		if (resourceRateLine != null) {
-			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(resourceRateLine));
+			maxWidth = Math.max(maxWidth, client.font.width(resourceRateLine));
 		}
 		if (showBlocksNeeded) {
-			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksNeededLine));
+			maxWidth = Math.max(maxWidth, client.font.width(blocksNeededLine));
 		}
 		if (showTimeToNext) {
-			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNextLine));
+			maxWidth = Math.max(maxWidth, client.font.width(timeToNextLine));
 		}
 		maxWidth = Math.max(maxWidth, 100);
 		
@@ -8542,7 +8456,7 @@ public class InformationenUtility {
 		int unscaledHeight = lineCount * 11 + padding * 2;
 		
 		// Use Matrix transformations for scaling
-		org.joml.Matrix3x2fStack matrices = context.getMatrices();
+		org.joml.Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Translate to position and scale from there
@@ -8558,24 +8472,24 @@ public class InformationenUtility {
 		
 		// Draw text (scaled, relative to matrix)
 		int textY = padding;
-		context.drawText(client.textRenderer, header, padding, textY, headerColor, true);
+		context.text(client.font, header, padding, textY, headerColor, true);
 		textY += 11;
-		context.drawText(client.textRenderer, timeLine, padding, textY, textColor, true);
+		context.text(client.font, timeLine, padding, textY, textColor, true);
 		textY += 11;
-		context.drawText(client.textRenderer, blocksLine, padding, textY, textColor, true);
+		context.text(client.font, blocksLine, padding, textY, textColor, true);
 		textY += 11;
-		context.drawText(client.textRenderer, blocksPerMinLine, padding, textY, textColor, true);
+		context.text(client.font, blocksPerMinLine, padding, textY, textColor, true);
 		textY += 11;
 		if (showBlocksNeeded) {
-			context.drawText(client.textRenderer, blocksNeededLine, padding, textY, textColor, true);
+			context.text(client.font, blocksNeededLine, padding, textY, textColor, true);
 			textY += 11;
 		}
 		if (showTimeToNext) {
-			context.drawText(client.textRenderer, timeToNextLine, padding, textY, textColor, true);
+			context.text(client.font, timeToNextLine, padding, textY, textColor, true);
 			textY += 11;
 		}
 		if (resourceRateLine != null) {
-			context.drawText(client.textRenderer, resourceRateLine, padding, textY, textColor, true);
+			context.text(client.font, resourceRateLine, padding, textY, textColor, true);
 		}
 		
 		matrices.popMatrix();
@@ -8623,8 +8537,8 @@ public class InformationenUtility {
 	 * Get current overlay width based on actual text content
 	 * Used by CollectionDraggableOverlay to match the actual overlay size
 	 */
-	public static int getCurrentCollectionOverlayWidth(MinecraftClient client) {
-		if (client == null || client.textRenderer == null) {
+	public static int getCurrentCollectionOverlayWidth(Minecraft client) {
+		if (client == null || client.font == null) {
 			return 200; // Default fallback width
 		}
 		
@@ -8647,17 +8561,17 @@ public class InformationenUtility {
 		boolean showBlocksNeeded = isCollectionBlocksNeededVisible();
 		boolean showTimeToNext = isCollectionTimeToNextVisible();
 		
-		int maxWidth = Math.max(client.textRenderer.getWidth(header), client.textRenderer.getWidth(timeLine));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksLine));
-		maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksPerMinLine));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(timeLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksPerMinLine));
 		if (resourceRateLine != null) {
-			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(resourceRateLine));
+			maxWidth = Math.max(maxWidth, client.font.width(resourceRateLine));
 		}
 		if (showBlocksNeeded) {
-			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(blocksNeededLine));
+			maxWidth = Math.max(maxWidth, client.font.width(blocksNeededLine));
 		}
 		if (showTimeToNext) {
-			maxWidth = Math.max(maxWidth, client.textRenderer.getWidth(timeToNextLine));
+			maxWidth = Math.max(maxWidth, client.font.width(timeToNextLine));
 		}
 		maxWidth = Math.max(maxWidth, 100);
 		

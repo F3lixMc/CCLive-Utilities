@@ -1,17 +1,17 @@
 package net.felix.mixin;
 
-import net.minecraft.client.gui.hud.BossBarHud;
-import net.minecraft.client.gui.hud.ClientBossBar;
 import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Factory.WaveUtility;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.BossHealthOverlay;
+import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.ItemViewer.ItemViewerHudStatsCollector;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -21,28 +21,28 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
 
-@Mixin(BossBarHud.class)
+@Mixin(BossHealthOverlay.class)
 public class BossBarMixin {
 
     private static volatile Field cachedBossBarsField;
     private static volatile boolean bossBarsFieldLookupFailed;
 
-    @Inject(method = "render", at = @At("HEAD"))
-    private void onRenderBossBar(DrawContext context, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("HEAD"))
+    private void onRenderBossBar(GuiGraphicsExtractor context, CallbackInfo ci) {
         try {
-            BossBarHud bossBarHud = (BossBarHud) (Object) this;
-            Map<UUID, ClientBossBar> bossBars = resolveBossBars(bossBarHud);
+            BossHealthOverlay bossBarHud = (BossHealthOverlay) (Object) this;
+            Map<UUID, LerpingBossEvent> bossBars = resolveBossBars(bossBarHud);
             if (bossBars == null || bossBars.isEmpty()) {
                 return;
             }
 
             NpcAlertsUtility.beginKomboKisteBossBarScan();
-            MinecraftClient mc = MinecraftClient.getInstance();
+            Minecraft mc = Minecraft.getInstance();
             boolean komboKisteDim = NpcAlertsUtility.isKomboKisteReadingDimension(mc);
             String aincraftBottomFont = ZeichenUtility.getAincraftBottomFont();
 
             int index = 0;
-            for (ClientBossBar bossBar : bossBars.values()) {
+            for (LerpingBossEvent bossBar : bossBars.values()) {
                 index++;
                 String name = bossBar.getName().getString();
                 if (komboKisteDim) {
@@ -51,7 +51,7 @@ public class BossBarMixin {
 
                 CoinTrackerUtility.processBossBar(name);
                 ItemViewerHudStatsCollector.processBossBar(name);
-                net.felix.utilities.DragOverlay.ClipboardCoinCollector.processBossBar(name);
+                net.felix.utilities.Other.Clipboard.ClipboardCoinCollector.processBossBar(name);
                 WaveUtility.processBossBarWave(name, index);
 
                 boolean hasAincraftFont = !aincraftBottomFont.isEmpty()
@@ -74,7 +74,7 @@ public class BossBarMixin {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<UUID, ClientBossBar> resolveBossBars(BossBarHud bossBarHud) {
+    private static Map<UUID, LerpingBossEvent> resolveBossBars(BossHealthOverlay bossBarHud) {
         try {
             Field field = cachedBossBarsField;
             if (field == null && !bossBarsFieldLookupFailed) {
@@ -97,21 +97,21 @@ public class BossBarMixin {
             }
             if (!map.isEmpty()) {
                 for (Object entry : map.values()) {
-                    if (!(entry instanceof ClientBossBar)) {
+                    if (!(entry instanceof LerpingBossEvent)) {
                         cachedBossBarsField = null;
                         bossBarsFieldLookupFailed = false;
                         return null;
                     }
                 }
             }
-            return (Map<UUID, ClientBossBar>) map;
+            return (Map<UUID, LerpingBossEvent>) map;
         } catch (Exception e) {
             cachedBossBarsField = null;
             return null;
         }
     }
 
-    private static Field findBossBarsField(BossBarHud bossBarHud) {
+    private static Field findBossBarsField(BossHealthOverlay bossBarHud) {
         Class<?> bossBarHudClass = bossBarHud.getClass();
         Field mapField = null;
         for (Field field : bossBarHudClass.getDeclaredFields()) {
@@ -123,7 +123,7 @@ public class BossBarMixin {
                 Object value = field.get(bossBarHud);
                 if (value instanceof Map<?, ?> map && !map.isEmpty()) {
                     for (Object entry : map.values()) {
-                        if (entry instanceof ClientBossBar) {
+                        if (entry instanceof LerpingBossEvent) {
                             return field;
                         }
                     }

@@ -1,11 +1,10 @@
 package net.felix.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.ScoreboardObjective;
 import net.felix.leaderboards.LeaderboardManager;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.Scoreboard;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,8 +30,8 @@ public class StatsCollector implements DataCollector {
         // Silent error handling("✅ StatsCollector initialisiert");
     }
     
-    private void onClientTick(MinecraftClient client) {
-        if (!isActive || client.player == null || client.world == null) {
+    private void onClientTick(Minecraft client) {
+        if (!isActive || client.player == null || client.level == null) {
             return;
         }
         
@@ -49,13 +48,13 @@ public class StatsCollector implements DataCollector {
     /**
      * Aktualisiert alle Statistiken
      */
-    private void updateStats(MinecraftClient client) {
+    private void updateStats(Minecraft client) {
         try {
-            Scoreboard scoreboard = client.world.getScoreboard();
+            Scoreboard scoreboard = client.level.getScoreboard();
             if (scoreboard == null) return;
             
             // Suche nach relevanten Scoreboard-Objektiven
-            for (ScoreboardObjective objective : scoreboard.getObjectives()) {
+            for (Objective objective : scoreboard.getObjectives()) {
                 String objectiveName = objective.getName();
                 
                 // Prüfe verschiedene mögliche Scoreboard-Namen
@@ -86,7 +85,7 @@ public class StatsCollector implements DataCollector {
     /**
      * Aktualisiert Statistiken basierend auf Scoreboard-Daten
      */
-    private void updateScoreboardStats(Scoreboard scoreboard, ScoreboardObjective objective, MinecraftClient client) {
+    private void updateScoreboardStats(Scoreboard scoreboard, Objective objective, Minecraft client) {
         try {
             // TODO: ScoreboardPlayerScore ist in dieser MC-Version nicht verfügbar
             // Implementiere alternative Methode zur Score-Erfassung
@@ -108,7 +107,7 @@ public class StatsCollector implements DataCollector {
     /**
      * Fallback-Methode für Statistiken ohne Scoreboard
      */
-    private void updateFallbackStats(MinecraftClient client) {
+    private void updateFallbackStats(Minecraft client) {
         // TODO: Implementiere alternative Methoden zur Statistik-Erfassung
         // z.B. durch Chat-Nachrichten-Parsing, GUI-Analyse, etc.
         

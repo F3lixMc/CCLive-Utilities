@@ -2,8 +2,7 @@ package net.felix.leaderboards.collectors;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,8 +39,8 @@ public class FloorProgressCollector implements DataCollector {
         // System.out.println("✅ FloorProgressCollector initialisiert");
     }
     
-    private void onClientTick(MinecraftClient client) {
-        if (!isActive || client.player == null || client.world == null) {
+    private void onClientTick(Minecraft client) {
+        if (!isActive || client.player == null || client.level == null) {
             return;
         }
         
@@ -55,7 +54,7 @@ public class FloorProgressCollector implements DataCollector {
     /**
      * Prüft ob sich der aktuelle Floor geändert hat
      */
-    private void checkFloorChange(MinecraftClient client) {
+    private void checkFloorChange(Minecraft client) {
         try {
             String newFloor = getCurrentFloor(client);
             
@@ -118,11 +117,11 @@ public class FloorProgressCollector implements DataCollector {
     /**
      * Ermittelt den aktuellen Floor basierend auf der Welt-Dimension
      */
-    private String getCurrentFloor(MinecraftClient client) {
+    private String getCurrentFloor(Minecraft client) {
         try {
-            if (client.world == null) return null;
+            if (client.level == null) return null;
             
-            String dimensionId = client.world.getRegistryKey().getValue().toString();
+            String dimensionId = client.level.dimension().identifier().toString();
             
             if (dimensionId.startsWith("minecraft:floor_")) {
                 String floorPart = dimensionId.substring("minecraft:floor_".length());

@@ -6,16 +6,15 @@ import net.felix.MaterialTrackerDisplayMode;
 import net.felix.ResourceTrackerDisplayMode;
 import net.felix.utilities.Aincraft.MaterialRateUtility;
 import net.felix.utilities.Aincraft.MaterialTrackerUtility;
-import net.felix.utilities.DragOverlay.FarmzoneResourceRateUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.ScoreboardObjective;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-
+import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.Scoreboard;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,15 +47,15 @@ public final class CoinTrackerCustomSidebar {
     }
 
     public static void render(
-            DrawContext context,
-            ScoreboardObjective objective,
-            TextRenderer textRenderer,
-            MinecraftClient client) {
-        if (client.world == null || objective == null) {
+            GuiGraphicsExtractor context,
+            Objective objective,
+            Font textRenderer,
+            Minecraft client) {
+        if (client.level == null || objective == null) {
             return;
         }
 
-        Scoreboard scoreboard = client.world.getScoreboard();
+        Scoreboard scoreboard = client.level.getScoreboard();
         List<ScoreboardSidebarReader.Row> rows = new ArrayList<>(
                 ScoreboardSidebarReader.readRows(scoreboard, objective));
 
@@ -79,17 +78,17 @@ public final class CoinTrackerCustomSidebar {
             return;
         }
 
-        Text title = objective.getDisplayName();
-        int maxWidth = textRenderer.getWidth(title);
+        Component title = objective.getDisplayName();
+        int maxWidth = textRenderer.width(title);
         for (ScoreboardSidebarReader.Row row : rows) {
-            maxWidth = Math.max(maxWidth, textRenderer.getWidth(row.name()));
+            maxWidth = Math.max(maxWidth, textRenderer.width(row.name()));
         }
 
         // Vanilla renderScoreboardSidebar positioning (hardcoded line height 9)
         int lineHeight = 9;
         int entryCount = rows.size();
-        int scaledHeight = context.getScaledWindowHeight();
-        int scaledWidth = context.getScaledWindowWidth();
+        int scaledHeight = context.guiHeight();
+        int scaledWidth = context.guiWidth();
         int bottomY = scaledHeight / 2 + entryCount * lineHeight / 3;
         int leftX = scaledWidth - maxWidth - 3;
         int rightX = scaledWidth - 3 + 2;
@@ -100,21 +99,21 @@ public final class CoinTrackerCustomSidebar {
                 titleRowY - lineHeight - 1,
                 rightX,
                 titleRowY - 1,
-                client.options.getTextBackgroundColor(0.4F));
+                client.options.getBackgroundColor(0.4F));
         context.fill(
                 leftX - 2,
                 titleRowY - 1,
                 rightX,
                 bottomY - 1,
-                client.options.getTextBackgroundColor(0.3F));
+                client.options.getBackgroundColor(0.3F));
 
-        int titleX = leftX + maxWidth / 2 - textRenderer.getWidth(title) / 2;
-        context.drawText(textRenderer, title, titleX, titleRowY - lineHeight - 1, 0xFFFFFFFF, false);
+        int titleX = leftX + maxWidth / 2 - textRenderer.width(title) / 2;
+        context.text(textRenderer, title, titleX, titleRowY - lineHeight - 1, 0xFFFFFFFF, false);
 
         for (int i = 0; i < entryCount; i++) {
             int y = bottomY - (entryCount - i) * lineHeight;
             ScoreboardSidebarReader.Row row = rows.get(i);
-            context.drawText(textRenderer, row.name(), leftX, y, 0xFFFFFFFF, false);
+            context.text(textRenderer, row.name(), leftX, y, 0xFFFFFFFF, false);
         }
     }
 
@@ -149,12 +148,12 @@ public final class CoinTrackerCustomSidebar {
             }
 
             int materialLineIndex = i - materialienIndex - 1;
-            Text withRate = MaterialRateUtility.appendRateToScoreboardLine(row.name(), materialLineIndex);
+            Component withRate = MaterialRateUtility.appendRateToScoreboardLine(row.name(), materialLineIndex);
             rows.set(i, ScoreboardSidebarReader.Row.nameOnly(withRate));
         }
     }
 
-    private static boolean shouldAppendResourceRates(MinecraftClient client) {
+    private static boolean shouldAppendResourceRates(Minecraft client) {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         return config.enableMod
                 && config.resourceTrackerRateEnabled
@@ -178,7 +177,7 @@ public final class CoinTrackerCustomSidebar {
                 continue;
             }
 
-            Text withRate = FarmzoneResourceRateUtility.appendRateToScoreboardLine(row.name());
+            Component withRate = FarmzoneResourceRateUtility.appendRateToScoreboardLine(row.name());
             rows.set(i, ScoreboardSidebarReader.Row.nameOnly(withRate));
         }
     }
@@ -253,20 +252,20 @@ public final class CoinTrackerCustomSidebar {
     private static final int CPM_VALUE_COLOR = 0x54FCFC;
 
     private static ScoreboardSidebarReader.Row cpmHeaderRow() {
-        MutableText text = Text.empty()
-                .append(Text.literal("▌").setStyle(Style.EMPTY.withColor(CPM_BAR_COLOR)))
-                .append(Text.literal(" Coins/min").setStyle(Style.EMPTY.withColor(CPM_HEADER_COLOR)));
+        MutableComponent text = Component.empty()
+                .append(Component.literal("▌").setStyle(Style.EMPTY.withColor(CPM_BAR_COLOR)))
+                .append(Component.literal(" Coins/min").setStyle(Style.EMPTY.withColor(CPM_HEADER_COLOR)));
         return ScoreboardSidebarReader.Row.nameOnly(text);
     }
 
     private static ScoreboardSidebarReader.Row cpmValueRow() {
-        MutableText text = Text.literal("  ➥ " + CoinTrackerUtility.formatCpmForScoreboard())
+        MutableComponent text = Component.literal("  ➥ " + CoinTrackerUtility.formatCpmForScoreboard())
                 .setStyle(Style.EMPTY.withColor(CPM_VALUE_COLOR));
         return ScoreboardSidebarReader.Row.nameOnly(text);
     }
 
     private static ScoreboardSidebarReader.Row emptyRow() {
-        return ScoreboardSidebarReader.Row.nameOnly(Text.literal(""));
+        return ScoreboardSidebarReader.Row.nameOnly(Component.literal(""));
     }
 
     private static boolean isEmptyLine(ScoreboardSidebarReader.Row row) {

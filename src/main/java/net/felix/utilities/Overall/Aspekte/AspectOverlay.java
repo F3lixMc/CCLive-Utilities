@@ -1,14 +1,13 @@
 package net.felix.utilities.Overall.Aspekte;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
 import org.joml.Matrix3x2fStack;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 public class AspectOverlay {
     
@@ -47,7 +46,7 @@ public class AspectOverlay {
         }
         
         // Check if the item name contains Epic colors - if so, don't show overlay
-        net.minecraft.text.Text itemNameText = itemStack.getName();
+        net.minecraft.network.chat.Component itemNameText = itemStack.getHoverName();
         if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
             isCurrentlyHovering = false;
             currentAspectName = "";
@@ -276,19 +275,19 @@ public class AspectOverlay {
     /**
      * Checks if we're currently in a blueprint inventory
      */
-    private static boolean isInBlueprintInventory(MinecraftClient client) {
-        if (client == null || client.currentScreen == null) {
+    private static boolean isInBlueprintInventory(Minecraft client) {
+        if (client == null || client.screen == null) {
             return false;
         }
         
-        // Check if the current screen is a HandledScreen (inventory-like screen)
-        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+        // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
+        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's a blueprint inventory
-        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
         
         String title = handledScreen.getTitle().getString();
         
@@ -350,7 +349,7 @@ public class AspectOverlay {
         }
         
         // Get the display name
-        Text displayName = itemStack.getName();
+        Component displayName = itemStack.getHoverName();
         if (displayName != null) {
             return displayName.getString();
         }
@@ -358,34 +357,34 @@ public class AspectOverlay {
         return null;
     }
     
-    public static void render(DrawContext context) {
+    public static void render(GuiGraphicsExtractor context) {
         // Check if we have aspect information and shift is pressed
         if (currentAspectName.isEmpty() || currentItemName.isEmpty()) {
             return;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.textRenderer == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.font == null) {
             return;
         }
         
         // Hide overlay if F1 menu (debug screen) is open
-        if (client.options.hudHidden) {
+        if (client.options.hideGui) {
             return;
         }
         
         // Check if shift is pressed
-        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_LEFT_SHIFT) || 
-                                InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        boolean isShiftPressed = InputConstants.isKeyDown(client.getWindow(), 
+                                                       InputConstants.KEY_LSHIFT) || 
+                                InputConstants.isKeyDown(client.getWindow(), 
+                                                       InputConstants.KEY_RSHIFT);
         
         if (!isShiftPressed) {
             return;
         }
         
         // Position on the left side of the screen
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         
         // Calculate overlay dimensions and position
         int overlayWidth = 300;
@@ -408,26 +407,26 @@ public class AspectOverlay {
         // Try different text rendering methods with very high contrast colors
         try {
             // Method 1: Using drawText with Text objects and very high contrast colors
-            Text titleText = Text.literal("Aspekt Information");
-            Text itemText = Text.literal("Item: " + currentItemName);
-            Text aspectText = Text.literal("Aspekt: " + currentAspectName);
-            Text instructionText = Text.literal("Halte SHIFT gedrückt");
+            Component titleText = Component.literal("Aspekt Information");
+            Component itemText = Component.literal("Item: " + currentItemName);
+            Component aspectText = Component.literal("Aspekt: " + currentAspectName);
+            Component instructionText = Component.literal("Halte SHIFT gedrückt");
             
             // Use very high contrast colors - pure white on black background
-            context.drawText(client.textRenderer, titleText, overlayX + 10, overlayY + 8, 0xFFFFFFFF, false);
+            context.text(client.font, titleText, overlayX + 10, overlayY + 8, 0xFFFFFFFF, false);
             
-            context.drawText(client.textRenderer, itemText, overlayX + 10, overlayY + 40, 0xFFFFFFFF, false);
+            context.text(client.font, itemText, overlayX + 10, overlayY + 40, 0xFFFFFFFF, false);
             
-            context.drawText(client.textRenderer, aspectText, overlayX + 10, overlayY + 60, 0x00FF00FF, false);
+            context.text(client.font, aspectText, overlayX + 10, overlayY + 60, 0x00FF00FF, false);
             
             // Draw aspect description (wrapped to fit) with very high contrast
             String[] descriptionLines = wrapText(currentAspectDescription, 40);
             for (int i = 0; i < descriptionLines.length; i++) {
-                Text descText = Text.literal(descriptionLines[i]);
-                context.drawText(client.textRenderer, descText, overlayX + 10, overlayY + 85 + (i * 14), 0xFFFFFFFF, false);
+                Component descText = Component.literal(descriptionLines[i]);
+                context.text(client.font, descText, overlayX + 10, overlayY + 85 + (i * 14), 0xFFFFFFFF, false);
             }
             
-            context.drawText(client.textRenderer, instructionText, overlayX + 10, overlayY + overlayHeight - 20, 0xFFFFFFFF, false);
+            context.text(client.font, instructionText, overlayX + 10, overlayY + overlayHeight - 20, 0xFFFFFFFF, false);
             
         } catch (Exception e) {
             // Ignore rendering errors
@@ -437,9 +436,9 @@ public class AspectOverlay {
     /**
      * Renders the overlay in the foreground for chat messages (top-left, only when Shift is pressed)
      * This method should be called from ChatHudHoverMixin when hovering over chat messages with Shift pressed
-     * @param context The DrawContext for rendering
+     * @param context The GuiGraphicsExtractor for rendering
      */
-    public static void renderForegroundForChat(DrawContext context) {
+    public static void renderForegroundForChat(GuiGraphicsExtractor context) {
         // Check if chat aspect overlay is enabled in config
         boolean aspectOverlayEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled;
         boolean showAspectOverlay = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay;
@@ -449,16 +448,16 @@ public class AspectOverlay {
             return;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.textRenderer == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.font == null) {
             return;
         }
         
         // Check if Shift is pressed
-        boolean isShiftPressed = InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_LEFT_SHIFT) || 
-                                InputUtil.isKeyPressed(client.getWindow().getHandle(), 
-                                                       InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        boolean isShiftPressed = InputConstants.isKeyDown(client.getWindow(), 
+                                                       InputConstants.KEY_LSHIFT) || 
+                                InputConstants.isKeyDown(client.getWindow(), 
+                                                       InputConstants.KEY_RSHIFT);
         
         if (!isShiftPressed) {
             // Shift not pressed, don't render overlay
@@ -471,12 +470,12 @@ public class AspectOverlay {
         }
         
         // Check if we're in a world (important for multiplayer servers)
-        if (client.world == null) {
+        if (client.level == null) {
             return;
         }
         
         // Hide overlay if F1 menu (debug screen) is open
-        if (client.options.hudHidden) {
+        if (client.options.hideGui) {
             return;
         }
         
@@ -488,8 +487,8 @@ public class AspectOverlay {
         if (overlayScale <= 0) overlayScale = 1.0f;
         
         // Position using absolute coordinates from screen edges
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         
         // Calculate base overlay dimensions dynamically based on content
         int baseOverlayWidth = 210; // Base width in pixels
@@ -556,7 +555,7 @@ public class AspectOverlay {
         context.fill(borderX1, borderY2 - 1, borderX2, borderY2, 0xFFFFFFFF); // Bottom border
         
         // Apply scaling for text rendering
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Translate to scaled overlay position and apply scaling
@@ -567,11 +566,11 @@ public class AspectOverlay {
         matrices.scale(overlayScale, overlayScale);
         
         // Draw aspect name on its own line with custom color #FCA800
-        context.drawText(client.textRenderer, currentAspectName, 10, 10, 0xFFFCA800, false);
+        context.text(client.font, currentAspectName, 10, 10, 0xFFFCA800, false);
         
         // Draw aspect description (wrapped to fit) with colored text - numbers and special characters in light green
         for (int i = 0; i < descriptionLines.length; i++) {
-            drawColoredText(context, client.textRenderer, descriptionLines[i], 10, 35 + (i * 12));
+            drawColoredText(context, client.font, descriptionLines[i], 10, 35 + (i * 12));
         }
         
         // Restore matrices
@@ -583,7 +582,7 @@ public class AspectOverlay {
      * to ensure it renders over all GUI elements
      * This version requires Shift to be pressed (for inventory items)
      */
-    public static void renderForeground(DrawContext context) {
+    public static void renderForeground(GuiGraphicsExtractor context) {
         // Check if aspect overlay is enabled in config
         if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled || 
             !net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showAspectOverlay) {
@@ -600,25 +599,25 @@ public class AspectOverlay {
             return;
         }
         
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.textRenderer == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.font == null) {
             return;
         }
         
         // Check if we're in a world (important for multiplayer servers)
-        if (client.world == null) {
+        if (client.level == null) {
             return;
         }
         
         // Hide overlay if F1 menu (debug screen) is open
-        if (client.options.hudHidden) {
+        if (client.options.hideGui) {
             return;
         }
         
         // Check if shift is pressed (redundant check, but kept for safety)
-        long windowHandle = client.getWindow().getHandle();
-        boolean leftShift = InputUtil.isKeyPressed(windowHandle, InputUtil.GLFW_KEY_LEFT_SHIFT);
-        boolean rightShift = InputUtil.isKeyPressed(windowHandle, InputUtil.GLFW_KEY_RIGHT_SHIFT);
+        var window = client.getWindow();
+        boolean leftShift = InputConstants.isKeyDown(window, InputConstants.KEY_LSHIFT);
+        boolean rightShift = InputConstants.isKeyDown(window, InputConstants.KEY_RSHIFT);
         boolean isShiftPressed = leftShift || rightShift;
         
         if (!isShiftPressed) {
@@ -659,8 +658,8 @@ public class AspectOverlay {
         if (overlayScale <= 0) overlayScale = 1.0f;
         
         // Position using absolute coordinates from screen edges
-        int screenWidth = client.getWindow().getScaledWidth();
-        int screenHeight = client.getWindow().getScaledHeight();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
         
         // Calculate base overlay dimensions dynamically based on content
         int baseOverlayWidth = 210; // Base width in pixels
@@ -745,7 +744,7 @@ public class AspectOverlay {
         context.fill(overlayX - offsetX, overlayY - offsetY + scaledHeight - 1, overlayX - offsetX + scaledWidth, overlayY - offsetY + scaledHeight, 0xFFFFFFFF); // Bottom border
         
         // Apply scaling for text rendering
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Translate to scaled overlay position and apply scaling
@@ -753,15 +752,15 @@ public class AspectOverlay {
         matrices.scale(overlayScale, overlayScale);
         
         // Draw aspect name on its own line with custom color #FCA800
-        context.drawText(client.textRenderer, currentAspectName, 10, 10, 0xFFFCA800, false);
+        context.text(client.font, currentAspectName, 10, 10, 0xFFFCA800, false);
         
         // Draw aspect description (wrapped to fit) with colored text - numbers and special characters in light green
         for (int i = 0; i < descriptionLines.length; i++) {
-            drawColoredText(context, client.textRenderer, descriptionLines[i], 10, 35 + (i * 12));
+            drawColoredText(context, client.font, descriptionLines[i], 10, 35 + (i * 12));
         }
         
         // Draw instruction text with simple gray text
-        context.drawText(client.textRenderer, "Halte SHIFT gedrückt", 10, overlayHeight - 15, 0xCCCCCC, false);
+        context.text(client.font, "Halte SHIFT gedrückt", 10, overlayHeight - 15, 0xCCCCCC, false);
         
         // Restore matrices
         matrices.popMatrix();
@@ -855,7 +854,7 @@ public class AspectOverlay {
     /**
      * Draws text with colored text and white numbers/special characters/specific words
      */
-    private static void drawColoredText(DrawContext context, net.minecraft.client.font.TextRenderer textRenderer, String text, int x, int y) {
+    private static void drawColoredText(GuiGraphicsExtractor context, net.minecraft.client.gui.Font textRenderer, String text, int x, int y) {
         int currentX = x;
         int mainColor = 0xFF54FC54; // Main text color #54FC54
         int whiteColor = 0xFFFFFFFF; // White color for numbers, special characters, and specific words
@@ -878,8 +877,8 @@ public class AspectOverlay {
             
             if (isWhiteWord) {
                 // Render white word
-                context.drawText(textRenderer, word, currentX, y, whiteColor, false);
-                currentX += textRenderer.getWidth(word + " ");
+                context.text(textRenderer, word, currentX, y, whiteColor, false);
+                currentX += textRenderer.width(word + " ");
             } else {
                 // Render word character by character to handle numbers and special characters
                 for (int i = 0; i < word.length(); i++) {
@@ -890,11 +889,11 @@ public class AspectOverlay {
                     boolean isSpecial = Character.isDigit(c) || c == '%' || c == '+' || c == '-' || c == '.' || c == ',' || c == ':' || c == '[' || c == ']';
                     
                     int charColor = isSpecial ? whiteColor : mainColor;
-                    context.drawText(textRenderer, charStr, currentX, y, charColor, false);
-                    currentX += textRenderer.getWidth(charStr);
+                    context.text(textRenderer, charStr, currentX, y, charColor, false);
+                    currentX += textRenderer.width(charStr);
                 }
                 // Add space after word
-                currentX += textRenderer.getWidth(" ");
+                currentX += textRenderer.width(" ");
             }
         }
     }

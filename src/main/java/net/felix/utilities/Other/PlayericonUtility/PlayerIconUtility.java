@@ -1,11 +1,10 @@
 package net.felix.utilities.Other.PlayericonUtility;
 
 import net.felix.CCLiveUtilities;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -16,8 +15,8 @@ import java.util.UUID;
  */
 public class PlayerIconUtility {
     // Try both possible locations for the icon
-    private static final Identifier ICON_IDENTIFIER = Identifier.of(CCLiveUtilities.MOD_ID, "textures/icon.png");
-    private static final Identifier ICON_IDENTIFIER_ALT = Identifier.of(CCLiveUtilities.MOD_ID, "icon");
+    private static final Identifier ICON_IDENTIFIER = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/icon.png");
+    private static final Identifier ICON_IDENTIFIER_ALT = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "icon");
     private static boolean iconLoaded = false;
     
     // Set of player UUIDs that have the mod installed
@@ -94,7 +93,7 @@ public class PlayerIconUtility {
      * @param y The y position
      * @param size The size of the icon (both width and height)
      */
-    public static void renderIcon(DrawContext context, int x, int y, int size) {
+    public static void renderIcon(GuiGraphicsExtractor context, int x, int y, int size) {
         try {
             ensureIconLoaded();
             
@@ -102,7 +101,7 @@ public class PlayerIconUtility {
                 return;
             }
             
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client == null || context == null) {
                 return;
             }
@@ -123,7 +122,7 @@ public class PlayerIconUtility {
             // Draw the icon using the correct drawTexture signature
             // Wrap in try-catch to prevent crashes if RenderPipelines is not available
             try {
-                context.drawTexture(
+                context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     iconToUse,
                     x, y,
@@ -156,7 +155,7 @@ public class PlayerIconUtility {
     /**
      * Render the icon next to a player name with default size (8 pixels).
      */
-    public static void renderIcon(DrawContext context, int x, int y) {
+    public static void renderIcon(GuiGraphicsExtractor context, int x, int y) {
         renderIcon(context, x, y, 8);
     }
     
@@ -176,23 +175,23 @@ public class PlayerIconUtility {
     
     /**
      * Initialize world rendering for nametag icons.
-     * This sets up the WorldRenderEvents callback to render icons above player heads.
+     * This sets up the LevelRenderEvents callback to render icons above player heads.
      */
     public static void initializeWorldRendering() {
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES.register(context -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.world == null || client.player == null) {
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.END_MAIN.register(context -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client == null || client.level == null || client.player == null) {
                 return;
             }
             
             // Render icons above player heads
-            for (var entity : client.world.getEntities()) {
-                if (!(entity instanceof net.minecraft.entity.player.PlayerEntity)) {
+            for (var entity : client.level.entitiesForRendering()) {
+                if (!(entity instanceof net.minecraft.world.entity.player.Player)) {
                     continue;
                 }
                 
-                net.minecraft.entity.player.PlayerEntity player = (net.minecraft.entity.player.PlayerEntity) entity;
-                UUID playerUuid = player.getUuid();
+                net.minecraft.world.entity.player.Player player = (net.minecraft.world.entity.player.Player) entity;
+                UUID playerUuid = player.getUUID();
                 
                 // Check if player has the mod
                 if (!hasMod(playerUuid)) {
@@ -200,7 +199,7 @@ public class PlayerIconUtility {
                 }
                 
                 // Only render if player is visible and within render distance
-                if (!player.isInvisible() && client.player.canSee(player)) {
+                if (!player.isInvisible() && client.player.hasLineOfSight(player)) {
                     renderNametagIcon(context, player);
                 }
             }
@@ -212,22 +211,22 @@ public class PlayerIconUtility {
      * This is a simplified 3D rendering approach.
      */
     private static void renderNametagIcon(
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext context,
-        net.minecraft.entity.player.PlayerEntity player
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext context,
+        net.minecraft.world.entity.player.Player player
     ) {
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client == null || client.textRenderer == null) {
+            Minecraft client = Minecraft.getInstance();
+            if (client == null || client.font == null) {
                 return;
             }
             
             // Get player position
             double x = player.getX();
-            double y = player.getY() + player.getHeight() + 0.5; // Above head
+            double y = player.getY() + player.getBbHeight() + 0.5; // Above head
             double z = player.getZ();
             
             // Calculate camera position
-            net.minecraft.util.math.Vec3d cameraPos = context.camera().getPos();
+            net.minecraft.world.phys.Vec3 cameraPos = context.gameRenderer().getMainCamera().position();
             double dx = x - cameraPos.x;
             double dy = y - cameraPos.y;
             double dz = z - cameraPos.z;
@@ -239,19 +238,19 @@ public class PlayerIconUtility {
             }
             
             // Get the matrix stack
-            net.minecraft.client.util.math.MatrixStack matrices = context.matrixStack();
+            com.mojang.blaze3d.vertex.PoseStack matrices = context.poseStack();
             
             // Push matrix
-            matrices.push();
+            matrices.pushPose();
             
             // Translate to player position
             matrices.translate((float)dx, (float)dy, (float)dz);
             
             // Face camera (billboard)
-            matrices.multiplyPositionMatrix(new org.joml.Matrix4f().rotationY(
+            matrices.mulPose(new org.joml.Matrix4f().rotationY(
                 (float)(-Math.atan2(dx, dz))
             ));
-            matrices.multiplyPositionMatrix(new org.joml.Matrix4f().rotationX(
+            matrices.mulPose(new org.joml.Matrix4f().rotationX(
                 (float)(Math.asin(dy / distance))
             ));
             
@@ -264,7 +263,7 @@ public class PlayerIconUtility {
             // you'd need to use the texture manager and proper vertex consumers.
             // For now, we'll skip 3D rendering and focus on 2D (tab list and chat).
             
-            matrices.pop();
+            matrices.popPose();
         } catch (Exception e) {
             // Silently fail if rendering fails
         }

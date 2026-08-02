@@ -2,13 +2,13 @@ package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -22,15 +22,15 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     private final String displayName;
     
     // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler
-    private static final Identifier FORSCHUNG_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
-    private static final Identifier AMBOSS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
-    private static final Identifier SCHMELZOFEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
-    private static final Identifier SEELEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
-    private static final Identifier ESSENZEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
-    private static final Identifier JAEGER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
-    private static final Identifier KOMBO_KISTE_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
-    private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
-    private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
+    private static final Identifier FORSCHUNG_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
+    private static final Identifier AMBOSS_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
+    private static final Identifier SCHMELZOFEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
+    private static final Identifier SEELEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
+    private static final Identifier ESSENZEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
+    private static final Identifier JAEGER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+    private static final Identifier KOMBO_KISTE_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
+    private static final Identifier MACHTKRISTALL_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
+    private static final Identifier RECYCLER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
     
     public NpcAlertsSeparateDraggableOverlay(String infoName, String configKey, String displayName) {
         this.configKey = configKey;
@@ -46,12 +46,12 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     public int getX() {
         // Calculate X position using the same logic as Mining/Holzfäller overlays
         // baseX is the left edge position (like Mining overlays)
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             return getXFromConfig();
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int baseX = getXFromConfig();
         int overlayWidth = getWidth(); // Use scaled width for positioning
         
@@ -177,7 +177,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
      * Dynamische Verbreiterung basierend auf Inhalt (wie BossHP-Overlay)
      */
     private int calculateUnscaledWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return 200;
         
         // Für Machtkristalle: berechne maximale Breite über alle Zeilen, die im Multi-Line-Overlay sind
@@ -201,9 +201,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 
                 // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
                 if (showIcon) {
-                    int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+                    int iconSize = (int)(client.font.lineHeight * 1.5);
                     width += iconSize + 2; // Icon + Abstand
-                    width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+                    width += client.font.width(": "); // Doppelpunkt nach Icon
                 }
                 
                 // Text-Breite (gleiche Logik wie in renderSeparateOverlays)
@@ -221,12 +221,12 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
                     }
                 }
-                width += client.textRenderer.getWidth(displayText);
+                width += client.font.width(displayText);
                 
                 // Prozent-Breite
                 String percentText = slot.getPercentText();
                 if (percentText != null) {
-                    width += client.textRenderer.getWidth(" " + percentText);
+                    width += client.font.width(" " + percentText);
                 }
                 
                 if (width > maxWidth) {
@@ -291,9 +291,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 
                 // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
                 if (showIcon) {
-                    int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+                    int iconSize = (int)(client.font.lineHeight * 1.5);
                     width += iconSize + 2; // Icon + Abstand
-                    width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+                    width += client.font.width(": "); // Doppelpunkt nach Icon
                 }
                 
                 // Text-Breite
@@ -303,12 +303,12 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 } else {
                     displayText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
                 }
-                width += client.textRenderer.getWidth(displayText);
+                width += client.font.width(displayText);
                 
                 // Prozent-Breite
                 if (showPercent && recyclerSlot.isValid()) {
                     String percentText = NpcAlertsUtility.calculatePercent(recyclerSlot.current, recyclerSlot.max);
-                    width += client.textRenderer.getWidth(" " + percentText);
+                    width += client.font.width(" " + percentText);
                 }
                 
                 if (width > maxWidth) {
@@ -354,9 +354,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
             int width = 0;
             // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
             if (showIcon) {
-                int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+                int iconSize = (int)(client.font.lineHeight * 1.5);
                 width += iconSize + 2; // Icon + Abstand
-                width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+                width += client.font.width(": "); // Doppelpunkt nach Icon
             }
             
             // Text-Breite (gleiche Logik wie in renderSeparateOverlays)
@@ -374,11 +374,11 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
                 }
             }
-            width += client.textRenderer.getWidth(displayText);
+            width += client.font.width(displayText);
             
             // Prozent-Breite
             if (showPercent && percentText != null) {
-                width += client.textRenderer.getWidth(" " + percentText);
+                width += client.font.width(" " + percentText);
             }
             
             int padding = 5;
@@ -402,13 +402,13 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                                                 "machtkristalleSlot3".equals(configKey) ||
                                                 "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
                                                 "recyclerSlot3".equals(configKey)))) {
-            int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+            int iconSize = (int)(client.font.lineHeight * 1.5);
             width += iconSize + 2; // Icon + Abstand
-            width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+            width += client.font.width(": "); // Doppelpunkt nach Icon
         }
-        width += client.textRenderer.getWidth(text);
+        width += client.font.width(text);
         if (showPercent && percentText != null) {
-            width += client.textRenderer.getWidth(" " + percentText);
+            width += client.font.width(" " + percentText);
         }
         
         int padding = 5;
@@ -420,9 +420,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
      * Berechnet die unskalierte Höhe
      */
     private int calculateUnscaledHeight() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return 20;
-        int lineHeight = client.textRenderer.fontHeight + 2;
+        int lineHeight = client.font.lineHeight + 2;
         int padding = 5;
         
         // Für Machtkristalle: mehrere Zeilen möglich
@@ -585,14 +585,14 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     public void setPosition(int x, int y) {
         // Calculate baseX using the same logic as Mining/Holzfäller overlays
         // We need to reverse the calculation: from the actual x position, calculate baseX
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             setXInConfig(x);
             setYInConfig(y);
             return;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int overlayWidth = getWidth(); // Use scaled width for positioning
         
         // Determine if overlay is on left or right side of screen
@@ -627,8 +627,8 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         int x = getX();
@@ -641,13 +641,13 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f;
         
         // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.outline(x, y, width, height, 0xFFFF0000);
         
         // Render background (scaled)
         context.fill(x, y, x + width, y + height, 0x80000000);
         
         // Render content with scale using matrix transformation
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
@@ -660,10 +660,10 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         boolean showIcon = getShowIcon();
         
         int currentX = 5; // Relativ zu (x, y) nach Matrix-Transformation
-        int lineHeight = client.textRenderer.fontHeight + 2;
+        int lineHeight = client.font.lineHeight + 2;
         int unscaledHeight = calculateUnscaledHeight();
         int overlayCenterY = unscaledHeight / 2;
-        int currentY = overlayCenterY - client.textRenderer.fontHeight / 2;
+        int currentY = overlayCenterY - client.font.lineHeight / 2;
         
         // Lade Farben aus Config (für Recycler-Slots)
         int textColor = 0xFFFFFFFF;
@@ -737,7 +737,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
             
             if (iconToUse != null) {
                 try {
-                    context.drawTexture(
+                    context.blit(
                         RenderPipelines.GUI_TEXTURED,
                         iconToUse,
                         currentX, iconY,
@@ -751,14 +751,14 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 }
             }
             // Zeichne Doppelpunkt nach dem Icon
-            context.drawText(
-                client.textRenderer,
+            context.text(
+                client.font,
                 ": ",
                 currentX, currentY,
                 currentTextColor,
                 true
             );
-            currentX += client.textRenderer.getWidth(": ");
+            currentX += client.font.width(": ");
         }
         
         // Render main text (mehrzeilig für Machtkristalle)
@@ -840,7 +840,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 if (showIcon) {
                     int iconY = lineCenterY - iconSize / 2;
                     try {
-                        context.drawTexture(
+                        context.blit(
                             RenderPipelines.GUI_TEXTURED,
                             MACHTKRISTALL_ICON,
                             lineX, iconY,
@@ -850,35 +850,35 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         );
                         lineX += iconSize + 2; // Icon + Abstand
                         // Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-                        textYForIcon = lineCenterY - client.textRenderer.fontHeight / 2;
+                        textYForIcon = lineCenterY - client.font.lineHeight / 2;
                     } catch (Exception e) {
                         // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
                     }
                     // Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         ": ",
                         lineX, textYForIcon,
                         lineTextColor,
                         true
                     );
-                    lineX += client.textRenderer.getWidth(": ");
+                    lineX += client.font.width(": ");
                 }
                 
                 // Zeichne Haupttext (vertikal zentriert zum Icon, wenn Icon aktiviert)
-                context.drawText(
-                    client.textRenderer,
+                context.text(
+                    client.font,
                     displayText,
                     lineX, textYForIcon,
                     lineTextColor,
                     true
                 );
-                lineX += client.textRenderer.getWidth(displayText);
+                lineX += client.font.width(displayText);
                 
                 // Zeichne Prozentwert in gelb, falls vorhanden (vertikal zentriert zum Icon)
                 if (slotPercentText != null) {
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         " " + slotPercentText,
                         lineX, textYForIcon,
                         linePercentColor,
@@ -984,7 +984,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 if (showIcon) {
                     int iconY = lineCenterY - iconSize / 2;
                     try {
-                        context.drawTexture(
+                        context.blit(
                             RenderPipelines.GUI_TEXTURED,
                             RECYCLER_ICON,
                             lineX, iconY,
@@ -994,35 +994,35 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         );
                         lineX += iconSize + 2; // Icon + Abstand
                         // Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-                        textYForIcon = lineCenterY - client.textRenderer.fontHeight / 2;
+                        textYForIcon = lineCenterY - client.font.lineHeight / 2;
                     } catch (Exception e) {
                         // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
                     }
                     // Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         ": ",
                         lineX, textYForIcon,
                         recyclerCurrentTextColor,
                         true
                     );
-                    lineX += client.textRenderer.getWidth(": ");
+                    lineX += client.font.width(": ");
                 }
                 
                 // Zeichne Haupttext (vertikal zentriert zum Icon, wenn Icon aktiviert)
-                context.drawText(
-                    client.textRenderer,
+                context.text(
+                    client.font,
                     displayText,
                     lineX, textYForIcon,
                     recyclerCurrentTextColor,
                     true
                 );
-                lineX += client.textRenderer.getWidth(displayText);
+                lineX += client.font.width(displayText);
                 
                 // Zeichne Prozentwert mit konfigurierter Farbe, falls vorhanden (vertikal zentriert zum Icon)
                 if (slotPercentText != null) {
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         " " + slotPercentText,
                         lineX, textYForIcon,
                         recyclerPercentColor,
@@ -1042,27 +1042,27 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 // Entferne "MK [Name]: " oder "MK X: " Präfix wenn Icon angezeigt wird
                 displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
             }
-            context.drawText(
-                client.textRenderer,
+            context.text(
+                client.font,
                 displayText,
                 currentX, currentY,
                 currentTextColor,
                 true
             );
-            currentX += client.textRenderer.getWidth(displayText);
+            currentX += client.font.width(displayText);
             
             // Render percent if enabled
             // Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
             if (showPercent && percentText != null) {
                 int currentPercentColor = showWarning ? currentTextColor : percentColor;
-                context.drawText(
-                    client.textRenderer,
+                context.text(
+                    client.font,
                     " " + percentText,
                     currentX, currentY,
                     currentPercentColor,
                     true
                 );
-                currentX += client.textRenderer.getWidth(" " + percentText);
+                currentX += client.font.width(" " + percentText);
             }
         }
         
@@ -1101,12 +1101,12 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
      * Prüft, ob der Spieler in der "general_lobby" Dimension ist
      */
     private boolean isInGeneralLobby() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.level == null) {
             return false;
         }
         
-        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        String dimensionPath = client.level.dimension().identifier().getPath();
         return dimensionPath.equals("general_lobby");
     }
     
@@ -1153,8 +1153,8 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("NPC Alerts: " + displayName + " - Separates Overlay");
+    public Component getTooltip() {
+        return Component.literal("NPC Alerts: " + displayName + " - Separates Overlay");
     }
     
     @Override

@@ -1,8 +1,6 @@
 package net.felix.leaderboards;
 
 import com.google.gson.JsonObject;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.leaderboards.collectors.DataCollector;
@@ -16,6 +14,8 @@ import net.felix.leaderboards.collectors.FloorKillsCollector;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.utilities.Other.DebugUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.felix.leaderboards.config.LeaderboardConfig;
 import net.felix.leaderboards.cooldown.LeaderboardCooldownManager;
 
@@ -133,8 +133,8 @@ public class LeaderboardManager {
         });
         
         // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null && client.player != null && client.getNetworkHandler() != null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.player != null && client.getConnection() != null) {
             System.out.println("🌐 [LeaderboardManager] Spieler bereits auf Server - starte sofortige Registrierung...");
             schedulePlayerRegistration();
             // Prüfe Season-ID sofort
@@ -224,7 +224,7 @@ public class LeaderboardManager {
      * @return true wenn erfolgreich, false wenn Spieler noch nicht verfügbar
      */
     private boolean tryRegisterPlayer() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) {
             System.out.println("⚠️ Spieler noch nicht verfügbar - Retry in 5 Sekunden");
             return false;
@@ -238,7 +238,7 @@ public class LeaderboardManager {
      * Registriert den aktuellen Spieler beim Server
      */
     private void registerPlayer() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.player == null) {
             System.out.println("⚠️ [LeaderboardManager] Spieler nicht verfügbar - Registrierung später versuchen");
             return;
@@ -640,7 +640,7 @@ public class LeaderboardManager {
      * Verarbeitet eingehende Chat-Nachrichten für Datensammlung
      * @return true wenn die Nachricht unterdrückt werden soll, false wenn sie angezeigt werden soll
      */
-    private boolean processChatMessage(Text message) {
+    private boolean processChatMessage(Component message) {
         if (message == null) return false;
         
         String messageText = message.getString(); // Verwende getString() für korrekte Textextraktion

@@ -1,14 +1,14 @@
 package net.felix.utilities.DragOverlay.Aincraft;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.Overall.ActionBarData;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import java.util.List;
 
 /**
@@ -18,7 +18,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 155;
     private static final int DEFAULT_HEIGHT = 103;
-    private static final Identifier MATERIALS_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/materials_background.png");
+    private static final Identifier MATERIALS_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/materials_background.png");
     
     @Override
     public String getOverlayName() {
@@ -27,10 +27,10 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX;
         
         // Use unscaled width for positioning (same as MaterialTrackerUtility line 215)
@@ -77,10 +77,10 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         
         // Use unscaled width for positioning (same as MaterialTrackerUtility line 215)
         int unscaledWidth = calculateUnscaledWidth();
@@ -125,14 +125,14 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
         int width = getWidth();
         int height = getHeight();
         
         // Use Matrix transformations for scaling (like Blueprint Viewer)
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         
         // Scale based on config
@@ -153,7 +153,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         switch (overlayType) {
             case CUSTOM:
                 try {
-                    context.drawTexture(
+                    context.blit(
                         RenderPipelines.GUI_TEXTURED,
                         MATERIALS_BACKGROUND_TEXTURE,
                         0, 0, // Position (relative to matrix)
@@ -174,11 +174,11 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         }
         
         // Render border for edit mode (scaled)
-        context.drawBorder(0, 0, unscaledWidth, unscaledHeight, 0xFFFF0000);
+        context.outline(0, 0, unscaledWidth, unscaledHeight, 0xFFFF0000);
         
         // Render overlay name (scaled)
-        context.drawText(
-            MinecraftClient.getInstance().textRenderer,
+        context.text(
+            Minecraft.getInstance().font,
             getOverlayName(),
             5, 5, // Position (relative to matrix)
             0xFFFFFFFF,
@@ -204,8 +204,8 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Material Tracker - Shows collected materials from action bar");
+    public Component getTooltip() {
+        return Component.literal("Material Tracker - Shows collected materials from action bar");
     }
     
     @Override
@@ -224,8 +224,8 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
      * Render real material data if available, otherwise sample data
      * Uses matrix-relative positioning for scaling
      */
-    private void renderMaterialData(DrawContext context, int x, int y, int width, int height) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    private void renderMaterialData(GuiGraphicsExtractor context, int x, int y, int width, int height) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         try {
@@ -241,15 +241,15 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
                     if (count >= 3) break; // Limit to 3 items for edit mode
                     
                     String materialText;
-                    if (materialObj instanceof net.minecraft.text.Text) {
-                        materialText = ((net.minecraft.text.Text) materialObj).getString();
+                    if (materialObj instanceof net.minecraft.network.chat.Component) {
+                        materialText = ((net.minecraft.network.chat.Component) materialObj).getString();
                     } else {
                         materialText = materialObj.toString();
                     }
                     
                     // Truncate if too long for available width
                     int availableWidth = width - 16; // 8px margin on each side
-                    int textWidth = client.textRenderer.getWidth(materialText);
+                    int textWidth = client.font.width(materialText);
                     if (textWidth > availableWidth) {
                         int maxChars = (int) ((double) availableWidth / textWidth * materialText.length());
                         if (maxChars > 3) {
@@ -259,8 +259,8 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
                         }
                     }
                     
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         materialText,
                         8, materialY, // Position relative to matrix
                         0xFFFFFFFF,
@@ -272,8 +272,8 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
                 }
                 
                 if (materials.size() > 3) {
-                    context.drawText(
-                        client.textRenderer,
+                    context.text(
+                        client.font,
                         "... and " + (materials.size() - 3) + " more",
                         8, materialY, // Position relative to matrix
                         0xFF888888,
@@ -288,24 +288,24 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         }
         
         // Render sample data if real data is not available (scaled)
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Prächtiges Eselhaar [1067]",
             8, 20, // Position relative to matrix
             0xFFFFFFFF,
             true
         );
         
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Goldener Drache [234]",
             8, 32, // Position relative to matrix
             0xFFFFFFFF,
             true
         );
         
-        context.drawText(
-            client.textRenderer,
+        context.text(
+            client.font,
             "Mystisches Holz [89]",
             8, 44, // Position relative to matrix
             0xFFFFFFFF,
@@ -317,7 +317,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
      * Calculate unscaled width for positioning (same logic as MaterialTrackerUtility line 215)
      */
     private int calculateUnscaledWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return DEFAULT_WIDTH;
         
         try {
@@ -345,7 +345,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
      * This returns the SCALED width for rendering
      */
     private int calculateDynamicWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return DEFAULT_WIDTH;
         
         try {
@@ -376,19 +376,19 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     /**
      * Calculate required width for materials (exact same logic as MaterialTrackerUtility)
      */
-    private int calculateRequiredWidth(MinecraftClient client, List<Object> texts) {
+    private int calculateRequiredWidth(Minecraft client, List<Object> texts) {
         int maxWidth = 100; // MIN_TEXT_WIDTH from MaterialTrackerUtility
         
         for (Object textObj : texts) {
-            net.minecraft.text.Text textComponent;
-            if (textObj instanceof net.minecraft.text.Text) {
-                textComponent = (net.minecraft.text.Text) textObj;
+            net.minecraft.network.chat.Component textComponent;
+            if (textObj instanceof net.minecraft.network.chat.Component) {
+                textComponent = (net.minecraft.network.chat.Component) textObj;
             } else {
-                textComponent = net.minecraft.text.Text.literal(textObj.toString());
+                textComponent = net.minecraft.network.chat.Component.literal(textObj.toString());
             }
             
             // Calculate text width (same as MaterialTrackerUtility)
-            int textWidth = client.textRenderer.getWidth(textComponent);
+            int textWidth = client.font.width(textComponent);
             
             // Add padding (same as MaterialTrackerUtility: 10px left + 5px right)
             int totalWidth = textWidth + 20; // 10px links + 10px rechts

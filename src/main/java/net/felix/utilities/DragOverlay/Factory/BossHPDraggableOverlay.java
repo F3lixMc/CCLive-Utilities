@@ -1,10 +1,10 @@
 package net.felix.utilities.DragOverlay.Factory;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 import java.math.BigInteger;
@@ -26,12 +26,12 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     public int getX() {
         // Calculate X position using the same logic as Mining/Holzfäller overlays
         // baseX is the left edge position (like Mining overlays)
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             return CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int baseX = CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
         int overlayWidth = getWidth(); // Use scaled width for positioning
         
@@ -64,7 +64,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
      * Uses actual boss data to calculate real width dynamically
      */
     private int calculateUnscaledWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return 200; // Fallback width
 
         // Get actual boss data to calculate real width (exactly like the standard overlay)
@@ -89,8 +89,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     }
 
                     String nameWithColon = displayHP.isEmpty() ? displayText : (displayText + ": ");
-                    int nameWidth = client.textRenderer.getWidth(nameWithColon);
-                    int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
+                    int nameWidth = client.font.width(nameWithColon);
+                    int hpWidth = displayHP.isEmpty() ? 0 : client.font.width(displayHP);
                     
                     // Calculate percentage text (exactly like standard overlay)
                     String percentageText = null;
@@ -106,8 +106,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                         percentageText = String.format(Locale.US, "%.1f%%", percentage);
                     }
                     
-                    int separatorWidth = percentageText != null ? client.textRenderer.getWidth("|") : 0;
-                    int percentageWidth = percentageText != null ? client.textRenderer.getWidth(percentageText) : 0;
+                    int separatorWidth = percentageText != null ? client.font.width("|") : 0;
+                    int percentageWidth = percentageText != null ? client.font.width(percentageText) : 0;
                     
                     // Use exact same calculation as standard overlay (including percentage if applicable)
                     int firstLineWidth = nameWidth + (displayHP.isEmpty() ? 0 : 4 + hpWidth + 
@@ -119,13 +119,13 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                         dpmText = net.felix.utilities.Factory.BossHPUtility.getFormattedDpmText();
                     }
                     
-                    int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
+                    int dpmWidth = dpmText != null ? client.font.width(dpmText) : 0;
                     
                     String etaLine = null;
                     if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta && currentHP != null) {
                         etaLine = net.felix.utilities.Factory.BossHPUtility.getFormattedEtaText(currentHP);
                     }
-                    int etaWidth = etaLine != null ? client.textRenderer.getWidth(etaLine) : 0;
+                    int etaWidth = etaLine != null ? client.font.width(etaLine) : 0;
                     
                     String lastDmgLine = null;
                     String overallDmgLine = null;
@@ -145,8 +145,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                         overallDmgLine = "Overall DMG: " + net.felix.utilities.Factory.BossHPUtility.formatBigInteger(totalDealt)
                             + " | " + String.format(Locale.US, "%.1f%%", removedPct);
                     }
-                    int lastDmgWidth = lastDmgLine != null ? client.textRenderer.getWidth(lastDmgLine) : 0;
-                    int overallDmgWidth = overallDmgLine != null ? client.textRenderer.getWidth(overallDmgLine) : 0;
+                    int lastDmgWidth = lastDmgLine != null ? client.font.width(lastDmgLine) : 0;
+                    int overallDmgWidth = overallDmgLine != null ? client.font.width(overallDmgLine) : 0;
                     
                     int totalWidth = Math.max(
                         firstLineWidth,
@@ -161,33 +161,33 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         // No boss data available - calculate width for preview text (compact preview)
         // Use smaller example values for preview to keep overlay compact
         String previewText = "Boss-Name: XXXX";
-        int previewWidth = client.textRenderer.getWidth(previewText);
+        int previewWidth = client.font.width(previewText);
         
         // Add HP width estimate (use smaller value for preview)
         String previewHP = "100,000";
-        int previewHPWidth = client.textRenderer.getWidth(previewHP);
+        int previewHPWidth = client.font.width(previewHP);
         previewWidth += 10 + previewHPWidth; // 10 pixels spacing + HP width
         
         // Add percentage width if enabled (use smaller value for preview)
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowPercentage) {
             String previewPercentageText = "50.0%";
-            int percentageWidth = client.textRenderer.getWidth(previewPercentageText);
-            int separatorWidth = client.textRenderer.getWidth("|");
+            int percentageWidth = client.font.width(previewPercentageText);
+            int separatorWidth = client.font.width("|");
             previewWidth += 5 + separatorWidth + 5 + percentageWidth; // Spacing + separator + spacing + percentage
         }
         
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
             String dpmText = "DPM: -";
-            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth(dpmText));
+            previewWidth = Math.max(previewWidth, client.font.width(dpmText));
         }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta) {
-            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth("Benötigte Zeit: 9:59:59"));
+            previewWidth = Math.max(previewWidth, client.font.width("Benötigte Zeit: 9:59:59"));
         }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
-            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth("Last Dmg: 9,999,999 | 5s"));
+            previewWidth = Math.max(previewWidth, client.font.width("Last Dmg: 9,999,999 | 5s"));
         }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg) {
-            previewWidth = Math.max(previewWidth, client.textRenderer.getWidth("Overall DMG: 9,999,999 | 100.0%"));
+            previewWidth = Math.max(previewWidth, client.font.width("Overall DMG: 9,999,999 | 100.0%"));
         }
         return previewWidth + PADDING * 2;
     }
@@ -197,27 +197,27 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
      * Uses actual boss data to calculate real height dynamically
      */
     private int calculateUnscaledHeight() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return 20; // Fallback height
         
         final int LINE_SPACING = 2; // Abstand zwischen Zeilen
         
         // Height includes: first line (Boss-Name + HP) + optionally DPM line
-        int height = client.textRenderer.fontHeight + PADDING * 2; // First line
+        int height = client.font.lineHeight + PADDING * 2; // First line
         
         boolean shouldShowDPM = CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM;
         
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg) {
-            height += client.textRenderer.fontHeight + LINE_SPACING;
+            height += client.font.lineHeight + LINE_SPACING;
         }
         if (shouldShowDPM) {
-            height += client.textRenderer.fontHeight + LINE_SPACING;
+            height += client.font.lineHeight + LINE_SPACING;
         }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
-            height += client.textRenderer.fontHeight + LINE_SPACING;
+            height += client.font.lineHeight + LINE_SPACING;
         }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta) {
-            height += client.textRenderer.fontHeight + LINE_SPACING;
+            height += client.font.lineHeight + LINE_SPACING;
         }
         
         return height;
@@ -243,14 +243,14 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     public void setPosition(int x, int y) {
         // Calculate baseX using the same logic as Mining/Holzfäller overlays
         // We need to reverse the calculation: from the actual x position, calculate baseX
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = x;
             CCLiveUtilitiesConfig.HANDLER.instance().bossHPY = y;
             return;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int overlayWidth = getWidth(); // Use scaled width for positioning
         
         // Determine if overlay is on left or right side of screen
@@ -272,7 +272,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX(); // This is now the left edge position
         int y = getY();
         int width = getWidth();
@@ -289,17 +289,17 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         context.fill(x, y, x + width, y + height, 0x80000000);
         
         // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.outline(x, y, width, height, 0xFFFF0000);
         
         // Render preview text "Boss-Name: XXXX" and optionally "DPM: XXXX" with scale
         // Always show "XXXX" in preview, never real HP values
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null) {
             final int LINE_SPACING = 2;
             String previewText = "Boss-Name: XXXX";
             
             // Use Matrix transformations for scaling
-            Matrix3x2fStack matrices = context.getMatrices();
+            Matrix3x2fStack matrices = context.pose();
             matrices.pushMatrix();
             
             // Translate to position and scale from there
@@ -307,37 +307,37 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
             matrices.scale(scale, scale);
             
             // Render preview text (first line) - centered horizontally
-            int textWidth = client.textRenderer.getWidth(previewText);
+            int textWidth = client.font.width(previewText);
             int textX = (unscaledWidth - textWidth) / 2;
             int textY = PADDING;
             
-            context.drawText(client.textRenderer, previewText, textX, textY, 0xFFFFFFFF, false);
+            context.text(client.font, previewText, textX, textY, 0xFFFFFFFF, false);
             
-            int lineY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
+            int lineY = PADDING + client.font.lineHeight + LINE_SPACING;
             if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg) {
                 String overallPreview = "Overall DMG: XXXX | XX.X%";
-                int ow = client.textRenderer.getWidth(overallPreview);
-                context.drawText(client.textRenderer, overallPreview, (unscaledWidth - ow) / 2, lineY, 0xFFFFFF00, false);
-                lineY += client.textRenderer.fontHeight + LINE_SPACING;
+                int ow = client.font.width(overallPreview);
+                context.text(client.font, overallPreview, (unscaledWidth - ow) / 2, lineY, 0xFFFFFF00, false);
+                lineY += client.font.lineHeight + LINE_SPACING;
             }
             if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
                 String dpmText = "DPM: -";
-                int dpmTextWidth = client.textRenderer.getWidth(dpmText);
+                int dpmTextWidth = client.font.width(dpmText);
                 int dpmTextX = (unscaledWidth - dpmTextWidth) / 2;
-                context.drawText(client.textRenderer, dpmText, dpmTextX, lineY, 0xFFFFFF00, false);
-                lineY += client.textRenderer.fontHeight + LINE_SPACING;
+                context.text(client.font, dpmText, dpmTextX, lineY, 0xFFFFFF00, false);
+                lineY += client.font.lineHeight + LINE_SPACING;
             }
             if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg) {
                 String lastPreview = "Last Dmg: XXXX | 5s";
-                int lw = client.textRenderer.getWidth(lastPreview);
-                context.drawText(client.textRenderer, lastPreview, (unscaledWidth - lw) / 2, lineY, 0xFFFFFF00, false);
-                lineY += client.textRenderer.fontHeight + LINE_SPACING;
+                int lw = client.font.width(lastPreview);
+                context.text(client.font, lastPreview, (unscaledWidth - lw) / 2, lineY, 0xFFFFFF00, false);
+                lineY += client.font.lineHeight + LINE_SPACING;
             }
             if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta) {
                 String etaPreview = "Benötigte Zeit: -";
-                int etaTextWidth = client.textRenderer.getWidth(etaPreview);
+                int etaTextWidth = client.font.width(etaPreview);
                 int etaTextX = (unscaledWidth - etaTextWidth) / 2;
-                context.drawText(client.textRenderer, etaPreview, etaTextX, lineY, 0xFFFFFF00, false);
+                context.text(client.font, etaPreview, etaTextX, lineY, 0xFFFFFF00, false);
             }
             
             matrices.popMatrix();
@@ -356,8 +356,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("Boss HP - Shows boss health information");
+    public Component getTooltip() {
+        return Component.literal("Boss HP - Shows boss health information");
     }
     
     @Override

@@ -2,11 +2,9 @@ package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-
 import net.felix.CCLiveUtilitiesConfig;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -113,7 +111,7 @@ public class AnimationBlockerUtility {
         }
     }
     
-    private static void onGameMessage(Text message, boolean overlay) {
+    private static void onGameMessage(Component message, boolean overlay) {
         if (!animationBlockingEnabled) {
             return;
         }
@@ -146,7 +144,7 @@ public class AnimationBlockerUtility {
         }
     }
     
-    private static void onClientTick(MinecraftClient client) {
+    private static void onClientTick(Minecraft client) {
         // Update blocked characters if config changed
         updateBlockedCharacters();
         
@@ -157,7 +155,7 @@ public class AnimationBlockerUtility {
             return;
         }
         
-        if (client.player == null || client.world == null) {
+        if (client.player == null || client.level == null) {
             animationBlockingEnabled = false;
             return;
         }

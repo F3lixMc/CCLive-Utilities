@@ -1,11 +1,11 @@
 package net.felix.utilities.DragOverlay.Factory;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.Overall.ZeichenUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 /**
@@ -23,10 +23,10 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     
     @Override
     public int getX() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
         
         // Wenn xPos -1 ist, berechne automatisch rechts (für Kompatibilität)
@@ -52,9 +52,9 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         
         if (yOffset == -1) {
             // Im F6-Editor: Wenn -1, zeige eine Standard-Position (zentriert)
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client != null && client.getWindow() != null) {
-                int screenHeight = client.getWindow().getScaledHeight();
+                int screenHeight = client.getWindow().getGuiScaledHeight();
                 // Shift up by button height to include buttons in the overlay area
                 return (screenHeight - getHeight()) / 2 - scaledButtonHeight;
             }
@@ -75,8 +75,8 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
      */
     private int calculateUnscaledHeight() {
         // Höhe entspricht der Inventar-Höhe (wird dynamisch angepasst)
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             // Use cached height if available (from last render)
             int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
             if (cachedHeight > 0) {
@@ -87,26 +87,26 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         
         // Wenn wir im F6-Editor sind, verwende die gecachte Höhe (aus dem letzten Render)
         // Das vermeidet Reflection-Probleme auf dem Server
-        if (client.currentScreen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
+        if (client.screen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
             int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
             if (cachedHeight > 0) {
                 return cachedHeight;
             }
         }
         
-        net.minecraft.client.gui.screen.Screen screenToCheck = client.currentScreen;
+        net.minecraft.client.gui.screens.Screen screenToCheck = client.screen;
         
         // Wenn wir im F6-Editor sind, versuche auf previousScreen zuzugreifen (Fallback)
-        if (client.currentScreen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
+        if (client.screen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
             try {
                 java.lang.reflect.Field previousScreenField = net.felix.utilities.DragOverlay.OverlayEditorScreen.class.getDeclaredField("previousScreen");
                 previousScreenField.setAccessible(true);
-                net.minecraft.client.gui.screen.Screen previousScreen = (net.minecraft.client.gui.screen.Screen) previousScreenField.get(client.currentScreen);
+                net.minecraft.client.gui.screens.Screen previousScreen = (net.minecraft.client.gui.screens.Screen) previousScreenField.get(client.screen);
                 
-                if (previousScreen != null && previousScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?>) {
+                if (previousScreen != null && previousScreen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) {
                     // Prüfe ob es das MKLevel Inventar ist
-                    net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) previousScreen;
-                    net.minecraft.text.Text titleText = handledScreen.getTitle();
+                    net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) previousScreen;
+                    net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
                     String title = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
                     String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
                     
@@ -122,7 +122,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
                         return DEFAULT_HEIGHT;
                     }
                 } else {
-                    // Not a HandledScreen, use cached height
+                    // Not a AbstractContainerScreen, use cached height
                     int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
                     if (cachedHeight > 0) {
                         return cachedHeight;
@@ -140,9 +140,9 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         }
         
         // Versuche die tatsächliche Inventar-Höhe zu bekommen (für normale Screens, nicht F6-Editor)
-        if (screenToCheck instanceof net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen) {
+        if (screenToCheck instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
             try {
-                java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screen.ingame.HandledScreen.class.getDeclaredField("backgroundHeight");
+                java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageHeight");
                 bgHeightField.setAccessible(true);
                 int height = bgHeightField.getInt(handledScreen);
                 return height;
@@ -228,7 +228,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
         int width = getWidth();
@@ -249,11 +249,11 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         context.fill(x, y + scaledButtonHeight, x + width, y + height, 0x80000000);
         
         // Render preview with scale using matrix transformation
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null) {
             // Matrix should start at the actual overlay position (not including buttons)
             // Since getY() returns position including button offset, we need to add it back
-            Matrix3x2fStack matrices = context.getMatrices();
+            Matrix3x2fStack matrices = context.pose();
             matrices.pushMatrix();
             matrices.translate(x, y + scaledButtonHeight); // Start at actual overlay position
             matrices.scale(scale, scale);
@@ -277,25 +277,25 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
                 int buttonBgColor = i == 0 ? 0xFF404040 : 0xFF202020;
                 int buttonBorderColor = i == 0 ? 0xFFFFFF00 : 0xFF808080;
                 context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + unscaledButtonHeight, buttonBgColor);
-                context.drawBorder(buttonX, buttonY, buttonWidth, unscaledButtonHeight, buttonBorderColor);
+                context.outline(buttonX, buttonY, buttonWidth, unscaledButtonHeight, buttonBorderColor);
                 
                 String buttonText = tabLabels[i];
-                int textWidth = client.textRenderer.getWidth(buttonText);
+                int textWidth = client.font.width(buttonText);
                 int textXButton = buttonX + (buttonWidth - textWidth) / 2;
-                int textYButton = buttonY + (unscaledButtonHeight - client.textRenderer.fontHeight) / 2;
-                context.drawText(client.textRenderer, buttonText, textXButton, textYButton, 0xFFFFFFFF, false);
+                int textYButton = buttonY + (unscaledButtonHeight - client.font.lineHeight) / 2;
+                context.text(client.font, buttonText, textXButton, textYButton, 0xFFFFFFFF, false);
             }
             
             // Draw search bar
             int searchBarY = padding - contentOffset;
             int searchBarWidth = unscaledWidth - padding * 2;
             context.fill(padding, searchBarY, padding + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
-            context.drawBorder(padding, searchBarY, searchBarWidth, searchBarHeight, 0xFF808080);
+            context.outline(padding, searchBarY, searchBarWidth, searchBarHeight, 0xFF808080);
             
             // Draw search text placeholder
             String searchPlaceholder = "Suchen...";
-            int searchTextY = searchBarY + (searchBarHeight - client.textRenderer.fontHeight) / 2;
-            context.drawText(client.textRenderer, searchPlaceholder, padding + 2, searchTextY, 0xFF808080, false);
+            int searchTextY = searchBarY + (searchBarHeight - client.font.lineHeight) / 2;
+            context.text(client.font, searchPlaceholder, padding + 2, searchTextY, 0xFF808080, false);
             
             // Render preview entries below search bar
             int contentY = searchBarY + searchBarHeight + 2;
@@ -304,21 +304,21 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
             String previewLevel = "-Level 2";
             String previewEssence = " Pferd T1, x3.000";
             
-            context.drawText(client.textRenderer, previewLevel, textX, textY, 0xFFFFFF00, true);
+            context.text(client.font, previewLevel, textX, textY, 0xFFFFFF00, true);
             textY += lineHeight;
-            context.drawText(client.textRenderer, previewEssence, textX, textY, 0xFFFFFFFF, true);
+            context.text(client.font, previewEssence, textX, textY, 0xFFFFFFFF, true);
             textY += lineHeight;
             
-            context.drawText(client.textRenderer, "-Level 3", textX, textY, 0xFFFFFF00, true);
+            context.text(client.font, "-Level 3", textX, textY, 0xFFFFFF00, true);
             textY += lineHeight;
-            context.drawText(client.textRenderer, " Lohe T1, x4.000", textX, textY, 0xFFFFFFFF, true);
+            context.text(client.font, " Lohe T1, x4.000", textX, textY, 0xFFFFFFFF, true);
             
             matrices.popMatrix();
         }
         
         // Render border for edit mode (scaled) - around entire area including buttons
         // Rendered last so it appears on top of the buttons
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.outline(x, y, width, height, 0xFFFF0000);
     }
     
     @Override
@@ -334,8 +334,8 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("MKLevel Overlay - Zeigt Level, Essence und Amount für Machtkristalle Verbessern");
+    public Component getTooltip() {
+        return Component.literal("MKLevel Overlay - Zeigt Level, Essence und Amount für Machtkristalle Verbessern");
     }
     
     @Override

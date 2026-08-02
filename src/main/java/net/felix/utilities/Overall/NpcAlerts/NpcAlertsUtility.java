@@ -2,18 +2,19 @@ package net.felix.utilities.Overall.NpcAlerts;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Overall.HudOverlayVisibility;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.PowerCrystalLevelUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 
 import java.util.HashMap;
@@ -35,15 +36,15 @@ public class NpcAlertsUtility {
 	private static boolean showOverlays = true; // Overlay-Sichtbarkeit
 	
 	// Icon Identifier für Forschung, Amboss, Schmelzofen, Recycler, Seelen, Essenzen, Jäger und Machtkristalle
-	private static final Identifier FORSCHUNG_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
-	private static final Identifier AMBOSS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
-	private static final Identifier SCHMELZOFEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
-	private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
-	private static final Identifier SEELEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
-	private static final Identifier ESSENZEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
-	private static final Identifier JAEGER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
-	private static final Identifier KOMBO_KISTE_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
-	private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
+	private static final Identifier FORSCHUNG_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
+	private static final Identifier AMBOSS_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
+	private static final Identifier SCHMELZOFEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
+	private static final Identifier RECYCLER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
+	private static final Identifier SEELEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
+	private static final Identifier ESSENZEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
+	private static final Identifier JAEGER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+	private static final Identifier KOMBO_KISTE_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
+	private static final Identifier MACHTKRISTALL_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
 	
 	// Datenstrukturen für die verschiedenen Informationen
 	public static class CapacityData {
@@ -205,15 +206,15 @@ public class NpcAlertsUtility {
 	/**
 	 * Kombo-Kiste-Daten nur in Dimensionen, deren ID „floor“ enthält (Groß-/Kleinschreibung egal), z. B. {@code mymod:floor_5}.
 	 */
-	public static boolean isKomboKisteReadingDimension(MinecraftClient client) {
-		if (client == null || client.world == null) {
+	public static boolean isKomboKisteReadingDimension(Minecraft client) {
+		if (client == null || client.level == null) {
 			return false;
 		}
-		String id = client.world.getRegistryKey().getValue().toString();
+		String id = client.level.dimension().identifier().toString();
 		return id.toLowerCase(Locale.ROOT).contains("floor");
 	}
 	
-	private static void refreshKomboKisteFromBossbarAndScoreboard(MinecraftClient client) {
+	private static void refreshKomboKisteFromBossbarAndScoreboard(Minecraft client) {
 		if (!isKomboKisteReadingDimension(client)) {
 			clearKomboKisteProgress();
 			return;
@@ -377,7 +378,7 @@ public class NpcAlertsUtility {
 			
 			// Registriere HUD-Rendering
 			HudElementRegistry.addLast(
-					Identifier.of("cclive-utilities", "npc_alerts"),
+					Identifier.fromNamespaceAndPath("cclive-utilities", "npc_alerts"),
 					NpcAlertsUtility::onHudRender);
 			
 			isInitialized = true;
@@ -386,11 +387,11 @@ public class NpcAlertsUtility {
 		}
 	}
 	
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Check Tab key for overlay visibility
 		checkTabKey();
 		
-		if (client == null || client.player == null || client.world == null) {
+		if (client == null || client.player == null || client.level == null) {
 			return;
 		}
 		
@@ -424,7 +425,7 @@ public class NpcAlertsUtility {
 	/**
 	 * Aktualisiert alle Informationen aus der Tab-Liste
 	 */
-	private static void updateNpcAlerts(MinecraftClient client) {
+	private static void updateNpcAlerts(Minecraft client) {
 		// Nur alle 1 Sekunde prüfen, um Performance-Probleme zu vermeiden
 		long currentTime = System.currentTimeMillis();
 		long timeSinceLastCheck = currentTime - lastTabListCheck;
@@ -434,17 +435,17 @@ public class NpcAlertsUtility {
 		}
 		lastTabListCheck = currentTime;
 		
-		if (client == null || client.getNetworkHandler() == null) {
+		if (client == null || client.getConnection() == null) {
 			return;
 		}
 		
-		var playerList = client.getNetworkHandler().getPlayerList();
+		var playerList = client.getConnection().getOnlinePlayers();
 		if (playerList == null) {
 			return;
 		}
 		
 		// Konvertiere zu Liste für Index-Iteration
-		java.util.List<net.minecraft.client.network.PlayerListEntry> entries = 
+		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries = 
 			new java.util.ArrayList<>(playerList);
 		
 		// Helper-Methode zum Entfernen von Minecraft-Formatierungscodes (§ codes)
@@ -464,11 +465,11 @@ public class NpcAlertsUtility {
 				return null;
 			}
 			
-			net.minecraft.text.Text displayName = entry.getDisplayName();
+			net.minecraft.network.chat.Component displayName = entry.getTabListDisplayName();
 			if (displayName != null) {
 				return displayName.getString();
 			} else if (entry.getProfile() != null) {
-				return entry.getProfile().getName();
+				return entry.getProfile().name();
 			}
 			return null;
 		};
@@ -591,7 +592,7 @@ public class NpcAlertsUtility {
 	 * Behält die Reihenfolge bei (Slot 1, 2, 3)
 	 */
 	private static void parseMachtkristalle(
-		java.util.List<net.minecraft.client.network.PlayerListEntry> entries,
+		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries,
 		java.util.function.Function<Integer, String> getEntryText,
 		java.util.function.Function<String, String> removeFormatting
 	) {
@@ -691,7 +692,7 @@ public class NpcAlertsUtility {
 	 * Sucht nach dem Header und dann nach der Datenzeile darunter
 	 */
 	private static void parseCapacityData(
-		java.util.List<net.minecraft.client.network.PlayerListEntry> entries,
+		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries,
 		int headerIndex,
 		java.util.function.Function<Integer, String> getEntryText,
 		java.util.function.Function<String, String> removeFormatting,
@@ -836,21 +837,21 @@ public class NpcAlertsUtility {
 	/**
 	 * Liest den vollständigen Tablist-Text inkl. Custom-Font-Glyphen.
 	 */
-	private static String getTablistEntryText(net.minecraft.client.network.PlayerListEntry entry) {
+	private static String getTablistEntryText(net.minecraft.client.multiplayer.PlayerInfo entry) {
 		if (entry == null) {
 			return null;
 		}
-		net.minecraft.text.Text displayName = entry.getDisplayName();
+		net.minecraft.network.chat.Component displayName = entry.getTabListDisplayName();
 		if (displayName != null) {
 			StringBuilder sb = new StringBuilder();
 			displayName.visit((style, asString) -> {
 				sb.append(asString);
 				return java.util.Optional.empty();
-			}, net.minecraft.text.Style.EMPTY);
+			}, net.minecraft.network.chat.Style.EMPTY);
 			return sb.toString();
 		}
 		if (entry.getProfile() != null) {
-			return entry.getProfile().getName();
+			return entry.getProfile().name();
 		}
 		return null;
 	}
@@ -860,7 +861,7 @@ public class NpcAlertsUtility {
 	 * Sucht nach dem Header und dann nach der Datenzeile darunter
 	 */
 	private static void parseXPData(
-		java.util.List<net.minecraft.client.network.PlayerListEntry> entries,
+		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries,
 		int headerIndex,
 		java.util.function.Function<Integer, String> getEntryText,
 		java.util.function.Function<String, String> removeFormatting,
@@ -966,12 +967,12 @@ public class NpcAlertsUtility {
 	 * Prüft, ob der Spieler in der "general_lobby" Dimension ist
 	 */
 	private static boolean isInGeneralLobby() {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.world == null) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.level == null) {
 			return false;
 		}
 		
-		String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+		String dimensionPath = client.level.dimension().identifier().getPath();
 		return dimensionPath.equals("general_lobby");
 	}
 	
@@ -1172,25 +1173,25 @@ public class NpcAlertsUtility {
 		}
 	}
 	
-	private static void renderScreenMessages(DrawContext context, MinecraftClient client) {
+	private static void renderScreenMessages(GuiGraphicsExtractor context, Minecraft client) {
 		if (activeScreenMessages.isEmpty()) {
 			return;
 		}
 		
-		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int screenHeight = client.getWindow().getGuiScaledHeight();
 		int baseY = screenHeight / 4;
 		int lineSpacing = 24;
 		int startY = baseY - ((activeScreenMessages.size() - 1) * lineSpacing) / 2;
 		
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		for (int i = 0; i < activeScreenMessages.size(); i++) {
 			String message = activeScreenMessages.get(i);
 			matrices.pushMatrix();
 			matrices.translate(screenWidth / 2f, startY + i * lineSpacing);
 			matrices.scale(2.0f, 2.0f);
-			int textWidth = client.textRenderer.getWidth(message);
-			context.drawText(client.textRenderer, message, -textWidth / 2, 0, SCREEN_MESSAGE_COLOR, true);
+			int textWidth = client.font.width(message);
+			context.text(client.font, message, -textWidth / 2, 0, SCREEN_MESSAGE_COLOR, true);
 			matrices.popMatrix();
 		}
 	}
@@ -1198,14 +1199,17 @@ public class NpcAlertsUtility {
 	/**
 	 * HUD Render callback für das NPC Alerts Overlay
 	 */
-	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.player == null || client.world == null) {
+	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.player == null || client.level == null) {
+			return;
+		}
+		if (!HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 		
@@ -1778,7 +1782,7 @@ public class NpcAlertsUtility {
 	/**
 	 * Rendert das NPC Alerts Overlay links auf dem Bildschirm
 	 */
-	private static void renderNpcAlertsDisplay(DrawContext context, MinecraftClient client) {
+	private static void renderNpcAlertsDisplay(GuiGraphicsExtractor context, Minecraft client) {
 		if (client.getWindow() == null) {
 			return;
 		}
@@ -2050,13 +2054,13 @@ public class NpcAlertsUtility {
 			                                                   "machtkristalle".equals(line.configKey) ||
 			                                                   "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
 			                                                   "recyclerSlot3".equals(line.configKey)))) {
-				int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+				int iconSize = (int)(client.font.lineHeight * 1.5);
 				width += iconSize + 2; // Icon + Abstand
-				width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+				width += client.font.width(": "); // Doppelpunkt nach Icon
 			}
-			width += client.textRenderer.getWidth(line.text);
+			width += client.font.width(line.text);
 			if (line.showPercent && line.percentText != null) {
-				width += client.textRenderer.getWidth(" " + line.percentText); // Abstand + Prozente
+				width += client.font.width(" " + line.percentText); // Abstand + Prozente
 			}
 			if (width > maxWidth) {
 				maxWidth = width;
@@ -2065,14 +2069,14 @@ public class NpcAlertsUtility {
 		
 		// Padding
 		final int PADDING = 5;
-		final int LINE_HEIGHT = client.textRenderer.fontHeight + 2; // Verwende tatsächliche Schrift-Höhe
+		final int LINE_HEIGHT = client.font.lineHeight + 2; // Verwende tatsächliche Schrift-Höhe
 		
 		// Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
 		int actualLineHeight = LINE_HEIGHT;
 		int iconLineCount = 0; // Zähle Zeilen mit Icons für zusätzlichen Abstand
 		for (LineWithPercent line : lines) {
 			if (line.showIcon && line.configKey != null) {
-				int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+				int iconSize = (int)(client.font.lineHeight * 1.5);
 				// Die tatsächliche Höhe ist das Maximum aus Icon-Höhe und Text-Höhe
 				actualLineHeight = Math.max(actualLineHeight, iconSize);
 				iconLineCount++;
@@ -2104,7 +2108,7 @@ public class NpcAlertsUtility {
 		int yPosition = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY;
 		
 		// Determine if overlay is on left or right side of screen
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		boolean isOnLeftSide = baseX < screenWidth / 2;
 		
 		// Calculate X position based on side (same logic as Mining overlays)
@@ -2129,7 +2133,7 @@ public class NpcAlertsUtility {
 		}
 		
 		// Render content with scale using matrix transformation
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		matrices.translate(posX, posY);
 		matrices.scale(scale, scale);
@@ -2163,7 +2167,7 @@ public class NpcAlertsUtility {
 			}
 			
 			// Zeichne Haupttext
-			Text textComponent = Text.literal(line.text);
+			Component textComponent = Component.literal(line.text);
 			
 			try {
 				int currentX = PADDING; // Relativ zu (xPosition, yPosition) nach Matrix-Transformation
@@ -2182,7 +2186,7 @@ public class NpcAlertsUtility {
 				
 				// Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen und Recycler)
 				if (line.showIcon && (line.configKey != null)) {
-					int iconSize = (int)(client.textRenderer.fontHeight * 1.5); // Icon-Größe = 1.5x Text-Höhe
+					int iconSize = (int)(client.font.lineHeight * 1.5); // Icon-Größe = 1.5x Text-Höhe
 					// Zentriere Icon vertikal: Overlay-Mitte minus die Hälfte der Icon-Höhe
 					int lineCenterY = currentY + actualLineHeight / 2;
 					int iconY = lineCenterY - iconSize / 2;
@@ -2228,7 +2232,7 @@ public class NpcAlertsUtility {
 						boolean iconDrawn = false;
 						int textYForIcon = currentY; // Standard Y-Position für Text
 						try {
-							context.drawTexture(
+							context.blit(
 								RenderPipelines.GUI_TEXTURED,
 								iconToUse,
 								currentX, iconY,
@@ -2239,85 +2243,85 @@ public class NpcAlertsUtility {
 							currentX += iconSize + 2; // Abstand nach Icon
 							iconDrawn = true;
 							// Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-							textYForIcon = lineCenterY - client.textRenderer.fontHeight / 2;
+							textYForIcon = lineCenterY - client.font.lineHeight / 2;
 						} catch (Exception e) {
 							// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
 							if (fallbackText != null) {
-								context.drawText(
-									client.textRenderer,
-									Text.literal(fallbackText),
+								context.text(
+									client.font,
+									Component.literal(fallbackText),
 									currentX,
 									currentY,
 									currentTextColor,
 									true
 								);
-								currentX += client.textRenderer.getWidth(fallbackText);
+								currentX += client.font.width(fallbackText);
 							}
 						}
 						// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
 						if (iconDrawn) {
-							context.drawText(
-								client.textRenderer,
-								Text.literal(": "),
+							context.text(
+								client.font,
+								Component.literal(": "),
 								currentX,
 								textYForIcon,
 								currentTextColor,
 								true
 							);
-							currentX += client.textRenderer.getWidth(": ");
+							currentX += client.font.width(": ");
 						}
 						// Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-						context.drawText(
-							client.textRenderer,
-							Text.literal(line.text),
+						context.text(
+							client.font,
+							Component.literal(line.text),
 							currentX,
 							textYForIcon,
 							currentTextColor,
 							true
 						);
-						currentX += client.textRenderer.getWidth(line.text);
+						currentX += client.font.width(line.text);
 					} else {
 						// Fallback: Zeichne normalen Text
-						context.drawText(
-							client.textRenderer,
+						context.text(
+							client.font,
 							textComponent,
 							currentX,
 							currentY,
 							currentTextColor,
 							true
 						);
-						currentX += client.textRenderer.getWidth(line.text);
+						currentX += client.font.width(line.text);
 					}
 				} else {
 					// Zeichne Haupttext (inkl. "Amboss:" wenn kein Icon)
-					context.drawText(
-						client.textRenderer,
+					context.text(
+						client.font,
 						textComponent,
 						currentX,
 						currentY,
 						currentTextColor,
 						true // Mit Schatten für bessere Lesbarkeit
 					);
-					currentX += client.textRenderer.getWidth(line.text);
+					currentX += client.font.width(line.text);
 				}
 				
 				// Zeichne Prozente direkt nach dem Text, wenn vorhanden
 				// Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
 				if (line.showPercent && line.percentText != null) {
-					Text percentComponent = Text.literal(" " + line.percentText);
+					Component percentComponent = Component.literal(" " + line.percentText);
 					int currentPercentColor = line.showWarning ? currentTextColor : percentColor;
 					// Wenn Icon vorhanden ist, verwende die zentrierte Y-Position
 					int percentY = (line.showIcon && line.configKey != null) ? 
-						(currentY + actualLineHeight / 2 - client.textRenderer.fontHeight / 2) : currentY;
-					context.drawText(
-						client.textRenderer,
+						(currentY + actualLineHeight / 2 - client.font.lineHeight / 2) : currentY;
+					context.text(
+						client.font,
 						percentComponent,
 						currentX,
 						percentY,
 						currentPercentColor,
 						true // Mit Schatten für bessere Lesbarkeit
 					);
-					currentX += client.textRenderer.getWidth(" " + line.percentText);
+					currentX += client.font.width(" " + line.percentText);
 				}
 			} catch (Exception e) {
 				// Fallback: Versuche mit String direkt
@@ -2334,8 +2338,8 @@ public class NpcAlertsUtility {
 						}
 					}
 					
-					context.drawText(
-						client.textRenderer,
+					context.text(
+						client.font,
 						line.text,
 						PADDING, // Relativ zu (xPosition, yPosition) nach Matrix-Transformation
 						currentY,
@@ -2345,18 +2349,18 @@ public class NpcAlertsUtility {
 					
 					// Zeichne Prozente direkt nach dem Text, wenn vorhanden
 					// Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
-					int currentX = PADDING + client.textRenderer.getWidth(line.text);
+					int currentX = PADDING + client.font.width(line.text);
 					if (line.showPercent && line.percentText != null) {
 						int currentPercentColor = line.showWarning ? currentTextColor : percentColor;
-						context.drawText(
-							client.textRenderer,
+						context.text(
+							client.font,
 							" " + line.percentText,
 							currentX,
 							currentY,
 							currentPercentColor,
 							true
 						);
-						currentX += client.textRenderer.getWidth(" " + line.percentText);
+						currentX += client.font.width(" " + line.percentText);
 					}
 				} catch (Exception e2) {
 					// Ignoriere Fehler
@@ -2382,7 +2386,7 @@ public class NpcAlertsUtility {
 	/**
 	 * Rendert separate Overlays für einzelne Informationen
 	 */
-	private static void renderSeparateOverlays(DrawContext context, MinecraftClient client) {
+	private static void renderSeparateOverlays(GuiGraphicsExtractor context, Minecraft client) {
 		// Forschung
 		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
 		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
@@ -2787,14 +2791,14 @@ public class NpcAlertsUtility {
 	/**
 	 * Rendert ein Multi-Line-Overlay (für Machtkristalle, die alle 3 Slots in einem Overlay anzeigen)
 	 */
-	private static void renderMultiLineOverlay(DrawContext context, MinecraftClient client,
+	private static void renderMultiLineOverlay(GuiGraphicsExtractor context, Minecraft client,
 		List<LineWithPercent> lines, int xPosition, int yPosition, boolean showBackground, String configKey) {
 		if (lines.isEmpty()) {
 			return;
 		}
 		
 		final int PADDING = 5;
-		final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
+		final int LINE_HEIGHT = client.font.lineHeight + 2;
 		
 		// Berechne die maximale Breite des Textes
 		int maxWidth = 0;
@@ -2807,13 +2811,13 @@ public class NpcAlertsUtility {
 			                                                   "machtkristalle".equals(line.configKey) ||
 			                                                   "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
 			                                                   "recyclerSlot3".equals(line.configKey)))) {
-				int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+				int iconSize = (int)(client.font.lineHeight * 1.5);
 				width += iconSize + 2; // Icon + Abstand
-				width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+				width += client.font.width(": "); // Doppelpunkt nach Icon
 			}
-			width += client.textRenderer.getWidth(line.text);
+			width += client.font.width(line.text);
 			if (line.showPercent && line.percentText != null) {
-				width += client.textRenderer.getWidth(" " + line.percentText);
+				width += client.font.width(" " + line.percentText);
 			}
 			if (width > maxWidth) {
 				maxWidth = width;
@@ -2825,7 +2829,7 @@ public class NpcAlertsUtility {
 		// Berücksichtige Icons bei der Höhenberechnung
 		for (LineWithPercent line : lines) {
 			if (line.showIcon && line.configKey != null) {
-				int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+				int iconSize = (int)(client.font.lineHeight * 1.5);
 				actualLineHeight = Math.max(actualLineHeight, iconSize);
 			}
 		}
@@ -2846,7 +2850,7 @@ public class NpcAlertsUtility {
 		int baseX = xPosition;
 		
 		// Determine if overlay is on left or right side of screen
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		boolean isOnLeftSide = baseX < screenWidth / 2;
 		
 		// Calculate X position based on side (same logic as Mining overlays)
@@ -2871,7 +2875,7 @@ public class NpcAlertsUtility {
 		}
 		
 		// Render content with scale using matrix transformation
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		matrices.translate(posX, posY);
 		matrices.scale(scale, scale);
@@ -2912,7 +2916,7 @@ public class NpcAlertsUtility {
 			                                        "machtkristalle".equals(line.configKey) ||
 			                                        "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
 			                                        "recyclerSlot3".equals(line.configKey)))) {
-				int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+				int iconSize = (int)(client.font.lineHeight * 1.5);
 				// Zentriere Icon vertikal: Zeilen-Mitte minus die Hälfte der Icon-Höhe
 				int lineCenterY = currentY + actualLineHeight / 2;
 				int iconY = lineCenterY - iconSize / 2;
@@ -2957,7 +2961,7 @@ public class NpcAlertsUtility {
 				if (iconToUse != null) {
 					int textYForIcon = currentY; // Standard Y-Position für Text
 					try {
-						context.drawTexture(
+						context.blit(
 							RenderPipelines.GUI_TEXTURED,
 							iconToUse,
 							currentX, iconY,
@@ -2967,36 +2971,36 @@ public class NpcAlertsUtility {
 						);
 						currentX += iconSize + 2; // Abstand nach Icon
 						// Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-						textYForIcon = lineCenterY - client.textRenderer.fontHeight / 2;
+						textYForIcon = lineCenterY - client.font.lineHeight / 2;
 					} catch (Exception e) {
 						// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
 						if (fallbackText != null) {
-							context.drawText(client.textRenderer, Text.literal(fallbackText), currentX, currentY, currentTextColor, true);
-							currentX += client.textRenderer.getWidth(fallbackText);
+							context.text(client.font, Component.literal(fallbackText), currentX, currentY, currentTextColor, true);
+							currentX += client.font.width(fallbackText);
 						}
 					}
 					// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-					context.drawText(client.textRenderer, Text.literal(": "), currentX, textYForIcon, currentTextColor, true);
-					currentX += client.textRenderer.getWidth(": ");
+					context.text(client.font, Component.literal(": "), currentX, textYForIcon, currentTextColor, true);
+					currentX += client.font.width(": ");
 					// Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-					context.drawText(client.textRenderer, Text.literal(line.text), currentX, textYForIcon, currentTextColor, true);
-					currentX += client.textRenderer.getWidth(line.text);
+					context.text(client.font, Component.literal(line.text), currentX, textYForIcon, currentTextColor, true);
+					currentX += client.font.width(line.text);
 				} else {
 					// Fallback: Zeichne normalen Text
-					context.drawText(client.textRenderer, Text.literal(line.text), currentX, currentY, currentTextColor, true);
-					currentX += client.textRenderer.getWidth(line.text);
+					context.text(client.font, Component.literal(line.text), currentX, currentY, currentTextColor, true);
+					currentX += client.font.width(line.text);
 				}
 			} else {
 				// Zeichne Text ohne Icon
-				context.drawText(
-					client.textRenderer,
+				context.text(
+					client.font,
 					line.text,
 					currentX,
 					currentY,
 					currentTextColor,
 					true
 				);
-				currentX += client.textRenderer.getWidth(line.text);
+				currentX += client.font.width(line.text);
 			}
 			
 			// Zeichne Prozente, wenn vorhanden
@@ -3005,12 +3009,12 @@ public class NpcAlertsUtility {
 				// Wenn Icon aktiviert ist, zentriere Prozente vertikal zum Icon
 				if (line.showIcon && line.configKey != null) {
 					int lineCenterY = currentY + actualLineHeight / 2;
-					percentY = lineCenterY - client.textRenderer.fontHeight / 2;
+					percentY = lineCenterY - client.font.lineHeight / 2;
 				}
 				// Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
 				int currentPercentColor = line.showWarning ? currentTextColor : percentColor;
-				context.drawText(
-					client.textRenderer,
+				context.text(
+					client.font,
 					" " + line.percentText,
 					currentX,
 					percentY,
@@ -3158,11 +3162,11 @@ public class NpcAlertsUtility {
 	/**
 	 * Rendert ein einzelnes Overlay für eine Information (mit Icon-Support und Hintergrund-Option)
 	 */
-	private static void renderSingleInfoOverlay(DrawContext context, MinecraftClient client, 
+	private static void renderSingleInfoOverlay(GuiGraphicsExtractor context, Minecraft client, 
 		String text, String percentText, boolean showPercent, boolean showWarning, String configKey,
 		boolean showIcon, int xPosition, int yPosition, boolean showBackground) {
 		final int PADDING = 5;
-		final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
+		final int LINE_HEIGHT = client.font.lineHeight + 2;
 		// Hole konfigurierte Farben
 		int textColor = getTextColorForConfigKey(configKey);
 		int percentColor = getPercentColorForConfigKey(configKey);
@@ -3177,20 +3181,20 @@ public class NpcAlertsUtility {
 		                                        "machtkristalleSlot3".equals(configKey) ||
 		                                        "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
 		                                        "recyclerSlot3".equals(configKey)))) {
-			int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+			int iconSize = (int)(client.font.lineHeight * 1.5);
 			width = iconSize + 2; // Icon + Abstand
-			width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
-			width += client.textRenderer.getWidth(text); // Werte nach dem Doppelpunkt
+			width += client.font.width(": "); // Doppelpunkt nach Icon
+			width += client.font.width(text); // Werte nach dem Doppelpunkt
 		} else {
-			width = client.textRenderer.getWidth(text);
+			width = client.font.width(text);
 		}
 		if (showPercent && percentText != null) {
-			width += client.textRenderer.getWidth(" " + percentText);
+			width += client.font.width(" " + percentText);
 		}
 		// Berechne die tatsächliche Zeilenhöhe unter Berücksichtigung von Icons
 		int actualLineHeight = LINE_HEIGHT;
 		if (showIcon && configKey != null) {
-			int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+			int iconSize = (int)(client.font.lineHeight * 1.5);
 			// Die tatsächliche Höhe ist das Maximum aus Icon-Höhe und Text-Höhe
 			actualLineHeight = Math.max(actualLineHeight, iconSize);
 		}
@@ -3211,7 +3215,7 @@ public class NpcAlertsUtility {
 		int baseX = xPosition;
 		
 		// Determine if overlay is on left or right side of screen
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		boolean isOnLeftSide = baseX < screenWidth / 2;
 		
 		// Calculate X position based on side (same logic as Mining overlays)
@@ -3236,7 +3240,7 @@ public class NpcAlertsUtility {
 		}
 		
 		// Render content with scale using matrix transformation
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		matrices.translate(posX, posY);
 		matrices.scale(scale, scale);
@@ -3246,7 +3250,7 @@ public class NpcAlertsUtility {
 		// Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der fontHeight (da Text-Baseline unten ist)
 		// Verwende unskalierte Höhe für Zentrierung (Koordinaten sind nach Matrix-Transformation relativ)
 		int overlayCenterY = unscaledHeight / 2;
-		int currentY = overlayCenterY - client.textRenderer.fontHeight / 2;
+		int currentY = overlayCenterY - client.font.lineHeight / 2;
 		
 		// Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
 		int currentTextColor = textColor;
@@ -3270,7 +3274,7 @@ public class NpcAlertsUtility {
 			                                        "machtkristalleSlot3".equals(configKey) ||
 			                                        "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
 			                                        "recyclerSlot3".equals(configKey)))) {
-				int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+				int iconSize = (int)(client.font.lineHeight * 1.5);
 				// Zentriere Icon vertikal: Overlay-Mitte minus die Hälfte der Icon-Höhe
 				int iconY = overlayCenterY - iconSize / 2;
 				Identifier iconToUse = null;
@@ -3315,7 +3319,7 @@ public class NpcAlertsUtility {
 				if (iconToUse != null) {
 					int textYForIcon = currentY; // Standard Y-Position für Text
 					try {
-						context.drawTexture(
+						context.blit(
 							RenderPipelines.GUI_TEXTURED,
 							iconToUse,
 							currentX, iconY,
@@ -3325,46 +3329,46 @@ public class NpcAlertsUtility {
 						);
 						currentX += iconSize + 2; // Abstand nach Icon
 						// Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-						textYForIcon = overlayCenterY - client.textRenderer.fontHeight / 2;
+						textYForIcon = overlayCenterY - client.font.lineHeight / 2;
 					} catch (Exception e) {
 						// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
 						if (fallbackText != null) {
-							context.drawText(client.textRenderer, Text.literal(fallbackText), currentX, currentY, currentTextColor, true);
-							currentX += client.textRenderer.getWidth(fallbackText);
+							context.text(client.font, Component.literal(fallbackText), currentX, currentY, currentTextColor, true);
+							currentX += client.font.width(fallbackText);
 						}
 					}
 					// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-					context.drawText(client.textRenderer, Text.literal(": "), currentX, textYForIcon, currentTextColor, true);
-					currentX += client.textRenderer.getWidth(": ");
+					context.text(client.font, Component.literal(": "), currentX, textYForIcon, currentTextColor, true);
+					currentX += client.font.width(": ");
 					// Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-					context.drawText(client.textRenderer, Text.literal(text), currentX, textYForIcon, currentTextColor, true);
-					currentX += client.textRenderer.getWidth(text);
+					context.text(client.font, Component.literal(text), currentX, textYForIcon, currentTextColor, true);
+					currentX += client.font.width(text);
 				} else {
 					// Fallback: Zeichne normalen Text
-					context.drawText(client.textRenderer, Text.literal(text), currentX, currentY, currentTextColor, true);
-					currentX += client.textRenderer.getWidth(text);
+					context.text(client.font, Component.literal(text), currentX, currentY, currentTextColor, true);
+					currentX += client.font.width(text);
 				}
 			} else {
-				context.drawText(client.textRenderer, Text.literal(text), currentX, currentY, currentTextColor, true);
-				currentX += client.textRenderer.getWidth(text);
+				context.text(client.font, Component.literal(text), currentX, currentY, currentTextColor, true);
+				currentX += client.font.width(text);
 			}
 			
 			// Prozente
 			// Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
 			if (showPercent && percentText != null) {
-				Text percentComponent = Text.literal(" " + percentText);
+				Component percentComponent = Component.literal(" " + percentText);
 				int currentPercentColor = showWarning ? currentTextColor : percentColor;
 				// Wenn Icon vorhanden ist, verwende die zentrierte Y-Position
 				int percentY = (showIcon && configKey != null) ? 
-					(overlayCenterY - client.textRenderer.fontHeight / 2) : currentY;
-				context.drawText(client.textRenderer, percentComponent, currentX, percentY, currentPercentColor, true);
-				currentX += client.textRenderer.getWidth(" " + percentText);
+					(overlayCenterY - client.font.lineHeight / 2) : currentY;
+				context.text(client.font, percentComponent, currentX, percentY, currentPercentColor, true);
+				currentX += client.font.width(" " + percentText);
 			}
 		} catch (Exception e) {
 			// Fallback
 			try {
 				if (showIcon && configKey != null) {
-					int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+					int iconSize = (int)(client.font.lineHeight * 1.5);
 					// Zentriere Icon vertikal: Overlay-Mitte minus die Hälfte der Icon-Höhe
 					// Verwende unskalierte Höhe für Zentrierung (Koordinaten sind nach Matrix-Transformation relativ)
 					int fallbackOverlayCenterY = unscaledHeight / 2;
@@ -3407,7 +3411,7 @@ public class NpcAlertsUtility {
 					if (iconToUse != null) {
 						int fallbackTextYForIcon = currentY; // Standard Y-Position für Text
 						try {
-							context.drawTexture(
+							context.blit(
 								RenderPipelines.GUI_TEXTURED,
 								iconToUse,
 								currentX, iconY,
@@ -3417,37 +3421,37 @@ public class NpcAlertsUtility {
 							);
 							currentX += iconSize + 2;
 							// Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-							fallbackTextYForIcon = fallbackOverlayCenterY - client.textRenderer.fontHeight / 2;
+							fallbackTextYForIcon = fallbackOverlayCenterY - client.font.lineHeight / 2;
 						} catch (Exception e3) {
 							// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
 							if (fallbackText != null) {
-								context.drawText(client.textRenderer, fallbackText, currentX, currentY, currentTextColor, true);
-								currentX += client.textRenderer.getWidth(fallbackText);
+								context.text(client.font, fallbackText, currentX, currentY, currentTextColor, true);
+								currentX += client.font.width(fallbackText);
 							}
 						}
 						// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-						context.drawText(client.textRenderer, ": ", currentX, fallbackTextYForIcon, currentTextColor, true);
-						currentX += client.textRenderer.getWidth(": ");
+						context.text(client.font, ": ", currentX, fallbackTextYForIcon, currentTextColor, true);
+						currentX += client.font.width(": ");
 						// Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-						context.drawText(client.textRenderer, text, currentX, fallbackTextYForIcon, currentTextColor, true);
-						currentX += client.textRenderer.getWidth(text);
+						context.text(client.font, text, currentX, fallbackTextYForIcon, currentTextColor, true);
+						currentX += client.font.width(text);
 					} else {
 						// Fallback: Zeichne normalen Text
-						context.drawText(client.textRenderer, text, currentX, currentY, currentTextColor, true);
-						currentX += client.textRenderer.getWidth(text);
+						context.text(client.font, text, currentX, currentY, currentTextColor, true);
+						currentX += client.font.width(text);
 					}
 				} else {
-					context.drawText(client.textRenderer, text, currentX, currentY, currentTextColor, true);
-					currentX += client.textRenderer.getWidth(text);
+					context.text(client.font, text, currentX, currentY, currentTextColor, true);
+					currentX += client.font.width(text);
 				}
 				// Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
 				if (showPercent && percentText != null) {
 					int currentPercentColor = showWarning ? currentTextColor : percentColor;
 					// Wenn Icon vorhanden ist, verwende die zentrierte Y-Position
 					int percentY = (showIcon && configKey != null) ? 
-						(unscaledHeight / 2 - client.textRenderer.fontHeight / 2) : currentY;
-					context.drawText(client.textRenderer, " " + percentText, currentX, percentY, currentPercentColor, true);
-					currentX += client.textRenderer.getWidth(" " + percentText);
+						(unscaledHeight / 2 - client.font.lineHeight / 2) : currentY;
+					context.text(client.font, " " + percentText, currentX, percentY, currentPercentColor, true);
+					currentX += client.font.width(" " + percentText);
 				}
 			} catch (Exception e2) {
 				// Ignoriere Fehler

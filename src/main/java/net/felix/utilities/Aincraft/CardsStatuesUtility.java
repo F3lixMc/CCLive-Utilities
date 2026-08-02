@@ -1,29 +1,30 @@
 package net.felix.utilities.Aincraft;
 
+import net.felix.utilities.Overall.KeyCategories;
+
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.Style;
-import net.minecraft.util.Formatting;
-import net.minecraft.client.gl.RenderPipelines;
 import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.OverlayType;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.resources.Identifier;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class CardsStatuesUtility {
 	private static CardsStatuesUtility INSTANCE;
 	
 	// Hotkey variable
-	private static KeyBinding toggleKeyBinding;
+	private static KeyMapping toggleKeyMapping;
 	
 	// Daten für Karten und Statuen
 	private static CardData currentCard = null;
@@ -49,19 +50,19 @@ public class CardsStatuesUtility {
 	private static final int BACKGROUND_HEIGHT = 62;
 	
 	// Textur-Identifier für den Karten-Hintergrund
-	private static final Identifier CARD_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/karten_background.png");
+	private static final Identifier CARD_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/karten_background.png");
 	
 	// Textur-Identifier für den Statuen-Hintergrund
-	private static final Identifier STATUE_BACKGROUND_TEXTURE = Identifier.of("cclive-utilities", "textures/gui/statuen_background.png");
+	private static final Identifier STATUE_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/statuen_background.png");
 	
 	/**
 	 * Rendert den Karten-Hintergrund basierend auf dem Overlay-Typ
 	 */
-	private static void renderCardBackground(DrawContext context, int x, int y) {
+	private static void renderCardBackground(GuiGraphicsExtractor context, int x, int y) {
 		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayType;
 		
 		// Verwende Matrix-Transformationen für Skalierung
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Skaliere das Overlay basierend auf der Config
@@ -75,7 +76,7 @@ public class CardsStatuesUtility {
 		if (overlayType == OverlayType.CUSTOM) {
 			// Bild-Overlay mit karten_background.png
 			try {
-				context.drawTexture(
+				context.blit(
 					RenderPipelines.GUI_TEXTURED,
 					CARD_BACKGROUND_TEXTURE,
 					-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
@@ -99,11 +100,11 @@ public class CardsStatuesUtility {
 	/**
 	 * Rendert den Statuen-Hintergrund basierend auf dem Overlay-Typ
 	 */
-	private static void renderStatueBackground(DrawContext context, int x, int y) {
+	private static void renderStatueBackground(GuiGraphicsExtractor context, int x, int y) {
 		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
 		
 		// Verwende Matrix-Transformationen für Skalierung
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Skaliere das Overlay basierend auf der Config
@@ -117,7 +118,7 @@ public class CardsStatuesUtility {
 		if (overlayType == OverlayType.CUSTOM) {
 			// Bild-Overlay mit statuen_background.png
 			try {
-				context.drawTexture(
+				context.blit(
 					RenderPipelines.GUI_TEXTURED,
 					STATUE_BACKGROUND_TEXTURE,
 					-11, -11, // Relative Position (0-basiert, da wir bereits übersetzt haben)
@@ -185,7 +186,7 @@ public class CardsStatuesUtility {
 			
 			// Registriere HUD-Rendering
 			HudElementRegistry.addLast(
-					Identifier.of("cclive-utilities", "cards_statues"),
+					Identifier.fromNamespaceAndPath("cclive-utilities", "cards_statues"),
 					CardsStatuesUtility::onHudRender);
 			
 			// Chat-Nachrichten Event registrieren
@@ -199,21 +200,21 @@ public class CardsStatuesUtility {
 	
 	private static void registerHotkey() {
 		// Register toggle hotkey
-		toggleKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+		toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.cards-toggle",
-			InputUtil.Type.KEYSYM,
-			InputUtil.UNKNOWN_KEY.getCode(), // Unbound key
-			"category.cclive-utilities.cards"
+			InputConstants.Type.KEYSYM,
+			InputConstants.UNKNOWN.getValue(), // Unbound key
+			KeyCategories.of("cclive-utilities", "cards")
 		));
 	}
 	
 	private static void registerCommands() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-			dispatcher.register(ClientCommandManager.literal("cards-statues")
-				.then(ClientCommandManager.literal("show")
+			dispatcher.register(ClientCommands.literal("cards-statues")
+				.then(ClientCommands.literal("show")
 					.executes(context -> {
 						showOverlays = true;
-						context.getSource().sendFeedback(Text.literal("§aKarten und Statuen Overlay eingeblendet!"));
+						context.getSource().sendFeedback(Component.literal("§aKarten und Statuen Overlay eingeblendet!"));
 						return 1;
 					})
 				)
@@ -221,7 +222,7 @@ public class CardsStatuesUtility {
 		});
 	}
 	
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Check Tab key for overlay visibility
 		checkTabKey();
 		
@@ -234,12 +235,12 @@ public class CardsStatuesUtility {
 			return;
 		}
 		
-		if (client.player == null || client.world == null) {
+		if (client.player == null || client.level == null) {
 			return;
 		}
 		
 		// Prüfe auf Dimensionswechsel
-		Identifier currentDimension = client.world.getRegistryKey().getValue();
+		Identifier currentDimension = client.level.dimension().identifier();
 		if (lastDimension != null && !lastDimension.equals(currentDimension)) {
 			// Dimension hat sich geändert, setze Anzeige zurück
 			clear();
@@ -258,15 +259,21 @@ public class CardsStatuesUtility {
 	
 	private static void handleHotkey() {
 		// Handle toggle hotkey
-		if (toggleKeyBinding != null && toggleKeyBinding.wasPressed()) {
+		if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
 			boolean currentShow = CCLiveUtilitiesConfig.HANDLER.instance().showCard || CCLiveUtilitiesConfig.HANDLER.instance().showStatue;
-			CCLiveUtilitiesConfig.HANDLER.instance().showCard = !currentShow;
-			CCLiveUtilitiesConfig.HANDLER.instance().showStatue = !currentShow;
+			boolean newValue = !currentShow;
+			CCLiveUtilitiesConfig.HANDLER.instance().showCard = newValue;
+			CCLiveUtilitiesConfig.HANDLER.instance().showStatue = newValue;
+			CCLiveUtilitiesConfig.HANDLER.instance().cardEnabled = newValue;
+			CCLiveUtilitiesConfig.HANDLER.instance().statueEnabled = newValue;
+			if (newValue) {
+				CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled = true;
+			}
 			CCLiveUtilitiesConfig.HANDLER.save();
 		}
 	}
 	
-	private static void onChatMessage(Text message, boolean overlay) {
+	private static void onChatMessage(Component message, boolean overlay) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled) {
@@ -274,12 +281,12 @@ public class CardsStatuesUtility {
 		}
 		
 		// Prüfe ob wir in einer Floor-Dimension sind
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.world == null) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.level == null) {
 			return;
 		}
 		
-		Identifier currentDimension = client.world.getRegistryKey().getValue();
+		Identifier currentDimension = client.level.dimension().identifier();
 		String dimensionPath = currentDimension.getPath();
 		
 		// Prüfe ob die Dimension "floor_" gefolgt von einer Zahl enthält
@@ -288,14 +295,20 @@ public class CardsStatuesUtility {
 		}
 		
 		String content = message.getString();
+		String cleanContent = content.replaceAll("§[0-9a-fk-or]", "");
+		// Nur offizielle Legend-Server-Nachrichten (nicht z.B. [CactusAI-Beta])
+		if (!cleanContent.contains("[Legend]")) {
+			return;
+		}
+
 		HoverEvent hoverEvent = message.getStyle().getHoverEvent();
 		
 		String hoverContent = content; // Verwende den ursprünglichen Text als Basis
 		
-		if (hoverEvent != null && hoverEvent.getAction() == HoverEvent.Action.SHOW_TEXT) {
+		if (hoverEvent != null && hoverEvent.action() == HoverEvent.Action.SHOW_TEXT) {
 			try {
 				// Versuche direkt das Text-Objekt aus dem HoverEvent zu extrahieren
-				Text hoverText = extractHoverTextFromEvent(hoverEvent);
+				Component hoverText = extractHoverTextFromEvent(hoverEvent);
 				if (hoverText != null) {
 					hoverContent = extractAllTextFromComponent(hoverText);
 				} else {
@@ -321,8 +334,8 @@ public class CardsStatuesUtility {
 	/**
 	 * Extrahiert Text aus einem HoverEvent
 	 */
-	private static Text extractHoverTextFromEvent(HoverEvent hoverEvent) {
-		if (hoverEvent == null || hoverEvent.getAction() != HoverEvent.Action.SHOW_TEXT) {
+	private static Component extractHoverTextFromEvent(HoverEvent hoverEvent) {
+		if (hoverEvent == null || hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
 			return null;
 		}
 		
@@ -331,8 +344,8 @@ public class CardsStatuesUtility {
 			java.lang.reflect.Method getValueMethod = HoverEvent.class.getDeclaredMethod("getValue", HoverEvent.Action.class);
 			getValueMethod.setAccessible(true);
 			Object value = getValueMethod.invoke(hoverEvent, HoverEvent.Action.SHOW_TEXT);
-			if (value instanceof Text) {
-				return (Text) value;
+			if (value instanceof Component) {
+				return (Component) value;
 			}
 		} catch (Exception e) {
 			// Ignore
@@ -343,8 +356,8 @@ public class CardsStatuesUtility {
 			java.lang.reflect.Method valueMethod = HoverEvent.class.getDeclaredMethod("value");
 			valueMethod.setAccessible(true);
 			Object value = valueMethod.invoke(hoverEvent);
-			if (value instanceof Text) {
-				return (Text) value;
+			if (value instanceof Component) {
+				return (Component) value;
 			}
 		} catch (Exception e) {
 			// Ignore
@@ -356,11 +369,11 @@ public class CardsStatuesUtility {
 			if (hoverEventClass.isRecord()) {
 				java.lang.reflect.RecordComponent[] components = hoverEventClass.getRecordComponents();
 				for (java.lang.reflect.RecordComponent component : components) {
-					if (Text.class.isAssignableFrom(component.getType())) {
+					if (Component.class.isAssignableFrom(component.getType())) {
 						try {
 							Object value = component.getAccessor().invoke(hoverEvent);
-							if (value instanceof Text) {
-								return (Text) value;
+							if (value instanceof Component) {
+								return (Component) value;
 							}
 						} catch (Exception e) {
 							// Ignore
@@ -378,7 +391,7 @@ public class CardsStatuesUtility {
 	/**
 	 * Extrahiert rekursiv allen Text aus einem Text-Objekt (inklusive Siblings und verschachtelte Strukturen)
 	 */
-	private static String extractAllTextFromComponent(Text text) {
+	private static String extractAllTextFromComponent(Component text) {
 		if (text == null) {
 			return "";
 		}
@@ -392,7 +405,7 @@ public class CardsStatuesUtility {
 		}
 		
 		// Rekursiv alle Siblings durchgehen
-		for (Text sibling : text.getSiblings()) {
+		for (Component sibling : text.getSiblings()) {
 			String siblingText = extractAllTextFromComponent(sibling);
 			if (!siblingText.isEmpty()) {
 				// Füge Newline hinzu, wenn nötig
@@ -445,7 +458,7 @@ public class CardsStatuesUtility {
 		return finalResult;
 	}
 	
-	private static void handleCardMessage(Text message, String hoverContent) {
+	private static void handleCardMessage(Component message, String hoverContent) {
 		
 		CardData cardData = new CardData();
 		cardData.setColor(getColorFromStyle(message.getStyle()));
@@ -514,7 +527,7 @@ public class CardsStatuesUtility {
 		}
 	}
 	
-	private static void handleStatueMessage(Text message, String hoverContent) {
+	private static void handleStatueMessage(Component message, String hoverContent) {
 		StatueData statueData = new StatueData();
 		statueData.setColor(getColorFromStyle(message.getStyle()));
 		
@@ -595,9 +608,9 @@ public class CardsStatuesUtility {
 	
 	private static String getColorFromStyle(Style style) {
 		if (style.getColor() != null) {
-			return style.getColor().getName();
+			return style.getColor().serialize();
 		}
-		return Formatting.WHITE.getName();
+		return ChatFormatting.WHITE.getName();
 	}
 	
 	/**
@@ -620,22 +633,25 @@ public class CardsStatuesUtility {
 		return Math.min(count, 5);
 	}
 	
-	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
 		
 		// Prüfe ob die Cards/Statues Utility aktiviert ist
 		if (!config.cardsStatuesEnabled) {
 			return;
 		}
+		if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+			return;
+		}
 		
 		// Prüfe ob wir in einer Welt sind (ohne weitere Bedingungen)
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.world == null || client.player == null) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.level == null || client.player == null) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 		
@@ -645,14 +661,14 @@ public class CardsStatuesUtility {
 		}
 		
 		// Prüfe ob wir in einer "floor_" Dimension sind
-		String dimension = client.world.getRegistryKey().getValue().toString();
+		String dimension = client.level.dimension().identifier().toString();
 		if (!dimension.contains("floor_")) {
 			return;
 		}
 		
 		// Berechne Positionen basierend auf Bildschirmgröße und Config
-		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int screenHeight = client.getWindow().getGuiScaledHeight();
 		
 		// Karten-Position (unten rechts)
 		int cardX = screenWidth - config.cardX;
@@ -678,7 +694,7 @@ public class CardsStatuesUtility {
 	
 
 	
-	private static void renderCardInfo(DrawContext context, CardData card, int x, int y) {
+	private static void renderCardInfo(GuiGraphicsExtractor context, CardData card, int x, int y) {
 		// Zeichne Karten-Hintergrund basierend auf dem Overlay-Typ
 		OverlayType cardOverlayType = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayType;
 		if (cardOverlayType == OverlayType.CUSTOM || cardOverlayType == OverlayType.BLACK) {
@@ -687,7 +703,7 @@ public class CardsStatuesUtility {
 		// Bei OverlayType.NONE wird kein Hintergrund gezeichnet
 		
 		// Verwende Matrix-Transformationen für Text-Skalierung
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Skaliere den Text basierend auf der Config
@@ -737,11 +753,11 @@ public class CardsStatuesUtility {
 			matrices.translate(-1, -textY); // Verschiebe zurück
 			
 			// Erstelle Text-Objekt mit Farbcodes
-			Text textComponent = Text.literal(line);
+			Component textComponent = Component.literal(line);
 			
 			// Rendere den Text mit den ursprünglichen Farben
-			context.drawText(
-				MinecraftClient.getInstance().textRenderer, 
+			context.text(
+				Minecraft.getInstance().font, 
 				textComponent, 
 				1, // Verwende 1 da wir bereits übersetzt haben (1 Pixel nach rechts verschoben)
 				textY, 
@@ -757,7 +773,7 @@ public class CardsStatuesUtility {
 		matrices.popMatrix();
 	}
 	
-	private static void renderStatueInfo(DrawContext context, StatueData statue, int x, int y) {
+	private static void renderStatueInfo(GuiGraphicsExtractor context, StatueData statue, int x, int y) {
 		// Zeichne Statuen-Hintergrund basierend auf dem Overlay-Typ
 		OverlayType statueOverlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
 		if (statueOverlayType == OverlayType.CUSTOM || statueOverlayType == OverlayType.BLACK) {
@@ -766,7 +782,7 @@ public class CardsStatuesUtility {
 		// Bei OverlayType.NONE wird kein Hintergrund gezeichnet
 		
 		// Verwende Matrix-Transformationen für Text-Skalierung
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Skaliere den Text basierend auf der Config
@@ -816,11 +832,11 @@ public class CardsStatuesUtility {
 			matrices.translate(-1, -textY); // Verschiebe zurück
 			
 			// Erstelle Text-Objekt mit Farbcodes
-			Text textComponent = Text.literal(line);
+			Component textComponent = Component.literal(line);
 			
 			// Rendere den Text mit den ursprünglichen Farben
-			context.drawText(
-				MinecraftClient.getInstance().textRenderer, 
+			context.text(
+				Minecraft.getInstance().font, 
 				textComponent, 
 				1, // Verwende 1 da wir bereits übersetzt haben (1 Pixel nach rechts verschoben)
 				textY, 

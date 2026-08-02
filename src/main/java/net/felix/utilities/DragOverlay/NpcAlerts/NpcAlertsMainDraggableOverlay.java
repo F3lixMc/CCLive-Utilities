@@ -2,13 +2,13 @@ package net.felix.utilities.DragOverlay.NpcAlerts;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 import java.util.List;
 
@@ -20,15 +20,15 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
     private static final float MIN_SCALE = 0.05f;
     
     // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler
-    private static final Identifier FORSCHUNG_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
-    private static final Identifier AMBOSS_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
-    private static final Identifier SCHMELZOFEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
-    private static final Identifier SEELEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
-    private static final Identifier ESSENZEN_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
-    private static final Identifier JAEGER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
-    private static final Identifier KOMBO_KISTE_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
-    private static final Identifier MACHTKRISTALL_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
-    private static final Identifier RECYCLER_ICON = Identifier.of(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
+    private static final Identifier FORSCHUNG_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
+    private static final Identifier AMBOSS_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
+    private static final Identifier SCHMELZOFEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
+    private static final Identifier SEELEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
+    private static final Identifier ESSENZEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
+    private static final Identifier JAEGER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+    private static final Identifier KOMBO_KISTE_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
+    private static final Identifier MACHTKRISTALL_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
+    private static final Identifier RECYCLER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
     
     @Override
     public String getOverlayName() {
@@ -39,12 +39,12 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
     public int getX() {
         // Calculate X position using the same logic as Mining/Holzfäller overlays
         // baseX is the left edge position (like Mining overlays)
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int baseX = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX;
         int overlayWidth = getWidth(); // Use scaled width for positioning
         
@@ -78,7 +78,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
      * Dynamische Verbreiterung basierend auf Inhalt (wie BossHP-Overlay)
      */
     private int calculateUnscaledWidth() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return 200; // Fallback width
         
         // Verwende die tatsächlichen Zeilen aus dem originalen Overlay für genaue Breitenberechnung
@@ -106,15 +106,15 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
                                                                "machtkristalle".equals(line.configKey) ||
                                                                "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
                                                                "recyclerSlot3".equals(line.configKey)))) {
-                int iconSize = (int)(client.textRenderer.fontHeight * 1.5);
+                int iconSize = (int)(client.font.lineHeight * 1.5);
                 width += iconSize + 2; // Icon + Abstand
-                width += client.textRenderer.getWidth(": "); // Doppelpunkt nach Icon
+                width += client.font.width(": "); // Doppelpunkt nach Icon
             }
-            width += client.textRenderer.getWidth(line.text);
+            width += client.font.width(line.text);
             // Berücksichtige Prozente in der Breitenberechnung (wie im originalen Overlay)
             // aber rendere sie nicht im F6-Overlay
             if (line.showPercent && line.percentText != null) {
-                width += client.textRenderer.getWidth(" " + line.percentText); // Abstand + Prozente
+                width += client.font.width(" " + line.percentText); // Abstand + Prozente
             }
             if (width > maxWidth) {
                 maxWidth = width;
@@ -130,7 +130,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
      * Berechnet die unskalierte Höhe
      */
     private int calculateUnscaledHeight() {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return 100;
         
         List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLinesForEditMode();
@@ -143,7 +143,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         }
         
         final int PADDING = 5;
-        final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
+        final int LINE_HEIGHT = client.font.lineHeight + 2;
         
         return (lines.size() * LINE_HEIGHT) + (PADDING * 2);
     }
@@ -168,14 +168,14 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
     public void setPosition(int x, int y) {
         // Calculate baseX using the same logic as Mining/Holzfäller overlays
         // We need to reverse the calculation: from the actual x position, calculate baseX
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null) {
             CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX = x;
             CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY = y;
             return;
         }
         
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int overlayWidth = getWidth(); // Use scaled width for positioning
         
         // Determine if overlay is on left or right side of screen
@@ -210,8 +210,8 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public void renderInEditMode(DrawContext context, int mouseX, int mouseY, float delta) {
-        MinecraftClient client = MinecraftClient.getInstance();
+    public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
         int x = getX();
@@ -224,7 +224,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f;
         
         // Render border for edit mode (scaled)
-        context.drawBorder(x, y, width, height, 0xFFFF0000);
+        context.outline(x, y, width, height, 0xFFFF0000);
         
         // Render background (scaled)
         if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
@@ -239,7 +239,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         }
         
         // Render content with scale using matrix transformation
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
@@ -251,7 +251,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         }
         
         final int PADDING = 5;
-        final int LINE_HEIGHT = client.textRenderer.fontHeight + 2;
+        final int LINE_HEIGHT = client.font.lineHeight + 2;
         
         int totalTextHeight = lines.size() * LINE_HEIGHT;
         
@@ -336,7 +336,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
                         boolean iconDrawn = false;
                         int textYForIcon = currentY;
                         try {
-                            context.drawTexture(
+                            context.blit(
                                 RenderPipelines.GUI_TEXTURED,
                                 iconToUse,
                                 currentX, iconY,
@@ -346,66 +346,66 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
                             );
                             currentX += iconSize + 2;
                             iconDrawn = true;
-                            textYForIcon = lineCenterY - client.textRenderer.fontHeight / 2;
+                            textYForIcon = lineCenterY - client.font.lineHeight / 2;
                         } catch (Exception e) {
                             // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
                             if (fallbackText != null) {
-                                context.drawText(
-                                    client.textRenderer,
-                                    Text.literal(fallbackText),
+                                context.text(
+                                    client.font,
+                                    Component.literal(fallbackText),
                                     currentX,
                                     currentY,
                                     currentTextColor,
                                     true
                                 );
-                                currentX += client.textRenderer.getWidth(fallbackText);
+                                currentX += client.font.width(fallbackText);
                             }
                         }
                         // Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
                         if (iconDrawn) {
-                            context.drawText(
-                                client.textRenderer,
-                                Text.literal(": "),
+                            context.text(
+                                client.font,
+                                Component.literal(": "),
                                 currentX,
                                 textYForIcon,
                                 currentTextColor,
                                 true
                             );
-                            currentX += client.textRenderer.getWidth(": ");
+                            currentX += client.font.width(": ");
                         }
                         // Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-                        context.drawText(
-                            client.textRenderer,
-                            Text.literal(line.text),
+                        context.text(
+                            client.font,
+                            Component.literal(line.text),
                             currentX,
                             textYForIcon,
                             currentTextColor,
                             true
                         );
-                        currentX += client.textRenderer.getWidth(line.text);
+                        currentX += client.font.width(line.text);
                     } else {
                         // Fallback: Zeichne normalen Text
-                        context.drawText(
-                            client.textRenderer,
-                            Text.literal(line.text),
+                        context.text(
+                            client.font,
+                            Component.literal(line.text),
                             currentX,
                             currentY,
                             currentTextColor,
                             true
                         );
-                        currentX += client.textRenderer.getWidth(line.text);
+                        currentX += client.font.width(line.text);
                     }
                 } else {
                     // Zeichne Haupttext (inkl. "Amboss:" wenn kein Icon)
-                    context.drawText(
-                        client.textRenderer,
-                        Text.literal(line.text),
+                    context.text(
+                        client.font,
+                        Component.literal(line.text),
                         currentX,
                         currentY,
                         currentTextColor,
                         true
                     );
-                    currentX += client.textRenderer.getWidth(line.text);
+                    currentX += client.font.width(line.text);
                 }
                 
                 // Prozente werden im F6-Overlay nicht gerendert (nur im originalen Overlay)
@@ -452,18 +452,18 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
      * Prüft, ob der Spieler in der "general_lobby" Dimension ist
      */
     private boolean isInGeneralLobby() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.level == null) {
             return false;
         }
         
-        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        String dimensionPath = client.level.dimension().identifier().getPath();
         return dimensionPath.equals("general_lobby");
     }
     
     @Override
-    public Text getTooltip() {
-        return Text.literal("NPC Alerts Haupt-Overlay - Zeigt alle NPC Alertsrmationen");
+    public Component getTooltip() {
+        return Component.literal("NPC Alerts Haupt-Overlay - Zeigt alle NPC Alertsrmationen");
     }
     
     @Override

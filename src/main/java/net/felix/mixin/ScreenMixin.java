@@ -1,11 +1,11 @@
 package net.felix.mixin;
 
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import org.lwjgl.glfw.GLFW;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,14 +17,26 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(Screen.class)
 public class ScreenMixin {
+
+    /**
+     * Welt-HUD-Overlays vor dem Inventar-Dim zeichnen, damit sie abgedunkelt dahinter sichtbar bleiben.
+     */
+    @Inject(method = "extractTransparentBackground", at = @At("HEAD"))
+    private void cclive$renderOverlaysBehindDim(GuiGraphicsExtractor context, CallbackInfo ci) {
+        net.felix.utilities.Overall.HudOverlayVisibility.renderBehindInventoryDim(context);
+    }
     
     /**
      * Injiziert in keyPressed, um unseren Item-Viewer-Keybind auch in Screens zu behandeln
      */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    private void onKeyPressed(int keyCode, int scanCode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+    private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
+
         // Prüfe zuerst ESC für Hilfe-Overlay (höchste Priorität)
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             if (ItemViewerUtility.handleHelpOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
@@ -53,55 +65,55 @@ public class ScreenMixin {
         }
         
         // Handle Clipboard toggle hotkey (works in screens)
-        if (net.felix.utilities.DragOverlay.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Other.Clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }
         
-        // Handle keyboard input for Clipboard quantity text field (nur in HandledScreens)
+        // Handle keyboard input for Clipboard quantity text field (nur in AbstractContainerScreens)
         Screen screen = (Screen) (Object) this;
-        if (screen instanceof HandledScreen) {
-            if (net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.handleQuantityTextFieldKeyPress(keyCode, scanCode, modifiers)) {
+        if (screen instanceof AbstractContainerScreen) {
+            if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleQuantityTextFieldKeyPress(keyCode, scanCode, modifiers)) {
                 cir.setReturnValue(true);
             }
         }
         
         // Clipboard-Hover bei Tab oder F1 ausblenden
-        if (keyCode == GLFW.GLFW_KEY_TAB || keyCode == GLFW.GLFW_KEY_F1) {
-            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.hideHover();
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_TAB || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F1) {
+            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.hideHover();
         }
         
     }
     
     /**
-     * Injiziert in render, um Item Viewer auch in nicht-HandledScreen Screens zu rendern (z.B. Spielerinventar)
+     * Injiziert in render, um Item Viewer auch in nicht-AbstractContainerScreen Screens zu rendern (z.B. Spielerinventar)
      */
-    @Inject(method = "render", at = @At("TAIL"))
-    private void onRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
         
         // Prüfe zuerst ob es ein InventoryScreen ist (Spielerinventar)
         // Verwende instanceof für robustere Erkennung (funktioniert auch bei obfuscated class names)
-        if (screen instanceof net.minecraft.client.gui.screen.ingame.InventoryScreen && screen instanceof HandledScreen<?>) {
+        if (screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen && screen instanceof AbstractContainerScreen<?>) {
             // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
-            HandledScreen<?> handledScreen = (HandledScreen<?>) screen;
-            net.minecraft.text.Text titleText = handledScreen.getTitle();
+            AbstractContainerScreen<?> handledScreen = (AbstractContainerScreen<?>) screen;
+            net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
             
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             // Update mouse position
             ItemViewerUtility.updateMousePosition(mouseX, mouseY);
             
             // Render Clipboard Overlay (wenn aktiviert)
-            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
             
             // Render Clipboard Button Tooltips (Anzahl, Seiten-Navigation)
-            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
+            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
             
-            // Render Item Viewer (als HandledScreen behandeln)
+            // Render Item Viewer (als AbstractContainerScreen behandeln)
             ItemViewerUtility.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
             
             // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
@@ -137,8 +149,8 @@ public class ScreenMixin {
             return;
         }
 
-        // Alle anderen Screens (inkl. andere HandledScreens) werden nicht hier behandelt
-        // HandledScreens (Kisten, etc.) werden im HandledScreenMixin behandelt
+        // Alle anderen Screens (inkl. andere AbstractContainerScreens) werden nicht hier behandelt
+        // AbstractContainerScreens (Kisten, etc.) werden im AbstractContainerScreenMixin behandelt
     }
     
     /**
@@ -154,8 +166,8 @@ public class ScreenMixin {
         ItemViewerUtility.closeHelpOverlay();
         ItemViewerUtility.closeFilterOverlay();
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocus();
-        if (screen instanceof HandledScreen) {
-            net.felix.utilities.DragOverlay.ClipboardDraggableOverlay.finalizeQuantityTextField();
+        if (screen instanceof AbstractContainerScreen) {
+            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.finalizeQuantityTextField();
         }
     }
 }

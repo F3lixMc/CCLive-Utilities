@@ -1,21 +1,21 @@
 package net.felix.utilities.Town;
 
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.ItemViewer.FloorNumberExtractor;
 import net.felix.utilities.ItemViewer.ItemData;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonArray;
@@ -70,7 +70,7 @@ public class KitFilterUtility {
 	
 	// Status-Tracking
 	private static boolean wasInRelevantInventory = false;
-	private static HandledScreen<?> lastRelevantInventoryScreen = null;
+	private static AbstractContainerScreen<?> lastRelevantInventoryScreen = null;
 	
 	// Flag für verzögertes Öffnen des KitViewScreen (nach Chat-Schließung)
 	private static boolean pendingKitViewScreen = false;
@@ -85,7 +85,7 @@ public class KitFilterUtility {
 	private static Map<KitType, Map<Integer, Set<ItemInfo>>> neuKitItemInfos = new HashMap<>();
 	private static final Map<String, ItemInfo> itemInfoByNormalizedName = new HashMap<>();
 	private static final Map<String, List<ItemInfo>> customKitItemInfosCache = new HashMap<>();
-	private static final ItemStack[] KIT_TYPE_ICONS = buildKitTypeIcons();
+	private static ItemStack[] kitTypeIcons;
 	
 	public static final KitType[] NEU_KIT_TYPES = {
 		KitType.MÜNZ_KIT,
@@ -105,11 +105,19 @@ public class KitFilterUtility {
 		if (kitType == null) {
 			return ItemStack.EMPTY;
 		}
+		ItemStack[] icons = getKitTypeIcons();
 		int index = kitType.ordinal();
-		if (index < 0 || index >= KIT_TYPE_ICONS.length) {
+		if (index < 0 || index >= icons.length) {
 			return ItemStack.EMPTY;
 		}
-		return KIT_TYPE_ICONS[index];
+		return icons[index];
+	}
+
+	private static ItemStack[] getKitTypeIcons() {
+		if (kitTypeIcons == null) {
+			kitTypeIcons = buildKitTypeIcons();
+		}
+		return kitTypeIcons;
 	}
 
 	private static ItemStack[] buildKitTypeIcons() {
@@ -360,8 +368,8 @@ public class KitFilterUtility {
 	 */
 	private static void registerCommands() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-			dispatcher.register(ClientCommandManager.literal("cclive")
-				.then(ClientCommandManager.literal("kits")
+			dispatcher.register(ClientCommands.literal("cclive")
+				.then(ClientCommands.literal("kits")
 					.executes(context -> {
 						// Setze Flag, um das Screen im nächsten Tick zu öffnen (nach Chat-Schließung)
 						pendingKitViewScreen = true;
@@ -609,7 +617,7 @@ public class KitFilterUtility {
 		}
 	}
 	
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
 			return;
@@ -618,7 +626,7 @@ public class KitFilterUtility {
 		// Prüfe ob KitViewScreen geöffnet werden soll (nach Chat-Schließung)
 		if (pendingKitViewScreen) {
 			// Prüfe ob Chat geschlossen wurde (kein ChatScreen mehr)
-			if (client.currentScreen == null || !(client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen)) {
+			if (client.screen == null || !(client.screen instanceof net.minecraft.client.gui.screens.ChatScreen)) {
 				// Chat ist geschlossen, öffne das Screen
 				pendingKitViewScreen = false;
 				client.setScreen(new KitViewScreen());
@@ -626,7 +634,7 @@ public class KitFilterUtility {
 			}
 		}
 		
-		if (client.player == null || client.currentScreen == null) {
+		if (client.player == null || client.screen == null) {
 			// Wenn wir das Inventar verlassen haben, stelle alle Items wieder her und setze Filter zurück
 			if (wasInRelevantInventory) {
 				restoreOriginalItems(null);
@@ -640,7 +648,7 @@ public class KitFilterUtility {
 		}
 		
 		// Aktualisiere Button-Positionen und Filter-Logik wenn in einem relevanten Inventar
-		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+		if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 			if (isRelevantInventory(handledScreen)) {
 				lastRelevantInventoryScreen = handledScreen;
 				// Prüfe ob Kit Filter Buttons aktiviert sind
@@ -667,9 +675,9 @@ public class KitFilterUtility {
 					saveOriginalItems(handledScreen);
 					// Speichere auch als letzte bekannte Items
 					for (int slotIndex : FILTER_SLOTS) {
-						if (slotIndex < handledScreen.getScreenHandler().slots.size()) {
-							Slot slot = handledScreen.getScreenHandler().slots.get(slotIndex);
-							ItemStack itemStack = slot.getStack();
+						if (slotIndex < handledScreen.getMenu().slots.size()) {
+							Slot slot = handledScreen.getMenu().slots.get(slotIndex);
+							ItemStack itemStack = slot.getItem();
 							if (!itemStack.isEmpty() && itemStack.getItem() != Items.BLACK_CONCRETE) {
 								lastKnownItems.put(slotIndex, itemStack.copy());
 							}
@@ -686,9 +694,9 @@ public class KitFilterUtility {
 					lastKnownItems.clear();
 					// Speichere aktuelle Items als letzte bekannte Items
 					for (int slotIndex : FILTER_SLOTS) {
-						if (slotIndex < handledScreen.getScreenHandler().slots.size()) {
-							Slot slot = handledScreen.getScreenHandler().slots.get(slotIndex);
-							ItemStack itemStack = slot.getStack();
+						if (slotIndex < handledScreen.getMenu().slots.size()) {
+							Slot slot = handledScreen.getMenu().slots.get(slotIndex);
+							ItemStack itemStack = slot.getItem();
 							if (!itemStack.isEmpty() && itemStack.getItem() != Items.BLACK_CONCRETE) {
 								lastKnownItems.put(slotIndex, itemStack.copy());
 							}
@@ -697,9 +705,9 @@ public class KitFilterUtility {
 				} else {
 					// Speichere aktuelle Items als letzte bekannte Items (für nächsten Vergleich)
 					for (int slotIndex : FILTER_SLOTS) {
-						if (slotIndex < handledScreen.getScreenHandler().slots.size()) {
-							Slot slot = handledScreen.getScreenHandler().slots.get(slotIndex);
-							ItemStack itemStack = slot.getStack();
+						if (slotIndex < handledScreen.getMenu().slots.size()) {
+							Slot slot = handledScreen.getMenu().slots.get(slotIndex);
+							ItemStack itemStack = slot.getItem();
 							if (!itemStack.isEmpty() && itemStack.getItem() != Items.BLACK_CONCRETE) {
 								lastKnownItems.put(slotIndex, itemStack.copy());
 							} else {
@@ -726,9 +734,9 @@ public class KitFilterUtility {
 		} else {
 			// Prüfe ob der aktuelle Screen ein KitSelectionScreen ist
 			// In diesem Fall haben wir das Inventar nicht verlassen, sondern nur ein Menü geöffnet
-			if (client.currentScreen instanceof KitSelectionScreen
-					|| client.currentScreen instanceof KitViewScreen
-					|| client.currentScreen instanceof CustomKitEditorScreen) {
+			if (client.screen instanceof KitSelectionScreen
+					|| client.screen instanceof KitViewScreen
+					|| client.screen instanceof CustomKitEditorScreen) {
 				// Kit-Menüs sind offen - Filter bleiben aktiv
 				return;
 			}
@@ -748,7 +756,7 @@ public class KitFilterUtility {
 	 * Prüft ob das aktuelle Inventar relevant für Kit-Filter ist
 	 * (Schmied-Bauplan-Inventare: Rüstung, Waffen, Werkzeuge, Shop und Favoriten).
 	 */
-	private static boolean isRelevantInventory(HandledScreen<?> screen) {
+	private static boolean isRelevantInventory(AbstractContainerScreen<?> screen) {
 		String title = screen.getTitle().getString();
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
 				.replaceAll("[\\u3400-\\u4DBF]", "");
@@ -766,8 +774,8 @@ public class KitFilterUtility {
 	/**
 	 * Aktualisiert die Button-Positionen basierend auf dem Screen
 	 */
-	private static void updateButtonPositions(HandledScreen<?> screen, MinecraftClient client) {
-		int screenWidth = client.getWindow().getScaledWidth();
+	private static void updateButtonPositions(AbstractContainerScreen<?> screen, Minecraft client) {
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Positioniere Buttons basierend auf gespeicherten Positionen aus der Config
 		// Verwende die gleiche Logik wie in den DraggableOverlay-Klassen
@@ -792,7 +800,7 @@ public class KitFilterUtility {
 	/**
 	 * Rendert die Kit-Filter-Buttons
 	 */
-	public static void renderKitFilterButtons(DrawContext context, HandledScreen<?> screen, int mouseX, int mouseY) {
+	public static void renderKitFilterButtons(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int mouseX, int mouseY) {
 		if (!isRelevantInventory(screen)) {
 			return;
 		}
@@ -802,12 +810,12 @@ public class KitFilterUtility {
 			return;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) return;
 		
 		// Berechne Positionen direkt aus der Config (wie beim Hide Uncraftable Button)
 		// Das stellt sicher, dass Änderungen sofort sichtbar sind
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		int baseX = screenWidth - BUTTON_WIDTH - 20;
 		
 		Integer hoveredButtonIndex = null;
@@ -855,9 +863,9 @@ public class KitFilterUtility {
 			// Button-Text
 			String buttonText = getButtonText(i);
 			int textColor = 0xFF404040; // Dunkelgrau
-			int textX = pos.x + (BUTTON_WIDTH - client.textRenderer.getWidth(buttonText)) / 2;
+			int textX = pos.x + (BUTTON_WIDTH - client.font.width(buttonText)) / 2;
 			int textY = pos.y + (BUTTON_HEIGHT - 8) / 2;
-			context.drawText(client.textRenderer, buttonText, textX, textY, textColor, false);
+			context.text(client.font, buttonText, textX, textY, textColor, false);
 		}
 		
 		// Rendere Tooltip wenn über einem Button gehovered wird
@@ -869,14 +877,14 @@ public class KitFilterUtility {
 	/**
 	 * Rendert einen Tooltip für die Kit-Filter-Buttons
 	 */
-	private static void renderButtonTooltip(DrawContext context, int mouseX, int mouseY, MinecraftClient client) {
+	private static void renderButtonTooltip(GuiGraphicsExtractor context, int mouseX, int mouseY, Minecraft client) {
 		String line1 = "Linksklick : Filtern";
 		String line2 = "Rechtsklick : Bearbeiten";
 		
-		int line1Width = client.textRenderer.getWidth(line1);
-		int line2Width = client.textRenderer.getWidth(line2);
+		int line1Width = client.font.width(line1);
+		int line2Width = client.font.width(line2);
 		int maxWidth = Math.max(line1Width, line2Width);
-		int textHeight = client.textRenderer.fontHeight;
+		int textHeight = client.font.lineHeight;
 		int padding = 4;
 		int lineSpacing = 2;
 		
@@ -884,7 +892,7 @@ public class KitFilterUtility {
 		int tooltipY = mouseY - 20;
 		
 		// Stelle sicher, dass der Tooltip nicht außerhalb des Bildschirms ist
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		if (tooltipX + maxWidth + padding * 2 > screenWidth) {
 			tooltipX = mouseX - maxWidth - padding * 2 - 10;
 		}
@@ -909,8 +917,8 @@ public class KitFilterUtility {
 		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF); // Rechts
 		
 		// Tooltip-Text (zwei Zeilen)
-		context.drawText(client.textRenderer, line1, tooltipX, tooltipY, 0xFFFFFFFF, true);
-		context.drawText(client.textRenderer, line2, tooltipX, tooltipY + textHeight + lineSpacing, 0xFFFFFFFF, true);
+		context.text(client.font, line1, tooltipX, tooltipY, 0xFFFFFFFF, true);
+		context.text(client.font, line2, tooltipX, tooltipY + textHeight + lineSpacing, 0xFFFFFFFF, true);
 	}
 	
 	/**
@@ -934,10 +942,10 @@ public class KitFilterUtility {
 	 * Rechtsklick: Öffne Auswahlmenü
 	 */
 	public static boolean handleButtonClick(double mouseX, double mouseY, int button) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client == null || client.currentScreen == null) return false;
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.screen == null) return false;
 		
-		if (!(client.currentScreen instanceof HandledScreen<?> handledScreen)) return false;
+		if (!(client.screen instanceof AbstractContainerScreen<?> handledScreen)) return false;
 		if (!isRelevantInventory(handledScreen)) return false;
 		
 		// Prüfe ob Kit Filter Buttons aktiviert sind
@@ -946,7 +954,7 @@ public class KitFilterUtility {
 		}
 		
 		// Berechne Positionen direkt aus der Config (wie beim Rendern)
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		int baseX = screenWidth - BUTTON_WIDTH - 20;
 		
 		// Prüfe ob ein Button geklickt wurde
@@ -991,7 +999,7 @@ public class KitFilterUtility {
 	/**
 	 * Toggelt den Filter für einen Button
 	 */
-	private static void toggleFilter(int buttonIndex, HandledScreen<?> screen, MinecraftClient client) {
+	private static void toggleFilter(int buttonIndex, AbstractContainerScreen<?> screen, Minecraft client) {
 		// Prüfe ob ein Kit für diesen Button ausgewählt ist
 		if (!selectedKits.containsKey(buttonIndex)) {
 			// Kein Kit ausgewählt - öffne stattdessen das Auswahlmenü
@@ -1017,21 +1025,21 @@ public class KitFilterUtility {
 		currentButtonIndex = buttonIndex;
 		
 		// Öffne den Kit-Auswahl-Screen
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client != null) {
 			client.setScreen(new KitSelectionScreen(buttonIndex));
 		}
 	}
 
-	public static HandledScreen<?> getLastRelevantInventoryScreen() {
+	public static AbstractContainerScreen<?> getLastRelevantInventoryScreen() {
 		if (lastRelevantInventoryScreen != null && isRelevantInventory(lastRelevantInventoryScreen)) {
 			return lastRelevantInventoryScreen;
 		}
 		return null;
 	}
 
-	public static HandledScreen<?> resolveKitEditorItemViewerBackground(net.minecraft.client.gui.screen.Screen directPreviousScreen) {
-		if (directPreviousScreen instanceof HandledScreen<?> handled && isRelevantInventory(handled)) {
+	public static AbstractContainerScreen<?> resolveKitEditorItemViewerBackground(net.minecraft.client.gui.screens.Screen directPreviousScreen) {
+		if (directPreviousScreen instanceof AbstractContainerScreen<?> handled && isRelevantInventory(handled)) {
 			return handled;
 		}
 		return getLastRelevantInventoryScreen();
@@ -1087,8 +1095,8 @@ public class KitFilterUtility {
 	}
 
 	private static void applyKitSelectionSideEffects(int buttonIndex, boolean selectionChanged, Set<String> itemNames) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 			if (isRelevantInventory(handledScreen)) {
 				restoreOriginalItems(handledScreen, false);
 				if (selectionChanged) {
@@ -1129,19 +1137,19 @@ public class KitFilterUtility {
 	/**
 	 * Prüft, ob sich das Inventar geändert hat (Items hinzugefügt, entfernt oder geändert)
 	 */
-	private static boolean hasInventoryChanged(HandledScreen<?> screen) {
+	private static boolean hasInventoryChanged(AbstractContainerScreen<?> screen) {
 		if (screen == null || lastKnownItems.isEmpty()) {
 			return false;
 		}
 		
 		// Prüfe alle Filter-Slots
 		for (int slotIndex : FILTER_SLOTS) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-			ItemStack currentItem = slot.getStack();
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack currentItem = slot.getItem();
 			
 			// Wenn es ein schwarzer Betonblock ist, verwende das originale Item für den Vergleich
 			if (currentItem.getItem() == Items.BLACK_CONCRETE) {
@@ -1175,9 +1183,9 @@ public class KitFilterUtility {
 		// Prüfe auch, ob Items entfernt wurden (in lastKnownItems aber nicht mehr im Inventar)
 		for (Map.Entry<Integer, ItemStack> entry : lastKnownItems.entrySet()) {
 			int slotIndex = entry.getKey();
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack currentItem = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack currentItem = slot.getItem();
 				
 				// Wenn es ein schwarzer Betonblock ist, verwende das originale Item
 				if (currentItem.getItem() == Items.BLACK_CONCRETE) {
@@ -1214,8 +1222,8 @@ public class KitFilterUtility {
 		}
 		
 		// Prüfe Custom Name
-		var name1 = item1.get(DataComponentTypes.CUSTOM_NAME);
-		var name2 = item2.get(DataComponentTypes.CUSTOM_NAME);
+		var name1 = item1.get(DataComponents.CUSTOM_NAME);
+		var name2 = item2.get(DataComponents.CUSTOM_NAME);
 		if (name1 != null && name2 != null) {
 			if (!name1.getString().equals(name2.getString())) {
 				return false;
@@ -1230,7 +1238,7 @@ public class KitFilterUtility {
 	/**
 	 * Aktualisiert die originalen Items nach einer Inventaränderung
 	 */
-	private static void updateOriginalItemsAfterChange(HandledScreen<?> screen) {
+	private static void updateOriginalItemsAfterChange(AbstractContainerScreen<?> screen) {
 		if (screen == null) {
 			return;
 		}
@@ -1240,12 +1248,12 @@ public class KitFilterUtility {
 		
 		// Durchlaufe alle Filter-Slots und aktualisiere originale Items
 		for (int slotIndex : FILTER_SLOTS) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-			ItemStack currentItem = slot.getStack();
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack currentItem = slot.getItem();
 			
 			// Überspringe schwarze Betonblöcke
 			if (currentItem.getItem() == Items.BLACK_CONCRETE) {
@@ -1265,14 +1273,14 @@ public class KitFilterUtility {
 	/**
 	 * Speichert alle originalen Items aus den Filter-Slots
 	 */
-	private static void saveOriginalItems(HandledScreen<?> screen) {
+	private static void saveOriginalItems(AbstractContainerScreen<?> screen) {
 		if (screen == null) return;
 		
 		// Durchlaufe nur die Filter-Slots und speichere originale Items
 		for (int slotIndex : FILTER_SLOTS) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack itemStack = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
 				
 				if (!itemStack.isEmpty()) {
 					// Prüfe ob es bereits ein schwarzer Betonblock ist (dann ist es bereits gefiltert)
@@ -1288,13 +1296,13 @@ public class KitFilterUtility {
 	/**
 	 * Aktualisiert die Items basierend auf den ausgewählten Kit-Filtern
 	 */
-	private static void updateFilteredItems(HandledScreen<?> screen, MinecraftClient client) {
+	private static void updateFilteredItems(AbstractContainerScreen<?> screen, Minecraft client) {
 		// Stelle sicher, dass alle originalen Items in den Filter-Slots gespeichert sind
 		// (falls neue Items hinzugefügt wurden oder das Inventar sich geändert hat)
 		for (int slotIndex : FILTER_SLOTS) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-				ItemStack itemStack = slot.getStack();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
 				
 				if (!itemStack.isEmpty()) {
 					// Prüfe ob es bereits ein schwarzer Betonblock ist (dann ist es bereits gefiltert)
@@ -1325,12 +1333,12 @@ public class KitFilterUtility {
 		
 		// Durchlaufe nur die Filter-Slots und wende Filter an
 		for (int slotIndex : FILTER_SLOTS) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-			ItemStack itemStack = slot.getStack();
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack itemStack = slot.getItem();
 			
 			// Wenn der Slot bereits schwarzen Beton enthält, hole das originale Item
 			if (itemStack.getItem() == Items.BLACK_CONCRETE && originalItems.containsKey(slotIndex)) {
@@ -1355,35 +1363,35 @@ public class KitFilterUtility {
 					ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
 					
 					// Kopiere die ursprünglichen Komponenten für Tooltips
-					blackConcrete.set(DataComponentTypes.CUSTOM_NAME, itemStack.get(DataComponentTypes.CUSTOM_NAME));
-					blackConcrete.set(DataComponentTypes.LORE, itemStack.get(DataComponentTypes.LORE));
+					blackConcrete.set(DataComponents.CUSTOM_NAME, itemStack.get(DataComponents.CUSTOM_NAME));
+					blackConcrete.set(DataComponents.LORE, itemStack.get(DataComponents.LORE));
 					
 					// Füge einen Hinweis zum Custom Name hinzu, dass das Item ausgeblendet wurde
-					var customName = blackConcrete.get(DataComponentTypes.CUSTOM_NAME);
+					var customName = blackConcrete.get(DataComponents.CUSTOM_NAME);
 					if (customName != null) {
 						// Füge den Hinweis zum bestehenden Namen hinzu
 						String originalName = customName.getString();
 						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
 						if (!originalName.contains("[Ausgeblendet]")) {
-							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+							Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
 						}
 					} else {
 						// Erstelle einen neuen Custom Name mit Hinweis
-						String originalName = itemStack.getName().getString();
+						String originalName = itemStack.getHoverName().getString();
 						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
 						if (!originalName.contains("[Ausgeblendet]")) {
-							Text newName = Text.literal(originalName + " §7[Ausgeblendet]");
-							blackConcrete.set(DataComponentTypes.CUSTOM_NAME, newName);
+							Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
 						}
 					}
 					
-					slot.setStack(blackConcrete);
+					slot.setByPlayer(blackConcrete);
 				} else {
 					// Item passt zu einem Kit - stelle das originale Item wieder her falls es ausgeblendet war
-					ItemStack currentItem = slot.getStack();
+					ItemStack currentItem = slot.getItem();
 					if (currentItem.getItem() == Items.BLACK_CONCRETE && originalItems.containsKey(slotIndex)) {
-						slot.setStack(originalItems.get(slotIndex));
+						slot.setByPlayer(originalItems.get(slotIndex));
 					} else if (currentItem.getItem() != Items.BLACK_CONCRETE && originalItems.containsKey(slotIndex)) {
 						// Stelle sicher, dass das originale Item angezeigt wird (falls es geändert wurde)
 						ItemStack originalItem = originalItems.get(slotIndex);
@@ -1401,7 +1409,7 @@ public class KitFilterUtility {
 	 * Stellt die originalen Items wieder her
 	 * @param clearOriginalItems Wenn true, wird die originalItems Map nach der Wiederherstellung geleert
 	 */
-	private static void restoreOriginalItems(HandledScreen<?> screen, boolean clearOriginalItems) {
+	private static void restoreOriginalItems(AbstractContainerScreen<?> screen, boolean clearOriginalItems) {
 		if (screen == null) {
 			if (clearOriginalItems) {
 				originalItems.clear();
@@ -1411,17 +1419,17 @@ public class KitFilterUtility {
 		
 		// Durchlaufe nur die Filter-Slots und stelle Items wieder her
 		for (int slotIndex : FILTER_SLOTS) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-			ItemStack currentItem = slot.getStack();
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack currentItem = slot.getItem();
 			
 			// Wenn der Slot schwarzen Beton enthält, stelle das originale Item wieder her
 			if (currentItem.getItem() == Items.BLACK_CONCRETE) {
 				if (originalItems.containsKey(slotIndex)) {
-					slot.setStack(originalItems.get(slotIndex));
+					slot.setByPlayer(originalItems.get(slotIndex));
 				}
 			}
 		}
@@ -1434,7 +1442,7 @@ public class KitFilterUtility {
 	/**
 	 * Stellt die originalen Items wieder her (ohne originalItems zu löschen)
 	 */
-	private static void restoreOriginalItems(HandledScreen<?> screen) {
+	private static void restoreOriginalItems(AbstractContainerScreen<?> screen) {
 		restoreOriginalItems(screen, true);
 	}
 	
@@ -1452,7 +1460,7 @@ public class KitFilterUtility {
 			return false;
 		}
 
-		String itemName = itemStack.getName().getString();
+		String itemName = itemStack.getHoverName().getString();
 		String cleanItemName = itemName.replaceAll("§[0-9a-fk-or]", "");
 
 		for (String expectedName : expectedNames) {

@@ -1,22 +1,23 @@
 package net.felix.utilities.Overall;
 
+import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Overall.KeyCategories;
+
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.CoinTrackerDisplayMode;
-import net.felix.utilities.DragOverlay.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
-
+import com.mojang.blaze3d.platform.InputConstants;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Locale;
@@ -49,7 +50,7 @@ public class CoinTrackerUtility {
     private static BigDecimal lastCpmGainedCoins = null;
     private static String currentDimension = null;
 
-    private static KeyBinding resetKeyBinding;
+    private static KeyMapping resetKeyMapping;
 
     private static final int MIN_OVERLAY_WIDTH = 120;
     private static final int LINE_HEIGHT = 12;
@@ -62,16 +63,16 @@ public class CoinTrackerUtility {
         }
 
         try {
-            resetKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+            resetKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                     "key.cclive-utilities.coin-tracker-reset",
-                    InputUtil.Type.KEYSYM,
+                    InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_UNKNOWN,
-                    "category.cclive-utilities.overall"
+                    KeyCategories.of("cclive-utilities", "overall")
             ));
 
             ClientTickEvents.END_CLIENT_TICK.register(CoinTrackerUtility::onClientTick);
             HudElementRegistry.addLast(
-                    Identifier.of("cclive-utilities", "coin_tracker"),
+                    Identifier.fromNamespaceAndPath("cclive-utilities", "coin_tracker"),
                     CoinTrackerUtility::onHudRender);
             isInitialized = true;
         } catch (Exception e) {
@@ -145,8 +146,8 @@ public class CoinTrackerUtility {
         }
     }
 
-    private static void onClientTick(MinecraftClient client) {
-        if (!isEnabled() || client.player == null || client.world == null) {
+    private static void onClientTick(Minecraft client) {
+        if (!isEnabled() || client.player == null || client.level == null) {
             if (isTracking) {
                 resetSession();
             }
@@ -178,14 +179,14 @@ public class CoinTrackerUtility {
     }
 
     private static void handleResetKey() {
-        if (resetKeyBinding != null && resetKeyBinding.wasPressed()) {
+        if (resetKeyMapping != null && resetKeyMapping.consumeClick()) {
             resetSession();
         }
     }
 
-    private static void checkDimensionChange(MinecraftClient client) {
+    private static void checkDimensionChange(Minecraft client) {
         try {
-            String newDimension = client.world.getRegistryKey().getValue().toString();
+            String newDimension = client.level.dimension().identifier().toString();
             if (currentDimension != null && !currentDimension.equals(newDimension)) {
                 resetSession();
             }
@@ -245,13 +246,16 @@ public class CoinTrackerUtility {
         lastCpmGainedCoins = null;
     }
 
-    private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
+    public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
         if (!shouldRenderOverlay() || !isTracking || currentCoins == null) {
             return;
         }
+        if (!HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+            return;
+        }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.player == null || client.options.hudHidden) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || client.options.hideGui) {
             return;
         }
 
@@ -260,12 +264,12 @@ public class CoinTrackerUtility {
         }
     }
 
-    private static void renderCoinTrackerDisplay(DrawContext context, MinecraftClient client) {
+    private static void renderCoinTrackerDisplay(GuiGraphicsExtractor context, Minecraft client) {
         if (client.getWindow() == null) {
             return;
         }
 
-        int screenWidth = client.getWindow().getScaledWidth();
+        int screenWidth = client.getWindow().getGuiScaledWidth();
         int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerX;
         int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerY;
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerScale;
@@ -290,9 +294,9 @@ public class CoinTrackerUtility {
         int headerColor = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerHeaderColor.getRGB();
         int textColor = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerTextColor.getRGB();
 
-        int maxTextWidth = client.textRenderer.getWidth(title);
+        int maxTextWidth = client.font.width(title);
         for (String line : new String[] { coinsText, gainedText, cpmText, timeText }) {
-            maxTextWidth = Math.max(maxTextWidth, client.textRenderer.getWidth(line));
+            maxTextWidth = Math.max(maxTextWidth, client.font.width(line));
         }
         int overlayWidth = Math.max(MIN_OVERLAY_WIDTH, maxTextWidth + PADDING * 2);
 
@@ -305,26 +309,26 @@ public class CoinTrackerUtility {
             xPosition = screenWidth - overlayWidth - xOffset;
         }
 
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(xPosition, yOffset);
         matrices.scale(scale, scale);
 
         int overlayHeight = getCurrentOverlayHeight();
         if (CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerShowBackground) {
-            context.fill(0, 0, overlayWidth, overlayHeight, 0xC0101010);
+            context.fill(0, 0, overlayWidth, overlayHeight, 0x80000000);
         }
 
         int textY = PADDING;
-        context.drawText(client.textRenderer, Text.literal(title), PADDING, textY, headerColor, true);
+        context.text(client.font, Component.literal(title), PADDING, textY, headerColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal(coinsText), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal(coinsText), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal(gainedText), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal(gainedText), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal(cpmText), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal(cpmText), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.drawText(client.textRenderer, Text.literal(timeText), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal(timeText), PADDING, textY, textColor, true);
 
         matrices.popMatrix();
     }
@@ -386,13 +390,13 @@ public class CoinTrackerUtility {
 
     private static final int OVERLAY_LINE_COUNT = 5;
 
-    public static int getCurrentOverlayWidth(MinecraftClient client) {
-        if (client == null || client.textRenderer == null) {
+    public static int getCurrentOverlayWidth(Minecraft client) {
+        if (client == null || client.font == null) {
             return MIN_OVERLAY_WIDTH;
         }
-        int maxTextWidth = client.textRenderer.getWidth("Coin Tracker");
+        int maxTextWidth = client.font.width("Coin Tracker");
         for (String line : getOverlayLines()) {
-            maxTextWidth = Math.max(maxTextWidth, client.textRenderer.getWidth(line));
+            maxTextWidth = Math.max(maxTextWidth, client.font.width(line));
         }
         return Math.max(MIN_OVERLAY_WIDTH, maxTextWidth + PADDING * 2);
     }

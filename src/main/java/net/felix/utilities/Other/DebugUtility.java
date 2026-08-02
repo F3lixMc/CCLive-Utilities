@@ -2,27 +2,26 @@ package net.felix.utilities.Other;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.hud.BossBarHud;
-import net.minecraft.client.gui.hud.ClientBossBar;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.util.InputUtil;
 import org.lwjgl.glfw.GLFW;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.scoreboard.Scoreboard;
-import net.minecraft.scoreboard.ScoreboardDisplaySlot;
-import net.minecraft.scoreboard.ScoreboardEntry;
-import net.minecraft.scoreboard.ScoreboardObjective;
-import net.minecraft.scoreboard.Team;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.components.BossHealthOverlay;
+import net.minecraft.client.gui.components.LerpingBossEvent;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.scores.DisplaySlot;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.PlayerScoreEntry;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
+import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -121,7 +120,7 @@ public class DebugUtility {
         }
     }
     
-    private static void onItemLoggerClientTick(MinecraftClient client) {
+    private static void onItemLoggerClientTick(Minecraft client) {
         // Only check keys if debug functions are enabled
         if (!CCLiveUtilitiesConfig.HANDLER.instance().debugFunctionsEnabled) {
             return;
@@ -129,31 +128,31 @@ public class DebugUtility {
         
         // Check hardcoded keys: F8, F9, F10, F12
         if (client.getWindow() != null) {
-            long windowHandle = client.getWindow().getHandle();
+            var window = client.getWindow();
             
             // F8 - ItemHoverLogger
-            boolean f8CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F8);
+            boolean f8CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F8);
             if (f8CurrentlyPressed && !f8Pressed) {
                 logHoveredItemInfo(client);
             }
             f8Pressed = f8CurrentlyPressed;
             
             // F9 - InventoryNameLogger
-            boolean f9CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F9);
+            boolean f9CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F9);
             if (f9CurrentlyPressed && !f9Pressed) {
                 logInventoryName(client);
             }
             f9Pressed = f9CurrentlyPressed;
             
             // F10 - ScoreboardLogger
-            boolean f10CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F10);
+            boolean f10CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F10);
             if (f10CurrentlyPressed && !f10Pressed) {
                 logScoreboard(client);
             }
             f10Pressed = f10CurrentlyPressed;
             
             // F12 - BossBarLogger
-            boolean f12CurrentlyPressed = InputUtil.isKeyPressed(windowHandle, GLFW.GLFW_KEY_F12);
+            boolean f12CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F12);
             if (f12CurrentlyPressed && !f12Pressed) {
                 logBossBars(client);
             }
@@ -164,7 +163,7 @@ public class DebugUtility {
     /**
      * Logs the hover info of the currently hovered item
      */
-    private static void logHoveredItemInfo(MinecraftClient client) {
+    private static void logHoveredItemInfo(Minecraft client) {
         // Check if debug functions are enabled
         if (!CCLiveUtilitiesConfig.HANDLER.instance().debugFunctionsEnabled) {
             return;
@@ -182,12 +181,12 @@ public class DebugUtility {
             return;
         }
         
-        String itemId = Registries.ITEM.getId(hoveredItem.getItem()).toString();
+        String itemId = BuiltInRegistries.ITEM.getKey(hoveredItem.getItem()).toString();
         Integer customModelData = ItemInfoUtility.extractCustomModelData(hoveredItem);
-        var customModelDataComponent = hoveredItem.get(DataComponentTypes.CUSTOM_MODEL_DATA);
+        var customModelDataComponent = hoveredItem.get(DataComponents.CUSTOM_MODEL_DATA);
 
         // Get tooltip
-        List<Text> tooltip = getItemTooltip(hoveredItem, client.player);
+        List<Component> tooltip = getItemTooltip(hoveredItem, client.player);
         
         if (tooltip == null || tooltip.isEmpty()) {
             System.out.println("[ItemHoverLogger] Kein Tooltip gefunden!");
@@ -211,7 +210,7 @@ public class DebugUtility {
         // Create both raw and clean versions
         List<String> rawLines = new ArrayList<>();
         List<String> cleanLines = new ArrayList<>();
-        for (Text line : tooltip) {
+        for (Component line : tooltip) {
             String rawLine = getTextWithFormatting(line);
             // Clean version: remove all formatting codes (including hex colors) and Chinese characters
             String cleanLine = rawLine
@@ -255,7 +254,7 @@ public class DebugUtility {
         
         // Also send a message to the player
         if (client.player != null) {
-            client.player.sendMessage(Text.literal("§a[ItemHoverLogger] §fTooltip wurde in die Konsole geloggt!"), false);
+            client.player.sendSystemMessage(Component.literal("§a[ItemHoverLogger] §fTooltip wurde in die Konsole geloggt!"));
         }
     }
     
@@ -272,7 +271,7 @@ public class DebugUtility {
      * Works both in inventory screens and in the world
      * Uses ItemTooltipCallback as primary method for reliability
      */
-    private static ItemStack getHoveredItem(MinecraftClient client) {
+    private static ItemStack getHoveredItem(Minecraft client) {
         // First, try to use the item from ItemTooltipCallback (most reliable)
         long currentTime = System.currentTimeMillis();
         if (lastHoveredItem != null && !lastHoveredItem.isEmpty()) {
@@ -284,8 +283,8 @@ public class DebugUtility {
         }
         
         // Fallback: Try to find item using mouse position (for cases where tooltip wasn't shown yet)
-        if (client.currentScreen != null && client.currentScreen instanceof HandledScreen) {
-            HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+        if (client.screen != null && client.screen instanceof AbstractContainerScreen) {
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
             
             // Get mouse position - use stored position if available, otherwise calculate
             double mouseX;
@@ -295,17 +294,17 @@ public class DebugUtility {
                 mouseY = lastMouseY;
             } else {
                 // Fallback: calculate from window mouse position
-                mouseX = client.mouse.getX() * client.getWindow().getScaledWidth() / client.getWindow().getWidth();
-                mouseY = client.mouse.getY() * client.getWindow().getScaledHeight() / client.getWindow().getHeight();
+                mouseX = client.mouseHandler.xpos() * client.getWindow().getGuiScaledWidth() / client.getWindow().getScreenWidth();
+                mouseY = client.mouseHandler.ypos() * client.getWindow().getGuiScaledHeight() / client.getWindow().getScreenHeight();
             }
             
-            // Try to get screen position using reflection (similar to HandledScreenMixin)
+            // Try to get screen position using reflection (similar to AbstractContainerScreenMixin)
             int screenX = 0;
             int screenY = 0;
             
             try {
-                java.lang.reflect.Field xField = HandledScreen.class.getDeclaredField("x");
-                java.lang.reflect.Field yField = HandledScreen.class.getDeclaredField("y");
+                java.lang.reflect.Field xField = AbstractContainerScreen.class.getDeclaredField("leftPos");
+                java.lang.reflect.Field yField = AbstractContainerScreen.class.getDeclaredField("topPos");
                 xField.setAccessible(true);
                 yField.setAccessible(true);
                 screenX = xField.getInt(screen);
@@ -313,7 +312,7 @@ public class DebugUtility {
             } catch (Exception e) {
                 // If reflection fails, try alternative approach
                 try {
-                    java.lang.reflect.Field[] fields = HandledScreen.class.getDeclaredFields();
+                    java.lang.reflect.Field[] fields = AbstractContainerScreen.class.getDeclaredFields();
                     for (java.lang.reflect.Field field : fields) {
                         if (field.getType() == int.class) {
                             field.setAccessible(true);
@@ -336,7 +335,7 @@ public class DebugUtility {
             
             // Find the hovered slot - Minecraft slots are 18x18 pixels
             if (screenX > 0 || screenY > 0) {
-                for (Slot slot : screen.getScreenHandler().slots) {
+                for (Slot slot : screen.getMenu().slots) {
                     // Check if mouse is over this slot (slots are 18x18 pixels)
                     int slotLeft = slot.x + screenX;
                     int slotRight = slotLeft + 18;
@@ -345,8 +344,8 @@ public class DebugUtility {
                     
                     if (slotLeft <= mouseX && mouseX < slotRight &&
                         slotTop <= mouseY && mouseY < slotBottom) {
-                        if (slot.hasStack()) {
-                            return slot.getStack();
+                        if (slot.hasItem()) {
+                            return slot.getItem();
                         }
                     }
                 }
@@ -355,14 +354,14 @@ public class DebugUtility {
         
         // Last fallback: check the item in the player's hand (main hand)
         // Only use this if we're not in an inventory, to avoid logging wrong items
-        if (client.currentScreen == null && client.player != null) {
-            ItemStack mainHandItem = client.player.getMainHandStack();
+        if (client.screen == null && client.player != null) {
+            ItemStack mainHandItem = client.player.getMainHandItem();
             if (mainHandItem != null && !mainHandItem.isEmpty()) {
                 return mainHandItem;
             }
             
             // If main hand is empty, check off hand
-            ItemStack offHandItem = client.player.getOffHandStack();
+            ItemStack offHandItem = client.player.getOffhandItem();
             if (offHandItem != null && !offHandItem.isEmpty()) {
                 return offHandItem;
             }
@@ -374,14 +373,14 @@ public class DebugUtility {
     /**
      * Gets the tooltip for an item stack
      */
-    private static List<Text> getItemTooltip(ItemStack itemStack, PlayerEntity player) {
-        List<Text> tooltip = new ArrayList<>();
+    private static List<Component> getItemTooltip(ItemStack itemStack, Player player) {
+        List<Component> tooltip = new ArrayList<>();
         
         // Add item name
-        tooltip.add(itemStack.getName());
+        tooltip.add(itemStack.getHoverName());
         
         // Read lore from Data Component API (1.21.7)
-        var loreComponent = itemStack.get(DataComponentTypes.LORE);
+        var loreComponent = itemStack.get(DataComponents.LORE);
         if (loreComponent != null) {
             tooltip.addAll(loreComponent.lines());
         }
@@ -393,7 +392,7 @@ public class DebugUtility {
      * Extracts text with all formatting codes from a Text object
      * Uses OrderedText to preserve all formatting codes
      */
-    private static String getTextWithFormatting(Text text) {
+    private static String getTextWithFormatting(Component text) {
         if (text == null) {
             return "";
         }
@@ -407,9 +406,9 @@ public class DebugUtility {
         
         // Otherwise, extract formatting from style using OrderedText
         StringBuilder result = new StringBuilder();
-        net.minecraft.text.OrderedText orderedText = text.asOrderedText();
+        net.minecraft.util.FormattedCharSequence orderedText = text.getVisualOrderText();
         
-        final net.minecraft.text.Style[] lastStyle = {null};
+        final net.minecraft.network.chat.Style[] lastStyle = {null};
         
         // Process each character with its style
         orderedText.accept((index, style, codePoint) -> {
@@ -419,17 +418,17 @@ public class DebugUtility {
                 if (style != null) {
                     // Add color code if present
                     if (style.getColor() != null) {
-                        net.minecraft.text.TextColor textColor = style.getColor();
+                        net.minecraft.network.chat.TextColor textColor = style.getColor();
                         try {
                             // Try to get as Formatting first (named colors)
-                            String colorName = textColor.getName();
+                            String colorName = textColor.serialize();
                             if (colorName != null) {
-                                net.minecraft.util.Formatting formatting = net.minecraft.util.Formatting.byName(colorName);
+                                net.minecraft.ChatFormatting formatting = net.minecraft.ChatFormatting.getByName(colorName);
                                 if (formatting != null) {
-                                    result.append("§").append(formatting.getCode());
+                                    result.append("§").append(formatting.getChar());
                                 } else {
                                     // Try to get RGB color
-                                    Integer rgb = textColor.getRgb();
+                                    Integer rgb = textColor.getValue();
                                     if (rgb != null) {
                                         // Use hex color format §#RRGGBB
                                         String hex = String.format("#%06X", rgb & 0xFFFFFF);
@@ -438,7 +437,7 @@ public class DebugUtility {
                                 }
                             } else {
                                 // Try to get RGB color directly
-                                Integer rgb = textColor.getRgb();
+                                Integer rgb = textColor.getValue();
                                 if (rgb != null) {
                                     String hex = String.format("#%06X", rgb & 0xFFFFFF);
                                     result.append("§").append(hex);
@@ -471,37 +470,37 @@ public class DebugUtility {
     /**
      * Logs the name of the currently open inventory
      */
-    private static void logInventoryName(MinecraftClient client) {
+    private static void logInventoryName(Minecraft client) {
         // Check if debug functions are enabled
         if (!CCLiveUtilitiesConfig.HANDLER.instance().debugFunctionsEnabled) {
             return;
         }
         
-        if (client == null || client.currentScreen == null) {
+        if (client == null || client.screen == null) {
             System.out.println("[InventoryNameLogger] Kein Inventar geöffnet!");
             if (client != null && client.player != null) {
-                client.player.sendMessage(Text.literal("§c[InventoryNameLogger] §fKein Inventar geöffnet!"), false);
+                client.player.sendSystemMessage(Component.literal("§c[InventoryNameLogger] §fKein Inventar geöffnet!"));
             }
             return;
         }
         
-        // Check if it's a HandledScreen (inventory-like screen)
-        if (!(client.currentScreen instanceof HandledScreen)) {
-            String screenType = client.currentScreen.getClass().getSimpleName();
+        // Check if it's a AbstractContainerScreen (inventory-like screen)
+        if (!(client.screen instanceof AbstractContainerScreen)) {
+            String screenType = client.screen.getClass().getSimpleName();
             System.out.println("[InventoryNameLogger] Aktueller Screen ist kein Inventar: " + screenType);
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("§c[InventoryNameLogger] §fAktueller Screen ist kein Inventar: §7" + screenType), false);
+                client.player.sendSystemMessage(Component.literal("§c[InventoryNameLogger] §fAktueller Screen ist kein Inventar: §7" + screenType));
             }
             return;
         }
         
-        HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
-        Text titleText = screen.getTitle();
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+        Component titleText = screen.getTitle();
         
         if (titleText == null) {
             System.out.println("[InventoryNameLogger] Kein Titel gefunden!");
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("§c[InventoryNameLogger] §fKein Titel gefunden!"), false);
+                client.player.sendSystemMessage(Component.literal("§c[InventoryNameLogger] §fKein Titel gefunden!"));
             }
             return;
         }
@@ -533,40 +532,40 @@ public class DebugUtility {
         
         // Also send a message to the player
         if (client.player != null) {
-            client.player.sendMessage(Text.literal("§a[InventoryNameLogger] §fInventarname wurde in die Konsole geloggt!"), false);
-            client.player.sendMessage(Text.literal("§7Original: §f" + titleWithFormatting), false);
-            client.player.sendMessage(Text.literal("§7Bereinigt: §f" + cleanTitle), false);
+            client.player.sendSystemMessage(Component.literal("§a[InventoryNameLogger] §fInventarname wurde in die Konsole geloggt!"));
+            client.player.sendSystemMessage(Component.literal("§7Original: §f" + titleWithFormatting));
+            client.player.sendSystemMessage(Component.literal("§7Bereinigt: §f" + cleanTitle));
         }
     }
     
     /**
      * Logs all currently active bossbars
      */
-    private static void logBossBars(MinecraftClient client) {
+    private static void logBossBars(Minecraft client) {
         // Check if debug functions are enabled
         if (!CCLiveUtilitiesConfig.HANDLER.instance().debugFunctionsEnabled) {
             return;
         }
         
-        if (client == null || client.inGameHud == null) {
-            System.out.println("[BossBarLogger] Kein Client oder InGameHud gefunden!");
+        if (client == null || client.gui == null) {
+            System.out.println("[BossBarLogger] Kein Client oder Gui gefunden!");
             if (client != null && client.player != null) {
-                client.player.sendMessage(Text.literal("§c[BossBarLogger] §fKein Client oder InGameHud gefunden!"), false);
+                client.player.sendSystemMessage(Component.literal("§c[BossBarLogger] §fKein Client oder Gui gefunden!"));
             }
             return;
         }
         
-        BossBarHud bossBarHud = client.inGameHud.getBossBarHud();
+        BossHealthOverlay bossBarHud = client.gui.getBossOverlay();
         if (bossBarHud == null) {
             System.out.println("[BossBarLogger] Kein BossBarHud gefunden!");
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("§c[BossBarLogger] §fKein BossBarHud gefunden!"), false);
+                client.player.sendSystemMessage(Component.literal("§c[BossBarLogger] §fKein BossBarHud gefunden!"));
             }
             return;
         }
         
         // Get bossbars using the same method as BossBarMixin
-        Map<UUID, ClientBossBar> bossBars = null;
+        Map<UUID, LerpingBossEvent> bossBars = null;
         String[] possibleFieldNames = {
             "field_2060", "field_2061", "field_2062", // Common obfuscated field names
             "bossBars", "bossbars", "bossBars", "bars", "bossBarMap",
@@ -582,7 +581,7 @@ public class DebugUtility {
                     Object fieldValue = field.get(bossBarHud);
                     if (fieldValue instanceof Map) {
                         @SuppressWarnings("unchecked")
-                        Map<UUID, ClientBossBar> tempBars = (Map<UUID, ClientBossBar>) fieldValue;
+                        Map<UUID, LerpingBossEvent> tempBars = (Map<UUID, LerpingBossEvent>) fieldValue;
                         if (tempBars != null) {
                             bossBars = tempBars;
                             break;
@@ -604,7 +603,7 @@ public class DebugUtility {
                     
                     if (fieldValue instanceof Map) {
                         @SuppressWarnings("unchecked")
-                        Map<UUID, ClientBossBar> tempBars = (Map<UUID, ClientBossBar>) fieldValue;
+                        Map<UUID, LerpingBossEvent> tempBars = (Map<UUID, LerpingBossEvent>) fieldValue;
                         if (tempBars != null) {
                             bossBars = tempBars;
                             break;
@@ -619,21 +618,21 @@ public class DebugUtility {
         if (bossBars == null || bossBars.isEmpty()) {
             System.out.println("[BossBarLogger] Keine Bossbars gefunden!");
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("§e[BossBarLogger] §fKeine Bossbars gefunden!"), false);
+                client.player.sendSystemMessage(Component.literal("§e[BossBarLogger] §fKeine Bossbars gefunden!"));
             }
             return;
         }
         
         // Prepare data for both versions
         List<BossBarData> bossBarDataList = new ArrayList<>();
-        for (Map.Entry<UUID, ClientBossBar> entry : bossBars.entrySet()) {
+        for (Map.Entry<UUID, LerpingBossEvent> entry : bossBars.entrySet()) {
             UUID uuid = entry.getKey();
-            ClientBossBar bossBar = entry.getValue();
+            LerpingBossEvent bossBar = entry.getValue();
             String name = bossBar.getName().getString();
             String cleanName = name.replaceAll("§[0-9a-fk-or]", "");
-            float percent = bossBar.getPercent();
+            float percent = bossBar.getProgress();
             int color = bossBar.getColor().ordinal();
-            int style = bossBar.getStyle().ordinal();
+            int style = bossBar.getOverlay().ordinal();
             bossBarDataList.add(new BossBarData(uuid, name, cleanName, percent, color, style));
         }
         
@@ -676,42 +675,42 @@ public class DebugUtility {
         
         // Also send a message to the player
         if (client.player != null) {
-            client.player.sendMessage(Text.literal("§a[BossBarLogger] §f" + bossBars.size() + " Bossbar(s) wurden in die Konsole geloggt!"), false);
+            client.player.sendSystemMessage(Component.literal("§a[BossBarLogger] §f" + bossBars.size() + " Bossbar(s) wurden in die Konsole geloggt!"));
         }
     }
     
     /**
      * Logs the current scoreboard (sidebar on the right)
      */
-    private static void logScoreboard(MinecraftClient client) {
+    private static void logScoreboard(Minecraft client) {
         // Check if debug functions are enabled
         if (!CCLiveUtilitiesConfig.HANDLER.instance().debugFunctionsEnabled) {
             return;
         }
         
-        if (client == null || client.world == null) {
+        if (client == null || client.level == null) {
             System.out.println("[ScoreboardLogger] Kein Client oder World gefunden!");
             if (client != null && client.player != null) {
-                client.player.sendMessage(Text.literal("§c[ScoreboardLogger] §fKein Client oder World gefunden!"), false);
+                client.player.sendSystemMessage(Component.literal("§c[ScoreboardLogger] §fKein Client oder World gefunden!"));
             }
             return;
         }
         
-        Scoreboard scoreboard = client.world.getScoreboard();
+        Scoreboard scoreboard = client.level.getScoreboard();
         if (scoreboard == null) {
             System.out.println("[ScoreboardLogger] Kein Scoreboard gefunden!");
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("§c[ScoreboardLogger] §fKein Scoreboard gefunden!"), false);
+                client.player.sendSystemMessage(Component.literal("§c[ScoreboardLogger] §fKein Scoreboard gefunden!"));
             }
             return;
         }
         
         // Get sidebar objective
-        ScoreboardObjective sidebarObjective = scoreboard.getObjectiveForSlot(ScoreboardDisplaySlot.SIDEBAR);
+        Objective sidebarObjective = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR);
         if (sidebarObjective == null) {
             System.out.println("[ScoreboardLogger] Kein Sidebar-Objektiv gefunden!");
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("§c[ScoreboardLogger] §fKein Sidebar-Objektiv gefunden!"), false);
+                client.player.sendSystemMessage(Component.literal("§c[ScoreboardLogger] §fKein Sidebar-Objektiv gefunden!"));
             }
             return;
         }
@@ -726,7 +725,7 @@ public class DebugUtility {
         if (lines.isEmpty()) {
             System.out.println("[ScoreboardLogger] Scoreboard ist leer!");
             if (client.player != null) {
-                client.player.sendMessage(Text.literal("§e[ScoreboardLogger] §fScoreboard ist leer!"), false);
+                client.player.sendSystemMessage(Component.literal("§e[ScoreboardLogger] §fScoreboard ist leer!"));
             }
             return;
         }
@@ -771,7 +770,7 @@ public class DebugUtility {
         
         // Also send a message to the player
         if (client.player != null) {
-            client.player.sendMessage(Text.literal("§a[ScoreboardLogger] §f" + lines.size() + " Zeile(n) wurden in die Konsole geloggt!"), false);
+            client.player.sendSystemMessage(Component.literal("§a[ScoreboardLogger] §f" + lines.size() + " Zeile(n) wurden in die Konsole geloggt!"));
         }
     }
     
@@ -780,28 +779,28 @@ public class DebugUtility {
      * Uses the official 1.21.x API: getScoreboardEntries(ScoreboardObjective)
      * Based on the implementation in InformationenUtility.java
      */
-    private static List<String> readScoreboardLines(Scoreboard scoreboard, ScoreboardObjective sidebarObjective) {
+    private static List<String> readScoreboardLines(Scoreboard scoreboard, Objective sidebarObjective) {
         List<String> lines = new ArrayList<>();
         
         try {
             // Use official 1.21.x API: getScoreboardEntries(ScoreboardObjective)
-            Collection<ScoreboardEntry> rawEntries = scoreboard.getScoreboardEntries(sidebarObjective);
+            Collection<PlayerScoreEntry> rawEntries = scoreboard.listPlayerScores(sidebarObjective);
             
             if (rawEntries == null || rawEntries.isEmpty()) {
                 return lines;
             }
             
             // Filter hidden entries and sort like in HUD
-            List<ScoreboardEntry> filteredEntries = rawEntries.stream()
-                    .filter(e -> !e.hidden())
+            List<PlayerScoreEntry> filteredEntries = rawEntries.stream()
+                    .filter(e -> !e.isHidden())
                     .toList();
             
-            // Try to sort with InGameHud.SCOREBOARD_ENTRY_COMPARATOR (via reflection if needed)
-            List<ScoreboardEntry> entries;
+            // Try to sort with Gui.SCOREBOARD_ENTRY_COMPARATOR (via reflection if needed)
+            List<PlayerScoreEntry> entries;
             try {
-                java.lang.reflect.Field comparatorField = InGameHud.class.getField("SCOREBOARD_ENTRY_COMPARATOR");
+                java.lang.reflect.Field comparatorField = Gui.class.getField("SCOREBOARD_ENTRY_COMPARATOR");
                 @SuppressWarnings("unchecked")
-                java.util.Comparator<ScoreboardEntry> comparator = (java.util.Comparator<ScoreboardEntry>) comparatorField.get(null);
+                java.util.Comparator<PlayerScoreEntry> comparator = (java.util.Comparator<PlayerScoreEntry>) comparatorField.get(null);
                 entries = filteredEntries.stream()
                         .sorted(comparator)
                         .toList();
@@ -814,20 +813,20 @@ public class DebugUtility {
             
             // Extract text from each entry (same logic as InformationenUtility.java)
             for (int i = 0; i < entries.size(); i++) {
-                ScoreboardEntry entry = entries.get(i);
+                PlayerScoreEntry entry = entries.get(i);
                 
                 String owner = entry.owner();
                 
                 // Get the team for this owner using getScoreHolderTeam
-                Team team = null;
+                PlayerTeam team = null;
                 try {
                     java.lang.reflect.Method getScoreHolderTeamMethod = scoreboard.getClass().getMethod("getScoreHolderTeam", String.class);
-                    team = (Team) getScoreHolderTeamMethod.invoke(scoreboard, owner);
+                    team = (PlayerTeam) getScoreHolderTeamMethod.invoke(scoreboard, owner);
                 } catch (Exception e) {
                     // Try alternative method names
                     try {
                         java.lang.reflect.Method method = scoreboard.getClass().getMethod("method_1164", String.class);
-                        team = (Team) method.invoke(scoreboard, owner);
+                        team = (PlayerTeam) method.invoke(scoreboard, owner);
                     } catch (Exception e2) {
                         // Ignore
                     }
@@ -835,7 +834,7 @@ public class DebugUtility {
                 
                 // WICHTIG: sichtbarer Text kommt aus entry.name()
                 // Aber wenn entry.name() nur den Owner zurückgibt, müssen wir Team.decorateName() manuell verwenden
-                Text lineText = entry.name();
+                Component lineText = entry.ownerName();
                 String nameString = lineText != null ? lineText.getString() : "";
                 
                 // Prüfe ob entry.name() nur den Owner zurückgibt (dann ist Team.decorateName() nötig)
@@ -854,13 +853,13 @@ public class DebugUtility {
                                     if (!map.isEmpty()) {
                                         Object firstKey = map.keySet().iterator().next();
                                         Object firstValue = map.get(firstKey);
-                                        if (firstKey instanceof String && firstValue instanceof Team) {
+                                        if (firstKey instanceof String && firstValue instanceof PlayerTeam) {
                                             @SuppressWarnings("unchecked")
-                                            java.util.Map<String, Team> teamsMap = (java.util.Map<String, Team>) map;
+                                            java.util.Map<String, PlayerTeam> teamsMap = (java.util.Map<String, PlayerTeam>) map;
                                             
                                             // Suche nach einem Team, das diesen Owner enthält
-                                            for (java.util.Map.Entry<String, Team> teamEntry : teamsMap.entrySet()) {
-                                                Team t = teamEntry.getValue();
+                                            for (java.util.Map.Entry<String, PlayerTeam> teamEntry : teamsMap.entrySet()) {
+                                                PlayerTeam t = teamEntry.getValue();
                                                 if (t != null) {
                                                     // Prüfe ob dieses Team den Owner als Mitglied hat
                                                     try {
@@ -879,15 +878,15 @@ public class DebugUtility {
                                             // Wenn kein Team über Members gefunden wurde, versuche über Team-Name zu suchen
                                             if (team == null) {
                                                 // Versuche Team-Name, der dem Owner entspricht (z.B. Team "§e" für Owner "§e")
-                                                Team possibleTeam = teamsMap.get(owner);
+                                                PlayerTeam possibleTeam = teamsMap.get(owner);
                                                 if (possibleTeam != null) {
                                                     team = possibleTeam;
                                                 }
                                             }
                                             
                                             if (team != null) {
-                                                Text base = Text.literal(owner);
-                                                lineText = Team.decorateName(team, base);
+                                                Component base = Component.literal(owner);
+                                                lineText = PlayerTeam.formatNameForTeam(team, base);
                                             }
                                             break;
                                         }
@@ -925,7 +924,7 @@ public class DebugUtility {
         }
         
         try {
-            MinecraftClient client = MinecraftClient.getInstance();
+            Minecraft client = Minecraft.getInstance();
             if (client == null) {
                 return false;
             }

@@ -1,12 +1,11 @@
 package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.felix.utilities.DragOverlay.CollectedMaterialsResourcesStorage;
-
+import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +15,7 @@ public class ActionBarData {
 
     private static final Map<String, Integer> materials = new HashMap<>();
     private static final List<Object> filteredTexts = new ArrayList<>();
-    private static final Map<String, Text> materialTexts = new HashMap<>(); // Speichert originale Text-Objekte mit Farbcodes
+    private static final Map<String, Component> materialTexts = new HashMap<>(); // Speichert originale Text-Objekte mit Farbcodes
     /** Ausstehende Clipboard-Syncs – werden einmal pro Tick gebündelt. */
     private static final Map<String, Long> pendingStorageSync = new HashMap<>();
     private static boolean filteredTextsDirty = false;
@@ -72,7 +71,7 @@ public class ActionBarData {
         ensureTickHandlerRegistered();
     }
 
-    private static void recordMaterialDrop(String materialName, int count, Text message) {
+    private static void recordMaterialDrop(String materialName, int count, Component message) {
         materials.put(materialName, count);
         if (message != null) {
             materialTexts.put(materialName, message);
@@ -81,7 +80,7 @@ public class ActionBarData {
         schedulePostProcess();
     }
     
-    public static void processActionBarMessage(net.minecraft.text.Text message) {
+    public static void processActionBarMessage(net.minecraft.network.chat.Component message) {
         if (message == null) {
             return;
         }
@@ -138,12 +137,12 @@ public class ActionBarData {
      */
     public static boolean isOnFloor() {
         try {
-            var client = net.minecraft.client.MinecraftClient.getInstance();
-            if (client != null && client.world != null) {
-                String dimensionId = client.world.getRegistryKey().getValue().toString().toLowerCase();
+            var client = net.minecraft.client.Minecraft.getInstance();
+            if (client != null && client.level != null) {
+                String dimensionId = client.level.dimension().identifier().toString().toLowerCase();
                 
                 // Prüfe ob sich die Dimension geändert hat
-                String currentDim = client.world.getRegistryKey().getValue().toString();
+                String currentDim = client.level.dimension().identifier().toString();
                 if (currentDimension == null || !currentDimension.equals(currentDim)) {
                     // Dimension hat sich geändert - Cache zurücksetzen und neu berechnen
                     currentDimension = currentDim;
@@ -177,12 +176,12 @@ public class ActionBarData {
         for (Map.Entry<String, Integer> entry : sortedMaterials) {
             String materialName = entry.getKey();
             int count = entry.getValue();
-            net.minecraft.text.Text originalText = materialTexts.get(materialName);
+            net.minecraft.network.chat.Component originalText = materialTexts.get(materialName);
             
             if (originalText != null) {
                 // Extrahiere nur den Materialteil aus dem Text-Objekt (ohne Multiplikator)
                 // aber behalte die Farben
-                net.minecraft.text.Text materialOnlyText = extractMaterialOnly(originalText, materialName);
+                net.minecraft.network.chat.Component materialOnlyText = extractMaterialOnly(originalText, materialName);
                 filteredTexts.add(materialOnlyText);
             } else {
                 // Fallback ohne Farbcodes
@@ -207,18 +206,18 @@ public class ActionBarData {
                 .toList();
     }
 
-    public static Text getMaterialText(String materialName) {
+    public static Component getMaterialText(String materialName) {
         return materialTexts.get(materialName);
     }
 
-    public static Text getMaterialDisplayText(String materialName) {
-        Text originalText = materialTexts.get(materialName);
+    public static Component getMaterialDisplayText(String materialName) {
+        Component originalText = materialTexts.get(materialName);
         if (originalText != null) {
             return extractMaterialOnly(originalText, materialName);
         }
         Integer count = materials.get(materialName);
         if (count != null) {
-            return Text.literal(materialName + " [" + count + "]");
+            return Component.literal(materialName + " [" + count + "]");
         }
         return null;
     }
@@ -229,9 +228,9 @@ public class ActionBarData {
     
     public static void checkDimensionChange() {
         try {
-            net.minecraft.client.MinecraftClient client = net.minecraft.client.MinecraftClient.getInstance();
-            if (client.world != null && client.player != null) {
-                String newDimension = client.world.getRegistryKey().getValue().toString();
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+            if (client.level != null && client.player != null) {
+                String newDimension = client.level.dimension().identifier().toString();
                 
                 // Materialien werden NICHT mehr beim Dimensionswechsel zurückgesetzt,
                 // damit sie im Clipboard erhalten bleiben
@@ -253,12 +252,12 @@ public class ActionBarData {
     
     private static final Pattern MULTIPLIER_PREFIX = Pattern.compile("^(?:\\+\\d+|\\d+x)\\s*", Pattern.CASE_INSENSITIVE);
 
-    private static Text extractMaterialOnly(Text originalText, String materialName) {
+    private static Component extractMaterialOnly(Component originalText, String materialName) {
         try {
-            MutableText nameColored = Text.empty();
+            MutableComponent nameColored = Component.empty();
             Style nameStyle = Style.EMPTY;
 
-            for (Text sibling : originalText.getSiblings()) {
+            for (Component sibling : originalText.getSiblings()) {
                 String content = sibling.getString();
                 if (content.isEmpty() || MULTIPLIER_PREFIX.matcher(content).lookingAt()) {
                     continue;
@@ -270,7 +269,7 @@ public class ActionBarData {
                         String namePart = content.substring(0, bracketIndex).stripTrailing();
                         if (!namePart.isEmpty()) {
                             nameStyle = sibling.getStyle();
-                            nameColored.append(Text.literal(namePart).setStyle(nameStyle));
+                            nameColored.append(Component.literal(namePart).setStyle(nameStyle));
                         }
                     }
                     break;
@@ -279,12 +278,12 @@ public class ActionBarData {
                 String namePart = content.stripTrailing();
                 if (!namePart.isEmpty()) {
                     nameStyle = sibling.getStyle();
-                    nameColored.append(Text.literal(namePart).setStyle(nameStyle));
+                    nameColored.append(Component.literal(namePart).setStyle(nameStyle));
                 }
             }
 
             if (nameColored.getString().trim().isEmpty()) {
-                nameColored = Text.literal(materialName);
+                nameColored = Component.literal(materialName);
                 nameStyle = Style.EMPTY;
             } else {
                 nameStyle = getLastPartStyle(nameColored, nameStyle);
@@ -292,7 +291,7 @@ public class ActionBarData {
 
             Integer count = materials.get(materialName);
             if (count != null) {
-                nameColored.append(Text.literal(" [" + count + "]").setStyle(nameStyle));
+                nameColored.append(Component.literal(" [" + count + "]").setStyle(nameStyle));
             }
 
             return nameColored;
@@ -301,21 +300,21 @@ public class ActionBarData {
         }
     }
 
-    private static Style getLastPartStyle(MutableText text, Style fallback) {
+    private static Style getLastPartStyle(MutableComponent text, Style fallback) {
         if (text.getSiblings().isEmpty()) {
             return text.getStyle();
         }
-        Text last = text.getSiblings().get(text.getSiblings().size() - 1);
+        Component last = text.getSiblings().get(text.getSiblings().size() - 1);
         return last.getStyle() != null ? last.getStyle() : fallback;
     }
 
     public static Integer getMaterialNameColorRgb(String materialName) {
-        Text originalText = materialTexts.get(materialName);
+        Component originalText = materialTexts.get(materialName);
         if (originalText == null) {
             return null;
         }
 
-        for (Text sibling : originalText.getSiblings()) {
+        for (Component sibling : originalText.getSiblings()) {
             String content = sibling.getString();
             if (content.isEmpty() || MULTIPLIER_PREFIX.matcher(content).lookingAt()) {
                 continue;
@@ -345,14 +344,14 @@ public class ActionBarData {
         if (color == null) {
             return null;
         }
-        int rgb = color.getRgb() & 0xFFFFFF;
+        int rgb = color.getValue() & 0xFFFFFF;
         if (rgb == 0xFFFFFF) {
             return null;
         }
         return rgb;
     }
 
-    private static Integer findFirstNonWhiteColor(Text text) {
+    private static Integer findFirstNonWhiteColor(Component text) {
         if (text == null) {
             return null;
         }
@@ -362,7 +361,7 @@ public class ActionBarData {
             return direct;
         }
 
-        for (Text sibling : text.getSiblings()) {
+        for (Component sibling : text.getSiblings()) {
             Integer nested = findFirstNonWhiteColor(sibling);
             if (nested != null) {
                 return nested;
@@ -371,12 +370,12 @@ public class ActionBarData {
         return null;
     }
 
-    private static Text buildFallbackDisplayText(String materialName) {
+    private static Component buildFallbackDisplayText(String materialName) {
         Integer count = materials.get(materialName);
         if (count == null) {
-            return Text.literal(materialName);
+            return Component.literal(materialName);
         }
-        return Text.literal(materialName + " [" + count + "]");
+        return Component.literal(materialName + " [" + count + "]");
     }
     
 

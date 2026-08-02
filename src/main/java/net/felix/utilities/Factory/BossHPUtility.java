@@ -3,17 +3,16 @@ package net.felix.utilities.Factory;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.util.Identifier;
-
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import org.joml.Matrix3x2fStack;
 
 
@@ -156,7 +155,7 @@ public class BossHPUtility {
 			
 			// Registriere HUD-Rendering
 			HudElementRegistry.addLast(
-					Identifier.of("cclive-utilities", "boss_hp"),
+					Identifier.fromNamespaceAndPath("cclive-utilities", "boss_hp"),
 					BossHPUtility::onHudRender);
 			
 			// Chat-Nachrichten Event registrieren
@@ -175,7 +174,7 @@ public class BossHPUtility {
 	private static int entityScanTickCounter = 0;
 	private static final int ENTITY_SCAN_INTERVAL = 5; // Alle 5 Ticks scannen (4x pro Sekunde) - Performance-Optimierung
 	
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Check Tab key for overlay visibility
 		checkTabKey();
 		BossHPUtility instance = BossHPUtility.getInstance();
@@ -193,12 +192,12 @@ public class BossHPUtility {
 			}
 		}
 		
-		if (client.player == null || client.world == null) {
+		if (client.player == null || client.level == null) {
 			return;
 		}
 
         String playerName = client.player.getName().getString().toLowerCase();
-        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        String dimensionPath = client.level.dimension().identifier().getPath();
         
         // Check dimension change
         if (!dimensionPath.equals(instance.lastDimension)) {
@@ -220,7 +219,7 @@ public class BossHPUtility {
                 
                 // Alle Boss-Kandidaten sammeln, dann genau einen wählen (nächstes Display = echte Boss-Leiste)
                 List<BossScanHit> bossHits = new ArrayList<>();
-                for (Entity entity : client.world.getEntities()) {
+                for (Entity entity : client.level.entitiesForRendering()) {
                     String displayText = null;
                     
                     // Check if it's a TextDisplay or Display entity
@@ -230,7 +229,7 @@ public class BossHPUtility {
                     }
                     // Fallback to custom name check
                     else if (entity.hasCustomName()) {
-                        Text customName = entity.getCustomName();
+                        Component customName = entity.getCustomName();
                         if (customName != null) {
                             displayText = customName.getString().trim();
                         }
@@ -339,8 +338,8 @@ public class BossHPUtility {
 					// Method 1: Try to get text component
 					java.lang.reflect.Method getTextMethod = entity.getClass().getMethod("getText");
 					Object textComponent = getTextMethod.invoke(entity);
-					if (textComponent instanceof Text) {
-						String result = ((Text) textComponent).getString();
+					if (textComponent instanceof Component) {
+						String result = ((Component) textComponent).getString();
 						return result;
 					}
 				} catch (Exception e) {
@@ -362,7 +361,7 @@ public class BossHPUtility {
 				try {
 					// Method 3: Try to get custom name
 					if (entity.hasCustomName()) {
-						Text customName = entity.getCustomName();
+						Component customName = entity.getCustomName();
 						if (customName != null) {
 							String result = customName.getString();
 							return result;
@@ -419,7 +418,7 @@ public class BossHPUtility {
 	/**
 	 * Verarbeitet pro Entity-Scan höchstens eine Boss-Leiste, damit Start-HP und aktuelle HP aus derselben Quelle stammen.
 	 */
-	private void applySingleBossDisplayFromScan(MinecraftClient client, List<BossScanHit> bossHits) {
+	private void applySingleBossDisplayFromScan(Minecraft client, List<BossScanHit> bossHits) {
 		if (bossHits.isEmpty()) {
 			return;
 		}
@@ -430,20 +429,20 @@ public class BossHPUtility {
 	/**
 	 * Unter mehreren gültigen Boss-Texten: nächstes Entity zum Spieler; bei praktisch gleicher Distanz höhere angezeigte HP.
 	 */
-	private BossScanHit pickNearestBossDisplay(MinecraftClient client, List<BossScanHit> hits) {
-		PlayerEntity player = client.player;
+	private BossScanHit pickNearestBossDisplay(Minecraft client, List<BossScanHit> hits) {
+		Player player = client.player;
 		if (player == null) {
 			return hits.get(0);
 		}
 		BossScanHit best = hits.get(0);
-		double bestDist = best.entity().squaredDistanceTo(player);
+		double bestDist = best.entity().distanceToSqr(player);
 		BigInteger bestHp = parseHpFromBossText(best.text());
 		if (bestHp == null) {
 			bestHp = BigInteger.ZERO;
 		}
 		for (int i = 1; i < hits.size(); i++) {
 			BossScanHit h = hits.get(i);
-			double d = h.entity().squaredDistanceTo(player);
+			double d = h.entity().distanceToSqr(player);
 			BigInteger hp = parseHpFromBossText(h.text());
 			if (hp == null) {
 				hp = BigInteger.ZERO;
@@ -636,14 +635,17 @@ public class BossHPUtility {
 		return shouldShow;
 	}
 	
-	private static void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
-		MinecraftClient client = MinecraftClient.getInstance();
+	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
+			return;
+		}
+		if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
 			return;
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hudHidden) {
+		if (client.options.hideGui) {
 			return;
 		}
 		
@@ -655,12 +657,12 @@ public class BossHPUtility {
 		}
 		
 		// Prüfe ob Spieler in seiner eigenen Dimension ist
-		if (client.player == null || client.world == null) {
+		if (client.player == null || client.level == null) {
 			return;
 		}
 		
 		String playerName = client.player.getName().getString().toLowerCase();
-		String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+		String dimensionPath = client.level.dimension().identifier().getPath();
 		
 		// Zeige Boss HP Overlay nur in Dimensionen, die den Spielernamen enthalten
 		if (!dimensionPath.equals(playerName)) {
@@ -676,7 +678,7 @@ public class BossHPUtility {
 	}
 	
 
-	private static void renderBossHealthBars(DrawContext context, MinecraftClient client, BossHPUtility instance) {
+	private static void renderBossHealthBars(GuiGraphicsExtractor context, Minecraft client, BossHPUtility instance) {
 		// Verwende Konfigurationspositionen
 		int configX = CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
 		int configY = CCLiveUtilitiesConfig.HANDLER.instance().bossHPY;
@@ -691,7 +693,7 @@ public class BossHPUtility {
 		}
 	}
 	
-	private static void renderBossBar(DrawContext context, MinecraftClient client, int x, int y, String bossName, String hpText, boolean isDisappeared) {
+	private static void renderBossBar(GuiGraphicsExtractor context, Minecraft client, int x, int y, String bossName, String hpText, boolean isDisappeared) {
 		// Konstanten für das Layout
 		final int TEXT_COLOR = 0xFFFFFFFF; // Weiß
 		final int HP_COLOR = 0xFFFF5555;   // Rot
@@ -797,30 +799,30 @@ public class BossHPUtility {
 		// Erste Zeile: Bossname + ": " + HP (+ optional %)
 		String nameWithColon = (!isDisappeared && !displayHP.isEmpty()) ? (displayText + ": ") : displayText;
 		// Berechne die Breiten für das Layout (unscaled)
-		int nameWidth = client.textRenderer.getWidth(nameWithColon);
-		int hpWidth = displayHP.isEmpty() ? 0 : client.textRenderer.getWidth(displayHP);
-		int separatorWidth = percentageText != null ? client.textRenderer.getWidth("|") : 0;
-		int percentageWidth = percentageText != null ? client.textRenderer.getWidth(percentageText) : 0;
-		int dpmWidth = dpmText != null ? client.textRenderer.getWidth(dpmText) : 0;
-		int etaWidth = etaLine != null ? client.textRenderer.getWidth(etaLine) : 0;
-		int lastDmgWidth = lastDmgLine != null ? client.textRenderer.getWidth(lastDmgLine) : 0;
-		int overallDmgWidth = overallDmgLine != null ? client.textRenderer.getWidth(overallDmgLine) : 0;
+		int nameWidth = client.font.width(nameWithColon);
+		int hpWidth = displayHP.isEmpty() ? 0 : client.font.width(displayHP);
+		int separatorWidth = percentageText != null ? client.font.width("|") : 0;
+		int percentageWidth = percentageText != null ? client.font.width(percentageText) : 0;
+		int dpmWidth = dpmText != null ? client.font.width(dpmText) : 0;
+		int etaWidth = etaLine != null ? client.font.width(etaLine) : 0;
+		int lastDmgWidth = lastDmgLine != null ? client.font.width(lastDmgLine) : 0;
+		int overallDmgWidth = overallDmgLine != null ? client.font.width(overallDmgLine) : 0;
 		int totalWidth = Math.max(
 			nameWidth + (displayHP.isEmpty() ? 0 : 4 + hpWidth + (percentageText != null ? 5 + separatorWidth + 5 + percentageWidth : 0)), // Erste Zeile
 			Math.max(dpmWidth, Math.max(etaWidth, Math.max(lastDmgWidth, overallDmgWidth)))
 		);
-		int totalHeight = client.textRenderer.fontHeight + PADDING * 2;
+		int totalHeight = client.font.lineHeight + PADDING * 2;
 		if (overallDmgLine != null) {
-			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
+			totalHeight += client.font.lineHeight + LINE_SPACING;
 		}
 		if (dpmText != null) {
-			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
+			totalHeight += client.font.lineHeight + LINE_SPACING;
 		}
 		if (lastDmgLine != null) {
-			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
+			totalHeight += client.font.lineHeight + LINE_SPACING;
 		}
 		if (etaLine != null) {
-			totalHeight += client.textRenderer.fontHeight + LINE_SPACING;
+			totalHeight += client.font.lineHeight + LINE_SPACING;
 		}
 		
 		// Die Gesamtbreite inklusive Padding (unscaled)
@@ -832,7 +834,7 @@ public class BossHPUtility {
 		
 		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
 		int baseX = x;
-		int screenWidth = client.getWindow().getScaledWidth();
+		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		// Determine if overlay is on left or right side of screen
 		boolean isOnLeftSide = baseX < screenWidth / 2;
@@ -854,7 +856,7 @@ public class BossHPUtility {
 		int posY = y;
 		
 		// Verwende Matrix-Transformationen für Skalierung
-		Matrix3x2fStack matrices = context.getMatrices();
+		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
 		
 		// Translate to position and scale from there
@@ -869,38 +871,38 @@ public class BossHPUtility {
 		}
 		
 		// Zeichne den Boss-Namen inkl. Doppelpunkt (weiß) - relativ zur Matrix
-		context.drawText(client.textRenderer, nameWithColon, PADDING, PADDING, TEXT_COLOR, true);
+		context.text(client.font, nameWithColon, PADDING, PADDING, TEXT_COLOR, true);
 		
 		// Zeichne die HP (rot) nur wenn vorhanden - relativ zur Matrix
 		if (!displayHP.isEmpty()) {
 			int hpX = PADDING + nameWidth + 4;
-			context.drawText(client.textRenderer, displayHP, hpX, PADDING, HP_COLOR, true);
+			context.text(client.font, displayHP, hpX, PADDING, HP_COLOR, true);
 			
 			// Zeichne Prozentwert direkt nach den HP
 			if (percentageText != null) {
 				int separatorX = hpX + hpWidth + 5; // 5 Pixel Abstand nach den HP
-				context.drawText(client.textRenderer, "|", separatorX, PADDING, HP_COLOR, true);
+				context.text(client.font, "|", separatorX, PADDING, HP_COLOR, true);
 				int percentageX = separatorX + separatorWidth + 5; // 5 Pixel Abstand nach dem Separator
-				context.drawText(client.textRenderer, percentageText, percentageX, PADDING, percentageColor, true);
+				context.text(client.font, percentageText, percentageX, PADDING, percentageColor, true);
 			}
 		}
 		
 		// Stat-Zeilen unter der ersten Zeile (Overall DMG, DPM, Last Dmg, Benötigte Zeit)
-		int statLineY = PADDING + client.textRenderer.fontHeight + LINE_SPACING;
+		int statLineY = PADDING + client.font.lineHeight + LINE_SPACING;
 		if (overallDmgLine != null) {
-			context.drawText(client.textRenderer, overallDmgLine, PADDING, statLineY, dpmColor, true);
-			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
+			context.text(client.font, overallDmgLine, PADDING, statLineY, dpmColor, true);
+			statLineY += client.font.lineHeight + LINE_SPACING;
 		}
 		if (dpmText != null) {
-			context.drawText(client.textRenderer, dpmText, PADDING, statLineY, dpmColor, true);
-			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
+			context.text(client.font, dpmText, PADDING, statLineY, dpmColor, true);
+			statLineY += client.font.lineHeight + LINE_SPACING;
 		}
 		if (lastDmgLine != null) {
-			context.drawText(client.textRenderer, lastDmgLine, PADDING, statLineY, dpmColor, true);
-			statLineY += client.textRenderer.fontHeight + LINE_SPACING;
+			context.text(client.font, lastDmgLine, PADDING, statLineY, dpmColor, true);
+			statLineY += client.font.lineHeight + LINE_SPACING;
 		}
 		if (etaLine != null) {
-			context.drawText(client.textRenderer, etaLine, PADDING, statLineY, dpmColor, true);
+			context.text(client.font, etaLine, PADDING, statLineY, dpmColor, true);
 		}
 
 		matrices.popMatrix();
@@ -925,7 +927,7 @@ public class BossHPUtility {
 		}
 	}
 	
-	private static void onChatMessage(Text message, boolean overlay) {
+	private static void onChatMessage(Component message, boolean overlay) {
 		BossHPUtility instance = BossHPUtility.getInstance();
 		String content = message.getString();
 		

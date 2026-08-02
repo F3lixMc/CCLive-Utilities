@@ -2,13 +2,13 @@ package net.felix.chat;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.util.Formatting;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.leaderboards.http.HttpClient;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.felix.leaderboards.LeaderboardManager;
 
 import java.util.concurrent.CompletableFuture;
@@ -150,7 +150,7 @@ public class ChatManager {
      * Verarbeitet empfangene Nachrichten und zeigt sie im Chat an
      */
     private void processMessages(JsonArray messages) {
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client == null || client.player == null) {
             return;
         }
@@ -169,15 +169,15 @@ public class ChatManager {
             // Erstelle Chat-Nachricht mit [CCLive] Prefix
             // Farbe #d478f0 = RGB(212, 120, 240) = 0xFFD478F0
             // Das Icon wird im ChatHudRenderMixin direkt nach "[CCLive]" gerendert
-            MutableText chatMessage = Text.literal("[CCLive] ")
+            MutableComponent chatMessage = Component.literal("[CCLive] ")
                 .setStyle(Style.EMPTY.withColor(0xD478F0)) // #d478f0 (ohne Alpha, Minecraft fügt FF hinzu)
-                .append(Text.literal(player + ": ").setStyle(Style.EMPTY.withFormatting(Formatting.WHITE)))
-                .append(Text.literal(message).setStyle(Style.EMPTY.withFormatting(Formatting.WHITE)));
+                .append(Component.literal(player + ": ").setStyle(Style.EMPTY.applyFormat(ChatFormatting.WHITE)))
+                .append(Component.literal(message).setStyle(Style.EMPTY.applyFormat(ChatFormatting.WHITE)));
             
             // Zeige Nachricht im Chat an
-            if (client.inGameHud != null && client.inGameHud.getChatHud() != null) {
+            if (client.gui != null && client.gui.getChat() != null) {
                 client.execute(() -> {
-                    client.inGameHud.getChatHud().addMessage(chatMessage);
+                    client.gui.getChat().addClientSystemMessage(chatMessage);
                 });
             }
         }
@@ -194,7 +194,7 @@ public class ChatManager {
             }
             
             // Alle 20 Ticks (1 Sekunde) neue Nachrichten abrufen
-            if (client.player.age > 0 && client.player.age % 20 == 0) {
+            if (client.player.tickCount > 0 && client.player.tickCount % 20 == 0) {
                 loadChatHistory();
             }
         });

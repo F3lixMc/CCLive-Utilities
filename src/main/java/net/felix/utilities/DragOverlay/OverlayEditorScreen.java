@@ -2,12 +2,22 @@ package net.felix.utilities.DragOverlay;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.felix.utilities.DragOverlay.Aincraft.BlueprintViewerDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.CardsDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.KillsUtilityDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.MaterialTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
 import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
 import net.felix.utilities.DragOverlay.Factory.MKLevelDraggableOverlay;
@@ -21,14 +31,6 @@ import net.felix.utilities.DragOverlay.NpcAlerts.StarAspectOverlayDraggableOverl
 import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsMainDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsSeparateDraggableOverlay;
 import net.felix.utilities.Overall.InformationenUtility;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextWidget;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
@@ -54,10 +56,10 @@ public class OverlayEditorScreen extends Screen {
     private int resizeStartHeight = 0;
     private int resizeStartOverlayX = 0; // Speichere die ursprüngliche X-Position beim Resize-Start
     
-    private ButtonWidget doneButton;
-    private ButtonWidget resetButton;
-    private ButtonWidget overlayButton;
-    private TextWidget titleWidget;
+    private Button doneButton;
+    private Button resetButton;
+    private Button overlayButton;
+    private StringWidget titleWidget;
     
     // Store the previous screen so we can restore it
     private Screen previousScreen;
@@ -69,9 +71,9 @@ public class OverlayEditorScreen extends Screen {
     private boolean clipboardSettingsOpen = false;
     
     public OverlayEditorScreen() {
-        super(Text.literal("Overlay Editor"));
+        super(Component.literal("Overlay Editor"));
         // Store the current screen before opening the overlay editor
-        this.previousScreen = MinecraftClient.getInstance().currentScreen;
+        this.previousScreen = Minecraft.getInstance().screen;
         initializeOverlays();
     }
     
@@ -138,6 +140,9 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void initializeOverlays() {
+        // Biom-Erkennung aktualisieren, damit Collection/Mining-Overlays im F6-Menü erscheinen
+        InformationenUtility.refreshFarmzoneScoreboardCache(Minecraft.getInstance());
+
         // Check if we're in a chat screen
         boolean isInChatScreen = isInChatScreen();
         
@@ -280,45 +285,45 @@ public class OverlayEditorScreen extends Screen {
      * Check if the player is currently in a chat screen
      */
     private boolean isInChatScreen() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             return false;
         }
         
         // Check if the current screen is a ChatScreen
-        return client.currentScreen instanceof net.minecraft.client.gui.screen.ChatScreen;
+        return client.screen instanceof net.minecraft.client.gui.screens.ChatScreen;
     }
     
     /**
-     * Check if the player is currently in any inventory screen (HandledScreen)
+     * Check if the player is currently in any inventory screen (AbstractContainerScreen)
      */
     private boolean isInAnyInventoryScreen() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             return false;
         }
         
-        // Check if the current screen is a HandledScreen (inventory-like screen)
-        return client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
+        // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
+        return client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
     }
     
     /**
      * Check if the player is currently in a blueprint inventory screen where Hide Uncraftable button and Aspect Overlay work
      */
     private boolean isInInventoryScreen() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             return false;
         }
         
-        // Check if the current screen is a HandledScreen (inventory-like screen)
-        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+        // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
+        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's a blueprint inventory
-        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
         
         String title = handledScreen.getTitle().getString();
         
@@ -327,7 +332,7 @@ public class OverlayEditorScreen extends Screen {
                                .replaceAll("[\\u3400-\\u4DBF]", "");
         
         // Check if the clean title contains any of the allowed blueprint inventory names
-        // (same logic as in HandledScreenMixin.isBlueprintInventory())
+        // (same logic as in AbstractContainerScreenMixin.isBlueprintInventory())
         return cleanTitle.contains("Baupläne [Waffen]") ||
                cleanTitle.contains("Baupläne [Rüstung]") ||
                cleanTitle.contains("Baupläne [Werkzeuge]") ||
@@ -342,19 +347,19 @@ public class OverlayEditorScreen extends Screen {
      * Check if the player is currently in a Kit Filter relevant inventory
      */
     private boolean isInKitFilterInventory() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             return false;
         }
         
-        // Check if the current screen is a HandledScreen (inventory-like screen)
-        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+        // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
+        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's a Kit Filter relevant inventory
-        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
         
         String title = handledScreen.getTitle().getString();
         
@@ -378,13 +383,13 @@ public class OverlayEditorScreen extends Screen {
      * Check if the player is currently in a floor dimension
      */
     private boolean isInFloorDimension() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) {
             return false;
         }
         
         // Check if the player is in a floor dimension by checking the dimension identifier
-        String dimensionId = client.world.getRegistryKey().getValue().toString();
+        String dimensionId = client.level.dimension().identifier().toString();
         
         // Floor dimensions typically have "floor" in their identifier
         return dimensionId.contains("floor") || dimensionId.contains("dungeon");
@@ -394,19 +399,19 @@ public class OverlayEditorScreen extends Screen {
      * Check if the player is currently in the "Machtkristalle Verbessern" inventory
      */
     private boolean isInMKLevelInventory() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             return false;
         }
         
-        // Check if the current screen is a HandledScreen (inventory-like screen)
-        if (!(client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen)) {
+        // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
+        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's the MKLevel inventory
-        net.minecraft.client.gui.screen.ingame.HandledScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screen.ingame.HandledScreen<?>) client.currentScreen;
+        net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
         
         String title = handledScreen.getTitle().getString();
         
@@ -421,12 +426,12 @@ public class OverlayEditorScreen extends Screen {
         super.init();
         
         // Title
-        titleWidget = new TextWidget(
-            Text.literal("Overlay Editor - Drag & Drop to reposition overlays"),
-            textRenderer
+        titleWidget = new StringWidget(
+            Component.literal("Overlay Editor - Drag & Drop to reposition overlays"),
+            font
         );
         titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, 20);
-        addDrawableChild(titleWidget);
+        addRenderableWidget(titleWidget);
         
         // Buttons horizontal zentrieren
         // 4 Buttons à 80 Pixel = 320 Pixel, 3 Abstände à 10 Pixel = 30 Pixel, Gesamt = 350 Pixel
@@ -436,55 +441,55 @@ public class OverlayEditorScreen extends Screen {
         int startX = width / 2 - totalButtonsWidth / 2; // width / 2 - 175
         
         // Done Button
-        doneButton = ButtonWidget.builder(
-            Text.literal("Done"),
-            button -> close()
-        ).dimensions(startX, height - 30, buttonWidth, 20).build();
-        addDrawableChild(doneButton);
+        doneButton = Button.builder(
+            Component.literal("Done"),
+            button -> onClose()
+        ).bounds(startX, height - 30, buttonWidth, 20).build();
+        addRenderableWidget(doneButton);
         
         // NPC Alerts Button
-        ButtonWidget npcAlertsButton = ButtonWidget.builder(
-            Text.literal("NPC Alerts"),
+        Button npcAlertsButton = Button.builder(
+            Component.literal("NPC Alerts"),
             button -> {
-                MinecraftClient client = MinecraftClient.getInstance();
+                Minecraft client = Minecraft.getInstance();
                 if (client != null) {
                     client.setScreen(new net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen(this));
                 }
             }
-        ).dimensions(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
-        addDrawableChild(npcAlertsButton);
+        ).bounds(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
+        addRenderableWidget(npcAlertsButton);
         
         // Overlay Button
-        overlayButton = ButtonWidget.builder(
-            Text.literal("Overlay"),
+        overlayButton = Button.builder(
+            Component.literal("Overlay"),
             button -> overlaySettingsOpen = !overlaySettingsOpen
-        ).dimensions(startX + 2 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
-        addDrawableChild(overlayButton);
+        ).bounds(startX + 2 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
+        addRenderableWidget(overlayButton);
         
         // Reset Button
-        resetButton = ButtonWidget.builder(
-            Text.literal("Reset All"),
+        resetButton = Button.builder(
+            Component.literal("Reset All"),
             button -> resetAllOverlays()
-        ).dimensions(startX + 3 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
-        addDrawableChild(resetButton);
+        ).bounds(startX + 3 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
+        addRenderableWidget(resetButton);
     }
     
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // Render the previous screen in the background if it exists
         if (previousScreen != null) {
-            previousScreen.render(context, mouseX, mouseY, delta);
+            previousScreen.extractRenderState(context, mouseX, mouseY, delta);
         }
 
         // Render very transparent background overlay
         context.fill(0, 0, width, height, 0x20000000);
         
         // Render title
-        titleWidget.render(context, mouseX, mouseY, delta);
+        titleWidget.extractRenderState(context, mouseX, mouseY, delta);
         
         // Render all overlays in edit mode
         for (DraggableOverlay overlay : overlays) {
-            if (overlay.isEnabled()) {
+            if (overlay.isConfigEnabled()) {
                 overlay.renderInEditMode(context, mouseX, mouseY, delta);
                 
                 // Render resize handle and reset handle if hovering over the overlay
@@ -509,23 +514,23 @@ public class OverlayEditorScreen extends Screen {
         }
         
         // Render buttons
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
         
         renderOverlayHandleTooltips(context, mouseX, mouseY);
     }
     
-    private void renderOverlayHandleTooltips(DrawContext context, int mouseX, int mouseY) {
+    private void renderOverlayHandleTooltips(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         for (DraggableOverlay overlay : overlays) {
-            if (!overlay.isEnabled()) {
+            if (!overlay.isConfigEnabled()) {
                 continue;
             }
             
             if (isOverlayResetHandle(mouseX, mouseY, overlay)) {
-                context.drawTooltip(textRenderer, List.of(Text.literal("Größe zurücksetzen")), mouseX, mouseY);
+                context.setComponentTooltipForNextFrame(font, List.of(Component.literal("Größe zurücksetzen")), mouseX, mouseY);
                 return;
             }
             if (isOverlayResizeHandle(mouseX, mouseY, overlay)) {
-                context.drawTooltip(textRenderer, List.of(Text.literal("Ziehen um Größe anzupassen")), mouseX, mouseY);
+                context.setComponentTooltipForNextFrame(font, List.of(Component.literal("Ziehen um Größe anzupassen")), mouseX, mouseY);
                 return;
             }
         }
@@ -545,7 +550,7 @@ public class OverlayEditorScreen extends Screen {
         return mouseX >= x && mouseX <= x + handleSize && mouseY >= y && mouseY <= y + handleSize;
     }
     
-    private void renderResizeHandle(DrawContext context, DraggableOverlay overlay) {
+    private void renderResizeHandle(GuiGraphicsExtractor context, DraggableOverlay overlay) {
         int handleSize = 10;
         int x = overlay.getX() + overlay.getWidth() - handleSize;
         int y = overlay.getY() + overlay.getHeight() - handleSize;
@@ -577,7 +582,7 @@ public class OverlayEditorScreen extends Screen {
         context.fill(x + 1, y + 2, x + 2, y + 3, 0xFFFFFFFF);
     }
     
-    private void renderResetHandle(DrawContext context, DraggableOverlay overlay) {
+    private void renderResetHandle(GuiGraphicsExtractor context, DraggableOverlay overlay) {
         int handleSize = 10;
         int x = overlay.getX() + overlay.getWidth() - handleSize;
         int y = overlay.getY();
@@ -589,8 +594,8 @@ public class OverlayEditorScreen extends Screen {
         // Draw "<-" text (scaled down to fit better, centered)
         float scale = 0.7f;
         String arrowText = "<-";
-        int textWidth = textRenderer.getWidth(arrowText);
-        int textHeight = textRenderer.fontHeight;
+        int textWidth = font.width(arrowText);
+        int textHeight = font.lineHeight;
         
         // Calculate centered position (accounting for scale)
         float scaledTextWidth = textWidth * scale;
@@ -598,15 +603,15 @@ public class OverlayEditorScreen extends Screen {
         float textX = x + (handleSize - scaledTextWidth) / 2.0f;
         float textY = y + (handleSize - scaledTextHeight) / 2.0f;
         
-        Matrix3x2fStack matrices = context.getMatrices();
+        Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(textX, textY);
         matrices.scale(scale, scale);
-        context.drawText(textRenderer, arrowText, 0, 0, 0xFFFFFFFF, false);
+        context.text(font, arrowText, 0, 0, 0xFFFFFFFF, false);
         matrices.popMatrix();
     }
     
-    private void renderInstructions(DrawContext context) {
+    private void renderInstructions(GuiGraphicsExtractor context) {
         int y = height - 92;
         String[] instructions = {
             "Left Click + Drag: Move overlay",
@@ -616,13 +621,16 @@ public class OverlayEditorScreen extends Screen {
         };
         
         for (String instruction : instructions) {
-            context.drawText(textRenderer, instruction, 10, y, 0xFFFFFFFF, false);
+            context.text(font, instruction, 10, y, 0xFFFFFFFF, false);
             y += 12;
         }
     }
     
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         // Handle clipboard settings click
         if (handleClipboardSettingsClick(mouseX, mouseY, button)) {
             return true;
@@ -636,7 +644,7 @@ public class OverlayEditorScreen extends Screen {
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             // Check for reset area first (highest priority)
             for (DraggableOverlay overlay : overlays) {
-                if (overlay.isEnabled() && overlay.isResetArea((int) mouseX, (int) mouseY)) {
+                if (overlay.isConfigEnabled() && overlay.isResetArea((int) mouseX, (int) mouseY)) {
                     overlay.resetSizeToDefault();
                     overlay.savePosition();
                     CCLiveUtilitiesConfig.HANDLER.save();
@@ -646,7 +654,7 @@ public class OverlayEditorScreen extends Screen {
             
             // Check for resize area
             for (DraggableOverlay overlay : overlays) {
-                if (overlay.isEnabled() && overlay.isResizeArea((int) mouseX, (int) mouseY)) {
+                if (overlay.isConfigEnabled() && overlay.isResizeArea((int) mouseX, (int) mouseY)) {
                     // Check if dragging is allowed for this overlay
                     if (!canDragOverlay(overlay)) {
                         continue;
@@ -663,7 +671,7 @@ public class OverlayEditorScreen extends Screen {
             
             // Check for drag area
             for (DraggableOverlay overlay : overlays) {
-                if (overlay.isEnabled() && overlay.isHovered((int) mouseX, (int) mouseY)) {
+                if (overlay.isConfigEnabled() && overlay.isHovered((int) mouseX, (int) mouseY)) {
                     // Check if dragging is allowed for this overlay
                     if (!canDragOverlay(overlay)) {
                         continue;
@@ -676,11 +684,14 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubled);
     }
     
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double deltaX, double deltaY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
                 // Check if dragging is still allowed (might have changed dimension or opened inventory)
@@ -719,10 +730,10 @@ public class OverlayEditorScreen extends Screen {
                 resizingOverlay.setSize(newWidth, newHeight);
                 
                 // Berechne die neue Position basierend auf der Bildschirmseite
-                MinecraftClient client = MinecraftClient.getInstance();
+                Minecraft client = Minecraft.getInstance();
                 if (client != null && client.getWindow() != null) {
-                    int screenWidth = client.getWindow().getScaledWidth();
-                    int screenHeight = client.getWindow().getScaledHeight();
+                    int screenWidth = client.getWindow().getGuiScaledWidth();
+                    int screenHeight = client.getWindow().getGuiScaledHeight();
                     int currentY = resizingOverlay.getY();
                     
                     // Prüfe, ob es das MKLevel-Overlay ist (sollte immer von oben links vergrößern)
@@ -774,11 +785,14 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(event, deltaX, deltaY);
     }
     
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
                 draggingOverlay.savePosition();
@@ -793,21 +807,24 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
     
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-            close();
+            onClose();
             return true;
         }
         
         // Also close with the configured overlay editor key (toggle behavior)
         // Use the same key binding as outside inventories
-        if (OverlayEditorUtility.getOverlayEditorKeyBinding() != null) {
-            if (OverlayEditorUtility.getOverlayEditorKeyBinding().matchesKey(keyCode, -1)) {
-                close();
+        if (OverlayEditorUtility.getOverlayEditorKeyMapping() != null) {
+            if (OverlayEditorUtility.getOverlayEditorKeyMapping().matches(new net.minecraft.client.input.KeyEvent(keyCode, -1, 0))) {
+                onClose();
                 return true;
             }
         }
@@ -821,7 +838,7 @@ public class OverlayEditorScreen extends Screen {
             }
             
             // Check if left mouse button is still pressed
-            long windowHandle = MinecraftClient.getInstance().getWindow().getHandle();
+            long windowHandle = Minecraft.getInstance().getWindow().handle();
             boolean leftMousePressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
             
             if (leftMousePressed) {
@@ -854,12 +871,12 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
     
     private void resetAllOverlays() {
         for (DraggableOverlay overlay : overlays) {
-            if (overlay.isEnabled()) {
+            if (overlay.isConfigEnabled()) {
                 overlay.resetToDefault();
                 clampOverlayToScreen(overlay);
                 overlay.savePosition();
@@ -876,7 +893,7 @@ public class OverlayEditorScreen extends Screen {
     }
     
     @Override
-    public void close() {
+    public void onClose() {
         // Save all overlay positions
         for (DraggableOverlay overlay : overlays) {
             overlay.savePosition();
@@ -889,16 +906,16 @@ public class OverlayEditorScreen extends Screen {
         OverlayEditorUtility.setOverlayEditorOpen(false);
         
         // Restore the previous screen instead of closing
-        MinecraftClient client = MinecraftClient.getInstance();
+        Minecraft client = Minecraft.getInstance();
         if (client != null && previousScreen != null) {
             client.setScreen(previousScreen);
         } else {
-            super.close();
+            super.onClose();
         }
     }
     
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
     
@@ -906,13 +923,13 @@ public class OverlayEditorScreen extends Screen {
      * Check if the player is currently in a dimension that matches their player name
      */
     private boolean isInPlayerNameDimension() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) {
             return false;
         }
         
         String playerName = client.player.getName().getString().toLowerCase();
-        String dimensionPath = client.world.getRegistryKey().getValue().getPath();
+        String dimensionPath = client.level.dimension().identifier().getPath();
         
         // Check if dimension matches player name (player is in their own dimension)
         return dimensionPath.equals(playerName);
@@ -922,26 +939,26 @@ public class OverlayEditorScreen extends Screen {
      * Check if the player is currently in the Overworld dimension
      */
     private boolean isInOverworld() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) {
             return false;
         }
         
         // Check if the dimension is the Overworld
-        return client.world.getRegistryKey() == net.minecraft.world.World.OVERWORLD;
+        return client.level.dimension() == net.minecraft.world.level.Level.OVERWORLD;
     }
     
     /**
      * Check if an inventory screen is currently open
      */
     private boolean isInventoryOpen() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.currentScreen == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.screen == null) {
             return false;
         }
         
-        // Check if the current screen is an inventory-like screen (HandledScreen)
-        return client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
+        // Check if the current screen is an inventory-like screen (AbstractContainerScreen)
+        return client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
     }
     
     /**
@@ -959,7 +976,7 @@ public class OverlayEditorScreen extends Screen {
     /**
      * Rendert das Overlay-Settings-Overlay mit Checkboxen für alle verfügbaren Overlays
      */
-    private void renderOverlaySettings(DrawContext context, int mouseX, int mouseY) {
+    private void renderOverlaySettings(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         // Erstelle gefilterte Liste der Overlays (Kit-Filter-Buttons werden gruppiert)
         List<OverlayEntry> displayOverlays = getDisplayOverlays();
         
@@ -972,10 +989,10 @@ public class OverlayEditorScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.outline(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Titel
-        context.drawText(textRenderer, "Overlay Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
+        context.text(font, "Overlay Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
         
         // Checkboxen für alle Overlays
         int y = boxY + 35;
@@ -989,7 +1006,7 @@ public class OverlayEditorScreen extends Screen {
             // Checkbox-Hintergrund
             int checkboxY = y;
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
-            context.drawBorder(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
+            context.outline(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
             
             // Checkmark wenn aktiviert
             if (isEnabled) {
@@ -1019,9 +1036,9 @@ public class OverlayEditorScreen extends Screen {
             // Overlay-Name
             String overlayName = entry.displayName;
             int textX = checkboxX + checkboxSize + 5;
-            int textWidth = textRenderer.getWidth(overlayName);
-            int textHeight = textRenderer.fontHeight;
-            context.drawText(textRenderer, overlayName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
+            int textWidth = font.width(overlayName);
+            int textHeight = font.lineHeight;
+            context.text(font, overlayName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
             
             // Settings-Button für Clipboard (rechts in der Zeile, wie npcAlerts)
             if (entry.overlay instanceof ClipboardDraggableOverlay) {
@@ -1039,7 +1056,7 @@ public class OverlayEditorScreen extends Screen {
                 boolean isHoveringEntry = isHoveringCheckbox || isHoveringText;
                 
                 // Zeichne weißen Rahmen um das Zahnrad-Icon
-                context.drawBorder(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
+                context.outline(gearX - 1, gearY - 1, gearSize + 2, gearSize + 2, 0xFFFFFFFF);
                 
                 drawGearIcon(context, gearX, gearY, gearSize);
                 
@@ -1097,12 +1114,12 @@ public class OverlayEditorScreen extends Screen {
             if (overlay instanceof KitFilterButtonDraggableOverlay) {
                 hasKitFilterButtons = true;
                 // Kit-Filter ist enabled wenn mindestens einer der Buttons enabled ist
-                if (overlay.isEnabled()) {
+                if (overlay.isConfigEnabled()) {
                     kitFilterEnabled = true;
                 }
             } else {
                 // Normales Overlay - direkt hinzufügen
-                displayList.add(new OverlayEntry(overlay.getOverlayName(), overlay.isEnabled(), overlay, false));
+                displayList.add(new OverlayEntry(overlay.getOverlayName(), overlay.isConfigEnabled(), overlay, false));
             }
         }
         
@@ -1147,8 +1164,8 @@ public class OverlayEditorScreen extends Screen {
         for (OverlayEntry entry : displayOverlays) {
             int checkboxY = y;
             int textY = checkboxY;
-            int textHeight = textRenderer.fontHeight;
-            int textWidth = textRenderer.getWidth(entry.displayName);
+            int textHeight = font.lineHeight;
+            int textWidth = font.width(entry.displayName);
             
             // Prüfe ob Klick auf Checkbox
             boolean clickedOnCheckbox = (mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
@@ -1201,87 +1218,86 @@ public class OverlayEditorScreen extends Screen {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         
         if (overlay instanceof BossHPDraggableOverlay) {
-            boolean newValue = !config.showBossHP;
+            boolean newValue = !overlay.isConfigEnabled();
             config.showBossHP = newValue;
-            config.bossHPEnabled = newValue; // Synchronisiere mit show* Option
+            config.bossHPEnabled = newValue;
         } else if (overlay instanceof CardsDraggableOverlay) {
-            boolean newValue = !config.showCard;
+            boolean newValue = !overlay.isConfigEnabled();
             config.showCard = newValue;
-            config.cardEnabled = newValue; // Synchronisiere mit show* Option
+            config.cardEnabled = newValue;
+            if (newValue) {
+                config.cardsStatuesEnabled = true;
+            }
         } else if (overlay instanceof StatuesDraggableOverlay) {
-            boolean newValue = !config.showStatue;
+            boolean newValue = !overlay.isConfigEnabled();
             config.showStatue = newValue;
-            config.statueEnabled = newValue; // Synchronisiere mit show* Option
+            config.statueEnabled = newValue;
+            if (newValue) {
+                config.cardsStatuesEnabled = true;
+            }
         } else if (overlay instanceof BlueprintViewerDraggableOverlay) {
             // Nur showBlueprintViewer togglen (gleichgestellt mit "Blueprint Tracker Overlay anzeigen" in Config)
-            // blueprintViewerEnabled bleibt unabhängig (wird nicht synchronisiert)
             config.showBlueprintViewer = !config.showBlueprintViewer;
         } else if (overlay instanceof MaterialTrackerDraggableOverlay) {
-            boolean newValue = !config.materialTrackerEnabled;
+            boolean newValue = !overlay.isConfigEnabled();
             config.materialTrackerEnabled = newValue;
-            config.showMaterialTracker = newValue; // Synchronisiere mit *Enabled Option
+            config.showMaterialTracker = newValue;
         } else if (overlay instanceof KillsUtilityDraggableOverlay) {
-            boolean newValue = !config.killsUtilityEnabled;
+            boolean newValue = !overlay.isConfigEnabled();
             config.killsUtilityEnabled = newValue;
-            config.showKillsUtility = newValue; // Synchronisiere mit *Enabled Option
+            config.showKillsUtility = newValue;
         } else if (overlay instanceof CoinTrackerDraggableOverlay) {
-            boolean newValue = !config.coinTrackerEnabled;
+            boolean newValue = !overlay.isConfigEnabled();
             config.coinTrackerEnabled = newValue;
             config.showCoinTracker = newValue;
+            if (newValue) {
+                // Overlay-Picker steuert das Overlay selbst → Anzeige auf Overlay setzen
+                config.coinTrackerDisplayMode = net.felix.CoinTrackerDisplayMode.OVERLAY;
+            }
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
-            boolean newValue = !config.miningLumberjackOverlayEnabled;
+            boolean newValue = !overlay.isConfigEnabled();
             config.miningLumberjackOverlayEnabled = newValue;
-            // Mining/Lumberjack hat separate show* Optionen, aber keine gemeinsame show* Option
-            // Beide show* Optionen synchronisieren
+            config.miningOverlayEnabled = newValue;
+            config.lumberjackOverlayEnabled = newValue;
             config.showMiningOverlay = newValue;
             config.showLumberjackOverlay = newValue;
         } else if (overlay instanceof CollectionDraggableOverlay) {
-            boolean newValue = !config.showCollectionOverlay;
-            config.showCollectionOverlay = newValue;
-            // Collection hat keine separate *Enabled Option, nur show* Option
+            config.showCollectionOverlay = !config.showCollectionOverlay;
         } else if (overlay instanceof AspectOverlayDraggableOverlay) {
-            boolean newValue = !config.showAspectOverlay;
+            boolean newValue = !overlay.isConfigEnabled();
             config.showAspectOverlay = newValue;
-            config.aspectOverlayEnabled = newValue; // Synchronisiere mit show* Option
+            config.aspectOverlayEnabled = newValue;
         } else if (overlay instanceof StarAspectOverlayDraggableOverlay) {
-            boolean newValue = !config.showAspectOverlay;
+            boolean newValue = !overlay.isConfigEnabled();
             config.showAspectOverlay = newValue;
-            config.aspectOverlayEnabled = newValue; // Synchronisiere mit show* Option
+            config.aspectOverlayEnabled = newValue;
         } else if (overlay instanceof ChatAspectOverlayDraggableOverlay) {
-            boolean newValue = !config.chatAspectOverlayEnabled;
-            config.chatAspectOverlayEnabled = newValue;
-            // ChatAspectOverlay hat keine separate show* Option, nur *Enabled Option
+            config.chatAspectOverlayEnabled = !config.chatAspectOverlayEnabled;
         } else if (overlay instanceof HideUncraftableButtonDraggableOverlay) {
-            boolean newValue = !config.hideUncraftableEnabled;
-            config.hideUncraftableEnabled = newValue;
-            // HideUncraftableButton hat keine separate show* Option, nur *Enabled Option
+            config.hideUncraftableEnabled = !config.hideUncraftableEnabled;
         } else if (overlay instanceof HideWrongClassButtonDraggableOverlay) {
-            boolean newValue = !config.hideWrongClassEnabled;
+            boolean newValue = !overlay.isConfigEnabled();
             config.hideWrongClassEnabled = newValue;
-            config.showHideWrongClassButton = newValue; // Synchronisiere mit *Enabled Option
+            config.showHideWrongClassButton = newValue;
         } else if (overlay instanceof KitFilterButtonDraggableOverlay) {
-            boolean newValue = !config.kitFilterButtonsEnabled;
-            config.kitFilterButtonsEnabled = newValue;
-            // Kit Filter Buttons haben keine separate show* Option, nur *Enabled Option
+            config.kitFilterButtonsEnabled = !config.kitFilterButtonsEnabled;
         } else if (overlay instanceof MKLevelDraggableOverlay) {
-            boolean newValue = !config.mkLevelEnabled;
-            config.mkLevelEnabled = newValue;
-            // MKLevel hat keine separate show* Option, nur *Enabled Option
+            config.mkLevelEnabled = !config.mkLevelEnabled;
         } else if (overlay instanceof ClipboardDraggableOverlay) {
-            boolean newValue = !config.clipboardEnabled;
+            boolean newValue = !overlay.isConfigEnabled();
             config.clipboardEnabled = newValue;
-            config.showClipboard = newValue; // Synchronisiere mit *Enabled Option
+            config.showClipboard = newValue;
         }
     }
     
     /**
      * Zeichnet das Zahnrad-Icon (Settings-Icon) wie in NpcAlertsSettingsScreen
      */
-    private void drawGearIcon(DrawContext context, int x, int y, int size) {
+    private void drawGearIcon(GuiGraphicsExtractor context, int x, int y, int size) {
         try {
             // Zeichne das Settings-Icon aus der Textur
-            Identifier settingsIcon = Identifier.of("cclive-utilities", "textures/alert_icons/alert_icons_settings.png");
-            context.drawTexture(
+            Identifier settingsIcon = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/alert_icons/alert_icons_settings.png");
+            context.blit(
                 RenderPipelines.GUI_TEXTURED,
                 settingsIcon,
                 x, y,
@@ -1292,7 +1308,7 @@ public class OverlayEditorScreen extends Screen {
         } catch (Exception e) {
             // Fallback: Zeichne ein einfaches Zahnrad-Icon als gefüllte Formen
             // Äußerer Rahmen
-            context.drawBorder(x, y, size, size, 0xFFFFFFFF);
+            context.outline(x, y, size, size, 0xFFFFFFFF);
             
             // Diagonale Linien (als gefüllte Rechtecke)
             int lineWidth = 1;
@@ -1318,7 +1334,7 @@ public class OverlayEditorScreen extends Screen {
     /**
      * Rendert das Clipboard-Settings-Overlay
      */
-    private void renderClipboardSettings(DrawContext context, int mouseX, int mouseY) {
+    private void renderClipboardSettings(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         int boxWidth = 300;
         int boxHeight = 340; // Angepasst für neue Buttons (Fertige Kosten)
         int boxX = width / 2 - boxWidth / 2;
@@ -1328,10 +1344,10 @@ public class OverlayEditorScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.drawBorder(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.outline(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
         
         // Titel
-        context.drawText(textRenderer, "Clipboard Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
+        context.text(font, "Clipboard Settings", boxX + 10, boxY + 10, 0xFFFFFF00, false);
         
         // Buttons
         int buttonY = boxY + 40;
@@ -1346,13 +1362,13 @@ public class OverlayEditorScreen extends Screen {
                                  mouseY >= button1Y && mouseY <= button1Y + buttonHeight;
         int button1Color = button1Hovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, button1Y, boxX + 10 + buttonWidth, button1Y + buttonHeight, button1Color);
-        context.drawBorder(boxX + 10, button1Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.outline(boxX + 10, button1Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button1Text = "Blueprint Shop Kosten: " + (showBPCosts ? "An" : "Aus");
-        context.drawText(textRenderer, button1Text, boxX + 15, button1Y + 6, 0xFFFFFFFF, false);
+        context.text(font, button1Text, boxX + 15, button1Y + 6, 0xFFFFFFFF, false);
         
         // Überschrift: Material Sortierung
         int headerY = buttonY + buttonSpacing + 5;
-        context.drawText(textRenderer, "Material Sortierung", boxX + 10, headerY, 0xFFFFFF00, false);
+        context.text(font, "Material Sortierung", boxX + 10, headerY, 0xFFFFFF00, false);
         
         // Button 2: Material Sortierung An/Aus
         int button2Y = headerY + 20;
@@ -1361,9 +1377,9 @@ public class OverlayEditorScreen extends Screen {
                                  mouseY >= button2Y && mouseY <= button2Y + buttonHeight;
         int button2Color = button2Hovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, button2Y, boxX + 10 + buttonWidth, button2Y + buttonHeight, button2Color);
-        context.drawBorder(boxX + 10, button2Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.outline(boxX + 10, button2Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button2Text = "Material Sortierung: " + (materialSortEnabled ? "An" : "Aus");
-        context.drawText(textRenderer, button2Text, boxX + 15, button2Y + 6, 0xFFFFFFFF, false);
+        context.text(font, button2Text, boxX + 15, button2Y + 6, 0xFFFFFFFF, false);
         
         // Button 3: Aufsteigend/Absteigend Sortierung
         int button3Y = button2Y + buttonSpacing;
@@ -1376,14 +1392,14 @@ public class OverlayEditorScreen extends Screen {
             button3Color = 0xFF101010; // Dunkler wenn deaktiviert
         }
         context.fill(boxX + 10, button3Y, boxX + 10 + buttonWidth, button3Y + buttonHeight, button3Color);
-        context.drawBorder(boxX + 10, button3Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.outline(boxX + 10, button3Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button3Text = "Sortierung: " + (materialSortAscending ? "Aufsteigend (1-100)" : "Absteigend (100-1)");
         int button3TextColor = materialSortEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
-        context.drawText(textRenderer, button3Text, boxX + 15, button3Y + 6, button3TextColor, false);
+        context.text(font, button3Text, boxX + 15, button3Y + 6, button3TextColor, false);
         
         // Überschrift: Fertige Kosten
         int costHeaderY = button3Y + buttonSpacing + 5;
-        context.drawText(textRenderer, "Fertige Kosten", boxX + 10, costHeaderY, 0xFFFFFF00, false);
+        context.text(font, "Fertige Kosten", boxX + 10, costHeaderY, 0xFFFFFF00, false);
         
         // Button 4: Fertige Kosten Sortierung An/Aus
         int button4Y = costHeaderY + 20;
@@ -1392,9 +1408,9 @@ public class OverlayEditorScreen extends Screen {
                                  mouseY >= button4Y && mouseY <= button4Y + buttonHeight;
         int button4Color = button4Hovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, button4Y, boxX + 10 + buttonWidth, button4Y + buttonHeight, button4Color);
-        context.drawBorder(boxX + 10, button4Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.outline(boxX + 10, button4Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button4Text = "Fertige Kosten Sortierung: " + (costDisplayEnabled ? "An" : "Aus");
-        context.drawText(textRenderer, button4Text, boxX + 15, button4Y + 6, 0xFFFFFFFF, false);
+        context.text(font, button4Text, boxX + 15, button4Y + 6, 0xFFFFFFFF, false);
         
         // Button 5: Option 1/2 - Ausblenden/Ans Ende setzen (wechselt zwischen beiden)
         int button5Y = button4Y + buttonSpacing;
@@ -1407,10 +1423,10 @@ public class OverlayEditorScreen extends Screen {
             button5Color = 0xFF101010; // Dunkler wenn deaktiviert
         }
         context.fill(boxX + 10, button5Y, boxX + 10 + buttonWidth, button5Y + buttonHeight, button5Color);
-        context.drawBorder(boxX + 10, button5Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.outline(boxX + 10, button5Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
         String button5Text = costDisplayMode == 1 ? "Ausblenden" : "Ans Ende setzen";
         int button5TextColor = costDisplayEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
-        context.drawText(textRenderer, button5Text, boxX + 15, button5Y + 6, button5TextColor, false);
+        context.text(font, button5Text, boxX + 15, button5Y + 6, button5TextColor, false);
     }
     
     /**

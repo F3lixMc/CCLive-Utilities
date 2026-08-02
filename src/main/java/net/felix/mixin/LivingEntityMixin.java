@@ -1,10 +1,9 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.KillAnimationUtility;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.player.PlayerEntity;
-
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,13 +20,13 @@ public abstract class LivingEntityMixin {
     // with a text display scanning system in KillsUtility
     // Keeping the mixin class for potential future use
     
-    @Inject(method = "onDeath", at = @At("HEAD"))
+    @Inject(method = "die", at = @At("HEAD"))
     private void onDeath(DamageSource source, CallbackInfo ci) {
         try {
             LivingEntity entity = (LivingEntity)(Object)this;
             
             // Only disable for monsters (non-player entities)
-            if (entity instanceof PlayerEntity) {
+            if (entity instanceof Player) {
                 return;
             }
             
@@ -52,14 +51,14 @@ public abstract class LivingEntityMixin {
             LivingEntity entity = (LivingEntity)(Object)this;
             
             // Only disable for monsters (non-player entities)
-            if (entity instanceof PlayerEntity) {
+            if (entity instanceof Player) {
                 return;
             }
             
             // Check if kill animation utility is enabled
             if (KillAnimationUtility.isKillAnimationDisabled()) {
                 // If entity is dead or dying, immediately set deathTime to 20 and make invisible
-                if (entity.isDead() || entity.getHealth() <= 0) {
+                if (entity.isDeadOrDying() || entity.getHealth() <= 0) {
                     if (deathTime < 20) {
                         deathTime = 20;
                     }
@@ -83,12 +82,12 @@ public abstract class LivingEntityMixin {
             LivingEntity entity = (LivingEntity)(Object)this;
             
             // Only disable for monsters (non-player entities)
-            if (entity instanceof PlayerEntity) {
+            if (entity instanceof Player) {
                 return;
             }
             
             // Check if kill animation utility is enabled and entity is dead
-            if (KillAnimationUtility.isKillAnimationDisabled() && entity.isDead()) {
+            if (KillAnimationUtility.isKillAnimationDisabled() && entity.isDeadOrDying()) {
                 // Set entity as invisible to prevent rendering
                 // This is done by setting the invisible NBT data
                 entity.setInvisible(true);

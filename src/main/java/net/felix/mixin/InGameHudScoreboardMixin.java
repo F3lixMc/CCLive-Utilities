@@ -1,11 +1,11 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.CoinTrackerCustomSidebar;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.scoreboard.ScoreboardObjective;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -13,30 +13,30 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(InGameHud.class)
+@Mixin(Gui.class)
 public abstract class InGameHudScoreboardMixin {
 
     @Shadow
     @Final
-    private MinecraftClient client;
+    private Minecraft minecraft;
 
     @Shadow
-    public abstract TextRenderer getTextRenderer();
+    public abstract Font getFont();
 
     @Inject(
-            method = "renderScoreboardSidebar(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/scoreboard/ScoreboardObjective;)V",
+            method = "displayScoreboardSidebar(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/world/scores/Objective;)V",
             at = @At("HEAD"),
             cancellable = true
     )
     private void cclive$replaceScoreboardSidebar(
-            DrawContext context,
-            ScoreboardObjective objective,
+            GuiGraphicsExtractor context,
+            Objective objective,
             CallbackInfo ci) {
         if (!CoinTrackerCustomSidebar.shouldReplaceVanillaSidebar()) {
             return;
         }
 
         ci.cancel();
-        CoinTrackerCustomSidebar.render(context, objective, getTextRenderer(), client);
+        CoinTrackerCustomSidebar.render(context, objective, getFont(), minecraft);
     }
 }

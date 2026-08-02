@@ -7,7 +7,6 @@ import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
-import net.minecraft.client.MinecraftClient;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.http.HttpClient;
@@ -18,12 +17,12 @@ import net.felix.leaderboards.collectors.DataCollector;
 import net.felix.utilities.Aincraft.CardsStatuesUtility;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -130,7 +129,7 @@ public class ProfileStatsManager {
         
         // Registriere Screen-Event für Validierung von Karten/Statuen-Menüs
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
-            if (screen instanceof HandledScreen) {
+            if (screen instanceof AbstractContainerScreen) {
                 String title = screen.getTitle().getString();
                 if (title == null) {
                     return;
@@ -148,8 +147,8 @@ public class ProfileStatsManager {
                     new Thread(() -> {
                         try {
                             Thread.sleep(500); // 500ms warten
-                            if (client.currentScreen == screen && client.currentScreen instanceof HandledScreen) {
-                                scanCardsMenu((HandledScreen<?>) client.currentScreen, client);
+                            if (client.screen == screen && client.screen instanceof AbstractContainerScreen) {
+                                scanCardsMenu((AbstractContainerScreen<?>) client.screen, client);
                             }
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -160,8 +159,8 @@ public class ProfileStatsManager {
                     new Thread(() -> {
                         try {
                             Thread.sleep(500); // 500ms warten
-                            if (client.currentScreen == screen && client.currentScreen instanceof HandledScreen) {
-                                scanStatuesMenu((HandledScreen<?>) client.currentScreen, client);
+                            if (client.screen == screen && client.screen instanceof AbstractContainerScreen) {
+                                scanStatuesMenu((AbstractContainerScreen<?>) client.screen, client);
                             }
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -206,15 +205,15 @@ public class ProfileStatsManager {
     /**
      * Wird jeden Tick aufgerufen
      */
-    private void onClientTick(MinecraftClient client) {
-        if (!isEnabled || client.player == null || client.world == null) {
+    private void onClientTick(Minecraft client) {
+        if (!isEnabled || client.player == null || client.level == null) {
             return;
         }
         
         // Playtime NUR auf Multiplayer-Servern UND auf dem erlaubten Server tracken
         // getNetworkHandler() ist null im Singleplayer, nicht null auf Servern
         // isOnAllowedServerForPlaytime wurde bereits beim Server-Join geprüft (effizienter)
-        boolean isOnServer = client.getNetworkHandler() != null;
+        boolean isOnServer = client.getConnection() != null;
         
         if (isOnServer && isOnAllowedServerForPlaytime) {
             // Playtime tracken (für Leaderboard) - nur auf dem erlaubten Server
@@ -244,7 +243,7 @@ public class ProfileStatsManager {
         
         // Prüfe ob Karten/Statuen-Menü geöffnet ist und ob sich Items geändert haben
         // Nur alle 10 Ticks prüfen (0.5 Sekunden) um Performance zu verbessern
-        if (client.player.age % 10 == 0) {
+        if (client.player.tickCount % 10 == 0) {
             checkCardsStatuesMenuForChanges(client);
         }
     }
@@ -257,7 +256,7 @@ public class ProfileStatsManager {
      * 2. Server-Name aus der Server-Liste (wenn ALLOWED_SERVER_NAME gesetzt ist)
      * 3. Beide müssen übereinstimmen (wenn beide gesetzt sind)
      */
-    private boolean isOnAllowedServer(MinecraftClient client) {
+    private boolean isOnAllowedServer(Minecraft client) {
         // Server-Prüfung überspringen für Testing
         if (DISABLE_SERVER_CHECK) {
             return true; // Immer erlauben wenn Server-Check deaktiviert
@@ -279,8 +278,8 @@ public class ProfileStatsManager {
         if (ALLOWED_SERVER_ADDRESS != null && !ALLOWED_SERVER_ADDRESS.isEmpty()) {
             try {
                 String currentAddress = null;
-                if (client.getNetworkHandler() != null && client.getNetworkHandler().getConnection() != null) {
-                    var address = client.getNetworkHandler().getConnection().getAddress();
+                if (client.getConnection() != null && client.getConnection().getConnection() != null) {
+                    var address = client.getConnection().getConnection().getRemoteAddress();
                     if (address != null) {
                         currentAddress = address.toString();
                         // Entferne "/" am Anfang falls vorhanden
@@ -311,10 +310,10 @@ public class ProfileStatsManager {
         if (ALLOWED_SERVER_NAME != null && !ALLOWED_SERVER_NAME.isEmpty()) {
             try {
                 String currentName = null;
-                if (client.getCurrentServerEntry() != null) {
-                    currentName = client.getCurrentServerEntry().name;
-                } else if (client.getNetworkHandler() != null && client.getNetworkHandler().getServerInfo() != null) {
-                    currentName = client.getNetworkHandler().getServerInfo().name;
+                if (client.getCurrentServer() != null) {
+                    currentName = client.getCurrentServer().name;
+                } else if (client.getConnection() != null && client.getConnection().getServerData() != null) {
+                    currentName = client.getConnection().getServerData().name;
                 }
                 
                 if (currentName != null) {
@@ -407,8 +406,8 @@ public class ProfileStatsManager {
      * Sammelt alle aktuellen Stats aus verschiedenen Quellen
      */
     private void collectStats() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.player == null || client.world == null) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || client.level == null) {
             return;
         }
         
@@ -895,16 +894,16 @@ public class ProfileStatsManager {
     /**
      * Scannt das Karten-Menü und validiert/aktualisiert Karten-Level
      */
-    private void scanCardsMenu(HandledScreen<?> screen, MinecraftClient client) {
-        if (screen.getScreenHandler() == null || client.player == null) {
+    private void scanCardsMenu(AbstractContainerScreen<?> screen, Minecraft client) {
+        if (screen.getMenu() == null || client.player == null) {
             return;
         }
         
         // Scanne alle Slots (Karten können überall sein)
         lastKnownCardsItems.clear();
-        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
-            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-            ItemStack itemStack = slot.getStack();
+        for (int slotIndex = 0; slotIndex < screen.getMenu().slots.size(); slotIndex++) {
+            Slot slot = screen.getMenu().slots.get(slotIndex);
+            ItemStack itemStack = slot.getItem();
             
             // Speichere Item für Vergleich (auch wenn leer)
             if (itemStack != null && !itemStack.isEmpty()) {
@@ -918,7 +917,7 @@ public class ProfileStatsManager {
             }
             
             // Lese Tooltip des Items
-            List<Text> tooltip = getItemTooltip(itemStack, client.player);
+            List<Component> tooltip = getItemTooltip(itemStack, client.player);
             if (tooltip == null || tooltip.isEmpty()) {
                 continue;
             }
@@ -928,7 +927,7 @@ public class ProfileStatsManager {
             String cardName = null;
             int cardLevel = 0;
             
-            for (Text line : tooltip) {
+            for (Component line : tooltip) {
                 String lineText = line.getString();
                 if (lineText == null) {
                     continue;
@@ -983,17 +982,17 @@ public class ProfileStatsManager {
     /**
      * Scannt das Statuen-Menü und validiert/aktualisiert Statuen-Level
      */
-    private void scanStatuesMenu(HandledScreen<?> screen, MinecraftClient client) {
-        if (screen.getScreenHandler() == null || client.player == null) {
+    private void scanStatuesMenu(AbstractContainerScreen<?> screen, Minecraft client) {
+        if (screen.getMenu() == null || client.player == null) {
             return;
         }
         
         // Scanne alle Slots (wie bei Karten)
         lastKnownStatuesItems.clear();
-        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
+        for (int slotIndex = 0; slotIndex < screen.getMenu().slots.size(); slotIndex++) {
             
-            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-            ItemStack itemStack = slot.getStack();
+            Slot slot = screen.getMenu().slots.get(slotIndex);
+            ItemStack itemStack = slot.getItem();
             
             // Speichere Item für Vergleich (auch wenn leer)
             if (itemStack != null && !itemStack.isEmpty()) {
@@ -1007,7 +1006,7 @@ public class ProfileStatsManager {
             }
             
             // Lese Tooltip des Items
-            List<Text> tooltip = getItemTooltip(itemStack, client.player);
+            List<Component> tooltip = getItemTooltip(itemStack, client.player);
             if (tooltip == null || tooltip.isEmpty()) {
                 continue;
             }
@@ -1025,7 +1024,7 @@ public class ProfileStatsManager {
             String statueName = null;
             int statueLevel = 0;
             
-            for (Text line : tooltip) {
+            for (Component line : tooltip) {
                 String lineText = line.getString();
                 if (lineText == null) {
                     continue;
@@ -1116,13 +1115,13 @@ public class ProfileStatsManager {
     /**
      * Liest Tooltip-Daten (Lore) aus einem ItemStack
      */
-    private List<Text> getItemTooltip(ItemStack itemStack, net.minecraft.entity.player.PlayerEntity player) {
-        List<Text> tooltip = new ArrayList<>();
+    private List<Component> getItemTooltip(ItemStack itemStack, net.minecraft.world.entity.player.Player player) {
+        List<Component> tooltip = new ArrayList<>();
         // Füge den Item-Namen hinzu
-        tooltip.add(itemStack.getName());
+        tooltip.add(itemStack.getHoverName());
         
         // Lese die Lore über die Data Component API
-        var loreComponent = itemStack.get(DataComponentTypes.LORE);
+        var loreComponent = itemStack.get(DataComponents.LORE);
         if (loreComponent != null) {
             tooltip.addAll(loreComponent.lines());
         }
@@ -1148,14 +1147,14 @@ public class ProfileStatsManager {
     /**
      * Prüft ob Karten/Statuen-Menü geöffnet ist und ob sich Items geändert haben (Seitenwechsel)
      */
-    private void checkCardsStatuesMenuForChanges(MinecraftClient client) {
-        if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen)) {
+    private void checkCardsStatuesMenuForChanges(Minecraft client) {
+        if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
             lastKnownCardsItems.clear();
             lastKnownStatuesItems.clear();
             return;
         }
         
-        HandledScreen<?> screen = (HandledScreen<?>) client.currentScreen;
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
         String title = screen.getTitle().getString();
         if (title == null) {
             return;
@@ -1190,8 +1189,8 @@ public class ProfileStatsManager {
     /**
      * Prüft ob sich die Items im Karten-Menü geändert haben
      */
-    private boolean hasCardsMenuChanged(HandledScreen<?> screen) {
-        if (screen.getScreenHandler() == null) {
+    private boolean hasCardsMenuChanged(AbstractContainerScreen<?> screen) {
+        if (screen.getMenu() == null) {
             return false;
         }
         
@@ -1201,9 +1200,9 @@ public class ProfileStatsManager {
         }
         
         // Prüfe alle Slots
-        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
-            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-            ItemStack currentItem = slot.getStack();
+        for (int slotIndex = 0; slotIndex < screen.getMenu().slots.size(); slotIndex++) {
+            Slot slot = screen.getMenu().slots.get(slotIndex);
+            ItemStack currentItem = slot.getItem();
             ItemStack lastKnownItem = lastKnownCardsItems.get(slotIndex);
             
             if (currentItem == null || currentItem.isEmpty()) {
@@ -1225,8 +1224,8 @@ public class ProfileStatsManager {
     /**
      * Prüft ob sich die Items im Statuen-Menü geändert haben
      */
-    private boolean hasStatuesMenuChanged(HandledScreen<?> screen) {
-        if (screen.getScreenHandler() == null) {
+    private boolean hasStatuesMenuChanged(AbstractContainerScreen<?> screen) {
+        if (screen.getMenu() == null) {
             return false;
         }
         
@@ -1236,10 +1235,10 @@ public class ProfileStatsManager {
         }
         
         // Prüfe alle Slots (wie bei Karten)
-        for (int slotIndex = 0; slotIndex < screen.getScreenHandler().slots.size(); slotIndex++) {
+        for (int slotIndex = 0; slotIndex < screen.getMenu().slots.size(); slotIndex++) {
             
-            Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-            ItemStack currentItem = slot.getStack();
+            Slot slot = screen.getMenu().slots.get(slotIndex);
+            ItemStack currentItem = slot.getItem();
             ItemStack lastKnownItem = lastKnownStatuesItems.get(slotIndex);
             
             if (currentItem == null || currentItem.isEmpty()) {
@@ -1273,8 +1272,8 @@ public class ProfileStatsManager {
             return false;
         }
         // Vergleiche Custom Name
-        String name1 = item1.getName().getString();
-        String name2 = item2.getName().getString();
+        String name1 = item1.getHoverName().getString();
+        String name2 = item2.getHoverName().getString();
         return name1.equals(name2);
     }
 }

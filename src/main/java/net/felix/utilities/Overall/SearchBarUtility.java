@@ -1,17 +1,16 @@
 package net.felix.utilities.Overall;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.text.Text;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.component.DataComponentTypes;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Town.ItemDisplayMode;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,12 +46,12 @@ public class SearchBarUtility {
 	private static int symbolButtonSize = 16;
 	private static boolean isSymbolMenuOpen = false;
 	private static boolean isSymbolButtonHovered = false;
-	private static final net.minecraft.util.Identifier APPLE_ICON_TEXTURE = net.minecraft.util.Identifier.of("cclive-utilities", "textures/icons/apple_icon_2.png");
+	private static final net.minecraft.resources.Identifier APPLE_ICON_TEXTURE = net.minecraft.resources.Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/apple_icon_2.png");
 	
 	private static Set<Integer> matchingSlots = new HashSet<>();
 	private static final Map<Integer, ItemStack> hiddenOriginalItems = new HashMap<>();
 	private static final Set<Integer> hiddenSlots = new HashSet<>();
-	private static HandledScreen<?> lastSearchScreen = null;
+	private static AbstractContainerScreen<?> lastSearchScreen = null;
 	private static ItemDisplayMode lastSearchDisplayMode = ItemDisplayMode.BORDER;
 	private static final int SLOT_SIZE = 16;
 	
@@ -79,7 +78,7 @@ public class SearchBarUtility {
 		ClientTickEvents.END_CLIENT_TICK.register(SearchBarUtility::onClientTick);
 	}
 	
-	private static void onClientTick(MinecraftClient client) {
+	private static void onClientTick(Minecraft client) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().searchBarEnabled || 
@@ -89,13 +88,13 @@ public class SearchBarUtility {
 			return;
 		}
 		
-		if (client.player == null || client.currentScreen == null) {
+		if (client.player == null || client.screen == null) {
 			isSearchBarVisible = false;
 			clearSearchBar();
 			return;
 		}
 
-		if (client.currentScreen instanceof HandledScreen<?> handledScreen) {
+		if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
 			// Entferne Farbcodes für den Vergleich
@@ -154,26 +153,44 @@ public class SearchBarUtility {
 	}
 	
 	/**
-	 * Überprüft ob sich das Inventar geändert hat und führt bei Änderungen eine neue Suche durch
+	 * Überprüft ob sich das Inventar geändert hat und führt bei Änderungen eine neue Suche durch.
+	 * Wenn der Server einen ausgeblendeten Slot überschreibt, wird das gespeicherte Original
+	 * (inkl. Lore für Schmiedezustand) auf das neue Item aktualisiert.
 	 */
-	private static void checkInventoryChanges(HandledScreen<?> screen) {
+	private static void checkInventoryChanges(AbstractContainerScreen<?> screen) {
 		List<ItemStack> currentInventory = new ArrayList<>();
+		boolean hiddenOriginalUpdated = false;
 		
 		// Bestimme die zu überprüfenden Slots basierend auf dem Menütyp
 		int[] slotsToCheck = getSlotsForMenu(screen);
 		
 		for (int slot : slotsToCheck) {
-			if (slot < screen.getScreenHandler().slots.size()) {
-				Slot slotObj = screen.getScreenHandler().slots.get(slot);
-				currentInventory.add(resolveItemForMatching(slot, slotObj.getStack()).copy());
+			if (slot < screen.getMenu().slots.size()) {
+				Slot slotObj = screen.getMenu().slots.get(slot);
+				ItemStack currentStack = slotObj.getItem();
+				
+				// Server hat den Platzhalter ersetzt → neues Item als Original übernehmen
+				if (!currentStack.isEmpty()
+						&& currentStack.getItem() != Items.BLACK_CONCRETE
+						&& hiddenSlots.contains(slot)) {
+					ItemStack previousOriginal = hiddenOriginalItems.get(slot);
+					if (previousOriginal == null || !ItemStack.matches(previousOriginal, currentStack)) {
+						hiddenOriginalItems.put(slot, currentStack.copy());
+						hiddenOriginalUpdated = true;
+					}
+					currentInventory.add(currentStack.copy());
+				} else {
+					currentInventory.add(resolveItemForMatching(slot, currentStack).copy());
+				}
 			}
 		}
 		
 		// Vergleiche mit vorherigem Inventar
-		if (!inventoryEquals(previousInventory, currentInventory)) {
+		if (hiddenOriginalUpdated || !inventoryEquals(previousInventory, currentInventory)) {
 			previousInventory = new ArrayList<>(currentInventory);
 			
 			// Führe neue Suche durch wenn Suchtext vorhanden ist
+			// (schreibt ausgeblendete Platzhalter inkl. Lore neu)
 			if (!searchText.isEmpty()) {
 				performSearch();
 			}
@@ -183,7 +200,7 @@ public class SearchBarUtility {
 	/**
 	 * Bestimmt die zu überprüfenden Slots basierend auf dem Menütyp
 	 */
-	private static int[] getSlotsForMenu(HandledScreen<?> screen) {
+	private static int[] getSlotsForMenu(AbstractContainerScreen<?> screen) {
 		String title = screen.getTitle().getString();
 		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "");
 		
@@ -237,7 +254,7 @@ public class SearchBarUtility {
 			ItemStack stack2 = inv2.get(i);
 			
 			// Prüfe ob Items gleich sind (gleicher Typ, gleiche Anzahl, gleiche NBT)
-			if (!ItemStack.areEqual(stack1, stack2)) {
+			if (!ItemStack.matches(stack1, stack2)) {
 				return false;
 			}
 		}
@@ -247,7 +264,7 @@ public class SearchBarUtility {
 	
 
 	
-	public static void renderInScreen(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
+	public static void renderInScreen(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int screenX, int screenY) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().searchBarEnabled || 
@@ -259,7 +276,7 @@ public class SearchBarUtility {
 			return;
 		}
 
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client.player == null) {
 			return;
 		}
@@ -300,11 +317,11 @@ public class SearchBarUtility {
 
 		// Prüfe Hover über Symbol-Button
 		if (client.getWindow() != null) {
-			int windowWidth = client.getWindow().getWidth();
-			int windowHeight = client.getWindow().getHeight();
+			int windowWidth = client.getWindow().getScreenWidth();
+			int windowHeight = client.getWindow().getScreenHeight();
 			if (windowWidth > 0 && windowHeight > 0) {
-				double mouseX = client.mouse.getX() * client.getWindow().getScaledWidth() / windowWidth;
-				double mouseY = client.mouse.getY() * client.getWindow().getScaledHeight() / windowHeight;
+				double mouseX = client.mouseHandler.xpos() * client.getWindow().getGuiScaledWidth() / windowWidth;
+				double mouseY = client.mouseHandler.ypos() * client.getWindow().getGuiScaledHeight() / windowHeight;
 				checkSymbolButtonHover(mouseX, mouseY);
 			}
 		}
@@ -340,15 +357,15 @@ public class SearchBarUtility {
 		int availableWidth = searchBarWidth - 10; // 5px Padding auf jeder Seite
 		
 		if (!searchText.isEmpty()) {
-			int textWidth = client.textRenderer.getWidth(displayText);
+			int textWidth = client.font.width(displayText);
 			
 			if (textWidth > availableWidth) {
 				// Text ist zu lang - scrolle nach rechts
-				int cursorX = client.textRenderer.getWidth(searchText.substring(0, cursorPosition));
+				int cursorX = client.font.width(searchText.substring(0, cursorPosition));
 				int scrollOffset = Math.max(0, cursorX - availableWidth + 20); // 20px Abstand vom rechten Rand
 				
 				// Zeichne nur den sichtbaren Teil des Texts
-				String visibleText = getVisibleText(displayText, scrollOffset, availableWidth, client.textRenderer);
+				String visibleText = getVisibleText(displayText, scrollOffset, availableWidth, client.font);
 				drawTextWithSelection(context, client, visibleText, textX, searchBarY + 6, textColor, scrollOffset);
 			} else {
 
@@ -358,8 +375,8 @@ public class SearchBarUtility {
 				if (hasSelection() && isSearchBarFocused) {
 					renderTextWithSelection(context, client, displayText, textX, searchBarY + 6, textColor);
 				} else {
-					context.drawText(
-						client.textRenderer,
+					context.text(
+						client.font,
 						displayText,
 						textX,
 						searchBarY + 6,
@@ -370,8 +387,8 @@ public class SearchBarUtility {
 			}
 		} else {
 			// Placeholder-Text
-			context.drawText(
-				client.textRenderer,
+			context.text(
+				client.font,
 				displayText,
 				textX,
 				searchBarY + 6,
@@ -389,13 +406,13 @@ public class SearchBarUtility {
 				cursorX = searchBarX + 5;
 			} else {
 				// Cursor an der aktuellen Position
-				cursorX = searchBarX + 5 + client.textRenderer.getWidth(searchText.substring(0, cursorPosition));
-				int textWidth = client.textRenderer.getWidth(searchText);
+				cursorX = searchBarX + 5 + client.font.width(searchText.substring(0, cursorPosition));
+				int textWidth = client.font.width(searchText);
 				
 				if (textWidth > availableWidth) {
 					// Cursor-Position anpassen für Scrolling
 					int scrollOffset = Math.max(0, cursorX - searchBarX - 5 - availableWidth + 20);
-					cursorX = searchBarX + 5 + client.textRenderer.getWidth(searchText.substring(0, cursorPosition)) - scrollOffset;
+					cursorX = searchBarX + 5 + client.font.width(searchText.substring(0, cursorPosition)) - scrollOffset;
 				}
 			}
 			
@@ -416,10 +433,10 @@ public class SearchBarUtility {
 	/**
 	 * Zeichnet Text mit Selektion (Minecraft-typischer Negativ-Effekt)
 	 */
-	private static void drawTextWithSelection(DrawContext context, MinecraftClient client, String text, int x, int y, int textColor, int scrollOffset) {
+	private static void drawTextWithSelection(GuiGraphicsExtractor context, Minecraft client, String text, int x, int y, int textColor, int scrollOffset) {
 		if (!hasSelection()) {
 			// Keine Selektion - zeichne normal
-			context.drawText(client.textRenderer, text, x, y, textColor, true);
+			context.text(client.font, text, x, y, textColor, true);
 			return;
 		}
 		
@@ -429,35 +446,35 @@ public class SearchBarUtility {
 		
 		if (visibleSelectionStart >= text.length() || visibleSelectionEnd <= 0) {
 			// Selektion ist nicht sichtbar - zeichne normal
-			context.drawText(client.textRenderer, text, x, y, textColor, true);
+			context.text(client.font, text, x, y, textColor, true);
 			return;
 		}
 		
 		// ZUERST: Zeichne den weißen Hintergrund für die Selektion (80% Deckkraft)
 		if (visibleSelectionEnd > visibleSelectionStart) {
 			String selectedText = text.substring(visibleSelectionStart, visibleSelectionEnd);
-			int selectionX = x + client.textRenderer.getWidth(text.substring(0, visibleSelectionStart));
-			int selectionWidth = client.textRenderer.getWidth(selectedText);
+			int selectionX = x + client.font.width(text.substring(0, visibleSelectionStart));
+			int selectionWidth = client.font.width(selectedText);
 			
 			// Weißer Hintergrund mit 80% Deckkraft
 			context.fill(selectionX, y - 1, selectionX + selectionWidth, y + 9, 0xCCFFFFFF); // 0xCC = 80% Deckkraft
 		}
 		
 		// DANN: Zeichne den gesamten Text normal darüber
-		context.drawText(client.textRenderer, text, x, y, textColor, true);
+		context.text(client.font, text, x, y, textColor, true);
 		
 		// ZULETZT: Zeichne den selektierten Text in einer anderen Farbe über dem normalen Text
 		if (visibleSelectionEnd > visibleSelectionStart) {
 			String selectedText = text.substring(visibleSelectionStart, visibleSelectionEnd);
-			int selectionX = x + client.textRenderer.getWidth(text.substring(0, visibleSelectionStart));
+			int selectionX = x + client.font.width(text.substring(0, visibleSelectionStart));
 			
 			// Dunkelblauer Text für besseren Kontrast auf dem weißen Hintergrund
-			context.drawText(client.textRenderer, selectedText, selectionX, y, 0x000080, false); // Dunkelblau für besseren Kontrast
+			context.text(client.font, selectedText, selectionX, y, 0x000080, false); // Dunkelblau für besseren Kontrast
 		}
 	}
 	
 	// Hilfsmethode für Text-Scrolling
-	private static String getVisibleText(String text, int scrollOffset, int availableWidth, net.minecraft.client.font.TextRenderer textRenderer) {
+	private static String getVisibleText(String text, int scrollOffset, int availableWidth, net.minecraft.client.gui.Font textRenderer) {
 		if (scrollOffset <= 0) {
 			// Kein Scrolling nötig
 			return text;
@@ -468,7 +485,7 @@ public class SearchBarUtility {
 		int currentWidth = 0;
 		
 		for (int i = 0; i < text.length(); i++) {
-			int charWidth = textRenderer.getWidth(String.valueOf(text.charAt(i)));
+			int charWidth = textRenderer.width(String.valueOf(text.charAt(i)));
 			if (currentWidth + charWidth > scrollOffset) {
 				charIndex = i;
 				break;
@@ -480,7 +497,7 @@ public class SearchBarUtility {
 		String visibleText = text.substring(charIndex);
 		
 		// Kürze den Text, wenn er immer noch zu lang ist
-		while (textRenderer.getWidth(visibleText) > availableWidth && visibleText.length() > 1) {
+		while (textRenderer.width(visibleText) > availableWidth && visibleText.length() > 1) {
 			visibleText = visibleText.substring(0, visibleText.length() - 1);
 		}
 		
@@ -553,7 +570,7 @@ public class SearchBarUtility {
 		}
 	}
 	
-	private static boolean isCardsStatuesMenu(HandledScreen<?> screen) {
+	private static boolean isCardsStatuesMenu(AbstractContainerScreen<?> screen) {
 		String cleanTitle = screen.getTitle().getString().replaceAll("§[0-9a-fk-or]", "");
 		return ZeichenUtility.isCardsMenuTitle(cleanTitle) || ZeichenUtility.isStatuesMenuTitle(cleanTitle);
 	}
@@ -568,17 +585,17 @@ public class SearchBarUtility {
 	}
 	
 	private static String getItemSearchableText(ItemStack itemStack) {
-		StringBuilder text = new StringBuilder(itemStack.getName().getString());
-		var loreComponent = itemStack.get(DataComponentTypes.LORE);
+		StringBuilder text = new StringBuilder(itemStack.getHoverName().getString());
+		var loreComponent = itemStack.get(DataComponents.LORE);
 		if (loreComponent != null) {
-			for (Text loreLine : loreComponent.lines()) {
+			for (Component loreLine : loreComponent.lines()) {
 				text.append(' ').append(extractTextWithColors(loreLine));
 			}
 		}
 		return text.toString();
 	}
 	
-	private static java.util.List<Integer> extractFloorNumbersFromItem(ItemStack itemStack, HandledScreen<?> screen) {
+	private static java.util.List<Integer> extractFloorNumbersFromItem(ItemStack itemStack, AbstractContainerScreen<?> screen) {
 		java.util.List<Integer> floors = new java.util.ArrayList<>();
 		String searchableText = getItemSearchableText(itemStack);
 		
@@ -620,7 +637,7 @@ public class SearchBarUtility {
 				.replaceAll("[\\u3400-\\u4DBF]", "")
 				.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 			Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(
-				cleanBlueprintName, itemStack.getName());
+				cleanBlueprintName, itemStack.getHoverName());
 			if (floorNumber != null) {
 				addFloorIfAbsent(floors, floorNumber);
 			}
@@ -635,7 +652,7 @@ public class SearchBarUtility {
 		}
 	}
 	
-	private static boolean itemMatchesFloorSearch(ItemStack itemStack, FloorSearchQuery query, HandledScreen<?> screen) {
+	private static boolean itemMatchesFloorSearch(ItemStack itemStack, FloorSearchQuery query, AbstractContainerScreen<?> screen) {
 		java.util.List<Integer> itemFloors = extractFloorNumbersFromItem(itemStack, screen);
 		if (itemFloors.isEmpty()) {
 			return false;
@@ -679,8 +696,8 @@ public class SearchBarUtility {
 			return;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.currentScreen == null || !(client.currentScreen instanceof HandledScreen<?> handledScreen)) {
+		Minecraft client = Minecraft.getInstance();
+		if (client.screen == null || !(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
 			matchingSlots.clear();
 			restoreAllHiddenSlots(getActiveSearchScreen());
 			return;
@@ -714,9 +731,9 @@ public class SearchBarUtility {
 		int[] slotsToSearch = getSlotsForMenu(handledScreen);
 		
 		for (int slot : slotsToSearch) {
-			if (slot < handledScreen.getScreenHandler().slots.size()) {
-				Slot slotObj = handledScreen.getScreenHandler().slots.get(slot);
-				ItemStack itemStack = resolveItemForMatching(slot, slotObj.getStack());
+			if (slot < handledScreen.getMenu().slots.size()) {
+				Slot slotObj = handledScreen.getMenu().slots.get(slot);
+				ItemStack itemStack = resolveItemForMatching(slot, slotObj.getItem());
 				
 				if (!itemStack.isEmpty()) {
 					boolean matches = false;
@@ -734,7 +751,7 @@ public class SearchBarUtility {
 						if (floorQuery.isFloorSearch) {
 							matches = itemMatchesFloorSearch(itemStack, floorQuery, handledScreen);
 						} else {
-							String itemName = itemStack.getName().getString();
+							String itemName = itemStack.getHoverName().getString();
 							String itemNameLower = itemName.toLowerCase();
 							
 							// Ohne @ nur im Item-Namen suchen; Tooltips/Lore nur bei @-Suche
@@ -762,7 +779,7 @@ public class SearchBarUtility {
 								
 								if (!matches) {
 									Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(
-										cleanBlueprintName, itemStack.getName());
+										cleanBlueprintName, itemStack.getHoverName());
 									if (floorNumber != null) {
 										String floorStr = floorNumber.toString();
 										if (floorStr.contains(searchExact) || floorStr.toLowerCase().contains(searchLower)) {
@@ -784,12 +801,12 @@ public class SearchBarUtility {
 		applySearchDisplay(handledScreen);
 	}
 	
-	private static HandledScreen<?> getActiveSearchScreen() {
+	private static AbstractContainerScreen<?> getActiveSearchScreen() {
 		if (lastSearchScreen != null) {
 			return lastSearchScreen;
 		}
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 			return handledScreen;
 		}
 		return null;
@@ -806,7 +823,7 @@ public class SearchBarUtility {
 		return currentStack;
 	}
 	
-	private static void updateSearchDisplayMode(HandledScreen<?> screen) {
+	private static void updateSearchDisplayMode(AbstractContainerScreen<?> screen) {
 		ItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().searchBarItemDisplayMode;
 		if (displayMode == lastSearchDisplayMode) {
 			return;
@@ -819,7 +836,7 @@ public class SearchBarUtility {
 		}
 	}
 	
-	private static void applySearchDisplay(HandledScreen<?> screen) {
+	private static void applySearchDisplay(AbstractContainerScreen<?> screen) {
 		if (screen == null) {
 			return;
 		}
@@ -834,11 +851,11 @@ public class SearchBarUtility {
 		
 		int[] slotsToSearch = getSlotsForMenu(screen);
 		for (int slotIndex : slotsToSearch) {
-			if (slotIndex >= screen.getScreenHandler().slots.size()) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
 				continue;
 			}
 			
-			ItemStack currentStack = screen.getScreenHandler().slots.get(slotIndex).getStack();
+			ItemStack currentStack = screen.getMenu().slots.get(slotIndex).getItem();
 			ItemStack itemForMatch = resolveItemForMatching(slotIndex, currentStack);
 			
 			if (itemForMatch.isEmpty()) {
@@ -858,40 +875,39 @@ public class SearchBarUtility {
 		}
 	}
 	
-	private static void hideNonMatchingSlot(HandledScreen<?> screen, int slotIndex, ItemStack originalItem) {
-		if (!hiddenOriginalItems.containsKey(slotIndex)) {
-			hiddenOriginalItems.put(slotIndex, originalItem.copy());
-		}
+	private static void hideNonMatchingSlot(AbstractContainerScreen<?> screen, int slotIndex, ItemStack originalItem) {
+		ItemStack storedOriginal = originalItem.copy();
+		hiddenOriginalItems.put(slotIndex, storedOriginal);
 		
-		Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+		Slot slot = screen.getMenu().slots.get(slotIndex);
 		ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
-		blackConcrete.set(DataComponentTypes.LORE, originalItem.get(DataComponentTypes.LORE));
+		blackConcrete.set(DataComponents.LORE, storedOriginal.get(DataComponents.LORE));
 		
-		Text displayName = originalItem.getName();
+		Component displayName = storedOriginal.getHoverName();
 		if (!displayName.getString().contains("[Ausgeblendet]")) {
-			blackConcrete.set(DataComponentTypes.CUSTOM_NAME, displayName.copy().append(Text.literal(" §7[Ausgeblendet]")));
+			blackConcrete.set(DataComponents.CUSTOM_NAME, displayName.copy().append(Component.literal(" §7[Ausgeblendet]")));
 		} else {
-			blackConcrete.set(DataComponentTypes.CUSTOM_NAME, displayName.copy());
+			blackConcrete.set(DataComponents.CUSTOM_NAME, displayName.copy());
 		}
 		
-		slot.setStack(blackConcrete);
+		slot.setByPlayer(blackConcrete);
 		hiddenSlots.add(slotIndex);
 	}
 	
-	private static void restoreHiddenSlot(HandledScreen<?> screen, int slotIndex) {
-		if (!hiddenSlots.contains(slotIndex) || slotIndex >= screen.getScreenHandler().slots.size()) {
+	private static void restoreHiddenSlot(AbstractContainerScreen<?> screen, int slotIndex) {
+		if (!hiddenSlots.contains(slotIndex) || slotIndex >= screen.getMenu().slots.size()) {
 			return;
 		}
 		
-		Slot slot = screen.getScreenHandler().slots.get(slotIndex);
-		ItemStack currentItem = slot.getStack();
+		Slot slot = screen.getMenu().slots.get(slotIndex);
+		ItemStack currentItem = slot.getItem();
 		if (currentItem.getItem() == Items.BLACK_CONCRETE && hiddenOriginalItems.containsKey(slotIndex)) {
-			slot.setStack(hiddenOriginalItems.get(slotIndex).copy());
+			slot.setByPlayer(hiddenOriginalItems.get(slotIndex).copy());
 		}
 		hiddenSlots.remove(slotIndex);
 	}
 	
-	private static void restoreAllHiddenSlots(HandledScreen<?> screen) {
+	private static void restoreAllHiddenSlots(AbstractContainerScreen<?> screen) {
 		if (screen == null) {
 			hiddenSlots.clear();
 			hiddenOriginalItems.clear();
@@ -899,7 +915,7 @@ public class SearchBarUtility {
 		}
 		
 		for (int slotIndex : new HashSet<>(hiddenSlots)) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
+			if (slotIndex < screen.getMenu().slots.size()) {
 				restoreHiddenSlot(screen, slotIndex);
 			}
 		}
@@ -1042,10 +1058,10 @@ public class SearchBarUtility {
 	private static boolean searchWithComparison(ItemStack itemStack, ComparisonOperator comparison) {
 		try {
 			// Suche in Lore-Komponente nach dem Attribut
-			var loreComponent = itemStack.get(DataComponentTypes.LORE);
+			var loreComponent = itemStack.get(DataComponents.LORE);
 			if (loreComponent != null) {
-				List<Text> lore = loreComponent.lines();
-				for (Text loreText : lore) {
+				List<Component> lore = loreComponent.lines();
+				for (Component loreText : lore) {
 					String loreString = extractTextWithColors(loreText);
 					String loreLower = loreString.toLowerCase();
 					
@@ -1069,7 +1085,7 @@ public class SearchBarUtility {
 			}
 			
 			// Suche auch im Item-Namen
-			String itemName = itemStack.getName().getString();
+			String itemName = itemStack.getHoverName().getString();
 			String itemNameLower = itemName.toLowerCase();
 			if (itemNameLower.contains(comparison.attribute.toLowerCase())) {
 				double extractedValue = extractNumericValue(itemName);
@@ -1112,12 +1128,12 @@ public class SearchBarUtility {
 	
 	private static boolean searchInItemTooltips(ItemStack itemStack, String searchExact, String searchLower) {
 		try {
-			String itemName = itemStack.getName().getString();
+			String itemName = itemStack.getHoverName().getString();
 			
 			FloorSearchQuery floorQuery = FloorSearchQuery.parse(searchExact);
 			if (floorQuery.isFloorSearch) {
-				MinecraftClient client = MinecraftClient.getInstance();
-				if (client != null && client.currentScreen instanceof HandledScreen<?> handledScreen) {
+				Minecraft client = Minecraft.getInstance();
+				if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
 					return itemMatchesFloorSearch(itemStack, floorQuery, handledScreen);
 				}
 				return false;
@@ -1127,10 +1143,10 @@ public class SearchBarUtility {
 			// (Item-Name-Suche wird übersprungen)
 			
 			// Suche in Lore-Komponente
-			var loreComponent = itemStack.get(DataComponentTypes.LORE);
+			var loreComponent = itemStack.get(DataComponents.LORE);
 			if (loreComponent != null) {
-				List<Text> lore = loreComponent.lines();
-				for (Text loreText : lore) {
+				List<Component> lore = loreComponent.lines();
+				for (Component loreText : lore) {
 					String loreString = extractTextWithColors(loreText);
 					String loreLower = loreString.toLowerCase();
 					
@@ -1190,7 +1206,7 @@ public class SearchBarUtility {
 					}
 				}
 				
-				Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getName());
+				Integer floorNumber = net.felix.utilities.Overall.InformationenUtility.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getHoverName());
 				if (floorNumber != null) {
 					String floorStr = String.valueOf(floorNumber);
 					String ebeneText1 = "e" + floorStr;
@@ -1205,7 +1221,7 @@ public class SearchBarUtility {
 			
 		} catch (Exception e) {
 			// Fallback: Nur Item-Name durchsuchen
-			String itemName = itemStack.getName().getString();
+			String itemName = itemStack.getHoverName().getString();
 			String itemNameLower = itemName.toLowerCase();
 			return itemName.contains(searchExact) || itemNameLower.contains(searchLower);
 		}
@@ -1213,7 +1229,7 @@ public class SearchBarUtility {
 		return false;
 	}
 	
-	private static String extractTextWithColors(Text text) {
+	private static String extractTextWithColors(Component text) {
 		if (text == null) return "";
 		
 		StringBuilder result = new StringBuilder();
@@ -1221,21 +1237,21 @@ public class SearchBarUtility {
 		return result.toString();
 	}
 	
-	private static void extractTextColor(Text text, StringBuilder result) {
+	private static void extractTextColor(Component text, StringBuilder result) {
 		if (text == null) return;
 		
 		// Füge den Text hinzu
 		result.append(text.getString());
 		
 		// Verarbeite Kinder-Texts
-		for (Text sibling : text.getSiblings()) {
+		for (Component sibling : text.getSiblings()) {
 			extractTextColor(sibling, result);
 		}
 	}
 	
 	private static String extractCustomName(ItemStack itemStack) {
 		try {
-			Text customName = itemStack.get(DataComponentTypes.CUSTOM_NAME);
+			Component customName = itemStack.get(DataComponents.CUSTOM_NAME);
 			if (customName != null) {
 				return extractTextWithColors(customName);
 			}
@@ -1365,32 +1381,32 @@ public class SearchBarUtility {
 	/**
 	 * Rendert Text mit Auswahl-Highlighting
 	 */
-	private static void renderTextWithSelection(DrawContext context, MinecraftClient client, String text, int x, int y, int textColor) {
+	private static void renderTextWithSelection(GuiGraphicsExtractor context, Minecraft client, String text, int x, int y, int textColor) {
 		int start = Math.min(selectionStart, selectionEnd);
 		int end = Math.max(selectionStart, selectionEnd);
 		
 		// Zeichne Text vor der Auswahl
 		if (start > 0) {
 			String beforeSelection = text.substring(0, start);
-			context.drawText(client.textRenderer, beforeSelection, x, y, textColor, true);
+			context.text(client.font, beforeSelection, x, y, textColor, true);
 		}
 		
 		// Berechne Position für die Auswahl
-		int selectionX = x + client.textRenderer.getWidth(text.substring(0, start));
+		int selectionX = x + client.font.width(text.substring(0, start));
 		String selectedText = text.substring(start, end);
-		int selectionWidth = client.textRenderer.getWidth(selectedText);
+		int selectionWidth = client.font.width(selectedText);
 		
 		// Zeichne Auswahl-Hintergrund
 		context.fill(selectionX, y - 1, selectionX + selectionWidth, y + 9, 0xFF0078D4); // Blauer Auswahl-Hintergrund
 		
 		// Zeichne ausgewählten Text (weiß auf blau)
-		context.drawText(client.textRenderer, selectedText, selectionX, y, 0xFFFFFFFF, true);
+		context.text(client.font, selectedText, selectionX, y, 0xFFFFFFFF, true);
 		
 		// Zeichne Text nach der Auswahl
 		if (end < text.length()) {
 			String afterSelection = text.substring(end);
 			int afterX = selectionX + selectionWidth;
-			context.drawText(client.textRenderer, afterSelection, afterX, y, textColor, true);
+			context.text(client.font, afterSelection, afterX, y, textColor, true);
 		}
 	}
 	
@@ -1466,10 +1482,10 @@ public class SearchBarUtility {
 		
 		// Hilfe-Screen Schließen-Button prüfen
 		if (helpScreenOpen) {
-			MinecraftClient client = MinecraftClient.getInstance();
+			Minecraft client = Minecraft.getInstance();
 			if (client != null) {
-				int screenWidth = client.getWindow().getScaledWidth();
-				int screenHeight = client.getWindow().getScaledHeight();
+				int screenWidth = client.getWindow().getGuiScaledWidth();
+				int screenHeight = client.getWindow().getGuiScaledHeight();
 				int boxWidth = Math.min(350, screenWidth - 40);
 				int boxHeight = Math.min(400, screenHeight - 40);
 				int boxX = (screenWidth - boxWidth) / 2;
@@ -1502,10 +1518,10 @@ public class SearchBarUtility {
 				clearSelection(); // Auswahl löschen beim Klick
 				
 				// Cursor-Position basierend auf Mausklick berechnen
-				MinecraftClient client = MinecraftClient.getInstance();
+				Minecraft client = Minecraft.getInstance();
 				if (client != null) {
 					int clickX = (int) (mouseX - searchBarX - 5); // 5px Padding
-					cursorPosition = calculateCursorPosition(clickX, searchText, client.textRenderer);
+					cursorPosition = calculateCursorPosition(clickX, searchText, client.font);
 				} else {
 					cursorPosition = searchText.length();
 				}
@@ -1545,7 +1561,7 @@ public class SearchBarUtility {
 			return false;
 		}
 		
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			return false;
 		}
@@ -1573,14 +1589,14 @@ public class SearchBarUtility {
 					if (hasSelection()) {
 						// Kopiere markierten Text
 						String selectedText = searchText.substring(Math.min(selectionStart, selectionEnd), Math.max(selectionStart, selectionEnd));
-						client.keyboard.setClipboard(selectedText);
+						client.keyboardHandler.setClipboard(selectedText);
 					} else if (!searchText.isEmpty()) {
 						// Kopiere gesamten Text wenn nichts markiert ist
-						client.keyboard.setClipboard(searchText);
+						client.keyboardHandler.setClipboard(searchText);
 					}
 					return true;
 				case 86: // Strg+V - Einfügen
-					String clipboardText = client.keyboard.getClipboard();
+					String clipboardText = client.keyboardHandler.getClipboard();
 					if (clipboardText != null && !clipboardText.isEmpty()) {
 						if (hasSelection()) {
 							// Ersetze markierten Text
@@ -1893,7 +1909,7 @@ public class SearchBarUtility {
 	/**
 	 * Zeichnet den Hilfe-Button
 	 */
-	private static void drawHelpButton(DrawContext context, MinecraftClient client) {
+	private static void drawHelpButton(GuiGraphicsExtractor context, Minecraft client) {
 		// Button-Hintergrund
 		context.fill(helpButtonX, helpButtonY, helpButtonX + helpButtonSize, helpButtonY + helpButtonSize, 0x80000000);
 		
@@ -1904,8 +1920,8 @@ public class SearchBarUtility {
 		context.fill(helpButtonX + helpButtonSize - 1, helpButtonY, helpButtonX + helpButtonSize, helpButtonY + helpButtonSize, 0xFFFFFFFF);
 		
 		// Fragezeichen-Zeichen
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			"?",
 			helpButtonX + 5,
 			helpButtonY + 3,
@@ -1917,9 +1933,9 @@ public class SearchBarUtility {
 	/**
 	 * Zeichnet den Hilfe-Screen
 	 */
-	private static void drawHelpScreen(DrawContext context, MinecraftClient client) {
-		int screenWidth = client.getWindow().getScaledWidth();
-		int screenHeight = client.getWindow().getScaledHeight();
+	private static void drawHelpScreen(GuiGraphicsExtractor context, Minecraft client) {
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int screenHeight = client.getWindow().getGuiScaledHeight();
 		
 		// Hintergrund-Overlay
 		context.fill(0, 0, screenWidth, screenHeight, 0x80000000);
@@ -1940,8 +1956,8 @@ public class SearchBarUtility {
 		context.fill(boxX + boxWidth - 1, boxY, boxX + boxWidth, boxY + boxHeight, 0xFFFFFFFF);
 		
 		// Titel
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			"Suchleiste Hilfe",
 			boxX + 10,
 			boxY + 10,
@@ -1977,8 +1993,8 @@ public class SearchBarUtility {
 		
 		// Zeichne alle Zeilen
 		for (String line : helpText) {
-			context.drawText(
-				client.textRenderer,
+			context.text(
+				client.font,
 				line,
 				boxX + 10,
 				textY,
@@ -1992,7 +2008,7 @@ public class SearchBarUtility {
 	/**
 	 * Zeichnet den Symbol-Button (Apple-Icon)
 	 */
-	private static void drawSymbolButton(DrawContext context, MinecraftClient client) {
+	private static void drawSymbolButton(GuiGraphicsExtractor context, Minecraft client) {
 		// Button-Hintergrund (gelb wenn gehovered oder Menü offen)
 		int bgColor = (isSymbolButtonHovered || isSymbolMenuOpen) ? 0x80FFFF00 : 0x80000000;
 		context.fill(symbolButtonX, symbolButtonY, symbolButtonX + symbolButtonSize, symbolButtonY + symbolButtonSize, bgColor);
@@ -2011,8 +2027,8 @@ public class SearchBarUtility {
 			int iconY = symbolButtonY + (symbolButtonSize - iconSize) / 2;
 			
 			// Verwende drawTexture mit RenderPipeline
-			context.drawTexture(
-				net.minecraft.client.gl.RenderPipelines.GUI_TEXTURED,
+			context.blit(
+				net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
 				APPLE_ICON_TEXTURE,
 				iconX, iconY,
 				0.0f, 0.0f,
@@ -2022,12 +2038,12 @@ public class SearchBarUtility {
 		} catch (Exception e) {
 			// Fallback: Zeige "★" als Text wenn Textur nicht geladen werden kann
 			String starSymbol = "★";
-			int starTextWidth = client.textRenderer.getWidth(starSymbol);
-			int starTextHeight = client.textRenderer.fontHeight;
+			int starTextWidth = client.font.width(starSymbol);
+			int starTextHeight = client.font.lineHeight;
 			int starX = symbolButtonX + (symbolButtonSize - starTextWidth) / 2;
 			int starY = symbolButtonY + (symbolButtonSize - starTextHeight) / 2;
-			context.drawText(
-				client.textRenderer,
+			context.text(
+				client.font,
 				starSymbol,
 				starX,
 				starY,
@@ -2040,7 +2056,7 @@ public class SearchBarUtility {
 	/**
 	 * Zeichnet das Symbol-Menü (erscheint beim Hovern über den Stern-Button)
 	 */
-	private static void drawSymbolMenu(DrawContext context, MinecraftClient client) {
+	private static void drawSymbolMenu(GuiGraphicsExtractor context, Minecraft client) {
 		int menuX = symbolButtonX + symbolButtonSize; // Rechts neben dem Button
 		int menuY = symbolButtonY; // Gleiche Y-Position wie Button
 		int menuButtonWidth = 20;
@@ -2060,8 +2076,8 @@ public class SearchBarUtility {
 		// @-Button (links)
 		int atButtonX = menuX + 1;
 		context.fill(atButtonX, menuY + 1, atButtonX + menuButtonWidth, menuY + menuButtonHeight - 1, 0x80404040);
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			"@",
 			atButtonX + 7,
 			menuY + 4,
@@ -2076,8 +2092,8 @@ public class SearchBarUtility {
 		// <-Button (mitte)
 		int lessButtonX = menuX + menuButtonWidth + 1;
 		context.fill(lessButtonX, menuY + 1, lessButtonX + menuButtonWidth, menuY + menuButtonHeight - 1, 0x80404040);
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			"<",
 			lessButtonX + 7,
 			menuY + 4,
@@ -2092,8 +2108,8 @@ public class SearchBarUtility {
 		// >-Button (rechts)
 		int greaterButtonX = menuX + (menuButtonWidth + 1) * 2;
 		context.fill(greaterButtonX, menuY + 1, greaterButtonX + menuButtonWidth, menuY + menuButtonHeight - 1, 0x80404040);
-		context.drawText(
-			client.textRenderer,
+		context.text(
+			client.font,
 			">",
 			greaterButtonX + 7,
 			menuY + 4,
@@ -2136,7 +2152,7 @@ public class SearchBarUtility {
 	/**
 	 * Berechnet die Cursor-Position basierend auf der Mausklick-Position
 	 */
-	private static int calculateCursorPosition(int clickX, String text, net.minecraft.client.font.TextRenderer textRenderer) {
+	private static int calculateCursorPosition(int clickX, String text, net.minecraft.client.gui.Font textRenderer) {
 		if (text.isEmpty()) {
 			return 0;
 		}
@@ -2146,7 +2162,7 @@ public class SearchBarUtility {
 		int bestDistance = Integer.MAX_VALUE;
 		
 		for (int i = 0; i <= text.length(); i++) {
-			int textWidth = textRenderer.getWidth(text.substring(0, i));
+			int textWidth = textRenderer.width(text.substring(0, i));
 			int distance = Math.abs(clickX - textWidth);
 			
 			if (distance < bestDistance) {
@@ -2161,7 +2177,7 @@ public class SearchBarUtility {
 	/**
 	 * Rendert Rahmen oder Hintergrund um Items die mit dem Suchfilter übereinstimmen
 	 */
-	public static void renderSearchFrames(DrawContext context, HandledScreen<?> screen, int screenX, int screenY) {
+	public static void renderSearchFrames(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int screenX, int screenY) {
 		if (!isSearchBarVisible || searchText.isEmpty() || matchingSlots.isEmpty()) {
 			return;
 		}
@@ -2175,8 +2191,8 @@ public class SearchBarUtility {
 		
 		// Zeichne Rahmen oder Hintergrund um die passenden Items
 		for (Integer slotIndex : matchingSlots) {
-			if (slotIndex < screen.getScreenHandler().slots.size()) {
-				Slot slot = screen.getScreenHandler().slots.get(slotIndex);
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
 				
 				// Berechne die absolute Position auf dem Bildschirm
 				int slotX = screenX + slot.x;
