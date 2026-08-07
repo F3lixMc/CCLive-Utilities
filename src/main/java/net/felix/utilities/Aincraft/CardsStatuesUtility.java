@@ -22,11 +22,15 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 public class CardsStatuesUtility {
 	
@@ -389,33 +393,44 @@ public class CardsStatuesUtility {
 	}
 	
 	/**
-	 * Extrahiert rekursiv allen Text aus einem Text-Objekt (inklusive Siblings und verschachtelte Strukturen)
+	 * Extrahiert rekursiv allen Text aus einem Text-Objekt inkl. Hex-/Legacy-Farben.
+	 * Newlines bleiben erhalten; Farben werden als {@code §#RRGGBB} kodiert.
 	 */
 	private static String extractAllTextFromComponent(Component text) {
 		if (text == null) {
 			return "";
 		}
-		
+
 		StringBuilder result = new StringBuilder();
-		
-		// Füge den Haupttext hinzu (mit Formatierungscodes)
-		String mainText = text.getString();
-		if (mainText != null && !mainText.isEmpty()) {
-			result.append(mainText);
-		}
-		
-		// Rekursiv alle Siblings durchgehen
-		for (Component sibling : text.getSiblings()) {
-			String siblingText = extractAllTextFromComponent(sibling);
-			if (!siblingText.isEmpty()) {
-				// Füge Newline hinzu, wenn nötig
-				if (result.length() > 0) {
-					result.append("\n");
-				}
-				result.append(siblingText);
+		text.visit((style, string) -> {
+			if (string == null || string.isEmpty()) {
+				return Optional.empty();
 			}
-		}
-		
+
+			int start = 0;
+			while (start <= string.length()) {
+				int nl = string.indexOf('\n', start);
+				boolean hasNewline = nl >= 0;
+				String part = hasNewline ? string.substring(start, nl) : string.substring(start);
+
+				if (!part.isEmpty()) {
+					TextColor color = style.getColor();
+					if (color != null) {
+						result.append(String.format(Locale.ROOT, "§#%06X", color.getValue() & 0xFFFFFF));
+					}
+					result.append(part);
+				}
+
+				if (hasNewline) {
+					result.append('\n');
+					start = nl + 1;
+				} else {
+					break;
+				}
+			}
+			return Optional.empty();
+		}, Style.EMPTY);
+
 		return result.toString();
 	}
 	
@@ -469,10 +484,13 @@ public class CardsStatuesUtility {
 		String[] lines = hoverContent.split("\n");
 		
 		for (String line : lines) {
-			String trimmed = line.trim();
+			String trimmed = stripPixelSpacers(line).trim();
 			if (!trimmed.isEmpty()) {
 				// Entferne Formatierungscodes für Vergleich (um Duplikate zu erkennen)
-				String cleanForComparison = trimmed.replaceAll("§[0-9a-fk-or]", "").trim();
+				String cleanForComparison = stripFormatting(trimmed).trim();
+				if (cleanForComparison.isEmpty()) {
+					continue;
+				}
 				// Füge nur hinzu, wenn wir diese Zeile noch nicht gesehen haben
 				if (!seenLines.contains(cleanForComparison)) {
 					seenLines.add(cleanForComparison);
@@ -481,13 +499,13 @@ public class CardsStatuesUtility {
 			}
 		}
 		
-		cardData.setHoverLines(hoverLines);
+		cardData.setHoverLines(mergeCardStarAndDiamondLines(hoverLines));
 		
 		// Extrahiere Daten aus den geparsten Linien
 		if (!hoverLines.isEmpty()) {
 			// Entferne Formatierungscodes aus dem Namen
 			String rawName = hoverLines.get(0);
-			String cleanName = rawName.replaceAll("§[0-9a-fk-or]", "").trim();
+			String cleanName = stripFormatting(rawName).trim();
 			// Entferne "[Karte]" aus dem Namen
 			cleanName = cleanName.replaceAll("\\[Karte\\]", "").trim();
 			cardData.setName(cleanName);
@@ -507,11 +525,11 @@ public class CardsStatuesUtility {
 			
 			// Nächste Stufe (für Anzeige, nicht für Level-Tracking)
 			if (line.contains("Nächste Stufe:")) {
-				String nextLevel = line.replaceAll("[^0-9]", "").trim();
+				String nextLevel = stripFormatting(line).replaceAll("[^0-9]", "").trim();
 				if (!nextLevel.isEmpty()) {
 					cardData.setNextLevel(nextLevel);
 				}
-			} else if (line.startsWith("+") && !line.contains("Stufe")) {
+			} else if (stripFormatting(line).startsWith("+") && !line.contains("Stufe")) {
 				cardData.setEffect(line);
 			}
 		}
@@ -537,10 +555,13 @@ public class CardsStatuesUtility {
 		String[] lines = hoverContent.split("\n");
 		
 		for (String line : lines) {
-			String trimmed = line.trim();
+			String trimmed = stripPixelSpacers(line).trim();
 			if (!trimmed.isEmpty()) {
 				// Entferne Formatierungscodes für Vergleich (um Duplikate zu erkennen)
-				String cleanForComparison = trimmed.replaceAll("§[0-9a-fk-or]", "").trim();
+				String cleanForComparison = stripFormatting(trimmed).trim();
+				if (cleanForComparison.isEmpty()) {
+					continue;
+				}
 				// Füge nur hinzu, wenn wir diese Zeile noch nicht gesehen haben
 				if (!seenLines.contains(cleanForComparison)) {
 					seenLines.add(cleanForComparison);
@@ -555,7 +576,7 @@ public class CardsStatuesUtility {
 		if (!hoverLines.isEmpty()) {
 			// Entferne Formatierungscodes aus dem Namen
 			String rawName = hoverLines.get(0);
-			String cleanName = rawName.replaceAll("§[0-9a-fk-or]", "").trim();
+			String cleanName = stripFormatting(rawName).trim();
 			// Entferne "[Statue]" aus dem Namen
 			cleanName = cleanName.replaceAll("\\[Statue\\]", "").trim();
 			statueData.setName(cleanName);
@@ -565,7 +586,7 @@ public class CardsStatuesUtility {
 			// Statuen-Level: Suche nach "Stufe" (mit oder ohne Doppelpunkt, z.B. "Stufe 12" oder "Stufe: 12")
 			if (line.contains("Stufe") && !line.contains("Nächste")) {
 				// Entferne Formatierungscodes für bessere Suche
-				String cleanLine = line.replaceAll("§[0-9a-fk-or]", "");
+				String cleanLine = stripFormatting(line);
 				// Suche nach "Stufe" gefolgt von einer Zahl
 				java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("Stufe[\\s:]*?(\\d+)");
 				java.util.regex.Matcher matcher = pattern.matcher(cleanLine);
@@ -584,11 +605,11 @@ public class CardsStatuesUtility {
 			
 			// Nächste Stufe (für Anzeige, nicht für Level-Tracking)
 			if (line.contains("Nächste Stufe:")) {
-				String nextLevel = line.replaceAll("[^0-9]", "").trim();
+				String nextLevel = stripFormatting(line).replaceAll("[^0-9]", "").trim();
 				if (!nextLevel.isEmpty()) {
 					statueData.setNextLevel(nextLevel);
 				}
-			} else if (line.startsWith("+") && !line.contains("Stufe")) {
+			} else if (stripFormatting(line).startsWith("+") && !line.contains("Stufe")) {
 				statueData.setEffect(line);
 			}
 		}
@@ -631,6 +652,249 @@ public class CardsStatuesUtility {
 		}
 		// Begrenze auf maximal 5 (sollte nicht passieren, aber sicherheitshalber)
 		return Math.min(count, 5);
+	}
+
+	/**
+	 * Packt Rauten (♦) aus dem Hover in dieselbe Zeile wie die Sterne (⭐),
+	 * mit genau 3 Leerzeichen dazwischen und behält die Hover-Farben:
+	 * {@code §#6E627D⭐⭐⭐   §#FFB600♦}
+	 */
+	private static List<String> mergeCardStarAndDiamondLines(List<String> hoverLines) {
+		if (hoverLines == null || hoverLines.isEmpty()) {
+			return hoverLines;
+		}
+
+		List<String> merged = new ArrayList<>();
+		SymbolRun pendingDiamonds = null;
+
+		for (String line : hoverLines) {
+			SymbolRun stars = extractSymbolRun(line, '⭐', "§#6E627D");
+			SymbolRun diamonds = extractSymbolRun(line, '♦', "§#FFB600");
+			boolean symbolOnlyLine = isOnlyStarsAndOrDiamonds(line);
+
+			if (symbolOnlyLine && diamonds.count() > 0 && stars.count() == 0) {
+				int starIdx = findLastLineContaining(merged, '⭐');
+				if (starIdx >= 0) {
+					merged.set(starIdx, buildStarDiamondLine(extractSymbolRun(merged.get(starIdx), '⭐', "§#6E627D"), diamonds));
+				} else {
+					pendingDiamonds = diamonds;
+				}
+				continue;
+			}
+
+			if (symbolOnlyLine && stars.count() > 0 && diamonds.count() == 0) {
+				SymbolRun diamondRun = pendingDiamonds;
+				pendingDiamonds = null;
+				if (diamondRun != null && diamondRun.count() > 0) {
+					merged.add(buildStarDiamondLine(stars, diamondRun));
+				} else {
+					merged.add(buildStarDiamondLine(stars, null));
+				}
+				continue;
+			}
+
+			if (symbolOnlyLine && stars.count() > 0 && diamonds.count() > 0) {
+				pendingDiamonds = null;
+				merged.add(buildStarDiamondLine(stars, diamonds));
+				continue;
+			}
+
+			if (pendingDiamonds != null) {
+				int starIdx = findLastLineContaining(merged, '⭐');
+				if (starIdx >= 0) {
+					merged.set(starIdx, buildStarDiamondLine(extractSymbolRun(merged.get(starIdx), '⭐', "§#6E627D"), pendingDiamonds));
+				} else {
+					merged.add(pendingDiamonds.toFormatted());
+				}
+				pendingDiamonds = null;
+			}
+
+			merged.add(line);
+		}
+
+		if (pendingDiamonds != null) {
+			int starIdx = findLastLineContaining(merged, '⭐');
+			if (starIdx >= 0) {
+				merged.set(starIdx, buildStarDiamondLine(extractSymbolRun(merged.get(starIdx), '⭐', "§#6E627D"), pendingDiamonds));
+			} else {
+				merged.add(pendingDiamonds.toFormatted());
+			}
+		}
+
+		return merged;
+	}
+
+	private static String stripFormatting(String text) {
+		if (text == null) {
+			return "";
+		}
+		return text
+				.replaceAll("§#[0-9a-fA-F]{6}", "")
+				.replaceAll("§[0-9a-fk-or]", "");
+	}
+
+	private static String stripPixelSpacers(String text) {
+		if (text == null || text.isEmpty()) {
+			return "";
+		}
+		// Pixel-Spacer liegen im CJK Extension-A-Bereich (u. a. 㔛㔙㔘㔖)
+		return text.replaceAll("[\\u3400-\\u4DBF]", "");
+	}
+
+	private static boolean isOnlyStarsAndOrDiamonds(String line) {
+		String clean = stripFormatting(line).trim();
+		if (clean.isEmpty()) {
+			return false;
+		}
+		for (int i = 0; i < clean.length(); i++) {
+			char c = clean.charAt(i);
+			if (c != '⭐' && c != '♦' && !Character.isWhitespace(c)) {
+				return false;
+			}
+		}
+		return clean.indexOf('⭐') >= 0 || clean.indexOf('♦') >= 0;
+	}
+
+	private static int findLastLineContaining(List<String> lines, char symbol) {
+		for (int i = lines.size() - 1; i >= 0; i--) {
+			if (lines.get(i).indexOf(symbol) >= 0) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private static SymbolRun extractSymbolRun(String line, char symbol, String defaultColorCode) {
+		if (line == null || line.isEmpty()) {
+			return SymbolRun.empty();
+		}
+
+		String lastColor = "";
+		String runColor = "";
+		StringBuilder symbols = new StringBuilder();
+
+		for (int i = 0; i < line.length(); ) {
+			char c = line.charAt(i);
+			if (c == '§' && i + 1 < line.length()) {
+				if (line.charAt(i + 1) == '#' && i + 7 < line.length()) {
+					lastColor = line.substring(i, i + 8);
+					i += 8;
+					continue;
+				}
+				lastColor = line.substring(i, i + 2);
+				i += 2;
+				continue;
+			}
+			if (c == symbol) {
+				if (symbols.length() == 0) {
+					runColor = lastColor;
+				}
+				symbols.append(c);
+			}
+			i++;
+		}
+
+		if (symbols.length() == 0) {
+			return SymbolRun.empty();
+		}
+		if (runColor.isEmpty()) {
+			runColor = defaultColorCode != null ? defaultColorCode : "";
+		}
+		return new SymbolRun(runColor, symbols.toString());
+	}
+
+	private static String buildStarDiamondLine(SymbolRun stars, SymbolRun diamonds) {
+		StringBuilder out = new StringBuilder();
+		if (stars != null && stars.count() > 0) {
+			out.append(stars.toFormatted());
+		}
+		if (diamonds != null && diamonds.count() > 0) {
+			if (out.length() > 0) {
+				out.append("   ");
+			}
+			out.append(diamonds.toFormatted());
+		}
+		return out.toString();
+	}
+
+	private static final class SymbolRun {
+		private final String colorCode;
+		private final String symbols;
+
+		private SymbolRun(String colorCode, String symbols) {
+			this.colorCode = colorCode != null ? colorCode : "";
+			this.symbols = symbols != null ? symbols : "";
+		}
+
+		private static SymbolRun empty() {
+			return new SymbolRun("", "");
+		}
+
+		private int count() {
+			return symbols.length();
+		}
+
+		private String toFormatted() {
+			return colorCode + symbols;
+		}
+	}
+
+	/**
+	 * Wandelt Zeilen mit {@code §#RRGGBB} / Legacy-{@code §}-Codes in ein farbiges Text um.
+	 */
+	private static Component parseFormattedLine(String line) {
+		MutableComponent root = Component.empty();
+		if (line == null || line.isEmpty()) {
+			return root;
+		}
+
+		Style current = Style.EMPTY;
+		StringBuilder buffer = new StringBuilder();
+
+		for (int i = 0; i < line.length(); ) {
+			char c = line.charAt(i);
+			if (c == '§' && i + 1 < line.length()) {
+				flushFormattedBuffer(root, buffer, current);
+				if (line.charAt(i + 1) == '#' && i + 7 < line.length()) {
+					String hex = line.substring(i + 2, i + 8);
+					try {
+						int rgb = Integer.parseInt(hex, 16);
+						current = Style.EMPTY.withColor(rgb);
+						i += 8;
+						continue;
+					} catch (NumberFormatException ignored) {
+						// Fall through to legacy / literal handling
+					}
+				}
+
+				ChatFormatting formatting = ChatFormatting.getByCode(line.charAt(i + 1));
+				if (formatting != null) {
+					if (formatting == ChatFormatting.RESET) {
+						current = Style.EMPTY;
+					} else if (formatting.isColor()) {
+						current = Style.EMPTY.withColor(formatting);
+					} else {
+						current = current.applyFormat(formatting);
+					}
+					i += 2;
+					continue;
+				}
+			}
+
+			buffer.append(c);
+			i++;
+		}
+
+		flushFormattedBuffer(root, buffer, current);
+		return root;
+	}
+
+	private static void flushFormattedBuffer(MutableComponent root, StringBuilder buffer, Style style) {
+		if (buffer.length() == 0) {
+			return;
+		}
+		root.append(Component.literal(buffer.toString()).setStyle(style));
+		buffer.setLength(0);
 	}
 	
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
@@ -724,18 +988,16 @@ public class CardsStatuesUtility {
 		int lineCount = 0;
 		for (int i = 0; i < card.getHoverLines().size(); i++) {
 			String line = card.getHoverLines().get(i);
+			String cleanLine = stripFormatting(stripPixelSpacers(line)).trim();
 			
-			// Überspringe "Statistik", leere Zeilen und Zeilen mit unsichtbaren chinesischen Zeichen
-			if (line.contains("Statistik") || 
-				line.trim().isEmpty() || 
-				ZeichenUtility.containsPixelSpacer(line)) {
+			// Überspringe "Statistik", leere Zeilen und reine Pixel-Spacer-Zeilen
+			if (line.contains("Statistik") || cleanLine.isEmpty()) {
 				continue;
 			}
 			
 			// Überspringe auch die Zeile vor "Statistik" (leere Zeile), aber NICHT "Nächste Stufe"
 			if (i < card.getHoverLines().size() - 1 && card.getHoverLines().get(i + 1).contains("Statistik")) {
 				// Überspringe nur, wenn es keine "Nächste Stufe" Zeile ist
-				String cleanLine = line.replaceAll("§[0-9a-fk-or]", "").trim();
 				if (!cleanLine.contains("Nächste Stufe")) {
 					continue;
 				}
@@ -752,8 +1014,8 @@ public class CardsStatuesUtility {
 			matrices.scale(textScale, textScale); // Skaliere nur den Text
 			matrices.translate(-1, -textY); // Verschiebe zurück
 			
-			// Erstelle Text-Objekt mit Farbcodes
-			Component textComponent = Component.literal(line);
+			// Erstelle Text-Objekt mit übernommenen Hover-Farben (§#RRGGBB)
+			Component textComponent = parseFormattedLine(line);
 			
 			// Rendere den Text mit den ursprünglichen Farben
 			context.text(
@@ -803,18 +1065,16 @@ public class CardsStatuesUtility {
 		int lineCount = 0;
 		for (int i = 0; i < statue.getHoverLines().size(); i++) {
 			String line = statue.getHoverLines().get(i);
+			String cleanLine = stripFormatting(stripPixelSpacers(line)).trim();
 			
-			// Überspringe "Statistik", leere Zeilen und Zeilen mit unsichtbaren chinesischen Zeichen
-			if (line.contains("Statistik" ) || 
-				line.trim().isEmpty() || 
-				ZeichenUtility.containsPixelSpacer(line)) {
+			// Überspringe "Statistik", leere Zeilen und reine Pixel-Spacer-Zeilen
+			if (line.contains("Statistik") || cleanLine.isEmpty()) {
 				continue;
 			}
 			
 			// Überspringe auch die Zeile vor "Statistik" (leere Zeile), aber NICHT "Nächste Stufe"
-			if (i < statue.getHoverLines().size() - 1 && statue.getHoverLines().get(i + 1).contains("Statistik" )) {
+			if (i < statue.getHoverLines().size() - 1 && statue.getHoverLines().get(i + 1).contains("Statistik")) {
 				// Überspringe nur, wenn es keine "Nächste Stufe" Zeile ist
-				String cleanLine = line.replaceAll("§[0-9a-fk-or]", "").trim();
 				if (!cleanLine.contains("Nächste Stufe")) {
 					continue;
 				}
@@ -831,8 +1091,8 @@ public class CardsStatuesUtility {
 			matrices.scale(textScale, textScale); // Skaliere nur den Text
 			matrices.translate(-1, -textY); // Verschiebe zurück
 			
-			// Erstelle Text-Objekt mit Farbcodes
-			Component textComponent = Component.literal(line);
+			// Erstelle Text-Objekt mit übernommenen Hover-Farben (§#RRGGBB)
+			Component textComponent = parseFormattedLine(line);
 			
 			// Rendere den Text mit den ursprünglichen Farben
 			context.text(

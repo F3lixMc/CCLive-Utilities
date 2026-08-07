@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 
@@ -278,7 +279,9 @@ public class CardsDraggableOverlay implements DraggableOverlay {
         textY = -1 + (lineCount * 12);
         context.text(
             client.font,
-            "Stufe: 5",
+            Component.literal("⭐⭐⭐").setStyle(Style.EMPTY.withColor(0x6E627D))
+                .append(Component.literal("   "))
+                .append(Component.literal("♦").setStyle(Style.EMPTY.withColor(0xFFB600))),
             1, textY, // Same as CardsStatuesUtility line 523
             0xFFFFFFFF,
             true
