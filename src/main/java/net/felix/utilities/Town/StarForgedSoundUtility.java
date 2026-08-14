@@ -72,6 +72,18 @@ public class StarForgedSoundUtility {
 		client.execute(StarForgedSoundUtility::playStarForgedSound);
 	}
 
+	/**
+	 * Spielt den Sternengeschmiedet-Sound manuell ab (z.B. via /cclive sternen_sound_test).
+	 * Ignoriert die Ein/Aus-Einstellung, damit der Sound zum Testen hörbar bleibt.
+	 */
+	public static void playTestSound() {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			return;
+		}
+		client.execute(StarForgedSoundUtility::playStarForgedSound);
+	}
+
 	private static void playStarForgedSound() {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {

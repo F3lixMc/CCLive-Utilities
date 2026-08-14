@@ -20,6 +20,7 @@ import net.felix.chat.ChatManager;
 import net.felix.utilities.Other.ItemDisplayDebugUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Town.StarForgedSoundUtility;
 
 import java.util.concurrent.CompletableFuture;
 import com.google.gson.JsonObject;
@@ -112,6 +113,10 @@ public class CCLiveCommands {
                 .then(literal("reset")
                     .executes(CCLiveCommands::resetMaterialsResources)))
             
+            // Sternengeschmiedet Sound Test
+            .then(literal("sternen_sound_test")
+                .executes(CCLiveCommands::testStarForgedSound))
+            
             // Debug Commands
             .then(literal("debug")
                 .then(literal("coin_collector")
@@ -200,6 +205,23 @@ public class CCLiveCommands {
             return 1;
         } catch (Exception e) {
             context.getSource().sendError(Component.literal("§cFehler beim Zurücksetzen: " + e.getMessage()));
+            return 0;
+        }
+    }
+
+    // =================== STERNENGESCHMIEDET SOUND ===================
+
+    private static int testStarForgedSound(CommandContext<FabricClientCommandSource> context) {
+        try {
+            boolean enabled = CCLiveUtilitiesConfig.HANDLER.instance().starForgedSoundEnabled;
+            StarForgedSoundUtility.playTestSound();
+            context.getSource().sendFeedback(Component.literal(
+                    "§aSternengeschmiedet-Sound abgespielt"
+                            + (enabled ? " §7(Einstellung: §aAN§7)" : " §7(Einstellung: §cAUS§7 – Test spielt trotzdem)"))
+            );
+            return 1;
+        } catch (Exception e) {
+            context.getSource().sendError(Component.literal("§cFehler beim Abspielen des Sounds: " + e.getMessage()));
             return 0;
         }
     }
@@ -480,6 +502,9 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7/chat <cclive/default> §f- Chat-Modus wechseln"));
         context.getSource().sendFeedback(Component.literal("§7/cclive chat toggle <default/cclive> §f- Chat-Sichtbarkeit togglen"));
         context.getSource().sendFeedback(Component.literal("§7@cclive <nachricht> §f- Direkt in CCLive Chat schreiben"));
+        context.getSource().sendFeedback(Component.literal(""));
+        context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive sternen_sound_test §f- Sternengeschmiedet-Sound testen"));
         context.getSource().sendFeedback(Component.literal(""));
         
         // Debug Commands nur anzeigen wenn Debug aktiviert ist

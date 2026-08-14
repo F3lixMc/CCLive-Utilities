@@ -441,8 +441,16 @@ public class PlayerHoverStatsUtility {
         if (message == null || playerName == null || playerName.isEmpty()) {
             return message;
         }
+        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled) {
+            return message;
+        }
         
         try {
+            // Icon-Marker bereits vorhanden → nichts ändern
+            if (message.getString() != null && message.getString().indexOf(ICON_MARKER) >= 0) {
+                return message;
+            }
+
             List<Component> siblings = message.getSiblings();
             if (siblings == null || siblings.isEmpty()) {
                 return message;
@@ -455,57 +463,45 @@ public class PlayerHoverStatsUtility {
                 
                 // Prüfe ob current den Spielernamen enthält
                 if (currentText != null && currentText.trim().equals(playerName)) {
-                    // Suche nach ">>" in nachfolgenden Siblings (ignoriere Leerzeichen)
+                    // Suche nach ">>" in nachfolgenden Siblings (Leerzeichen dazwischen sind ok)
                     for (int j = i + 1; j < siblings.size(); j++) {
                         Component checkNext = siblings.get(j);
                         String checkNextText = checkNext.getString();
                         
-                        // Prüfe ob checkNext ">>" enthält (ignoriere Leerzeichen dazwischen)
                         boolean isArrow = checkNextText != null && (checkNextText.contains(">>") || checkNextText.trim().equals(">>"));
                         boolean isSpace = checkNextText != null && checkNextText.trim().isEmpty() && checkNextText.contains(" ");
                         
                         if (isArrow || (isSpace && j + 1 < siblings.size() && siblings.get(j + 1).getString() != null && siblings.get(j + 1).getString().contains(">>"))) {
-                            // Prüfe ob bereits ein Leerzeichen nach dem Namen vorhanden ist
-                            boolean hasSpace = false;
-                            if (j > i + 1) {
-                                // Prüfe ob zwischen Name und ">>" bereits ein Leerzeichen ist
-                                for (int k = i + 1; k < j; k++) {
-                                    String betweenText = siblings.get(k).getString();
-                                    if (betweenText != null && (betweenText.trim().isEmpty() || betweenText.equals(" "))) {
-                                        hasSpace = true;
-                                        break;
-                                    }
+                            // Index des ">>"-Siblings (bei Space+Arrow ist Arrow bei j+1)
+                            int arrowIndex = isArrow ? j : j + 1;
+
+                            // Bereits Icon zwischen Name und >>?
+                            for (int k = i + 1; k < arrowIndex; k++) {
+                                String between = siblings.get(k).getString();
+                                if (between != null && between.indexOf(ICON_MARKER) >= 0) {
+                                    return message;
                                 }
                             }
-                            
-                            if (hasSpace) {
-                                return message; // Leerzeichen bereits vorhanden
-                            }
-                            
-                            // Erstelle neue Struktur mit Leerzeichen zwischen Name und ">>"
+
                             MutableComponent newMessage = message.copy();
                             newMessage.getSiblings().clear();
                             
-                            // Füge alle Siblings bis current hinzu
+                            // Alles bis inkl. Name
                             for (int k = 0; k <= i; k++) {
                                 newMessage.append(siblings.get(k));
                             }
-                            
-                            // Füge Leerzeichen und unsichtbaren Marker hinzu
-                            // Der Marker wird durch ein Leerzeichen ersetzt, damit er nicht als Rechteck gerendert wird
-                            // Das Icon wird im ChatHudRenderMixin an der Position des Markers gerendert
+
+                            // Space + Icon-Glyphe (Font rendert das Icon an der korrekten Chat-Position)
                             MutableComponent space = Component.literal(" ").setStyle(current.getStyle());
-                            // Füge Marker hinzu mit expliziter Font-Referenz
-                            // Die Font muss explizit gesetzt werden, damit sie verwendet wird
-                            // Farbe explizit auf weiß setzen, damit das Icon nicht die Chat-Farbe erbt
-                            Style iconStyle = current.getStyle().withFont(new net.minecraft.network.chat.FontDescription.Resource(CUSTOM_FONT)).withColor(0xFFFFFF);
-                            MutableComponent iconMarker = Component.literal(String.valueOf(ICON_MARKER))
-                                .setStyle(iconStyle);
+                            Style iconStyle = current.getStyle()
+                                .withFont(new net.minecraft.network.chat.FontDescription.Resource(CUSTOM_FONT))
+                                .withColor(0xFFFFFF);
+                            MutableComponent iconMarker = Component.literal(String.valueOf(ICON_MARKER)).setStyle(iconStyle);
                             newMessage.append(space);
                             newMessage.append(iconMarker);
-                            
-                            // Füge restliche Siblings hinzu
-                            for (int k = i + 1; k < siblings.size(); k++) {
+
+                            // Rest ab ">>" (vorangehende Leerzeichen überspringen, Icon ersetzt den Abstand)
+                            for (int k = arrowIndex; k < siblings.size(); k++) {
                                 newMessage.append(siblings.get(k));
                             }
                             

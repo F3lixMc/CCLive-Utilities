@@ -2023,7 +2023,7 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .option(Option.<Boolean>createBuilder()
-                                        .name(Component.literal("Schmiedezustand-Sound"))
+                                        .name(Component.literal("Sternengeschmiedet-Sound"))
                                         .description(OptionDescription.of(Component.literal(
                                                 "Spielt einen Sound ab, wenn die Chat-Nachricht "
                                                         + "\"[Legend] Schmiedezustand erhalten: [Sternengeschmiedet]\" erscheint")))
