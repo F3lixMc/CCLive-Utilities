@@ -2,7 +2,6 @@ package net.felix.utilities.Aincraft;
 
 import net.felix.utilities.Overall.KeyCategories;
 
-import net.minecraft.resources.Identifier;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

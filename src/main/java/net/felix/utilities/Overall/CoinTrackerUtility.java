@@ -1,7 +1,6 @@
 package net.felix.utilities.Overall;
 
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.KeyCategories;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;

@@ -3566,7 +3566,6 @@ public class ItemViewerUtility {
     }
     
     private static void renderViewerSettingsButton(GuiGraphicsExtractor context, int x, int y) {
-        Minecraft client = Minecraft.getInstance();
 
         isViewerSettingsButtonHovered = lastMouseX >= x && lastMouseX < x + MINIMIZE_BUTTON_SIZE
                 && lastMouseY >= y && lastMouseY < y + MINIMIZE_BUTTON_SIZE;

@@ -790,8 +790,6 @@ public class OverlayEditorScreen extends Screen {
     
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
-        double mouseX = event.x();
-        double mouseY = event.y();
         int button = event.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
@@ -813,8 +811,6 @@ public class OverlayEditorScreen extends Screen {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int keyCode = event.key();
-        int scanCode = event.scancode();
-        int modifiers = event.modifiers();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             onClose();
             return true;

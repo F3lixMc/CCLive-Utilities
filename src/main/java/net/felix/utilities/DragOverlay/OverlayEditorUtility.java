@@ -2,7 +2,6 @@ package net.felix.utilities.DragOverlay;
 
 import net.felix.utilities.Overall.KeyCategories;
 
-import net.minecraft.resources.Identifier;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;

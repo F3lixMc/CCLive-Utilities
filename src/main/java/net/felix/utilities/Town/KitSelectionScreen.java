@@ -894,8 +894,6 @@ public class KitSelectionScreen extends Screen {
 	@Override
 	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int keyCode = event.key();
-        int scanCode = event.scancode();
-        int modifiers = event.modifiers();
 		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
 			onCancel();
 			return true;

@@ -1692,7 +1692,6 @@ public class NpcAlertsDetailScreen extends Screen {
     @Override
     public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
         char chr = (char) event.codepoint();
-        int modifiers = 0;
         if (isEditingWarnPercent) {
             if (chr >= '0' && chr <= '9' && warnPercentInput.length() < 12) {
                 warnPercentInput += chr;
@@ -1706,8 +1705,6 @@ public class NpcAlertsDetailScreen extends Screen {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int keyCode = event.key();
-        int scanCode = event.scancode();
-        int modifiers = event.modifiers();
         if (isEditingWarnPercent) {
             if (keyCode == 259) { // Backspace
                 if (!warnPercentInput.isEmpty()) {

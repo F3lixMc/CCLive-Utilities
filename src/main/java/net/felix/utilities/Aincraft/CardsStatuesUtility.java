@@ -11,7 +11,6 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import org.joml.Matrix3x2fStack;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
-import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.OverlayType;
 import net.minecraft.ChatFormatting;

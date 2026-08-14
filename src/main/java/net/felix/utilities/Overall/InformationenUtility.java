@@ -1,16 +1,13 @@
 package net.felix.utilities.Overall;
 
 import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
-import net.felix.utilities.Overall.KeyCategories;
 
 import net.minecraft.resources.Identifier;
 
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.minecraft.resources.Identifier;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import java.util.Collection;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.ResourceTrackerDisplayMode;
 import net.felix.utilities.Overall.Aspekte.AspectOverlay;
@@ -18,15 +15,12 @@ import net.felix.utilities.Overall.Aspekte.AspectOverlayRenderer;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.scores.PlayerScoreEntry;
-import net.minecraft.world.scores.PlayerTeam;
 import net.fabricmc.loader.api.FabricLoader;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -332,7 +326,6 @@ public class InformationenUtility {
 		return maxWidth + padding * 2;
 	}
 
-	@SuppressWarnings("deprecation")
 	public static void initialize() {
 		if (isInitialized) {
 			return;
