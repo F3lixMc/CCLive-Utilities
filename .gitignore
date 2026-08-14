@@ -38,6 +38,10 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+*.class
+log.txt
+temp_*.java
+temp_*.png
 
 # Server & Database (NICHT ins öffentliche Repo!)
 server.js
