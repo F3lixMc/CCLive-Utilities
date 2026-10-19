@@ -1,5 +1,7 @@
 package net.felix.mixin;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -32,11 +34,11 @@ public class ScreenMixin {
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         int keyCode = event.key();
-        int scanCode = event.scancode();
+        int scanCode = event.keycode();
         int modifiers = event.modifiers();
 
         // Prüfe zuerst ESC für Hilfe-Overlay (höchste Priorität)
-        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             if (ItemViewerUtility.handleHelpOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
@@ -79,7 +81,7 @@ public class ScreenMixin {
         }
         
         // Clipboard-Hover bei Tab oder F1 ausblenden
-        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_TAB || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F1) {
+        if (keyCode == InputConstants.KEY_TAB || keyCode == InputConstants.KEY_F1) {
             net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.hideHover();
         }
         

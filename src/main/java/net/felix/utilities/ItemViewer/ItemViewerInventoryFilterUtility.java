@@ -65,7 +65,7 @@ public class ItemViewerInventoryFilterUtility {
         } else {
             filterActive = true;
             Minecraft client = Minecraft.getInstance();
-            if (client != null && client.screen instanceof AbstractContainerScreen<?> screen && isFilterableInventory(screen)) {
+            if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> screen && isFilterableInventory(screen)) {
                 enterSmithyInventory(screen);
                 activeFilteredScreen = screen;
                 applyFilter(screen);
@@ -82,7 +82,7 @@ public class ItemViewerInventoryFilterUtility {
             return;
         }
         Minecraft client = Minecraft.getInstance();
-        if (client != null && client.screen instanceof AbstractContainerScreen<?> screen && isFilterableInventory(screen)) {
+        if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> screen && isFilterableInventory(screen)) {
             restoreHiddenItems(screen);
             applyFilter(screen);
         }
@@ -100,7 +100,7 @@ public class ItemViewerInventoryFilterUtility {
             return;
         }
 
-        if (!(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
             if (filterActive || !hiddenSlots.isEmpty()) {
                 resetFilter(activeFilteredScreen);
             }
@@ -250,7 +250,7 @@ public class ItemViewerInventoryFilterUtility {
                 continue;
             }
 
-            if (!originalItems.containsKey(slotIndex) && currentStack.getItem() != Items.BLACK_CONCRETE) {
+            if (!originalItems.containsKey(slotIndex) && currentStack.getItem() != Items.CONCRETE.black()) {
                 originalItems.put(slotIndex, currentStack.copy());
             }
 
@@ -259,7 +259,7 @@ public class ItemViewerInventoryFilterUtility {
                 if (hiddenSlots.contains(slotIndex)) {
                     restoreSlot(screen, slotIndex);
                 }
-            } else if (currentStack.getItem() != Items.BLACK_CONCRETE || hiddenSlots.contains(slotIndex)) {
+            } else if (currentStack.getItem() != Items.CONCRETE.black() || hiddenSlots.contains(slotIndex)) {
                 hideSlot(screen, slotIndex, itemForMatch);
             }
         }
@@ -269,7 +269,7 @@ public class ItemViewerInventoryFilterUtility {
         if (currentStack == null || currentStack.isEmpty()) {
             return ItemStack.EMPTY;
         }
-        if (currentStack.getItem() == Items.BLACK_CONCRETE) {
+        if (currentStack.getItem() == Items.CONCRETE.black()) {
             if (hiddenSlots.contains(slotIndex) && originalItems.containsKey(slotIndex)) {
                 return originalItems.get(slotIndex);
             }
@@ -326,7 +326,7 @@ public class ItemViewerInventoryFilterUtility {
         }
 
         Slot slot = screen.getMenu().slots.get(slotIndex);
-        ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
+        ItemStack blackConcrete = new ItemStack(Items.CONCRETE.black());
         blackConcrete.set(DataComponents.CUSTOM_NAME, originalItem.get(DataComponents.CUSTOM_NAME));
         blackConcrete.set(DataComponents.LORE, originalItem.get(DataComponents.LORE));
 
@@ -345,7 +345,7 @@ public class ItemViewerInventoryFilterUtility {
         }
         Slot slot = screen.getMenu().slots.get(slotIndex);
         ItemStack currentItem = slot.getItem();
-        if (currentItem.getItem() == Items.BLACK_CONCRETE && originalItems.containsKey(slotIndex)) {
+        if (currentItem.getItem() == Items.CONCRETE.black() && originalItems.containsKey(slotIndex)) {
             slot.setByPlayer(originalItems.get(slotIndex).copy());
         }
         hiddenSlots.remove(slotIndex);
@@ -368,7 +368,7 @@ public class ItemViewerInventoryFilterUtility {
                 continue;
             }
             ItemStack itemStack = screen.getMenu().slots.get(slotIndex).getItem();
-            if (!itemStack.isEmpty() && itemStack.getItem() != Items.BLACK_CONCRETE) {
+            if (!itemStack.isEmpty() && itemStack.getItem() != Items.CONCRETE.black()) {
                 originalItems.put(slotIndex, itemStack.copy());
             }
         }
@@ -381,7 +381,7 @@ public class ItemViewerInventoryFilterUtility {
                 continue;
             }
             ItemStack currentItem = screen.getMenu().slots.get(slotIndex).getItem();
-            if (currentItem.getItem() == Items.BLACK_CONCRETE) {
+            if (currentItem.getItem() == Items.CONCRETE.black()) {
                 continue;
             }
             if (currentItem.isEmpty()) {
@@ -399,7 +399,7 @@ public class ItemViewerInventoryFilterUtility {
             }
             ItemStack itemStack = screen.getMenu().slots.get(slotIndex).getItem();
             ItemStack comparable = itemStack;
-            if (itemStack.getItem() == Items.BLACK_CONCRETE && hiddenSlots.contains(slotIndex) && originalItems.containsKey(slotIndex)) {
+            if (itemStack.getItem() == Items.CONCRETE.black() && hiddenSlots.contains(slotIndex) && originalItems.containsKey(slotIndex)) {
                 comparable = originalItems.get(slotIndex);
             }
             if (comparable != null && !comparable.isEmpty()) {
@@ -419,7 +419,7 @@ public class ItemViewerInventoryFilterUtility {
                 continue;
             }
             ItemStack currentItem = screen.getMenu().slots.get(slotIndex).getItem();
-            if (currentItem.getItem() == Items.BLACK_CONCRETE && hiddenSlots.contains(slotIndex) && originalItems.containsKey(slotIndex)) {
+            if (currentItem.getItem() == Items.CONCRETE.black() && hiddenSlots.contains(slotIndex) && originalItems.containsKey(slotIndex)) {
                 currentItem = originalItems.get(slotIndex);
             }
             ItemStack lastKnownItem = lastKnownItems.get(slotIndex);

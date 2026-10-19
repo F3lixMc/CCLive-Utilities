@@ -7,14 +7,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.felix.utilities.Overall.ActionBarData;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.network.chat.Component;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardFarmzoneActionBar;
 
 
-@Mixin(Gui.class)
+@Mixin(Hud.class)
 public class ActionBarMixin {
     
     @Shadow

@@ -88,7 +88,7 @@ public final class ClipboardCostPurchaseTracker {
         AbstractContainerScreen<?> handledScreen = null;
         boolean isFishingCraft = pendingIsFishingCraft;
 
-        if (client.screen instanceof AbstractContainerScreen<?> screen) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> screen) {
             handledScreen = screen;
             String title = screen.getTitle() != null ? screen.getTitle().getString() : "";
             isFishingCraft = ZeichenUtility.isFishingComponentsCraftTitle(title);

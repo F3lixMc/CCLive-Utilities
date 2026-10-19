@@ -24,6 +24,11 @@ repositories {
 		name = "Xander Maven"
 		url = "https://maven.isxander.dev/releases"
 	}
+
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+	}
 }
 
 fabricApi {
@@ -38,8 +43,8 @@ dependencies {
 
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	implementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
-	implementation name: 'modmenu-18.0.0-alpha.8'
+	implementation "maven.modrinth:yacl:${project.yacl_version}"
+	implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 	compileOnly "com.mojang:brigadier:1.3.10"
 }
 
@@ -51,15 +56,13 @@ processResources {
 	}
 }
 
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
-}
-
 java {
-	withSourcesJar()
+	// Loom 1.18 and Minecraft 26.3 need a JDK 25 toolchain.
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
 
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	withSourcesJar()
 }
 
 jar {

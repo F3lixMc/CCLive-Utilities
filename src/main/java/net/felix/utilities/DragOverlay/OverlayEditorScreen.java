@@ -1,5 +1,7 @@
 package net.felix.utilities.DragOverlay;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
@@ -32,7 +34,7 @@ import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsMainDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsSeparateDraggableOverlay;
 import net.felix.utilities.Overall.InformationenUtility;
 import org.joml.Matrix3x2fStack;
-import org.lwjgl.glfw.GLFW;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +75,7 @@ public class OverlayEditorScreen extends Screen {
     public OverlayEditorScreen() {
         super(Component.literal("Overlay Editor"));
         // Store the current screen before opening the overlay editor
-        this.previousScreen = Minecraft.getInstance().screen;
+        this.previousScreen = Minecraft.getInstance().gui.screen();
         initializeOverlays();
     }
     
@@ -286,12 +288,12 @@ public class OverlayEditorScreen extends Screen {
      */
     private boolean isInChatScreen() {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Check if the current screen is a ChatScreen
-        return client.screen instanceof net.minecraft.client.gui.screens.ChatScreen;
+        return client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen;
     }
     
     /**
@@ -299,12 +301,12 @@ public class OverlayEditorScreen extends Screen {
      */
     private boolean isInAnyInventoryScreen() {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
-        return client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+        return client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
     }
     
     /**
@@ -312,18 +314,18 @@ public class OverlayEditorScreen extends Screen {
      */
     private boolean isInInventoryScreen() {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
-        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
+        if (!(client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's a blueprint inventory
         net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
         
         String title = handledScreen.getTitle().getString();
         
@@ -348,18 +350,18 @@ public class OverlayEditorScreen extends Screen {
      */
     private boolean isInKitFilterInventory() {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
-        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
+        if (!(client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's a Kit Filter relevant inventory
         net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
         
         String title = handledScreen.getTitle().getString();
         
@@ -400,18 +402,18 @@ public class OverlayEditorScreen extends Screen {
      */
     private boolean isInMKLevelInventory() {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
-        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
+        if (!(client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's the MKLevel inventory
         net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
         
         String title = handledScreen.getTitle().getString();
         
@@ -453,7 +455,7 @@ public class OverlayEditorScreen extends Screen {
             button -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client != null) {
-                    client.setScreen(new net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen(this));
+                    client.gui.setScreen(new net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen(this));
                 }
             }
         ).bounds(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
@@ -641,7 +643,7 @@ public class OverlayEditorScreen extends Screen {
             return true;
         }
         
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             // Check for reset area first (highest priority)
             for (DraggableOverlay overlay : overlays) {
                 if (overlay.isConfigEnabled() && overlay.isResetArea((int) mouseX, (int) mouseY)) {
@@ -692,7 +694,7 @@ public class OverlayEditorScreen extends Screen {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
                 // Check if dragging is still allowed (might have changed dimension or opened inventory)
                 if (!canDragOverlay(draggingOverlay)) {
@@ -791,7 +793,7 @@ public class OverlayEditorScreen extends Screen {
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
         int button = event.button();
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
                 draggingOverlay.savePosition();
                 draggingOverlay = null;
@@ -811,7 +813,7 @@ public class OverlayEditorScreen extends Screen {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int keyCode = event.key();
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }
@@ -833,9 +835,7 @@ public class OverlayEditorScreen extends Screen {
                 return false;
             }
             
-            // Check if left mouse button is still pressed
-            long windowHandle = Minecraft.getInstance().getWindow().handle();
-            boolean leftMousePressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
+            boolean leftMousePressed = Minecraft.getInstance().mouseHandler.isLeftPressed();
             
             if (leftMousePressed) {
                 int currentX = draggingOverlay.getX();
@@ -844,13 +844,13 @@ public class OverlayEditorScreen extends Screen {
                 int newY = currentY;
                 
                 // Move overlay by 1 pixel in the direction of the arrow key
-                if (keyCode == GLFW.GLFW_KEY_LEFT) {
+                if (keyCode == InputConstants.KEY_LEFT) {
                     newX = currentX - 1;
-                } else if (keyCode == GLFW.GLFW_KEY_RIGHT) {
+                } else if (keyCode == InputConstants.KEY_RIGHT) {
                     newX = currentX + 1;
-                } else if (keyCode == GLFW.GLFW_KEY_UP) {
+                } else if (keyCode == InputConstants.KEY_UP) {
                     newY = currentY - 1;
-                } else if (keyCode == GLFW.GLFW_KEY_DOWN) {
+                } else if (keyCode == InputConstants.KEY_DOWN) {
                     newY = currentY + 1;
                 }
                 
@@ -904,7 +904,7 @@ public class OverlayEditorScreen extends Screen {
         // Restore the previous screen instead of closing
         Minecraft client = Minecraft.getInstance();
         if (client != null && previousScreen != null) {
-            client.setScreen(previousScreen);
+            client.gui.setScreen(previousScreen);
         } else {
             super.onClose();
         }
@@ -949,12 +949,12 @@ public class OverlayEditorScreen extends Screen {
      */
     private boolean isInventoryOpen() {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Check if the current screen is an inventory-like screen (AbstractContainerScreen)
-        return client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+        return client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
     }
     
     /**
@@ -1131,7 +1131,7 @@ public class OverlayEditorScreen extends Screen {
      * Behandelt Klicks im Overlay-Settings-Overlay
      */
     private boolean handleOverlaySettingsClick(double mouseX, double mouseY, int button) {
-        if (!overlaySettingsOpen || button != 0) {
+        if (!overlaySettingsOpen || button != InputConstants.MOUSE_BUTTON_LEFT) {
             return false;
         }
         
@@ -1429,7 +1429,7 @@ public class OverlayEditorScreen extends Screen {
      * Behandelt Klicks im Clipboard-Settings-Overlay
      */
     private boolean handleClipboardSettingsClick(double mouseX, double mouseY, int button) {
-        if (!clipboardSettingsOpen || button != 0) {
+        if (!clipboardSettingsOpen || button != InputConstants.MOUSE_BUTTON_LEFT) {
             return false;
         }
         

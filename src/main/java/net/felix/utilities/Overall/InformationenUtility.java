@@ -410,8 +410,8 @@ public class InformationenUtility {
 			boolean isMaterialBagInventory = false;
 			boolean hideFloorNumbersInEssenceMenu = false;
 			String screenTitle = "";
-			if (client.screen != null) {
-				screenTitle = client.screen.getTitle().getString();
+			if (client.gui.screen() != null) {
+				screenTitle = client.gui.screen().getTitle().getString();
 				if (ZeichenUtility.containsMoblexicon(screenTitle)) {
 					isSpecialInventory = true;
 				}
@@ -430,7 +430,7 @@ public class InformationenUtility {
 			if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
 				CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled &&
 				CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay &&
-				client.screen != null &&
+				client.gui.screen() != null &&
 				ZeichenUtility.containsEssenceBagUi(screenTitle)) {
 				addEssenceBagWaveDisplayToTooltip(lines, stack);
 			}
@@ -705,7 +705,7 @@ public class InformationenUtility {
 			if (CCLiveUtilitiesConfig.HANDLER.instance().showModuleInformation) {
 				boolean isModuleUpgradeInventory = false;
 				boolean isEngineerInventory = false;
-				if (client.screen != null) {
+				if (client.gui.screen() != null) {
 					String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
 						.replaceAll("[\\u3400-\\u4DBF]", "");
 					if (cleanScreenTitle.contains("Module [Upgraden]")) {
@@ -745,7 +745,7 @@ public class InformationenUtility {
 		}
 		
 		// Performance-Optimierung: Prüfe Screen früher
-		if (client.screen == null) {
+		if (client.gui.screen() == null) {
 			return;
 		}
 		
@@ -793,7 +793,7 @@ public class InformationenUtility {
 		boolean isInBlueprintInventory = false;
 		
 		// Check if we're in a blueprint inventory
-		String screenTitle = client.screen.getTitle().getString();
+		String screenTitle = client.gui.screen().getTitle().getString();
 		
 		// Remove Minecraft formatting codes and Unicode characters for comparison
 		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
@@ -3379,11 +3379,11 @@ public class InformationenUtility {
 	 * Checks if the hovered item is in one of the license slots
 	 */
 	private static boolean isItemInLicenseSlot(ItemStack stack, Minecraft client) {
-		if (client.screen == null || !(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
+		if (client.gui.screen() == null || !(client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
 			return false;
 		}
 		
-		net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
+		net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
 		net.minecraft.world.inventory.AbstractContainerMenu handler = screen.getMenu();
 		
 		// Check if the hovered item is in one of the license slots
@@ -4073,12 +4073,12 @@ public class InformationenUtility {
 			return;
 		}
 		
-		if (client.screen == null) {
+		if (client.gui.screen() == null) {
 			return;
 		}
 		
 		// Prüfe ob wir in einem Bauplan-Inventar sind (Baupläne [Waffen], Bauplan [Shop], etc.)
-		String screenTitle = client.screen.getTitle().getString();
+		String screenTitle = client.gui.screen().getTitle().getString();
 		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
 											.replaceAll("[\\u3400-\\u4DBF]", "");
 		
@@ -4138,12 +4138,12 @@ public class InformationenUtility {
 			return;
 		}
 		
-		if (client.screen == null) {
+		if (client.gui.screen() == null) {
 			return;
 		}
 		
 		// Check if we're in a blueprint inventory
-		String screenTitle = client.screen.getTitle().getString();
+		String screenTitle = client.gui.screen().getTitle().getString();
 		
 		if (ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle)) {
 			return;
@@ -4250,12 +4250,12 @@ public class InformationenUtility {
 	 * Only works in inventories that contain the cards/statues characters (㭆 or 㭂)
 	 */
 	private static void addFloorNumberToCardsStatuesNames(List<Component> lines, Minecraft client) {
-		if (client == null || client.screen == null) {
+		if (client == null || client.gui.screen() == null) {
 			return;
 		}
 		
 		// Check if we're in a cards/statues inventory
-		String screenTitle = client.screen.getTitle().getString();
+		String screenTitle = client.gui.screen().getTitle().getString();
 		if (screenTitle == null) {
 			return;
 		}
@@ -5383,7 +5383,7 @@ public class InformationenUtility {
 		}
 		
 		// Check if we're in MKLevel inventory
-		if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+		if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
@@ -5533,7 +5533,7 @@ public class InformationenUtility {
 			
 			// Limit scroll offset based on actual entry heights (including spacing)
 			Minecraft client = Minecraft.getInstance();
-			if (client != null && client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+			if (client != null && client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 				try {
 					java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageHeight");
 					bgHeightField.setAccessible(true);
@@ -5666,7 +5666,7 @@ public class InformationenUtility {
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hideGui) {
+		if (client.gui.hud.isHidden()) {
 			return;
 		}
 		
@@ -7205,7 +7205,7 @@ public class InformationenUtility {
 		// Check if we're in the MKLevel inventory - check directly instead of relying on isInMKLevelInventory
 		// This ensures it works even if onClientTick hasn't run yet
 		boolean inMKLevelInventory = false;
-		if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+		if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
@@ -7505,7 +7505,7 @@ public class InformationenUtility {
 		
 		// Double-check that we're still in the MKLevel inventory
 		boolean inMKLevelInventory = false;
-		if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+		if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
@@ -8307,7 +8307,7 @@ public class InformationenUtility {
 		// Register reset hotkey
 		collectionResetKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.collection-reset",
-			InputConstants.Type.KEYSYM,
+			InputConstants.Type.KEYBOARD,
 			InputConstants.UNKNOWN.getValue(), // Unbound by default
 			KeyCategories.of("cclive-utilities", "collection")
 		));
@@ -8385,7 +8385,7 @@ public class InformationenUtility {
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hideGui) {
+		if (client.gui.hud.isHidden()) {
 			return;
 		}
 		

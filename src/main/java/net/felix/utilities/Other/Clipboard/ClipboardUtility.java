@@ -12,7 +12,7 @@ import net.felix.utilities.ItemViewer.BlueprintShopData;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import org.lwjgl.glfw.GLFW;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
@@ -111,7 +111,7 @@ public class ClipboardUtility {
             if (client == null) return;
             
             // Nur rendern wenn kein Screen offen ist (außerhalb von Inventaren)
-            if (client.screen == null) {
+            if (client.gui.screen() == null) {
                 int mouseX = (int) client.mouseHandler.xpos();
                 int mouseY = (int) client.mouseHandler.ypos();
                 float delta = 1.0f; // Delta wird nicht benötigt für statisches Rendering
@@ -126,7 +126,7 @@ public class ClipboardUtility {
         // Für HUD (außerhalb von Screens) müssen wir einen anderen Ansatz verwenden
         // Wir verwenden ClientTickEvents um auf Mausklicks zu reagieren
         net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.screen == null && client.mouseHandler != null) {
+            if (client.gui.screen() == null && client.mouseHandler != null) {
                 // Prüfe ob Maus geklickt wurde (wird in einem Mixin behandelt)
                 // Für jetzt: Button-Clicks werden in AbstractContainerScreenMixin und ScreenMixin behandelt
             }
@@ -140,7 +140,7 @@ public class ClipboardUtility {
             // In Screens: wird über ScreenMixin.handleKeyPress behandelt
             if (toggleClipboardKeyMapping != null && toggleClipboardKeyMapping.consumeClick()) {
                 // Prüfe ob ein Textfeld fokussiert ist (Chat, etc.) - ignoriere dann den Hotkey
-                if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+                if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
                     return; // Ignoriere Hotkey wenn Chat offen ist
                 }
                 if (isTextFieldFocused(client)) {
@@ -176,7 +176,7 @@ public class ClipboardUtility {
         if (client == null) {
             return false;
         }
-        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+        if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
             return false;
         }
         if (isTextFieldFocused(client)) {
@@ -209,20 +209,20 @@ public class ClipboardUtility {
     private static void registerKeyMapping() {
         toggleClipboardKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.toggle-clipboard",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_UNKNOWN, // Kein Standard-Key (unbelegt)
+            InputConstants.Type.KEYBOARD,
+            InputConstants.UNKNOWN.getValue(), // Kein Standard-Key (unbelegt)
             KeyCategories.of("cclive-utilities", "itemviewer")
         ));
         nextPageKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.clipboard.next-page",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_UNKNOWN,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.UNKNOWN.getValue(),
             KeyCategories.of("cclive-utilities", "itemviewer")
         ));
         previousPageKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.clipboard.previous-page",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_UNKNOWN,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.UNKNOWN.getValue(),
             KeyCategories.of("cclive-utilities", "itemviewer")
         ));
     }
@@ -242,7 +242,7 @@ public class ClipboardUtility {
     
     /**
      * Behandelt Key-Press direkt (für Verwendung in Mixins, wenn Screens geöffnet sind)
-     * @param keyCode Der Key-Code (z.B. GLFW.GLFW_KEY_F8)
+     * @param keyCode Der Key-Code (z.B. InputConstants.KEY_F8)
      * @param scanCode Der Scan-Code (für bessere Key-Erkennung)
      * @return true wenn der Key behandelt wurde
      */
@@ -286,12 +286,12 @@ public class ClipboardUtility {
      * Verhindert, dass Hotkeys aktiviert werden, wenn der Spieler tippt
      */
     private static boolean isTextFieldFocused(net.minecraft.client.Minecraft client) {
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Prüfe ob ChatScreen offen ist
-        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+        if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
             return true;
         }
         
@@ -299,9 +299,9 @@ public class ClipboardUtility {
         // Verwende Reflection um auf fokussierte Widgets zuzugreifen
         try {
             // Prüfe ob Screen ein fokussiertes Widget hat
-            java.lang.reflect.Method getFocusedMethod = client.screen.getClass().getMethod("getFocused");
+            java.lang.reflect.Method getFocusedMethod = client.gui.screen().getClass().getMethod("getFocused");
             if (getFocusedMethod != null) {
-                Object focused = getFocusedMethod.invoke(client.screen);
+                Object focused = getFocusedMethod.invoke(client.gui.screen());
                 if (focused instanceof net.minecraft.client.gui.components.EditBox) {
                     net.minecraft.client.gui.components.EditBox textField = (net.minecraft.client.gui.components.EditBox) focused;
                     if (textField.isFocused()) {

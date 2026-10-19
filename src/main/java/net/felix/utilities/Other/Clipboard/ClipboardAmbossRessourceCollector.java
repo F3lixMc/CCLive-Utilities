@@ -54,7 +54,7 @@ public class ClipboardAmbossRessourceCollector {
         }
         
         // Prüfe ob ein Inventar geöffnet ist
-        if (!(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
             // Inventar geschlossen - Cache zurücksetzen
             lastScreenTitle = "";
             lastSlotCount = 0;

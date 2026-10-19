@@ -121,13 +121,13 @@ public class EquipmentDisplayUtility {
 	private static void onClientTick(Minecraft client) {
 		// Check Tab key for overlay visibility
 		checkTabKey();
-		if (client.player == null || client.screen == null) {
+		if (client.player == null || client.gui.screen() == null) {
 			isInEquipmentChest = false;
 			return;
 		}
 
 		// Überprüfe ob wir in einem Kisteninventar sind
-		if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+		if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
 			if (ZeichenUtility.containsEquipmentDisplay(title)) { //Equipment Display
@@ -347,7 +347,7 @@ public class EquipmentDisplayUtility {
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hideGui) {
+		if (client.gui.hud.isHidden()) {
 			return;
 		}
 

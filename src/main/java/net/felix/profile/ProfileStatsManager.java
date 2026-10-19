@@ -147,8 +147,8 @@ public class ProfileStatsManager {
                     new Thread(() -> {
                         try {
                             Thread.sleep(500); // 500ms warten
-                            if (client.screen == screen && client.screen instanceof AbstractContainerScreen) {
-                                scanCardsMenu((AbstractContainerScreen<?>) client.screen, client);
+                            if (client.gui.screen() == screen && client.gui.screen() instanceof AbstractContainerScreen) {
+                                scanCardsMenu((AbstractContainerScreen<?>) client.gui.screen(), client);
                             }
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -159,8 +159,8 @@ public class ProfileStatsManager {
                     new Thread(() -> {
                         try {
                             Thread.sleep(500); // 500ms warten
-                            if (client.screen == screen && client.screen instanceof AbstractContainerScreen) {
-                                scanStatuesMenu((AbstractContainerScreen<?>) client.screen, client);
+                            if (client.gui.screen() == screen && client.gui.screen() instanceof AbstractContainerScreen) {
+                                scanStatuesMenu((AbstractContainerScreen<?>) client.gui.screen(), client);
                             }
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -1148,13 +1148,13 @@ public class ProfileStatsManager {
      * Prüft ob Karten/Statuen-Menü geöffnet ist und ob sich Items geändert haben (Seitenwechsel)
      */
     private void checkCardsStatuesMenuForChanges(Minecraft client) {
-        if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+        if (client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
             lastKnownCardsItems.clear();
             lastKnownStatuesItems.clear();
             return;
         }
         
-        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
         String title = screen.getTitle().getString();
         if (title == null) {
             return;

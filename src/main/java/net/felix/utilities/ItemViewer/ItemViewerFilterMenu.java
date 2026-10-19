@@ -1,6 +1,8 @@
 package net.felix.utilities.ItemViewer;
 
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
+
+
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -599,7 +601,7 @@ public final class ItemViewerFilterMenu {
             return true;
         }
 
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             focusedInputKey = null;
             return true;
         }
@@ -609,7 +611,7 @@ public final class ItemViewerFilterMenu {
         state.cursor = clampCursor(state.cursor, text.length());
 
         if (isCtrlDown(modifiers)) {
-            if (keyCode == GLFW.GLFW_KEY_A) {
+            if (keyCode == InputConstants.KEY_A) {
                 if (!text.isEmpty()) {
                     state.selectionStart = 0;
                     state.selectionEnd = text.length();
@@ -617,7 +619,7 @@ public final class ItemViewerFilterMenu {
                 }
                 return true;
             }
-            if (keyCode == GLFW.GLFW_KEY_C) {
+            if (keyCode == InputConstants.KEY_C) {
                 if (state.hasSelection()) {
                     int min = state.selectionMin();
                     int max = state.selectionMax();
@@ -628,7 +630,7 @@ public final class ItemViewerFilterMenu {
                 }
                 return true;
             }
-            if (keyCode == GLFW.GLFW_KEY_V) {
+            if (keyCode == InputConstants.KEY_V) {
                 Minecraft client = Minecraft.getInstance();
                 if (client != null) {
                     String clipboard = client.keyboardHandler.getClipboard();
@@ -638,7 +640,7 @@ public final class ItemViewerFilterMenu {
                 }
                 return true;
             }
-            if (keyCode == GLFW.GLFW_KEY_X) {
+            if (keyCode == InputConstants.KEY_X) {
                 if (state.hasSelection()) {
                     int min = state.selectionMin();
                     int max = state.selectionMax();
@@ -654,35 +656,35 @@ public final class ItemViewerFilterMenu {
             }
         }
 
-        if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+        if (keyCode == InputConstants.KEY_BACKSPACE) {
             text = deleteBeforeCursor(text, state);
             inputFieldText.put(focusedInputKey, text);
             commitInputFieldChange(focusedInputKey);
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_DELETE) {
+        if (keyCode == InputConstants.KEY_DELETE) {
             text = deleteAfterCursor(text, state);
             inputFieldText.put(focusedInputKey, text);
             commitInputFieldChange(focusedInputKey);
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_LEFT) {
+        if (keyCode == InputConstants.KEY_LEFT) {
             moveCursorHorizontal(text, state, -1, isShiftDown(modifiers));
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_RIGHT) {
+        if (keyCode == InputConstants.KEY_RIGHT) {
             moveCursorHorizontal(text, state, 1, isShiftDown(modifiers));
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_HOME) {
+        if (keyCode == InputConstants.KEY_HOME) {
             moveCursorTo(text, state, 0, isShiftDown(modifiers));
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_END) {
+        if (keyCode == InputConstants.KEY_END) {
             moveCursorTo(text, state, text.length(), isShiftDown(modifiers));
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+        if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
             focusedInputKey = null;
             return true;
         }
@@ -701,8 +703,8 @@ public final class ItemViewerFilterMenu {
                 return true;
             }
             if (isItemScoreAmountField(focusedInputKey)
-                    && (keyCode == GLFW.GLFW_KEY_PERIOD || keyCode == GLFW.GLFW_KEY_COMMA
-                    || keyCode == GLFW.GLFW_KEY_KP_DECIMAL)) {
+                    && (keyCode == InputConstants.KEY_PERIOD || keyCode == InputConstants.KEY_COMMA
+                    || keyCode == InputConstants.KEY_NUMPADCOMMA)) {
                 insertAtCursor(".");
                 return true;
             }
@@ -718,11 +720,11 @@ public final class ItemViewerFilterMenu {
     }
 
     private static boolean isCtrlDown(int modifiers) {
-        return (modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+        return (modifiers & InputConstants.MOD_CONTROL) != 0;
     }
 
     private static boolean isShiftDown(int modifiers) {
-        return (modifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+        return (modifiers & InputConstants.MOD_SHIFT) != 0;
     }
 
     private static int clampCursor(int cursor, int textLength) {
@@ -884,13 +886,13 @@ public final class ItemViewerFilterMenu {
     }
 
     private static boolean isModifierOnlyKey(int keyCode) {
-        return keyCode == GLFW.GLFW_KEY_LEFT_SHIFT
-                || keyCode == GLFW.GLFW_KEY_RIGHT_SHIFT
-                || keyCode == GLFW.GLFW_KEY_LEFT_CONTROL
-                || keyCode == GLFW.GLFW_KEY_RIGHT_CONTROL
-                || keyCode == GLFW.GLFW_KEY_LEFT_ALT
-                || keyCode == GLFW.GLFW_KEY_RIGHT_ALT
-                || keyCode == GLFW.GLFW_KEY_CAPS_LOCK;
+        return keyCode == InputConstants.KEY_LSHIFT
+                || keyCode == InputConstants.KEY_RSHIFT
+                || keyCode == InputConstants.KEY_LCONTROL
+                || keyCode == InputConstants.KEY_RCONTROL
+                || keyCode == InputConstants.KEY_LALT
+                || keyCode == InputConstants.KEY_RALT
+                || keyCode == InputConstants.KEY_CAPSLOCK;
     }
 
     private static RowInputType getInputTypeForKey(String inputKey) {
@@ -905,39 +907,24 @@ public final class ItemViewerFilterMenu {
     }
 
     private static Character resolveDigitKey(int keyCode) {
-        if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-            return (char) ('0' + (keyCode - GLFW.GLFW_KEY_0));
-        }
-        if (keyCode >= GLFW.GLFW_KEY_KP_0 && keyCode <= GLFW.GLFW_KEY_KP_9) {
-            return (char) ('0' + (keyCode - GLFW.GLFW_KEY_KP_0));
-        }
-        return null;
+        return net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
     }
 
     private static String resolveItemTextKey(int keyCode, int modifiers) {
         boolean shift = isShiftDown(modifiers);
-        if (keyCode == GLFW.GLFW_KEY_SPACE) {
+        if (keyCode == InputConstants.KEY_SPACE) {
             return " ";
         }
-        if (keyCode == GLFW.GLFW_KEY_MINUS || keyCode == GLFW.GLFW_KEY_KP_SUBTRACT) {
+        if (keyCode == InputConstants.KEY_MINUS || keyCode == org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_KP_MINUS) {
             return shift ? "_" : "-";
         }
-        if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
-            char letter;
-            if (keyCode == GLFW.GLFW_KEY_Y) {
-                letter = shift ? 'Z' : 'z';
-            } else if (keyCode == GLFW.GLFW_KEY_Z) {
-                letter = shift ? 'Y' : 'y';
-            } else {
-                letter = shift ? (char) keyCode : (char) (keyCode + 32);
-            }
-            return String.valueOf(letter);
+        String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, shift);
+        if (letter != null) {
+            return letter;
         }
-        if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-            return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
-        }
-        if (keyCode >= GLFW.GLFW_KEY_KP_0 && keyCode <= GLFW.GLFW_KEY_KP_9) {
-            return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_KP_0)));
+        Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+        if (digit != null) {
+            return String.valueOf(digit);
         }
         return null;
     }

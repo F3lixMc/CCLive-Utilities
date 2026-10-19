@@ -143,9 +143,9 @@ public class CollectionCollector implements DataCollector {
      */
     private boolean isInCollectionInventory() {
         Minecraft client = Minecraft.getInstance();
-        if (client.screen == null) return false;
+        if (client.gui.screen() == null) return false;
         
-        String screenTitle = client.screen.getTitle().getString();
+        String screenTitle = client.gui.screen().getTitle().getString();
         
         // Prüfe auf Haupt-Collection-Inventare
         if (screenTitle.equals(WOOD_COLLECTION_TITLE) || screenTitle.equals(ORE_COLLECTION_TITLE)) {
@@ -161,9 +161,9 @@ public class CollectionCollector implements DataCollector {
      */
     private boolean isInMainCollectionInventory() {
         Minecraft client = Minecraft.getInstance();
-        if (client.screen == null) return false;
+        if (client.gui.screen() == null) return false;
         
-        String screenTitle = client.screen.getTitle().getString();
+        String screenTitle = client.gui.screen().getTitle().getString();
         return screenTitle.equals(WOOD_COLLECTION_TITLE) || screenTitle.equals(ORE_COLLECTION_TITLE);
     }
     
@@ -172,9 +172,9 @@ public class CollectionCollector implements DataCollector {
      */
     private boolean isInSubCollectionInventory() {
         Minecraft client = Minecraft.getInstance();
-        if (client.screen == null) return false;
+        if (client.gui.screen() == null) return false;
         
-        String screenTitle = client.screen.getTitle().getString();
+        String screenTitle = client.gui.screen().getTitle().getString();
         return screenTitle.endsWith(" Collection");
     }
     
@@ -189,8 +189,8 @@ public class CollectionCollector implements DataCollector {
         }
         
         // Prüfe beide Shift-Tasten (Links und Rechts)
-        boolean leftShift = InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_LSHIFT);
-        boolean rightShift = InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_RSHIFT);
+        boolean leftShift = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT);
+        boolean rightShift = InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
         
         isShiftPressed = leftShift || rightShift;
         
@@ -296,9 +296,9 @@ public class CollectionCollector implements DataCollector {
      */
     private String extractCollectionNameFromScreen() {
         Minecraft client = Minecraft.getInstance();
-        if (client.screen == null) return null;
+        if (client.gui.screen() == null) return null;
         
-        String screenTitle = client.screen.getTitle().getString();
+        String screenTitle = client.gui.screen().getTitle().getString();
         
         // Für Unterinventare: "Mangroven Holz Collection" -> "mangroven holz"
         if (screenTitle.endsWith(" Collection")) {
@@ -709,11 +709,11 @@ public class CollectionCollector implements DataCollector {
      */
     private void scanSubInventoryAutomatically() {
         Minecraft client = Minecraft.getInstance();
-        if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+        if (client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
             return;
         }
         
-        String screenTitle = client.screen.getTitle().getString();
+        String screenTitle = client.gui.screen().getTitle().getString();
         if (!screenTitle.endsWith(" Collection")) {
             return;
         }
@@ -734,7 +734,7 @@ public class CollectionCollector implements DataCollector {
         }
         
         // Scanne alle Items im Inventar
-        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
         if (screen.getMenu() != null) {
             for (Slot slot : screen.getMenu().slots) {
                 ItemStack stack = slot.getItem();

@@ -205,7 +205,7 @@ public class CardsStatuesUtility {
 		// Register toggle hotkey
 		toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.cards-toggle",
-			InputConstants.Type.KEYSYM,
+			InputConstants.Type.KEYBOARD,
 			InputConstants.UNKNOWN.getValue(), // Unbound key
 			KeyCategories.of("cclive-utilities", "cards")
 		));
@@ -630,7 +630,7 @@ public class CardsStatuesUtility {
 		if (style.getColor() != null) {
 			return style.getColor().serialize();
 		}
-		return ChatFormatting.WHITE.getName();
+		return "white";
 	}
 	
 	/**
@@ -870,7 +870,7 @@ public class CardsStatuesUtility {
 				if (formatting != null) {
 					if (formatting == ChatFormatting.RESET) {
 						current = Style.EMPTY;
-					} else if (formatting.isColor()) {
+					} else if (formatting.ordinal() <= ChatFormatting.WHITE.ordinal()) {
 						current = Style.EMPTY.withColor(formatting);
 					} else {
 						current = current.applyFormat(formatting);
@@ -914,7 +914,7 @@ public class CardsStatuesUtility {
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hideGui) {
+		if (client.gui.hud.isHidden()) {
 			return;
 		}
 		

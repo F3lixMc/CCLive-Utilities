@@ -17,7 +17,7 @@ public class MouseScrollMixin {
     private void onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
         // Prüfe zuerst ob ItemViewer das Scroll-Event behandelt
         Minecraft client = Minecraft.getInstance();
-        if (client.screen != null && client.getWindow() != null) {
+        if (client.gui.screen() != null && client.getWindow() != null) {
             // Hole aktuelle Mausposition und skaliere auf Screen-Koordinaten
             int windowWidth = client.getWindow().getScreenWidth();
             int windowHeight = client.getWindow().getScreenHeight();

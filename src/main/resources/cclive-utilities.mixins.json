@@ -23,8 +23,7 @@
 		"HelpOverlayScreenMixin",
 		"InGameHudHelpOverlayMixin",
 		"InGameHudScoreboardMixin",
-		"MouseClickMixin",
-		"YaclTextScaledButtonWidgetMixin"
+		"MouseClickMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

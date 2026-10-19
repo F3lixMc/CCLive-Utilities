@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.felix.CCLiveUtilities;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -36,7 +36,7 @@ public class PlayerNametagRenderer {
                     return;
                 }
                 
-                if (client.font == null || context == null || context.gameRenderer().getMainCamera() == null) {
+                if (client.font == null || context == null || context.gameRenderer().mainCamera() == null) {
                     return;
                 }
 
@@ -44,11 +44,10 @@ public class PlayerNametagRenderer {
                     return;
                 }
 
-                if (client.options.hideGui) {
+                if (client.gui.hud.isHidden()) {
                     return;
                 }
                 
-                boolean renderedAny = false;
                 for (var entity : client.level.entitiesForRendering()) {
                     try {
                         if (!(entity instanceof Player player)) {
@@ -69,14 +68,9 @@ public class PlayerNametagRenderer {
                         }
                         
                         renderNametagIcon(context, player);
-                        renderedAny = true;
                     } catch (Exception e) {
                         continue;
                     }
-                }
-
-                if (renderedAny && context.bufferSource() != null) {
-                    context.bufferSource().endBatch();
                 }
             } catch (Exception e) {
                 // Silently fail
@@ -93,12 +87,12 @@ public class PlayerNametagRenderer {
                 return;
             }
             
-            if (context == null || context.gameRenderer().getMainCamera() == null || context.poseStack() == null || context.bufferSource() == null) {
+            if (context == null || context.gameRenderer().mainCamera() == null || context.poseStack() == null) {
                 return;
             }
 
             float partialTick = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-            Vec3 cameraPos = context.gameRenderer().getMainCamera().position();
+            Vec3 cameraPos = context.gameRenderer().mainCamera().position();
             Vec3 playerPos = player.getPosition(partialTick);
 
             // Vanilla: NAME_TAG-Attachment folgt der Pose (inkl. Sneaken → tiefer)
@@ -142,7 +136,7 @@ public class PlayerNametagRenderer {
             
             try {
                 matrices.translate((float) dx, (float) dy, (float) dz);
-                matrices.mulPose(context.gameRenderer().getMainCamera().rotation());
+                matrices.mulPose(new Matrix4f().rotate(context.gameRenderer().mainCamera().rotation()));
                 float baseScale = EntityRenderer.NAMETAG_SCALE;
                 matrices.scale(baseScale, -baseScale, baseScale);
                 
@@ -160,7 +154,7 @@ public class PlayerNametagRenderer {
                 // Wie Vanilla-Nametag: see-through nur wenn nicht discrete (sneaken)
                 boolean seeThrough = !player.isDiscrete();
                 int lightLevel = 15728880;
-                renderIconTexture(matrices, context.bufferSource(), iconSize, lightLevel, seeThrough);
+                renderIconTexture(context.submitNodeCollector(), matrices, iconSize, lightLevel, seeThrough);
             } finally {
                 matrices.popPose();
             }
@@ -170,8 +164,8 @@ public class PlayerNametagRenderer {
     }
     
     private static void renderIconTexture(
+        SubmitNodeCollector collector,
         PoseStack matrices,
-        MultiBufferSource vertexConsumers,
         float size,
         int light,
         boolean seeThrough
@@ -204,42 +198,43 @@ public class PlayerNametagRenderer {
                 iconToUse = iconIdAlt;
             }
             
-            Matrix4f matrix = matrices.last().pose();
             float halfSize = size / 2.0f;
 
             // Wie NameTagFeatureRenderer: bei Sichtbarkeit durch Wände zuerst see-through, dann normal
             if (seeThrough) {
-                emitIconQuad(vertexConsumers.getBuffer(RenderTypes.textSeeThrough(iconToUse)), matrix, halfSize, light);
+                collector.submitCustomGeometry(matrices, RenderTypes.textSeeThrough(iconToUse), (pose, consumer) ->
+                    emitIconQuad(consumer, pose, halfSize, light));
             }
-            emitIconQuad(vertexConsumers.getBuffer(RenderTypes.text(iconToUse)), matrix, halfSize, light);
+            collector.submitCustomGeometry(matrices, RenderTypes.text(iconToUse), (pose, consumer) ->
+                emitIconQuad(consumer, pose, halfSize, light));
         } catch (Exception e) {
             // Silently fail
         }
     }
 
-    private static void emitIconQuad(VertexConsumer vertexConsumer, Matrix4f matrix, float halfSize, int light) {
-        vertexConsumer.addVertex(matrix, -halfSize, -halfSize, 0.0f)
+    private static void emitIconQuad(VertexConsumer vertexConsumer, PoseStack.Pose pose, float halfSize, int light) {
+        vertexConsumer.addVertex(pose, -halfSize, -halfSize, 0.0f)
             .setColor(255, 255, 255, 255)
             .setUv(0.0f, 0.0f)
             .setOverlay(OverlayTexture.NO_OVERLAY)
             .setLight(light)
             .setNormal(0.0f, 0.0f, 1.0f);
         
-        vertexConsumer.addVertex(matrix, -halfSize, halfSize, 0.0f)
+        vertexConsumer.addVertex(pose, -halfSize, halfSize, 0.0f)
             .setColor(255, 255, 255, 255)
             .setUv(0.0f, 1.0f)
             .setOverlay(OverlayTexture.NO_OVERLAY)
             .setLight(light)
             .setNormal(0.0f, 0.0f, 1.0f);
         
-        vertexConsumer.addVertex(matrix, halfSize, halfSize, 0.0f)
+        vertexConsumer.addVertex(pose, halfSize, halfSize, 0.0f)
             .setColor(255, 255, 255, 255)
             .setUv(1.0f, 1.0f)
             .setOverlay(OverlayTexture.NO_OVERLAY)
             .setLight(light)
             .setNormal(0.0f, 0.0f, 1.0f);
         
-        vertexConsumer.addVertex(matrix, halfSize, -halfSize, 0.0f)
+        vertexConsumer.addVertex(pose, halfSize, -halfSize, 0.0f)
             .setColor(255, 255, 255, 255)
             .setUv(1.0f, 0.0f)
             .setOverlay(OverlayTexture.NO_OVERLAY)

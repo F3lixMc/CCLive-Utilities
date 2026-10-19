@@ -87,14 +87,14 @@ public class MaterialTrackerUtility {
 		// Register toggle hotkey
 		toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.material-toggle",
-			InputConstants.Type.KEYSYM,
+			InputConstants.Type.KEYBOARD,
 			InputConstants.UNKNOWN.getValue(), // Unbound key
 			KeyCategories.of("cclive-utilities", "material")
 		));
 
 		resetRateKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.material-rate-reset",
-			InputConstants.Type.KEYSYM,
+			InputConstants.Type.KEYBOARD,
 			InputConstants.UNKNOWN.getValue(), // Unbound by default
 			KeyCategories.of("cclive-utilities", "material")
 		));
@@ -268,7 +268,7 @@ public class MaterialTrackerUtility {
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hideGui) {
+		if (client.gui.hud.isHidden()) {
 			return;
 		}
 

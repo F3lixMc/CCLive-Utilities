@@ -175,9 +175,9 @@ public class ChatManager {
                 .append(Component.literal(message).setStyle(Style.EMPTY.applyFormat(ChatFormatting.WHITE)));
             
             // Zeige Nachricht im Chat an
-            if (client.gui != null && client.gui.getChat() != null) {
+            if (client.gui != null && client.gui.hud.getChat() != null) {
                 client.execute(() -> {
-                    client.gui.getChat().addClientSystemMessage(chatMessage);
+                    client.gui.hud.getChat().addClientSystemMessage(chatMessage);
                 });
             }
         }

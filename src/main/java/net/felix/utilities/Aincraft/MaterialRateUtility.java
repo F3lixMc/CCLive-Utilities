@@ -202,8 +202,9 @@ public final class MaterialRateUtility {
 
     private static Integer toLegacyFormattingRgb(int rgb) {
         for (ChatFormatting formatting : ChatFormatting.values()) {
-            if (formatting.getColor() != null && (formatting.getColor() & 0xFFFFFF) == rgb) {
-                return formatting.getColor() & 0xFFFFFF;
+            TextColor legacy = TextColor.fromLegacyFormat(formatting);
+            if (legacy != null && (legacy.getValue() & 0xFFFFFF) == rgb) {
+                return legacy.getValue() & 0xFFFFFF;
             }
         }
         return rgb;
@@ -288,8 +289,9 @@ public final class MaterialRateUtility {
                 continue;
             }
             ChatFormatting formatting = ChatFormatting.getByCode(raw.charAt(i + 1));
-            if (formatting != null && formatting.getColor() != null) {
-                lastColor = formatting.getColor() & 0xFFFFFF;
+            TextColor legacy = formatting == null ? null : TextColor.fromLegacyFormat(formatting);
+            if (legacy != null) {
+                lastColor = legacy.getValue() & 0xFFFFFF;
             }
         }
         return lastColor;

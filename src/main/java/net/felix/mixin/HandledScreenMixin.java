@@ -194,7 +194,8 @@ public abstract class HandledScreenMixin {
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int sdlButton = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(sdlButton);
         // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
         // Dies muss vor allen anderen Klicks geprüft werden
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
@@ -223,7 +224,7 @@ public abstract class HandledScreenMixin {
         // Dies wird bereits in handleButtonClick behandelt, aber wir müssen sicherstellen, dass es auch außerhalb von Screens funktioniert
         
         // Handle clicks on Clipboard quantity text field
-        if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, button)) {
+        if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, sdlButton)) {
             cir.setReturnValue(true);
             return;
         }
@@ -296,7 +297,7 @@ public abstract class HandledScreenMixin {
     private void onMouseDragged(MouseButtonEvent event, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
             if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
@@ -315,7 +316,7 @@ public abstract class HandledScreenMixin {
     private void onMouseReleased(MouseButtonEvent event, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
             return;

@@ -121,7 +121,7 @@ public class ItemInfoUtility {
 	private static void registerHotkey() {
 		extractKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.item-info-extract",
-			InputConstants.Type.KEYSYM,
+			InputConstants.Type.KEYBOARD,
 			InputConstants.UNKNOWN.getValue(), // Unbound by default
 			KeyCategories.of("cclive-utilities", "item-info")
 		));
@@ -129,7 +129,7 @@ public class ItemInfoUtility {
 		// Register auto-click hotkey
 		autoClickKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.item-info-auto-click",
-			InputConstants.Type.KEYSYM,
+			InputConstants.Type.KEYBOARD,
 			InputConstants.UNKNOWN.getValue(), // Unbound by default
 			KeyCategories.of("cclive-utilities", "item-info")
 		));
@@ -154,11 +154,11 @@ public class ItemInfoUtility {
 	 * Processes pending clicks from the queue (called every tick)
 	 */
 	private static void processPendingClicks(Minecraft client) {
-		if (pendingClicks.isEmpty() || client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+		if (pendingClicks.isEmpty() || client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
 			return;
 		}
 		
-		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
 		net.minecraft.world.inventory.AbstractContainerMenu handler = screen.getMenu();
 		
 		// Process a few clicks per frame
@@ -243,11 +243,11 @@ public class ItemInfoUtility {
 	 */
 	public static boolean handleAutoClickKeyPress(int keyCode) {
 		Minecraft client = Minecraft.getInstance();
-		if (client == null || client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+		if (client == null || client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
 			return false;
 		}
 		
-		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
 		// Try to get position from mixin via reflection
 		try {
 			java.lang.reflect.Field[] fields = AbstractContainerScreen.class.getDeclaredFields();
@@ -285,12 +285,12 @@ public class ItemInfoUtility {
 	 * @param screenY Y position of the screen (from mixin)
 	 */
 	public static void autoRightClickUnregisteredItems(Minecraft client, int screenX, int screenY) {
-		if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+		if (client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
 			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Kein Inventar geöffnet!"));
 			return;
 		}
 		
-		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
 		
 		// Check if we're in a blueprint shop inventory
 		String title = screen.getTitle().getString();
@@ -342,8 +342,8 @@ public class ItemInfoUtility {
 	 */
 	public static void autoRightClickUnregisteredItems(Minecraft client) {
 		// Try to get screen position from mixin or use default
-		if (client.screen instanceof AbstractContainerScreen) {
-			AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+		if (client.gui.screen() instanceof AbstractContainerScreen) {
+			AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
 			// Try to get position from mixin via reflection as fallback
 			try {
 				java.lang.reflect.Field xField = AbstractContainerScreen.class.getDeclaredField("leftPos");
@@ -388,12 +388,12 @@ public class ItemInfoUtility {
 	}
 	
 	private static void extractItemInfo(Minecraft client) {
-		if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+		if (client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
 			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Kein Inventar geöffnet!"));
 			return;
 		}
 		
-		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+		AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
 		if (!isSupportedInventory(screen)) {
 			client.player.sendSystemMessage(Component.literal("§c[ItemInfo] Nicht in einem unterstützten Inventar (Bauplan [Shop] oder Angel-Komponenten)!"));
 			return;

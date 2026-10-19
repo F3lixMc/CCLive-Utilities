@@ -1,5 +1,7 @@
 package net.felix.utilities.Town;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.minecraft.client.Minecraft;
@@ -11,7 +13,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.glfw.GLFW;
+
 
 /**
  * Screen für die Auswahl eines Kits und seiner Stufe
@@ -88,7 +90,7 @@ public class KitSelectionScreen extends Screen {
 		this.buttonIndex = buttonIndex;
 		
 		// Speichere den aktuellen Screen (Schmied-Inventar) bevor wir den Kit-Auswahl-Screen öffnen
-		this.previousScreen = Minecraft.getInstance().screen;
+		this.previousScreen = Minecraft.getInstance().gui.screen();
 		
 		// Lade die aktuelle Auswahl für diesen Button
 		KitFilterUtility.KitSelection currentSelection = KitFilterUtility.getKitSelection(buttonIndex);
@@ -266,13 +268,13 @@ public class KitSelectionScreen extends Screen {
 		}
 		
 		Minecraft client = Minecraft.getInstance();
-		if (client == null || client.screen == null) {
+		if (client == null || client.gui.screen() == null) {
 			return false;
 		}
 		
 		// Prüfe, ob wir im Shop sind - dann keine Status-Anzeige
-		if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen) {
-			net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
+		if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen) {
+			net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
 			String title = screen.getTitle().getString();
 			String cleanTitle = title.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
 			cleanTitle = cleanTitle.replaceAll("§[0-9a-fk-or]", "");
@@ -734,7 +736,7 @@ public class KitSelectionScreen extends Screen {
 	public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
 		if (button == 0) {
 			int clickedTab = getTabAt(mouseX, mouseY);
 			if (clickedTab == 0) {
@@ -878,9 +880,9 @@ public class KitSelectionScreen extends Screen {
 		}
 		AbstractContainerScreen<?> itemViewerScreen = KitFilterUtility.resolveKitEditorItemViewerBackground(previousScreen);
 		if (existing == null) {
-			client.setScreen(new CustomKitEditorScreen(buttonIndex, this, itemViewerScreen));
+			client.gui.setScreen(new CustomKitEditorScreen(buttonIndex, this, itemViewerScreen));
 		} else {
-			client.setScreen(new CustomKitEditorScreen(buttonIndex, this, itemViewerScreen, existing));
+			client.gui.setScreen(new CustomKitEditorScreen(buttonIndex, this, itemViewerScreen, existing));
 		}
 	}
 	
@@ -894,7 +896,7 @@ public class KitSelectionScreen extends Screen {
 	@Override
 	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int keyCode = event.key();
-		if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			onCancel();
 			return true;
 		}
@@ -908,7 +910,7 @@ public class KitSelectionScreen extends Screen {
 		// Stelle den vorherigen Screen wieder her (Schmied-Inventar)
 		Minecraft client = Minecraft.getInstance();
 		if (client != null && previousScreen != null) {
-			client.setScreen(previousScreen);
+			client.gui.setScreen(previousScreen);
 		} else {
 			super.onClose();
 		}

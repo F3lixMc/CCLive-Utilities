@@ -25,6 +25,31 @@ public class CCLiveUtilitiesConfig {
                     .build())
             .build();
     
+    /**
+     * Löscht die Config-Datei und schreibt sie mit den Standardwerten neu.
+     */
+    public static boolean resetToDefaults() {
+        try {
+            CCLiveUtilitiesConfig fresh = new CCLiveUtilitiesConfig();
+            CCLiveUtilitiesConfig live = HANDLER.instance();
+            for (java.lang.reflect.Field field : CCLiveUtilitiesConfig.class.getDeclaredFields()) {
+                if (!field.isAnnotationPresent(SerialEntry.class)) {
+                    continue;
+                }
+                field.setAccessible(true);
+                field.set(live, field.get(fresh));
+            }
+            java.nio.file.Path configPath = CCLiveUtilities.getConfigDir()
+                    .resolve("cclive-utilities")
+                    .resolve("cclive-utilities.json");
+            java.nio.file.Files.deleteIfExists(configPath);
+            HANDLER.save();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // Migration: Verschiebe alte Config-Datei von config/ nach config/cclive-utilities/
     public static void migrateConfigLocation() {
         try {
@@ -387,10 +412,10 @@ public class CCLiveUtilitiesConfig {
     public Color equipmentDisplayHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
     
     @SerialEntry
-    public int equipmentDisplayArmorX = -134; // X-Position der Rüstungsanzeige (optimiert)
+    public int equipmentDisplayArmorX = 1; // X-Position der Rüstungsanzeige (optimiert)
     
     @SerialEntry
-    public int equipmentDisplayArmorY = 300; // Y-Position der Rüstungsanzeige (Pixel vom unteren Rand, optimiert)
+    public int equipmentDisplayArmorY = 382; // Y-Position der Rüstungsanzeige (Pixel vom unteren Rand, optimiert)
     
     // equipmentDisplayShowBackground wurde durch equipmentDisplayOverlayType ersetzt
     // true = CUSTOM/BLACK, false = NONE
@@ -424,10 +449,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showKillsUtility = true;
     
     @SerialEntry
-    public int killsUtilityX = 570; // X-Position der Kills-Anzeige (Pixel vom rechten Rand, optimiert)
+    public int killsUtilityX = 789; // X-Position der Kills-Anzeige (Pixel vom rechten Rand, optimiert)
     
     @SerialEntry
-    public int killsUtilityY = 100; // Y-Position der Kills-Anzeige (Pixel vom oberen Rand, optimiert)
+    public int killsUtilityY = 116; // Y-Position der Kills-Anzeige (Pixel vom oberen Rand, optimiert)
     
     @SerialEntry
     public Color killsUtilityHeaderColor = new Color(0xFFFFFF00); // Überschriftenfarbe (Gelb)
@@ -458,7 +483,7 @@ public class CCLiveUtilitiesConfig {
     public int coinTrackerX = 734;
 
     @SerialEntry
-    public int coinTrackerY = 285;
+    public int coinTrackerY = 286;
 
     @SerialEntry
     public Color coinTrackerHeaderColor = new Color(0xFFFFFF00);
@@ -553,10 +578,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showMiningOverlay = true; // Bergbau Overlay anzeigen
     
     @SerialEntry
-    public int miningOverlayX = 5; // X-Position des Bergbau Overlays (am linken Bildschirmrand)
+    public int miningOverlayX = 0; // X-Position des Bergbau Overlays (am linken Bildschirmrand)
     
     @SerialEntry
-    public int miningOverlayY = 200; // Y-Position des Bergbau Overlays (mittig am linken Rand)
+    public int miningOverlayY = 109; // Y-Position des Bergbau Overlays (mittig am linken Rand)
     
     @SerialEntry
     public boolean miningOverlayShowBackground = true; // Schwarzer Hintergrund für Bergbau Overlay
@@ -609,10 +634,10 @@ public class CCLiveUtilitiesConfig {
     public boolean hideUncraftableUseAlternativeAnalysis = true; // Alternative Analyse-Methode
     
     @SerialEntry
-    public int hideUncraftableButtonX = -80; // X-Position des Hide Uncraftable Buttons (Offset)
+    public int hideUncraftableButtonX = -195; // X-Position des Hide Uncraftable Buttons (Offset)
     
     @SerialEntry
-    public int hideUncraftableButtonY = 54; // Y-Position des Hide Uncraftable Buttons (Offset)
+    public int hideUncraftableButtonY = 103; // Y-Position des Hide Uncraftable Buttons (Offset)
     
     @SerialEntry
     public float hideUncraftableButtonScale = 1.0f; // Skalierung des Hide Uncraftable Buttons
@@ -624,38 +649,38 @@ public class CCLiveUtilitiesConfig {
     public boolean showHideWrongClassButton = true; // Hide Wrong Class Button anzeigen/ausblenden
     
     @SerialEntry
-    public int hideWrongClassButtonX = -80; // X-Position des Hide Wrong Class Buttons (Offset)
+    public int hideWrongClassButtonX = -195; // X-Position des Hide Wrong Class Buttons (Offset)
     
     @SerialEntry
-    public int hideWrongClassButtonY = 80; // Y-Position des Hide Wrong Class Buttons (Offset)
+    public int hideWrongClassButtonY = 126; // Y-Position des Hide Wrong Class Buttons (Offset)
     
     @SerialEntry
     public float hideWrongClassButtonScale = 1.0f; // Skalierung des Hide Wrong Class Buttons
     
     // Kit Filter Button Positions
     @SerialEntry
-    public int kitFilterButton1X = -100; // X-Position des Kit Filter Button 1 (Offset)
+    public int kitFilterButton1X = -215; // X-Position des Kit Filter Button 1 (Offset)
     
     @SerialEntry
-    public int kitFilterButton1Y = 50; // Y-Position des Kit Filter Button 1 (Offset)
+    public int kitFilterButton1Y = 119; // Y-Position des Kit Filter Button 1 (Offset)
     
     @SerialEntry
     public float kitFilterButton1Scale = 1.0f; // Skalierung des Kit Filter Button 1
     
     @SerialEntry
-    public int kitFilterButton2X = -100; // X-Position des Kit Filter Button 2 (Offset)
+    public int kitFilterButton2X = -215; // X-Position des Kit Filter Button 2 (Offset)
     
     @SerialEntry
-    public int kitFilterButton2Y = 75; // Y-Position des Kit Filter Button 2 (Offset)
+    public int kitFilterButton2Y = 117; // Y-Position des Kit Filter Button 2 (Offset)
     
     @SerialEntry
     public float kitFilterButton2Scale = 1.0f; // Skalierung des Kit Filter Button 2
     
     @SerialEntry
-    public int kitFilterButton3X = -100; // X-Position des Kit Filter Button 3 (Offset)
+    public int kitFilterButton3X = -215; // X-Position des Kit Filter Button 3 (Offset)
     
     @SerialEntry
-    public int kitFilterButton3Y = 100; // Y-Position des Kit Filter Button 3 (Offset)
+    public int kitFilterButton3Y = 115; // Y-Position des Kit Filter Button 3 (Offset)
     
     @SerialEntry
     public float kitFilterButton3Scale = 1.0f; // Skalierung des Kit Filter Button 3
@@ -760,10 +785,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showMaterialTracker = true;
     
     @SerialEntry
-    public int materialTrackerX = 1; // Pixel vom rechten Rand (optimiert)
+    public int materialTrackerX = 0; // Pixel vom rechten Rand (optimiert)
     
     @SerialEntry
-    public int materialTrackerY = 35; // Pixel vom oberen Rand (optimiert)
+    public int materialTrackerY = 43; // Pixel vom oberen Rand (optimiert)
     
     @SerialEntry
     public boolean materialTrackerShowBackground = true; // Schwarzer Hintergrund für Material Tracker (veraltet, wird durch materialTrackerOverlayType ersetzt)
@@ -810,10 +835,10 @@ public class CCLiveUtilitiesConfig {
 
     // Clipboard Settings
     @SerialEntry
-    public boolean clipboardEnabled = true;
+    public boolean clipboardEnabled = false;
     
     @SerialEntry
-    public boolean showClipboard = true;
+    public boolean showClipboard = false;
     
     @SerialEntry
     public int clipboardX = 10; // Pixel vom linken Rand (oben links)
@@ -908,10 +933,10 @@ public class CCLiveUtilitiesConfig {
     public boolean showBossHP = true;
     
     @SerialEntry
-    public int bossHPX = 562; // X-Position der Boss-HP Anzeige (optimiert)
+    public int bossHPX = 854; // X-Position der Boss-HP Anzeige (optimiert)
     
     @SerialEntry
-    public int bossHPY = 201; // Y-Position der Boss-HP Anzeige (optimiert)
+    public int bossHPY = 261; // Y-Position der Boss-HP Anzeige (optimiert)
     
     @SerialEntry
     public Color bossHPTextColor = new Color(0xFFFFFFFF); // Textfarbe (Weiß)
@@ -942,10 +967,10 @@ public class CCLiveUtilitiesConfig {
     public float mkLevelScale = 1.0f; // Skalierung des MKLevel Overlays
     
     @SerialEntry
-    public int mkLevelX = -1; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
+    public int mkLevelX = 135; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
     
     @SerialEntry
-    public int mkLevelY = -1; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
+    public int mkLevelY = 115; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
     
     // Cards/Statues Settings
     @SerialEntry
@@ -965,7 +990,7 @@ public class CCLiveUtilitiesConfig {
     public int cardY = 125; // Y-Position der Karten Anzeige (optimiert)
     
     @SerialEntry
-    public float cardOverlayScale = 1.2f; // Skalierung der Karten-Overlays (0.5f bis 2.0f)
+    public float cardOverlayScale = 1.0f; // Skalierung der Karten-Overlays (0.5f bis 2.0f)
     
     @SerialEntry
     public float cardTextScale = 1.0f; // Zusätzliche Text-Skalierung für Karten-Overlay (nur Text, nicht Hintergrund) - Bereich: 1.0 bis 1.5
@@ -984,7 +1009,7 @@ public class CCLiveUtilitiesConfig {
     public int statueY = 60; // Y-Position der Statuen Anzeige (optimiert)
     
     @SerialEntry
-    public float statueOverlayScale = 1.2f; // Skalierung der Statuen-Overlays (0.5f bis 2.0f)
+    public float statueOverlayScale = 1.0f; // Skalierung der Statuen-Overlays (0.5f bis 2.0f)
     
     @SerialEntry
     public float statueTextScale = 1.0f; // Zusätzliche Text-Skalierung für Statuen-Overlay (nur Text, nicht Hintergrund) - Bereich: 1.0 bis 1.5
@@ -1032,7 +1057,7 @@ public class CCLiveUtilitiesConfig {
     public boolean showBlueprintViewer = true;
     
     @SerialEntry
-    public int blueprintViewerX = 1; // X-Position des Blueprint Viewers (Pixel vom rechten Rand)
+    public int blueprintViewerX = 654; // X-Position des Blueprint Viewers (Pixel vom rechten Rand)
     
     @SerialEntry
     public int blueprintViewerY = 199; // Y-Position des Blueprint Viewers (Pixel vom oberen Rand)
@@ -1064,16 +1089,16 @@ public class CCLiveUtilitiesConfig {
     public boolean showAspectOverlay = true;
     
     @SerialEntry
-    public int aspectOverlayX = 10; // X-Position des Aspect Overlays (Pixel vom rechten Rand)
+    public int aspectOverlayX = 530; // X-Position des Aspect Overlays (Pixel vom rechten Rand)
     
     @SerialEntry
-    public int aspectOverlayY = 100; // Y-Position des Aspect Overlays (Pixel vom oberen Rand)
+    public int aspectOverlayY = 120; // Y-Position des Aspect Overlays (Pixel vom oberen Rand)
     
     @SerialEntry
     public boolean aspectOverlayShowBackground = true; // Schwarzer Hintergrund für Aspect Overlay
     
     @SerialEntry
-    public int chatAspectOverlayX = 15; // X-Position des Chat Aspect Overlays (Pixel vom linken Rand)
+    public int chatAspectOverlayX = 7; // X-Position des Chat Aspect Overlays (Pixel vom linken Rand)
     
     @SerialEntry
     public int chatAspectOverlayY = 15; // Y-Position des Chat Aspect Overlays (Pixel vom oberen Rand)
@@ -1391,7 +1416,7 @@ public class CCLiveUtilitiesConfig {
     // NPC Alerts Main Overlay Settings
     /** Alle NPC Alerts-Overlays sichtbar; nur Sichtbarkeit, ändert keine einzelnen showNpcAlerts-Schalter. */
     @SerialEntry
-    public boolean npcAlertsOverlaysVisible = true;
+    public boolean npcAlertsOverlaysVisible = false;
     
     @SerialEntry
     public int npcAlertsMainOverlayX = 5;
@@ -1407,7 +1432,7 @@ public class CCLiveUtilitiesConfig {
     
     // NPC Alerts Utility Enabled
     @SerialEntry
-    public boolean npcAlertsUtilityEnabled = true;
+    public boolean npcAlertsUtilityEnabled = false;
     
     // NPC Alerts Scales
     @SerialEntry
@@ -1552,19 +1577,19 @@ public class CCLiveUtilitiesConfig {
     public int npcAlertsMachtkristalleSlot1X = 10;
     
     @SerialEntry
-    public int npcAlertsMachtkristalleSlot1Y = 250;
+    public int npcAlertsMachtkristalleSlot1Y = 10;
     
     @SerialEntry
     public int npcAlertsMachtkristalleSlot2X = 10;
     
     @SerialEntry
-    public int npcAlertsMachtkristalleSlot2Y = 280;
+    public int npcAlertsMachtkristalleSlot2Y = 10;
     
     @SerialEntry
     public int npcAlertsMachtkristalleSlot3X = 10;
     
     @SerialEntry
-    public int npcAlertsMachtkristalleSlot3Y = 310;
+    public int npcAlertsMachtkristalleSlot3Y = 10;
     
     @SerialEntry
     public int npcAlertsRecyclerX = 10;

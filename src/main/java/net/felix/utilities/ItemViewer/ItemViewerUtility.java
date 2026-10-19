@@ -26,7 +26,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix3x2fStack;
-import org.lwjgl.glfw.GLFW;
+
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -570,16 +570,16 @@ public class ItemViewerUtility {
     private static void registerKeybind() {
         toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.itemviewer.toggle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_I,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_I,
             KeyCategories.of("cclive-utilities", "itemviewer")
         ));
         
         // Registriere KeyMapping für Bauplan Anpinnen (Clipboard)
         clipboardPinKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.clipboard.pin",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_P,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_P,
             KeyCategories.of("cclive-utilities", "itemviewer")
         ));
     }
@@ -612,18 +612,16 @@ public class ItemViewerUtility {
                 Object boundKey = getBoundKeyMethod.invoke(toggleKeyMapping);
                 
                 // Hole den KeyCode
-                java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getCode");
+                java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getValue");
                 int keyCode = (Integer) getCodeMethod.invoke(boundKey);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                if (keyCode == GLFW.GLFW_KEY_I) {
-                    return "I";
-                } else if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
-                    // Buchstaben A-Z
-                    return String.valueOf((char) ('A' + (keyCode - GLFW.GLFW_KEY_A)));
-                } else if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-                    // Zahlen 0-9
-                    return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
+                String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+                if (letter != null) {
+                    return letter;
+                } else if (digit != null) {
+                    return String.valueOf(digit);
                 } else {
                     return "Key " + keyCode;
                 }
@@ -668,23 +666,23 @@ public class ItemViewerUtility {
             Object boundKeyObj = getBoundKeyMethod.invoke(clipboardPinKeyMapping);
             if (boundKeyObj != null) {
                 // Hole den KeyCode
-                java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getCode");
+                java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getValue");
                 int keyCode = (Integer) getCodeMethod.invoke(boundKeyObj);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
-                    // Buchstaben A-Z
-                    return String.valueOf((char) ('A' + (keyCode - GLFW.GLFW_KEY_A)));
-                } else if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-                    // Zahlen 0-9
-                    return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
-                } else if (keyCode == GLFW.GLFW_KEY_SPACE) {
+                String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+                if (letter != null) {
+                    return letter;
+                } else if (digit != null) {
+                    return String.valueOf(digit);
+                } else if (keyCode == InputConstants.KEY_SPACE) {
                     return "SPACE";
-                } else if (keyCode == GLFW.GLFW_KEY_LEFT_SHIFT || keyCode == GLFW.GLFW_KEY_RIGHT_SHIFT) {
+                } else if (keyCode == InputConstants.KEY_LSHIFT || keyCode == InputConstants.KEY_RSHIFT) {
                     return "SHIFT";
-                } else if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL || keyCode == GLFW.GLFW_KEY_RIGHT_CONTROL) {
+                } else if (keyCode == InputConstants.KEY_LCONTROL || keyCode == InputConstants.KEY_RCONTROL) {
                     return "CTRL";
-                } else if (keyCode == GLFW.GLFW_KEY_LEFT_ALT || keyCode == GLFW.GLFW_KEY_RIGHT_ALT) {
+                } else if (keyCode == InputConstants.KEY_LALT || keyCode == InputConstants.KEY_RALT) {
                     return "ALT";
                 } else {
                     // Versuche über getTranslationKey() einen lesbaren Namen zu bekommen
@@ -746,7 +744,7 @@ public class ItemViewerUtility {
         // Wenn ein Screen geöffnet ist, wird handleKeyPress verwendet (vom ScreenMixin aufgerufen)
         if (clipboardPinKeyMapping != null && clipboardPinKeyMapping.consumeClick()) {
             // Nur verarbeiten, wenn kein Screen geöffnet ist (sonst wird handleKeyPress verwendet)
-            if (client.screen == null) {
+            if (client.gui.screen() == null) {
                 // Prüfe ob ein Textfeld fokussiert ist
                 if (isTextFieldFocused(client)) {
                     return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
@@ -1254,12 +1252,12 @@ public class ItemViewerUtility {
      * Verhindert, dass Hotkeys aktiviert werden, wenn der Spieler tippt
      */
     private static boolean isTextFieldFocused(Minecraft client) {
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Prüfe ob ChatScreen offen ist
-        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+        if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
             return true;
         }
         
@@ -1272,9 +1270,9 @@ public class ItemViewerUtility {
         // Verwende Reflection um auf fokussierte Widgets zuzugreifen
         try {
             // Prüfe ob Screen ein fokussiertes Widget hat
-            java.lang.reflect.Method getFocusedMethod = client.screen.getClass().getMethod("getFocused");
+            java.lang.reflect.Method getFocusedMethod = client.gui.screen().getClass().getMethod("getFocused");
             if (getFocusedMethod != null) {
-                Object focused = getFocusedMethod.invoke(client.screen);
+                Object focused = getFocusedMethod.invoke(client.gui.screen());
                 if (focused instanceof net.minecraft.client.gui.components.EditBox) {
                     net.minecraft.client.gui.components.EditBox textField = (net.minecraft.client.gui.components.EditBox) focused;
                     if (textField.isFocused()) {
@@ -1319,7 +1317,7 @@ public class ItemViewerUtility {
             }
             
             // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
-            if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+            if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
                 if (tryPinHoveredInventoryItem(handledScreen, client)) {
                     return true;
                 }
@@ -1364,11 +1362,11 @@ public class ItemViewerUtility {
      * Prüft ob ein Inventar geöffnet ist (AbstractContainerScreen oder InventoryScreen)
      */
     private static boolean isInventoryOpen(Minecraft client) {
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
-        return client.screen instanceof AbstractContainerScreen<?> || 
-               client.screen instanceof InventoryScreen;
+        return client.gui.screen() instanceof AbstractContainerScreen<?> || 
+               client.gui.screen() instanceof InventoryScreen;
     }
     
     /**
@@ -1673,19 +1671,19 @@ public class ItemViewerUtility {
      */
     public static boolean handleSearchFieldKeyPress(int keyCode, int scanCode, int modifiers) {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             searchFieldFocused = false;
             return false;
         }
 
         // Niemals Tastatureingaben vom Chat oder anderen Screens abfangen
-        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+        if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
             searchFieldFocused = false;
             return false;
         }
 
-        boolean canUseSearchInput = client.screen instanceof AbstractContainerScreen<?>
-                || client.screen instanceof InventoryScreen
+        boolean canUseSearchInput = client.gui.screen() instanceof AbstractContainerScreen<?>
+                || client.gui.screen() instanceof InventoryScreen
                 || isKitEditorMode();
         if (!canUseSearchInput) {
             searchFieldFocused = false;
@@ -1699,11 +1697,11 @@ public class ItemViewerUtility {
         
         // Prüfe ob Maus über Suchfeld ist
         ViewerPosition pos;
-        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
-            pos = getOrCalculateViewerPosition(handledScreen, client.screen);
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
+            pos = getOrCalculateViewerPosition(handledScreen, client.gui.screen());
         } else {
             // Für nicht-AbstractContainerScreen Screens (z.B. Spielerinventar)
-            pos = calculateViewerPositionForScreen(client.screen);
+            pos = calculateViewerPositionForScreen(client.gui.screen());
         }
         int searchX = getSearchFieldX(pos);
         int searchY = pos.viewerY + VIEWER_PADDING;
@@ -1728,7 +1726,7 @@ public class ItemViewerUtility {
         searchCursorBlinkTime = System.currentTimeMillis();
         
         // ESC-Taste
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             if (helpScreenOpen) {
                 helpScreenOpen = false;
                 return true;
@@ -1738,7 +1736,7 @@ public class ItemViewerUtility {
         }
         
         // Enter-Taste
-        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+        if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
             return true;
         }
         
@@ -1764,17 +1762,17 @@ public class ItemViewerUtility {
                         selectionEnd = currentSearch.length();
                     }
                     return true;
-                case GLFW.GLFW_KEY_BACKSPACE: // Strg+Backspace - Wort links löschen
+                case InputConstants.KEY_BACKSPACE: // Strg+Backspace - Wort links löschen
                     deleteSearchWord(false);
                     return true;
-                case GLFW.GLFW_KEY_DELETE: // Strg+Delete - Wort rechts löschen
+                case InputConstants.KEY_DELETE: // Strg+Delete - Wort rechts löschen
                     deleteSearchWord(true);
                     return true;
             }
         }
         
         // Backspace-Taste
-        if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+        if (keyCode == InputConstants.KEY_BACKSPACE) {
             if (hasSelection()) {
                 // Lösche markierten Text
                 int start = Math.min(selectionStart, selectionEnd);
@@ -1795,7 +1793,7 @@ public class ItemViewerUtility {
         }
         
         // Delete-Taste
-        if (keyCode == GLFW.GLFW_KEY_DELETE) {
+        if (keyCode == InputConstants.KEY_DELETE) {
             if (hasSelection()) {
                 // Lösche markierten Text
                 int start = Math.min(selectionStart, selectionEnd);
@@ -1815,7 +1813,7 @@ public class ItemViewerUtility {
         }
         
         // Pfeiltasten für Cursor-Bewegung
-        if (keyCode == GLFW.GLFW_KEY_LEFT) {
+        if (keyCode == InputConstants.KEY_LEFT) {
             if (modifiers == 1) { // Shift + Links = Selektion erweitern
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
@@ -1834,7 +1832,7 @@ public class ItemViewerUtility {
             return true;
         }
         
-        if (keyCode == GLFW.GLFW_KEY_RIGHT) {
+        if (keyCode == InputConstants.KEY_RIGHT) {
             if (modifiers == 1) { // Shift + Rechts = Selektion erweitern
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
@@ -1853,13 +1851,13 @@ public class ItemViewerUtility {
             return true;
         }
         
-        if (keyCode == GLFW.GLFW_KEY_HOME) {
+        if (keyCode == InputConstants.KEY_HOME) {
             clearSelection();
             cursorPosition = 0;
             return true;
         }
         
-        if (keyCode == GLFW.GLFW_KEY_END) {
+        if (keyCode == InputConstants.KEY_END) {
             clearSelection();
             cursorPosition = currentSearch.length();
             return true;
@@ -2371,8 +2369,8 @@ public class ItemViewerUtility {
         String currentScreenType = "";
         if (screen != null) {
             currentScreenType = "AbstractContainerScreen (Kiste) - " + screen.getClass().getSimpleName();
-        } else if (client.screen != null && !(client.screen instanceof AbstractContainerScreen<?>)) {
-            currentScreenType = "Spielerinventar - " + client.screen.getClass().getSimpleName();
+        } else if (client.gui.screen() != null && !(client.gui.screen() instanceof AbstractContainerScreen<?>)) {
+            currentScreenType = "Spielerinventar - " + client.gui.screen().getClass().getSimpleName();
         }
         
         if (!currentScreenType.equals(lastRenderedScreenType)) {
@@ -2386,9 +2384,9 @@ public class ItemViewerUtility {
         if (screen != null) {
             // AbstractContainerScreen (wird im AbstractContainerScreenMixin behandelt)
             renderItemViewer(context, client, screen);
-        } else if (client.screen != null && !(client.screen instanceof AbstractContainerScreen<?>)) {
+        } else if (client.gui.screen() != null && !(client.gui.screen() instanceof AbstractContainerScreen<?>)) {
             // Nicht-AbstractContainerScreen (z.B. Spielerinventar)
-            renderItemViewerForScreen(context, client, client.screen);
+            renderItemViewerForScreen(context, client, client.gui.screen());
         }
     }
     
@@ -4063,20 +4061,20 @@ public class ItemViewerUtility {
             return null;
         }
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return null;
         }
         if (kitEditorBackgroundScreen != null) {
-            return getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.screen);
+            return getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.gui.screen());
         }
-        return calculateViewerPositionBesideCenteredInventory(client.screen);
+        return calculateViewerPositionBesideCenteredInventory(client.gui.screen());
     }
 
     private static ViewerPosition resolveViewerPositionForMouseInput(Minecraft client) {
         if (isKitEditorMode()) {
             return resolveKitEditorViewerPosition();
         }
-        if (client.screen == null) {
+        if (client.gui.screen() == null) {
             return null;
         }
         AbstractContainerScreen<?> handledScreen = resolveAbstractContainerScreenForInput(client);
@@ -4088,7 +4086,7 @@ public class ItemViewerUtility {
                 && !helpScreenOpen) {
             return null;
         }
-        return getOrCalculateViewerPosition(handledScreen, client.screen);
+        return getOrCalculateViewerPosition(handledScreen, client.gui.screen());
     }
 
     public static boolean isMouseOverKitEditorItemViewer(double mouseX, double mouseY) {
@@ -4843,7 +4841,7 @@ public class ItemViewerUtility {
                     && !helpScreenOpen) {
                 return false;
             }
-        } else if (client.screen == null) {
+        } else if (client.gui.screen() == null) {
             return false;
         }
         
@@ -5201,13 +5199,13 @@ public class ItemViewerUtility {
     }
     
     private static AbstractContainerScreen<?> resolveAbstractContainerScreenForInput(Minecraft client) {
-        if (client.screen == null) {
+        if (client.gui.screen() == null) {
             return null;
         }
         if (isKitEditorMode() && kitEditorBackgroundScreen != null) {
             return kitEditorBackgroundScreen;
         }
-        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
             return handledScreen;
         }
         return null;
@@ -5483,7 +5481,7 @@ public class ItemViewerUtility {
         }
         
         // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
-        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
             net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {

@@ -43,10 +43,8 @@ public class AspectInfoGUI extends Screen {
         
         // Check if shift is pressed
         Minecraft client = Minecraft.getInstance();
-        boolean isShiftPressed = InputConstants.isKeyDown(client.getWindow(), 
-                                                       InputConstants.KEY_LSHIFT) || 
-                                InputConstants.isKeyDown(client.getWindow(), 
-                                                       InputConstants.KEY_RSHIFT);
+        boolean isShiftPressed = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT) || 
+                                InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
         
         if (!isShiftPressed) {
             shouldShow = false;
