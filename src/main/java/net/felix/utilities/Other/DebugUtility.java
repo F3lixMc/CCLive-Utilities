@@ -128,7 +128,6 @@ public class DebugUtility {
         
         // Check hardcoded keys: F8, F9, F10, F12
         if (client.getWindow() != null) {
-            var window = client.getWindow();
             
             // F8 - ItemHoverLogger
             boolean f8CurrentlyPressed = InputConstants.isKeyDown(InputConstants.KEY_F8);

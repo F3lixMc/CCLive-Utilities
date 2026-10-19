@@ -611,7 +611,6 @@ public class AspectOverlay {
         }
         
         // Check if shift is pressed (redundant check, but kept for safety)
-        var window = client.getWindow();
         boolean leftShift = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT);
         boolean rightShift = InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
         boolean isShiftPressed = leftShift || rightShift;
