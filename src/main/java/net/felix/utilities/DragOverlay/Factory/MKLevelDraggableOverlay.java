@@ -76,7 +76,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     private int calculateUnscaledHeight() {
         // Höhe entspricht der Inventar-Höhe (wird dynamisch angepasst)
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             // Use cached height if available (from last render)
             int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
             if (cachedHeight > 0) {
@@ -87,21 +87,21 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
         
         // Wenn wir im F6-Editor sind, verwende die gecachte Höhe (aus dem letzten Render)
         // Das vermeidet Reflection-Probleme auf dem Server
-        if (client.screen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
+        if (client.gui.screen() instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
             int cachedHeight = net.felix.utilities.Overall.InformationenUtility.getMKLevelLastKnownHeight();
             if (cachedHeight > 0) {
                 return cachedHeight;
             }
         }
         
-        net.minecraft.client.gui.screens.Screen screenToCheck = client.screen;
+        net.minecraft.client.gui.screens.Screen screenToCheck = client.gui.screen();
         
         // Wenn wir im F6-Editor sind, versuche auf previousScreen zuzugreifen (Fallback)
-        if (client.screen instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
+        if (client.gui.screen() instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
             try {
                 java.lang.reflect.Field previousScreenField = net.felix.utilities.DragOverlay.OverlayEditorScreen.class.getDeclaredField("previousScreen");
                 previousScreenField.setAccessible(true);
-                net.minecraft.client.gui.screens.Screen previousScreen = (net.minecraft.client.gui.screens.Screen) previousScreenField.get(client.screen);
+                net.minecraft.client.gui.screens.Screen previousScreen = (net.minecraft.client.gui.screens.Screen) previousScreenField.get(client.gui.screen());
                 
                 if (previousScreen != null && previousScreen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) {
                     // Prüfe ob es das MKLevel Inventar ist

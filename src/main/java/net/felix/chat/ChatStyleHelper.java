@@ -32,15 +32,15 @@ public final class ChatStyleHelper {
         if (client == null || client.gui == null || client.font == null || client.getWindow() == null) {
             return null;
         }
-        ChatComponent chatHud = client.gui.getChat();
+        ChatComponent chatHud = client.gui.hud.getChat();
         if (chatHud == null) {
             return null;
         }
         try {
             ChatComponent.DisplayMode mode = ChatComponent.DisplayMode.FOREGROUND;
-            if (client.screen instanceof ChatScreen) {
+            if (client.gui.screen() instanceof ChatScreen) {
                 // displayMode-Feld ist privat — FOREGROUND deckt den Normalfall ab
-                mode = resolveChatDisplayMode(client.screen);
+                mode = resolveChatDisplayMode(client.gui.screen());
             }
             ActiveTextCollector.ClickableStyleFinder finder =
                 new ActiveTextCollector.ClickableStyleFinder(client.font, (int) mouseX, (int) mouseY)
@@ -48,7 +48,7 @@ public final class ChatStyleHelper {
             chatHud.captureClickableText(
                 finder,
                 client.getWindow().getGuiScaledHeight(),
-                client.gui.getGuiTicks(),
+                client.gui.hud.getGuiTicks(),
                 mode);
             return finder.result();
         } catch (Exception ignored) {
@@ -78,7 +78,7 @@ public final class ChatStyleHelper {
         if (client == null || client.gui == null) {
             return null;
         }
-        ChatComponent chatHud = client.gui.getChat();
+        ChatComponent chatHud = client.gui.hud.getChat();
         if (chatHud == null) {
             return null;
         }
@@ -127,10 +127,10 @@ public final class ChatStyleHelper {
 
     public static Component getHoveredChatComponent(double mouseX, double mouseY) {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.gui == null || client.gui.getChat() == null) {
+        if (client == null || client.gui == null || client.gui.hud.getChat() == null) {
             return null;
         }
-        ChatComponent chatHud = client.gui.getChat();
+        ChatComponent chatHud = client.gui.hud.getChat();
         try {
             for (java.lang.reflect.Method method : ChatComponent.class.getDeclaredMethods()) {
                 if (method.getParameterCount() != 2

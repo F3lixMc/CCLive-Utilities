@@ -5,7 +5,7 @@ import net.felix.utilities.Overall.KeyCategories;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import org.lwjgl.glfw.GLFW;
+
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.SessionRateUtility;
@@ -101,16 +101,16 @@ public class KillsUtility {
 		// Register toggle hotkey
 		toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.kills-toggle",
-			InputConstants.Type.KEYSYM,
-			GLFW.GLFW_KEY_K, // Default to K key
+			InputConstants.Type.KEYBOARD,
+			InputConstants.KEY_K, // Default to K key
 			KeyCategories.of("cclive-utilities", "kills")
 		));
 		
 		// Register reset hotkey
 		resetKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.kills-reset",
-			InputConstants.Type.KEYSYM,
-			GLFW.GLFW_KEY_R, // Default to R key
+			InputConstants.Type.KEYBOARD,
+			InputConstants.KEY_R, // Default to R key
 			KeyCategories.of("cclive-utilities", "kills")
 		));
 	}
@@ -538,7 +538,7 @@ public class KillsUtility {
 		}
 		
 		// Hide overlay if F1 menu (debug screen) is open
-		if (client.options.hideGui) {
+		if (client.gui.hud.isHidden()) {
 			return;
 		}
 

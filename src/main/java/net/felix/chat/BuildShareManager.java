@@ -167,7 +167,7 @@ public final class BuildShareManager {
 
         if (suppressUntilMenuClose) {
             Minecraft client = Minecraft.getInstance();
-            if (client != null && client.screen instanceof AbstractContainerScreen<?> screen) {
+            if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> screen) {
                 suppressRescanScreen = screen;
             }
         }
@@ -263,8 +263,8 @@ public final class BuildShareManager {
     }
 
     private void onClientTick(Minecraft client) {
-        if (client == null || client.player == null || !(client.screen instanceof AbstractContainerScreen<?> screen)) {
-            if (suppressRescanScreen != null && (client == null || client.screen != suppressRescanScreen)) {
+        if (client == null || client.player == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
+            if (suppressRescanScreen != null && (client == null || client.gui.screen() != suppressRescanScreen)) {
                 suppressRescanScreen = null;
             }
             return;
@@ -589,7 +589,7 @@ public final class BuildShareManager {
             return false;
         }
         Minecraft client = Minecraft.getInstance();
-        if (client == null || !(client.screen instanceof AbstractContainerScreen<?> screen)) {
+        if (client == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             return false;
         }
         if (!ZeichenUtility.isBuildShareContextTitle(screen.getTitle().getString())) {
@@ -647,7 +647,7 @@ public final class BuildShareManager {
             return false;
         }
         Minecraft client = Minecraft.getInstance();
-        if (client == null || !(client.screen instanceof AbstractContainerScreen<?> screen)) {
+        if (client == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             return false;
         }
         if (!ZeichenUtility.isBuildShareContextTitle(screen.getTitle().getString())) {
@@ -668,7 +668,7 @@ public final class BuildShareManager {
             return;
         }
         Minecraft client = Minecraft.getInstance();
-        if (client == null || !(client.screen instanceof AbstractContainerScreen<?> screen)) {
+        if (client == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             return;
         }
         if (!ZeichenUtility.isBuildShareContextTitle(screen.getTitle().getString())) {
@@ -1105,7 +1105,7 @@ public final class BuildShareManager {
     public int getOverlayX() {
         if (isContainerAnchored()) {
             Minecraft client = Minecraft.getInstance();
-            if (client != null && client.screen instanceof AbstractContainerScreen<?> screen) {
+            if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> screen) {
                 return computeLeftTopOfContainer(screen, client)[0];
             }
         }
@@ -1115,7 +1115,7 @@ public final class BuildShareManager {
     public int getOverlayY() {
         if (isContainerAnchored()) {
             Minecraft client = Minecraft.getInstance();
-            if (client != null && client.screen instanceof AbstractContainerScreen<?> screen) {
+            if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> screen) {
                 return computeLeftTopOfContainer(screen, client)[1];
             }
         }
@@ -1286,10 +1286,10 @@ public final class BuildShareManager {
 
     private void openPreviewNow(Minecraft client, BuildSnapshot snapshot) {
         clearLastHoveredShareId();
-        net.minecraft.client.gui.screens.Screen previous = client.screen;
+        net.minecraft.client.gui.screens.Screen previous = client.gui.screen();
         debug("Build-Vorschau öffnen kit="
             + (snapshot != null && snapshot.kitName != null ? snapshot.kitName : "?"));
-        client.setScreen(new BuildShareViewScreen(snapshot, previous));
+        client.gui.setScreen(new BuildShareViewScreen(snapshot, previous));
     }
 
     /** Klick aus Chat: nur wenn Maus auf dem Build-Link-Style liegt. */

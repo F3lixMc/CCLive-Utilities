@@ -2,7 +2,7 @@ package net.felix.utilities.Other;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import org.lwjgl.glfw.GLFW;
+
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.minecraft.client.Minecraft;
@@ -128,31 +128,30 @@ public class DebugUtility {
         
         // Check hardcoded keys: F8, F9, F10, F12
         if (client.getWindow() != null) {
-            var window = client.getWindow();
             
             // F8 - ItemHoverLogger
-            boolean f8CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F8);
+            boolean f8CurrentlyPressed = InputConstants.isKeyDown(InputConstants.KEY_F8);
             if (f8CurrentlyPressed && !f8Pressed) {
                 logHoveredItemInfo(client);
             }
             f8Pressed = f8CurrentlyPressed;
             
             // F9 - InventoryNameLogger
-            boolean f9CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F9);
+            boolean f9CurrentlyPressed = InputConstants.isKeyDown(InputConstants.KEY_F9);
             if (f9CurrentlyPressed && !f9Pressed) {
                 logInventoryName(client);
             }
             f9Pressed = f9CurrentlyPressed;
             
             // F10 - ScoreboardLogger
-            boolean f10CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F10);
+            boolean f10CurrentlyPressed = InputConstants.isKeyDown(InputConstants.KEY_F10);
             if (f10CurrentlyPressed && !f10Pressed) {
                 logScoreboard(client);
             }
             f10Pressed = f10CurrentlyPressed;
             
             // F12 - BossBarLogger
-            boolean f12CurrentlyPressed = InputConstants.isKeyDown(window, GLFW.GLFW_KEY_F12);
+            boolean f12CurrentlyPressed = InputConstants.isKeyDown(InputConstants.KEY_F12);
             if (f12CurrentlyPressed && !f12Pressed) {
                 logBossBars(client);
             }
@@ -283,8 +282,8 @@ public class DebugUtility {
         }
         
         // Fallback: Try to find item using mouse position (for cases where tooltip wasn't shown yet)
-        if (client.screen != null && client.screen instanceof AbstractContainerScreen) {
-            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+        if (client.gui.screen() != null && client.gui.screen() instanceof AbstractContainerScreen) {
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
             
             // Get mouse position - use stored position if available, otherwise calculate
             double mouseX;
@@ -354,7 +353,7 @@ public class DebugUtility {
         
         // Last fallback: check the item in the player's hand (main hand)
         // Only use this if we're not in an inventory, to avoid logging wrong items
-        if (client.screen == null && client.player != null) {
+        if (client.gui.screen() == null && client.player != null) {
             ItemStack mainHandItem = client.player.getMainHandItem();
             if (mainHandItem != null && !mainHandItem.isEmpty()) {
                 return mainHandItem;
@@ -423,9 +422,13 @@ public class DebugUtility {
                             // Try to get as Formatting first (named colors)
                             String colorName = textColor.serialize();
                             if (colorName != null) {
-                                net.minecraft.ChatFormatting formatting = net.minecraft.ChatFormatting.getByName(colorName);
+                                net.minecraft.ChatFormatting formatting = null;
+                                try {
+                                    formatting = net.minecraft.ChatFormatting.valueOf(colorName.toUpperCase(java.util.Locale.ROOT));
+                                } catch (IllegalArgumentException ignored) {
+                                }
                                 if (formatting != null) {
-                                    result.append("§").append(formatting.getChar());
+                                    result.append(formatting.toString());
                                 } else {
                                     // Try to get RGB color
                                     Integer rgb = textColor.getValue();
@@ -476,7 +479,7 @@ public class DebugUtility {
             return;
         }
         
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             System.out.println("[InventoryNameLogger] Kein Inventar geöffnet!");
             if (client != null && client.player != null) {
                 client.player.sendSystemMessage(Component.literal("§c[InventoryNameLogger] §fKein Inventar geöffnet!"));
@@ -485,8 +488,8 @@ public class DebugUtility {
         }
         
         // Check if it's a AbstractContainerScreen (inventory-like screen)
-        if (!(client.screen instanceof AbstractContainerScreen)) {
-            String screenType = client.screen.getClass().getSimpleName();
+        if (!(client.gui.screen() instanceof AbstractContainerScreen)) {
+            String screenType = client.gui.screen().getClass().getSimpleName();
             System.out.println("[InventoryNameLogger] Aktueller Screen ist kein Inventar: " + screenType);
             if (client.player != null) {
                 client.player.sendSystemMessage(Component.literal("§c[InventoryNameLogger] §fAktueller Screen ist kein Inventar: §7" + screenType));
@@ -494,7 +497,7 @@ public class DebugUtility {
             return;
         }
         
-        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
         Component titleText = screen.getTitle();
         
         if (titleText == null) {
@@ -555,7 +558,7 @@ public class DebugUtility {
             return;
         }
         
-        BossHealthOverlay bossBarHud = client.gui.getBossOverlay();
+        BossHealthOverlay bossBarHud = client.gui.hud.getBossOverlay();
         if (bossBarHud == null) {
             System.out.println("[BossBarLogger] Kein BossBarHud gefunden!");
             if (client.player != null) {
@@ -930,22 +933,22 @@ public class DebugUtility {
             }
             
             // Check hardcoded keys: F8, F9, F10, F12
-            if (keyCode == GLFW.GLFW_KEY_F8) {
+            if (keyCode == InputConstants.KEY_F8) {
                 logHoveredItemInfo(client);
                 return true;
             }
             
-            if (keyCode == GLFW.GLFW_KEY_F9) {
+            if (keyCode == InputConstants.KEY_F9) {
                 logInventoryName(client);
                 return true;
             }
             
-            if (keyCode == GLFW.GLFW_KEY_F10) {
+            if (keyCode == InputConstants.KEY_F10) {
                 logScoreboard(client);
                 return true;
             }
             
-            if (keyCode == GLFW.GLFW_KEY_F12) {
+            if (keyCode == InputConstants.KEY_F12) {
                 logBossBars(client);
                 return true;
             }

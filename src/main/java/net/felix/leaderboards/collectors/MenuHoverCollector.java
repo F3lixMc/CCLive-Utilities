@@ -62,7 +62,7 @@ public class MenuHoverCollector implements DataCollector {
      * Prüft den aktuellen Screen auf relevante Hover-Texte
      */
     private void checkCurrentScreen(Minecraft client) {
-        Screen currentScreen = client.screen;
+        Screen currentScreen = client.gui.screen();
         
         if (currentScreen == null) {
             return; // Kein Screen geöffnet

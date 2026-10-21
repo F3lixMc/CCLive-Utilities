@@ -35,7 +35,7 @@ public class ClipboardMaterialCollector {
         if (client.player == null || client.level == null) {
             return;
         }
-        if (!(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
             return;
         }
         

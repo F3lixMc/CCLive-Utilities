@@ -15,7 +15,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-import org.lwjgl.glfw.GLFW;
+
 import com.mojang.blaze3d.platform.InputConstants;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -64,8 +64,8 @@ public class CoinTrackerUtility {
         try {
             resetKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                     "key.cclive-utilities.coin-tracker-reset",
-                    InputConstants.Type.KEYSYM,
-                    GLFW.GLFW_KEY_UNKNOWN,
+                    InputConstants.Type.KEYBOARD,
+                    InputConstants.UNKNOWN.getValue(),
                     KeyCategories.of("cclive-utilities", "overall")
             ));
 
@@ -254,7 +254,7 @@ public class CoinTrackerUtility {
         }
 
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.player == null || client.options.hideGui) {
+        if (client == null || client.player == null || client.gui.hud.isHidden()) {
             return;
         }
 

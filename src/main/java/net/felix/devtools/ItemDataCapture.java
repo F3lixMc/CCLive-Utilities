@@ -45,7 +45,7 @@ public final class ItemDataCapture {
             DevToolOutputWriter.notifyPlayer("§cKein Spieler.");
             return;
         }
-        if (!(client.screen instanceof AbstractContainerScreen<?> screen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             DevToolOutputWriter.notifyPlayer("§cKein Container-Menü geöffnet.");
             return;
         }

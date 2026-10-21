@@ -17,9 +17,9 @@ public class MouseClickMixin {
      */
     @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
     private void onMouseButton(long window, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
-        int button = buttonInfo.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(buttonInfo.button());
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen != null) {
+        if (client == null || client.gui.screen() != null) {
             return; // Nur behandeln wenn kein Screen offen ist
         }
         

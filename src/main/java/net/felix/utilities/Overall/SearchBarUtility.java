@@ -88,13 +88,13 @@ public class SearchBarUtility {
 			return;
 		}
 		
-		if (client.player == null || client.screen == null) {
+		if (client.player == null || client.gui.screen() == null) {
 			isSearchBarVisible = false;
 			clearSearchBar();
 			return;
 		}
 
-		if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+		if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			
 			// Entferne Farbcodes für den Vergleich
@@ -171,7 +171,7 @@ public class SearchBarUtility {
 				
 				// Server hat den Platzhalter ersetzt → neues Item als Original übernehmen
 				if (!currentStack.isEmpty()
-						&& currentStack.getItem() != Items.BLACK_CONCRETE
+						&& currentStack.getItem() != Items.CONCRETE.black()
 						&& hiddenSlots.contains(slot)) {
 					ItemStack previousOriginal = hiddenOriginalItems.get(slot);
 					if (previousOriginal == null || !ItemStack.matches(previousOriginal, currentStack)) {
@@ -697,7 +697,7 @@ public class SearchBarUtility {
 		}
 		
 		Minecraft client = Minecraft.getInstance();
-		if (client.screen == null || !(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
+		if (client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
 			matchingSlots.clear();
 			restoreAllHiddenSlots(getActiveSearchScreen());
 			return;
@@ -806,7 +806,7 @@ public class SearchBarUtility {
 			return lastSearchScreen;
 		}
 		Minecraft client = Minecraft.getInstance();
-		if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+		if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 			return handledScreen;
 		}
 		return null;
@@ -816,7 +816,7 @@ public class SearchBarUtility {
 		if (currentStack == null || currentStack.isEmpty()) {
 			return ItemStack.EMPTY;
 		}
-		if (currentStack.getItem() == Items.BLACK_CONCRETE && hiddenSlots.contains(slotIndex)
+		if (currentStack.getItem() == Items.CONCRETE.black() && hiddenSlots.contains(slotIndex)
 				&& hiddenOriginalItems.containsKey(slotIndex)) {
 			return hiddenOriginalItems.get(slotIndex);
 		}
@@ -880,7 +880,7 @@ public class SearchBarUtility {
 		hiddenOriginalItems.put(slotIndex, storedOriginal);
 		
 		Slot slot = screen.getMenu().slots.get(slotIndex);
-		ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
+		ItemStack blackConcrete = new ItemStack(Items.CONCRETE.black());
 		blackConcrete.set(DataComponents.LORE, storedOriginal.get(DataComponents.LORE));
 		
 		Component displayName = storedOriginal.getHoverName();
@@ -901,7 +901,7 @@ public class SearchBarUtility {
 		
 		Slot slot = screen.getMenu().slots.get(slotIndex);
 		ItemStack currentItem = slot.getItem();
-		if (currentItem.getItem() == Items.BLACK_CONCRETE && hiddenOriginalItems.containsKey(slotIndex)) {
+		if (currentItem.getItem() == Items.CONCRETE.black() && hiddenOriginalItems.containsKey(slotIndex)) {
 			slot.setByPlayer(hiddenOriginalItems.get(slotIndex).copy());
 		}
 		hiddenSlots.remove(slotIndex);
@@ -1133,7 +1133,7 @@ public class SearchBarUtility {
 			FloorSearchQuery floorQuery = FloorSearchQuery.parse(searchExact);
 			if (floorQuery.isFloorSearch) {
 				Minecraft client = Minecraft.getInstance();
-				if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+				if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 					return itemMatchesFloorSearch(itemStack, floorQuery, handledScreen);
 				}
 				return false;

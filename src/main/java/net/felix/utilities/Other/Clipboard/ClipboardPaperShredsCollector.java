@@ -81,7 +81,7 @@ public class ClipboardPaperShredsCollector {
         }
         
         // Prüfe ob ein Inventar geöffnet ist
-        if (!(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
             return;
         }
         

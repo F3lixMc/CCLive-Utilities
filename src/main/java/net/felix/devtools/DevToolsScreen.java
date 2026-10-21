@@ -8,7 +8,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -351,9 +351,9 @@ public class DevToolsScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (DevToolsHotkeyDispatcher.isCapturingHotkey()) {
-            return DevToolsHotkeyDispatcher.handleScreenKeyPress(event.key(), event.scancode(), event.modifiers());
+            return DevToolsHotkeyDispatcher.handleScreenKeyPress(event.key(), event.keycode(), event.modifiers());
         }
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }
@@ -384,7 +384,7 @@ public class DevToolsScreen extends Screen {
     public static void open() {
         Minecraft client = Minecraft.getInstance();
         if (client != null) {
-            client.setScreen(new DevToolsScreen());
+            client.gui.setScreen(new DevToolsScreen());
         }
     }
 }

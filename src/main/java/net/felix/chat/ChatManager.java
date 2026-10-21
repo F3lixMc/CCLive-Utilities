@@ -253,8 +253,8 @@ public class ChatManager {
             chatMessage.append(body);
 
             client.execute(() -> {
-                if (client.gui != null && client.gui.getChat() != null) {
-                    client.gui.getChat().addClientSystemMessage(chatMessage);
+                if (client.gui != null && client.gui.hud.getChat() != null) {
+                    client.gui.hud.getChat().addClientSystemMessage(chatMessage);
                 }
             });
         });

@@ -1015,7 +1015,7 @@ public class NpcAlertsDetailScreen extends Screen {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 0) {
             // Prüfe ob auf das Schließen-Kreuz geklickt wurde
             // Verwende exakt die gleiche Berechnung wie im Rendering
@@ -1323,7 +1323,7 @@ public class NpcAlertsDetailScreen extends Screen {
         if (clickedOnColorButton) {
             // Öffne YACL-Screen für beide Farben
             Screen colorScreen = createColorConfigScreen(this, configKey);
-            minecraft.setScreen(colorScreen);
+            minecraft.gui.setScreen(colorScreen);
             return true;
         }
         
@@ -2343,7 +2343,7 @@ public class NpcAlertsDetailScreen extends Screen {
         }
         
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 }

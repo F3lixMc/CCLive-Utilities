@@ -68,14 +68,14 @@ public final class ItemShareManager {
     public void initialize() {
         copyItemKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.chat.copy-item",
-            InputConstants.Type.KEYSYM,
+            InputConstants.Type.KEYBOARD,
             InputConstants.UNKNOWN.getValue(),
             KeyCategories.of("cclive-utilities", "chat")
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (copyItemKeyMapping != null && copyItemKeyMapping.consumeClick()) {
-                if (client.screen == null) {
+                if (client.gui.screen() == null) {
                     tryCopyHoveredItem();
                 }
             }

@@ -80,7 +80,7 @@ public final class LegendPlusSammlerCollector {
             return;
         }
 
-        if (client.player == null || client.level == null || !(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
+        if (client.player == null || client.level == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
             pendingTicksRemaining--;
             if (pendingTicksRemaining <= 0) {
                 clearPending();

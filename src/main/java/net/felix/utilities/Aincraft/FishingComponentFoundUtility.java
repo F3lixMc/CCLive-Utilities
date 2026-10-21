@@ -94,7 +94,7 @@ public class FishingComponentFoundUtility {
     }
 
     public static void onClientTick(Minecraft client) {
-        if (client == null || !(client.screen instanceof AbstractContainerScreen<?> screen)) {
+        if (client == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             return;
         }
 

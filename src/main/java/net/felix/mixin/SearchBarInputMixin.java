@@ -1,5 +1,7 @@
 package net.felix.mixin;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
@@ -19,7 +21,7 @@ public abstract class SearchBarInputMixin {
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         // Blockiere Mausklicks wenn der Hilfe-Screen offen ist
         if (SearchBarUtility.isHelpScreenOpen()) {
             cir.setReturnValue(true);
@@ -53,7 +55,7 @@ public abstract class SearchBarInputMixin {
         // Handle MKLevel search bar clicks - need to get position from screen
         // We can't use @Shadow here, so we'll use reflection as fallback
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-        if (client != null && client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+        if (client != null && client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
             try {
                 java.lang.reflect.Field xField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("leftPos");
                 java.lang.reflect.Field yField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("topPos");
@@ -76,10 +78,10 @@ public abstract class SearchBarInputMixin {
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         int keyCode = event.key();
-        int scanCode = event.scancode();
+        int scanCode = event.keycode();
         int modifiers = event.modifiers();
 
-        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
@@ -124,7 +126,7 @@ public abstract class SearchBarInputMixin {
         // Handle ItemInfo auto-click hotkey (works in inventories)
         // Get screen position using reflection (same pattern as MKLevel)
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-        if (client != null && client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+        if (client != null && client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
             try {
                 // Try to get x and y fields (may be obfuscated)
                 java.lang.reflect.Field xField = null;

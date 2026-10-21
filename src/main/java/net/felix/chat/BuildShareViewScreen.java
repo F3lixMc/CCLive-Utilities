@@ -14,7 +14,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -451,7 +451,7 @@ public class BuildShareViewScreen extends Screen {
 
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }
@@ -512,7 +512,7 @@ public class BuildShareViewScreen extends Screen {
         BuildShareManager.getInstance().invalidatePendingOpens();
         Minecraft client = Minecraft.getInstance();
         if (client != null) {
-            client.setScreen(previousScreen);
+            client.gui.setScreen(previousScreen);
         }
     }
 

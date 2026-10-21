@@ -36,10 +36,10 @@ public final class HudOverlayVisibility {
         if (client == null) {
             return false;
         }
-        if (client.screen == null || client.screen instanceof OverlayEditorScreen) {
+        if (client.gui.screen() == null || client.gui.screen() instanceof OverlayEditorScreen) {
             return true;
         }
-        return !(client.screen instanceof AbstractContainerScreen);
+        return !(client.gui.screen() instanceof AbstractContainerScreen);
     }
 
     /**
@@ -50,7 +50,7 @@ public final class HudOverlayVisibility {
         if (client == null || context == null) {
             return;
         }
-        if (!(client.screen instanceof AbstractContainerScreen) || client.screen instanceof OverlayEditorScreen) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen) || client.gui.screen() instanceof OverlayEditorScreen) {
             return;
         }
 

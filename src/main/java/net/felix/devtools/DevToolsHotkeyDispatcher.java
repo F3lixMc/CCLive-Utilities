@@ -10,7 +10,6 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -84,7 +83,7 @@ public final class DevToolsHotkeyDispatcher {
         if (!DevToolsAccess.isAllowed()) {
             return false;
         }
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && capturingHotkey) {
+        if (keyCode == InputConstants.KEY_ESCAPE && capturingHotkey) {
             cancelHotkeyCapture();
             return true;
         }
@@ -92,7 +91,7 @@ public final class DevToolsHotkeyDispatcher {
             return finishCapture(keyCode);
         }
         Minecraft client = Minecraft.getInstance();
-        if (client != null && client.screen instanceof DevToolsScreen) {
+        if (client != null && client.gui.screen() instanceof DevToolsScreen) {
             return false; // GUI offen: keine Tool-Auslösung, nur Capture
         }
         if (shouldIgnoreInput()) {
@@ -111,7 +110,7 @@ public final class DevToolsHotkeyDispatcher {
             return;
         }
         // Wenn ein Screen offen ist, kommt der Press über ScreenMixin — Tick pollt nur Welt
-        if (client.screen != null && !(client.screen instanceof DevToolsScreen)) {
+        if (client.gui.screen() != null && !(client.gui.screen() instanceof DevToolsScreen)) {
             // Inventar: Screen-Hook feuert; Tick hält nur Release-Tracking
             syncReleasedKeys(client);
             return;
@@ -119,7 +118,7 @@ public final class DevToolsHotkeyDispatcher {
 
         Set<Integer> boundKeys = collectBoundEnabledKeys();
         for (Integer keyCode : boundKeys) {
-            boolean down = InputConstants.isKeyDown(client.getWindow(), keyCode);
+            boolean down = InputConstants.isKeyDown(keyCode);
             if (down) {
                 tryFire(keyCode);
             } else {
@@ -127,22 +126,18 @@ public final class DevToolsHotkeyDispatcher {
             }
         }
         // Auch Keys freigeben die nicht mehr gebunden sind
-        handledWhileDown.removeIf(k -> !boundKeys.contains(k) && !InputConstants.isKeyDown(client.getWindow(), k));
+        handledWhileDown.removeIf(k -> !boundKeys.contains(k) && !InputConstants.isKeyDown(k));
     }
 
     private static void syncReleasedKeys(Minecraft client) {
-        if (client.getWindow() == null) {
-            handledWhileDown.clear();
-            return;
-        }
-        handledWhileDown.removeIf(k -> !InputConstants.isKeyDown(client.getWindow(), k));
+        handledWhileDown.removeIf(k -> !InputConstants.isKeyDown(k));
     }
 
     /**
      * Ein Press = eine Runde: alle enabled Tools mit dieser Taste, je einmal.
      */
     private static boolean tryFire(int keyCode) {
-        if (keyCode == GLFW.GLFW_KEY_UNKNOWN || keyCode < 0) {
+        if (keyCode == InputConstants.UNKNOWN.getValue() || keyCode < 0) {
             return false;
         }
         if (handledWhileDown.contains(keyCode)) {
@@ -182,12 +177,12 @@ public final class DevToolsHotkeyDispatcher {
     }
 
     private static boolean finishCapture(int keyCode) {
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             cancelHotkeyCapture();
             return true;
         }
         // Backspace / Delete = unbinden
-        if (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE) {
+        if (keyCode == InputConstants.KEY_BACKSPACE || keyCode == InputConstants.KEY_DELETE) {
             if (capturingToolId != null) {
                 DevToolsStateStore.setHotkey(capturingToolId, null);
             }
@@ -255,7 +250,7 @@ public final class DevToolsHotkeyDispatcher {
             return "—";
         }
         try {
-            return InputConstants.Type.KEYSYM.getOrCreate(keyCode).getDisplayName().getString();
+            return InputConstants.Type.KEYBOARD.getOrCreate(keyCode).getDisplayName().getString();
         } catch (Exception e) {
             return "Key" + keyCode;
         }
@@ -280,13 +275,13 @@ public final class DevToolsHotkeyDispatcher {
         if (client == null) {
             return true;
         }
-        if (client.screen instanceof ChatScreen) {
+        if (client.gui.screen() instanceof ChatScreen) {
             return true;
         }
-        if (client.screen instanceof DevToolsScreen) {
+        if (client.gui.screen() instanceof DevToolsScreen) {
             return true;
         }
-        Screen screen = client.screen;
+        Screen screen = client.gui.screen();
         if (screen != null) {
             try {
                 var focused = screen.getFocused();
@@ -303,10 +298,10 @@ public final class DevToolsHotkeyDispatcher {
     }
 
     private static boolean isModifierOnly(int keyCode) {
-        return keyCode == GLFW.GLFW_KEY_LEFT_SHIFT || keyCode == GLFW.GLFW_KEY_RIGHT_SHIFT
-            || keyCode == GLFW.GLFW_KEY_LEFT_CONTROL || keyCode == GLFW.GLFW_KEY_RIGHT_CONTROL
-            || keyCode == GLFW.GLFW_KEY_LEFT_ALT || keyCode == GLFW.GLFW_KEY_RIGHT_ALT
-            || keyCode == GLFW.GLFW_KEY_LEFT_SUPER || keyCode == GLFW.GLFW_KEY_RIGHT_SUPER;
+        return keyCode == InputConstants.KEY_LSHIFT || keyCode == InputConstants.KEY_RSHIFT
+            || keyCode == InputConstants.KEY_LCONTROL || keyCode == InputConstants.KEY_RCONTROL
+            || keyCode == InputConstants.KEY_LALT || keyCode == InputConstants.KEY_RALT
+            || keyCode == InputConstants.KEY_LGUI || keyCode == InputConstants.KEY_RGUI;
     }
 
     private static void notify(String msg) {

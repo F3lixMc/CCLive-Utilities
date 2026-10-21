@@ -18,7 +18,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
-import org.lwjgl.glfw.GLFW;
+
 
 import java.util.List;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -144,8 +144,8 @@ public class SchmiedTrackerUtility {
 	private static void registerHotkey() {
 		toggleFramesKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.toggle-schmied-frames",
-			InputConstants.Type.KEYSYM,
-			GLFW.GLFW_KEY_F7, // Standard: F7
+			InputConstants.Type.KEYBOARD,
+			InputConstants.KEY_F7, // Standard: F7
 			KeyCategories.of("cclive-utilities", "schmied")
 		));
 	}
@@ -169,14 +169,14 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 		
-		if (client.player == null || client.screen == null) {
+		if (client.player == null || client.gui.screen() == null) {
 			isInDisassembleChest = false;
 			slotColors.clear();
 			return;
 		}
 
 		// Überprüfe ob wir in einem "Zerlegen" Kisteninventar sind
-		if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+		if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 			String title = handledScreen.getTitle().getString();
 			String cleanTitle = cleanInventoryTitle(title);
 			
@@ -610,7 +610,7 @@ public class SchmiedTrackerUtility {
 					
 					if (!hasEnchantmentsResult) {
 						// Ersetze mit schwarzem Beton, aber behalte die ursprünglichen Tooltips
-						ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
+						ItemStack blackConcrete = new ItemStack(Items.CONCRETE.black());
 						
 						// Kopiere die ursprünglichen Komponenten für Tooltips
 						blackConcrete.set(DataComponents.CUSTOM_NAME, itemStack.get(DataComponents.CUSTOM_NAME));
@@ -665,7 +665,7 @@ public class SchmiedTrackerUtility {
 				Slot slot = screen.getMenu().slots.get(slotIndex);
 				// Prüfe ob der Slot noch den schwarzen Betonblock enthält
 				ItemStack currentItem = slot.getItem();
-				if (currentItem.getItem() == Items.BLACK_CONCRETE) {
+				if (currentItem.getItem() == Items.CONCRETE.black()) {
 					slot.setByPlayer(originalItem);
 				}
 			}
@@ -724,7 +724,7 @@ public class SchmiedTrackerUtility {
 					
 					if (isWrongClassResult) {
 						// Ersetze mit schwarzem Beton, aber behalte die ursprünglichen Tooltips
-						ItemStack blackConcrete = new ItemStack(Items.BLACK_CONCRETE);
+						ItemStack blackConcrete = new ItemStack(Items.CONCRETE.black());
 						
 						// Kopiere die ursprünglichen Komponenten für Tooltips
 						blackConcrete.set(DataComponents.CUSTOM_NAME, itemStack.get(DataComponents.CUSTOM_NAME));
@@ -773,7 +773,7 @@ public class SchmiedTrackerUtility {
 				Slot slot = screen.getMenu().slots.get(slotIndex);
 				// Prüfe ob der Slot noch den schwarzen Betonblock enthält
 				ItemStack currentItem = slot.getItem();
-				if (currentItem.getItem() == Items.BLACK_CONCRETE) {
+				if (currentItem.getItem() == Items.CONCRETE.black()) {
 					slot.setByPlayer(originalItem);
 				}
 			}
@@ -921,7 +921,7 @@ public class SchmiedTrackerUtility {
 		}
 		
 		Minecraft client = Minecraft.getInstance();
-		if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+		if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 			// Hide Uncraftable Button soll nicht im "Bauplan [Shop]" Menü funktionieren
 			if (isInBlueprintShop(handledScreen)) {
 				return false;
@@ -940,7 +940,7 @@ public class SchmiedTrackerUtility {
 			hideUncraftableActive = !hideUncraftableActive;
 			
 			// Aktualisiere die Items basierend auf dem neuen Status
-			if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+			if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 				if (hideUncraftableActive) {
 					updateBlueprintItems(handledScreen, client);
 				} else {
@@ -1022,7 +1022,7 @@ public class SchmiedTrackerUtility {
 			
 			// Aktualisiere die Items basierend auf dem neuen Status
 			Minecraft client = Minecraft.getInstance();
-			if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+			if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
 				if (hideWrongClassActive) {
 					updateBlueprintItemsWrongClass(handledScreen, client);
 				} else {
@@ -1052,7 +1052,7 @@ public class SchmiedTrackerUtility {
 	
 	/**
 	 * Handle key press directly (for use in mixins when screens are open)
-	 * @param keyCode The key code (e.g., GLFW.GLFW_KEY_F7)
+	 * @param keyCode The key code (e.g., InputConstants.KEY_F7)
 	 * @return true if the key was handled
 	 */
 	public static boolean handleKeyPress(int keyCode) {
@@ -1060,7 +1060,7 @@ public class SchmiedTrackerUtility {
 			// Check if F7 is pressed (default key for toggling frames)
 			// Note: This checks the default key, not the configured key binding
 			// For full support of custom key bindings, we'd need to check the KeyMapping's bound key
-			if (keyCode == GLFW.GLFW_KEY_F7) {
+			if (keyCode == InputConstants.KEY_F7) {
 				framesVisible = !framesVisible;
 				return true;
 			}
