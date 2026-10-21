@@ -351,16 +351,20 @@ public class KitSelectionScreen extends Screen {
 		if (kitName == null || kitName.isEmpty()) {
 			kitName = "Neues Kit";
 		}
-		renderCachedItemInfosTooltip(
-				context,
-				mouseX,
-				mouseY,
+		boolean showBpStatus = shouldShowBPViewerStatus();
+		KitTooltipHelper.CachedTooltip cached = tooltipHelper.getOrBuildSections(
 				"custom:" + KitFilterUtility.getCustomKitItemCacheKey(hoveredCustomKit) + tooltipBpCacheSuffix(),
+				this.font,
 				kitName,
-				KitFilterUtility.getCustomKitItemInfos(hoveredCustomKit),
+				KitFilterUtility.getCustomKitHoverSections(hoveredCustomKit),
 				true,
-				true
+				true,
+				showBpStatus,
+				this::isBlueprintFound,
+				net.felix.utilities.Aincraft.FishingComponentFoundUtility::isFound,
+				net.felix.profile.ProfileStatsManager::isCardUnlockedLocally
 		);
+		KitTooltipHelper.render(context, this.font, cached, mouseX, mouseY, this.width, this.height);
 	}
 
 	private String tooltipBpCacheSuffix() {

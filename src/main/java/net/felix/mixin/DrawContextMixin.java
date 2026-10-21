@@ -1,11 +1,14 @@
 package net.felix.mixin;
 
+import net.felix.chat.BuildShareManager;
+import net.felix.chat.BuildShareOverviewLayout;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -33,6 +36,22 @@ public class DrawContextMixin {
                     ci.cancel(); // Rendering abbrechen → Overlay wird nicht gezeichnet
                 }
             }
+        }
+    }
+
+    /**
+     * Chat-Hover in 26.1+: componentHoverEffect → Font.split(~200px) → setTooltipForNextFrame.
+     * Build-Share: Vanilla abbrechen und skaliertes Spaltenpanel direkt zeichnen.
+     */
+    @Inject(method = "componentHoverEffect", at = @At("HEAD"), cancellable = true)
+    private void cclive$replaceBuildShareHover(Font font, Style style, int mouseX, int mouseY, CallbackInfo ci) {
+        String shareId = BuildShareManager.extractShareIdFromStyle(style);
+        if (shareId == null || shareId.isEmpty()) {
+            return;
+        }
+        GuiGraphicsExtractor self = (GuiGraphicsExtractor) (Object) this;
+        if (BuildShareOverviewLayout.renderHoveredShare(self, shareId, mouseX, mouseY)) {
+            ci.cancel();
         }
     }
     

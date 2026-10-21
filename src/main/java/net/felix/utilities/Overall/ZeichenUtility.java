@@ -107,6 +107,8 @@ public class ZeichenUtility {
     private static String uiQuickTravelOverworld = "";
     private static String uiQuickTravelMining = "";
     private static String uiQuickTravelOcean = "";
+    /** Glyph aus {@code wardrobe} / {@code wardrobe_ui_background} – Kit-/Wardrobe-Inventar. */
+    private static String uiWardrobeFull = "";
     private static Map<Character, String> factoryFontFirstLine = new HashMap<>();
     private static Map<Character, String> aincraftFontFirstLine = new HashMap<>();
     private static Map<Integer, Integer> npcAlertsKomboKisteBossBarDigitCodePoints = new HashMap<>();
@@ -278,6 +280,7 @@ public class ZeichenUtility {
         uiQuickTravelOverworld = "";
         uiQuickTravelMining = "";
         uiQuickTravelOcean = "";
+        uiWardrobeFull = "";
         factoryFontFirstLine = new HashMap<>();
         aincraftFontFirstLine = new HashMap<>();
         npcAlertsKomboKisteBossBarDigitCodePoints = new HashMap<>();
@@ -347,6 +350,7 @@ public class ZeichenUtility {
         uiQuickTravelOverworld = singleChar(index, "farmzone_quick_travel", "ui_overworld");
         uiQuickTravelMining = singleChar(index, "farmzone_quick_travel", "ui_mining");
         uiQuickTravelOcean = singleChar(index, "farmzone_quick_travel", "ui_ocean");
+        uiWardrobeFull = singleChar(index, "wardrobe", "wardrobe_ui_background");
 
         find(index, "cactusclicker_aincraft_overlay", "font_first_line").ifPresent(cps ->
                 aincraftFontFirstLine = buildGlyphToDecodedMap(cps, STANDARD_LINE_DECODE));
@@ -552,6 +556,12 @@ public class ZeichenUtility {
         if (json.has("ui_quick_travel_ocean")) {
             uiQuickTravelOcean = json.getAsJsonObject("ui_quick_travel_ocean").get("character").getAsString();
         }
+        if (json.has("ui_wardrobe_full")) {
+            JsonObject o = json.getAsJsonObject("ui_wardrobe_full");
+            if (o.has("character")) {
+                uiWardrobeFull = o.get("character").getAsString();
+            }
+        }
         if (json.has("factory_bottom_font")) {
             JsonObject factoryObj = json.getAsJsonObject("factory_bottom_font");
             if (factoryObj.has("characters")) {
@@ -678,6 +688,7 @@ public class ZeichenUtility {
         uiQuickTravelOverworld = "㷔";
         uiQuickTravelMining = "㷕";
         uiQuickTravelOcean = "㷖";
+        uiWardrobeFull = "";
 
         factoryBottomFont = "㝡㝢㝣㝤㝥㝦㝧㝨㝩㝪";
         factoryBottomFontNumbers.clear();
@@ -734,6 +745,38 @@ public class ZeichenUtility {
             }
         }
         return false;
+    }
+
+    /** {@code ui_open_gadget_bag} – Module sichtbar. */
+    public static boolean isEquipmentOpenGadgetBag(String text) {
+        ensureInitialized();
+        return containsGlyph(text, equipmentDisplay.length > 2 ? equipmentDisplay[2] : null);
+    }
+
+    /** {@code ui_open_both} – Module sichtbar. */
+    public static boolean isEquipmentOpenBoth(String text) {
+        ensureInitialized();
+        return containsGlyph(text, equipmentDisplay.length > 3 ? equipmentDisplay[3] : null);
+    }
+
+    /** Module-Slots sind in open_both und open_gadget_bag sichtbar. */
+    public static boolean isEquipmentModulesVisible(String text) {
+        return isEquipmentOpenBoth(text) || isEquipmentOpenGadgetBag(text);
+    }
+
+    public static boolean isWardrobeFullTitle(String text) {
+        ensureInitialized();
+        return containsGlyph(text, uiWardrobeFull);
+    }
+
+    public static String getUiWardrobeFull() {
+        ensureInitialized();
+        return uiWardrobeFull;
+    }
+
+    /** Build-Kontext: Ausrüstung, Karten oder Kit-Wardrobe. */
+    public static boolean isBuildShareContextTitle(String text) {
+        return containsEquipmentDisplay(text) || isCardsMenuTitle(text) || isWardrobeFullTitle(text);
     }
 
     /**

@@ -163,7 +163,11 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public boolean isEnabled() {
-        return isConfigEnabled()
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return isConfigEnabled()
                 && CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode == CoinTrackerDisplayMode.OVERLAY
                 && BossBarHudValueDecoder.isFloorDimension();
     }

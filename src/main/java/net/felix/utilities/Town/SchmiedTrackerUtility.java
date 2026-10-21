@@ -163,7 +163,7 @@ public class SchmiedTrackerUtility {
 		}
 		
 		// Prüfe Konfiguration
-				if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+				if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerEnabled ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().showSchmiedTracker) {
 			return;

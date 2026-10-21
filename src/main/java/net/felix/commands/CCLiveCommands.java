@@ -12,12 +12,12 @@ import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.chat.ChatManager;
-import net.felix.utilities.Other.ItemDisplayDebugUtility;
+import net.felix.devtools.DevToolsAccess;
+import net.felix.devtools.DevToolsScreen;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Town.StarForgedSoundUtility;
@@ -117,14 +117,9 @@ public class CCLiveCommands {
             .then(literal("sternen_sound_test")
                 .executes(CCLiveCommands::testStarForgedSound))
             
-            // Debug Commands
-            .then(literal("debug")
-                .then(literal("coin_collector")
-                    .executes(CCLiveCommands::debugCoinCollector))
-                .then(literal("itemdisplay")
-                    .executes(CCLiveCommands::debugItemDisplay))
-                .then(literal("nearby")
-                    .executes(CCLiveCommands::debugNearbyDisplays)))
+            // DevTools (Allowlist / Fabric-Dev)
+            .then(literal("devtools")
+                .executes(CCLiveCommands::openDevTools))
             
             // Allgemeine Commands
             .then(literal("help")
@@ -351,6 +346,17 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7Registriert: " + (manager.isRegistered() ? "§aJa" : "§cNein")));
         context.getSource().sendFeedback(Component.literal("§7Spieler: " + (manager.getPlayerName() != null ? "§a" + manager.getPlayerName() : "§cUnbekannt")));
         context.getSource().sendFeedback(Component.literal("§7Token: " + (manager.getPlayerToken() != null ? "§aVorhanden" : "§cFehlt")));
+        context.getSource().sendFeedback(Component.literal("§7Chat-WebSocket: " +
+            (net.felix.chat.ChatManager.getInstance().isWebSocketConnected() ? "§aVerbunden" : "§cGetrennt")));
+        net.felix.utilities.Overall.ServerConnectionGate.refresh();
+        var gate = net.felix.utilities.Overall.ServerConnectionGate.getMatchState();
+        context.getSource().sendFeedback(Component.literal("§7Server-Gate: §f" + gate
+            + " §7Features: " + (net.felix.utilities.Overall.ServerConnectionGate.areFeaturesAllowed() ? "§aAn" : "§cAus")
+            + " §7Uploads: " + (net.felix.utilities.Overall.ServerConnectionGate.isDataUploadAllowed() ? "§aAn" : "§cAus")));
+        String raw = net.felix.utilities.Overall.ServerConnectionGate.getCachedRawAddress();
+        if (raw != null && !raw.isEmpty()) {
+            context.getSource().sendFeedback(Component.literal("§7Remote: §f" + raw));
+        }
         context.getSource().sendFeedback(Component.literal("§7Siehe Konsole für vollständige Diagnose"));
         
         return 1;
@@ -377,78 +383,44 @@ public class CCLiveCommands {
     
     // =================== HELP COMMAND ===================
     
-    // =================== DEBUG COMMANDS ===================
-    
-    /**
-     * Debug-Info für CoinCollector
-     */
-    private static int debugCoinCollector(CommandContext<FabricClientCommandSource> context) {
-        // Prüfe ob Debug-Modus aktiviert ist
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().leaderboardDebugging) {
-            context.getSource().sendError(Component.literal("§cDieser Command ist nur im Debug-Modus verfügbar!"));
-            context.getSource().sendError(Component.literal("§7Aktiviere 'Leaderboard Debugging' in der Config."));
+    // =================== DEVTOOLS ===================
+
+    private static int openDevTools(CommandContext<FabricClientCommandSource> context) {
+        if (!DevToolsAccess.isAllowed()) {
+            context.getSource().sendError(Component.literal("§cKeine Berechtigung"));
             return 0;
         }
-        
-        try {
-            LeaderboardManager manager = LeaderboardManager.getInstance();
-            CoinCollector coinCollector = (CoinCollector) manager.getCollector("coins");
-            
-            if (coinCollector == null || !coinCollector.isActive()) {
-                context.getSource().sendError(Component.literal("§cCoinCollector ist nicht aktiv!"));
-                return 0;
-            }
-            
-            // Hole nächsten Command-Zeitpunkt
-            long nextCommandTime = coinCollector.getNextCommandTime();
-            long currentTime = System.currentTimeMillis();
-            long timeUntilNext = Math.max(0, nextCommandTime - currentTime);
-            
-            context.getSource().sendFeedback(Component.literal("§6=== CoinCollector Debug ==="));
-            context.getSource().sendFeedback(Component.literal("§7Status: " + (coinCollector.isActive() ? "§aAktiv" : "§cInaktiv")));
-            context.getSource().sendFeedback(Component.literal("§7Aktuelle Coins: §a" + String.format("%,d", coinCollector.getCoins()).replace('.', ',')));
-            context.getSource().sendFeedback(Component.literal("§7Nächster /cc coins Command: §a" + formatTime(timeUntilNext)));
-            
-            return 1;
-        } catch (Exception e) {
-            context.getSource().sendError(Component.literal("§cFehler beim Abrufen der CoinCollector-Debug-Info: " + e.getMessage()));
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if (client == null) {
             return 0;
         }
-    }
-    
-    /**
-     * Formatiert Zeit in Millisekunden zu lesbarem Format
-     */
-    private static String formatTime(long milliseconds) {
-        if (milliseconds <= 0) {
-            return "Jetzt";
-        }
-        
-        long seconds = milliseconds / 1000;
-        long minutes = seconds / 60;
-        seconds = seconds % 60;
-        
-        if (minutes > 0) {
-            return minutes + "m " + seconds + "s";
-        } else {
-            return seconds + "s";
-        }
+        client.execute(DevToolsScreen::open);
+        return 1;
     }
     
     // =================== CHAT COMMANDS ===================
     
     /**
-     * Setzt den Chat-Modus (default oder cclive)
+     * Setzt das Schreibziel (default oder cclive). Wird persistiert.
+     * Bei beiden Chats an kann frei zwischen Default und CCLive gewechselt werden.
      */
     private static int setChatMode(CommandContext<FabricClientCommandSource> context, String mode) {
         ChatManager chatManager = ChatManager.getInstance();
         
         if (mode.equalsIgnoreCase("cclive")) {
+            if (!chatManager.isShowCCLiveChat()) {
+                context.getSource().sendError(Component.literal("§cCCLive-Chat ist aus — erst mit /cclive chat toggle cclive aktivieren."));
+                return 0;
+            }
             chatManager.setChatMode(ChatManager.ChatMode.CCLIVE);
-            context.getSource().sendFeedback(Component.literal("§aChat-Modus auf CCLive gesetzt!"));
+            context.getSource().sendFeedback(Component.literal("§aSchreiben: CCLive"));
         } else if (mode.equalsIgnoreCase("default")) {
+            if (!chatManager.isShowDefaultChat()) {
+                context.getSource().sendError(Component.literal("§cDefault-Chat ist aus — erst mit /cclive chat toggle default aktivieren."));
+                return 0;
+            }
             chatManager.setChatMode(ChatManager.ChatMode.DEFAULT);
-            context.getSource().sendFeedback(Component.literal("§aChat-Modus auf Default gesetzt!"));
+            context.getSource().sendFeedback(Component.literal("§aSchreiben: Default"));
         } else {
             context.getSource().sendError(Component.literal("§cUngültiger Modus! Verwende 'cclive' oder 'default'."));
             return 0;
@@ -469,13 +441,22 @@ public class CCLiveCommands {
         }
         
         chatManager.toggleChat(chatType);
-        boolean isVisible = chatManager.isChatVisible(chatType);
-        
-        context.getSource().sendFeedback(Component.literal(
-            "§a" + chatType + " Chat ist jetzt " + (isVisible ? "§a§lAN" : "§c§lAUS")
-        ));
-        
+        sendChatVisibilityOverview(context.getSource());
         return 1;
+    }
+
+    /** Übersicht über die Sichtbarkeit beider Chats. */
+    private static void sendChatVisibilityOverview(FabricClientCommandSource source) {
+        ChatManager chat = ChatManager.getInstance();
+        String ccliveState = chat.isShowCCLiveChat() ? "§a§lAN" : "§c§lAUS";
+        String defaultState = chat.isShowDefaultChat() ? "§a§lAN" : "§c§lAUS";
+        String writeMode = chat.getEffectiveWriteMode() == ChatManager.ChatMode.CCLIVE ? "§dCCLive" : "§fDefault";
+
+        source.sendFeedback(Component.literal("§6== Chats =="));
+        source.sendFeedback(Component.literal("§7CCLive  " + ccliveState));
+        source.sendFeedback(Component.literal("§7Default " + defaultState));
+        source.sendFeedback(Component.literal("§7Schreiben: " + writeMode));
+        source.sendFeedback(Component.literal("§6=========="));
     }
     
     // =================== HELP COMMAND ===================
@@ -502,6 +483,9 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7/chat <cclive/default> §f- Chat-Modus wechseln"));
         context.getSource().sendFeedback(Component.literal("§7/cclive chat toggle <default/cclive> §f- Chat-Sichtbarkeit togglen"));
         context.getSource().sendFeedback(Component.literal("§7@cclive <nachricht> §f- Direkt in CCLive Chat schreiben"));
+        context.getSource().sendFeedback(Component.literal("§7@global <nachricht> §f- Direkt in Default/Global Chat schreiben"));
+        context.getSource().sendFeedback(Component.literal("§7@lp … §f- Immer in den globalen Minecraft-Chat"));
+        context.getSource().sendFeedback(Component.literal("§7!item §f- Geteiltes Item einfügen (CCLive; sonst → xD)"));
         context.getSource().sendFeedback(Component.literal(""));
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
         context.getSource().sendFeedback(Component.literal("§7/cclive sternen_sound_test §f- Sternengeschmiedet-Sound testen"));
@@ -518,7 +502,6 @@ public class CCLiveCommands {
             context.getSource().sendFeedback(Component.literal("§e§lLeaderboard Debug Commands:"));
             context.getSource().sendFeedback(Component.literal("§7/cclive lb status §f- Leaderboard-System Status"));
             context.getSource().sendFeedback(Component.literal("§7/cclive lb refresh §f- Registrierung erneuern"));
-            context.getSource().sendFeedback(Component.literal("§7/cclive debug coin_collector §f- CoinCollector Debug-Info"));
             context.getSource().sendFeedback(Component.literal(""));
         }
         
@@ -527,31 +510,6 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7Debug-Commands sind nur sichtbar wenn Debug-Modi in der Config aktiviert sind."));
         
         return 1;
-    }
-    
-    // =================== DEBUG: ITEM DISPLAY ===================
-    private static int debugItemDisplay(CommandContext<FabricClientCommandSource> context) {
-        try {
-            int result = ItemDisplayDebugUtility.dump(context.getSource());
-            if (result == 0) {
-                context.getSource().sendError(Component.literal("§cKein passendes Entity gefunden."));
-            }
-            return result;
-        } catch (Exception e) {
-            context.getSource().sendError(Component.literal("§cFehler beim Auslesen des ItemDisplays: " + e.getMessage()));
-            return 0;
-        }
-    }
-    
-    // =================== DEBUG: NEARBY DISPLAYS ===================
-    private static int debugNearbyDisplays(CommandContext<FabricClientCommandSource> context) {
-        try {
-            // fester Radius 8 Blöcke für den Anfang
-            return ItemDisplayDebugUtility.scanNearby(context.getSource(), 8.0);
-        } catch (Exception e) {
-            context.getSource().sendError(Component.literal("§cFehler beim Nearby-Scan: " + e.getMessage()));
-            return 0;
-        }
     }
     
     // =================== TAB COMPLETION ===================

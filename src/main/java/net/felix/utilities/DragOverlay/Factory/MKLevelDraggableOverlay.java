@@ -328,7 +328,7 @@ public class MKLevelDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+        return CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
                CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled &&
                CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled;
     }

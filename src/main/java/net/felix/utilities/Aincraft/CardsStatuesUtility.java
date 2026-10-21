@@ -233,7 +233,7 @@ public class CardsStatuesUtility {
 		handleHotkey();
 		
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled) {
 			return;
 		}
@@ -278,7 +278,7 @@ public class CardsStatuesUtility {
 	
 	private static void onChatMessage(Component message, boolean overlay) {
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled) {
 			return;
 		}

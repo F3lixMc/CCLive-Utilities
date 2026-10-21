@@ -67,24 +67,7 @@ public class ProfileStatsManager {
     private long playtimeTicks = 0; // Ticks seit letztem Update
     private static final int PLAYTIME_UPDATE_INTERVAL = 1200; // Alle 60 Sekunden (20 ticks/sec * 60)
     
-    // Erlaubter Server für Playtime-Tracking
-    // Option 1: Server-IP und Port (z.B. "play.example.com:25565" oder "192.168.1.100:25565")
-    // Option 2: Server-Name aus der Server-Liste (wie du ihn in Minecraft benannt hast)
-    // Option 3: Beide leer lassen = Server-Prüfung deaktiviert (trackt auf allen Servern)
-    
-    // Server-IP/Port (z.B. "play.example.com:25565" oder "192.168.1.100:25565")
-    // Leer lassen wenn nicht bekannt oder nicht verwendet werden soll
-    private static final String ALLOWED_SERVER_ADDRESS = "playlegend.net:25565";
-    
-    // Server-Name aus der Server-Liste (wie du ihn in Minecraft benannt hast)
-    // Leer lassen wenn nicht verwendet werden soll
-    private static final String ALLOWED_SERVER_NAME = ""; // z.B. "Mein Produktionsserver"
-    
-    // Server-Prüfung deaktivieren für Testing (auf true setzen zum Testen)
-    private static final boolean DISABLE_SERVER_CHECK = true; // true = Server-Prüfung überspringen (für Testing)
-    
-    // Flag: Ist der Spieler auf dem erlaubten Server für Playtime-Tracking?
-    // Wird beim Server-Join gesetzt und beim Disconnect zurückgesetzt
+    // Playtime nur wenn Server-Gate Uploads erlaubt (PlayLegend / Dev)
     private boolean isOnAllowedServerForPlaytime = false;
     
     // Karten/Statuen-Level (Name -> Level)
@@ -114,6 +97,31 @@ public class ProfileStatsManager {
             instance = new ProfileStatsManager();
         }
         return instance;
+    }
+
+    /**
+     * Lokal freigeschaltete Karte: Eintrag in cards_statues_levels.json (Level immer ≥ 1).
+     * Fehlt der Name → nicht gefunden.
+     */
+    public boolean hasUnlockedCard(String cardName) {
+        if (cardName == null || cardName.isEmpty()) {
+            return false;
+        }
+        if (cardsLevels.containsKey(cardName) && cardsLevels.get(cardName) != null && cardsLevels.get(cardName) >= 1) {
+            return true;
+        }
+        for (Map.Entry<String, Integer> entry : cardsLevels.entrySet()) {
+            if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(cardName)
+                    && entry.getValue() != null && entry.getValue() >= 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isCardUnlockedLocally(String cardName) {
+        ProfileStatsManager mgr = getInstance();
+        return mgr != null && mgr.hasUnlockedCard(cardName);
     }
     
     /**
@@ -175,8 +183,9 @@ public class ProfileStatsManager {
         
         // Registriere Server-Join Event (Reset + Server-Prüfung)
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            // Prüfe beim Join, ob es der erlaubte Server ist (nur einmal beim Join)
-            isOnAllowedServerForPlaytime = isOnAllowedServer(client);
+            net.felix.utilities.Overall.ServerConnectionGate.refresh();
+            isOnAllowedServerForPlaytime =
+                net.felix.utilities.Overall.ServerConnectionGate.isDataUploadAllowed();
             resetCounters();
         });
         
@@ -246,106 +255,6 @@ public class ProfileStatsManager {
         if (client.player.tickCount % 10 == 0) {
             checkCardsStatuesMenuForChanges(client);
         }
-    }
-    
-    /**
-     * Prüft ob der Spieler auf dem erlaubten Server ist (für Playtime-Tracking)
-     * 
-     * Verwendet mehrere Methoden zur Server-Erkennung:
-     * 1. Server-IP/Port (wenn ALLOWED_SERVER_ADDRESS gesetzt ist)
-     * 2. Server-Name aus der Server-Liste (wenn ALLOWED_SERVER_NAME gesetzt ist)
-     * 3. Beide müssen übereinstimmen (wenn beide gesetzt sind)
-     */
-    private boolean isOnAllowedServer(Minecraft client) {
-        // Server-Prüfung überspringen für Testing
-        if (DISABLE_SERVER_CHECK) {
-            return true; // Immer erlauben wenn Server-Check deaktiviert
-        }
-        
-        // Wenn beide leer sind, tracke auf allen Servern
-        if ((ALLOWED_SERVER_ADDRESS == null || ALLOWED_SERVER_ADDRESS.isEmpty()) &&
-            (ALLOWED_SERVER_NAME == null || ALLOWED_SERVER_NAME.isEmpty())) {
-            if (isDebugEnabled()) {
-                // Silent error handling("[ProfileStats] ⚠️ Keine Server-Prüfung konfiguriert → Playtime-Tracking auf allen Servern aktiviert");
-            }
-            return true;
-        }
-        
-        boolean matchesAddress = true;
-        boolean matchesName = true;
-        
-        // Prüfe Server-IP/Port
-        if (ALLOWED_SERVER_ADDRESS != null && !ALLOWED_SERVER_ADDRESS.isEmpty()) {
-            try {
-                String currentAddress = null;
-                if (client.getConnection() != null && client.getConnection().getConnection() != null) {
-                    var address = client.getConnection().getConnection().getRemoteAddress();
-                    if (address != null) {
-                        currentAddress = address.toString();
-                        // Entferne "/" am Anfang falls vorhanden
-                        if (currentAddress.startsWith("/")) {
-                            currentAddress = currentAddress.substring(1);
-                        }
-                    }
-                }
-                
-                if (currentAddress != null) {
-                    matchesAddress = currentAddress.equalsIgnoreCase(ALLOWED_SERVER_ADDRESS);
-                    if (isDebugEnabled()) {
-                        // Silent error handling("[ProfileStats] Server-Adresse: '" + currentAddress + "' (erwartet: '" + ALLOWED_SERVER_ADDRESS + "') → " + (matchesAddress ? "✅" : "❌"));
-                    }
-                } else {
-                    matchesAddress = false;
-                    if (isDebugEnabled()) {
-                        // Silent error handling("[ProfileStats] ❌ Server-Adresse konnte nicht ermittelt werden");
-                    }
-                }
-            } catch (Exception e) {
-                // Silent error handling("[ProfileStats] Fehler beim Prüfen der Server-Adresse: " + e.getMessage());
-                matchesAddress = false;
-            }
-        }
-        
-        // Prüfe Server-Name aus der Liste
-        if (ALLOWED_SERVER_NAME != null && !ALLOWED_SERVER_NAME.isEmpty()) {
-            try {
-                String currentName = null;
-                if (client.getCurrentServer() != null) {
-                    currentName = client.getCurrentServer().name;
-                } else if (client.getConnection() != null && client.getConnection().getServerData() != null) {
-                    currentName = client.getConnection().getServerData().name;
-                }
-                
-                if (currentName != null) {
-                    matchesName = currentName.equalsIgnoreCase(ALLOWED_SERVER_NAME);
-                    if (isDebugEnabled()) {
-                        // Silent error handling("[ProfileStats] Server-Name: '" + currentName + "' (erwartet: '" + ALLOWED_SERVER_NAME + "') → " + (matchesName ? "✅" : "❌"));
-                    }
-                } else {
-                    matchesName = false;
-                    if (isDebugEnabled()) {
-                        // Silent error handling("[ProfileStats] ❌ Server-Name konnte nicht ermittelt werden");
-                    }
-                }
-            } catch (Exception e) {
-                // Silent error handling("[ProfileStats] Fehler beim Prüfen des Server-Namens: " + e.getMessage());
-                matchesName = false;
-            }
-        }
-        
-        // Wenn beide gesetzt sind, müssen beide übereinstimmen
-        // Wenn nur eine gesetzt ist, muss diese übereinstimmen
-        boolean isAllowed = matchesAddress && matchesName;
-        
-        if (isDebugEnabled()) {
-            if (isAllowed) {
-                // Silent error handling("[ProfileStats] ✅ Spieler ist auf dem erlaubten Server → Playtime-Tracking aktiviert");
-            } else {
-                // Silent error handling("[ProfileStats] ⚠️ Spieler ist NICHT auf dem erlaubten Server → Playtime-Tracking deaktiviert");
-            }
-        }
-        
-        return isAllowed;
     }
     
     /**
@@ -534,6 +443,14 @@ public class ProfileStatsManager {
      * Sendet Stats-Update an den Server
      */
     private void sendStatsUpdate(boolean isFinal) {
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            return;
+        }
+
+        if (!net.felix.leaderboards.SeasonChangeGate.getInstance().areSeasonUploadsAllowed()) {
+            return;
+        }
+
         LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
         if (!leaderboardManager.isRegistered() || leaderboardManager.getPlayerToken() == null) {
             if (isDebugEnabled()) {
@@ -666,6 +583,9 @@ public class ProfileStatsManager {
         currentBlueprintCount = 0;
         
         // Sende Reset-Request an den Server (setzt blueprints_found in SQL auf 0)
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            return;
+        }
         if (isEnabled && httpClient != null) {
             LeaderboardManager manager = LeaderboardManager.getInstance();
             if (manager.isEnabled() && manager.isRegistered()) {
@@ -755,41 +675,70 @@ public class ProfileStatsManager {
     /**
      * Speichert Karten/Statuen-Level in die JSON-Datei (asynchron, um Freezes zu vermeiden)
      */
+    private final java.util.concurrent.atomic.AtomicLong cardsStatuesSaveGeneration =
+        new java.util.concurrent.atomic.AtomicLong(0L);
+
     private void saveCardsStatuesLevels() {
-        // Erstelle Kopien der Maps für asynchrones Schreiben (Thread-sicher)
+        final long generation = cardsStatuesSaveGeneration.get();
         final Map<String, Integer> cardsCopy = new HashMap<>(cardsLevels);
         final Map<String, Integer> statuesCopy = new HashMap<>(statuesLevels);
         
-        // Führe File I/O asynchron aus, um Freezes zu vermeiden
-        CompletableFuture.runAsync(() -> {
-            try {
-                // Erstelle Verzeichnis falls nicht vorhanden
-                saveFile.getParentFile().mkdirs();
-                
-                JsonObject json = new JsonObject();
-                
-                // Speichere Karten-Level
-                JsonObject cardsJson = new JsonObject();
-                for (Map.Entry<String, Integer> entry : cardsCopy.entrySet()) {
-                    cardsJson.addProperty(entry.getKey(), entry.getValue());
-                }
-                json.add("cards", cardsJson);
-                
-                // Speichere Statuen-Level
-                JsonObject statuesJson = new JsonObject();
-                for (Map.Entry<String, Integer> entry : statuesCopy.entrySet()) {
-                    statuesJson.addProperty(entry.getKey(), entry.getValue());
-                }
-                json.add("statues", statuesJson);
-                
-                // Schreibe in Datei
-                try (FileWriter writer = new FileWriter(saveFile)) {
-                    gson.toJson(json, writer);
-                }
-            } catch (IOException e) {
-                // Silent error handling("❌ [ProfileStats] Fehler beim Speichern von Karten/Statuen-Level: " + e.getMessage());
+        CompletableFuture.runAsync(() -> writeCardsStatuesLevels(cardsCopy, statuesCopy, generation));
+    }
+
+    /**
+     * Leert Karten-/Statuen-Level lokal und speichert synchron cards_statues_levels.json.
+     * Kein Backend-Aufruf. Invalidiert laufende async Saves.
+     * @return true bei erfolgreichem Speichern
+     */
+    public boolean resetCardsStatuesLevelsLocalSync() {
+        cardsStatuesSaveGeneration.incrementAndGet();
+        final long generation = cardsStatuesSaveGeneration.get();
+        cardsLevels.clear();
+        statuesLevels.clear();
+        currentBlueprintCount = 0;
+        return writeCardsStatuesLevels(new HashMap<>(), new HashMap<>(), generation);
+    }
+
+    /** Verwirft ausstehende Profile-Uploads der vorherigen Season (nur lokal). */
+    public void discardPendingSeasonUploads() {
+        cardsStatuesSaveGeneration.incrementAndGet();
+        currentBlueprintCount = 0;
+        resetAdditiveCounters();
+    }
+
+    private boolean writeCardsStatuesLevels(Map<String, Integer> cardsCopy,
+            Map<String, Integer> statuesCopy, long expectedGeneration) {
+        if (expectedGeneration != cardsStatuesSaveGeneration.get()) {
+            return false;
+        }
+        try {
+            saveFile.getParentFile().mkdirs();
+            
+            JsonObject json = new JsonObject();
+            
+            JsonObject cardsJson = new JsonObject();
+            for (Map.Entry<String, Integer> entry : cardsCopy.entrySet()) {
+                cardsJson.addProperty(entry.getKey(), entry.getValue());
             }
-        });
+            json.add("cards", cardsJson);
+            
+            JsonObject statuesJson = new JsonObject();
+            for (Map.Entry<String, Integer> entry : statuesCopy.entrySet()) {
+                statuesJson.addProperty(entry.getKey(), entry.getValue());
+            }
+            json.add("statues", statuesJson);
+            
+            if (expectedGeneration != cardsStatuesSaveGeneration.get()) {
+                return false;
+            }
+            try (FileWriter writer = new FileWriter(saveFile)) {
+                gson.toJson(json, writer);
+            }
+            return expectedGeneration == cardsStatuesSaveGeneration.get();
+        } catch (IOException e) {
+            return false;
+        }
     }
     
     

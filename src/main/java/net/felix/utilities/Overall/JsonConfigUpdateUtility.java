@@ -43,14 +43,14 @@ public class JsonConfigUpdateUtility {
         CompletableFuture.runAsync(() -> {
             try {
                 LeaderboardManager manager = LeaderboardManager.getInstance();
-                if (manager == null || !manager.isEnabled() || !manager.isRegistered()) {
-                    return; // Leaderboard-System nicht aktiv, kein Server-Check
+                if (manager == null) {
+                    return;
                 }
                 
                 LeaderboardConfig config = new LeaderboardConfig();
                 String serverUrl = config.getServerUrl();
                 
-                // Prüfe und aktualisiere alle Configs parallel
+                // Config-Downloads brauchen keine Registrierung (nur GET)
                 checkAndUpdateConfig("aincraft", "Aincraft.json", CCLiveUtilitiesConfig.HANDLER.instance().aincraftConfigVersion, 
                     (version) -> CCLiveUtilitiesConfig.HANDLER.instance().aincraftConfigVersion = version, serverUrl);
                 

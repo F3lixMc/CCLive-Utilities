@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -619,7 +620,7 @@ public class KitFilterUtility {
 	
 	private static void onClientTick(Minecraft client) {
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
 			return;
 		}
 		
@@ -1543,12 +1544,8 @@ public class KitFilterUtility {
 
 	private static ItemInfo convertItemDataToKitItemInfo(ItemData item) {
 		String name = item.name != null ? item.name : "";
-		String ebene = null;
-		if (item.foundAt != null && !item.foundAt.isEmpty() && item.foundAt.get(0).floor != null) {
-			String floor = item.foundAt.get(0).floor;
-			Integer floorNum = FloorNumberExtractor.parseFloorString(floor);
-			ebene = floorNum != null ? "e" + floorNum : floor;
-		}
+		String ebene = formatItemFoundAt(item);
+		boolean isModule = isModuleItem(item);
 
 		String itemType = null;
 		String nameColorString = null;
@@ -1558,7 +1555,9 @@ public class KitFilterUtility {
 
 		if (item.info != null) {
 			net.felix.utilities.ItemViewer.ItemInfo ivInfo = item.info;
-			if (ivInfo.piece != null && !ivInfo.piece.isEmpty()) {
+			if (isModule) {
+				itemType = "Modul";
+			} else if (ivInfo.piece != null && !ivInfo.piece.isEmpty()) {
 				itemType = ivInfo.piece;
 			} else if (ivInfo.type != null && !ivInfo.type.isEmpty()) {
 				itemType = ivInfo.type;
@@ -1567,22 +1566,64 @@ public class KitFilterUtility {
 				nameColorString = ivInfo.rarity;
 				nameColor = rarityColorFromItemViewer(ivInfo.rarity);
 			}
-			if (ivInfo.modifier != null && !ivInfo.modifier.isEmpty()) {
+			if (!isModule && ivInfo.modifier != null && !ivInfo.modifier.isEmpty()) {
 				StringBuilder modifierBuilder = new StringBuilder();
 				for (int i = 0; i < ivInfo.modifier.size(); i++) {
 					if (i > 0) {
 						modifierBuilder.append(", ");
 					}
-					modifierBuilder.append("[").append(ivInfo.modifier.get(i)).append("]");
+					String mod = ivInfo.modifier.get(i);
+					if (mod == null || mod.isEmpty()) {
+						continue;
+					}
+					modifierBuilder.append("[").append(mod).append("]");
 				}
-				modifier = modifierBuilder.toString();
+				modifier = modifierBuilder.length() > 0 ? modifierBuilder.toString() : null;
 			}
 			if (ivInfo.description != null && !ivInfo.description.isEmpty()) {
 				infoText = ivInfo.description;
 			}
+		} else if (isModule) {
+			itemType = "Modul";
+		}
+
+		if (isModule || modifier == null || modifier.isEmpty() || "[]".equals(modifier)) {
+			if (isModule) {
+				modifier = "–";
+			}
 		}
 
 		return new ItemInfo(name, ebene, infoText, nameColor, nameColorString, itemType, modifier);
+	}
+
+	private static boolean isModuleItem(ItemData item) {
+		if (item == null) {
+			return false;
+		}
+		if (item.category != null && item.category.equalsIgnoreCase("modules")) {
+			return true;
+		}
+		return item.info != null && Boolean.TRUE.equals(item.info.module);
+	}
+
+	/** Fundorte/Meilensteine aus ItemViewer (Komma-getrennt). */
+	private static String formatItemFoundAt(ItemData item) {
+		if (item == null || item.foundAt == null || item.foundAt.isEmpty()) {
+			return null;
+		}
+		List<String> parts = new ArrayList<>();
+		for (net.felix.utilities.ItemViewer.LocationData loc : item.foundAt) {
+			if (loc == null) {
+				continue;
+			}
+			if (loc.collection != null && !loc.collection.isEmpty()) {
+				parts.add(loc.collection);
+			} else if (loc.floor != null && !loc.floor.isEmpty()) {
+				Integer floorNum = FloorNumberExtractor.parseFloorString(loc.floor);
+				parts.add(floorNum != null ? "e" + floorNum : loc.floor);
+			}
+		}
+		return parts.isEmpty() ? null : String.join(", ", parts);
 	}
 
 	private static int rarityColorFromItemViewer(String rarity) {
@@ -1593,31 +1634,258 @@ public class KitFilterUtility {
 		return customKitCacheKey(kit);
 	}
 
+	/** Nur Ausrüstung (itemNames), ohne Angelkomponenten und ohne Karten. */
 	public static List<ItemInfo> getCustomKitItemInfos(CustomKit kit) {
-		if (kit == null || kit.itemNames == null) {
+		if (kit == null) {
 			return new ArrayList<>();
 		}
-		String cacheKey = customKitCacheKey(kit);
-		List<ItemInfo> cached = customKitItemInfosCache.get(cacheKey);
-		if (cached != null) {
-			return cached;
-		}
 		List<ItemInfo> result = new ArrayList<>();
-		for (String itemName : kit.itemNames) {
-			ItemInfo info = findItemInfoByName(itemName);
-			if (info != null) {
-				result.add(info);
+		if (kit.itemNames != null) {
+			for (String itemName : kit.itemNames) {
+				ItemInfo info = findItemInfoByName(itemName);
+				if (info != null) {
+					result.add(info);
+				}
 			}
 		}
-		customKitItemInfosCache.put(cacheKey, result);
 		return result;
+	}
+
+	/** Angelkomponenten für Kit-Hover-Abschnitt (Typ aus Speicherung, Metadaten aus items.json). */
+	public static List<ItemInfo> getCustomKitFishingComponentInfos(CustomKit kit) {
+		List<ItemInfo> result = new ArrayList<>();
+		if (kit == null || kit.fishingComponents == null) {
+			return result;
+		}
+		for (CustomKit.FishingComponent fc : kit.fishingComponents) {
+			if (fc == null || fc.itemName == null || fc.itemName.isEmpty()) {
+				continue;
+			}
+			ItemInfo base = findItemInfoByName(fc.itemName);
+			String type = fc.type != null && !fc.type.isEmpty() ? fc.type : "Komponente";
+			if (base != null) {
+				String modifier = (base.modifier != null && !base.modifier.isEmpty() && !"[]".equals(base.modifier))
+					? base.modifier : "–";
+				result.add(new ItemInfo(
+					base.name,
+					base.ebene,
+					base.info,
+					base.nameColor,
+					base.nameColorString,
+					type,
+					modifier));
+			} else {
+				result.add(new ItemInfo(fc.itemName, null, null, 0xFFFFFFFF, null, type, "–"));
+			}
+		}
+		return result;
+	}
+
+	/** Karten: Effekt + eN-Fundorte aus CardsStatues.json; Found lokal. */
+	public static List<ItemInfo> getCustomKitCardInfos(CustomKit kit) {
+		List<ItemInfo> result = new ArrayList<>();
+		if (kit == null || kit.cardNames == null) {
+			return result;
+		}
+		for (String cardName : kit.cardNames) {
+			if (cardName == null || cardName.isEmpty()) {
+				continue;
+			}
+			String clean = stripCardSuffix(cardName);
+			String effect = net.felix.utilities.Overall.InformationenUtility.getCardEffectByName(clean);
+			if (effect == null || effect.isEmpty()) {
+				effect = "–";
+			}
+			String floors = formatCardFloors(
+				net.felix.utilities.Overall.InformationenUtility.getCardFloorsByName(clean));
+			result.add(new ItemInfo(clean, floors, null, 0xFFFFFFFF, null, "Karte", effect));
+		}
+		return result;
+	}
+
+	private static String stripCardSuffix(String name) {
+		String cleaned = name != null ? name.trim() : "";
+		if (cleaned.endsWith("]")) {
+			int start = cleaned.lastIndexOf('[');
+			if (start >= 0) {
+				String inner = cleaned.substring(start + 1, cleaned.length() - 1).trim();
+				if ("karte".equalsIgnoreCase(inner)) {
+					cleaned = cleaned.substring(0, start).trim();
+				}
+			}
+		}
+		return cleaned;
+	}
+
+	private static String formatCardFloors(List<Integer> floors) {
+		if (floors == null || floors.isEmpty()) {
+			return null;
+		}
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < floors.size(); i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			sb.append("e").append(floors.get(i));
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Kit-Hover-Abschnitte in Reihenfolge:
+	 * Rüstung, Waffen, Werkzeuge, Module, Angelkomponenten, Karten (nur nicht-leere).
+	 */
+	public static List<KitHoverSection> getCustomKitHoverSections(CustomKit kit) {
+		List<KitHoverSection> sections = new ArrayList<>();
+		if (kit == null) {
+			return sections;
+		}
+
+		List<ItemInfo> armor = new ArrayList<>();
+		List<ItemInfo> weapons = new ArrayList<>();
+		List<ItemInfo> tools = new ArrayList<>();
+		List<ItemInfo> modules = new ArrayList<>();
+
+		if (kit.itemNames != null) {
+			for (String itemName : kit.itemNames) {
+				ItemInfo info = findItemInfoByName(itemName);
+				if (info == null) {
+					continue;
+				}
+				String cat = resolveItemCategory(kit, itemName);
+				switch (cat) {
+					case "weapons" -> weapons.add(info);
+					case "tools" -> tools.add(info);
+					case "modules" -> {
+						ItemInfo moduleInfo = forceModuleDisplay(info);
+						modules.add(moduleInfo);
+					}
+					default -> armor.add(info);
+				}
+			}
+		}
+
+		if (!armor.isEmpty()) {
+			sections.add(new KitHoverSection("Rüstung", armor, KitHoverSection.FoundMode.BLUEPRINT));
+		}
+		if (!weapons.isEmpty()) {
+			sections.add(new KitHoverSection("Waffen", weapons, KitHoverSection.FoundMode.BLUEPRINT));
+		}
+		if (!tools.isEmpty()) {
+			sections.add(new KitHoverSection("Werkzeuge", tools, KitHoverSection.FoundMode.BLUEPRINT));
+		}
+		if (!modules.isEmpty()) {
+			sections.add(new KitHoverSection("Module", modules, KitHoverSection.FoundMode.BLUEPRINT));
+		}
+
+		List<ItemInfo> fishing = getCustomKitFishingComponentInfos(kit);
+		if (!fishing.isEmpty()) {
+			sections.add(new KitHoverSection("Angelkomponenten", fishing, KitHoverSection.FoundMode.FISHING));
+		}
+
+		List<ItemInfo> cards = getCustomKitCardInfos(kit);
+		if (!cards.isEmpty()) {
+			sections.add(new KitHoverSection("Karten", cards, KitHoverSection.FoundMode.CARD));
+		}
+
+		return sections;
+	}
+
+	private static ItemInfo forceModuleDisplay(ItemInfo info) {
+		String modifier = info.modifier;
+		if (modifier == null || modifier.isEmpty() || "[]".equals(modifier)) {
+			modifier = "–";
+		}
+		return new ItemInfo(
+			info.name,
+			info.ebene,
+			info.info,
+			info.nameColor,
+			info.nameColorString,
+			"Modul",
+			modifier);
+	}
+
+	private static String resolveItemCategory(CustomKit kit, String itemName) {
+		if (kit.itemCategories != null) {
+			String stored = kit.itemCategories.get(itemName);
+			if (stored != null && !stored.isEmpty()) {
+				return stored.toLowerCase(Locale.ROOT);
+			}
+		}
+		ItemData data = ItemViewerUtility.findItemByName(itemName);
+		if (data == null) {
+			data = ItemViewerUtility.findItemByNameFuzzy(itemName);
+		}
+		return classifyEquipmentCategory(data);
+	}
+
+	private static String classifyEquipmentCategory(ItemData data) {
+		if (data == null) {
+			return "armor";
+		}
+		if (isModuleItem(data)) {
+			return "modules";
+		}
+		String piece = data.info != null && data.info.piece != null
+			? data.info.piece.toLowerCase(Locale.ROOT) : "";
+		String type = data.info != null && data.info.type != null
+			? data.info.type.toLowerCase(Locale.ROOT) : "";
+		String tags = "";
+		if (data.tags != null) {
+			tags = String.join(" ", data.tags).toLowerCase(Locale.ROOT);
+		}
+
+		if (type.contains("tool") || type.contains("werkzeug")
+				|| piece.contains("spitzhacke") || piece.contains("schaufel")
+				|| piece.contains("hacke") || tags.contains("tool")) {
+			return "tools";
+		}
+		if (type.contains("waffe") || type.contains("weapon")
+				|| piece.contains("schwert") || piece.contains("bogen")
+				|| piece.contains("armbrust") || piece.contains("dolch")
+				|| tags.contains("weapon")) {
+			return "weapons";
+		}
+		return "armor";
+	}
+
+	public static final class KitHoverSection {
+		public enum FoundMode { NONE, BLUEPRINT, FISHING, CARD }
+
+		public final String title;
+		public final List<ItemInfo> items;
+		public final FoundMode foundMode;
+
+		public KitHoverSection(String title, List<ItemInfo> items, FoundMode foundMode) {
+			this.title = title;
+			this.items = items != null ? items : List.of();
+			this.foundMode = foundMode != null ? foundMode : FoundMode.NONE;
+		}
 	}
 
 	private static String customKitCacheKey(CustomKit kit) {
 		StringBuilder key = new StringBuilder(kit.id != null ? kit.id : "");
 		key.append('|').append(kit.name != null ? kit.name : "");
-		for (String itemName : kit.itemNames) {
-			key.append('|').append(itemName);
+		if (kit.itemNames != null) {
+			for (String itemName : kit.itemNames) {
+				key.append('|').append(itemName);
+			}
+		}
+		key.append("|cards");
+		if (kit.cardNames != null) {
+			for (String cardName : kit.cardNames) {
+				key.append('|').append(cardName);
+			}
+		}
+		key.append("|fish");
+		if (kit.fishingComponents != null) {
+			for (CustomKit.FishingComponent fc : kit.fishingComponents) {
+				if (fc == null) {
+					continue;
+				}
+				key.append('|').append(fc.type).append(':').append(fc.itemName);
+			}
 		}
 		return key.toString();
 	}
@@ -1660,10 +1928,21 @@ public class KitFilterUtility {
 		}
 		if (selection.isCustom()) {
 			CustomKit kit = CustomKitManager.getKit(selection.customKitId);
-			if (kit == null || kit.itemNames == null) {
+			if (kit == null) {
 				return new HashSet<>();
 			}
-			return new HashSet<>(kit.itemNames);
+			Set<String> names = new HashSet<>();
+			if (kit.itemNames != null) {
+				names.addAll(kit.itemNames);
+			}
+			if (kit.fishingComponents != null) {
+				for (CustomKit.FishingComponent fc : kit.fishingComponents) {
+					if (fc != null && fc.itemName != null && !fc.itemName.isEmpty()) {
+						names.add(fc.itemName);
+					}
+				}
+			}
+			return names;
 		}
 		return getKitItemNames(selection.kitType, selection.level, selection.neuKit);
 	}

@@ -45,9 +45,6 @@ public class LeaderboardManager {
     private String playerToken = null;
     private String playerName = null;
     
-    // Season-Tracking für automatischen Blueprint-Reset
-    private Integer lastKnownSeasonId = null;
-    
     // Status
     private boolean isEnabled = true;
     private boolean isRegistered = false;
@@ -124,12 +121,13 @@ public class LeaderboardManager {
             }
         }
         
+        // Season-Gate (Upload-Sperre + lokaler Progress-Reset) vor Score-Updates
+        SeasonChangeGate.getInstance().initialize();
+
         // Registriere Server-Join Event für verzögerte Registrierung
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             System.out.println("🌐 [LeaderboardManager] Server beigetreten - starte Spieler-Registrierung...");
             schedulePlayerRegistration();
-            // Prüfe Season-ID beim Server-Join
-            checkSeasonChange();
         });
         
         // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
@@ -137,58 +135,22 @@ public class LeaderboardManager {
         if (client != null && client.player != null && client.getConnection() != null) {
             System.out.println("🌐 [LeaderboardManager] Spieler bereits auf Server - starte sofortige Registrierung...");
             schedulePlayerRegistration();
-            // Prüfe Season-ID sofort
-            checkSeasonChange();
         }
         
         System.out.println("🚀 LeaderboardManager vollständig initialisiert!");
     }
-    
-    /**
-     * Prüft, ob sich die Season-ID geändert hat und führt bei Bedarf einen Blueprint-Reset durch
-     */
-    private void checkSeasonChange() {
-        if (!isEnabled || !isRegistered) {
-            return;
+
+    /** Verwirft lastSentValues und Cooldown-Pending nach Season-Reset (kein Backend-Löschen). */
+    public void discardSeasonComparisonState() {
+        lastSentValues.clear();
+        try {
+            LeaderboardCooldownManager.getInstance().resetAllCooldowns();
+        } catch (Exception ignored) {
         }
-        
-        CompletableFuture.runAsync(() -> {
-            try {
-                JsonObject response = httpClient.get("/season/current");
-                if (response != null && response.has("season_id")) {
-                    int currentSeasonId = response.get("season_id").getAsInt();
-                    
-                    // Wenn wir noch keine Season-ID kennen, speichere sie einfach
-                    if (lastKnownSeasonId == null) {
-                        lastKnownSeasonId = currentSeasonId;
-                        System.out.println("📅 [LeaderboardManager] Aktuelle Season-ID: " + currentSeasonId);
-                        return;
-                    }
-                    
-                    // Prüfe ob sich die Season-ID geändert hat
-                    if (currentSeasonId != lastKnownSeasonId) {
-                        System.out.println("🔄 [LeaderboardManager] Season-Wechsel erkannt: " + lastKnownSeasonId + " → " + currentSeasonId);
-                        System.out.println("🔄 [LeaderboardManager] Führe automatischen Blueprint-Reset durch...");
-                        
-                        // Führe automatischen Blueprint-Reset durch
-                        try {
-                            net.felix.utilities.Aincraft.BPViewerUtility bpViewer = net.felix.utilities.Aincraft.BPViewerUtility.getInstance();
-                            if (bpViewer != null) {
-                                bpViewer.resetFoundBlueprints();
-                                System.out.println("✅ [LeaderboardManager] Blueprint-Reset erfolgreich durchgeführt!");
-                            }
-                        } catch (Exception e) {
-                            System.err.println("❌ [LeaderboardManager] Fehler beim Blueprint-Reset: " + e.getMessage());
-                        }
-                        
-                        // Aktualisiere die gespeicherte Season-ID
-                        lastKnownSeasonId = currentSeasonId;
-                    }
-                }
-            } catch (Exception e) {
-                // Ignoriere Fehler beim Season-Check (nicht kritisch)
-            }
-        });
+    }
+
+    private boolean canUploadSeasonalScores() {
+        return SeasonChangeGate.getInstance().areSeasonUploadsAllowed();
     }
     
     /**
@@ -238,6 +200,11 @@ public class LeaderboardManager {
      * Registriert den aktuellen Spieler beim Server
      */
     private void registerPlayer() {
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            System.out.println("⚠️ [LeaderboardManager] Datentracking deaktiviert - Registrierung übersprungen");
+            return;
+        }
+
         Minecraft client = Minecraft.getInstance();
         if (client.player == null) {
             System.out.println("⚠️ [LeaderboardManager] Spieler nicht verfügbar - Registrierung später versuchen");
@@ -307,9 +274,16 @@ public class LeaderboardManager {
         }
         
         // Prüfe ob Tracker-Aktivität aktiviert ist
-        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             if (config.isDebugMode()) {
-                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Tracker-Aktivität deaktiviert");
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Datentracking deaktiviert");
+            }
+            return;
+        }
+
+        if (!canUploadSeasonalScores()) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Season-Gate noch nicht freigegeben");
             }
             return;
         }
@@ -425,9 +399,16 @@ public class LeaderboardManager {
         }
         
         // Prüfe ob Tracker-Aktivität aktiviert ist
-        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             if (config.isDebugMode()) {
-                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Tracker-Aktivität deaktiviert");
+                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Datentracking deaktiviert");
+            }
+            return;
+        }
+
+        if (!canUploadSeasonalScores()) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Season-Gate noch nicht freigegeben");
             }
             return;
         }
@@ -528,9 +509,16 @@ public class LeaderboardManager {
         }
         
         // Prüfe ob Tracker-Aktivität aktiviert ist
-        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             if (config.isDebugMode()) {
-                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Tracker-Aktivität deaktiviert");
+                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Datentracking deaktiviert");
+            }
+            return;
+        }
+
+        if (!canUploadSeasonalScores()) {
+            if (config.isDebugMode()) {
+                System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Season-Gate noch nicht freigegeben");
             }
             return;
         }
@@ -677,6 +665,40 @@ public class LeaderboardManager {
     }
     
     
+    /**
+     * Stellt sicher, dass ein Auth-Token vorliegt (synchron, für Chat-Senden o.ä.).
+     * @return true wenn Token vorhanden bzw. Registrierung gelungen
+     */
+    public boolean ensureRegisteredSync() {
+        if (isRegistered && playerToken != null) {
+            return true;
+        }
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            return false;
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null) {
+            return false;
+        }
+
+        try {
+            playerName = client.player.getName().getString();
+            JsonObject requestData = new JsonObject();
+            requestData.addProperty("player", playerName);
+            JsonObject response = httpClient.post("/register", requestData);
+            if (response != null && response.has("token")) {
+                playerToken = response.get("token").getAsString();
+                isRegistered = true;
+                isEnabled = true;
+                return true;
+            }
+        } catch (Exception e) {
+            System.err.println("❌ [LeaderboardManager] Sync-Registrierung fehlgeschlagen: " + e.getMessage());
+        }
+        return false;
+    }
+
     /**
      * Manueller Refresh der Registrierung (falls beim Start fehlgeschlagen)
      */

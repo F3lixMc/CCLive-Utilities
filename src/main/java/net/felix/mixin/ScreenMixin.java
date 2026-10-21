@@ -69,6 +69,18 @@ public class ScreenMixin {
             cir.setReturnValue(true);
             return;
         }
+
+        // CCLive Chat: Item für Share kopieren (Inventar/Chest)
+        if (net.felix.chat.ItemShareManager.getInstance().handleKeyPress(keyCode, scanCode)) {
+            cir.setReturnValue(true);
+            return;
+        }
+
+        // DevTools-Hotkeys (Inventar erlaubt; Dedup mit Client-Tick)
+        if (net.felix.devtools.DevToolsHotkeyDispatcher.handleScreenKeyPress(keyCode, scanCode, modifiers)) {
+            cir.setReturnValue(true);
+            return;
+        }
         
         // Handle keyboard input for Clipboard quantity text field (nur in AbstractContainerScreens)
         Screen screen = (Screen) (Object) this;

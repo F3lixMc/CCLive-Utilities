@@ -65,7 +65,8 @@ public abstract class ChatHudRenderMixin {
                 return;
             }
             
-            if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled) {
+            if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled
+                    || !net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
                 return;
             }
             
@@ -138,14 +139,9 @@ public abstract class ChatHudRenderMixin {
                         int entryBottom = chatBottom - lineIndex * entryHeight;
                         int textTop = entryBottom - entryBottomToMessageY;
 
+                        // CCLive-Nachrichten nutzen die Font-Glyphe (ѳ) und brauchen keinen Fallback
                         String cleanMessage = messageString.replaceAll("§[0-9a-fk-or]", "");
-                        boolean isCCLiveMessage = cleanMessage.contains("[CCLive]");
-
-                        if (isCCLiveMessage) {
-                            net.minecraft.network.chat.Component cclivePrefix = net.minecraft.network.chat.Component.literal("[CCLive] ")
-                                .setStyle(net.minecraft.network.chat.Style.EMPTY.withColor(0xD478F0));
-                            int cclivePrefixWidth = client.font.width(cclivePrefix);
-                            PlayerIconUtility.renderIcon(context, cclivePrefixWidth, textTop - 1, iconSize + 2);
+                        if (cleanMessage.contains("[CCLive]")) {
                             continue;
                         }
 

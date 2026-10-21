@@ -246,7 +246,11 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled && 
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled && 
                CCLiveUtilitiesConfig.HANDLER.instance().showKillsUtility;
     }
     

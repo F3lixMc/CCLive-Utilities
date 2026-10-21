@@ -26,16 +26,36 @@ public class HttpClient {
             .connectTimeout(Duration.ofMillis(config.getConnectionTimeout()))
             .build();
     }
+
+    public String getServerUrl() {
+        return config.getServerUrl();
+    }
     
     /**
      * Sendet eine GET-Anfrage
      */
     public JsonObject get(String endpoint) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
+        return sendGet(endpoint, null);
+    }
+
+    /**
+     * Sendet eine GET-Anfrage mit Auth-Token
+     */
+    public JsonObject getWithToken(String endpoint, String token) throws IOException, InterruptedException {
+        return sendGet(endpoint, token);
+    }
+
+    private JsonObject sendGet(String endpoint, String token) throws IOException, InterruptedException {
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create(config.getServerUrl() + endpoint))
             .timeout(Duration.ofMillis(config.getReadTimeout()))
-            .GET()
-            .build();
+            .GET();
+
+        if (token != null) {
+            requestBuilder.header("x-auth-token", token);
+        }
+
+        HttpRequest request = requestBuilder.build();
             
         if (config.isDebugMode()) {
             System.out.println("🌐 HTTP GET: " + config.getServerUrl() + endpoint);
@@ -55,8 +75,9 @@ public class HttpClient {
                 return null;
             }
         } else {
-            // 404 für Profil-Stats ist normal (Spieler hat keine Stats) - nicht loggen
-            if (response.statusCode() == 404 && endpoint.contains("/profile/")) {
+            // 404 für Profil-Stats / Shares ist erwartbar - nicht loggen
+            if (response.statusCode() == 404
+                    && (endpoint.contains("/profile/") || endpoint.contains("/share/"))) {
                 return null;
             }
             System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());

@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
@@ -66,9 +67,24 @@ public class PlayerHoverStatsUtility {
     // Cache für Spieler-Stats (um wiederholte HTTP-Requests zu vermeiden)
     private static final java.util.Map<String, CachedStats> statsCache = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long CACHE_DURATION_MS = 60000; // 1 Minute Cache-Dauer
+
+    /** Lokaler Cache: Spieler → Kaktus-/Seelenrang (aus Default-Chat-Hover). */
+    private static final java.util.Map<String, CachedRanks> rankCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.concurrent.atomic.AtomicBoolean rankSyncPending =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
     
     // Cache für Playtime-Werte (um wiederholte HTTP-Requests zu vermeiden)
     private static final java.util.Map<String, CachedPlaytime> playtimeCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static final class CachedRanks {
+        final int cactus;
+        final int soul;
+
+        CachedRanks(int cactus, int soul) {
+            this.cactus = Math.max(0, cactus);
+            this.soul = Math.max(0, soul);
+        }
+    }
     
     /**
      * Gecachte Playtime für einen Spieler
@@ -142,7 +158,7 @@ public class PlayerHoverStatsUtility {
         }
         
         // Prüfe ob Tracker-Aktivität aktiviert ist
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             return null; // Keine Hover-Info-Texte anzeigen wenn Tracker deaktiviert
         }
         
@@ -232,9 +248,14 @@ public class PlayerHoverStatsUtility {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] ✅ Stats gefunden, erstelle Hover-Text...");
             }
+
+            int kaktusrang = extractKaktusrang(originalMessage);
+            int seelenrang = extractSeelenrang(originalMessage);
+            cacheRanks(playerName, kaktusrang, seelenrang);
+            maybeSyncOwnRanks(playerName, kaktusrang, seelenrang);
             
             // Erstelle Hover-Text mit Stats (inkl. bestehender Hover-Info)
-            Component hoverText = createStatsHoverText(originalMessage, stats);
+            Component hoverText = createStatsHoverText(stats, playerName, kaktusrang, seelenrang);
             if (hoverText == null) {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ⚠️ Hover-Text konnte nicht erstellt werden");
@@ -441,7 +462,8 @@ public class PlayerHoverStatsUtility {
         if (message == null || playerName == null || playerName.isEmpty()) {
             return message;
         }
-        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled) {
+        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled
+                || !net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             return message;
         }
         
@@ -568,10 +590,109 @@ public class PlayerHoverStatsUtility {
     }
     
     /**
-     * Erstellt einen Hover-Text mit Player-Stats
-     * Extrahiert Kaktusrang und Seelenrang aus dem bestehenden Hover-Text
+     * Öffentliche API für CCLive-Chat: gleiche Stats-Zeilen wie Default-Hover,
+     * Ränge aus Cache/WS-Payload (Fallback 0).
      */
-    private static Component createStatsHoverText(Component originalMessage, JsonObject stats) {
+    public static Component createStatsHoverForPlayer(String playerName, int cactusRank, int soulRank) {
+        if (playerName == null || playerName.isEmpty() || httpClient == null) {
+            return null;
+        }
+        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            return null;
+        }
+
+        int cactus = Math.max(0, cactusRank);
+        int soul = Math.max(0, soulRank);
+        CachedRanks cached = rankCache.get(playerName.toLowerCase());
+        if (cached != null) {
+            if (cactus <= 0) {
+                cactus = cached.cactus;
+            }
+            if (soul <= 0) {
+                soul = cached.soul;
+            }
+        }
+        if (cactus > 0 || soul > 0) {
+            cacheRanks(playerName, cactus, soul);
+        }
+
+        JsonObject stats = fetchStatsForPlayer(playerName);
+        if (stats == null || !stats.has("player") || stats.get("player").isJsonNull()) {
+            return null;
+        }
+        return createStatsHoverText(stats, playerName, cactus, soul);
+    }
+
+    public static void cacheRanks(String playerName, int cactus, int soul) {
+        if (playerName == null || playerName.isEmpty()) {
+            return;
+        }
+        rankCache.put(playerName.toLowerCase(), new CachedRanks(cactus, soul));
+    }
+
+    public static int[] getCachedRanks(String playerName) {
+        if (playerName == null) {
+            return new int[]{0, 0};
+        }
+        CachedRanks cached = rankCache.get(playerName.toLowerCase());
+        if (cached == null) {
+            return new int[]{0, 0};
+        }
+        return new int[]{cached.cactus, cached.soul};
+    }
+
+    private static void maybeSyncOwnRanks(String playerName, int cactus, int soul) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null || playerName == null) {
+            return;
+        }
+        String self = client.player.getGameProfile().name();
+        if (self == null || !self.equalsIgnoreCase(playerName)) {
+            return;
+        }
+        rankSyncPending.set(true);
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                LeaderboardManager lb = LeaderboardManager.getInstance();
+                if (!lb.ensureRegisteredSync()) {
+                    return;
+                }
+                HttpClient http = lb.getHttpClient();
+                JsonObject body = new JsonObject();
+                body.addProperty("cactus_rank", Math.max(0, cactus));
+                body.addProperty("soul_rank", Math.max(0, soul));
+                JsonObject response = http.postWithToken("/player/ranks", body, lb.getPlayerToken());
+                if (response != null && (response.has("success")
+                        || response.has("cactus_rank") || response.has("soul_rank"))) {
+                    rankSyncPending.set(false);
+                }
+            } catch (Exception ignored) {
+            }
+        });
+    }
+
+    private static JsonObject fetchStatsForPlayer(String playerName) {
+        CachedStats cached = statsCache.get(playerName.toLowerCase());
+        if (cached != null && !cached.isExpired()) {
+            return cached.stats;
+        }
+        try {
+            JsonObject stats = httpClient.get("/profile/" + playerName);
+            if (stats != null) {
+                statsCache.put(playerName.toLowerCase(), new CachedStats(stats));
+            } else if (cached != null) {
+                return cached.stats;
+            }
+            return stats;
+        } catch (Exception e) {
+            return cached != null ? cached.stats : null;
+        }
+    }
+
+    /**
+     * Erstellt einen Hover-Text mit Player-Stats und gegebenen Rängen.
+     */
+    private static Component createStatsHoverText(JsonObject stats, String playerNameForStat, int kaktusrang, int seelenrang) {
         boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
         
         if (stats == null) {
@@ -586,19 +707,12 @@ public class PlayerHoverStatsUtility {
                 // Silent error handling("[PlayerHoverStats] 🔍 createStatsHoverText gestartet");
             }
             
-            // Extrahiere Kaktusrang und Seelenrang aus dem bestehenden Hover-Text
-            int kaktusrang = extractKaktusrang(originalMessage);
-            int seelenrang = extractSeelenrang(originalMessage);
-            
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] 🔍 Kaktusrang: " + kaktusrang + ", Seelenrang: " + seelenrang);
-            }
-            
             // Erstelle neuen Hover-Text
             MutableComponent hoverText = Component.literal("§e=== Spieler Stats ===\n");
             
             // Zeile 1: Kaktusrang | Seelenrang
-            hoverText.append(Component.literal("§a🌵 §f" + kaktusrang + " §7| §d💀 §f" + seelenrang + "\n"));
+            hoverText.append(Component.literal("§a🌵 §f" + Math.max(0, kaktusrang)
+                + " §7| §d💀 §f" + Math.max(0, seelenrang) + "\n"));
             
             // Zeile 2: Höchste Ebene | Höchste Welle
             int floor = 0;
@@ -621,10 +735,6 @@ public class PlayerHoverStatsUtility {
             }
             
             // Zeile 3: Chosen Stat (vom Server, oder Fallback zu playtime)
-            // Extrahiere Spielernamen aus der Nachricht für Stat-Lookup
-            String playerNameForStat = extractPlayerNameFromText(originalMessage);
-            
-            // Hole chosen_stat vom Server (vom Sender der Nachricht)
             String chosenStat = "playtime"; // Fallback
             if (stats.has("chosen_stat") && !stats.get("chosen_stat").isJsonNull()) {
                 chosenStat = stats.get("chosen_stat").getAsString();
@@ -1054,15 +1164,16 @@ public class PlayerHoverStatsUtility {
     }
     
     /**
-     * Erstellt ein Hover-Event aus einem Text
-     * Verwendet umfassende Logik ähnlich wie InformationenUtility.createHoverEventDirect
+     * Erstellt ein Hover-Event aus einem Text (MC 1.21+ via Reflection / ShowText).
+     * Öffentlich für Chat-Item-Links o.ä.
      */
-    private static HoverEvent createHoverEvent(Component hoverText) {
+    public static HoverEvent createHoverEvent(Component hoverText) {
         if (hoverText == null) {
             return null;
         }
         
-        boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
+        boolean debugging = CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging
+                || CCLiveUtilitiesConfig.HANDLER.instance().chatDebugging;
         
         // First, try to find ShowText class dynamically by searching inner classes
         Class<?> showTextClass = null;
@@ -1227,7 +1338,17 @@ public class PlayerHoverStatsUtility {
         }
         
         if (debugging) {
-            // Silent error handling("[PlayerHoverStats] ❌ HoverEvent konnte nicht erstellt werden");
+            System.out.println("[CCLive-Hover] ❌ HoverEvent konnte nicht erstellt werden");
+            System.out.println("[CCLive-Hover] HoverEvent.class=" + HoverEvent.class.getName());
+            System.out.println("[CCLive-Hover] Inner classes=" + java.util.Arrays.toString(HoverEvent.class.getDeclaredClasses()));
+            for (java.lang.reflect.Constructor<?> c : HoverEvent.class.getDeclaredConstructors()) {
+                System.out.println("[CCLive-Hover] ctor " + java.util.Arrays.toString(c.getParameterTypes()));
+            }
+            for (java.lang.reflect.Method m : HoverEvent.class.getDeclaredMethods()) {
+                if (java.lang.reflect.Modifier.isStatic(m.getModifiers()) && m.getReturnType() == HoverEvent.class) {
+                    System.out.println("[CCLive-Hover] static " + m.getName() + java.util.Arrays.toString(m.getParameterTypes()));
+                }
+            }
         }
         return null;
     }

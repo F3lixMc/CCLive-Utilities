@@ -110,7 +110,11 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
 
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
     }
 
     @Override

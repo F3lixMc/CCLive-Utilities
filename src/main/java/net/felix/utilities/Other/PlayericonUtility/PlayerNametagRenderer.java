@@ -40,7 +40,8 @@ public class PlayerNametagRenderer {
                     return;
                 }
 
-                if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showPlayerNametagIcon) {
+                if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showPlayerNametagIcon
+                        || !net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
                     return;
                 }
 

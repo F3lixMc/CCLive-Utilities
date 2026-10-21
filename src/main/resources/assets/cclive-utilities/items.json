@@ -214822,6 +214822,454 @@
         "komponente",
         "epic"
       ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Gewicht",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "21"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "21"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Gewicht",
+        "piece": "",
+        "modifier": [
+          "Fisch Geschwindigkeit: [-10% - -5%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "gewicht",
+        "angel",
+        "komponente",
+        "common"
+      ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Haken",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "21"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "21"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Haken",
+        "piece": "",
+        "modifier": [
+          "Gewöhnliche Fisch Chance: [+5% - +10%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "haken",
+        "angel",
+        "komponente",
+        "common"
+      ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Köder",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "21"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "21"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Köder",
+        "piece": "",
+        "modifier": [
+          "Fischarten Chance: [+5% - +10%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "köder",
+        "angel",
+        "komponente",
+        "common"
+      ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Pose",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "21"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "21"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Pose",
+        "piece": "",
+        "modifier": [
+          "Anbeißgeschwindigkeit: [-10% - -5%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "pose",
+        "angel",
+        "komponente",
+        "common"
+      ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Rolle",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "20"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "20"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Rolle",
+        "piece": "",
+        "modifier": [
+          "Fischfang-Geschwindigkeit: [+5% - +10%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "rolle",
+        "angel",
+        "komponente",
+        "common"
+      ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Rute",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "20"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "20"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Rute",
+        "piece": "",
+        "modifier": [
+          "Angel Geschwindigkeit: [+5% - +10%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "rute",
+        "angel",
+        "komponente",
+        "common"
+      ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Schnur",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "20"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "20"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Schnur",
+        "piece": "",
+        "modifier": [
+          "Fisch Fluchtgeschwindigkeit: [-10% - -5%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "schnur",
+        "angel",
+        "komponente",
+        "common"
+      ]
+    },
+    {
+      "id": "minecraft:name_tag",
+      "customModelData": 0,
+      "name": "Anfänger-Spinner",
+      "foundAt": [
+        {
+          "collection": "Starter Item"
+        }
+      ],
+      "price": {
+        "coin": {
+          "itemName": "Coins",
+          "amount": "63"
+        },
+        "cactus": {
+          "itemName": "Kaktus",
+          "amount": "1.000k"
+        },
+        "soul": {
+          "itemName": "Seelen",
+          "amount": "30"
+        },
+        "material1": {
+          "itemName": "Hühnerfeder",
+          "amount": "21"
+        },
+        "material2": {
+          "itemName": "Spinnfaden",
+          "amount": "21"
+        }
+      },
+      "info": {
+        "aspect": false,
+        "rarity": "common",
+        "description": "",
+        "type": "Spinner",
+        "piece": "",
+        "modifier": [
+          "Fischverarbeitungsertrag: [+5% - +10%]"
+        ],
+        "stats": [],
+        "blueprint": true,
+        "module": false,
+        "ability": false,
+        "rune": false,
+        "power_crystal": false,
+        "essence": false
+      },
+      "tags": [
+        "bauplan",
+        "Spinner",
+        "angel",
+        "komponente",
+        "common"
+      ]
     }
   ],
   "fish_traps": [

@@ -431,7 +431,11 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
             return false;
         }
         if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible) {

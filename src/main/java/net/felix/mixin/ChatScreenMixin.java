@@ -3,7 +3,11 @@ package net.felix.mixin;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.felix.chat.BuildShareManager;
+import net.felix.chat.BuildShareViewScreen;
 import net.felix.chat.ChatManager;
+import net.felix.chat.ItemShareManager;
 import net.felix.profile.ProfileStatsManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -40,9 +44,37 @@ public abstract class ChatScreenMixin {
             cir.setReturnValue(true);
         }
     }
+
+    /** Linksklick auf Build-Share-Link öffnet die PNG-Container-Vorschau (kein SuggestCommand). */
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
+        if (event.button() != 0) {
+            return;
+        }
+        if (BuildShareViewScreen.isActive()) {
+            cir.setReturnValue(true);
+            return;
+        }
+        // Auch Insertion/Suggest von Vanilla abfangen, falls noch alte Nachrichten im Chat sind
+        if (BuildShareManager.getInstance().tryOpenFromChatClick(event.x(), event.y())) {
+            cir.setReturnValue(true);
+            return;
+        }
+        // Alte SuggestCommand-Links (cclive-build:…) nicht in den Chat schreiben
+        net.minecraft.network.chat.Style style =
+            net.felix.chat.ChatStyleHelper.getHoveredChatStyle(event.x(), event.y());
+        if (style != null && style.getClickEvent() != null) {
+            String clickVal = net.felix.chat.ChatStyleHelper.clickEventValue(style.getClickEvent());
+            if (clickVal != null && clickVal.startsWith(BuildShareManager.BUILD_INSERTION_PREFIX)) {
+                String id = clickVal.substring(BuildShareManager.BUILD_INSERTION_PREFIX.length());
+                BuildShareManager.getInstance().openBuildScreen(id);
+                cir.setReturnValue(true);
+            }
+        }
+    }
     
     /**
-     * Interceptiert Chat-Nachrichten und prüft auf @cclive, @default und @lp
+     * Interceptiert Chat-Nachrichten und prüft auf @cclive, @global, @lp und !item
      */
     @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
     private void onSendMessage(String message, boolean addToHistory, CallbackInfo ci) {
@@ -52,109 +84,105 @@ public abstract class ChatScreenMixin {
         
         String trimmedMessage = message.trim();
         ChatManager chatManager = ChatManager.getInstance();
-        ChatManager.ChatMode currentMode = chatManager.getCurrentChatMode();
+        ChatManager.ChatMode writeMode = chatManager.getEffectiveWriteMode();
         
-        // @lp sollte IMMER in den Default-Chat gehen (normale Nachricht, nicht cancel)
+        // @lp: immer in den globalen Minecraft-Chat; !item → xD
         if (trimmedMessage.startsWith("@lp")) {
-            // Wird ganz normal als Chat-Nachricht gesendet → mitzählen
-            trackMessageSent();
-            return; // Lass normale Nachricht durchgehen (geht an Default-Chat)
-        }
-        
-        // @cclive: Nur wenn Chat-Modus DEFAULT ist (sonst wäre es doppelt)
-        if (trimmedMessage.startsWith("@cclive")) {
-            if (currentMode == ChatManager.ChatMode.DEFAULT) {
-                ci.cancel(); // Verhindere normale Nachricht
-                
-                // Extrahiere die eigentliche Nachricht (nach @cclive)
-                String chatMessage = trimmedMessage.substring("@cclive".length()).trim();
-                
-                if (chatMessage.isEmpty()) {
-                    return;
-                }
-                
-                // Sende an CCLive Chat
-                chatManager.sendMessage(chatMessage).thenAccept(success -> {
-                    if (!success) {
-                        scheduleChatError("§cFehler beim Senden der Chat-Nachricht!");
-                    }
-                });
-            } else {
-                // Wenn Chat-Modus CCLIVE ist, sende die Nachricht mit @cclive Prefix an CCLIVE Chat
-                // (damit der User merkt, dass er es falsch gemacht hat, aber bleibt im CCLIVE Chat)
-                ci.cancel(); // Verhindere normale Nachricht (die würde in Default-Chat gehen)
-                
-                // Sende die komplette Nachricht (mit @cclive) an CCLIVE Chat
-                chatManager.sendMessage(trimmedMessage).thenAccept(success -> {
-                    if (!success) {
-                        scheduleChatError("§cFehler beim Senden der Chat-Nachricht!");
-                    }
-                });
+            String withXd = ItemShareManager.replaceItemTokenWithXd(trimmedMessage);
+            if (!withXd.equals(trimmedMessage)) {
+                ci.cancel();
+                sendMinecraftChat(withXd);
             }
-            // Jede @cclive-Nachricht ist eine gesendete Chatnachricht
             trackMessageSent();
             return;
         }
         
-        // @default: Nur wenn Chat-Modus CCLIVE ist (um in Default-Chat zu schreiben)
-        if (trimmedMessage.startsWith("@default")) {
-            if (currentMode == ChatManager.ChatMode.CCLIVE) {
-                // Entferne @default Prefix und sende Nachricht manuell in den Default-Chat
-                String defaultMessage = trimmedMessage.substring("@default".length()).trim();
-                if (!defaultMessage.isEmpty()) {
-                    ci.cancel();
-                    // Sende die Nachricht ohne @default direkt an den Server (normale Chat-Nachricht)
-                    net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-                    if (client.player != null && client.getConnection() != null) {
-                        client.getConnection().sendChat(defaultMessage);
-                    }
-                    
-                    // Nur echte Chat-Nachrichten (keine Commands) mitzählen
-                    if (!defaultMessage.startsWith("/")) {
-                        trackMessageSent();
-                    }
+        // @cclive: nur senden wenn CCLive-Chat an ist
+        if (trimmedMessage.startsWith("@cclive")) {
+            ci.cancel();
+
+            if (!chatManager.isShowCCLiveChat()) {
+                scheduleChatError("§cCCLive-Chat ist aus — Nachricht nicht gesendet.");
+                return;
+            }
+
+            String chatMessage = trimmedMessage.substring("@cclive".length()).trim();
+            if (chatMessage.isEmpty()) {
+                return;
+            }
+
+            chatManager.sendMessage(chatMessage).thenAccept(error -> {
+                if (error != null) {
+                    scheduleChatError("§cChat: " + error);
                 }
-            } else {
-                // Wenn Chat-Modus DEFAULT ist, wird @default ignoriert und die Nachricht normal gesendet
-                // → immer eine Chat-Nachricht (kein führendes /), also mitzählen
+            });
+            trackMessageSent();
+            return;
+        }
+        
+        // @global: nur senden wenn Default-Chat an ist; !item → xD
+        if (trimmedMessage.startsWith("@global")) {
+            ci.cancel();
+
+            if (!chatManager.isShowDefaultChat()) {
+                scheduleChatError("§cDefault-Chat ist aus — @global nicht verfügbar.");
+                return;
+            }
+
+            String globalMessage = trimmedMessage.substring("@global".length()).trim();
+            if (globalMessage.isEmpty()) {
+                return;
+            }
+            globalMessage = ItemShareManager.replaceItemTokenWithXd(globalMessage);
+
+            sendMinecraftChat(globalMessage);
+            if (!globalMessage.startsWith("/")) {
                 trackMessageSent();
             }
             return;
         }
         
-        // Prüfe ob der aktuelle Chat-Modus deaktiviert ist
-        if (currentMode == ChatManager.ChatMode.CCLIVE && !chatManager.isShowCCLiveChat()) {
-            // CCLIVE Chat ist deaktiviert, wechsle automatisch zu DEFAULT
-            chatManager.setChatMode(ChatManager.ChatMode.DEFAULT);
-            currentMode = ChatManager.ChatMode.DEFAULT;
-        } else if (currentMode == ChatManager.ChatMode.DEFAULT && !chatManager.isShowDefaultChat()) {
-            // Default Chat ist deaktiviert, wechsle automatisch zu CCLIVE
-            chatManager.setChatMode(ChatManager.ChatMode.CCLIVE);
-            currentMode = ChatManager.ChatMode.CCLIVE;
-        }
-        
-        // Wenn Chat-Modus auf CCLIVE gesetzt ist, sende alle Nachrichten an CCLive Chat
-        // ABER: Commands (beginnend mit /) sollten weiterhin normal funktionieren
-        if (currentMode == ChatManager.ChatMode.CCLIVE) {
+        // CCLIVE-Schreibziel: normale Nachrichten → CCLive (!item → Share-Ref in sendMessage)
+        if (writeMode == ChatManager.ChatMode.CCLIVE) {
             if (trimmedMessage.startsWith("/")) {
-                // Command → nicht als Chatnachricht zählen
-                return; // Lass Commands normal funktionieren
+                return;
             }
+
+            ci.cancel();
             
-            ci.cancel(); // Verhindere normale Nachricht
-            
-            chatManager.sendMessage(trimmedMessage).thenAccept(success -> {
-                if (!success) {
-                    scheduleChatError("§cFehler beim Senden der Chat-Nachricht!");
+            chatManager.sendMessage(trimmedMessage).thenAccept(error -> {
+                if (error != null) {
+                    scheduleChatError("§cChat: " + error);
                 }
             });
-            // Kein return; wir wollen unten noch trackMessageSent() aufrufen
+            trackMessageSent();
+            return;
+        }
+
+        // Default-Schreibziel: !item → xD
+        if (!chatManager.isShowDefaultChat() && !trimmedMessage.startsWith("/")) {
+            scheduleChatError("§cDefault-Chat ist aus — Nachricht nicht gesendet.");
+            ci.cancel();
+            return;
+        }
+
+        String defaultOut = ItemShareManager.replaceItemTokenWithXd(trimmedMessage);
+        if (!defaultOut.equals(trimmedMessage) && !trimmedMessage.startsWith("/")) {
+            ci.cancel();
+            sendMinecraftChat(defaultOut);
+            trackMessageSent();
+            return;
         }
         
-        // Standard-Fall: alle Nachrichten, die bis hierher durchkommen
-        // und keine Commands sind, als gesendete Chat-Nachricht zählen
         if (!trimmedMessage.startsWith("/")) {
             trackMessageSent();
+        }
+    }
+
+    private static void sendMinecraftChat(String text) {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if (client.player != null && client.getConnection() != null && text != null && !text.isEmpty()) {
+            client.getConnection().sendChat(text);
         }
     }
 
@@ -172,4 +200,3 @@ public abstract class ChatScreenMixin {
         });
     }
 }
-

@@ -26,6 +26,7 @@
     "key.cclive-utilities.clipboard.pin": "Pin Blueprint to Clipboard",
     "key.cclive-utilities.itemviewer.toggle": "Toggle Item Viewer",
     "key.cclive-utilities.toggle-blueprint-missing-mode": "Toggle Blueprint Missing Mode",
+    "key.cclive-utilities.chat.copy-item": "Copy Item for Chat Share",
 
     "key.category.cclive-utilities.overall": "CCLive Utilities - General",
     "key.category.cclive-utilities.kills": "CCLive Utilities - Kill Tracker",
@@ -36,5 +37,6 @@
     "key.category.cclive-utilities.schmied": "CCLive Utilities - Smithing Tracker",
     "key.category.cclive-utilities.collection": "CCLive Utilities - Collection",
     "key.category.cclive-utilities.item-info": "CCLive Utilities - Item Info",
-    "key.category.cclive-utilities.itemviewer": "CCLive Utilities - Item Viewer"
+    "key.category.cclive-utilities.itemviewer": "CCLive Utilities - Item Viewer",
+    "key.category.cclive-utilities.chat": "CCLive-Utilities - Chat"
 }

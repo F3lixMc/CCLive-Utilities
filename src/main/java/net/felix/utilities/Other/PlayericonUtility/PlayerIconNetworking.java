@@ -122,6 +122,10 @@ public class PlayerIconNetworking {
             
             // Every 5 seconds (100 ticks), fetch player list from API (asynchron, um Freezes zu vermeiden)
             if (client.player.tickCount > 0 && client.player.tickCount % 100 == 0) {
+                if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+                    PlayerIconUtility.clearPlayers();
+                    return;
+                }
                 java.util.concurrent.CompletableFuture.runAsync(() -> {
                     updatePlayersWithModFromAPI(client);
                 });
@@ -135,6 +139,11 @@ public class PlayerIconNetworking {
      */
     private static void updatePlayersWithModFromAPI(Minecraft client) {
         try {
+            if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+                PlayerIconUtility.clearPlayers();
+                return;
+            }
+
             // Get HttpClient from LeaderboardManager
             net.felix.leaderboards.LeaderboardManager manager = net.felix.leaderboards.LeaderboardManager.getInstance();
             if (manager == null) {

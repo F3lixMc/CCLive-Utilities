@@ -24,6 +24,16 @@ abstract class ChatHudHoverMixin {
      */
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onRender(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        // Während Build-Vorschau: keinerlei Chat-Hover (Stats/Item/Build/Aspekt)
+        if (net.felix.chat.BuildShareViewScreen.isActive()) {
+            AspectOverlay.onHoverStopped();
+            net.felix.chat.BuildShareManager.clearLastHoveredShareId();
+            return;
+        }
+
+        // Build-Share: shareId für Linksklick merken (Panel kommt aus componentHoverEffect)
+        net.felix.chat.BuildShareOverviewLayout.trackHoverAtMouse(mouseX, mouseY);
+
         // IMPORTANT: Don't clear overlay if we're hovering over an item with "⭐" in tooltip
         // Items with "⭐" are managed by addAspectNameToTooltip, not by this chat hover mixin
         // This mixin is only for chat message hover events
@@ -61,6 +71,7 @@ abstract class ChatHudHoverMixin {
         ChatComponent chatHud = client.gui.getChat();
         boolean hasHoverEvent = false;
         Component hoveredMessage = null;
+        Style hoveredStyle = null;
         
         if (chatHud != null) {
             // Convert mouse coordinates to double (as required by getTextStyleAt)
@@ -68,7 +79,6 @@ abstract class ChatHudHoverMixin {
             double mouseYDouble = (double) mouseY;
             
             // Try to find and call getTextStyleAt method via reflection (may be obfuscated)
-            Style hoveredStyle = null;
             
             try {
                 // Find getTextStyleAt method - it takes two double parameters and returns Style
@@ -154,7 +164,14 @@ abstract class ChatHudHoverMixin {
         }
         
         // Both conditions are met: Shift pressed AND HoverEvent present
-        // Extract blueprint name from chat message (text with color #FC7E00)
+        // 1) CCLive Item-Share-Links (!item)
+        if (hoveredStyle != null
+                && net.felix.chat.ItemShareManager.getInstance().tryShowAspectOverlayForShare(hoveredStyle)) {
+            AspectOverlay.renderForegroundForChat(context);
+            return;
+        }
+
+        // 2) Server-Chat Bauplan-Namen (Farbe #FC7E00)
         if (hoveredMessage != null) {
             String blueprintName = InformationenUtility.extractBlueprintNameFromChatMessage(hoveredMessage);
             if (blueprintName != null && !blueprintName.isEmpty()) {

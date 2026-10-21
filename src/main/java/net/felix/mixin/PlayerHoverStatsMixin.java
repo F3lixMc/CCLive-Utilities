@@ -34,6 +34,9 @@ public abstract class PlayerHoverStatsMixin {
         if (originalMessage == null) {
             return;
         }
+
+        // Namensfarbe aus Original-Default-Chat (vor Cancel/Umbau durch Hover-Stats)
+        net.felix.chat.ChatNameColorTracker.getInstance().observeDefaultChatMessage(originalMessage);
         
         // Prüfe ob PlayerHoverStatsUtility initialisiert ist
         if (!PlayerHoverStatsUtility.isInitialized()) {

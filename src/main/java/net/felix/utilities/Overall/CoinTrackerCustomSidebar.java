@@ -33,7 +33,7 @@ public final class CoinTrackerCustomSidebar {
 
     public static boolean shouldReplaceVanillaSidebar() {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-        if (!config.enableMod) {
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
             return false;
         }
         boolean coinScoreboard = config.coinTrackerEnabled
@@ -119,7 +119,7 @@ public final class CoinTrackerCustomSidebar {
 
     private static boolean shouldInsertCpmBlock() {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-        return config.enableMod
+        return CCLiveUtilitiesConfig.isModRuntimeEnabled()
                 && config.coinTrackerEnabled
                 && config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
                 && BossBarHudValueDecoder.isFloorDimension();
@@ -127,7 +127,7 @@ public final class CoinTrackerCustomSidebar {
 
     private static boolean shouldAppendMaterialRates() {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-        return config.enableMod
+        return CCLiveUtilitiesConfig.isModRuntimeEnabled()
                 && config.materialTrackerEnabled
                 && config.materialTrackerRateEnabled
                 && MaterialTrackerUtility.usesScoreboardRateDisplay()
@@ -155,7 +155,7 @@ public final class CoinTrackerCustomSidebar {
 
     private static boolean shouldAppendResourceRates(Minecraft client) {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
-        return config.enableMod
+        return CCLiveUtilitiesConfig.isModRuntimeEnabled()
                 && config.resourceTrackerRateEnabled
                 && config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.SCOREBOARD
                 && InformationenUtility.isInFarmzone(client);

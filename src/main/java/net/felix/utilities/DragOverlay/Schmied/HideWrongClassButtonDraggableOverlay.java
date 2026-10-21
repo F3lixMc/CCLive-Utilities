@@ -158,7 +158,11 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled &&
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled &&
                CCLiveUtilitiesConfig.HANDLER.instance().showHideWrongClassButton;
     }
     

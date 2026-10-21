@@ -145,7 +145,7 @@ public class MaterialTrackerUtility {
 		updateMaterialRates(client);
 		
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled || 
 			!CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker) {
 			return;
@@ -193,7 +193,7 @@ public class MaterialTrackerUtility {
 	}
 
 	private static void updateMaterialRates(Minecraft client) {
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()
 				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled
 				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateEnabled
 				|| client.player == null) {
@@ -253,7 +253,7 @@ public class MaterialTrackerUtility {
 	
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled || 
 			!CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker) {
 			return;

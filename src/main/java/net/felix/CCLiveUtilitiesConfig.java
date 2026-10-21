@@ -153,19 +153,47 @@ public class CCLiveUtilitiesConfig {
                 }
             }
             if (changed) {
-                java.nio.file.Path configPath = CCLiveUtilities.getConfigDir()
-                        .resolve("cclive-utilities")
-                        .resolve("cclive-utilities.json");
-                com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
-                java.nio.file.Files.writeString(configPath, gson.toJson(raw));
+                writeRawConfigJson(raw);
                 HANDLER.load();
             }
         } catch (Exception ignored) {
         }
     }
 
+    /** Übernimmt alten Opt-out-Schalter {@code trackerActivityEnabled} → {@code dataTrackingEnabled}. */
+    public static void migrateTrackerActivityToDataTracking() {
+        try {
+            JsonObject raw = readRawConfigJson();
+            if (raw == null) {
+                return;
+            }
+            boolean changed = false;
+            if (raw.has("trackerActivityEnabled")) {
+                if (!raw.has("dataTrackingEnabled") || raw.get("dataTrackingEnabled").isJsonNull()) {
+                    raw.add("dataTrackingEnabled", raw.get("trackerActivityEnabled"));
+                }
+                raw.remove("trackerActivityEnabled");
+                changed = true;
+            }
+            if (changed) {
+                writeRawConfigJson(raw);
+                HANDLER.load();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void writeRawConfigJson(JsonObject raw) throws java.io.IOException {
+        java.nio.file.Path configPath = CCLiveUtilities.getConfigDir()
+                .resolve("cclive-utilities")
+                .resolve("cclive-utilities.json");
+        com.google.gson.Gson gson = new com.google.gson.GsonBuilder().setPrettyPrinting().create();
+        java.nio.file.Files.writeString(configPath, gson.toJson(raw));
+    }
+
     public static void migrateConfigFields() {
         migrateTabInfoToNpcAlerts();
+        migrateTrackerActivityToDataTracking();
         boolean configChanged = false;
         try {
             CCLiveUtilitiesConfig loadedConfig = HANDLER.instance();
@@ -310,10 +338,66 @@ public class CCLiveUtilitiesConfig {
     // Chat Settings
     @SerialEntry
     public boolean chatIconEnabled = true; // Chat-Icon hinter Spielernamen im Chat anzeigen
+
+    /** Sichtbarkeit Default-Minecraft-Chat (persistiert). */
+    @SerialEntry
+    public boolean chatShowDefault = true;
+
+    /** Sichtbarkeit CCLive-Chat (persistiert). */
+    @SerialEntry
+    public boolean chatShowCCLive = true;
+
+    /**
+     * Schreibziel wenn beide Chats sichtbar sind: {@code "default"} oder {@code "cclive"}.
+     * Standard: default.
+     */
+    @SerialEntry
+    public String chatWriteMode = "default";
+
+    /**
+     * Zuletzt erkannte eigene Chat-Namensfarbe (0xRRGGBB).
+     * 0xFFFFFF = unbekannt/weiß.
+     */
+    @SerialEntry
+    public int ownChatNameColorRgb = 0xFFFFFF;
     
     // Leaderboard Settings
     @SerialEntry
-    public boolean trackerActivityEnabled = true; // Tracker-Aktivität aktivieren (Updates senden und Trackings anzeigen)
+    /** Opt-out: bei false keine Uploads an das CCLive-Backend (Register, Scores, Profil, Icon-Sync). Downloads bleiben erlaubt. */
+    public boolean dataTrackingEnabled = true;
+
+    /**
+     * Zuletzt erfolgreich verarbeitete Season-ID für lokalen Progress-Reset.
+     * Sentinel {@code -1} = noch nie verarbeitet (nicht als echte Season interpretieren).
+     */
+    @SerialEntry
+    public int lastProcessedSeasonId = -1;
+
+    /** Preseason-Status zur zuletzt verarbeiteten Season (nur gültig wenn lastProcessedSeasonId != -1). */
+    @SerialEntry
+    public boolean lastProcessedPreseason = false;
+
+    /** ISO-8601-UTC Zeitpunkt des letzten lokalen Season-Resets (Diagnose); leer bis zum ersten Reset. */
+    @SerialEntry
+    public String lastSeasonResetAt = "";
+
+    /**
+     * Config-Schalter + Server-Gate (PlayLegend / Dev / Bypass-Spieler).
+     * Für Feature-Rendering statt direktem {@code enableMod}-Zugriff verwenden.
+     */
+    public static boolean isModRuntimeEnabled() {
+        return HANDLER.instance().enableMod
+            && net.felix.utilities.Overall.ServerConnectionGate.areFeaturesAllowed();
+    }
+
+    /**
+     * Opt-in Datentracking + nur auf erlaubtem Server (PlayLegend) bzw. Dev.
+     * Bypass-Spieler ohne erkannte PlayLegend-IP: Features an, Uploads aus.
+     */
+    public static boolean isDataTrackingEnabled() {
+        return HANDLER.instance().dataTrackingEnabled
+            && net.felix.utilities.Overall.ServerConnectionGate.isDataUploadAllowed();
+    }
     
     // Debug Settings
     @SerialEntry
@@ -357,6 +441,25 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean leaderboardDebugging = false;
+
+    @SerialEntry
+    public boolean chatDebugging = false;
+
+    @SerialEntry
+    public boolean buildShareEnabled = true;
+
+    /** Sentinel: Icon wird links oben am Container positioniert. */
+    public static final int BUILD_SHARE_DEFAULT_X = -1;
+    public static final int BUILD_SHARE_DEFAULT_Y = -1;
+
+    @SerialEntry
+    public int buildShareOverlayX = BUILD_SHARE_DEFAULT_X;
+
+    @SerialEntry
+    public int buildShareOverlayY = BUILD_SHARE_DEFAULT_Y;
+
+    @SerialEntry
+    public float buildShareOverlayScale = 1.0f;
     
     // Player Stats Debug Settings
     @SerialEntry
@@ -1607,7 +1710,108 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public Color miningLumberjackOverlayTextColor = new Color(0xFFFFFFFF);
 
+    private static Option<Boolean> dataTrackingOption;
+    private static Option<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType> hoverStatsOption;
+    private static Option<Boolean> chatIconOption;
+    private static Option<Boolean> nametagIconOption;
+    private static boolean dataTrackingUiBuilt = false;
+
+    private static void ensureDataTrackingUiOptions() {
+        if (dataTrackingUiBuilt) {
+            boolean trackingOn = HANDLER.instance().dataTrackingEnabled;
+            if (hoverStatsOption != null) hoverStatsOption.setAvailable(trackingOn);
+            if (chatIconOption != null) chatIconOption.setAvailable(trackingOn);
+            if (nametagIconOption != null) nametagIconOption.setAvailable(trackingOn);
+            return;
+        }
+        dataTrackingUiBuilt = true;
+
+        hoverStatsOption = Option.<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
+                .name(Component.literal("Hover Stats: Gewählter Stat"))
+                .description(OptionDescription.of(Component.literal(
+                        "Welcher Wert soll anderen Spielern angezeigt werden, wenn sie im Chat über deinen Namen hovern?\n\n"
+                                + "- Spielzeit\n- Max Coins\n- Gesendete Nachrichten\n- Gefundene Baupläne\n- Max Schaden\n\n"
+                                + "!!! Erfordert ein aktives 'Daten Tracking'.")))
+                .binding(
+                        net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
+                        () -> HANDLER.instance().hoverStatsChosenStat != null
+                                ? HANDLER.instance().hoverStatsChosenStat
+                                : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
+                        newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
+                .controller(opt -> EnumControllerBuilder.create(opt)
+                        .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)
+                        .formatValue(value -> value != null
+                                ? Component.literal(value.getDisplayName())
+                                : Component.literal("Spielzeit")))
+                .available(HANDLER.instance().dataTrackingEnabled)
+                .build();
+
+        chatIconOption = Option.<Boolean>createBuilder()
+                .name(Component.literal("Mod-Icon im Chat"))
+                .description(OptionDescription.of(Component.literal(
+                        "Zeigt dein Mod-Icon hinter deinem Namen im Chat für andere an und erlaubt es dir, die Icons anderer Spieler zu sehen.\n\n"
+                                + "!!! Erfordert ein aktives 'Daten Tracking'.")))
+                .binding(true, () -> HANDLER.instance().chatIconEnabled, newVal -> HANDLER.instance().chatIconEnabled = newVal)
+                .controller(TickBoxControllerBuilder::create)
+                .available(HANDLER.instance().dataTrackingEnabled)
+                .build();
+
+        nametagIconOption = Option.<Boolean>createBuilder()
+                .name(Component.literal("Mod-Icon über Spielernamen"))
+                .description(OptionDescription.of(Component.literal(
+                        "Zeigt das Mod-Icon über dem Kopf von Spielern an, die die Mod installiert haben.\n\n"
+                                + "!!! Erfordert ein aktives 'Daten Tracking'.")))
+                .binding(true, () -> HANDLER.instance().showPlayerNametagIcon, newVal -> HANDLER.instance().showPlayerNametagIcon = newVal)
+                .controller(TickBoxControllerBuilder::create)
+                .available(HANDLER.instance().dataTrackingEnabled)
+                .build();
+
+        dataTrackingOption = Option.<Boolean>createBuilder()
+                .name(Component.literal("CCLive Community Features"))
+                .description(OptionDescription.of(Component.literal(
+                        "Aktiviert die Online-Features der Mod.\n\n"
+                                + "AN (Empfohlen): Ermöglicht die Teilnahme an globalen custom Leaderboards, "
+                                + "die Anzeige von custom Hover-Stats im Chat und exklusive Spieler-Icons.\n\n"
+                                + "AUS: Es werden keinerlei Daten gesendet (Vollständiges Opt-out). "
+                                + "Dadurch verlierst du jedoch den Zugriff auf alle oben genannten Community-Features. "
+                                + "Der Update-Checker bleibt aktiv.")))
+                .binding(true, () -> HANDLER.instance().dataTrackingEnabled, newVal -> HANDLER.instance().dataTrackingEnabled = newVal)
+                .controller(TickBoxControllerBuilder::create)
+                .listener((opt, value) -> {
+                    boolean enabled = Boolean.TRUE.equals(value);
+                    hoverStatsOption.setAvailable(enabled);
+                    chatIconOption.setAvailable(enabled);
+                    nametagIconOption.setAvailable(enabled);
+                    if (!enabled) {
+                        net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.clearPlayers();
+                    }
+                })
+                .build();
+
+    }
+
+
+    private static OptionGroup buildDataTrackingGroup() {
+        ensureDataTrackingUiOptions();
+        return OptionGroup.createBuilder()
+                .name(Component.literal("Daten Tracking"))
+                .option(dataTrackingOption)
+                .build();
+    }
+
+    private static OptionGroup buildLeaderboardsAndIconsGroup() {
+        ensureDataTrackingUiOptions();
+        return OptionGroup.createBuilder()
+                .name(Component.literal("Leaderboards & Icons"))
+                .option(hoverStatsOption)
+                .option(chatIconOption)
+                .option(nametagIconOption)
+                .build();
+    }
+
     public static Screen createConfigScreen(Screen parent) {
+        // Beim erneuten Öffnen Availability an aktuellen Config-Stand anpassen
+        dataTrackingUiBuilt = false;
         return YetAnotherConfigLib.createBuilder()
                 .title(Component.literal("CCLive Utilities Configuration"))
                 .category(ConfigCategory.createBuilder()
@@ -2404,46 +2608,16 @@ public class CCLiveUtilitiesConfig {
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Verschiedenes"))
                         .tooltip(Component.literal("Verschiedene Einstellungen"))
-                        .group(OptionGroup.createBuilder()
-                                .name(Component.literal("Leaderboards"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Component.literal("Tracker Aktivität"))
-                                        .description(OptionDescription.of(Component.literal("Tracker-Updates an den Server senden und Trackings von anderen Spielern anzeigen")))
-                                        .binding(true, () -> HANDLER.instance().trackerActivityEnabled, newVal -> HANDLER.instance().trackerActivityEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build()) 
-                                .option(Option.<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
-                                        .name(Component.literal("Hover Stats: Chosen Stat"))
-                                        .description(OptionDescription.of(Component.literal("Welcher Stat soll anderen Spielern in Chat-Hover-Events angezeigt werden?\n\n-Spielzeit\n-Max Coins\n-Gesendete Nachrichten\n-Gefundene Baupläne\n-Max Schaden")))
-                                        .binding(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, () -> HANDLER.instance().hoverStatsChosenStat != null ? HANDLER.instance().hoverStatsChosenStat : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME, newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
-                                        .controller(opt -> EnumControllerBuilder.create(opt)
-                                                .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)
-                                                .formatValue(value -> value != null ? Component.literal(value.getDisplayName()) : Component.literal("Spielzeit")))
-                                        .build())
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Component.literal("Icon"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Component.literal("Mod-Icon im Chat"))
-                                        .description(OptionDescription.of(Component.literal("Mod-Icon hinter Spielernamen im Chat anzeigen oder ausblenden")))
-                                        .binding(true, () -> HANDLER.instance().chatIconEnabled, newVal -> HANDLER.instance().chatIconEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Component.literal("Mod-Icon über Spielernamen"))
-                                        .description(OptionDescription.of(Component.literal("Zeigt das Mod-Icon über dem Namen von Spielern an, die die Mod installiert haben")))
-                                        .binding(true, () -> HANDLER.instance().showPlayerNametagIcon, newVal -> HANDLER.instance().showPlayerNametagIcon = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .build())
+                        .group(buildDataTrackingGroup())
+                        .group(buildLeaderboardsAndIconsGroup())
                         .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Update Checker"))
                                 .option(Option.<Boolean>createBuilder()
-                                .name(Component.literal("Update Checker aktivieren"))
-                                .description(OptionDescription.of(Component.literal("Automatische Update-Prüfung beim Server-Beitritt aktivieren oder deaktivieren")))
-                                .binding(true, () -> HANDLER.instance().updateCheckerEnabled, newVal -> HANDLER.instance().updateCheckerEnabled = newVal)
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
+                                        .name(Component.literal("Update Checker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Automatische Update-Prüfung beim Server-Beitritt aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().updateCheckerEnabled, newVal -> HANDLER.instance().updateCheckerEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
@@ -2462,6 +2636,20 @@ public class CCLiveUtilitiesConfig {
                                 .binding(false, () -> HANDLER.instance().leaderboardDebugging, newVal -> HANDLER.instance().leaderboardDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Chat Debugging"))
+                                        .description(OptionDescription.of(Component.literal(
+                                        "Debug-Logs für CCLive-Chat und Item-Shares (Kopieren, Upload, Resolve)")))
+                                        .binding(false, () -> HANDLER.instance().chatDebugging, newVal -> HANDLER.instance().chatDebugging = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Build-Share"))
+                                        .description(OptionDescription.of(Component.literal(
+                                        "Build aus Ausrüstung-/Karten-Inventar erkennen, Übersicht anzeigen und hochladen")))
+                                        .binding(true, () -> HANDLER.instance().buildShareEnabled, newVal -> HANDLER.instance().buildShareEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                         .option(Option.<Boolean>createBuilder()
                                 .name(Component.literal("Player Stats Debugging"))
                                 .description(OptionDescription.of(Component.literal("Aktiviert Debug-Nachrichten für das Senden von Player-Stats")))

@@ -351,7 +351,11 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().bossHPEnabled && 
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().bossHPEnabled && 
                CCLiveUtilitiesConfig.HANDLER.instance().showBossHP;
     }
     

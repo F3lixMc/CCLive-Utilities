@@ -39,7 +39,7 @@ public class EquipmentDisplayUtility {
 	public static double getTotalArmor() {
 		return totalArmor;
 	}
-	private static final int[] EQUIPMENT_SLOTS = {1, 2, 6, 10, 11, 15, 19, 20, 24, 28, 29, 33, 38, 42, 48, 50};
+	private static final int[] EQUIPMENT_SLOTS = BuildSlotMapping.getEquipmentStatSlots();
 	// Pattern für Zahlen mit Tausendertrennungen: Kommas als Tausendertrennungen, Punkt als Dezimaltrenner
 	private static final Pattern STAT_PATTERN = Pattern.compile("([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
 	private static final Pattern ARMOR_PATTERN = Pattern.compile("Rüstung\\s*([+-]?\\d{1,3}(?:,\\d{3})*(?:\\.\\d+)?)");
@@ -202,58 +202,255 @@ public class EquipmentDisplayUtility {
 		// Die eigentliche Scroll-Verarbeitung erfolgt über den MouseScrollMixin
 	}
 
-	private static void updateEquipmentStats(AbstractContainerScreen<?> screen, Minecraft client) {
-		// Maps zurücksetzen
-		percentageStats.clear();
-		absoluteStats.clear();
-		totalArmor = 0.0;
+	/** Aggregierte Equipment-Stats (Prozent links, Flat rechts). */
+	public static final class AggregatedStats {
+		public final Map<String, Double> percentageStats = new HashMap<>();
+		public final Map<String, Double> absoluteStats = new HashMap<>();
+		public double totalArmor;
+	}
 
+	private static void updateEquipmentStats(AbstractContainerScreen<?> screen, Minecraft client) {
+		AggregatedStats aggregated = new AggregatedStats();
 		for (int slotIndex : EQUIPMENT_SLOTS) {
 			if (slotIndex < screen.getMenu().slots.size()) {
 				Slot slot = screen.getMenu().slots.get(slotIndex);
 				ItemStack itemStack = slot.getItem();
-				
 				if (!itemStack.isEmpty()) {
-					// Hole die echten Tooltip-Daten des Items
-					List<Component> lore = getItemTooltip(itemStack, client.player);
-					boolean inStatistics = false;
-					for (Component text : lore) {
-						String line = text.getString();
-						
-						// Prüfe auf Rüstungswert
-						Matcher armorMatcher = ARMOR_PATTERN.matcher(line);
-						if (armorMatcher.find()) {
-							try {
-								String numberStr = removeThousandSeparators(armorMatcher.group(1));
-								double armorValue = Double.parseDouble(numberStr);
-								totalArmor += armorValue;
-							} catch (NumberFormatException e) {
-								// Ignoriere ungültige Zahlen
-							}
-						}
-						
-						if (line.contains("Statistik")) {
-							inStatistics = true;
-							continue;
-						}
-						if (inStatistics && (line.contains("+") || line.contains("-"))) {
-							// Extrahiere den Namen der Statistik und den Wert
-							Map<String, Double> stats = extractStatsFromLine(line);
-							for (Map.Entry<String, Double> entry : stats.entrySet()) {
-								String statName = entry.getKey();
-								Double value = entry.getValue();
-								
-								if (line.contains("%")) {
-									percentageStats.merge(statName, value, Double::sum);
-								} else {
-									absoluteStats.merge(statName, value, Double::sum);
-								}
-							}
-						}
+					accumulateTooltipLines(aggregated, getItemTooltip(itemStack, client.player));
+				}
+			}
+		}
+		percentageStats.clear();
+		percentageStats.putAll(aggregated.percentageStats);
+		absoluteStats.clear();
+		absoluteStats.putAll(aggregated.absoluteStats);
+		totalArmor = aggregated.totalArmor;
+	}
+
+	/**
+	 * Stats aus Tooltip-Zeilen (Component oder Klartext) — für echte Inventare und Build-Share-Fake-Items.
+	 */
+	public static AggregatedStats aggregateFromTooltipLines(Iterable<? extends Iterable<String>> itemTooltipLines) {
+		AggregatedStats out = new AggregatedStats();
+		if (itemTooltipLines == null) {
+			return out;
+		}
+		for (Iterable<String> lines : itemTooltipLines) {
+			if (lines == null) {
+				continue;
+			}
+			List<Component> asComponents = new ArrayList<>();
+			for (String line : lines) {
+				asComponents.add(Component.literal(line != null ? line : ""));
+			}
+			accumulateTooltipLines(out, asComponents);
+		}
+		return out;
+	}
+
+	public static void accumulateTooltipLines(AggregatedStats out, List<Component> lore) {
+		if (out == null || lore == null) {
+			return;
+		}
+		boolean inStatistics = false;
+		for (Component text : lore) {
+			if (text == null) {
+				continue;
+			}
+			String line = text.getString();
+			Matcher armorMatcher = ARMOR_PATTERN.matcher(line);
+			if (armorMatcher.find()) {
+				try {
+					out.totalArmor += Double.parseDouble(removeThousandSeparators(armorMatcher.group(1)));
+				} catch (NumberFormatException ignored) {
+				}
+			}
+			if (line.contains("Statistik")) {
+				inStatistics = true;
+				continue;
+			}
+			if (inStatistics && (line.contains("+") || line.contains("-"))) {
+				Map<String, Double> stats = extractStatsFromLine(line);
+				for (Map.Entry<String, Double> entry : stats.entrySet()) {
+					if (line.contains("%")) {
+						out.percentageStats.merge(entry.getKey(), entry.getValue(), Double::sum);
+					} else {
+						out.absoluteStats.merge(entry.getKey(), entry.getValue(), Double::sum);
 					}
 				}
 			}
 		}
+	}
+
+	/**
+	 * Links/Rechts-Overlays relativ zu einem Inventar-Rechteck zeichnen (Equipment-Menü).
+	 */
+	public static void renderOverlaysAt(
+			GuiGraphicsExtractor context,
+			int inventoryX,
+			int inventoryY,
+			int inventoryWidth,
+			int inventoryHeight,
+			Map<String, Double> pctStats,
+			Map<String, Double> absStats,
+			double armorTotal,
+			boolean drawContents,
+			int leftScroll,
+			int rightScroll) {
+		renderOverlaysAt(context, inventoryX, inventoryY, inventoryWidth, inventoryHeight,
+			pctStats, absStats, armorTotal, drawContents, leftScroll, rightScroll, false);
+	}
+
+	/**
+	 * @param flushToInventoryBounds true = Overlay-Höhe/Y = Inventar (Build-Share-PNG);
+	 *                               false = klassisch höher (+55) und etwas nach oben versetzt
+	 */
+	public static void renderOverlaysAt(
+			GuiGraphicsExtractor context,
+			int inventoryX,
+			int inventoryY,
+			int inventoryWidth,
+			int inventoryHeight,
+			Map<String, Double> pctStats,
+			Map<String, Double> absStats,
+			double armorTotal,
+			boolean drawContents,
+			int leftScroll,
+			int rightScroll,
+			boolean flushToInventoryBounds) {
+		if (context == null || pctStats == null || absStats == null) {
+			return;
+		}
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.font == null) {
+			return;
+		}
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int screenHeight = client.getWindow().getGuiScaledHeight();
+		int baseOverlayWidth = 160;
+		// Build-Share: oben bündig mit PNG, unten 22px früher (41 − 19)
+		int overlayHeight = flushToInventoryBounds
+			? Math.max(40, inventoryHeight - 22)
+			: inventoryHeight + 55;
+		int overlaySpacing = 5;
+		int leftOverlayWidth = calculateRequiredWidth(pctStats, baseOverlayWidth, true);
+		int rightOverlayWidth = calculateRequiredWidth(absStats, baseOverlayWidth, false);
+		int screenMargin = 5;
+		int desiredLeftOverlayX = inventoryX - leftOverlayWidth - overlaySpacing;
+		int leftOverlayX = Math.max(screenMargin, desiredLeftOverlayX);
+		if (leftOverlayX == screenMargin) {
+			leftOverlayWidth = Math.min(leftOverlayWidth, inventoryX - overlaySpacing - screenMargin);
+		}
+		int rightOverlayX = inventoryX + inventoryWidth + overlaySpacing;
+		if (rightOverlayX + rightOverlayWidth > screenWidth - screenMargin) {
+			rightOverlayWidth = screenWidth - screenMargin - rightOverlayX;
+		}
+		int overlayY = flushToInventoryBounds ? inventoryY : inventoryY - 28;
+		if (overlayY < screenMargin) {
+			overlayY = screenMargin;
+		}
+		if (overlayY + overlayHeight > screenHeight - screenMargin) {
+			overlayY = Math.max(screenMargin, screenHeight - overlayHeight - screenMargin);
+		}
+
+		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
+		if (overlayType == OverlayType.CUSTOM) {
+			try {
+				context.blit(RenderPipelines.GUI_TEXTURED, LEFT_OVERLAY_TEXTURE,
+					leftOverlayX, overlayY, 0.0f, 0.0f,
+					leftOverlayWidth, overlayHeight, leftOverlayWidth, overlayHeight);
+				context.blit(RenderPipelines.GUI_TEXTURED, RIGHT_OVERLAY_TEXTURE,
+					rightOverlayX, overlayY, 0.0f, 0.0f,
+					rightOverlayWidth, overlayHeight, rightOverlayWidth, overlayHeight);
+			} catch (Exception e) {
+				context.fill(leftOverlayX, overlayY, leftOverlayX + leftOverlayWidth, overlayY + overlayHeight, 0x80000000);
+				context.fill(rightOverlayX, overlayY, rightOverlayX + rightOverlayWidth, overlayY + overlayHeight, 0x80000000);
+			}
+		} else if (overlayType == OverlayType.BLACK) {
+			context.fill(leftOverlayX, overlayY, leftOverlayX + leftOverlayWidth, overlayY + overlayHeight, 0x80000000);
+			context.fill(rightOverlayX, overlayY, rightOverlayX + rightOverlayWidth, overlayY + overlayHeight, 0x80000000);
+		}
+
+		if (!drawContents) {
+			return;
+		}
+		if (armorTotal > 0) {
+			String armorText = String.format("Rüstung: %s", formatNumber(armorTotal));
+			int armorTextWidth = client.font.width(armorText);
+			int textHeight = client.font.lineHeight;
+			int padding = 4;
+			int armorX = inventoryX + (inventoryWidth - armorTextWidth) / 2;
+			int armorY;
+			if (flushToInventoryBounds) {
+				armorY = overlayY + 6;
+			} else {
+				int gapAboveInventory = 40;
+				armorY = inventoryY - textHeight - padding - gapAboveInventory;
+			}
+			int armorOverlayWidth = armorTextWidth + (padding * 2);
+			int armorOverlayHeight = textHeight + (padding * 2);
+			int armorOverlayX = armorX - padding;
+			int armorOverlayY = armorY - padding;
+			if (overlayType != OverlayType.NONE) {
+				context.fill(armorOverlayX, armorOverlayY,
+					armorOverlayX + armorOverlayWidth, armorOverlayY + armorOverlayHeight, 0x80000000);
+			}
+			context.text(client.font, armorText, armorX, armorY, 0xFFFFFFFF, true);
+		}
+		int extraTopPad = flushToInventoryBounds ? 4 : 0;
+		drawStatsInOverlay(context, client.font, pctStats, leftOverlayX, overlayY, leftOverlayWidth, overlayHeight, true, leftScroll, extraTopPad);
+		drawStatsInOverlay(context, client.font, absStats, rightOverlayX, overlayY, rightOverlayWidth, overlayHeight, false, rightScroll, extraTopPad);
+	}
+
+	/** Hover-Rechtecke der Overlays für Scroll (gleiche Geometrie wie {@link #renderOverlaysAt}). */
+	public static boolean[] computeOverlayHover(
+			int mouseX, int mouseY,
+			int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight,
+			Map<String, Double> pctStats, Map<String, Double> absStats) {
+		return computeOverlayHover(mouseX, mouseY, inventoryX, inventoryY, inventoryWidth, inventoryHeight,
+			pctStats, absStats, false);
+	}
+
+	public static boolean[] computeOverlayHover(
+			int mouseX, int mouseY,
+			int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight,
+			Map<String, Double> pctStats, Map<String, Double> absStats,
+			boolean flushToInventoryBounds) {
+		Minecraft client = Minecraft.getInstance();
+		boolean[] hover = new boolean[]{false, false};
+		if (client == null || client.getWindow() == null || pctStats == null || absStats == null) {
+			return hover;
+		}
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int screenHeight = client.getWindow().getGuiScaledHeight();
+		int baseOverlayWidth = 160;
+		int overlayHeight = flushToInventoryBounds
+			? Math.max(40, inventoryHeight - 22)
+			: inventoryHeight + 55;
+		int overlaySpacing = 5;
+		int leftOverlayWidth = calculateRequiredWidth(pctStats, baseOverlayWidth, true);
+		int rightOverlayWidth = calculateRequiredWidth(absStats, baseOverlayWidth, false);
+		int screenMargin = 5;
+		int leftOverlayX = Math.max(screenMargin, inventoryX - leftOverlayWidth - overlaySpacing);
+		if (leftOverlayX == screenMargin) {
+			leftOverlayWidth = Math.min(leftOverlayWidth, inventoryX - overlaySpacing - screenMargin);
+		}
+		int rightOverlayX = inventoryX + inventoryWidth + overlaySpacing;
+		if (rightOverlayX + rightOverlayWidth > screenWidth - screenMargin) {
+			rightOverlayWidth = screenWidth - screenMargin - rightOverlayX;
+		}
+		int overlayY = flushToInventoryBounds ? inventoryY : inventoryY - 28;
+		if (overlayY < screenMargin) {
+			overlayY = screenMargin;
+		}
+		if (overlayY + overlayHeight > screenHeight - screenMargin) {
+			overlayY = Math.max(screenMargin, screenHeight - overlayHeight - screenMargin);
+		}
+		hover[0] = mouseX >= leftOverlayX && mouseX <= leftOverlayX + leftOverlayWidth
+			&& mouseY >= overlayY && mouseY <= overlayY + overlayHeight;
+		hover[1] = mouseX >= rightOverlayX && mouseX <= rightOverlayX + rightOverlayWidth
+			&& mouseY >= overlayY && mouseY <= overlayY + overlayHeight;
+		return hover;
 	}
 
 	private static Map<String, Double> extractStatsFromLine(String line) {
@@ -331,7 +528,7 @@ public class EquipmentDisplayUtility {
 
 	private static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayEnabled || 
 			!CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay) {
 			return;
@@ -353,126 +550,16 @@ public class EquipmentDisplayUtility {
 
 		int screenWidth = client.getWindow().getGuiScaledWidth();
 		int screenHeight = client.getWindow().getGuiScaledHeight();
-
-		// Berechne die Position des Inventars (normalerweise in der Mitte)
-		int inventoryWidth = 176; // Standard Inventar-Breite
-		int inventoryHeight = 166; // Standard Inventar-Höhe
+		int inventoryWidth = 176;
+		int inventoryHeight = 166;
 		int inventoryX = (screenWidth - inventoryWidth) / 2;
 		int inventoryY = (screenHeight - inventoryHeight) / 2;
 
-		// Overlay-Dimensionen - dynamisch anpassbar
-		int baseOverlayWidth = 160;
-		int overlayHeight = inventoryHeight + 55;
-		int overlaySpacing = 5; // Abstand zum Inventar
-
-		// Berechne die benötigte Breite basierend auf der Länge der Texte
-		int leftOverlayWidth = calculateRequiredWidth(percentageStats, baseOverlayWidth, true);
-		int rightOverlayWidth = calculateRequiredWidth(absoluteStats, baseOverlayWidth, false);
-
-		// Positionen der Overlays - verhindere Überlappung mit Bildschirmrändern
-		int screenMargin = 5; // Abstand zum Bildschirmrand
-		
-		// Linkes Overlay: Verbreitert sich nur nach rechts (linke Kante bleibt fix oder wird begrenzt)
-		// Berechne zunächst die gewünschte Position
-		int desiredLeftOverlayX = inventoryX - leftOverlayWidth - overlaySpacing;
-		// Wenn die linke Kante zu weit links wäre, begrenze sie
-		int leftOverlayX = Math.max(screenMargin, desiredLeftOverlayX);
-		// Wenn die linke Kante begrenzt wurde, passe die Breite an
-		if (leftOverlayX == screenMargin) {
-			leftOverlayWidth = Math.min(leftOverlayWidth, inventoryX - overlaySpacing - screenMargin);
-		}
-		
-		// Rechtes Overlay: Verbreitert sich nur nach links (rechte Kante bleibt fix)
-		int rightOverlayX = inventoryX + inventoryWidth + overlaySpacing;
-		// Begrenze die Breite, damit es nicht rechts aus dem Bildschirm ragt
-		if (rightOverlayX + rightOverlayWidth > screenWidth - screenMargin) {
-			rightOverlayWidth = screenWidth - screenMargin - rightOverlayX;
-		}
-		
-		int overlayY = inventoryY - 28;
-		
-		// Begrenze die Y-Position so, dass das Overlay nicht oben oder unten aus dem Bildschirm ragt
-		if (overlayY < screenMargin) {
-			overlayY = screenMargin;
-		}
-		if (overlayY + overlayHeight > screenHeight - screenMargin) {
-			overlayY = screenHeight - overlayHeight - screenMargin;
-		}
-
-		// Zeichne Overlays basierend auf dem Overlay-Typ
-		OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
-		if (overlayType == OverlayType.CUSTOM) {
-			// Zeichne Bild-Overlays
-			try {
-				// Zeichne linkes Overlay mit der left_overlay.png Textur
-				context.blit(
-					RenderPipelines.GUI_TEXTURED,
-					LEFT_OVERLAY_TEXTURE,
-					leftOverlayX, overlayY, // Position
-					0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
-					leftOverlayWidth, overlayHeight, // Größe
-					leftOverlayWidth, overlayHeight // Textur-Größe
-				);
-				
-				// Zeichne rechtes Overlay mit der right_overlay.png Textur
-				context.blit(
-					RenderPipelines.GUI_TEXTURED,
-					RIGHT_OVERLAY_TEXTURE,
-					rightOverlayX, overlayY, // Position
-					0.0f, 0.0f, // UV-Koordinaten (Start der Textur)
-					rightOverlayWidth, overlayHeight, // Größe
-					rightOverlayWidth, overlayHeight // Textur-Größe
-				);
-			} catch (Exception e) {
-				// Fallback: Verwende den ursprünglichen schwarzen Hintergrund wenn Textur-Loading fehlschlägt
-				context.fill(leftOverlayX, overlayY, leftOverlayX + leftOverlayWidth, overlayY + overlayHeight, 0x80000000);
-				context.fill(rightOverlayX, overlayY, rightOverlayX + rightOverlayWidth, overlayY + overlayHeight, 0x80000000);
-			}
-		} else if (overlayType == OverlayType.BLACK) {
-			// Zeichne schwarze halbtransparente Overlays
-			context.fill(leftOverlayX, overlayY, leftOverlayX + leftOverlayWidth, overlayY + overlayHeight, 0x80000000);
-			context.fill(rightOverlayX, overlayY, rightOverlayX + rightOverlayWidth, overlayY + overlayHeight, 0x80000000);
-		}
-		// Bei OverlayType.NONE wird nichts gezeichnet
-
-		// Render nur wenn Overlays sichtbar sind
-		if (showOverlays) {
-			// Rüstungswert mittig über dem Inventar
-			if (totalArmor > 0) {
-				String armorText = String.format("Rüstung: %s", formatNumber(totalArmor));
-				int armorTextWidth = client.font.width(armorText);
-				int textHeight = client.font.lineHeight;
-				int padding = 4;
-				int gapAboveInventory = 40;
-
-				int armorX = inventoryX + (inventoryWidth - armorTextWidth) / 2;
-				int armorY = inventoryY - textHeight - padding - gapAboveInventory;
-
-				int armorOverlayWidth = armorTextWidth + (padding * 2);
-				int armorOverlayHeight = textHeight + (padding * 2);
-				int armorOverlayX = armorX - padding;
-				int armorOverlayY = armorY - padding;
-
-				if (CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType != OverlayType.NONE) {
-					context.fill(armorOverlayX, armorOverlayY, armorOverlayX + armorOverlayWidth, armorOverlayY + armorOverlayHeight, 0x80000000);
-				}
-
-				context.text(
-					client.font,
-					armorText,
-					armorX,
-					armorY,
-					0xFFFFFFFF,
-					true
-				);
-			}
-
-			// Zeichne Prozentwerte im linken Overlay
-			drawStatsInOverlay(context, client.font, percentageStats, leftOverlayX, overlayY, leftOverlayWidth, overlayHeight, true, leftScrollOffset);
-
-			// Zeichne absolute Werte im rechten Overlay
-			drawStatsInOverlay(context, client.font, absoluteStats, rightOverlayX, overlayY, rightOverlayWidth, overlayHeight, false, rightScrollOffset);
-		}
+		renderOverlaysAt(
+			context,
+			inventoryX, inventoryY, inventoryWidth, inventoryHeight,
+			percentageStats, absoluteStats, totalArmor,
+			showOverlays, leftScrollOffset, rightScrollOffset);
 	}
 
 	private static String formatNumber(double value) {
@@ -538,8 +625,12 @@ public class EquipmentDisplayUtility {
 	 * Zeichnet Statistiken in einem Overlay mit fester Höhe und dynamischer Breite
 	 */
 	private static void drawStatsInOverlay(GuiGraphicsExtractor context, net.minecraft.client.gui.Font textRenderer, Map<String, Double> stats, int overlayX, int overlayY, int overlayWidth, int overlayHeight, boolean isPercentage, int scrollOffset) {
+		drawStatsInOverlay(context, textRenderer, stats, overlayX, overlayY, overlayWidth, overlayHeight, isPercentage, scrollOffset, 0);
+	}
+
+	private static void drawStatsInOverlay(GuiGraphicsExtractor context, net.minecraft.client.gui.Font textRenderer, Map<String, Double> stats, int overlayX, int overlayY, int overlayWidth, int overlayHeight, boolean isPercentage, int scrollOffset, int extraTopPad) {
 		int textX = overlayX + 11; // 11 Pixel Abstand vom Rand (3 + 8 Pixel nach rechts)
-		int yOffset = overlayY + 8; // 8 Pixel Abstand vom oberen Rand (5 + 3 Pixel nach unten)
+		int yOffset = overlayY + 8 + Math.max(0, extraTopPad); // +extraTopPad: erste Textzeile etwas tiefer
 		int maxY = overlayY + overlayHeight - 10; // Maximale Y-Position
 		
 		// Wenn das Overlay zu schmal ist, zeichne einen Hinweis

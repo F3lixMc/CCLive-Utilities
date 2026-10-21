@@ -1322,13 +1322,18 @@ public class BPViewerUtility {
     }
     
     private void saveFoundBlueprints() {
+        saveFoundBlueprintsReturningSuccess();
+    }
+
+    private boolean saveFoundBlueprintsReturningSuccess() {
         try {
             saveFile.getParentFile().mkdirs();
             try (FileWriter writer = new FileWriter(saveFile)) {
                 gson.toJson(foundBlueprints, writer);
             }
+            return true;
         } catch (IOException e) {
-            // Silent error handling
+            return false;
         }
     }
     
@@ -1365,6 +1370,10 @@ public class BPViewerUtility {
     }
     
     private void saveProgress() {
+        saveProgressReturningSuccess();
+    }
+
+    private boolean saveProgressReturningSuccess() {
         try {
             progressFile.getParentFile().mkdirs();
             JsonObject json = new JsonObject();
@@ -1388,8 +1397,9 @@ public class BPViewerUtility {
             try (FileWriter writer = new FileWriter(progressFile)) {
                 gson.toJson(json, writer);
             }
+            return true;
         } catch (IOException e) {
-            // Silent error handling
+            return false;
         }
     }
     
@@ -1409,6 +1419,32 @@ public class BPViewerUtility {
      * Prüft, ob ein Blueprint gefunden wurde (prüft sowohl foundBlueprints als auch floorProgress)
      * Diese Methode wird für externe Utilities verwendet, die den Status eines Blueprints prüfen möchten
      */
+    /**
+     * Prüft, ob ein Blueprint mit exakter Rarity gefunden wurde.
+     * Key-Logik wie beim Speichern: epic/legendary → {@code name:rarity}, sonst nur {@code name}.
+     */
+    public boolean isBlueprintFoundExact(String blueprintName, String rarity) {
+        if (blueprintName == null || blueprintName.isEmpty()) {
+            return false;
+        }
+        String key = blueprintName;
+        if (rarity != null && !rarity.isEmpty()) {
+            String r = rarity.toLowerCase(java.util.Locale.ROOT);
+            if ("epic".equals(r) || "legendary".equals(r)) {
+                key = blueprintName + ":" + r;
+            }
+        }
+        if (foundBlueprints.containsKey(key)) {
+            return true;
+        }
+        for (Set<String> floorSet : floorProgress.values()) {
+            if (floorSet != null && floorSet.contains(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean isBlueprintFoundAnywhere(String blueprintName) {
         if (blueprintName == null || blueprintName.isEmpty()) {
             return false;
@@ -1449,23 +1485,11 @@ public class BPViewerUtility {
     }
     
     public void resetFoundBlueprints() {
- 
-        
-        // Clear found blueprints
-        foundBlueprints.clear();
-        
-        // Clear floor progress
-        floorProgress.clear();
-
-        // Clear found fishing components and fish traps
+        resetLocalBlueprintProgressFiles();
         FishingComponentFoundUtility.reset();
         FishTrapFoundUtility.reset();
         
-        // Save empty data to files
-        saveFoundBlueprints();
-        saveProgress();
-        
-        // Reset blueprints_found in player_stats
+        // Reset blueprints_found in player_stats (Backend) — nur manueller/Command-Pfad
         try {
             net.felix.profile.ProfileStatsManager profileStatsManager = net.felix.profile.ProfileStatsManager.getInstance();
             profileStatsManager.resetBlueprintCount();
@@ -1474,6 +1498,19 @@ public class BPViewerUtility {
         }
 
         net.felix.utilities.ItemViewer.ItemViewerUtility.onFoundStatusChanged();
+    }
+
+    /**
+     * Nur lokale Bauplan-Dateien + Memory (found_blueprints.json, blueprint_progress.json).
+     * Kein Backend, keine Fishing/Fish-Trap-Resets.
+     * @return true wenn beide Dateien erfolgreich gespeichert wurden
+     */
+    public boolean resetLocalBlueprintProgressFiles() {
+        foundBlueprints.clear();
+        floorProgress.clear();
+        boolean ok = saveFoundBlueprintsReturningSuccess() && saveProgressReturningSuccess();
+        net.felix.utilities.ItemViewer.ItemViewerUtility.onFoundStatusChanged();
+        return ok;
     }
     
     private void loadBlueprintConfig() {

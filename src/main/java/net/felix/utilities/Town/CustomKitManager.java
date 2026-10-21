@@ -59,31 +59,67 @@ public final class CustomKitManager {
         return null;
     }
 
-    public static void addKit(int buttonIndex, CustomKit kit) {
-        addKit(kit);
+    /** @return true wenn das Kit hinzugefügt und dauerhaft gespeichert wurde */
+    public static boolean addKit(int buttonIndex, CustomKit kit) {
+        return addKit(kit);
     }
 
-    public static void addKit(CustomKit kit) {
+    /** @return true wenn das Kit hinzugefügt und dauerhaft gespeichert wurde */
+    public static boolean addKit(CustomKit kit) {
         if (kit == null) {
-            return;
+            return false;
         }
         ensureLoaded();
+        if (kit.cardNames == null) {
+            kit.cardNames = new ArrayList<>();
+        }
+        if (kit.itemNames == null) {
+            kit.itemNames = new ArrayList<>();
+        }
+        if (kit.fishingComponents == null) {
+            kit.fishingComponents = new ArrayList<>();
+        }
+        if (kit.itemCategories == null) {
+            kit.itemCategories = new java.util.HashMap<>();
+        }
         kits.add(kit);
-        save();
+        if (!save()) {
+            kits.remove(kit);
+            return false;
+        }
+        return true;
     }
 
-    public static void updateKit(CustomKit kit) {
+    /** @return true wenn das Kit aktualisiert und dauerhaft gespeichert wurde */
+    public static boolean updateKit(CustomKit kit) {
         if (kit == null || kit.id == null) {
-            return;
+            return false;
         }
         ensureLoaded();
+        if (kit.cardNames == null) {
+            kit.cardNames = new ArrayList<>();
+        }
+        if (kit.itemNames == null) {
+            kit.itemNames = new ArrayList<>();
+        }
+        if (kit.fishingComponents == null) {
+            kit.fishingComponents = new ArrayList<>();
+        }
+        if (kit.itemCategories == null) {
+            kit.itemCategories = new java.util.HashMap<>();
+        }
         for (int i = 0; i < kits.size(); i++) {
             if (kit.id.equals(kits.get(i).id)) {
+                CustomKit previous = kits.get(i);
                 kits.set(i, kit);
-                save();
-                return;
+                if (!save()) {
+                    kits.set(i, previous);
+                    return false;
+                }
+                return true;
             }
         }
+        return false;
     }
 
     public static boolean deleteKit(String kitId) {
@@ -91,11 +127,22 @@ public final class CustomKitManager {
             return false;
         }
         ensureLoaded();
-        if (kits.removeIf(kit -> kitId.equals(kit.id))) {
-            save();
-            return true;
+        CustomKit removed = null;
+        for (CustomKit kit : kits) {
+            if (kitId.equals(kit.id)) {
+                removed = kit;
+                break;
+            }
         }
-        return false;
+        if (removed == null) {
+            return false;
+        }
+        kits.remove(removed);
+        if (!save()) {
+            kits.add(removed);
+            return false;
+        }
+        return true;
     }
 
     private static Path getSavePath() {
@@ -121,7 +168,7 @@ public final class CustomKitManager {
                 loadKitsFromLegacyButtonFormat(root.getAsJsonObject("buttonKits"));
             }
         } catch (Exception e) {
-            // Silent error handling
+            // Silent error handling on load
         }
         loaded = true;
     }
@@ -169,10 +216,42 @@ public final class CustomKitManager {
                 }
             }
         }
-        return new CustomKit(id, name, icon, iconName, items);
+        List<String> cards = new ArrayList<>();
+        if (obj.has("cards") && obj.get("cards").isJsonArray()) {
+            for (JsonElement el : obj.getAsJsonArray("cards")) {
+                if (el.isJsonPrimitive()) {
+                    cards.add(el.getAsString());
+                }
+            }
+        }
+        List<CustomKit.FishingComponent> fishing = new ArrayList<>();
+        if (obj.has("fishingComponents") && obj.get("fishingComponents").isJsonArray()) {
+            for (JsonElement el : obj.getAsJsonArray("fishingComponents")) {
+                if (!el.isJsonObject()) {
+                    continue;
+                }
+                JsonObject fc = el.getAsJsonObject();
+                String type = fc.has("type") ? fc.get("type").getAsString() : null;
+                String itemName = fc.has("itemName") ? fc.get("itemName").getAsString() : null;
+                if (itemName != null && !itemName.isEmpty()) {
+                    fishing.add(new CustomKit.FishingComponent(type, itemName));
+                }
+            }
+        }
+        CustomKit kit = new CustomKit(id, name, icon, iconName, items, cards, fishing);
+        if (obj.has("itemCategories") && obj.get("itemCategories").isJsonObject()) {
+            JsonObject cats = obj.getAsJsonObject("itemCategories");
+            for (Map.Entry<String, JsonElement> e : cats.entrySet()) {
+                if (e.getValue().isJsonPrimitive()) {
+                    kit.itemCategories.put(e.getKey(), e.getValue().getAsString());
+                }
+            }
+        }
+        return kit;
     }
 
-    private static void save() {
+    /** @return true wenn die Datei erfolgreich geschrieben wurde */
+    private static boolean save() {
         try {
             JsonObject root = new JsonObject();
             JsonArray arr = new JsonArray();
@@ -185,18 +264,52 @@ public final class CustomKitManager {
                     obj.addProperty("iconName", kit.iconItemName);
                 }
                 JsonArray items = new JsonArray();
-                for (String itemName : kit.itemNames) {
-                    items.add(itemName);
+                if (kit.itemNames != null) {
+                    for (String itemName : kit.itemNames) {
+                        items.add(itemName);
+                    }
                 }
                 obj.add("items", items);
+                JsonArray cards = new JsonArray();
+                if (kit.cardNames != null) {
+                    for (String cardName : kit.cardNames) {
+                        cards.add(cardName);
+                    }
+                }
+                obj.add("cards", cards);
+                JsonArray fishing = new JsonArray();
+                if (kit.fishingComponents != null) {
+                    for (CustomKit.FishingComponent fc : kit.fishingComponents) {
+                        if (fc == null || fc.itemName == null || fc.itemName.isEmpty()) {
+                            continue;
+                        }
+                        JsonObject entry = new JsonObject();
+                        if (fc.type != null && !fc.type.isEmpty()) {
+                            entry.addProperty("type", fc.type);
+                        }
+                        entry.addProperty("itemName", fc.itemName);
+                        fishing.add(entry);
+                    }
+                }
+                obj.add("fishingComponents", fishing);
+                if (kit.itemCategories != null && !kit.itemCategories.isEmpty()) {
+                    JsonObject cats = new JsonObject();
+                    for (Map.Entry<String, String> e : kit.itemCategories.entrySet()) {
+                        if (e.getKey() != null && e.getValue() != null) {
+                            cats.addProperty(e.getKey(), e.getValue());
+                        }
+                    }
+                    obj.add("itemCategories", cats);
+                }
                 arr.add(obj);
             }
             root.add("kits", arr);
             Path path = getSavePath();
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(root), StandardCharsets.UTF_8);
+            return true;
         } catch (Exception e) {
-            // Silent error handling
+            return false;
         }
     }
 }

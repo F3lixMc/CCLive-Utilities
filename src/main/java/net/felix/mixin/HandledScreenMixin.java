@@ -37,6 +37,9 @@ public abstract class HandledScreenMixin {
         // Update mouse position for DebugUtility (Item Logger)
         net.felix.utilities.Other.DebugUtility.updateMousePosition(mouseX, mouseY);
         
+        // Container-Geometrie für Build-Share (links am Inventar statt Screen-Rand)
+        net.felix.chat.ContainerScreenBounds.update(leftPos, topPos, imageWidth, imageHeight);
+
         // Update mouse position for Item Viewer
         net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
         
@@ -51,6 +54,9 @@ public abstract class HandledScreenMixin {
         
         // Render Clipboard Button Tooltips
         net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
+        
+        // Build-Share Overlay (Ausrüstung / Karten / Wardrobe)
+        net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
         
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
@@ -212,15 +218,24 @@ public abstract class HandledScreenMixin {
 
         net.felix.utilities.ItemViewer.ItemViewerUtility.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
+
+        // Build-Share vor Clipboard: gleiches Eck-Gebiet, sonst schluckt Clipboard Delete/Pfeile die Klicks
+        if (net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY, button)) {
+            cir.setReturnValue(true);
+            return;
+        }
         
         // Handle clicks on Clipboard Overlay buttons (inkl. Delete-Button)
         if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {
             cir.setReturnValue(true);
             return;
         }
-        
-        // Handle clicks on Clipboard Delete-Button (auch wenn Bestätigungs-Overlay offen ist)
-        // Dies wird bereits in handleButtonClick behandelt, aber wir müssen sicherstellen, dass es auch außerhalb von Screens funktioniert
+
+        // Wardrobe: Hover + Rechtsklick → Kit-Name (Server-Klick nicht blockieren)
+        if (button == 1) {
+            AbstractContainerScreen<?> wardrobeScreen = (AbstractContainerScreen<?>) (Object) this;
+            net.felix.chat.BuildShareManager.getInstance().handleWardrobeRightClick(wardrobeScreen, button);
+        }
         
         // Handle clicks on Clipboard quantity text field
         if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, button)) {

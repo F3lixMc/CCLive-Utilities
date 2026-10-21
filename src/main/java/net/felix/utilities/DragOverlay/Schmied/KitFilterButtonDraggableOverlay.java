@@ -182,7 +182,7 @@ public class KitFilterButtonDraggableOverlay implements DraggableOverlay {
 
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+        return CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
                CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled;
     }
 

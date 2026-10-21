@@ -750,18 +750,23 @@ public class ItemViewerGrid {
                 stack.set(DataComponents.CUSTOM_NAME, nameText);
             }
             
-            // Setze CustomModelData falls vorhanden
-            // CustomModelDataComponent in 1.21.7/1.21.8 verwendet einen 4-Listen-Konstruktor:
-            // Liste 0: List<Float> - hier gehört der CustomModelData-Wert (als Float)
-            // Liste 1: List<Boolean>
-            // Liste 2: List<String>
-            // Liste 3: List<Integer>
-            if (itemData.customModelData != null) {
-                stack.set(DataComponents.CUSTOM_MODEL_DATA, new CustomModelData(
-                        List.of(itemData.customModelData.floatValue()),
-                        List.of(),
-                        List.of(),
-                        List.of()));
+            // CustomModelData (floats/flags/strings/colors) — Strings oft für Platzhalter-Modelle
+            boolean hasCmd = itemData.customModelData != null
+                || (itemData.customModelStrings != null && !itemData.customModelStrings.isEmpty())
+                || (itemData.customModelFlags != null && !itemData.customModelFlags.isEmpty())
+                || (itemData.customModelColors != null && !itemData.customModelColors.isEmpty());
+            if (hasCmd) {
+                List<Float> floats = itemData.customModelData != null
+                    ? List.of(itemData.customModelData.floatValue())
+                    : List.of();
+                List<Boolean> flags = itemData.customModelFlags != null
+                    ? itemData.customModelFlags : List.of();
+                List<String> strings = itemData.customModelStrings != null
+                    ? itemData.customModelStrings : List.of();
+                List<Integer> colors = itemData.customModelColors != null
+                    ? itemData.customModelColors : List.of();
+                stack.set(DataComponents.CUSTOM_MODEL_DATA,
+                    new CustomModelData(floats, flags, strings, colors));
             }
             
             return stack;
@@ -794,7 +799,7 @@ public class ItemViewerGrid {
     /**
      * Gibt die Farbe für eine Rarity zurück
      */
-    private static int getRarityColor(String rarity) {
+    public static int getRarityColor(String rarity) {
         if (rarity == null) {
             return 0xFFFFFFFF; // Weiß als Standard
         }
@@ -807,6 +812,59 @@ public class ItemViewerGrid {
             case "legendary": return 0xFFDE680D;    // #de680d
             default: return 0xFFFFFFFF;            // Weiß als Standard
         }
+    }
+
+    /** Chat-Link-Farbe: Schmiedegrad (falls im Namen) > Ability/Crystal > Rarity. */
+    public static int getChatLinkColor(ItemData itemData) {
+        if (itemData == null) {
+            return 0xFFFFFFFF;
+        }
+
+        String forging = extractForgingConditionFromName(itemData.name);
+        if (forging == null || forging.isBlank()) {
+            forging = itemData.forgingCondition;
+        }
+        if (forging != null && !forging.isBlank()) {
+            return ForgingConditionUtility.getDisplayColorArgb(forging);
+        }
+
+        if (itemData.info != null) {
+            if (Boolean.TRUE.equals(itemData.info.power_crystal)) {
+                return 0xFF00FFFF;
+            }
+            if (Boolean.TRUE.equals(itemData.info.ability)) {
+                return 0xFFFF5555;
+            }
+            return getRarityColor(itemData.info.rarity);
+        }
+        return 0xFFFFFFFF;
+    }
+
+    /** Liest Schmiedegrad aus Anzeigenamen wie "Schwert [Drachengeschmiedet]". */
+    public static String extractForgingConditionFromName(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        int start = name.lastIndexOf('[');
+        int end = name.lastIndexOf(']');
+        if (start < 0 || end <= start) {
+            return null;
+        }
+        String inner = name.substring(start + 1, end).trim()
+            .replaceAll("§[0-9a-fk-or]", "");
+        if (inner.isEmpty()) {
+            return null;
+        }
+        return switch (inner.toLowerCase()) {
+            case "sternengeschmiedet" -> "Sternengeschmiedet";
+            case "blitzgeschmiedet" -> "Blitzgeschmiedet";
+            case "dämonengeschmiedet", "daemonengeschmiedet" -> "Dämonengeschmiedet";
+            case "drachengeschmiedet" -> "Drachengeschmiedet";
+            case "titangeschmiedet" -> "Titangeschmiedet";
+            case "lavageschmiedet" -> "Lavageschmiedet";
+            case "frostgeschmiedet" -> "Frostgeschmiedet";
+            default -> null;
+        };
     }
     
     /**

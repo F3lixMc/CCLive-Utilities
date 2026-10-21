@@ -398,7 +398,7 @@ public class InformationenUtility {
 			addClipboardPinTextToTooltip(lines, client);
 			
 			// Only process other information if Informationen Utility is enabled in config
-			if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+			if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 				!CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled) {
 				return;
 			}
@@ -427,7 +427,7 @@ public class InformationenUtility {
 				isMaterialBagInventory = ZeichenUtility.containsUiMaterialBag(screenTitle);
 			}
 			
-			if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+			if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
 				CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled &&
 				CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay &&
 				client.screen != null &&
@@ -1255,6 +1255,40 @@ public class InformationenUtility {
 		return getFloorNumberForBlueprint(blueprintName, null);
 	}
 	
+	/** Effekt einer Karte aus CardsStatues.json (exakter oder case-insensitive Name). */
+	public static String getCardEffectByName(String cardName) {
+		if (cardName == null || cardName.isEmpty()) {
+			return null;
+		}
+		String effect = cardsEffects.get(cardName);
+		if (effect != null) {
+			return effect;
+		}
+		for (Map.Entry<String, String> entry : cardsEffects.entrySet()) {
+			if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(cardName)) {
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
+
+	/** Ebenen einer Karte aus CardsStatues.json, z. B. [8, 29]. */
+	public static List<Integer> getCardFloorsByName(String cardName) {
+		if (cardName == null || cardName.isEmpty()) {
+			return null;
+		}
+		List<Integer> floors = cardsFloors.get(cardName);
+		if (floors == null) {
+			for (Map.Entry<String, List<Integer>> entry : cardsFloors.entrySet()) {
+				if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(cardName)) {
+					floors = entry.getValue();
+					break;
+				}
+			}
+		}
+		return floors != null && !floors.isEmpty() ? new ArrayList<>(floors) : null;
+	}
+
 	/**
 	 * Gets floor numbers for a card or statue from CardsStatues.json
 	 * @param stack The item stack (name/lore may contain [Karte] or [Statue])
@@ -5257,7 +5291,7 @@ public class InformationenUtility {
 	 */
 	private static void onClientTick(Minecraft client) {
 		// Performance-Optimierung: Frühe Returns wenn Mod deaktiviert
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
 			return;
 		}
 		
@@ -5295,7 +5329,7 @@ public class InformationenUtility {
 		updateOverlayVisibility(lumberjackXP);
 		
 		// Collection tracking - runs every 20 ticks (1 second)
-		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+		if (CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
 			// Increment tick counter
 			collectionTickCounter++;
 			
@@ -5695,7 +5729,7 @@ public class InformationenUtility {
 		}
 		
 		// Render mining overlay (only when XP changed recently and not in player's own dimension or floor dimension)
-		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+		if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
 			CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled &&
 			CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayEnabled &&
 			CCLiveUtilitiesConfig.HANDLER.instance().showMiningOverlay &&
@@ -5705,7 +5739,7 @@ public class InformationenUtility {
 		}
 		
 		// Render collection overlay (only if biom is detected in scoreboard)
-		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+		if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
 			isTrackingCollections &&
 			biomDetected &&
 			!shouldHideOverlays) {
@@ -5715,7 +5749,7 @@ public class InformationenUtility {
 		}
 		
 		// Render lumberjack overlay (only when XP changed recently and not in player's own dimension or floor dimension)
-		if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&
+		if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
 			CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled &&
 			CCLiveUtilitiesConfig.HANDLER.instance().lumberjackOverlayEnabled &&
 			CCLiveUtilitiesConfig.HANDLER.instance().showLumberjackOverlay &&

@@ -30,6 +30,15 @@ public class MouseScrollMixin {
                 // Das ist aber in Ordnung, da wir nur die Pagination ändern
                 return;
             }
+            if (net.felix.chat.BuildShareViewScreen.isActive()) {
+                net.felix.chat.BuildShareViewScreen view = net.felix.chat.BuildShareViewScreen.getActive();
+                if (view != null && view.handleStatOverlayScroll(mouseX, mouseY, vertical)) {
+                    return;
+                }
+            }
+            if (net.felix.chat.BuildShareManager.getInstance().handleOverlayScroll(mouseX, mouseY, vertical)) {
+                return;
+            }
         }
         
         // Übergebe das Scroll-Event an die EquipmentDisplayUtility

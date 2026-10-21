@@ -29,7 +29,7 @@ public class KillAnimationUtility {
     }
     
     public static boolean isKillAnimationDisabled() {
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
             return false;
         }
         

@@ -478,14 +478,14 @@ public class ItemViewerUtility {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 net.felix.leaderboards.LeaderboardManager manager = net.felix.leaderboards.LeaderboardManager.getInstance();
-                if (manager == null || !manager.isEnabled() || !manager.isRegistered()) {
-                    return; // Leaderboard-System nicht aktiv, kein Server-Check
+                if (manager == null) {
+                    return;
                 }
                 
                 net.felix.leaderboards.config.LeaderboardConfig config = new net.felix.leaderboards.config.LeaderboardConfig();
                 String serverUrl = config.getServerUrl();
                 
-                // Prüfe Server-Version
+                // Items-Download braucht keine Registrierung (nur GET)
                 java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
                 java.net.http.HttpRequest versionRequest = java.net.http.HttpRequest.newBuilder()
                     .uri(java.net.URI.create(serverUrl + "/items/version"))
@@ -1408,6 +1408,212 @@ public class ItemViewerUtility {
         }
         return false;
     }
+
+    /**
+     * Kopiert das gehoverte Inventar-/Chest-Item als Share-Snapshot (nicht ItemViewer-Grid).
+     * Template-Felder für Icon + Live-Tooltip-Stats.
+     */
+    public static ItemData captureHoveredInventoryItemForShare(Minecraft client) {
+        if (client == null || !(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen)) {
+            return null;
+        }
+        // ItemViewer-Grid bewusst nicht — nur echte Inventar-Slots
+        net.minecraft.world.inventory.Slot hoveredSlot;
+        if (lastHoveredScreen == handledScreen && lastHoveredSlot != null && lastHoveredSlot.hasItem()) {
+            hoveredSlot = lastHoveredSlot;
+        } else {
+            hoveredSlot = getHoveredSlot(handledScreen, client);
+        }
+        if (hoveredSlot == null || !hoveredSlot.hasItem()) {
+            return null;
+        }
+        net.minecraft.world.item.ItemStack stack = hoveredSlot.getItem();
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+
+        java.util.List<net.felix.chat.ChatTooltipLine> tooltipLines =
+            extractShareTooltipLines(handledScreen, client, stack);
+        String rawName = extractItemNameFromTooltip(handledScreen, client, stack);
+        if (rawName == null || rawName.isEmpty()) {
+            rawName = stack.getHoverName().getString();
+        }
+        String displayName = cleanItemNameForDisplay(rawName);
+        String lookupName = cleanItemNameForLookup(rawName);
+
+        String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
+        ItemData template = findItemByNameAndFoundAt(lookupName, foundAtFloor);
+        if (template == null) {
+            template = findItemByName(lookupName);
+        }
+
+        return net.felix.chat.ItemShareManager.buildSnapshotFromTooltip(displayName, tooltipLines, template);
+    }
+
+    /**
+     * Share-Snapshot aus beliebigem Inventar-Stack (nicht nur Cursor).
+     */
+    public static ItemData captureInventoryStackForShare(
+            Minecraft client,
+            net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen,
+            net.minecraft.world.item.ItemStack stack) {
+        if (client == null || handledScreen == null || stack == null || stack.isEmpty()) {
+            return null;
+        }
+
+        java.util.List<net.felix.chat.ChatTooltipLine> tooltipLines =
+            extractShareTooltipLines(handledScreen, client, stack);
+        String rawName = extractItemNameFromTooltip(handledScreen, client, stack);
+        if (rawName == null || rawName.isEmpty()) {
+            rawName = stack.getHoverName().getString();
+        }
+        String displayName = cleanItemNameForDisplay(rawName);
+        String lookupName = cleanItemNameForLookup(rawName);
+
+        String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
+        ItemData template = findItemByNameAndFoundAt(lookupName, foundAtFloor);
+        if (template == null) {
+            template = findItemByName(lookupName);
+        }
+
+        ItemData snapshot = net.felix.chat.ItemShareManager.buildSnapshotFromTooltip(
+            displayName, tooltipLines, template);
+        // Live-Stack hat Vorrang für Icon (Modul-Platzhalter oft nicht in ItemViewer)
+        applyLiveStackVisuals(snapshot, stack);
+        return snapshot;
+    }
+
+    /**
+     * Item-ID + vollständige CustomModelData vom echten Inventar-Stack übernehmen
+     * (Platzhalter/Locked-Module brauchen floats/strings vom Live-Item).
+     */
+    public static void applyLiveStackVisuals(ItemData snapshot, ItemStack stack) {
+        if (snapshot == null || stack == null || stack.isEmpty()) {
+            return;
+        }
+        try {
+            Identifier id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+            if (id != null) {
+                snapshot.id = id.toString();
+            }
+        } catch (Exception ignored) {
+        }
+        try {
+            var cmd = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_MODEL_DATA);
+            if (cmd == null) {
+                return;
+            }
+            if (cmd.floats() != null && !cmd.floats().isEmpty()) {
+                snapshot.customModelData = cmd.floats().get(0).intValue();
+            } else {
+                Integer legacy = net.felix.utilities.Aincraft.ItemInfoUtility.extractCustomModelData(stack);
+                if (legacy != null) {
+                    snapshot.customModelData = legacy;
+                }
+            }
+            if (cmd.strings() != null && !cmd.strings().isEmpty()) {
+                snapshot.customModelStrings = new ArrayList<>(cmd.strings());
+            }
+            if (cmd.flags() != null && !cmd.flags().isEmpty()) {
+                snapshot.customModelFlags = new ArrayList<>(cmd.flags());
+            }
+            if (cmd.colors() != null && !cmd.colors().isEmpty()) {
+                snapshot.customModelColors = new ArrayList<>(cmd.colors());
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Anzeigename eines Inventar-Stacks (für Kit-Namen etc.). */
+    public static String extractInventoryItemDisplayName(
+            Minecraft client,
+            net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen,
+            net.minecraft.world.item.ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return null;
+        }
+        String rawName = extractItemNameFromTooltip(handledScreen, client, stack);
+        if (rawName == null || rawName.isEmpty()) {
+            rawName = stack.getHoverName().getString();
+        }
+        return cleanItemNameForDisplay(rawName);
+    }
+
+    public static boolean isTextFieldFocusedPublic(Minecraft client) {
+        return isTextFieldFocused(client);
+    }
+
+    /**
+     * Inventar-Tooltip als formatierte Zeilen, ohne Vanilla-Attribute und ohne Advanced-IDs.
+     */
+    private static java.util.List<net.felix.chat.ChatTooltipLine> extractShareTooltipLines(
+            net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen,
+            Minecraft client,
+            net.minecraft.world.item.ItemStack stack) {
+        java.util.List<net.minecraft.network.chat.Component> rawLines = new java.util.ArrayList<>();
+        try {
+            java.util.List<net.minecraft.network.chat.Component> tooltip = null;
+            Class<?> clazz = screen.getClass();
+            while (clazz != null && tooltip == null) {
+                for (java.lang.reflect.Method method : clazz.getDeclaredMethods()) {
+                    if (!"getTooltipFromItem".equals(method.getName())) {
+                        continue;
+                    }
+                    Class<?>[] params = method.getParameterTypes();
+                    method.setAccessible(true);
+                    try {
+                        if (params.length == 2
+                                && net.minecraft.client.Minecraft.class.isAssignableFrom(params[0])
+                                && net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[1])) {
+                            @SuppressWarnings("unchecked")
+                            java.util.List<net.minecraft.network.chat.Component> result =
+                                (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, client, stack);
+                            tooltip = result;
+                            break;
+                        }
+                        if (params.length == 1 && net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[0])) {
+                            @SuppressWarnings("unchecked")
+                            java.util.List<net.minecraft.network.chat.Component> result =
+                                (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, stack);
+                            tooltip = result;
+                            break;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+                clazz = clazz.getSuperclass();
+            }
+            if (tooltip != null) {
+                rawLines.addAll(tooltip);
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (rawLines.size() <= 1) {
+            rawLines.clear();
+            rawLines.add(stack.getHoverName());
+            try {
+                net.minecraft.world.item.component.ItemLore lore =
+                    stack.get(net.minecraft.core.component.DataComponents.LORE);
+                if (lore != null) {
+                    for (net.minecraft.network.chat.Component line : lore.lines()) {
+                        if (line != null) {
+                            rawLines.add(line);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        java.util.List<net.minecraft.network.chat.Component> filtered =
+            net.felix.chat.ChatTooltipLine.filterInventoryTooltip(rawLines);
+        java.util.List<net.felix.chat.ChatTooltipLine> result = new java.util.ArrayList<>();
+        for (net.minecraft.network.chat.Component line : filtered) {
+            result.add(net.felix.chat.ChatTooltipLine.fromComponent(line));
+        }
+        return result;
+    }
     
     /**
      * Findet den gehoverten Slot in einem AbstractContainerScreen
@@ -1628,6 +1834,12 @@ public class ItemViewerUtility {
         
         // 1. Entferne alle Minecraft-Formatierungscodes (§[0-9a-fk-or])
         itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
+
+        // 1b. Schmiedegrad / Suffix in eckigen Klammern: "Name [Drachengeschmiedet]" → "Name"
+        int bracketIdx = itemName.indexOf('[');
+        if (bracketIdx >= 0) {
+            itemName = itemName.substring(0, bracketIdx).trim();
+        }
         
         // 2. Entferne " - [Bauplan]" oder ähnliche Suffixe komplett (inkl. Bindestrich)
         // Pattern: "name - [Bauplan]" -> "name"
@@ -1671,6 +1883,11 @@ public class ItemViewerUtility {
      * @param modifiers Modifier keys
      * @return true wenn der Input behandelt wurde, false sonst
      */
+    
+    /** Anzeigename: Layout-Glyphen/Spacer weg, Schmiedegrad in [] bleibt erhalten. */
+    private static String cleanItemNameForDisplay(String itemName) {
+        return net.felix.chat.ShareTextCleaner.cleanDisplayName(itemName);
+    }
     public static boolean handleSearchFieldKeyPress(int keyCode, int scanCode, int modifiers) {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.screen == null) {
@@ -2396,6 +2613,8 @@ public class ItemViewerUtility {
     private static final int VIEWER_PADDING = 5;
     private static final int SEARCH_HEIGHT = 20;
     private static final int HELP_BUTTON_SIZE = 20; // Gleiche Höhe wie Suchleiste
+    private static final Identifier HELP_ICON_TEXTURE =
+        Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/hint.png");
     private static final int FILTER_BUTTON_SIZE = 20;
     private static final Identifier FILTER_ICON_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/lupe_icon.png");
     private static final int SORT_DROPDOWN_HEIGHT = 20;
@@ -3525,12 +3744,25 @@ public class ItemViewerUtility {
         context.fill(x, y, x + 1, y + HELP_BUTTON_SIZE, borderColor); // Links
         context.fill(x + HELP_BUTTON_SIZE - 1, y, x + HELP_BUTTON_SIZE, y + HELP_BUTTON_SIZE, borderColor); // Rechts
         
-        // Fragezeichen (zentriert)
-        String questionMark = "?";
-        int textWidth = client.font.width(questionMark);
-        int textX = x + (HELP_BUTTON_SIZE - textWidth) / 2;
-        int textY = y + (HELP_BUTTON_SIZE - 9) / 2; // 9 ist die Text-Höhe, zentriert vertikal
-        context.text(client.font, Component.literal(questionMark), textX, textY, 0xFFFFFFFF, false);
+        try {
+            int iconSize = 16;
+            int iconX = x + (HELP_BUTTON_SIZE - iconSize) / 2;
+            int iconY = y + (HELP_BUTTON_SIZE - iconSize) / 2;
+            context.blit(
+                    RenderPipelines.GUI_TEXTURED,
+                    HELP_ICON_TEXTURE,
+                    iconX, iconY,
+                    0.0f, 0.0f,
+                    iconSize, iconSize,
+                    iconSize, iconSize
+            );
+        } catch (Exception ignored) {
+            String questionMark = "?";
+            int textWidth = client.font.width(questionMark);
+            int textX = x + (HELP_BUTTON_SIZE - textWidth) / 2;
+            int textY = y + (HELP_BUTTON_SIZE - 9) / 2;
+            context.text(client.font, Component.literal(questionMark), textX, textY, 0xFFFFFFFF, false);
+        }
     }
     
     private static void renderFilterButton(GuiGraphicsExtractor context, int x, int y) {
@@ -4489,6 +4721,11 @@ public class ItemViewerUtility {
             }
         }
     }
+
+    /** Zuletzt gehoverter Inventar-Slot (kann null sein). */
+    public static net.minecraft.world.inventory.Slot getLastHoveredSlot() {
+        return lastHoveredSlot;
+    }
     
     /**
      * Berechnet die Viewer-Position und Dimensionen (wird für Rendering und Klick-Handling verwendet)
@@ -5282,12 +5519,12 @@ public class ItemViewerUtility {
      * Läuft immer auf dem Client-Thread (auch bei Chat-/Netzwerk-Callbacks).
      */
     public static void onFoundStatusChanged() {
-        if (!currentSortMode.filtersNotFoundOnly()) {
-            return;
-        }
         Runnable refresh = () -> {
-            applyFilters();
-            ItemViewerGrid.invalidateTooltipCache();
+            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.invalidateRenderSnapshot();
+            if (currentSortMode.filtersNotFoundOnly()) {
+                applyFilters();
+                ItemViewerGrid.invalidateTooltipCache();
+            }
         };
         Minecraft client = Minecraft.getInstance();
         if (client != null && client.isSameThread()) {

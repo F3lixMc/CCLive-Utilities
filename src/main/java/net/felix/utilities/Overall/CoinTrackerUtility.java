@@ -468,7 +468,7 @@ public class CoinTrackerUtility {
     }
 
     private static boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().enableMod
+        return CCLiveUtilitiesConfig.isModRuntimeEnabled()
                 && CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerEnabled;
     }
 

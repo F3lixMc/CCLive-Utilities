@@ -158,7 +158,11 @@ public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled;
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled;
     }
     
     @Override

@@ -199,7 +199,11 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled && 
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled && 
                CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker;
     }
     

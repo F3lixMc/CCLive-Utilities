@@ -16,6 +16,7 @@ import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverla
 import net.felix.utilities.DragOverlay.Aincraft.KillsUtilityDraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.MaterialTrackerDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
@@ -279,6 +280,7 @@ public class OverlayEditorScreen extends Screen {
         
         // Clipboard is available everywhere
         overlays.add(new ClipboardDraggableOverlay());
+        overlays.add(new BuildShareDraggableOverlay());
     }
     
     /**
@@ -1283,6 +1285,8 @@ public class OverlayEditorScreen extends Screen {
             boolean newValue = !overlay.isConfigEnabled();
             config.clipboardEnabled = newValue;
             config.showClipboard = newValue;
+        } else if (overlay instanceof BuildShareDraggableOverlay) {
+            config.buildShareEnabled = !config.buildShareEnabled;
         }
     }
     

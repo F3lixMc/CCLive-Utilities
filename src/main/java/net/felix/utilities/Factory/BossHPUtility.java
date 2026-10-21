@@ -650,7 +650,7 @@ public class BossHPUtility {
 		}
 		
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().bossHPEnabled ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().showBossHP) {
 			return;

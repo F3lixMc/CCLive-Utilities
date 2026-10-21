@@ -167,7 +167,7 @@ public class ClipboardUtility {
     }
 
     private static boolean canHandleClipboardPageHotkeys(net.minecraft.client.Minecraft client) {
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
             return false;
         }
         if (!CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled) {

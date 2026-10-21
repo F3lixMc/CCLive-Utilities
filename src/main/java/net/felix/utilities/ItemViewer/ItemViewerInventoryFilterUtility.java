@@ -89,7 +89,7 @@ public class ItemViewerInventoryFilterUtility {
     }
 
     private static void onClientTick(Minecraft client) {
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
             return;
         }
 

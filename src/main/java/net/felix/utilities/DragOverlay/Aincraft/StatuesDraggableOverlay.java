@@ -175,7 +175,11 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled && 
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled && 
                CCLiveUtilitiesConfig.HANDLER.instance().statueEnabled &&
                CCLiveUtilitiesConfig.HANDLER.instance().showStatue;
     }

@@ -80,7 +80,7 @@ public class SearchBarUtility {
 	
 	private static void onClientTick(Minecraft client) {
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().searchBarEnabled || 
 			!CCLiveUtilitiesConfig.HANDLER.instance().showSearchBar) {
 			isSearchBarVisible = false;
@@ -266,7 +266,7 @@ public class SearchBarUtility {
 	
 	public static void renderInScreen(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int screenX, int screenY) {
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().searchBarEnabled || 
 			!CCLiveUtilitiesConfig.HANDLER.instance().showSearchBar) {
 			return;

@@ -126,7 +126,11 @@ public class EquipmentDisplayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayEnabled && 
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayEnabled && 
                CCLiveUtilitiesConfig.HANDLER.instance().showEquipmentDisplay;
     }
     

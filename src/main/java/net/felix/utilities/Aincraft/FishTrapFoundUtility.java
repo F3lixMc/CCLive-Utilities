@@ -80,12 +80,17 @@ public class FishTrapFoundUtility {
     }
 
     public static void reset() {
+        resetReturningSuccess();
+    }
+
+    /** @return true wenn found_fish_traps.json erfolgreich gespeichert wurde */
+    public static boolean resetReturningSuccess() {
         try {
             FishTrapFoundUtility instance = getInstance();
             instance.foundFishTraps.clear();
-            instance.saveFoundFishTraps();
+            return instance.saveFoundFishTrapsReturningSuccess();
         } catch (Exception e) {
-            // Silent error handling
+            return false;
         }
     }
 
@@ -222,13 +227,18 @@ public class FishTrapFoundUtility {
     }
 
     private void saveFoundFishTraps() {
+        saveFoundFishTrapsReturningSuccess();
+    }
+
+    private boolean saveFoundFishTrapsReturningSuccess() {
         try {
             saveFile.getParentFile().mkdirs();
             try (FileWriter writer = new FileWriter(saveFile)) {
                 gson.toJson(foundFishTraps, writer);
             }
+            return true;
         } catch (IOException e) {
-            // Silent error handling
+            return false;
         }
     }
 }

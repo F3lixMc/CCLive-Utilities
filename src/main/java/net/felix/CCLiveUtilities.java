@@ -55,6 +55,9 @@ public class CCLiveUtilities implements ModInitializer {
 
 		// Initialisiere ZeichenUtility zuerst (wird von anderen Utilities benötigt)
 		net.felix.utilities.Overall.ZeichenUtility.initialize();
+
+		// Server-Gate: Features/Uploads nur auf PlayLegend (Dev + Bypass-Spieler ausgenommen)
+		net.felix.utilities.Overall.ServerConnectionGate.initialize();
 		
 		// Initialisiere JSON-Config-Update-Utility (für automatische Updates vom Server)
 		net.felix.utilities.Overall.JsonConfigUpdateUtility.initialize();
@@ -86,6 +89,9 @@ public class CCLiveUtilities implements ModInitializer {
 		// Initialisiere Chat-System
 		try {
 			ChatManager.getInstance().initialize();
+			net.felix.chat.ChatNameColorTracker.getInstance().initialize();
+			net.felix.chat.ItemShareManager.getInstance().initialize();
+			net.felix.chat.BuildShareManager.getInstance().initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}
@@ -104,6 +110,14 @@ public class CCLiveUtilities implements ModInitializer {
 			// Silent error handling
 		}
 		
+		// DevTools (Allowlist / Fabric-Dev; unabhängig von ServerConnectionGate)
+		try {
+			net.felix.devtools.DevToolsRegistry.initialize();
+			net.felix.devtools.DevToolsHotkeyDispatcher.initialize();
+		} catch (Exception e) {
+			// Silent error handling
+		}
+
 		// Registriere alle CCLive-Commands (Blueprint + Leaderboard)
 		CCLiveCommands.register();
 		

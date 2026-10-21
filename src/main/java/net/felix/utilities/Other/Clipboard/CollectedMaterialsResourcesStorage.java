@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class CollectedMaterialsResourcesStorage {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -49,6 +50,8 @@ public class CollectedMaterialsResourcesStorage {
     private static final Map<String, Long> normalizedOther = new HashMap<>();
     private static final Map<String, String> normalizedOtherAbbreviated = new HashMap<>();
     private static final AtomicBoolean saveScheduled = new AtomicBoolean(false);
+    /** Invalidiert verzögerte Saves nach Season-Reset. */
+    private static final AtomicLong saveGeneration = new AtomicLong(0L);
     private static File storageFile;
     private static boolean initialized = false;
     private static long lastKnownModified = -1L;
@@ -637,7 +640,18 @@ public class CollectedMaterialsResourcesStorage {
     }
     
     public static void resetAll() {
+        resetAllAndFlushSync();
+    }
+
+    /**
+     * Leert Memory und speichert synchron collected_materials-ressources.json.
+     * Erhöht die Save-Generation, damit verzögerte scheduleSave-Threads alte Daten nicht zurückschreiben.
+     * @return true bei erfolgreichem Speichern
+     */
+    public static boolean resetAllAndFlushSync() {
         ensureInitialized();
+        saveGeneration.incrementAndGet();
+        final long generation = saveGeneration.get();
         synchronized (materials) {
             materials.clear();
         }
@@ -651,7 +665,7 @@ public class CollectedMaterialsResourcesStorage {
             otherAbbreviated.clear();
         }
         rebuildNormalizedCaches();
-        save();
+        return saveReturningSuccess(generation);
     }
     
     private static void ensureInitialized() {
@@ -1044,8 +1058,15 @@ public class CollectedMaterialsResourcesStorage {
     }
     
     private static void save() {
+        saveReturningSuccess(saveGeneration.get());
+    }
+
+    private static boolean saveReturningSuccess(long expectedGeneration) {
         if (storageFile == null) {
-            return;
+            return false;
+        }
+        if (expectedGeneration != saveGeneration.get()) {
+            return false;
         }
         purgeOtherFromLegacySections();
         try {
@@ -1053,12 +1074,21 @@ public class CollectedMaterialsResourcesStorage {
             if (parent != null) {
                 parent.mkdirs();
             }
+            // Snapshot vor Schreiben — Generation nochmal prüfen
+            JsonObject payload = buildJsonObject();
+            if (expectedGeneration != saveGeneration.get()) {
+                return false;
+            }
             try (FileWriter writer = new FileWriter(storageFile)) {
-                GSON.toJson(buildJsonObject(), writer);
+                GSON.toJson(payload, writer);
+            }
+            if (expectedGeneration != saveGeneration.get()) {
+                return false;
             }
             lastKnownModified = storageFile.lastModified();
+            return true;
         } catch (IOException e) {
-            // Silent error handling
+            return false;
         }
     }
     
@@ -1103,14 +1133,20 @@ public class CollectedMaterialsResourcesStorage {
         if (!saveScheduled.compareAndSet(false, true)) {
             return;
         }
+        final long generationAtSchedule = saveGeneration.get();
         Thread saveThread = new Thread(() -> {
             try {
                 Thread.sleep(200);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             }
-            save();
-            saveScheduled.set(false);
+            try {
+                if (generationAtSchedule == saveGeneration.get()) {
+                    saveReturningSuccess(generationAtSchedule);
+                }
+            } finally {
+                saveScheduled.set(false);
+            }
         }, "CCLive-Utilities-MaterialsResourcesSave");
         saveThread.setDaemon(true);
         saveThread.start();

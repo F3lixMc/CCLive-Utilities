@@ -271,7 +271,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     public boolean isEnabled() {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         // Check if the main toggle is enabled and either overlay is enabled
-        return config.enableMod && 
+        return CCLiveUtilitiesConfig.isModRuntimeEnabled() && 
                config.miningLumberjackOverlayEnabled &&
                ((config.miningOverlayEnabled && config.showMiningOverlay) ||
                 (config.lumberjackOverlayEnabled && config.showLumberjackOverlay));

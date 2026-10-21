@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.function.Function;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 /**
  * Cached layout + render helper for kit tooltips (avoids per-frame sorting, width calculation and BP lookups).
@@ -14,6 +17,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class KitTooltipHelper {
 
 	private static final int ACTION_GREEN = 0xFF16A80C;
+	private static final int SECTION_TITLE_YELLOW = 0xFFFFFF55;
+	private static final int KIT_NAME_AQUA = 0xFF55FFFF;
+	private static final int CARD_EFFECT_GREEN = 0xFF55FF55;
 	private static final int COLUMN_SPACING = 12;
 	private static final String BULLET_POINT = "• ";
 
@@ -35,6 +41,62 @@ public final class KitTooltipHelper {
 			boolean showBpStatus,
 			Function<String, Boolean> blueprintLookup
 	) {
+		List<KitFilterUtility.ItemInfo> items = new ArrayList<>();
+		if (rawItems != null) {
+			items.addAll(rawItems);
+		}
+		if (!items.isEmpty()) {
+			items.sort((a, b) -> Integer.compare(parseEbeneNumber(a.ebene), parseEbeneNumber(b.ebene)));
+		}
+		List<SectionData> sections = new ArrayList<>();
+		if (!items.isEmpty()) {
+			sections.add(new SectionData(null, items, KitFilterUtility.KitHoverSection.FoundMode.BLUEPRINT));
+		}
+		return buildInternal(
+			key, textRenderer, header, sections,
+			showSelectActionHint, showEditActionHint, showBpStatus,
+			blueprintLookup, null, null);
+	}
+
+	public CachedTooltip getOrBuildSections(
+			String key,
+			Font textRenderer,
+			String header,
+			List<KitFilterUtility.KitHoverSection> hoverSections,
+			boolean showSelectActionHint,
+			boolean showEditActionHint,
+			boolean showBpStatus,
+			Function<String, Boolean> blueprintLookup,
+			Function<String, Boolean> fishingFoundLookup,
+			Function<String, Boolean> cardFoundLookup
+	) {
+		List<SectionData> sections = new ArrayList<>();
+		if (hoverSections != null) {
+			for (KitFilterUtility.KitHoverSection section : hoverSections) {
+				if (section == null || section.items == null || section.items.isEmpty()) {
+					continue;
+				}
+				sections.add(new SectionData(section.title, new ArrayList<>(section.items), section.foundMode));
+			}
+		}
+		return buildInternal(
+			key, textRenderer, header, sections,
+			showSelectActionHint, showEditActionHint, showBpStatus,
+			blueprintLookup, fishingFoundLookup, cardFoundLookup);
+	}
+
+	private CachedTooltip buildInternal(
+			String key,
+			Font textRenderer,
+			String header,
+			List<SectionData> sections,
+			boolean showSelectActionHint,
+			boolean showEditActionHint,
+			boolean showBpStatus,
+			Function<String, Boolean> blueprintLookup,
+			Function<String, Boolean> fishingFoundLookup,
+			Function<String, Boolean> cardFoundLookup
+	) {
 		if (key != null && key.equals(cacheKey) && cache != null) {
 			return cache;
 		}
@@ -45,24 +107,19 @@ public final class KitTooltipHelper {
 			return null;
 		}
 
-		List<KitFilterUtility.ItemInfo> items = new ArrayList<>();
-		if (rawItems != null) {
-			items.addAll(rawItems);
-		}
-		if (!items.isEmpty()) {
-			items.sort((a, b) -> Integer.compare(parseEbeneNumber(a.ebene), parseEbeneNumber(b.ebene)));
-		}
-
 		int maxItemTypeWidth = 0;
 		int maxItemNameWidth = 0;
 		int maxModifierWidth = 0;
 		int maxEbeneWidth = 0;
-		for (KitFilterUtility.ItemInfo itemInfo : items) {
-			maxItemTypeWidth = Math.max(maxItemTypeWidth, calculateItemTypeWidth(textRenderer, itemInfo));
-			maxItemNameWidth = Math.max(maxItemNameWidth, calculateItemNameWidth(textRenderer, itemInfo));
-			maxModifierWidth = Math.max(maxModifierWidth, calculateModifierWidth(textRenderer, itemInfo));
-			maxEbeneWidth = Math.max(maxEbeneWidth, calculateEbeneWidth(textRenderer, itemInfo));
+		for (SectionData section : sections) {
+			for (KitFilterUtility.ItemInfo itemInfo : section.items) {
+				maxItemTypeWidth = Math.max(maxItemTypeWidth, calculateItemTypeWidth(textRenderer, itemInfo));
+				maxItemNameWidth = Math.max(maxItemNameWidth, calculateItemNameWidth(textRenderer, itemInfo));
+				maxModifierWidth = Math.max(maxModifierWidth, calculateModifierWidth(textRenderer, itemInfo));
+				maxEbeneWidth = Math.max(maxEbeneWidth, calculateEbeneWidth(textRenderer, itemInfo));
+			}
 		}
+		maxModifierWidth = Math.max(maxModifierWidth, textRenderer.width("–"));
 
 		int bulletWidth = textRenderer.width(BULLET_POINT);
 		int statusWidth = 0;
@@ -70,12 +127,16 @@ public final class KitTooltipHelper {
 			statusWidth = textRenderer.width(" ✓") + COLUMN_SPACING;
 		}
 
-		int headerWidth = textRenderer.width(header);
 		int totalWidth = Math.max(
-				headerWidth,
+				textRenderer.width(header),
 				bulletWidth + maxItemTypeWidth + COLUMN_SPACING + maxItemNameWidth + COLUMN_SPACING
 						+ maxModifierWidth + COLUMN_SPACING + maxEbeneWidth + statusWidth
 		);
+		for (SectionData section : sections) {
+			if (section.title != null && !section.title.isEmpty()) {
+				totalWidth = Math.max(totalWidth, textRenderer.width(section.title));
+			}
+		}
 		if (showSelectActionHint) {
 			totalWidth = Math.max(totalWidth, textRenderer.width("[Linksklick]: Auswählen"));
 		}
@@ -88,9 +149,12 @@ public final class KitTooltipHelper {
 		int lineSpacing = 2;
 
 		int totalHeight = textHeight + padding * 2;
-		if (!items.isEmpty()) {
+		for (SectionData section : sections) {
 			totalHeight += lineSpacing;
-			totalHeight += textHeight * items.size();
+			if (section.title != null && !section.title.isEmpty()) {
+				totalHeight += textHeight + lineSpacing;
+			}
+			totalHeight += textHeight * section.items.size();
 		}
 		if (showSelectActionHint || showEditActionHint) {
 			totalHeight += lineSpacing;
@@ -102,20 +166,30 @@ public final class KitTooltipHelper {
 			}
 		}
 
-		boolean[] blueprintFound = null;
-		if (showBpStatus && blueprintLookup != null && !items.isEmpty()) {
-			blueprintFound = new boolean[items.size()];
-			for (int i = 0; i < items.size(); i++) {
-				KitFilterUtility.ItemInfo itemInfo = items.get(i);
-				blueprintFound[i] = Boolean.TRUE.equals(blueprintLookup.apply(itemInfo.name));
+		List<CachedSection> cachedSections = new ArrayList<>();
+		for (SectionData section : sections) {
+			boolean[] found = null;
+			if (showBpStatus) {
+				Function<String, Boolean> lookup = switch (section.foundMode) {
+					case FISHING -> fishingFoundLookup != null ? fishingFoundLookup : blueprintLookup;
+					case CARD -> cardFoundLookup != null ? cardFoundLookup : blueprintLookup;
+					case BLUEPRINT -> blueprintLookup;
+					default -> null;
+				};
+				if (lookup != null && !section.items.isEmpty()) {
+					found = new boolean[section.items.size()];
+					for (int i = 0; i < section.items.size(); i++) {
+						found[i] = Boolean.TRUE.equals(lookup.apply(section.items.get(i).name));
+					}
+				}
 			}
+			cachedSections.add(new CachedSection(section.title, section.items, found, section.foundMode));
 		}
 
 		cacheKey = key;
 		cache = new CachedTooltip(
 				header,
-				items,
-				blueprintFound,
+				cachedSections,
 				showBpStatus,
 				showSelectActionHint,
 				showEditActionHint,
@@ -185,15 +259,48 @@ public final class KitTooltipHelper {
 		context.fill(bgX1, bgY1, bgX1 + 1, bgY2, 0xFFFFFFFF);
 		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF);
 
-		context.text(textRenderer, tooltip.header, tooltipX, tooltipY, 0xFFFFFFFF, true);
+		Component kitName = Component.literal(tooltip.header != null ? tooltip.header : "")
+			.setStyle(Style.EMPTY
+				.withBold(true)
+				.withColor(TextColor.fromRgb(KIT_NAME_AQUA & 0xFFFFFF)));
+		context.text(textRenderer, kitName, tooltipX, tooltipY, KIT_NAME_AQUA, true);
 
 		int currentY = tooltipY + tooltip.textHeight;
-		if (!tooltip.items.isEmpty()) {
+		for (CachedSection section : tooltip.sections) {
 			currentY += tooltip.lineSpacing;
+			if (section.title != null && !section.title.isEmpty()) {
+				context.text(textRenderer, section.title, tooltipX, currentY, SECTION_TITLE_YELLOW, true);
+				currentY += tooltip.textHeight + tooltip.lineSpacing;
+			}
+			currentY = renderItemRows(
+				context, textRenderer, tooltip, section.items, section.foundFlags,
+				section.foundMode, tooltipX, currentY);
 		}
 
-		for (int i = 0; i < tooltip.items.size(); i++) {
-			KitFilterUtility.ItemInfo itemInfo = tooltip.items.get(i);
+		if (tooltip.showSelectActionHint || tooltip.showEditActionHint) {
+			currentY += tooltip.lineSpacing;
+			if (tooltip.showSelectActionHint) {
+				drawActionHintLine(context, textRenderer, tooltipX, currentY, "Linksklick", "Auswählen");
+				currentY += tooltip.textHeight;
+			}
+			if (tooltip.showEditActionHint) {
+				drawActionHintLine(context, textRenderer, tooltipX, currentY, "Rechtsklick", "Bearbeiten");
+			}
+		}
+	}
+
+	private static int renderItemRows(
+			GuiGraphicsExtractor context,
+			Font textRenderer,
+			CachedTooltip tooltip,
+			List<KitFilterUtility.ItemInfo> rows,
+			boolean[] foundFlags,
+			KitFilterUtility.KitHoverSection.FoundMode foundMode,
+			int tooltipX,
+			int currentY
+	) {
+		for (int i = 0; i < rows.size(); i++) {
+			KitFilterUtility.ItemInfo itemInfo = rows.get(i);
 			int currentX = tooltipX;
 
 			context.text(textRenderer, BULLET_POINT, currentX, currentY, 0xFFFFFFFF, true);
@@ -212,18 +319,19 @@ public final class KitTooltipHelper {
 			}
 			currentX += tooltip.maxItemNameWidth + COLUMN_SPACING;
 
-			renderModifierColumn(context, textRenderer, itemInfo, currentX, currentY);
+			boolean cardEffect = foundMode == KitFilterUtility.KitHoverSection.FoundMode.CARD
+				|| "Karte".equals(itemInfo.itemType);
+			renderModifierColumn(context, textRenderer, itemInfo, currentX, currentY, cardEffect);
 			currentX += tooltip.maxModifierWidth + COLUMN_SPACING;
 
 			if (itemInfo.ebene != null && !itemInfo.ebene.isEmpty()) {
 				context.text(textRenderer, itemInfo.ebene, currentX, currentY, 0xFFFFFFFF, true);
-				currentX += textRenderer.width(itemInfo.ebene);
-			} else {
-				currentX += tooltip.maxEbeneWidth;
 			}
+			// Immer volle Spaltenbreite — Found-Status einheitlich rechtsbündig
+			currentX += tooltip.maxEbeneWidth;
 
-			if (tooltip.showBpStatus && tooltip.blueprintFound != null) {
-				boolean isFound = tooltip.blueprintFound[i];
+			if (tooltip.showBpStatus && foundFlags != null && i < foundFlags.length) {
+				boolean isFound = foundFlags[i];
 				String statusSymbol = isFound ? " ✓" : " ✗";
 				int statusColor = isFound ? 0xFF00FF00 : 0xFFFF0000;
 				context.text(textRenderer, statusSymbol, currentX, currentY, statusColor, true);
@@ -231,17 +339,7 @@ public final class KitTooltipHelper {
 
 			currentY += tooltip.textHeight;
 		}
-
-		if (tooltip.showSelectActionHint || tooltip.showEditActionHint) {
-			currentY += tooltip.lineSpacing;
-			if (tooltip.showSelectActionHint) {
-				drawActionHintLine(context, textRenderer, tooltipX, currentY, "Linksklick", "Auswählen");
-				currentY += tooltip.textHeight;
-			}
-			if (tooltip.showEditActionHint) {
-				drawActionHintLine(context, textRenderer, tooltipX, currentY, "Rechtsklick", "Bearbeiten");
-			}
-		}
+		return currentY;
 	}
 
 	private static void renderModifierColumn(
@@ -249,9 +347,20 @@ public final class KitTooltipHelper {
 			Font textRenderer,
 			KitFilterUtility.ItemInfo itemInfo,
 			int x,
-			int y
+			int y,
+			boolean cardEffect
 	) {
 		if (itemInfo.modifier == null || itemInfo.modifier.isEmpty()) {
+			return;
+		}
+
+		if ("–".equals(itemInfo.modifier) || "-".equals(itemInfo.modifier) || "[]".equals(itemInfo.modifier)) {
+			context.text(textRenderer, "–", x, y, 0xFFFFFFFF, true);
+			return;
+		}
+
+		if (cardEffect) {
+			context.text(textRenderer, itemInfo.modifier, x, y, CARD_EFFECT_GREEN, true);
 			return;
 		}
 
@@ -267,6 +376,10 @@ public final class KitTooltipHelper {
 
 			if (part.startsWith("[") && part.endsWith("]")) {
 				String modifierName = part.substring(1, part.length() - 1);
+				if (modifierName.isEmpty()) {
+					context.text(textRenderer, "–", modifierX, y, 0xFFFFFFFF, true);
+					continue;
+				}
 				int modifierColor = KitFilterUtility.ItemInfo.parseModifierColor(modifierName);
 
 				context.text(textRenderer, "[", modifierX, y, 0xFFFFFFFF, true);
@@ -337,8 +450,10 @@ public final class KitTooltipHelper {
 	}
 
 	private static int calculateModifierWidth(Font textRenderer, KitFilterUtility.ItemInfo itemInfo) {
-		if (itemInfo.modifier == null || itemInfo.modifier.isEmpty()) {
-			return 0;
+		if (itemInfo.modifier == null || itemInfo.modifier.isEmpty()
+				|| "–".equals(itemInfo.modifier) || "-".equals(itemInfo.modifier)
+				|| "[]".equals(itemInfo.modifier)) {
+			return textRenderer.width("–");
 		}
 
 		int width = 0;
@@ -360,10 +475,40 @@ public final class KitTooltipHelper {
 		return width;
 	}
 
+	private static final class SectionData {
+		final String title;
+		final List<KitFilterUtility.ItemInfo> items;
+		final KitFilterUtility.KitHoverSection.FoundMode foundMode;
+
+		SectionData(String title, List<KitFilterUtility.ItemInfo> items,
+				KitFilterUtility.KitHoverSection.FoundMode foundMode) {
+			this.title = title;
+			this.items = items;
+			this.foundMode = foundMode;
+		}
+	}
+
+	public static final class CachedSection {
+		final String title;
+		final List<KitFilterUtility.ItemInfo> items;
+		final boolean[] foundFlags;
+		final KitFilterUtility.KitHoverSection.FoundMode foundMode;
+
+		CachedSection(
+				String title,
+				List<KitFilterUtility.ItemInfo> items,
+				boolean[] foundFlags,
+				KitFilterUtility.KitHoverSection.FoundMode foundMode) {
+			this.title = title;
+			this.items = Collections.unmodifiableList(items);
+			this.foundFlags = foundFlags;
+			this.foundMode = foundMode != null ? foundMode : KitFilterUtility.KitHoverSection.FoundMode.NONE;
+		}
+	}
+
 	public static final class CachedTooltip {
 		final String header;
-		final List<KitFilterUtility.ItemInfo> items;
-		final boolean[] blueprintFound;
+		final List<CachedSection> sections;
 		final boolean showBpStatus;
 		final boolean showSelectActionHint;
 		final boolean showEditActionHint;
@@ -380,8 +525,7 @@ public final class KitTooltipHelper {
 
 		private CachedTooltip(
 				String header,
-				List<KitFilterUtility.ItemInfo> items,
-				boolean[] blueprintFound,
+				List<CachedSection> sections,
 				boolean showBpStatus,
 				boolean showSelectActionHint,
 				boolean showEditActionHint,
@@ -397,8 +541,7 @@ public final class KitTooltipHelper {
 				int lineSpacing
 		) {
 			this.header = header;
-			this.items = Collections.unmodifiableList(items);
-			this.blueprintFound = blueprintFound;
+			this.sections = Collections.unmodifiableList(sections);
 			this.showBpStatus = showBpStatus;
 			this.showSelectActionHint = showSelectActionHint;
 			this.showEditActionHint = showEditActionHint;

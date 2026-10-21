@@ -174,5 +174,9 @@
   "ui_quick_travel_ocean": {
     "group": "farmzone_quick_travel",
     "name": "ui_ocean"
+  },
+  "ui_wardrobe_full": {
+    "group": "wardrobe",
+    "name": "wardrobe_ui_background"
   }
 }

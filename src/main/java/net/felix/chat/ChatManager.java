@@ -1,276 +1,365 @@
 package net.felix.chat;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.felix.leaderboards.http.HttpClient;
-import net.minecraft.ChatFormatting;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.leaderboards.LeaderboardManager;
 import net.minecraft.client.Minecraft;
+import net.felix.profile.PlayerHoverStatsUtility;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.felix.leaderboards.LeaderboardManager;
+import net.minecraft.resources.Identifier;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Manager für das CCLive Chat-System
- * Verwaltet das Senden und Empfangen von Chat-Nachrichten über den Server
+ * Manager für das CCLive Chat-System.
+ * Transport: WebSocket (Send + Push). Item/Build-Shares bleiben HTTP.
  */
 public class ChatManager {
     private static ChatManager instance;
-    
-    private final HttpClient httpClient;
-    
-    // Letzter abgerufener Timestamp (für Polling)
+
+    /** Gleiche Glyphe wie im normalen Chat → Custom-Font rendert das Icon mit Text-Opacity. */
+    private static final char ICON_MARKER = 'ѳ';
+    private static final Identifier ICON_FONT = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
+
+    /** Prefix-Farbe (#9b029e) — dunkles Lila. */
+    private static final int CCLIVE_PREFIX_COLOR = 0x9B029E;
+    /** Name / >> / Nachricht (#fba9fc). */
+    private static final int CCLIVE_TEXT_COLOR = ItemShareManager.CCLIVE_MESSAGE_COLOR;
+
+    private final ChatWebSocket webSocket = new ChatWebSocket();
+
+    /** Deduplizierung für eingehende WS-Nachrichten. */
     private final AtomicLong lastMessageTimestamp = new AtomicLong(0);
-    
-    // Chat-Sichtbarkeit
+    private final Object displayDedupLock = new Object();
+    private volatile String lastDisplayedDedupKey = "";
+    private volatile long lastDisplayedAtMs;
+    private volatile long lastSendAtMs;
+    private volatile String lastSendPayload = "";
+
     private boolean showDefaultChat = true;
     private boolean showCCLiveChat = true;
-    
-    // Aktueller Chat-Modus (default oder cclive)
     private ChatMode currentChatMode = ChatMode.DEFAULT;
-    
-    // Status
-    private boolean isEnabled = false; // Vorübergehend deaktiviert bis vollständig einsatzbereit
+
+    private boolean isEnabled = true;
     private boolean isInitialized = false;
-    
+
     public enum ChatMode {
         DEFAULT,
         CCLIVE
     }
-    
+
     private ChatManager() {
-        // Nutze den HttpClient vom LeaderboardManager
-        LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
-        this.httpClient = leaderboardManager.getHttpClient();
         loadChatSettings();
+        webSocket.setOnChatMessage(this::onIncomingChatMessage);
     }
-    
+
     public static ChatManager getInstance() {
         if (instance == null) {
             instance = new ChatManager();
         }
         return instance;
     }
-    
-    /**
-     * Initialisiert das Chat-System
-     */
+
     public void initialize() {
         if (isInitialized) {
             return;
         }
-        
-        // Überspringe Initialisierung wenn Chat deaktiviert ist
+
+        // Config ist zu diesem Zeitpunkt geladen (inkl. Migration)
+        loadChatSettings();
+
         if (!isEnabled) {
-            // Silent error handling("⚠️ ChatManager: Chat-System ist deaktiviert");
-            isInitialized = true; // Markiere als initialisiert, um erneute Versuche zu vermeiden
+            isInitialized = true;
             return;
         }
-        
-        // Starte Polling für neue Nachrichten
-        startMessagePolling();
-        
-        // Registriere Server-Join Event
+
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            // Setze Timestamp auf aktuelle Zeit beim Join (keine alten Nachrichten laden)
-            long joinTimestamp = System.currentTimeMillis();
-            lastMessageTimestamp.set(joinTimestamp);
-            // Silent error handling("[CCLive-Utilities] 🎮 Server-Join: Lade nur Nachrichten ab jetzt");
-            // Lade keine Historie beim Join - nur neue Nachrichten ab jetzt
+            // Sichtbarkeit/Schreibmodus bleiben aus Config — nur WS neu verbinden
+            lastMessageTimestamp.set(0);
+            client.execute(this::ensureSocketConnected);
         });
-        
-        isInitialized = true;
-        // Silent error handling("✅ ChatManager initialisiert");
-    }
-    
-    /**
-     * Sendet eine Nachricht an den CCLive Chat
-     */
-    public CompletableFuture<Boolean> sendMessage(String message) {
-        if (!isEnabled) {
-            return CompletableFuture.completedFuture(false);
-        }
-        
-        LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
-        if (!leaderboardManager.isRegistered() || leaderboardManager.getPlayerToken() == null) {
-            // Silent error handling("⚠️ Chat: Spieler nicht registriert");
-            return CompletableFuture.completedFuture(false);
-        }
-        
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                JsonObject requestData = new JsonObject();
-                requestData.addProperty("message", message);
-                
-                JsonObject response = httpClient.postWithToken(
-                    "/chat/send",
-                    requestData,
-                    leaderboardManager.getPlayerToken()
-                );
-                
-                if (response != null && response.has("success")) {
-                    return true;
-                }
-            } catch (Exception e) {
-                // Silent error handling("❌ Fehler beim Senden der Chat-Nachricht: " + e.getMessage());
-            }
-            return false;
-        });
-    }
-    
-    /**
-     * Lädt neue Chat-Nachrichten vom Server
-     */
-    private void loadChatHistory() {
-        if (!isEnabled || !showCCLiveChat) {
-            return;
-        }
-        
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                long since = lastMessageTimestamp.get();
-                String endpoint = "/chat/messages?since=" + since;
-                
-                JsonArray messages = httpClient.getArray(endpoint);
-                if (messages != null) {
-                    processMessages(messages);
-                }
-            } catch (Exception e) {
-                // Silently fail - Server könnte nicht erreichbar sein
-            }
-            return null;
-        });
-    }
-    
-    /**
-     * Verarbeitet empfangene Nachrichten und zeigt sie im Chat an
-     */
-    private void processMessages(JsonArray messages) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.player == null) {
-            return;
-        }
-        
-        for (int i = 0; i < messages.size(); i++) {
-            JsonObject msgObj = messages.get(i).getAsJsonObject();
-            String player = msgObj.get("player").getAsString();
-            String message = msgObj.get("message").getAsString();
-            long timestamp = msgObj.get("timestamp").getAsLong();
-            
-            // Update last timestamp
-            if (timestamp > lastMessageTimestamp.get()) {
-                lastMessageTimestamp.set(timestamp);
-            }
-            
-            // Erstelle Chat-Nachricht mit [CCLive] Prefix
-            // Farbe #d478f0 = RGB(212, 120, 240) = 0xFFD478F0
-            // Das Icon wird im ChatHudRenderMixin direkt nach "[CCLive]" gerendert
-            MutableComponent chatMessage = Component.literal("[CCLive] ")
-                .setStyle(Style.EMPTY.withColor(0xD478F0)) // #d478f0 (ohne Alpha, Minecraft fügt FF hinzu)
-                .append(Component.literal(player + ": ").setStyle(Style.EMPTY.applyFormat(ChatFormatting.WHITE)))
-                .append(Component.literal(message).setStyle(Style.EMPTY.applyFormat(ChatFormatting.WHITE)));
-            
-            // Zeige Nachricht im Chat an
-            if (client.gui != null && client.gui.getChat() != null) {
-                client.execute(() -> {
-                    client.gui.getChat().addClientSystemMessage(chatMessage);
-                });
-            }
-        }
-    }
-    
-    /**
-     * Startet das Polling für neue Nachrichten
-     */
-    private void startMessagePolling() {
-        // Poll alle 2 Sekunden für neue Nachrichten
-        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK.register(client -> {
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+            client.execute(webSocket::disconnect));
+
+        // Periodisch Verbindung halten / reconnecten
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || !isEnabled || !showCCLiveChat) {
                 return;
             }
-            
-            // Alle 20 Ticks (1 Sekunde) neue Nachrichten abrufen
-            if (client.player.tickCount > 0 && client.player.tickCount % 20 == 0) {
-                loadChatHistory();
+            if (client.player.tickCount > 0 && client.player.tickCount % 100 == 0) {
+                ensureSocketConnected();
             }
         });
+
+        ensureSocketConnected();
+        isInitialized = true;
     }
-    
+
+    private void ensureSocketConnected() {
+        if (!isEnabled || !showCCLiveChat) {
+            return;
+        }
+        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            // Bypass/unbekannte IP oder falscher Server: keine Verbindung zum Backend
+            if (webSocket.isConnected()) {
+                webSocket.disconnect();
+            }
+            return;
+        }
+        webSocket.connectIfNeeded();
+    }
+
     /**
-     * Lädt Chat-Einstellungen (Toggle-Status)
+     * Sendet eine Nachricht an den CCLive Chat (WebSocket).
+     * Ersetzt !item / !build durch Share-Ref wenn nötig.
+     * @return null bei Erfolg, sonst Fehlermeldung
      */
+    public CompletableFuture<String> sendMessage(String message) {
+        if (!isEnabled) {
+            return CompletableFuture.completedFuture("CCLive-Chat ist deaktiviert.");
+        }
+
+        if (message == null || message.trim().isEmpty()) {
+            return CompletableFuture.completedFuture("Nachricht ist leer.");
+        }
+
+        StringBuilder prepared = new StringBuilder();
+        String prepareError = ItemShareManager.getInstance().prepareCcliveOutgoing(message.trim(), prepared);
+        if (prepareError != null) {
+            return CompletableFuture.completedFuture(prepareError);
+        }
+        final String trimmed = prepared.toString();
+
+        // Doppel-Enter / doppelter Mixin-Aufruf: gleiche Payload innerhalb 750ms nur einmal senden
+        long now = System.currentTimeMillis();
+        if (trimmed.equals(lastSendPayload) && now - lastSendAtMs < 750L) {
+            return CompletableFuture.completedFuture(null);
+        }
+        lastSendPayload = trimmed;
+        lastSendAtMs = now;
+
+        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            return CompletableFuture.completedFuture(
+                "Datentracking ist aus — Chat-Senden braucht Registrierung. In den Mod-Einstellungen aktivieren."
+            );
+        }
+
+        return CompletableFuture.supplyAsync(() -> {
+            LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
+            if (!leaderboardManager.ensureRegisteredSync()) {
+                return "Nicht registriert. Warte kurz nach Server-Join oder nutze /cclive lb refresh.";
+            }
+            return null;
+        }).thenCompose(regError -> {
+            if (regError != null) {
+                return CompletableFuture.completedFuture(regError);
+            }
+            ensureSocketConnected();
+            return webSocket.sendChat(trimmed);
+        });
+    }
+
+    private void onIncomingChatMessage(JsonObject msgObj) {
+        if (!isEnabled || !showCCLiveChat) {
+            return;
+        }
+        if (msgObj == null || !msgObj.has("player") || !msgObj.has("message")) {
+            return;
+        }
+
+        String player = msgObj.get("player").getAsString();
+        String message = msgObj.get("message").getAsString();
+        long timestamp = msgObj.has("timestamp") ? msgObj.get("timestamp").getAsLong() : System.currentTimeMillis();
+        int nameColor = ChatNameColorTracker.parseNameColor(
+            msgObj.has("name_color") && !msgObj.get("name_color").isJsonNull()
+                ? msgObj.get("name_color").getAsString()
+                : null);
+        int cactusRank = parseRankField(msgObj, "cactus_rank");
+        int soulRank = parseRankField(msgObj, "soul_rank");
+
+        // Dedup: doppelte WS-Pushs / Race bei zwei Sockets (gleicher Spieler+Text kurz hintereinander)
+        String softKey = player + "|" + message;
+        String exactKey = softKey + "|" + timestamp;
+        synchronized (displayDedupLock) {
+            long now = System.currentTimeMillis();
+            if (exactKey.equals(lastDisplayedDedupKey)
+                    || (softKey.equals(stripTimestamp(lastDisplayedDedupKey))
+                        && now - lastDisplayedAtMs < 2000L)) {
+                return;
+            }
+            long last = lastMessageTimestamp.get();
+            if (timestamp > 0 && timestamp < last) {
+                return;
+            }
+            if (timestamp >= last) {
+                lastMessageTimestamp.set(timestamp);
+            }
+            lastDisplayedDedupKey = exactKey;
+            lastDisplayedAtMs = now;
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return;
+        }
+
+        HoverEvent statsHover = null;
+        if (PlayerHoverStatsUtility.isInitialized()) {
+            Component hoverText = PlayerHoverStatsUtility.createStatsHoverForPlayer(
+                player, cactusRank, soulRank);
+            if (hoverText != null) {
+                statsHover = PlayerHoverStatsUtility.createHoverEvent(hoverText);
+            }
+        }
+        final HoverEvent statsHoverFinal = statsHover;
+
+        // Body OHNE Stats-Hover — sonst vererbt sich Hover vom Root auf Item-/Build-Links
+        ItemShareManager.getInstance().buildMessageBodyAsync(message, null).thenAccept(body -> {
+            // Stats-Hover NUR auf den Blatt-Segmenten [CCLive]/Name/Icon/>> — nie am Root
+            Style prefixStyle = Style.EMPTY.withColor(CCLIVE_PREFIX_COLOR);
+            Style nameStyle = Style.EMPTY.withColor(nameColor);
+            Style arrowStyle = Style.EMPTY.withColor(0xFFFFFF);
+            if (statsHoverFinal != null) {
+                prefixStyle = prefixStyle.withHoverEvent(statsHoverFinal);
+                nameStyle = nameStyle.withHoverEvent(statsHoverFinal);
+                arrowStyle = arrowStyle.withHoverEvent(statsHoverFinal);
+            }
+
+            MutableComponent chatMessage = Component.empty();
+            chatMessage.append(Component.literal("[CCLive] ").setStyle(prefixStyle));
+            chatMessage.append(Component.literal(player).setStyle(nameStyle));
+
+            if (CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled
+                    && CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+                Style iconStyle = Style.EMPTY
+                    .withFont(new FontDescription.Resource(ICON_FONT))
+                    .withColor(0xFFFFFF);
+                if (statsHoverFinal != null) {
+                    iconStyle = iconStyle.withHoverEvent(statsHoverFinal);
+                }
+                chatMessage.append(Component.literal(" ").setStyle(arrowStyle));
+                chatMessage.append(Component.literal(String.valueOf(ICON_MARKER)).setStyle(iconStyle));
+            }
+
+            chatMessage.append(Component.literal(">> ").setStyle(arrowStyle));
+            chatMessage.append(body);
+
+            client.execute(() -> {
+                if (client.gui != null && client.gui.getChat() != null) {
+                    client.gui.getChat().addClientSystemMessage(chatMessage);
+                }
+            });
+        });
+    }
+
+    private static int parseRankField(JsonObject msgObj, String key) {
+        if (msgObj == null || key == null || !msgObj.has(key) || msgObj.get(key).isJsonNull()) {
+            return 0;
+        }
+        try {
+            return Math.max(0, msgObj.get(key).getAsInt());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     private void loadChatSettings() {
-        // TODO: Später aus Config-Datei laden
-        // Für jetzt: Standardwerte (beide Chats an)
-        showDefaultChat = true;
-        showCCLiveChat = true;
-        currentChatMode = ChatMode.DEFAULT;
+        CCLiveUtilitiesConfig cfg = CCLiveUtilitiesConfig.HANDLER.instance();
+        showDefaultChat = cfg.chatShowDefault;
+        showCCLiveChat = cfg.chatShowCCLive;
+        // Mindestens ein Chat muss an sein
+        if (!showDefaultChat && !showCCLiveChat) {
+            showDefaultChat = true;
+            cfg.chatShowDefault = true;
+        }
+        currentChatMode = parseWriteMode(cfg.chatWriteMode);
+        currentChatMode = clampWriteMode(currentChatMode);
     }
-    
-    /**
-     * Speichert Chat-Einstellungen
-     */
+
     private void saveChatSettings() {
-        // TODO: Später in Config-Datei speichern
+        CCLiveUtilitiesConfig cfg = CCLiveUtilitiesConfig.HANDLER.instance();
+        cfg.chatShowDefault = showDefaultChat;
+        cfg.chatShowCCLive = showCCLiveChat;
+        cfg.chatWriteMode = currentChatMode == ChatMode.CCLIVE ? "cclive" : "default";
+        CCLiveUtilitiesConfig.HANDLER.save();
     }
-    
+
+    private static ChatMode parseWriteMode(String raw) {
+        if (raw != null && raw.equalsIgnoreCase("cclive")) {
+            return ChatMode.CCLIVE;
+        }
+        return ChatMode.DEFAULT;
+    }
+
+    /** Schreibmodus an sichtbare Chats anpassen. */
+    private ChatMode clampWriteMode(ChatMode mode) {
+        if (mode == ChatMode.CCLIVE && !showCCLiveChat) {
+            return ChatMode.DEFAULT;
+        }
+        if (mode == ChatMode.DEFAULT && !showDefaultChat) {
+            return showCCLiveChat ? ChatMode.CCLIVE : ChatMode.DEFAULT;
+        }
+        return mode;
+    }
+
     /**
-     * Wechselt den Chat-Modus
+     * Effektives Schreibziel: respektiert {@link #currentChatMode}, falls der Kanal sichtbar ist.
+     * Sind beide an, gilt der gespeicherte Modus (Standard: Default).
      */
+    public ChatMode getEffectiveWriteMode() {
+        return clampWriteMode(currentChatMode);
+    }
+
     public void setChatMode(ChatMode mode) {
+        if (mode == ChatMode.CCLIVE && !showCCLiveChat) {
+            return;
+        }
+        if (mode == ChatMode.DEFAULT && !showDefaultChat) {
+            return;
+        }
         this.currentChatMode = mode;
         saveChatSettings();
     }
-    
-    /**
-     * Togglet die Sichtbarkeit eines Chat-Kanals
-     */
+
     public void toggleChat(String chatType) {
+        boolean wasDefaultVisible = showDefaultChat;
+
         if (chatType.equalsIgnoreCase("default")) {
-            boolean wasVisible = showDefaultChat;
             showDefaultChat = !showDefaultChat;
-            
-            // Prüfe: Wenn beide Chats jetzt aus wären, aktiviere den anderen wieder
             if (!showDefaultChat && !showCCLiveChat) {
                 showCCLiveChat = true;
             }
-            
-            // Wenn Default deaktiviert wurde, wechsle automatisch zu CCLIVE
-            if (wasVisible && !showDefaultChat && showCCLiveChat) {
+            // Default aus → Schreiben CCLive; Default wieder an → Schreiben Default
+            if (!showDefaultChat && showCCLiveChat) {
                 currentChatMode = ChatMode.CCLIVE;
-            }
-            // Wenn Default aktiviert wurde und wir im CCLIVE Modus sind, wechsle zu DEFAULT
-            else if (!wasVisible && showDefaultChat && currentChatMode == ChatMode.CCLIVE) {
+            } else if (showDefaultChat && !wasDefaultVisible) {
                 currentChatMode = ChatMode.DEFAULT;
             }
         } else if (chatType.equalsIgnoreCase("cclive")) {
-            boolean wasVisible = showCCLiveChat;
             showCCLiveChat = !showCCLiveChat;
-            
-            // Prüfe: Wenn beide Chats jetzt aus wären, aktiviere den anderen wieder
             if (!showDefaultChat && !showCCLiveChat) {
                 showDefaultChat = true;
             }
-            
-            // Wenn CCLIVE deaktiviert wurde, wechsle automatisch zu DEFAULT
-            if (wasVisible && !showCCLiveChat && showDefaultChat) {
-                currentChatMode = ChatMode.DEFAULT;
-            }
-            // Wenn CCLIVE aktiviert wurde und wir im DEFAULT Modus sind, wechsle zu CCLIVE
-            else if (!wasVisible && showCCLiveChat && currentChatMode == ChatMode.DEFAULT) {
-                currentChatMode = ChatMode.CCLIVE;
-            }
         }
+
+        currentChatMode = clampWriteMode(currentChatMode);
         saveChatSettings();
+
+        if (showCCLiveChat) {
+            ensureSocketConnected();
+        } else {
+            webSocket.disconnect();
+        }
     }
-    
-    /**
-     * Prüft ob ein Chat-Kanal sichtbar ist
-     */
+
     public boolean isChatVisible(String chatType) {
         if (chatType.equalsIgnoreCase("default")) {
             return showDefaultChat;
@@ -279,13 +368,30 @@ public class ChatManager {
         }
         return true;
     }
-    
-    
-    // Getter
+
+    public boolean isWebSocketConnected() {
+        return webSocket.isConnected();
+    }
+
+    /** exactKey = player|message|timestamp → softKey = player|message */
+    private static String stripTimestamp(String exactKey) {
+        if (exactKey == null || exactKey.isEmpty()) {
+            return "";
+        }
+        int last = exactKey.lastIndexOf('|');
+        return last > 0 ? exactKey.substring(0, last) : exactKey;
+    }
+
     public ChatMode getCurrentChatMode() { return currentChatMode; }
     public boolean isShowDefaultChat() { return showDefaultChat; }
     public boolean isShowCCLiveChat() { return showCCLiveChat; }
     public boolean isEnabled() { return isEnabled; }
-    public void setEnabled(boolean enabled) { this.isEnabled = enabled; }
+    public void setEnabled(boolean enabled) {
+        this.isEnabled = enabled;
+        if (!enabled) {
+            webSocket.disconnect();
+        } else if (showCCLiveChat) {
+            ensureSocketConnected();
+        }
+    }
 }
-

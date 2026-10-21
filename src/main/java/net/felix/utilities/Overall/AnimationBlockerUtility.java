@@ -149,7 +149,7 @@ public class AnimationBlockerUtility {
         updateBlockedCharacters();
         
         // Prüfe Konfiguration und setze animationBlockingEnabled entsprechend
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
             !CCLiveUtilitiesConfig.HANDLER.instance().animationBlockerEnabled) {
             animationBlockingEnabled = false;
             return;

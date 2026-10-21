@@ -3,12 +3,9 @@
     {
       "type": "bitmap",
       "file": "cclive-utilities:64_chat_icon.png",
-      "ascent": 8,
+      "ascent": 7,
       "height": 8,
       "chars": ["ѳ"]
     }
   ]
 }
-
-
-

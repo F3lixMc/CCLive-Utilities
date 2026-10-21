@@ -123,7 +123,7 @@ public class KillsUtility {
 		checkTabKey();
 		
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod ||
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled ||
 			!CCLiveUtilitiesConfig.HANDLER.instance().showKillsUtility) {
 			return;
@@ -515,7 +515,7 @@ public class KillsUtility {
 	
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
-		if (!CCLiveUtilitiesConfig.HANDLER.instance().enableMod) {
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
 			return;
 		}
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled) {

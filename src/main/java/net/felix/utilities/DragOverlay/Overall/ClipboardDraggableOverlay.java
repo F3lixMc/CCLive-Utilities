@@ -1,7 +1,10 @@
 package net.felix.utilities.DragOverlay.Overall;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.ItemViewer.CostItem;
+import net.felix.utilities.ItemViewer.ItemData;
+import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardPaperShredsCollector;
@@ -218,6 +221,16 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     private static final int QUANTITY_TEXT_FIELD_WIDTH = 50;
     private static final int QUANTITY_FIELD_OUTLINE_PADDING = 2;
     private static final int QUANTITY_AFTER_BUTTONS_SPACING = 8;
+    private static final class FoundStatusLabel {
+        final String text;
+        final int color;
+
+        FoundStatusLabel(String text, int color) {
+            this.text = text;
+            this.color = color;
+        }
+    }
+
     private static final int HEADER_BUTTON_GAP = 5;
     private static final int HEADER_COUNT_PADDING = 5;
     private static final int HEADER_NAME_PADDING = 5;
@@ -512,23 +525,30 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         for (ClipboardUtility.ClipboardEntry clipboardEntry : entries) {
             if (clipboardEntry.blueprintName != null) {
                 String countText = formatQuantityText(clipboardEntry.quantity > 0 ? clipboardEntry.quantity : 1);
-                maxWidth = Math.max(maxWidth, computeHeaderLineWidth(client, clipboardEntry.blueprintName, countText));
+                FoundStatusLabel status = resolveEntryFoundStatus(clipboardEntry);
+                maxWidth = Math.max(maxWidth, computeHeaderLineWidth(client, clipboardEntry.blueprintName,
+                    status != null ? status.text : null, countText));
             }
         }
 
         String blueprintName;
         String countText;
+        FoundStatusLabel pageStatus;
         if (currentPage == 1) {
             blueprintName = "Gesamtliste";
             countText = formatQuantityText(displayQuantity);
+            pageStatus = resolveOverallFoundStatus();
         } else if (entry != null) {
             blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
             countText = formatQuantityText(displayQuantity);
+            pageStatus = resolveEntryFoundStatus(entry);
         } else {
             blueprintName = "Bauplan Name";
             countText = formatQuantityText(1);
+            pageStatus = null;
         }
-        maxWidth = Math.max(maxWidth, computeHeaderLineWidth(client, blueprintName, countText));
+        maxWidth = Math.max(maxWidth, computeHeaderLineWidth(client, blueprintName,
+            pageStatus != null ? pageStatus.text : null, countText));
 
         for (PreparedCostLine line : mainCostLines) {
             maxWidth = Math.max(maxWidth, line.totalWidth + COST_LINE_HORIZONTAL_PADDING);
@@ -917,24 +937,30 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         String blueprintName;
         String countText;
         
+        FoundStatusLabel foundStatus;
         if (currentPage == 1) {
             // Seite 1: Gesamtliste
             blueprintName = "Gesamtliste";
             // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
             int quantityForPage1 = getQuantityForPage(1, null);
             countText = formatQuantityText(quantityForPage1);
+            foundStatus = resolveOverallFoundStatus();
         } else if (entry != null) {
             // Seite 2+: Einzelner Bauplan
             blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
             countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
+            foundStatus = resolveEntryFoundStatus(entry);
         } else {
             // Fallback
             blueprintName = "Bauplan Name";
             countText = formatQuantityText(1);
+            foundStatus = null;
         }
+
+        String statusLabel = foundStatus != null ? foundStatus.text : null;
         
         // Berechne Button-Positionen mit Hilfsmethode
-        int[] buttonPositions = calculateButtonPositions(client, blueprintName, countText, unscaledWidth);
+        int[] buttonPositions = calculateButtonPositions(client, blueprintName, statusLabel, countText, unscaledWidth);
         int leftButtonX = buttonPositions[0];
         int rightButtonX = buttonPositions[1];
         int spaceAfterLeftX = buttonPositions[2];
@@ -955,6 +981,18 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             0xFFFFFFFF,
             true
         );
+
+        // Gefunden-Status direkt neben dem Namen
+        if (foundStatus != null) {
+            int statusX = 5 + client.font.width(blueprintName) + client.font.width(" ");
+            context.text(
+                client.font,
+                foundStatus.text,
+                statusX, currentY,
+                foundStatus.color,
+                true
+            );
+        }
         
         // Pfeil-Buttons rendern
         int totalPages = ClipboardUtility.getTotalPages();
@@ -1871,7 +1909,11 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        // Deaktiviere in der general_lobby Dimension
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+// Deaktiviere in der general_lobby Dimension
         try {
             var client = net.minecraft.client.Minecraft.getInstance();
             if (client != null && client.level != null) {
@@ -1913,12 +1955,17 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * Berechnet die Button-Positionen basierend auf dem Bauplan-Namen
      * @param client MinecraftClient
      * @param blueprintName Name des Bauplans
+     * @param statusLabel Optionaler Status neben dem Namen (z. B. "[Gefunden]")
      * @param countText Text für [Anzahl]
      * @param unscaledWidth Unskalierte Breite des Overlays
      * @return Array mit [leftButtonX, rightButtonX, spaceAfterLeftX, separatorX, spaceAfterSeparatorX, spaceAfterRightX, countX]
      */
-    private static int[] calculateButtonPositions(Minecraft client, String blueprintName, String countText, int unscaledWidth) {
+    private static int[] calculateButtonPositions(Minecraft client, String blueprintName, String statusLabel,
+            String countText, int unscaledWidth) {
         int nameWidth = client.font.width(blueprintName);
+        if (statusLabel != null && !statusLabel.isEmpty()) {
+            nameWidth += client.font.width(" ") + client.font.width(statusLabel);
+        }
         
         String leftArrow = "«";
         String rightArrow = "»";
@@ -2100,18 +2147,23 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         // Hole Bauplan-Name für Button-Positionierung
         String blueprintName;
+        FoundStatusLabel foundStatus;
         if (currentPage == 1) {
             blueprintName = "Gesamtliste";
+            foundStatus = resolveOverallFoundStatus();
         } else if (entry != null) {
             blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
+            foundStatus = resolveEntryFoundStatus(entry);
         } else {
             blueprintName = "Bauplan Name";
+            foundStatus = null;
         }
         
         int unscaledWidth = calculateUnscaledWidth();
         
         // Berechne Button-Positionen mit Hilfsmethode (exakt wie in renderInGame)
-        int[] buttonPositions = calculateButtonPositions(client, blueprintName, countText, unscaledWidth);
+        int[] buttonPositions = calculateButtonPositions(client, blueprintName,
+            foundStatus != null ? foundStatus.text : null, countText, unscaledWidth);
         int leftButtonX = buttonPositions[0];
         int rightButtonX = buttonPositions[1];
         
@@ -2312,23 +2364,28 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         String blueprintName;
         String countText;
+        FoundStatusLabel foundStatus;
         if (currentPage == 1) {
             blueprintName = "Gesamtliste";
             // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
             int quantityForPage1 = getQuantityForPage(1, null);
             countText = formatQuantityText(quantityForPage1);
+            foundStatus = resolveOverallFoundStatus();
         } else if (entry != null) {
             blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
             countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
+            foundStatus = resolveEntryFoundStatus(entry);
         } else {
             blueprintName = "Bauplan Name";
             countText = formatQuantityText(1);
+            foundStatus = null;
         }
         
         int unscaledWidth = calculateUnscaledWidth();
         
         // Berechne Button-Positionen mit Hilfsmethode (exakt wie in renderInGame)
-        int[] buttonPositions = calculateButtonPositions(client, blueprintName, countText, unscaledWidth);
+        int[] buttonPositions = calculateButtonPositions(client, blueprintName,
+            foundStatus != null ? foundStatus.text : null, countText, unscaledWidth);
         int leftButtonX = buttonPositions[0];
         int rightButtonX = buttonPositions[1];
         
@@ -2451,11 +2508,14 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             + client.font.width("»");
     }
     
-    private static int computeHeaderLineWidth(Minecraft client, String blueprintName, String countText) {
+    private static int computeHeaderLineWidth(Minecraft client, String blueprintName, String statusLabel, String countText) {
         boolean isInInventory = client.screen instanceof AbstractContainerScreen;
         int quantityAreaWidth = getQuantityAreaWidth(client, countText, isInInventory);
         int totalButtonWidth = getNavigationButtonsWidth(client);
         int nameEndX = HEADER_NAME_PADDING + client.font.width(blueprintName);
+        if (statusLabel != null && !statusLabel.isEmpty()) {
+            nameEndX += client.font.width(" ") + client.font.width(statusLabel);
+        }
         
         int flowLayoutWidth = nameEndX + HEADER_BUTTON_GAP + totalButtonWidth
             + QUANTITY_AFTER_BUTTONS_SPACING + quantityAreaWidth + HEADER_COUNT_PADDING;
@@ -2464,6 +2524,51 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             + QUANTITY_AFTER_BUTTONS_SPACING + quantityAreaWidth + HEADER_COUNT_PADDING;
         
         return Math.max(flowLayoutWidth, rightAlignedMinWidth);
+    }
+
+    private static FoundStatusLabel resolveOverallFoundStatus() {
+        List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
+        if (entries == null || entries.isEmpty()) {
+            return null;
+        }
+        for (ClipboardUtility.ClipboardEntry entry : entries) {
+            if (!isClipboardBlueprintFound(entry)) {
+                return new FoundStatusLabel("[Nicht alle Gefunden]", 0xFFFF5555);
+            }
+        }
+        return new FoundStatusLabel("[Alle Gefunden]", 0xFF55FF55);
+    }
+
+    private static FoundStatusLabel resolveEntryFoundStatus(ClipboardUtility.ClipboardEntry entry) {
+        if (entry == null || entry.blueprintName == null || entry.blueprintName.isEmpty()) {
+            return null;
+        }
+        if (isClipboardBlueprintFound(entry)) {
+            return new FoundStatusLabel("[Gefunden]", 0xFF55FF55);
+        }
+        return new FoundStatusLabel("[Nicht gefunden]", 0xFFFF5555);
+    }
+
+    private static boolean isClipboardBlueprintFound(ClipboardUtility.ClipboardEntry entry) {
+        if (entry == null || entry.blueprintName == null || entry.blueprintName.isEmpty()) {
+            return false;
+        }
+        ItemData item = null;
+        try {
+            if (entry.clipboardId != null) {
+                item = ItemViewerUtility.findItemByNameAndClipboardId(entry.blueprintName, entry.clipboardId);
+            }
+            if (item == null) {
+                item = ItemViewerUtility.findItemByName(entry.blueprintName);
+            }
+        } catch (Exception ignored) {
+        }
+        String rarity = (item != null && item.info != null) ? item.info.rarity : null;
+        try {
+            return BPViewerUtility.getInstance().isBlueprintFoundExact(entry.blueprintName, rarity);
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     private static void renderQuantityFieldBackground(GuiGraphicsExtractor context, int x, int y, int width, int height, boolean focused) {

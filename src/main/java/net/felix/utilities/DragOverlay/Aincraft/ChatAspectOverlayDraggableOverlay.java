@@ -94,7 +94,11 @@ public class ChatAspectOverlayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled;
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled;
     }
     
     @Override

@@ -79,12 +79,17 @@ public class FishingComponentFoundUtility {
     }
 
     public static void reset() {
+        resetReturningSuccess();
+    }
+
+    /** @return true wenn found_fishing_components.json erfolgreich gespeichert wurde */
+    public static boolean resetReturningSuccess() {
         try {
             FishingComponentFoundUtility instance = getInstance();
             instance.foundComponents.clear();
-            instance.saveFoundComponents();
+            return instance.saveFoundComponentsReturningSuccess();
         } catch (Exception e) {
-            // Silent error handling
+            return false;
         }
     }
 
@@ -223,13 +228,18 @@ public class FishingComponentFoundUtility {
     }
 
     private void saveFoundComponents() {
+        saveFoundComponentsReturningSuccess();
+    }
+
+    private boolean saveFoundComponentsReturningSuccess() {
         try {
             saveFile.getParentFile().mkdirs();
             try (FileWriter writer = new FileWriter(saveFile)) {
                 gson.toJson(foundComponents, writer);
             }
+            return true;
         } catch (IOException e) {
-            // Silent error handling
+            return false;
         }
     }
 }

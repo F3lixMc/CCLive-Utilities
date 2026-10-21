@@ -176,7 +176,11 @@ public class CardsDraggableOverlay implements DraggableOverlay {
     
     @Override
     public boolean isEnabled() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled && 
+        
+        if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            return false;
+        }
+return CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled && 
                CCLiveUtilitiesConfig.HANDLER.instance().cardEnabled &&
                CCLiveUtilitiesConfig.HANDLER.instance().showCard;
     }
