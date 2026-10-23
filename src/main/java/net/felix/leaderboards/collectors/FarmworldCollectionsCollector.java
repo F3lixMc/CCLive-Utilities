@@ -1,13 +1,22 @@
 package net.felix.leaderboards.collectors;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.CCLiveUtilities;
 import net.felix.leaderboards.LeaderboardManager;
+import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.scores.DisplaySlot;
-import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.Scoreboard;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,7 +36,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
     private static final int CACHE_UPDATE_INTERVAL = 20; // Alle 20 Ticks = 1 Sekunde
     private int cachedCollectionForCurrentZone = 0; // Gecachter Wert für die aktuelle Zone
     
-    // Cache für Zone-Collection-Daten
+    // Cache für Zone-Collection-Daten, bleibt über Neustarts in farmworld-collections.json erhalten
+    private static final String ZONE_COLLECTIONS_FILE = "farmworld-collections.json";
+    private static final Gson ZONE_COLLECTIONS_GSON = new GsonBuilder().setPrettyPrinting().create();
     private final Map<String, Long> zoneCollections = new HashMap<>();
     private String lastZone = null;
     private int lastTotalCollection = 0; // Absoluter Collection-Wert aus Bossbar
@@ -61,21 +72,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         ZONE_TO_COLLECTION.put("[Echomine]", "echo_collection");
         ZONE_TO_COLLECTION.put("[Eisenmine]", "raw_iron_collection");
         ZONE_TO_COLLECTION.put("[Obsidianmine]", "obsidian_collection");
-    }
-    
-    // Chinesische Zahlen-Mapping (wie in KillsUtility)
-    private static final Map<Character, Integer> CHINESE_NUMBERS = new HashMap<>();
-    static {
-        CHINESE_NUMBERS.put('㚏', 0);
-        CHINESE_NUMBERS.put('㚐', 1);
-        CHINESE_NUMBERS.put('㚑', 2);
-        CHINESE_NUMBERS.put('㚒', 3);
-        CHINESE_NUMBERS.put('㚓', 4);
-        CHINESE_NUMBERS.put('㚔', 5);
-        CHINESE_NUMBERS.put('㚕', 6);
-        CHINESE_NUMBERS.put('㚖', 7);
-        CHINESE_NUMBERS.put('㚗', 8);
-        CHINESE_NUMBERS.put('㚘', 9);
+        ZONE_TO_COLLECTION.put("[Amethystmine]", "amethyst_collection");
     }
     
     @Override
@@ -85,7 +82,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
             return;
         }
         
-        // System.out.println("🔍 [FarmworldCollectionsCollector] Starte Initialisierung...");
+        loadZoneCollections();
         // Registriere Tick-Event für Collection-Tracking
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
@@ -171,7 +168,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
             // Nur cachen wenn wir noch in der gleichen Zone sind UND die Zone stabil ist
             if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 int currentCollection = getCollectionFromBossbar(client);
-                cachedCollectionForCurrentZone = currentCollection;
+                if (currentCollection >= 0) {
+                    cachedCollectionForCurrentZone = currentCollection;
+                }
             }
         } catch (Exception e) {
             // Silent error handling
@@ -206,18 +205,17 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     return;
                 }
                 
-                // Zone-Wechsel erkannt - speichere die vorherige Zone IMMER (forceSend=true)
-                // So wird der Wert auch gesendet, wenn er noch nicht übermittelt wurde
+                // Letzten noch nicht gesendeten Wert der vorherigen Zone mitnehmen.
+                // Bereits übertragene Stände lösen keinen neuen Upload aus.
                 if (lastZone != null && cachedCollectionForCurrentZone > 0) {
-                    updateZoneScore(lastZone, cachedCollectionForCurrentZone, true);
+                    updateZoneScore(lastZone, cachedCollectionForCurrentZone, false);
                 } else if (lastZone != null && lastTotalCollection > 0) {
-                    // Fallback: Falls kein gecachter Wert vorhanden, verwende lastTotalCollection
-                    updateZoneScore(lastZone, lastTotalCollection, true);
+                    updateZoneScore(lastZone, lastTotalCollection, false);
                 }
-                
-                // Nach dem Speichern der vorherigen Zone All Collections sofort aktualisieren
-                // (zusätzlich zum 60-Sekunden-Intervall), damit kurze Zonen nicht verloren gehen
-                updateAllCollections();
+
+                // Neue Zone startet ohne übernommenen Zähler, damit der erste Bossbar-Wert gesendet wird.
+                lastTotalCollection = -1;
+                cachedCollectionForCurrentZone = 0;
 
                 // Neue Zone als "pending" markieren - warte 5 Sekunden, bevor Bossbar gelesen wird
                 pendingZone = currentZone;
@@ -254,10 +252,14 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     return;
                 }
             } else if (stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
-                // Zone ist bereits stabil - aktualisiere lastTotalCollection kontinuierlich (nur wenn höher)
+                // Während die Zone stabil ist: Bossbar-Zahl senden, sobald sie sich ändert
                 int currentCollection = getCollectionFromBossbar(client);
-                if (currentCollection > lastTotalCollection) {
-                    lastTotalCollection = currentCollection;
+                if (currentCollection >= 0) {
+                    cachedCollectionForCurrentZone = currentCollection;
+                    if (currentCollection != lastTotalCollection) {
+                        lastTotalCollection = currentCollection;
+                        updateZoneScore(currentZone, currentCollection);
+                    }
                 }
             } else {
                 // Gleiche Zone, aber noch nicht stabil - warte weiter
@@ -296,16 +298,12 @@ public class FarmworldCollectionsCollector implements DataCollector {
         pendingZoneTicks = 0;
 
         int newZoneCollection = getCollectionFromBossbar(client);
+        if (newZoneCollection < 0) {
+            return;
+        }
         lastTotalCollection = newZoneCollection;
         cachedCollectionForCurrentZone = newZoneCollection;
-
-        long cachedCollection = zoneCollections.getOrDefault(stableZone, 0L);
-        if (newZoneCollection < cachedCollection) {
-            zoneCollections.put(stableZone, (long) newZoneCollection);
-            if (ENABLE_SERVER_UPDATES) {
-                LeaderboardManager.getInstance().updateScore(getCollectionNameForZone(stableZone), newZoneCollection);
-            }
-        }
+        updateZoneScore(stableZone, newZoneCollection);
     }
     
     /**
@@ -321,6 +319,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
             // Nur updaten wenn wir noch in der gleichen Zone sind UND die Zone stabil ist (10 Sekunden im Scoreboard)
             if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 int totalCollection = getCollectionFromBossbar(client);
+                if (totalCollection < 0) {
+                    return;
+                }
                 
                 // Aktualisiere lastTotalCollection immer
                 lastTotalCollection = totalCollection;
@@ -346,7 +347,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         if (zone == null || collection < 0) return;
         
         String collectionName = getCollectionNameForZone(zone);
-        if (collectionName == null) return;
+        if (collectionName == null || collectionName.isBlank()) return;
         
         // Hole bisherige Collection für diese Zone
         long currentTotal = zoneCollections.getOrDefault(zone, 0L);
@@ -365,11 +366,11 @@ public class FarmworldCollectionsCollector implements DataCollector {
         // Updaten wenn sich der Wert geändert hat ODER wenn forceSend=true (z.B. bei Zone-Wechsel)
         if (newTotal != currentTotal || forceSend) {
             zoneCollections.put(zone, newTotal);
+            saveZoneCollections();
             
             // DEBUG: Nur senden wenn aktiviert
-            if (ENABLE_SERVER_UPDATES) {
-                LeaderboardManager.getInstance().updateScore(collectionName, newTotal);
-            }
+            sendZoneScore(zone, newTotal);
+            updateAllCollections();
         }
     }
     
@@ -381,10 +382,53 @@ public class FarmworldCollectionsCollector implements DataCollector {
     }
     
     /**
-     * Berechnet die Summe aller Collection-Werte aus allen Zonen
+     * Summe aller gespeicherten Zonen, auch solcher aus früheren Sitzungen.
      */
     public long getTotalCollections() {
         return zoneCollections.values().stream().mapToLong(Long::longValue).sum();
+    }
+
+    private Path zoneCollectionsFile() {
+        return CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve(ZONE_COLLECTIONS_FILE);
+    }
+
+    private void loadZoneCollections() {
+        Path file = zoneCollectionsFile();
+        if (!Files.exists(file)) {
+            return;
+        }
+        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+            for (String zone : json.keySet()) {
+                if (!ZONE_TO_COLLECTION.containsKey(zone) || !json.get(zone).isJsonPrimitive()) {
+                    continue;
+                }
+                long value = json.get(zone).getAsLong();
+                if (value >= 0) {
+                    zoneCollections.put(zone, value);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("❌ [FarmworldCollections] Zonenstände konnten nicht geladen werden: " + e.getMessage());
+        }
+    }
+
+    private void saveZoneCollections() {
+        try {
+            Path file = zoneCollectionsFile();
+            Files.createDirectories(file.getParent());
+            JsonObject json = new JsonObject();
+            for (Map.Entry<String, Long> entry : zoneCollections.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null && entry.getValue() >= 0) {
+                    json.addProperty(entry.getKey(), entry.getValue());
+                }
+            }
+            try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+                ZONE_COLLECTIONS_GSON.toJson(json, writer);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ [FarmworldCollections] Zonenstände konnten nicht gespeichert werden: " + e.getMessage());
+        }
     }
     
     /**
@@ -398,6 +442,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
             if (calculatedAllCollections > 0) {
                 // DEBUG: Nur senden wenn aktiviert
                 if (ENABLE_SERVER_UPDATES) {
+                    System.out.println("[FarmworldCollections] Sende an Server: all_collections = " + calculatedAllCollections);
                     LeaderboardManager.getInstance().updateScore("all_collections", calculatedAllCollections);
                 }
             }
@@ -407,836 +452,43 @@ public class FarmworldCollectionsCollector implements DataCollector {
     }
     
     /**
-     * Ermittelt die aktuelle Zone aus dem Sidebar-Scoreboard (rechts)
+     * Ermittelt die aktuelle Zone aus den sichtbaren Sidebar-Zeilen.
+     * Dieselbe Team-/Display-Auflösung wie das Farmzone-Overlay, nicht die leeren Owner-IDs.
      */
     private String getCurrentZone(Minecraft client) {
         try {
-            if (client == null || client.level == null) {
+            List<String> lines = InformationenUtility.readCleanSidebarLines(client);
+            if (lines == null || lines.isEmpty()) {
                 return null;
             }
-            
-            Scoreboard scoreboard = client.level.getScoreboard();
-            if (scoreboard == null) {
-                return null;
-            }
-            
-            // Hole das Sidebar-Objektiv (wird rechts angezeigt)
-            Objective sidebarObjective = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR);
-            if (sidebarObjective == null) {
-                return null;
-            }
-            
-            // Helper method to remove Minecraft formatting codes (§ codes)
-            java.util.function.Function<String, String> removeFormatting = (text) -> {
-                if (text == null) return "";
-                return text.replaceAll("§[0-9a-fk-or]", "").trim();
-            };
-            
-            // Versuche alle Scoreboard-Einträge zu lesen
-            // Verwende verschiedene Ansätze, da die API je nach MC-Version unterschiedlich ist
-            
-            // Ansatz 1: Versuche über getAllPlayerScores (Collection zurück) - OFFIZIELLE API
-            java.util.Collection<?> scores = null;
-            try {
-                java.lang.reflect.Method getAllPlayerScoresMethod = scoreboard.getClass().getMethod("getAllPlayerScores", Objective.class);
-                scores = (java.util.Collection<?>) getAllPlayerScoresMethod.invoke(scoreboard, sidebarObjective);
-                
-                // Durchsuche alle Scores
-                for (Object scoreObj : scores) {
-                    if (scoreObj != null) {
-                        try {
-                            // Versuche getPlayerName() oder ähnliche Methoden
-                            java.lang.reflect.Method getPlayerNameMethod = scoreObj.getClass().getMethod("getPlayerName");
-                            String playerName = (String) getPlayerNameMethod.invoke(scoreObj);
-                            if (playerName != null) {
-                                String cleanName = removeFormatting.apply(playerName);
-                                
-                                // Prüfe ob dieser Name eine Zone enthält
-                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                    if (cleanName.contains(zoneName)) {
-                                        return zoneName;
-                                    }
-                                }
-                            }
-                        } catch (Exception ex) {
-                            // Ignoriere Fehler
-                        }
+            for (String line : lines) {
+                if (line == null || line.isBlank()) {
+                    continue;
+                }
+                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
+                    if (line.contains(zoneName)) {
+                        return zoneName;
                     }
                 }
-            } catch (Exception e) {
-                // Silent error handling
-                
-                // Ansatz 2: Versuche über getPlayerScores (Collection zurück)
-                try {
-                    java.lang.reflect.Method getPlayerScoresMethod = scoreboard.getClass().getMethod("getPlayerScores", Objective.class);
-                    scores = (java.util.Collection<?>) getPlayerScoresMethod.invoke(scoreboard, sidebarObjective);
-                    
-                    // Durchsuche alle Scores (gleiche Logik wie oben)
-                    for (Object scoreObj : scores) {
-                        if (scoreObj != null) {
-                            try {
-                                java.lang.reflect.Method getPlayerNameMethod = scoreObj.getClass().getMethod("getPlayerName");
-                                String playerName = (String) getPlayerNameMethod.invoke(scoreObj);
-                                if (playerName != null) {
-                                    String cleanName = removeFormatting.apply(playerName);
-                                    
-                                    for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                        if (cleanName.contains(zoneName)) {
-                                            return zoneName;
-                                        }
-                                    }
-                                }
-                            } catch (Exception ex) {
-                                // Ignoriere Fehler
-                            }
-                        }
-                    }
-                } catch (Exception e2) {
-                    // Silent error handling
-                    
-                    // Ansatz 3: Versuche playerObjectives direkt zu durchsuchen (Map<String, Map<ScoreboardObjective, ScoreboardPlayerScore>>)
-                    // Da das Feld obfuskiert ist, identifizieren wir es durch seine Struktur:
-                    // Es ist eine Map<String, Map<ScoreboardObjective, ScoreboardPlayerScore>>
-                    java.util.Map<String, java.util.Map<Objective, ?>> playerObjectives = null;
-                    try {
-                        
-                        java.lang.reflect.Field[] fields = scoreboard.getClass().getDeclaredFields();
-                        
-                        for (java.lang.reflect.Field field : fields) {
-                            if (java.util.Map.class.isAssignableFrom(field.getType())) {
-                                field.setAccessible(true);
-                                Object fieldValue = field.get(scoreboard);
-                                if (fieldValue instanceof java.util.Map<?, ?> map) {
-                                    
-                                    // Prüfe ob dies playerObjectives ist:
-                                    // 1. Name enthält "player" oder "objective" ODER
-                                    // 2. Map hat String-Keys und Map-Values (Map<String, Map<?, ?>>)
-                                    boolean isPlayerObjectives = false;
-                                    
-                                    if (field.getName().contains("player") && field.getName().contains("objective")) {
-                                        isPlayerObjectives = true;
-                                    } else if (map.size() > 10) {
-                                        // Prüfe ob die Values Maps sind (Map<String, Map<?, ?>>)
-                                        int mapValueCount = 0;
-                                        for (Object value : map.values()) {
-                                            if (value instanceof java.util.Map) {
-                                                mapValueCount++;
-                                            }
-                                        }
-                                        // Wenn mindestens 50% der Values Maps sind, ist es wahrscheinlich playerObjectives
-                                        if (mapValueCount > map.size() * 0.5) {
-                                            isPlayerObjectives = true;
-                                        }
-                                    }
-                                    
-                                    if (isPlayerObjectives) {
-                                        @SuppressWarnings("unchecked")
-                                        java.util.Map<String, java.util.Map<Objective, ?>> playerObjectivesMap = (java.util.Map<String, java.util.Map<Objective, ?>>) map;
-                                        playerObjectives = playerObjectivesMap;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if (playerObjectives == null) {
-                            throw new Exception("playerObjectives Map nicht gefunden");
-                        }
-                            
-                            // Priorisiere sb_display_* Keys
-                            java.util.List<String> sbDisplayKeys = new java.util.ArrayList<>();
-                            java.util.List<String> otherKeys = new java.util.ArrayList<>();
-                            
-                            for (String playerName : playerObjectives.keySet()) {
-                                if (playerName.startsWith("sb_display_")) {
-                                    sbDisplayKeys.add(playerName);
-                                } else {
-                                    otherKeys.add(playerName);
-                                }
-                            }
-                            
-                            // Durchsuche zuerst sb_display_* Keys
-                            for (String playerName : sbDisplayKeys) {
-                                String cleanName = removeFormatting.apply(playerName);
-                                
-                                // Prüfe ob dieser Name eine Zone enthält
-                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                    if (cleanName.contains(zoneName)) {
-                                        
-                                        return zoneName;
-                                    }
-                                }
-                                
-                                // Prüfe auch die Values (Map<ScoreboardObjective, ScoreboardPlayerScore>)
-                                java.util.Map<Objective, ?> playerScores = playerObjectives.get(playerName);
-                                if (playerScores != null && playerScores.containsKey(sidebarObjective)) {
-                                    Object scoreObj = playerScores.get(sidebarObjective);
-                                    if (scoreObj != null) {
-                                        try {
-                                            java.lang.reflect.Method getPlayerNameMethod = scoreObj.getClass().getMethod("getPlayerName");
-                                            String scorePlayerName = (String) getPlayerNameMethod.invoke(scoreObj);
-                                            if (scorePlayerName != null) {
-                                                String cleanScoreName = removeFormatting.apply(scorePlayerName);
-                                                
-                                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                    if (cleanScoreName.contains(zoneName)) {
-                                                        
-                                                        return zoneName;
-                                                    }
-                                                }
-                                            }
-                                        } catch (Exception ex) {
-                                            // Ignoriere Fehler
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // Dann durchsuche andere Keys
-                            for (String playerName : otherKeys) {
-                                String cleanName = removeFormatting.apply(playerName);
-                                
-                                // Prüfe ob dieser Name eine Zone enthält
-                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                    if (cleanName.contains(zoneName)) {
-                                        
-                                        return zoneName;
-                                    }
-                                }
-                            }
-                    } catch (Exception e3) {
-                        // Silent error handling
-                    }
-                    
-                    // Ansatz 4: Versuche über Felder direkt auf die Score-Map zuzugreifen
-                    // WICHTIG: Wir suchen nur in der "scores" Map, die die Scores für alle Objectives enthält
-                    // Aber wir müssen prüfen, ob die Scores zu unserem Sidebar-Objective gehören
-                    try {
-                        
-                        java.lang.reflect.Field[] fields = scoreboard.getClass().getDeclaredFields();
-                        
-                        
-                        // Finde die "scores" Map - das ist die Map, die alle Scores für alle Objectives enthält
-                        // Da die Feldnamen obfuskiert sind, identifizieren wir sie durch ihre Struktur:
-                        // Die scores Map ist normalerweise die größte Map (>50 Einträge) und enthält String-Keys
-                        java.util.Map<?, ?> scoresMap = null;
-                        java.util.Map<?, ?> largestMap = null;
-                        int largestSize = 0;
-                        
-                        for (java.lang.reflect.Field field : fields) {
-                            if (java.util.Map.class.isAssignableFrom(field.getType())) {
-                                field.setAccessible(true);
-                                Object fieldValue = field.get(scoreboard);
-                                if (fieldValue instanceof java.util.Map<?, ?> map) {
-                                    
-                                    // Prüfe ob dies die "scores" Map ist:
-                                    // 1. Name enthält "score" ODER
-                                    // 2. Map ist groß (>50) und hat String-Keys
-                                    boolean isScoresMap = false;
-                                    
-                                    if (field.getName().equals("scores") || field.getName().contains("score")) {
-                                        isScoresMap = true;
-                                    } else if (map.size() > 50) { // scores Map ist normalerweise groß
-                                        // Prüfe ob die Keys Strings sind (scores Map hat String-Keys)
-                                        int stringKeyCount = 0;
-                                        for (Object key : map.keySet()) {
-                                            if (key instanceof String) {
-                                                stringKeyCount++;
-                                            }
-                                        }
-                                        // Wenn mindestens 80% der Keys Strings sind, ist es wahrscheinlich die scores Map
-                                        if (stringKeyCount > map.size() * 0.8) {
-                                            isScoresMap = true;
-                                        }
-                                    }
-                                    
-                                    // Tracke die größte Map als Fallback
-                                    if (map.size() > largestSize) {
-                                        largestSize = map.size();
-                                        largestMap = map;
-                                    }
-                                    
-                                    if (isScoresMap) {
-                                        scoresMap = map;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Fallback: Wenn keine scores Map gefunden wurde, verwende die größte Map
-                        if (scoresMap == null && largestMap != null && largestSize > 50) {
-                            scoresMap = largestMap;
-                        }
-                        
-                        // Wenn wir die scores Map gefunden haben, durchsuche nur diese
-                        if (scoresMap != null) {
-                            
-                            
-                            // WICHTIG: Prüfe direkt die Keys der scores Map (die Zone kann als Key stehen, z.B. "|||->[Kupfermine]")
-                            // Priorisiere sb_display_* Keys, da diese wahrscheinlich Sidebar-Einträge sind
-                            java.util.List<java.util.Map.Entry<?, ?>> sbDisplayEntries = new java.util.ArrayList<>();
-                            java.util.List<java.util.Map.Entry<?, ?>> otherEntries = new java.util.ArrayList<>();
-                            
-                            for (java.util.Map.Entry<?, ?> entry : scoresMap.entrySet()) {
-                                Object key = entry.getKey();
-                                if (key instanceof String) {
-                                    String keyString = (String) key;
-                                    if (keyString.startsWith("sb_display_")) {
-                                        sbDisplayEntries.add(entry);
-                                    } else {
-                                        otherEntries.add(entry);
-                                    }
-                                } else {
-                                    otherEntries.add(entry);
-                                }
-                            }
-                            
-                            // OPTIMIERUNG: Durchsuche zuerst nur die sb_display_* Einträge und prüfe direkt field_1418
-                            // Die Zone steht in field_1418 des Team-Objekts (net.minecraft.class_268)
-                            for (java.util.Map.Entry<?, ?> entry : sbDisplayEntries) {
-                                Object value = entry.getValue();
-                                
-                                // Die Zone steht in field_1418 des Team-Objekts
-                                if (value != null && value.getClass().getName().contains("PlayerTeam")) {
-                                    try {
-                                        // Direkt field_1418 prüfen (das ist das Feld, das die Zone enthält)
-                                        java.lang.reflect.Field field1418 = value.getClass().getDeclaredField("displayName");
-                                        field1418.setAccessible(true);
-                                        Object fieldValue = field1418.get(value);
-                                        
-                                        if (fieldValue != null) {
-                                            String extractedText = null;
-                                            if (fieldValue instanceof Component) {
-                                                extractedText = ((Component) fieldValue).getString();
-                                            } else if (fieldValue instanceof String) {
-                                                extractedText = (String) fieldValue;
-                                            } else if (fieldValue instanceof net.minecraft.network.chat.MutableComponent) {
-                                                extractedText = ((net.minecraft.network.chat.MutableComponent) fieldValue).getString();
-                                            }
-                                            
-                                            if (extractedText != null && !extractedText.isEmpty()) {
-                                                // Prüfe ob dieser Text eine Zone enthält
-                                                String cleanText = removeFormatting.apply(extractedText);
-                                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                    if (cleanText.contains(zoneName)) {
-                                                        return zoneName;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } catch (java.lang.NoSuchFieldException ex) {
-                                        // field_1418 nicht gefunden, versuche alternativen Ansatz
-                                        // Fallback: Durchsuche alle Felder (nur wenn field_1418 nicht existiert)
-                                        try {
-                                            java.lang.reflect.Field[] teamFields = value.getClass().getDeclaredFields();
-                                            for (java.lang.reflect.Field teamField : teamFields) {
-                                                try {
-                                                    teamField.setAccessible(true);
-                                                    Object teamFieldValue = teamField.get(value);
-                                                    
-                                                    if (teamFieldValue != null) {
-                                                        String extractedText = null;
-                                                        if (teamFieldValue instanceof Component) {
-                                                            extractedText = ((Component) teamFieldValue).getString();
-                                                        } else if (teamFieldValue instanceof String) {
-                                                            extractedText = (String) teamFieldValue;
-                                                        } else if (teamFieldValue instanceof net.minecraft.network.chat.MutableComponent) {
-                                                            extractedText = ((net.minecraft.network.chat.MutableComponent) teamFieldValue).getString();
-                                                        }
-                                                        
-                                                        if (extractedText != null && !extractedText.isEmpty()) {
-                                                            String cleanText = removeFormatting.apply(extractedText);
-                                                            for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                                if (cleanText.contains(zoneName)) {
-                                                                    return zoneName;
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                } catch (Exception ex2) {
-                                                    // Ignoriere Fehler
-                                                }
-                                            }
-                                        } catch (Exception ex3) {
-                                            // Ignoriere Fehler
-                                        }
-                                    } catch (Exception ex) {
-                                        // Ignoriere andere Fehler
-                                    }
-                                }
-                            }
-                            
-                            // Fallback: Falls keine Zone in sb_display_* gefunden wurde, durchsuche andere Keys
-                            for (java.util.Map.Entry<?, ?> entry : otherEntries) {
-                                Object key = entry.getKey();
-                                if (key instanceof String) {
-                                    String keyString = (String) key;
-                                    String cleanKey = removeFormatting.apply(keyString);
-                                    
-                                    // Prüfe ob dieser Key eine Zone enthält
-                                    for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                        if (cleanKey.contains(zoneName)) {
-                                            
-                                            return zoneName;
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // Fallback: Falls keine Zone in sb_display_* gefunden wurde, durchsuche andere Einträge
-                            for (java.util.Map.Entry<?, ?> entry : scoresMap.entrySet()) {
-                                Object key = entry.getKey();
-                                Object value = entry.getValue();
-                                
-                                // Überspringe sb_display_* Keys, die bereits durchsucht wurden
-                                if (key instanceof String && ((String) key).startsWith("sb_display_")) {
-                                    continue;
-                                }
-                                
-                                // Prüfe andere Team-Objekte (nur als Fallback)
-                                if (value != null && value.getClass().getName().contains("PlayerTeam")) {
-                                    String text = null;
-                                    try {
-                                        // Versuche verschiedene Methoden/Felder
-                                        java.lang.reflect.Method[] methods = value.getClass().getDeclaredMethods();
-                                        for (java.lang.reflect.Method method : methods) {
-                                            if (method.getName().contains("DisplayName") || method.getName().contains("Name") || method.getName().contains("Text")) {
-                                                try {
-                                                    method.setAccessible(true);
-                                                    Object result = method.invoke(value);
-                                                    if (result instanceof Component) {
-                                                        text = ((Component) result).getString();
-                                                        break;
-                                                    } else if (result instanceof String) {
-                                                        text = (String) result;
-                                                        break;
-                                                    }
-                                                } catch (Exception ex) {
-                                                    // Ignoriere Fehler
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Falls keine Methode funktioniert hat, versuche Felder
-                                        if (text == null) {
-                                            java.lang.reflect.Field[] teamFields = value.getClass().getDeclaredFields();
-                                            for (java.lang.reflect.Field teamField : teamFields) {
-                                                try {
-                                                    teamField.setAccessible(true);
-                                                    Object teamFieldValue = teamField.get(value);
-                                                    if (teamFieldValue instanceof Component) {
-                                                        text = ((Component) teamFieldValue).getString();
-                                                        break;
-                                                    } else if (teamFieldValue instanceof String) {
-                                                        text = (String) teamFieldValue;
-                                                        break;
-                                                    }
-                                                } catch (Exception ex) {
-                                                    // Ignoriere Fehler
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Prüfe ob dieser Text eine Zone enthält
-                                        if (text != null && !text.isEmpty()) {
-                                            String cleanText = removeFormatting.apply(text);
-                                            for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                if (cleanText.contains(zoneName)) {
-                                                    return zoneName;
-                                                }
-                                            }
-                                        }
-                                    } catch (Exception ex) {
-                                        // Ignoriere Fehler
-                                    }
-                                }
-                                        
-                                        // Prüfe ob der Value direkt ein ScoreboardPlayerScore ist (field_1431 hat diese Struktur)
-                                        if (value != null && value.getClass().getName().contains("ScoreboardPlayerScore")) {
-                                            // Versuche Text aus dem Score-Objekt zu extrahieren
-                                            String text = null;
-                                            try {
-                                                // Methode 1: getDisplayName()
-                                                try {
-                                                    java.lang.reflect.Method getDisplayNameMethod = value.getClass().getMethod("getDisplayName");
-                                                    Component displayName = (Component) getDisplayNameMethod.invoke(value);
-                                                    if (displayName != null) {
-                                                        text = displayName.getString();
-                                                    }
-                                                } catch (Exception ex1) {
-                                                    // Methode 2: playerName Feld
-                                                    try {
-                                                        java.lang.reflect.Field playerNameField = value.getClass().getDeclaredField("playerName");
-                                                        playerNameField.setAccessible(true);
-                                                        text = (String) playerNameField.get(value);
-                                                    } catch (Exception ex2) {
-                                                        // Methode 3: Alle String-Felder durchsuchen
-                                                        java.lang.reflect.Field[] scoreFields = value.getClass().getDeclaredFields();
-                                                        for (java.lang.reflect.Field scoreField : scoreFields) {
-                                                            if (scoreField.getType() == String.class) {
-                                                                scoreField.setAccessible(true);
-                                                                Object scoreFieldValue = scoreField.get(value);
-                                                                if (scoreFieldValue instanceof String && !((String) scoreFieldValue).isEmpty()) {
-                                                                    text = (String) scoreFieldValue;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            } catch (Exception ex3) {
-                                                // Silent error handling
-                                            }
-                                            
-                                            if (text != null && !text.isEmpty()) {
-                                                String cleanText = removeFormatting.apply(text);
-                                                
-                                                // Prüfe ob dieser Text eine Zone enthält
-                                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                    if (cleanText.contains(zoneName)) {
-                                                        return zoneName;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Prüfe ob der Value ein Scores-Objekt ist (field_1426 hat diese Struktur)
-                                        if (value != null && value.getClass().getName().contains("Scores") && !value.getClass().getName().contains("ScoreboardPlayerScore")) {
-                                            try {
-                                                // Durchsuche alle Felder des Scores-Objekts
-                                                java.lang.reflect.Field[] scoresFields = value.getClass().getDeclaredFields();
-                                                for (java.lang.reflect.Field scoresField : scoresFields) {
-                                                    if (scoresField.getType() == String.class || Component.class.isAssignableFrom(scoresField.getType()) || java.util.Map.class.isAssignableFrom(scoresField.getType())) {
-                                                        try {
-                                                            scoresField.setAccessible(true);
-                                                            Object scoresFieldValue = scoresField.get(value);
-                                                            
-                                                            if (scoresFieldValue instanceof String) {
-                                                                String text = (String) scoresFieldValue;
-                                                                String cleanText = removeFormatting.apply(text);
-                                                                
-                                                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                                    if (cleanText.contains(zoneName)) {
-                                                                        return zoneName;
-                                                                    }
-                                                                }
-                                                            } else if (scoresFieldValue instanceof Component) {
-                                                                String text = ((Component) scoresFieldValue).getString();
-                                                                String cleanText = removeFormatting.apply(text);
-                                                                
-                                                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                                    if (cleanText.contains(zoneName)) {
-                                                                        return zoneName;
-                                                                    }
-                                                                }
-                                                            } else if (scoresFieldValue instanceof java.util.Map<?, ?> innerMap) {
-                                                                // Wenn es eine Map ist, durchsuche auch diese (enthält möglicherweise ScoreboardPlayerScore-Objekte)
-                                                                
-                                                                // Prüfe Keys
-                                                                for (Object innerKey : innerMap.keySet()) {
-                                                                    if (innerKey instanceof String) {
-                                                                        String innerKeyString = (String) innerKey;
-                                                                        String cleanInnerKey = removeFormatting.apply(innerKeyString);
-                                                                        
-                                                                        for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                                            if (cleanInnerKey.contains(zoneName)) {
-                                                                                return zoneName;
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                
-                                                                // Prüfe Values (könnten ScoreboardPlayerScore-Objekte sein)
-                                                                for (Object innerValue : innerMap.values()) {
-                                                                    if (innerValue != null && innerValue.getClass().getName().contains("ScoreboardPlayerScore")) {
-                                                                        try {
-                                                                            // Versuche Text aus dem ScoreboardPlayerScore zu extrahieren
-                                                                            java.lang.reflect.Method getDisplayNameMethod = innerValue.getClass().getMethod("getDisplayName");
-                                                                            Component displayName = (Component) getDisplayNameMethod.invoke(innerValue);
-                                                                            if (displayName != null) {
-                                                                                String text = displayName.getString();
-                                                                                String cleanText = removeFormatting.apply(text);
-                                                                                
-                                                                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                                                    if (cleanText.contains(zoneName)) {
-                                                                                        return zoneName;
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        } catch (Exception ex) {
-                                                                            // Ignoriere Fehler
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } catch (Exception ex) {
-                                                            // Ignoriere Fehler
-                                                        }
-                                                    }
-                                                }
-                                            } catch (Exception ex) {
-                                                // System.out.println("  ⚠️ Fehler beim Extrahieren von Text aus Scores-Objekt: " + ex.getMessage());
-                                            }
-                                        }
-                                        
-                                        // Prüfe ob der Value eine Collection ist
-                                        if (value instanceof java.util.Collection<?> tempScores) {
-                                            if (!tempScores.isEmpty()) {
-                                                Object first = tempScores.iterator().next();
-                                                if (first != null && first.getClass().getName().contains("ScoreboardPlayerScore")) {
-                                                    scores = tempScores;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Prüfe ob der Key das Objective ist und der Value die Scores
-                                        if (key instanceof Objective && value instanceof java.util.Collection<?> tempScores) {
-                                            if (!tempScores.isEmpty()) {
-                                                scores = tempScores;
-                                                
-                                                break;
-                                            }
-                                        }
-                            }
-                            // Nach der Durchsuchung der scores Map sind wir fertig
-                            
-                        } else {
-                            
-                            // Fallback: Durchsuche alle Maps (nur wenn scores Map nicht gefunden wurde)
-                            for (java.lang.reflect.Field field : fields) {
-                                if (java.util.Map.class.isAssignableFrom(field.getType())) {
-                                    field.setAccessible(true);
-                                    Object fieldValue = field.get(scoreboard);
-                                    if (fieldValue instanceof java.util.Map<?, ?> map) {
-                                        
-                                        // Prüfe Keys
-                                        for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
-                                            Object key = entry.getKey();
-                                            if (key instanceof String) {
-                                                String keyString = (String) key;
-                                                String cleanKey = removeFormatting.apply(keyString);
-                                                
-                                                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                                    if (cleanKey.contains(zoneName)) {
-                                                        return zoneName;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception e3) {
-                        // Silent error handling
+                String normalized = line.replace("\u27A5", "").replace("->", "").trim();
+                if (normalized.startsWith("[") && normalized.endsWith("]") && normalized.length() > 2) {
+                    normalized = normalized.substring(1, normalized.length() - 1).trim();
+                }
+                if (normalized.isEmpty()) {
+                    continue;
+                }
+                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
+                    String inner = zoneName.substring(1, zoneName.length() - 1);
+                    if (normalized.equalsIgnoreCase(inner)) {
+                        return zoneName;
                     }
                 }
             }
-            
-            // Wenn wir Scores gefunden haben, durchsuche sie
-            if (scores != null && !scores.isEmpty()) {
-                for (Object scoreObj : scores) {
-                    if (scoreObj == null) {
-                        continue;
-                    }
-                    
-                    // Versuche Text aus Score-Objekt zu extrahieren
-                    String text = null;
-                    String rawText = null;
-                    try {
-                        // Methode 1: getDisplayName()
-                        try {
-                            java.lang.reflect.Method getDisplayNameMethod = scoreObj.getClass().getMethod("getDisplayName");
-                            Component displayName = (Component) getDisplayNameMethod.invoke(scoreObj);
-                            if (displayName != null) {
-                                rawText = displayName.getString();
-                                text = rawText;
-                            }
-                        } catch (Exception e) {
-                            // Methode 2: playerName Feld
-                            try {
-                                java.lang.reflect.Field playerNameField = scoreObj.getClass().getDeclaredField("playerName");
-                                playerNameField.setAccessible(true);
-                                rawText = (String) playerNameField.get(scoreObj);
-                                text = rawText;
-                            } catch (Exception e2) {
-                                // Methode 3: Durchsuche alle Felder nach String-Feldern
-                                java.lang.reflect.Field[] fields = scoreObj.getClass().getDeclaredFields();
-                                for (java.lang.reflect.Field field : fields) {
-                                    if (field.getType() == String.class) {
-                                        field.setAccessible(true);
-                                        Object fieldValue = field.get(scoreObj);
-                                        if (fieldValue instanceof String && !((String) fieldValue).isEmpty()) {
-                                            rawText = (String) fieldValue;
-                                            text = rawText;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        continue;
-                    }
-                    
-                    if (text == null || text.isEmpty()) {
-                        continue;
-                    }
-                    
-                    String cleanText = removeFormatting.apply(text);
-                    
-                    // Prüfe ob dieser Text eine Zone enthält
-                    for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                        if (cleanText.contains(zoneName)) {
-                            return zoneName;
-                        }
-                    }
-                }
-            } else {
-                
-                
-                // Ansatz 4: Versuche alle Player-Namen aus den Maps zu extrahieren
-                
-                try {
-                    java.lang.reflect.Field[] fields = scoreboard.getClass().getDeclaredFields();
-                    java.util.Set<String> playerNames = new java.util.HashSet<>();
-                    
-                    for (java.lang.reflect.Field field : fields) {
-                        if (java.util.Map.class.isAssignableFrom(field.getType())) {
-                            field.setAccessible(true);
-                            Object fieldValue = field.get(scoreboard);
-                            if (fieldValue instanceof java.util.Map<?, ?> map) {
-                                // Wenn der Key ein String ist, könnte es ein Player-Name sein
-                                for (Object key : map.keySet()) {
-                                    if (key instanceof String) {
-                                        playerNames.add((String) key);
-                                    }
-                                }
-                                
-                                // Wenn der Value eine Map ist, durchsuche auch diese
-                                for (Object value : map.values()) {
-                                    if (value instanceof java.util.Map<?, ?> innerMap) {
-                                        for (Object innerKey : innerMap.keySet()) {
-                                            if (innerKey instanceof String) {
-                                                playerNames.add((String) innerKey);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    // WICHTIG: Prüfe zuerst, ob einer der Player-Namen eine Zone enthält!
-                    for (String playerName : playerNames) {
-                        String cleanPlayerName = removeFormatting.apply(playerName);
-                        
-                        // Prüfe ob dieser Player-Name eine Zone enthält
-                        for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                            if (cleanPlayerName.contains(zoneName)) {
-                                
-                                return zoneName;
-                            }
-                        }
-                    }
-                    
-                    // Versuche für jeden Player-Namen den Score zu holen
-                    java.lang.reflect.Method getPlayerScoreMethod = null;
-                    try {
-                        getPlayerScoreMethod = scoreboard.getClass().getMethod("getPlayerScore", String.class, Objective.class);
-                    } catch (Exception e) {
-                        // Versuche alternative Methoden-Signaturen
-                        try {
-                            getPlayerScoreMethod = scoreboard.getClass().getMethod("method_835", String.class, Objective.class);
-                        } catch (Exception e2) {
-                            // Weitere Versuche...
-                        }
-                    }
-                    
-                    if (getPlayerScoreMethod == null) {
-                        
-                    } else {
-                    
-                        // Verwende die extrahierten Player-Namen
-                        java.util.List<String> playerNamesToTry = new java.util.ArrayList<>(playerNames);
-                        
-                        // Füge auch Standard-Formate hinzu
-                        for (int i = 0; i < 16; i++) {
-                            String hex = Integer.toHexString(i);
-                            playerNamesToTry.add("§" + hex);
-                        }
-                        playerNamesToTry.add("§r");
-                        for (String playerName : playerNamesToTry) {
-                            try {
-                                Object scoreObj = getPlayerScoreMethod.invoke(scoreboard, playerName, sidebarObjective);
-                                
-                                if (scoreObj != null) {
-                                    // Versuche Text zu extrahieren
-                                String text = null;
-                                String rawText = null;
-                                try {
-                                    // Methode 1: getDisplayName()
-                                    java.lang.reflect.Method getDisplayNameMethod = scoreObj.getClass().getMethod("getDisplayName");
-                                    Component displayName = (Component) getDisplayNameMethod.invoke(scoreObj);
-                                    if (displayName != null) {
-                                        rawText = displayName.getString();
-                                        text = rawText;
-                                    }
-                                } catch (Exception e) {
-                                    // Methode 2: playerName Feld
-                                    try {
-                                        java.lang.reflect.Field playerNameField = scoreObj.getClass().getDeclaredField("playerName");
-                                        playerNameField.setAccessible(true);
-                                        rawText = (String) playerNameField.get(scoreObj);
-                                        text = rawText;
-                                    } catch (Exception e2) {
-                                        // Methode 3: Alle String-Felder durchsuchen
-                                        java.lang.reflect.Field[] scoreFields = scoreObj.getClass().getDeclaredFields();
-                                        for (java.lang.reflect.Field field : scoreFields) {
-                                            if (field.getType() == String.class) {
-                                                field.setAccessible(true);
-                                                Object fieldValue = field.get(scoreObj);
-                                                if (fieldValue instanceof String && !((String) fieldValue).isEmpty()) {
-                                                    rawText = (String) fieldValue;
-                                                    text = rawText;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                if (text != null && !text.isEmpty()) {
-                                    String cleanText = removeFormatting.apply(text);
-                                    
-                                    // Prüfe ob dieser Text eine Zone enthält
-                                    for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
-                                        if (cleanText.contains(zoneName)) {
-                                            return zoneName;
-                                        }
-                                    }
-                                }
-                            }
-                            } catch (Exception e) {
-                                // Ignoriere einzelne Fehler
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    // Silent error handling
-                }
-            }
-            
-            // Keine Zone gefunden - silent return
         } catch (Exception e) {
             System.err.println("❌ [FarmworldCollections] Fehler bei Zone-Suche: " + e.getMessage());
-            e.printStackTrace();
         }
         return null;
     }
-    
     // Statische Variable für den aktuellen Collection-Wert (wird vom BossBarMixin gesetzt)
     private static int currentBossbarCollection = 0;
     private static long lastBossbarUpdate = 0;
@@ -1267,27 +519,37 @@ public class FarmworldCollectionsCollector implements DataCollector {
     }
     
     /**
-     * Gibt den aktuellen Collection-Wert aus der Bossbar zurück
+     * Gibt den aktuellen Collection-Wert aus der Bossbar zurück.
+     * -1, wenn noch kein gültiger Wert gelesen wurde oder der letzte Wert veraltet ist.
+     * 0 ist nur dann ein echter Wert, wenn die Bossbar wirklich 0 dekodiert hat.
      */
     private int getCollectionFromBossbar(Minecraft client) {
-        // Prüfe ob der Wert noch aktuell ist (max. 5 Sekunden alt)
-        long currentTime = System.currentTimeMillis();
-        long age = currentTime - lastBossbarUpdate;
+        if (lastBossbarUpdate <= 0) {
+            return -1;
+        }
+        long age = System.currentTimeMillis() - lastBossbarUpdate;
         if (age > 5000) {
-            // Wert ist zu alt, zurück zu 0
-            return 0;
+            return -1;
         }
         return currentBossbarCollection;
     }
     
     /**
-     * Dekodiert eine chinesische Zahl aus einem Text
+     * Dekodiert die Bossbar-Ziffern über die aktuell geladene Aincraft-Schrift,
+     * nicht über eine fest eingebaute Glyphenliste.
      */
     private static int decodeChineseNumber(String text) {
+        if (text == null || text.isEmpty()) {
+            return -1;
+        }
         try {
+            Map<Character, Integer> digits = ZeichenUtility.getAincraftBottomFontNumbers();
+            if (digits == null || digits.isEmpty()) {
+                return -1;
+            }
             StringBuilder numberStr = new StringBuilder();
             for (char c : text.toCharArray()) {
-                Integer digit = CHINESE_NUMBERS.get(c);
+                Integer digit = digits.get(c);
                 if (digit != null) {
                     numberStr.append(digit);
                 }
@@ -1299,6 +561,18 @@ public class FarmworldCollectionsCollector implements DataCollector {
             // Silent error handling
         }
         return -1;
+    }
+
+    private void sendZoneScore(String zone, long score) {
+        if (!ENABLE_SERVER_UPDATES || score < 0) {
+            return;
+        }
+        String collectionName = getCollectionNameForZone(zone);
+        if (collectionName == null || collectionName.isBlank()) {
+            return;
+        }
+        System.out.println("[FarmworldCollections] Sende an Server: " + collectionName + " = " + score);
+        LeaderboardManager.getInstance().updateScore(collectionName, score);
     }
     
     /**
@@ -1366,6 +640,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         if (lastZone != null && lastTotalCollection > 0) {
             updateZoneScore(lastZone, lastTotalCollection, true);
         }
+        saveZoneCollections();
         
         isActive = false;
         // System.out.println("🛑 FarmworldCollectionsCollector gestoppt");
