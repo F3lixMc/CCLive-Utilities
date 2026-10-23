@@ -26,7 +26,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix3x2fStack;
-import org.lwjgl.glfw.GLFW;
+
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -570,16 +570,16 @@ public class ItemViewerUtility {
     private static void registerKeybind() {
         toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.itemviewer.toggle",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_I,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_I,
             KeyCategories.of("cclive-utilities", "itemviewer")
         ));
         
         // Registriere KeyMapping für Bauplan Anpinnen (Clipboard)
         clipboardPinKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.clipboard.pin",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_P,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_P,
             KeyCategories.of("cclive-utilities", "itemviewer")
         ));
     }
@@ -612,18 +612,16 @@ public class ItemViewerUtility {
                 Object boundKey = getBoundKeyMethod.invoke(toggleKeyMapping);
                 
                 // Hole den KeyCode
-                java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getCode");
+                java.lang.reflect.Method getCodeMethod = boundKey.getClass().getMethod("getValue");
                 int keyCode = (Integer) getCodeMethod.invoke(boundKey);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                if (keyCode == GLFW.GLFW_KEY_I) {
-                    return "I";
-                } else if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
-                    // Buchstaben A-Z
-                    return String.valueOf((char) ('A' + (keyCode - GLFW.GLFW_KEY_A)));
-                } else if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-                    // Zahlen 0-9
-                    return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
+                String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+                if (letter != null) {
+                    return letter;
+                } else if (digit != null) {
+                    return String.valueOf(digit);
                 } else {
                     return "Key " + keyCode;
                 }
@@ -668,23 +666,23 @@ public class ItemViewerUtility {
             Object boundKeyObj = getBoundKeyMethod.invoke(clipboardPinKeyMapping);
             if (boundKeyObj != null) {
                 // Hole den KeyCode
-                java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getCode");
+                java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getValue");
                 int keyCode = (Integer) getCodeMethod.invoke(boundKeyObj);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
-                    // Buchstaben A-Z
-                    return String.valueOf((char) ('A' + (keyCode - GLFW.GLFW_KEY_A)));
-                } else if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-                    // Zahlen 0-9
-                    return String.valueOf((char) ('0' + (keyCode - GLFW.GLFW_KEY_0)));
-                } else if (keyCode == GLFW.GLFW_KEY_SPACE) {
+                String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+                if (letter != null) {
+                    return letter;
+                } else if (digit != null) {
+                    return String.valueOf(digit);
+                } else if (keyCode == InputConstants.KEY_SPACE) {
                     return "SPACE";
-                } else if (keyCode == GLFW.GLFW_KEY_LEFT_SHIFT || keyCode == GLFW.GLFW_KEY_RIGHT_SHIFT) {
+                } else if (keyCode == InputConstants.KEY_LSHIFT || keyCode == InputConstants.KEY_RSHIFT) {
                     return "SHIFT";
-                } else if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL || keyCode == GLFW.GLFW_KEY_RIGHT_CONTROL) {
+                } else if (keyCode == InputConstants.KEY_LCONTROL || keyCode == InputConstants.KEY_RCONTROL) {
                     return "CTRL";
-                } else if (keyCode == GLFW.GLFW_KEY_LEFT_ALT || keyCode == GLFW.GLFW_KEY_RIGHT_ALT) {
+                } else if (keyCode == InputConstants.KEY_LALT || keyCode == InputConstants.KEY_RALT) {
                     return "ALT";
                 } else {
                     // Versuche über getTranslationKey() einen lesbaren Namen zu bekommen
@@ -746,7 +744,7 @@ public class ItemViewerUtility {
         // Wenn ein Screen geöffnet ist, wird handleKeyPress verwendet (vom ScreenMixin aufgerufen)
         if (clipboardPinKeyMapping != null && clipboardPinKeyMapping.consumeClick()) {
             // Nur verarbeiten, wenn kein Screen geöffnet ist (sonst wird handleKeyPress verwendet)
-            if (client.screen == null) {
+            if (client.gui.screen() == null) {
                 // Prüfe ob ein Textfeld fokussiert ist
                 if (isTextFieldFocused(client)) {
                     return; // Ignoriere Hotkey wenn Textfeld fokussiert ist
@@ -1254,12 +1252,12 @@ public class ItemViewerUtility {
      * Verhindert, dass Hotkeys aktiviert werden, wenn der Spieler tippt
      */
     private static boolean isTextFieldFocused(Minecraft client) {
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Prüfe ob ChatScreen offen ist
-        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+        if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
             return true;
         }
         
@@ -1272,9 +1270,9 @@ public class ItemViewerUtility {
         // Verwende Reflection um auf fokussierte Widgets zuzugreifen
         try {
             // Prüfe ob Screen ein fokussiertes Widget hat
-            java.lang.reflect.Method getFocusedMethod = client.screen.getClass().getMethod("getFocused");
+            java.lang.reflect.Method getFocusedMethod = client.gui.screen().getClass().getMethod("getFocused");
             if (getFocusedMethod != null) {
-                Object focused = getFocusedMethod.invoke(client.screen);
+                Object focused = getFocusedMethod.invoke(client.gui.screen());
                 if (focused instanceof net.minecraft.client.gui.components.EditBox) {
                     net.minecraft.client.gui.components.EditBox textField = (net.minecraft.client.gui.components.EditBox) focused;
                     if (textField.isFocused()) {
@@ -1319,7 +1317,7 @@ public class ItemViewerUtility {
             }
             
             // Wenn kein Item im Grid gehovered wurde (oder ItemViewer nicht sichtbar), prüfe Inventar
-            if (client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
+            if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
                 if (tryPinHoveredInventoryItem(handledScreen, client)) {
                     return true;
                 }
@@ -1364,11 +1362,11 @@ public class ItemViewerUtility {
      * Prüft ob ein Inventar geöffnet ist (AbstractContainerScreen oder InventoryScreen)
      */
     private static boolean isInventoryOpen(Minecraft client) {
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
-        return client.screen instanceof AbstractContainerScreen<?> || 
-               client.screen instanceof InventoryScreen;
+        return client.gui.screen() instanceof AbstractContainerScreen<?> || 
+               client.gui.screen() instanceof InventoryScreen;
     }
     
     /**
@@ -1673,19 +1671,19 @@ public class ItemViewerUtility {
      */
     public static boolean handleSearchFieldKeyPress(int keyCode, int scanCode, int modifiers) {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             searchFieldFocused = false;
             return false;
         }
 
         // Niemals Tastatureingaben vom Chat oder anderen Screens abfangen
-        if (client.screen instanceof net.minecraft.client.gui.screens.ChatScreen) {
+        if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
             searchFieldFocused = false;
             return false;
         }
 
-        boolean canUseSearchInput = client.screen instanceof AbstractContainerScreen<?>
-                || client.screen instanceof InventoryScreen
+        boolean canUseSearchInput = client.gui.screen() instanceof AbstractContainerScreen<?>
+                || client.gui.screen() instanceof InventoryScreen
                 || isKitEditorMode();
         if (!canUseSearchInput) {
             searchFieldFocused = false;
@@ -1699,11 +1697,11 @@ public class ItemViewerUtility {
         
         // Prüfe ob Maus über Suchfeld ist
         ViewerPosition pos;
-        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
-            pos = getOrCalculateViewerPosition(handledScreen, client.screen);
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
+            pos = getOrCalculateViewerPosition(handledScreen, client.gui.screen());
         } else {
             // Für nicht-AbstractContainerScreen Screens (z.B. Spielerinventar)
-            pos = calculateViewerPositionForScreen(client.screen);
+            pos = calculateViewerPositionForScreen(client.gui.screen());
         }
         int searchX = getSearchFieldX(pos);
         int searchY = pos.viewerY + VIEWER_PADDING;
@@ -1728,7 +1726,7 @@ public class ItemViewerUtility {
         searchCursorBlinkTime = System.currentTimeMillis();
         
         // ESC-Taste
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             if (helpScreenOpen) {
                 helpScreenOpen = false;
                 return true;
@@ -1738,43 +1736,52 @@ public class ItemViewerUtility {
         }
         
         // Enter-Taste
-        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+        if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
             return true;
         }
         
-        // Strg-Funktionen
-        if (modifiers == 2) { // 2 = Strg
-            switch (keyCode) {
-                case 67: // Strg+C - Kopieren
-                    if (!currentSearch.isEmpty()) {
-                        client.keyboardHandler.setClipboard(currentSearch);
-                    }
-                    return true;
-                case 86: // Strg+V - Einfügen
-                    String clipboardText = client.keyboardHandler.getClipboard();
-                    if (clipboardText != null && !clipboardText.isEmpty()) {
-                        currentSearch += clipboardText;
-                        scheduleApplyFilters();
-                        currentPage = 0;
-                    }
-                    return true;
-                case 65: // Strg+A - Alles markieren
-                    if (!currentSearch.isEmpty()) {
-                        selectionStart = 0;
-                        selectionEnd = currentSearch.length();
-                    }
-                    return true;
-                case GLFW.GLFW_KEY_BACKSPACE: // Strg+Backspace - Wort links löschen
-                    deleteSearchWord(false);
-                    return true;
-                case GLFW.GLFW_KEY_DELETE: // Strg+Delete - Wort rechts löschen
-                    deleteSearchWord(true);
-                    return true;
+        boolean ctrl = net.felix.utilities.Overall.KeyBindingUtility.isCtrlDown(modifiers)
+                && !net.felix.utilities.Overall.KeyBindingUtility.isAltGrDown(modifiers);
+        boolean shift = net.felix.utilities.Overall.KeyBindingUtility.isShiftDown(modifiers);
+
+        if (ctrl && keyCode == InputConstants.KEY_C) {
+            if (hasSelection()) {
+                int start = Math.min(selectionStart, selectionEnd);
+                int end = Math.max(selectionStart, selectionEnd);
+                client.keyboardHandler.setClipboard(currentSearch.substring(start, end));
+            } else if (!currentSearch.isEmpty()) {
+                client.keyboardHandler.setClipboard(currentSearch);
             }
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_V) {
+            String clipboardText = client.keyboardHandler.getClipboard();
+            if (clipboardText != null && !clipboardText.isEmpty()) {
+                for (int i = 0; i < clipboardText.length(); i++) {
+                    insertCharacter(clipboardText.charAt(i));
+                }
+            }
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_A) {
+            if (!currentSearch.isEmpty()) {
+                selectionStart = 0;
+                selectionEnd = currentSearch.length();
+                cursorPosition = currentSearch.length();
+            }
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_BACKSPACE) {
+            deleteSearchWord(false);
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_DELETE) {
+            deleteSearchWord(true);
+            return true;
         }
         
         // Backspace-Taste
-        if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+        if (keyCode == InputConstants.KEY_BACKSPACE) {
             if (hasSelection()) {
                 // Lösche markierten Text
                 int start = Math.min(selectionStart, selectionEnd);
@@ -1795,7 +1802,7 @@ public class ItemViewerUtility {
         }
         
         // Delete-Taste
-        if (keyCode == GLFW.GLFW_KEY_DELETE) {
+        if (keyCode == InputConstants.KEY_DELETE) {
             if (hasSelection()) {
                 // Lösche markierten Text
                 int start = Math.min(selectionStart, selectionEnd);
@@ -1815,8 +1822,8 @@ public class ItemViewerUtility {
         }
         
         // Pfeiltasten für Cursor-Bewegung
-        if (keyCode == GLFW.GLFW_KEY_LEFT) {
-            if (modifiers == 1) { // Shift + Links = Selektion erweitern
+        if (keyCode == InputConstants.KEY_LEFT) {
+            if (shift) {
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
                     selectionEnd = cursorPosition;
@@ -1834,8 +1841,8 @@ public class ItemViewerUtility {
             return true;
         }
         
-        if (keyCode == GLFW.GLFW_KEY_RIGHT) {
-            if (modifiers == 1) { // Shift + Rechts = Selektion erweitern
+        if (keyCode == InputConstants.KEY_RIGHT) {
+            if (shift) {
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
                     selectionEnd = cursorPosition;
@@ -1853,215 +1860,25 @@ public class ItemViewerUtility {
             return true;
         }
         
-        if (keyCode == GLFW.GLFW_KEY_HOME) {
+        if (keyCode == InputConstants.KEY_HOME) {
             clearSelection();
             cursorPosition = 0;
             return true;
         }
         
-        if (keyCode == GLFW.GLFW_KEY_END) {
+        if (keyCode == InputConstants.KEY_END) {
             clearSelection();
             cursorPosition = currentSearch.length();
             return true;
         }
         
-        // Leertaste
-        if (keyCode == 32) {
-            insertCharacter(' ');
+        if (ctrl) {
             return true;
         }
-        
-        // AltGr-Kombinationen (müssen VOR normalen Komma/Punkt-Behandlungen geprüft werden)
-        if (modifiers == 6) {
-            switch (keyCode) {
-                case 56:
-                    insertCharacter('[');
-                    return true;
-                case 57:
-                    insertCharacter(']');
-                    return true;
-                case 55:
-                    insertCharacter('{');
-                    return true;
-                case 48:
-                    insertCharacter('}');
-                    return true;
-                case 81:
-                    insertCharacter('@');
-                    return true;
-                case 188: // Komma-Taste mit AltGr = <
-                    insertCharacter('<');
-                    return true;
-                case 190: // Punkt-Taste mit AltGr = >
-                    insertCharacter('>');
-                    return true;
-            }
-        }
-        
-        // < und > mit Shift (müssen VOR normalen Komma/Punkt-Behandlungen geprüft werden)
-        if (modifiers == 1) { // Shift
-            if (keyCode == 188) { // Komma-Taste mit Shift = < (auf einigen Layouts)
-                insertCharacter('<');
-                return true;
-            }
-            if (keyCode == 190) { // Punkt-Taste mit Shift = > (auf einigen Layouts)
-                insertCharacter('>');
-                return true;
-            }
-        }
-        
-        // Sonderzeichen (KeyCodes wie in SearchBarUtility)
-        // Auf deutschen Tastaturen: Komma ohne Shift, Semikolon mit Shift
-        if (keyCode == 188 || keyCode == 44) { // Komma/Semikolon
-            insertCharacter(modifiers == 1 ? ';' : ',');
-            return true;
-        }
-        
-        // Auf deutschen Tastaturen: Punkt ohne Shift, Doppelpunkt mit Shift
-        if (keyCode == 190 || keyCode == 46) { // Punkt/Doppelpunkt
-            insertCharacter(modifiers == 1 ? ':' : '.');
-            return true;
-        }
-        
-        if (keyCode == 189 || keyCode == 47) { // Minus
-            insertCharacter('-');
-            return true;
-        }
-        
-        if (keyCode == 187) { // Plus/Equal
-            insertCharacter(modifiers == 1 ? '+' : '=');
-            return true;
-        }
-        
-        if (keyCode == 186) { // Semikolon/Doppelpunkt
-            // Prüfe ob Shift gedrückt ist (modifiers == 1 = Shift, wie bei anderen Zeichen)
-            insertCharacter(modifiers == 1 ? ':' : ';');
-            return true;
-        }
-        
-        if (keyCode == 222) { // Apostroph/Anführungszeichen
-            insertCharacter('"');
-            return true;
-        }
-        
-        if (keyCode == 192) { // Grave Accent
-            insertCharacter('`');
-            return true;
-        }
-        
-        if (keyCode == 53 && modifiers == 1) { // Prozent mit Shift
-            insertCharacter('%');
-            return true;
-        }
-        
-        if (keyCode == 92) { // Backslash
-            insertCharacter('#');
-            return true;
-        }
-        
-        // Separate +-Taste (wie im Bauplan-Shop)
-        if (keyCode == 93) {
-            insertCharacter('+');
-            return true;
-        }
-        
-        // Shift-Kombinationen
-        if (modifiers == 1) {
-            switch (keyCode) {
-                case 55:
-                    insertCharacter('/');
-                    return true;
-                case 56:
-                    insertCharacter('(');
-                    return true;
-                case 57:
-                    insertCharacter(')');
-                    return true;
-                case 48:
-                    insertCharacter('=');
-                    return true;
-                case 220:
-                    insertCharacter('|');
-                    return true;
-            }
-        }
-        
-        // Direkte Unterstützung für < und > (wie im Bauplan-Shop)
-        // keyCode 162 ohne Shift = <, mit Shift = >
-        if (keyCode == 162) {
-            if (modifiers == 0) {
-                insertCharacter('<');
-            } else if (modifiers == 1) {
-                insertCharacter('>');
-            }
-            return true;
-        }
-        
-        // Separate ß-Taste
-        if (keyCode == 45) {
-            insertCharacter('ß');
-            return true;
-        }
-        
-        // Separate Umlaut-Tasten
-        if (keyCode == 39) { // ä
-            insertCharacter('ä');
-            return true;
-        }
-        
-        if (keyCode == 59) { // ö
-            insertCharacter('ö');
-            return true;
-        }
-        
-        if (keyCode == 91) { // ü
-            insertCharacter('ü');
-            return true;
-        }
-        
-        // Numpad-Tasten
-        if (keyCode == 334) {
-            insertCharacter('+');
-            return true;
-        }
-        
-        if (keyCode == 333) {
-            insertCharacter('-');
-            return true;
-        }
-        
-        // Numpad-Zahlen 0-9
-        if (keyCode == 320) {
-            insertCharacter('0');
-            return true;
-        }
-        
-        if (keyCode >= 321 && keyCode <= 329) {
-            char number = (char) ('0' + (keyCode - 321 + 1));
-            insertCharacter(number);
-            return true;
-        }
-        
-        // Zahlen 0-9
-        if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
-            char number = (char) keyCode;
-            insertCharacter(number);
-            return true;
-        }
-        
-        // Buchstaben A-Z (QWERTZ Layout)
-        if (keyCode >= 65 && keyCode <= 90) {
-            char letter;
-            // QWERTZ Layout: Y und Z tauschen
-            if (keyCode == 89) {
-                letter = modifiers == 1 ? 'Z' : 'z';
-            } else if (keyCode == 90) {
-                letter = modifiers == 1 ? 'Y' : 'y';
-            } else {
-                // Normale Buchstaben: Großbuchstaben bei Shift, Kleinbuchstaben ohne Shift
-                letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
-            }
-            insertCharacter(letter);
+
+        String typed = net.felix.utilities.Overall.KeyBindingUtility.characterFromScancode(keyCode, modifiers);
+        if (typed != null && !typed.isEmpty()) {
+            insertCharacter(typed.charAt(0));
             return true;
         }
         
@@ -2371,8 +2188,8 @@ public class ItemViewerUtility {
         String currentScreenType = "";
         if (screen != null) {
             currentScreenType = "AbstractContainerScreen (Kiste) - " + screen.getClass().getSimpleName();
-        } else if (client.screen != null && !(client.screen instanceof AbstractContainerScreen<?>)) {
-            currentScreenType = "Spielerinventar - " + client.screen.getClass().getSimpleName();
+        } else if (client.gui.screen() != null && !(client.gui.screen() instanceof AbstractContainerScreen<?>)) {
+            currentScreenType = "Spielerinventar - " + client.gui.screen().getClass().getSimpleName();
         }
         
         if (!currentScreenType.equals(lastRenderedScreenType)) {
@@ -2386,9 +2203,9 @@ public class ItemViewerUtility {
         if (screen != null) {
             // AbstractContainerScreen (wird im AbstractContainerScreenMixin behandelt)
             renderItemViewer(context, client, screen);
-        } else if (client.screen != null && !(client.screen instanceof AbstractContainerScreen<?>)) {
+        } else if (client.gui.screen() != null && !(client.gui.screen() instanceof AbstractContainerScreen<?>)) {
             // Nicht-AbstractContainerScreen (z.B. Spielerinventar)
-            renderItemViewerForScreen(context, client, client.screen);
+            renderItemViewerForScreen(context, client, client.gui.screen());
         }
     }
     
@@ -4063,20 +3880,20 @@ public class ItemViewerUtility {
             return null;
         }
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return null;
         }
         if (kitEditorBackgroundScreen != null) {
-            return getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.screen);
+            return getOrCalculateViewerPosition(kitEditorBackgroundScreen, client.gui.screen());
         }
-        return calculateViewerPositionBesideCenteredInventory(client.screen);
+        return calculateViewerPositionBesideCenteredInventory(client.gui.screen());
     }
 
     private static ViewerPosition resolveViewerPositionForMouseInput(Minecraft client) {
         if (isKitEditorMode()) {
             return resolveKitEditorViewerPosition();
         }
-        if (client.screen == null) {
+        if (client.gui.screen() == null) {
             return null;
         }
         AbstractContainerScreen<?> handledScreen = resolveAbstractContainerScreenForInput(client);
@@ -4088,7 +3905,7 @@ public class ItemViewerUtility {
                 && !helpScreenOpen) {
             return null;
         }
-        return getOrCalculateViewerPosition(handledScreen, client.screen);
+        return getOrCalculateViewerPosition(handledScreen, client.gui.screen());
     }
 
     public static boolean isMouseOverKitEditorItemViewer(double mouseX, double mouseY) {
@@ -4843,7 +4660,7 @@ public class ItemViewerUtility {
                     && !helpScreenOpen) {
                 return false;
             }
-        } else if (client.screen == null) {
+        } else if (client.gui.screen() == null) {
             return false;
         }
         
@@ -5201,13 +5018,13 @@ public class ItemViewerUtility {
     }
     
     private static AbstractContainerScreen<?> resolveAbstractContainerScreenForInput(Minecraft client) {
-        if (client.screen == null) {
+        if (client.gui.screen() == null) {
             return null;
         }
         if (isKitEditorMode() && kitEditorBackgroundScreen != null) {
             return kitEditorBackgroundScreen;
         }
-        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
             return handledScreen;
         }
         return null;
@@ -5483,7 +5300,7 @@ public class ItemViewerUtility {
         }
         
         // Prüfe ob das Menü eines der Special Menus No JEI Zeichen enthält
-        if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
             net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
             if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {

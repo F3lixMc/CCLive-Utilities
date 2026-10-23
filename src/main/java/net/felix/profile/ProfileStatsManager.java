@@ -21,6 +21,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import java.io.File;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -89,6 +91,7 @@ public class ProfileStatsManager {
     
     // Karten/Statuen-Level (Name -> Level)
     private final Map<String, Integer> cardsLevels = new HashMap<>();
+    private final Map<String, Integer> cardPrestigeLevels = new HashMap<>();
     private final Map<String, Integer> statuesLevels = new HashMap<>();
     
     // JSON-Datei für persistente Speicherung
@@ -147,8 +150,8 @@ public class ProfileStatsManager {
                     new Thread(() -> {
                         try {
                             Thread.sleep(500); // 500ms warten
-                            if (client.screen == screen && client.screen instanceof AbstractContainerScreen) {
-                                scanCardsMenu((AbstractContainerScreen<?>) client.screen, client);
+                            if (client.gui.screen() == screen && client.gui.screen() instanceof AbstractContainerScreen) {
+                                scanCardsMenu((AbstractContainerScreen<?>) client.gui.screen(), client);
                             }
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -159,8 +162,8 @@ public class ProfileStatsManager {
                     new Thread(() -> {
                         try {
                             Thread.sleep(500); // 500ms warten
-                            if (client.screen == screen && client.screen instanceof AbstractContainerScreen) {
-                                scanStatuesMenu((AbstractContainerScreen<?>) client.screen, client);
+                            if (client.gui.screen() == screen && client.gui.screen() instanceof AbstractContainerScreen) {
+                                scanStatuesMenu((AbstractContainerScreen<?>) client.gui.screen(), client);
                             }
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -447,10 +450,7 @@ public class ProfileStatsManager {
                 try {
                     int level = Integer.parseInt(currentCard.getLevel());
                     String cardName = currentCard.getName();
-                    // Nur updaten wenn höher
-                    int oldLevel = cardsLevels.getOrDefault(cardName, 0);
-                    if (level > oldLevel) {
-                        cardsLevels.put(cardName, level);
+                    if (rememberCard(cardName, level, currentCard.getPrestige())) {
                         cardUpdated = true;
                         if (isDebugEnabled()) {
                             // Silent error handling("[ProfileStats] ✅ Karte aus Chat aktualisiert: " + cardName + " = Level " + level);
@@ -584,6 +584,15 @@ public class ProfileStatsManager {
                 cardsJson.addProperty(entry.getKey(), entry.getValue());
             }
             payload.add("cards", cardsJson);
+
+            JsonObject prestigeJson = new JsonObject();
+            for (Map.Entry<String, Integer> entry : cardsLevels.entrySet()) {
+                int prestige = cardPrestigeLevels.getOrDefault(entry.getKey(), 0);
+                prestigeJson.addProperty(entry.getKey(), prestige);
+                System.out.println("[ProfileStats] Sende Karte an Server: " + entry.getKey()
+                        + " = Level " + entry.getValue() + ", Prestige " + prestige);
+            }
+            payload.add("card_prestiges", prestigeJson);
         }
         
         if (!statuesLevels.isEmpty()) {
@@ -716,6 +725,184 @@ public class ProfileStatsManager {
     }
     
     /**
+     * Tooltip-Zeile 2 ist {@code 㔛㔙㔖§#FFB600♦㔛㔙㔖} für Prestige 1. Gezählt wird nur die goldene Raute.
+     * Ohne Prestige ist Zeile 2 leer, das Level bleibt in Zeile 3.
+     * Ein Stern in §#6E627D ist Level 0. Jeder Stern in §#FFD477 ist ein Level, maximal 5.
+     * Nach einem Prestige beginnt das Kartenlevel wieder bei 1, die Rauten steigen.
+     */
+    private record CardProgress(int level, int prestige) {}
+
+    private static CardProgress readCardProgress(List<Component> lines) {
+        int prestige = 0;
+        for (Component line : lines) {
+            prestige += countDiamonds(line);
+        }
+        int level = lines.size() > 2 ? readCardLevelLine(lines.get(2)) : -1;
+        return new CardProgress(level, prestige);
+    }
+
+    private static int readCardLevelLine(Component line) {
+        if (line == null) {
+            return -1;
+        }
+        String text = line.getString();
+        if (text != null && text.contains("Maximale Stufe erreicht!")) {
+            return 5;
+        }
+        int[] stars = countStars(line);
+        if (stars[0] == 0 && stars[1] == 0) {
+            return -1;
+        }
+        return Math.min(stars[0], 5);
+    }
+
+    /**
+     * Prestige steht als goldene Raute in der Zeile, umgeben von Pixel-Spacern:
+     * {@code 㔛㔙㔖§#FFB600♦㔛㔙㔖} ist Prestige 1.
+     * Gezählt wird nur ♦ hinter der Farbe #FFB600.
+     */
+    private static int countDiamonds(Component line) {
+        if (line == null) {
+            return 0;
+        }
+        int fromText = countGoldDiamonds(line.getString(), false);
+        int[] fromStyle = new int[1];
+        line.visit((style, string) -> {
+            if (string == null || string.isEmpty()) {
+                return Optional.empty();
+            }
+            boolean gold = style.getColor() != null && (style.getColor().getValue() & 0xFFFFFF) == 0xFFB600;
+            fromStyle[0] += countGoldDiamonds(string, gold);
+            return Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+        return Math.max(fromText, fromStyle[0]);
+    }
+
+    private static int countGoldDiamonds(String text, boolean gold) {
+        int count = 0;
+        for (int i = 0; i < text.length(); ) {
+            char c = text.charAt(i);
+            if (c == '§' && i + 1 < text.length()) {
+                if (text.charAt(i + 1) == '#' && i + 7 < text.length()) {
+                    gold = text.substring(i + 2, i + 8).equalsIgnoreCase("FFB600");
+                    i += 8;
+                    continue;
+                }
+                i += 2;
+                continue;
+            }
+            int codePoint = text.codePointAt(i);
+            i += Character.charCount(codePoint);
+            if (gold && codePoint == '♦') {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Prestige zählt stärker als das Kartenlevel, weil das Level nach einem Prestige wieder von vorne beginnt.
+     */
+    private boolean rememberCard(String cardName, int level, int prestige) {
+        if (cardName == null || cardName.isEmpty() || level < 0 || prestige < 0) {
+            return false;
+        }
+        int oldLevel = cardsLevels.getOrDefault(cardName, 0);
+        int oldPrestige = cardPrestigeLevels.getOrDefault(cardName, 0);
+        boolean known = cardsLevels.containsKey(cardName);
+        if (!known || prestige > oldPrestige || (prestige == oldPrestige && level != oldLevel)) {
+            cardsLevels.put(cardName, level);
+            cardPrestigeLevels.put(cardName, prestige);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Liest die Statuen-Stufe aus allen Tooltip-Zeilen.
+     * Normale Ziffern und die Aincraft-Ziffernschrift nach "Stufe" zählen.
+     */
+    private static int readStatueLevel(List<String> lines) {
+        int level = 0;
+        boolean maxReached = false;
+        for (String lineText : lines) {
+            if (lineText == null) {
+                continue;
+            }
+            String cleanLine = lineText.replaceAll("§[0-9a-fk-or]", "");
+            if (cleanLine.contains("Maximale Stufe erreicht!")) {
+                maxReached = true;
+                continue;
+            }
+            if (!cleanLine.contains("Stufe") || cleanLine.contains("Nächste")) {
+                continue;
+            }
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("Stufe[\\s:]*?(\\d+)").matcher(cleanLine);
+            if (matcher.find()) {
+                try {
+                    return Integer.parseInt(matcher.group(1));
+                } catch (NumberFormatException ignored) {
+                    // weiter mit der Schrift-Ziffer
+                }
+            }
+            int marker = cleanLine.toLowerCase().indexOf("stufe");
+            if (marker >= 0) {
+                int decoded = decodeAincraftNumber(cleanLine.substring(marker + "stufe".length()));
+                if (decoded >= 0) {
+                    return decoded;
+                }
+            }
+        }
+        if (level > 0) {
+            return level;
+        }
+        return maxReached ? 100 : 0;
+    }
+
+    private static int decodeAincraftNumber(String text) {
+        if (text == null || text.isEmpty()) {
+            return -1;
+        }
+        java.util.Map<Character, Integer> digits = ZeichenUtility.getAincraftBottomFontNumbers();
+        if (digits == null || digits.isEmpty()) {
+            return -1;
+        }
+        StringBuilder number = new StringBuilder();
+        for (int offset = 0; offset < text.length(); ) {
+            int codePoint = text.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+            if (codePoint > 0xFFFF) {
+                continue;
+            }
+            Integer digit = digits.get((char) codePoint);
+            if (digit != null) {
+                number.append(digit);
+            }
+        }
+        if (number.length() == 0) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(number.toString());
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    /** Such-Platzhalter (schwarzer Beton mit angehängtem [Ausgeblendet]) sind keine eigenen Karten oder Statuen. */
+    private static boolean isSearchHiddenItem(ItemStack itemStack) {
+        String name = itemStack.getHoverName().getString();
+        return name != null && name.contains("[Ausgeblendet]");
+    }
+
+    private static String stripSearchHiddenMarker(String name) {
+        if (name == null) {
+            return "";
+        }
+        return name.replace(" [Ausgeblendet]", "").replace("[Ausgeblendet]", "").trim();
+    }
+
+    /**
      * Lädt Karten/Statuen-Level aus der JSON-Datei
      */
     private void loadCardsStatuesLevels() {
@@ -727,13 +914,34 @@ public class ProfileStatsManager {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             
             // Lade Karten-Level
+            boolean cleanedHiddenNames = false;
             if (json.has("cards") && json.get("cards").isJsonObject()) {
                 JsonObject cardsJson = json.getAsJsonObject("cards");
                 cardsLevels.clear();
                 for (Map.Entry<String, com.google.gson.JsonElement> entry : cardsJson.entrySet()) {
-                    String cardName = entry.getKey();
+                    String cardName = stripSearchHiddenMarker(entry.getKey());
                     int level = entry.getValue().getAsInt();
-                    cardsLevels.put(cardName, level);
+                    if (!cardName.equals(entry.getKey())) {
+                        cleanedHiddenNames = true;
+                    }
+                    if (!cardName.isEmpty()) {
+                        int prestige = 0;
+                        cardsLevels.put(cardName, level);
+                        cardPrestigeLevels.putIfAbsent(cardName, prestige);
+                    }
+                }
+            }
+            if (json.has("card_prestiges") && json.get("card_prestiges").isJsonObject()) {
+                JsonObject prestigeJson = json.getAsJsonObject("card_prestiges");
+                for (Map.Entry<String, com.google.gson.JsonElement> entry : prestigeJson.entrySet()) {
+                    String cardName = stripSearchHiddenMarker(entry.getKey());
+                    int prestige = entry.getValue().getAsInt();
+                    if (!cardName.equals(entry.getKey())) {
+                        cleanedHiddenNames = true;
+                    }
+                    if (!cardName.isEmpty() && prestige >= 0) {
+                        cardPrestigeLevels.merge(cardName, prestige, Math::max);
+                    }
                 }
             }
             
@@ -742,10 +950,18 @@ public class ProfileStatsManager {
                 JsonObject statuesJson = json.getAsJsonObject("statues");
                 statuesLevels.clear();
                 for (Map.Entry<String, com.google.gson.JsonElement> entry : statuesJson.entrySet()) {
-                    String statueName = entry.getKey();
+                    String statueName = stripSearchHiddenMarker(entry.getKey());
                     int level = entry.getValue().getAsInt();
-                    statuesLevels.put(statueName, level);
+                    if (!statueName.equals(entry.getKey())) {
+                        cleanedHiddenNames = true;
+                    }
+                    if (!statueName.isEmpty()) {
+                        statuesLevels.merge(statueName, level, Math::max);
+                    }
                 }
+            }
+            if (cleanedHiddenNames) {
+                saveCardsStatuesLevels();
             }
         } catch (IOException e) {
             // Silent error handling("❌ [ProfileStats] Fehler beim Laden von Karten/Statuen-Level: " + e.getMessage());
@@ -758,6 +974,7 @@ public class ProfileStatsManager {
     private void saveCardsStatuesLevels() {
         // Erstelle Kopien der Maps für asynchrones Schreiben (Thread-sicher)
         final Map<String, Integer> cardsCopy = new HashMap<>(cardsLevels);
+        final Map<String, Integer> prestigeCopy = new HashMap<>(cardPrestigeLevels);
         final Map<String, Integer> statuesCopy = new HashMap<>(statuesLevels);
         
         // Führe File I/O asynchron aus, um Freezes zu vermeiden
@@ -774,6 +991,12 @@ public class ProfileStatsManager {
                     cardsJson.addProperty(entry.getKey(), entry.getValue());
                 }
                 json.add("cards", cardsJson);
+
+                JsonObject prestigeJson = new JsonObject();
+                for (Map.Entry<String, Integer> entry : cardsCopy.entrySet()) {
+                    prestigeJson.addProperty(entry.getKey(), prestigeCopy.getOrDefault(entry.getKey(), 0));
+                }
+                json.add("card_prestiges", prestigeJson);
                 
                 // Speichere Statuen-Level
                 JsonObject statuesJson = new JsonObject();
@@ -818,10 +1041,7 @@ public class ProfileStatsManager {
         try {
             int level = Integer.parseInt(cardData.getLevel());
             String cardName = cardData.getName();
-            // Nur updaten wenn höher
-            int oldLevel = cardsLevels.getOrDefault(cardName, 0);
-            if (level > oldLevel) {
-                cardsLevels.put(cardName, level);
+            if (rememberCard(cardName, level, cardData.getPrestige())) {
                 saveCardsStatuesLevels();
                 if (isDebugEnabled()) {
                     // Silent error handling("[ProfileStats] ✅ Karte aus Chat sofort gespeichert: " + cardName + " = Level " + level);
@@ -912,7 +1132,7 @@ public class ProfileStatsManager {
                 lastKnownCardsItems.remove(slotIndex);
             }
             
-            if (itemStack == null || itemStack.isEmpty()) {
+            if (itemStack == null || itemStack.isEmpty() || isSearchHiddenItem(itemStack)) {
                 continue;
             }
             
@@ -922,56 +1142,31 @@ public class ProfileStatsManager {
                 continue;
             }
             
-            // Prüfe ob es eine Karte ist (Tooltip enthält "[Karte]")
+            List<String> lines = new ArrayList<>();
             boolean isCard = false;
-            String cardName = null;
-            int cardLevel = 0;
-            
             for (Component line : tooltip) {
                 String lineText = line.getString();
                 if (lineText == null) {
                     continue;
                 }
-                
-                // Prüfe ob es eine Karte ist
+                lines.add(lineText);
                 if (lineText.contains("[Karte]")) {
                     isCard = true;
-                    // Name ist die erste Zeile (ohne Formatierung)
-                    if (tooltip.size() > 0) {
-                        String nameLine = tooltip.get(0).getString();
-                        if (nameLine != null) {
-                            // Entferne Formatierungscodes und Unicode
-                            cardName = nameLine.replaceAll("§[0-9a-fk-or]", "")
-                                             .replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
-                                             .trim();
-                            // Entferne "[Karte]" aus dem Namen
-                            cardName = cardName.replaceAll("\\[Karte\\]", "").trim();
-                        }
-                    }
-                }
-                
-                // Zähle Sterne (⭐) für Level
-                if (isCard) {
-                    int starCount = countStars(lineText);
-                    if (starCount > 0) {
-                        cardLevel = starCount;
-                    }
-                    // Backup: Maximale Stufe erreicht
-                    if (lineText.contains("Maximale Stufe erreicht!")) {
-                        cardLevel = 5;
-                    }
                 }
             }
+            if (!isCard || lines.isEmpty()) {
+                continue;
+            }
+
+            String cardName = stripSearchHiddenMarker(lines.get(0)
+                    .replaceAll("§[0-9a-fk-or]", "")
+                    .replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
+                    .replaceAll("\\[Karte\\]", "")
+                    .trim());
+            CardProgress progress = readCardProgress(tooltip);
             
-            // Wenn Karte gefunden, aktualisiere Level (nur wenn höher)
-            if (isCard && cardName != null && !cardName.isEmpty() && cardLevel > 0) {
-                int currentLevel = cardsLevels.getOrDefault(cardName, 0);
-                if (cardLevel > currentLevel) {
-                    cardsLevels.put(cardName, cardLevel);
-                    if (isDebugEnabled()) {
-                        // Silent error handling("[ProfileStats] ✅ Karte validiert/aktualisiert: " + cardName + " = Level " + cardLevel);
-                    }
-                }
+            if (!cardName.isEmpty() && progress.level() >= 0) {
+                rememberCard(cardName, progress.level(), progress.prestige());
             }
         }
         
@@ -1001,7 +1196,7 @@ public class ProfileStatsManager {
                 lastKnownStatuesItems.remove(slotIndex);
             }
             
-            if (itemStack == null || itemStack.isEmpty()) {
+            if (itemStack == null || itemStack.isEmpty() || isSearchHiddenItem(itemStack)) {
                 continue;
             }
             
@@ -1019,78 +1214,33 @@ public class ProfileStatsManager {
                 }
             }
             
-            // Prüfe ob es eine Statue ist (Tooltip enthält "[Statue]")
+            // [Statue] und "Stufe" können in beliebiger Reihenfolge stehen
+            List<String> lines = new ArrayList<>();
             boolean isStatue = false;
-            String statueName = null;
-            int statueLevel = 0;
-            
             for (Component line : tooltip) {
                 String lineText = line.getString();
                 if (lineText == null) {
                     continue;
                 }
-                
-                // Prüfe ob es eine Statue ist
+                lines.add(lineText);
                 if (lineText.contains("[Statue]")) {
                     isStatue = true;
-                    if (isDebugEnabled()) {
-                        // Silent error handling("[ProfileStats] 🔍 [Statue] gefunden in Tooltip-Zeile: " + lineText);
-                    }
-                    // Name ist die erste Zeile (ohne Formatierung)
-                    if (tooltip.size() > 0) {
-                        String nameLine = tooltip.get(0).getString();
-                        if (nameLine != null) {
-                            // Entferne Formatierungscodes und Unicode
-                            statueName = nameLine.replaceAll("§[0-9a-fk-or]", "")
-                                                .replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
-                                                .trim();
-                            // Entferne "[Statue]" aus dem Namen
-                            statueName = statueName.replaceAll("\\[Statue\\]", "").trim();
-                            if (isDebugEnabled()) {
-                                // Silent error handling("[ProfileStats] 🔍 Statue-Name extrahiert: " + statueName);
-                            }
-                        }
-                    }
-                }
-                
-                // Suche nach "Stufe: XX" für Level (auch ohne Doppelpunkt, falls Formatierungscodes dazwischen sind)
-                if (isStatue) {
-                    // Entferne Formatierungscodes für bessere Suche
-                    String cleanLine = lineText.replaceAll("§[0-9a-fk-or]", "");
-                    if (cleanLine.contains("Stufe") && !cleanLine.contains("Nächste")) {
-                        if (isDebugEnabled()) {
-                            // Silent error handling("[ProfileStats] 🔍 'Stufe' gefunden in Zeile: " + lineText + " (clean: " + cleanLine + ")");
-                        }
-                        // Suche nach Zahl nach "Stufe" (mit oder ohne Doppelpunkt)
-                        String levelStr = cleanLine.replaceAll(".*[Ss]tufe\\s*:?\\s*", "").replaceAll("[^0-9].*", "").trim();
-                        if (levelStr.isEmpty()) {
-                            // Fallback: Entferne alles außer Zahlen
-                            levelStr = cleanLine.replaceAll("[^0-9]", "").trim();
-                        }
-                        if (!levelStr.isEmpty()) {
-                            try {
-                                statueLevel = Integer.parseInt(levelStr);
-                                if (isDebugEnabled()) {
-                                    // Silent error handling("[ProfileStats] 🔍 Statue-Level geparst: " + statueLevel);
-                                }
-                            } catch (NumberFormatException e) {
-                                if (isDebugEnabled()) {
-                                    // Silent error handling("[ProfileStats] ❌ Fehler beim Parsen von Statue-Level: " + levelStr);
-                                }
-                            }
-                        } else if (isDebugEnabled()) {
-                            // Silent error handling("[ProfileStats] ⚠️ Keine Zahl nach 'Stufe' gefunden in: " + cleanLine);
-                        }
-                    }
-                }
-                // Backup: Maximale Stufe erreicht
-                if (isStatue && lineText.contains("Maximale Stufe erreicht!")) {
-                    statueLevel = 40;
-                    if (isDebugEnabled()) {
-                        // Silent error handling("[ProfileStats] 🔍 Statue-Level (max): 40");
-                    }
                 }
             }
+            if (!isStatue) {
+                continue;
+            }
+
+            String statueName = null;
+            if (!lines.isEmpty()) {
+                statueName = lines.get(0)
+                        .replaceAll("§[0-9a-fk-or]", "")
+                        .replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "")
+                        .replaceAll("\\[Statue\\]", "")
+                        .trim();
+                statueName = stripSearchHiddenMarker(statueName);
+            }
+            int statueLevel = readStatueLevel(lines);
             
             // Wenn Statue gefunden, aktualisiere Level (nur wenn höher)
             if (isStatue && statueName != null && !statueName.isEmpty() && statueLevel > 0) {
@@ -1129,32 +1279,84 @@ public class ProfileStatsManager {
     }
     
     /**
-     * Zählt die Anzahl der Sterne (⭐) in einer Zeile
+     * Zählt Sterne in einer Tooltip-Zeile.
+     * Index 0 sind farbige Sterne (das Kartenlevel), Index 1 ausgegraute Sterne (Level 0).
      */
-    private int countStars(String line) {
-        if (line == null || line.isEmpty()) {
-            return 0;
+    private static int[] countStars(Component line) {
+        int[] counts = new int[2];
+        if (line == null) {
+            return counts;
         }
-        int count = 0;
-        for (char c : line.toCharArray()) {
-            if (c == '⭐') {
-                count++;
+        String raw = line.getString();
+        if (raw != null && raw.contains("§")) {
+            return countStarsInFormattedText(raw);
+        }
+        line.visit((style, string) -> {
+            if (string == null || string.isEmpty()) {
+                return Optional.empty();
+            }
+            int starKind = starKind(style.getColor());
+            for (int offset = 0; offset < string.length(); ) {
+                int codePoint = string.codePointAt(offset);
+                offset += Character.charCount(codePoint);
+                if (codePoint == '⭐' && starKind >= 0) {
+                    counts[starKind]++;
+                }
+            }
+            return Optional.empty();
+        }, net.minecraft.network.chat.Style.EMPTY);
+        return counts;
+    }
+
+    private static int[] countStarsInFormattedText(String line) {
+        int[] counts = new int[2];
+        int starKind = -1;
+        for (int i = 0; i < line.length(); ) {
+            char c = line.charAt(i);
+            if (c == '§' && i + 1 < line.length()) {
+                if (line.charAt(i + 1) == '#' && i + 7 < line.length()) {
+                    starKind = starKindFromHex(line.substring(i + 2, i + 8));
+                    i += 8;
+                    continue;
+                }
+                i += 2;
+                continue;
+            }
+            int codePoint = line.codePointAt(i);
+            i += Character.charCount(codePoint);
+            if (codePoint == '⭐' && starKind >= 0) {
+                counts[starKind]++;
             }
         }
-        return Math.min(count, 5); // Maximal 5 Sterne
+        return counts;
+    }
+
+    /** 0 = Kartenlevel, 1 = ausgegraut §#6E627D. Jede andere Sternfarbe, z. B. §#CADADB, zählt als Level. */
+    private static int starKind(TextColor color) {
+        if (color == null) {
+            return -1;
+        }
+        return starKindFromHex(String.format("%06X", color.getValue() & 0xFFFFFF));
+    }
+
+    private static int starKindFromHex(String hex) {
+        if (hex != null && hex.equalsIgnoreCase("6E627D")) {
+            return 1;
+        }
+        return hex == null ? -1 : 0;
     }
     
     /**
      * Prüft ob Karten/Statuen-Menü geöffnet ist und ob sich Items geändert haben (Seitenwechsel)
      */
     private void checkCardsStatuesMenuForChanges(Minecraft client) {
-        if (client.screen == null || !(client.screen instanceof AbstractContainerScreen)) {
+        if (client.gui.screen() == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
             lastKnownCardsItems.clear();
             lastKnownStatuesItems.clear();
             return;
         }
         
-        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
         String title = screen.getTitle().getString();
         if (title == null) {
             return;

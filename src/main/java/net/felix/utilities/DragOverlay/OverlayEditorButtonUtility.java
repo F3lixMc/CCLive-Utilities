@@ -1,5 +1,7 @@
 package net.felix.utilities.DragOverlay;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -115,7 +117,7 @@ public class OverlayEditorButtonUtility {
         if (client == null) return false;
         
         // Nicht anzeigen wenn F6-Menü bereits offen ist
-        if (client.screen instanceof OverlayEditorScreen) {
+        if (client.gui.screen() instanceof OverlayEditorScreen) {
             return false;
         }
         
@@ -154,27 +156,26 @@ public class OverlayEditorButtonUtility {
             Object boundKeyObj = getBoundKeyMethod.invoke(keyBinding);
             if (boundKeyObj != null) {
                 // Hole den KeyCode
-                java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getCode");
+                java.lang.reflect.Method getCodeMethod = boundKeyObj.getClass().getMethod("getValue");
                 int keyCode = (Integer) getCodeMethod.invoke(boundKeyObj);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                if (keyCode >= org.lwjgl.glfw.GLFW.GLFW_KEY_A && keyCode <= org.lwjgl.glfw.GLFW.GLFW_KEY_Z) {
-                    // Buchstaben A-Z
-                    return String.valueOf((char) ('A' + (keyCode - org.lwjgl.glfw.GLFW.GLFW_KEY_A)));
-                } else if (keyCode >= org.lwjgl.glfw.GLFW.GLFW_KEY_0 && keyCode <= org.lwjgl.glfw.GLFW.GLFW_KEY_9) {
-                    // Zahlen 0-9
-                    return String.valueOf((char) ('0' + (keyCode - org.lwjgl.glfw.GLFW.GLFW_KEY_0)));
-                } else if (keyCode >= org.lwjgl.glfw.GLFW.GLFW_KEY_F1 && keyCode <= org.lwjgl.glfw.GLFW.GLFW_KEY_F25) {
-                    // Funktionstasten F1-F25
-                    int fNumber = keyCode - org.lwjgl.glfw.GLFW.GLFW_KEY_F1 + 1;
-                    return "F" + fNumber;
-                } else if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE) {
+                String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+                String functionKey = net.felix.utilities.Overall.KeyBindingUtility.functionKeyName(keyCode);
+                if (letter != null) {
+                    return letter;
+                } else if (digit != null) {
+                    return String.valueOf(digit);
+                } else if (functionKey != null) {
+                    return functionKey;
+                } else if (keyCode == InputConstants.KEY_SPACE) {
                     return "SPACE";
-                } else if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) {
+                } else if (keyCode == InputConstants.KEY_LSHIFT || keyCode == InputConstants.KEY_RSHIFT) {
                     return "SHIFT";
-                } else if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL) {
+                } else if (keyCode == InputConstants.KEY_LCONTROL || keyCode == InputConstants.KEY_RCONTROL) {
                     return "CTRL";
-                } else if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_ALT || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_ALT) {
+                } else if (keyCode == InputConstants.KEY_LALT || keyCode == InputConstants.KEY_RALT) {
                     return "ALT";
                 } else {
                     return "Key " + keyCode;

@@ -8,7 +8,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.glfw.GLFW;
+
 
 /**
  * Utility für den Overlay Editor
@@ -44,8 +44,8 @@ public class OverlayEditorUtility {
         // Register overlay editor key binding
         overlayEditorKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.overlay-editor",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_F6, // Default to F6
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_F6, // Default to F6
             KeyCategories.of("cclive-utilities", "overlay")
         ));
     }
@@ -81,7 +81,7 @@ public class OverlayEditorUtility {
             try {
             // Don't replace the current screen, render the overlay editor as an overlay
             // This way the inventory stays visible underneath
-            client.setScreen(new OverlayEditorScreen());
+            client.gui.setScreen(new OverlayEditorScreen());
             isOverlayEditorOpen = true;
             } catch (Exception e) {
                 // Silent error handling
@@ -92,8 +92,8 @@ public class OverlayEditorUtility {
     public static void closeOverlayEditor() {
         Minecraft client = Minecraft.getInstance();
         if (client != null) {
-            if (client.screen instanceof OverlayEditorScreen) {
-                client.screen.onClose();
+            if (client.gui.screen() instanceof OverlayEditorScreen) {
+                client.gui.screen().onClose();
             }
             isOverlayEditorOpen = false;
         }
@@ -113,7 +113,7 @@ public class OverlayEditorUtility {
     
     /**
      * Handle key press directly (for use in mixins when screens are open)
-     * @param keyCode The key code (e.g., GLFW.GLFW_KEY_F6)
+     * @param keyCode The key code (e.g., InputConstants.KEY_F6)
      * @return true if the key was handled
      */
     public static boolean handleKeyPress(int keyCode) {

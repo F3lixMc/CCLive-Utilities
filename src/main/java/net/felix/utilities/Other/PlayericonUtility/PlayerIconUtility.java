@@ -226,7 +226,7 @@ public class PlayerIconUtility {
             double z = player.getZ();
             
             // Calculate camera position
-            net.minecraft.world.phys.Vec3 cameraPos = context.gameRenderer().getMainCamera().position();
+            net.minecraft.world.phys.Vec3 cameraPos = context.gameRenderer().mainCamera().position();
             double dx = x - cameraPos.x;
             double dy = y - cameraPos.y;
             double dz = z - cameraPos.z;

@@ -46,7 +46,7 @@ public class CCLiveCommands {
 
     private static void registerClassSelectionInventoryReset() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+            if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
                 String title = handledScreen.getTitle().getString();
                 boolean inClassSelection = ZeichenUtility.containsClassSelectionUi(title);
                 if (inClassSelection && !wasInClassSelectionInventory) {
@@ -126,6 +126,11 @@ public class CCLiveCommands {
                 .then(literal("nearby")
                     .executes(CCLiveCommands::debugNearbyDisplays)))
             
+            // Config
+            .then(literal("config")
+                .then(literal("reset")
+                    .executes(CCLiveCommands::resetConfig)))
+
             // Allgemeine Commands
             .then(literal("help")
                 .executes(CCLiveCommands::showHelp))
@@ -139,6 +144,20 @@ public class CCLiveCommands {
         );
     }
     
+    private static int resetConfig(CommandContext<FabricClientCommandSource> context) {
+        try {
+            if (CCLiveUtilitiesConfig.resetToDefaults()) {
+                context.getSource().sendFeedback(Component.literal("§aDie Config wurde gelöscht und mit Standardwerten neu erstellt."));
+                return 1;
+            }
+            context.getSource().sendError(Component.literal("§cDie Config konnte nicht zurückgesetzt werden."));
+            return 0;
+        } catch (Exception e) {
+            context.getSource().sendError(Component.literal("§cFehler beim Zurücksetzen der Config: " + e.getMessage()));
+            return 0;
+        }
+    }
+
     // =================== BLUEPRINT COMMANDS ===================
     
     /**
@@ -522,6 +541,7 @@ public class CCLiveCommands {
             context.getSource().sendFeedback(Component.literal(""));
         }
         
+        context.getSource().sendFeedback(Component.literal("§7/cclive config reset §f- Config löschen und mit Standardwerten neu erstellen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive help §f- Diese Hilfe anzeigen"));
         context.getSource().sendFeedback(Component.literal(""));
         context.getSource().sendFeedback(Component.literal("§7Debug-Commands sind nur sichtbar wenn Debug-Modi in der Config aktiviert sind."));

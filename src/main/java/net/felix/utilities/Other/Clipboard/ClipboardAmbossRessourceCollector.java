@@ -16,8 +16,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Sammelt Amboss- und Ressourcen-Anzahlen aus dem Ressourcen-Bag Inventar (Symbol Ⳅ),
- * Schmiede-/Modul-/Ingenieur-Inventaren, Bestätigungs- und Freunde-Menüs.
+ * Sammelt Ressourcen und Essenzen aus Inventaren mit dem Zeichen essence_bag_ui (Slots 10–43)
+ * sowie Amboss-/Ressourcen-Anzahlen aus Schmiede-, Modul- und Ingenieur-Inventaren.
+ * Ressource: Name, darunter „Anzahl XXX“. Essenz: „NAME [Essenz]“, darunter „Tier X - XXX“.
  */
 public class ClipboardAmbossRessourceCollector {
     private static final Map<String, Long> ambossItems = new HashMap<>(); // ItemName -> Anzahl
@@ -26,7 +27,10 @@ public class ClipboardAmbossRessourceCollector {
     // Pattern für die Anzahl-Zeile im Tooltip: "Anzahl" + Leerzeichen + Zahl (z.B. "Anzahl 10000", "Anzahl 1,000")
     // Format: "Anzahl" (gold) + " " + Zahl (white)
     // Matcht: eine oder mehrere Ziffern, gefolgt von optionalen Komma-Gruppen (jeweils 3 Ziffern)
-    private static final Pattern AMOUNT_PATTERN = Pattern.compile("Anzahl\\s+(\\d+(?:,\\d{3})*)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern AMOUNT_PATTERN = Pattern.compile(
+            "Anzahl\\s+(\\d{1,3}(?:[.,]\\d{3})*|\\d+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ESSENCE_TIER_PATTERN = Pattern.compile(
+            "Tier\\s+(\\d+)\\s*-\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SCHMIED_PATTERN =
         Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s*/\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s+(.+)", Pattern.CASE_INSENSITIVE);
     
@@ -46,7 +50,7 @@ public class ClipboardAmbossRessourceCollector {
      * Wird jeden Tick aufgerufen
      * Läuft wenn ein passendes Inventar geöffnet ist (unabhängig vom Clipboard-Overlay):
      * - Inventar geöffnet
-     * - Ressourcen-Bag Inventar (Symbol Ⳅ im Titel)
+     * - Essenz-Tasche (Zeichen essence_bag_ui): Ressourcen und Essenzen in den Slots 10–43
      */
     private static void onClientTick(Minecraft client) {
         if (client.player == null || client.level == null) {
@@ -54,22 +58,20 @@ public class ClipboardAmbossRessourceCollector {
         }
         
         // Prüfe ob ein Inventar geöffnet ist
-        if (!(client.screen instanceof AbstractContainerScreen<?> handledScreen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
             // Inventar geschlossen - Cache zurücksetzen
             lastScreenTitle = "";
             lastSlotCount = 0;
             return;
         }
         
-        // Prüfe ob wir im Ressourcen-Bag Inventar sind (Symbol Ⳅ im Titel)
         net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
         String screenTitle = titleText != null ? titleText.getString() : "";
-        boolean isRessourceBag = net.felix.utilities.Overall.ZeichenUtility.containsUiRessourceBag(screenTitle);
+        boolean isEssenceBag = net.felix.utilities.Overall.ZeichenUtility.containsEssenceBagUi(screenTitle);
         boolean isCostInventory = ClipboardCostInventoryUtility.usesSchmiedCostTooltipFormat(handledScreen);
         boolean isFishingCraft = net.felix.utilities.Overall.ZeichenUtility.isFishingComponentsCraftTitle(screenTitle);
         
-        if (!isRessourceBag && !isCostInventory && !isFishingCraft) {
-            // Nicht im Ressourcen-Bag oder Schmied - Cache zurücksetzen
+        if (!isEssenceBag && !isCostInventory && !isFishingCraft) {
             lastScreenTitle = "";
             lastSlotCount = 0;
             return;
@@ -91,8 +93,10 @@ public class ClipboardAmbossRessourceCollector {
         // Werte, die nicht auf der aktuellen Seite sind, bleiben erhalten
         try {
             List<Slot> slots = handledScreen.getMenu().slots;
-            int minIndex = isFishingCraft ? 9 : 0;
-            int maxIndex = isFishingCraft ? Math.min(44, slots.size() - 1) : Math.min(53, slots.size() - 1);
+            int minIndex = isEssenceBag ? 10 : (isFishingCraft ? 9 : 0);
+            int maxIndex = isEssenceBag
+                    ? Math.min(43, slots.size() - 1)
+                    : (isFishingCraft ? Math.min(44, slots.size() - 1) : Math.min(53, slots.size() - 1));
             for (int i = minIndex; i <= maxIndex; i++) {
                 Slot slot = slots.get(i);
                 ItemStack stack = slot.getItem();
@@ -106,39 +110,8 @@ public class ClipboardAmbossRessourceCollector {
                     continue;
                 }
                 
-                if (isRessourceBag) {
-                    // Parse Tooltip nach Format: "Name\nAnzahl 10000\n\nFür Details klicken"
-                    String itemName = null;
-                    long amount = 0;
-                    boolean amountFound = false;
-                    
-                    // Durchsuche alle Tooltip-Zeilen
-                    for (int j = 0; j < tooltip.size(); j++) {
-                        String lineText = tooltip.get(j).getString();
-                        String cleanLineText = cleanTooltipLine(lineText);
-                        
-                        // Erste Zeile ist der Name
-                        if (j == 0) {
-                            itemName = cleanLineText;
-                            continue;
-                        }
-                        
-                        // Suche nach "Anzahl" + Zahl in jeder Zeile
-                        Matcher matcher = AMOUNT_PATTERN.matcher(cleanLineText);
-                        if (matcher.find()) {
-                            amount = parseAmount(matcher.group(1));
-                            amountFound = true;
-                            break; // Gefunden, keine weiteren Zeilen prüfen
-                        }
-                    }
-                    
-                    // Wenn wir Name und Anzahl haben, speichere es
-                    if (itemName != null && !itemName.isEmpty() && amountFound) {
-                        String cleanItemName = cleanTooltipLine(itemName);
-                        if (!isCoinsName(cleanItemName)) {
-                            updateResourceFromBag(cleanItemName, amount);
-                        }
-                    }
+                if (isEssenceBag) {
+                    readEssenceBagStack(tooltip);
                 } else if (isCostInventory || isFishingCraft) {
                     for (Component line : tooltip) {
                         String cleanLineText = cleanTooltipLine(line.getString());
@@ -161,6 +134,41 @@ public class ClipboardAmbossRessourceCollector {
         }
     }
     
+    /**
+     * Essenz-Tasche, Slots 10–43.
+     * Ressource: Zeile 1 Name, danach „Anzahl XXX“.
+     * Essenz: Zeile 1 „NAME [Essenz]“, danach „Tier X - XXX“.
+     */
+    private static void readEssenceBagStack(List<Component> tooltip) {
+        String itemName = cleanTooltipLine(tooltip.get(0).getString());
+        if (itemName.isEmpty() || isCoinsName(itemName)) {
+            return;
+        }
+        if (itemName.contains("[Essenz]")) {
+            for (int j = 1; j < tooltip.size(); j++) {
+                Matcher matcher = ESSENCE_TIER_PATTERN.matcher(cleanTooltipLine(tooltip.get(j).getString()));
+                if (!matcher.find()) {
+                    continue;
+                }
+                String storedName = itemName;
+                String tierLabel = "Tier " + matcher.group(1);
+                if (!storedName.toLowerCase(java.util.Locale.ROOT).contains(tierLabel.toLowerCase(java.util.Locale.ROOT))) {
+                    storedName = storedName + " " + tierLabel;
+                }
+                updateEssenceFromBag(storedName, parseAmount(matcher.group(2)));
+                return;
+            }
+            return;
+        }
+        for (int j = 1; j < tooltip.size(); j++) {
+            Matcher matcher = AMOUNT_PATTERN.matcher(cleanTooltipLine(tooltip.get(j).getString()));
+            if (matcher.find()) {
+                updateResourceFromBag(itemName, parseAmount(matcher.group(1)));
+                return;
+            }
+        }
+    }
+
     /**
      * Holt den Tooltip eines Items über Data Component API (wie in ItemInfoUtility)
      */
@@ -220,12 +228,24 @@ public class ClipboardAmbossRessourceCollector {
         ressourceItems.put(cleanItemName, amount);
         CollectedMaterialsResourcesStorage.updateResource(cleanItemName, amount);
     }
+
+    private static void updateEssenceFromBag(String itemName, long amount) {
+        if (itemName == null || itemName.isEmpty()) {
+            return;
+        }
+        String cleanItemName = cleanTooltipLine(itemName);
+        if (cleanItemName.isEmpty()) {
+            return;
+        }
+        CollectedMaterialsResourcesStorage.updateEssence(cleanItemName, amount);
+    }
     
     private static String cleanTooltipLine(String lineText) {
         if (lineText == null) {
             return "";
         }
-        return lineText.replaceAll("§[0-9a-fk-or]", "")
+        return lineText.replaceAll("§#[0-9A-Fa-f]{6}", "")
+                       .replaceAll("§[0-9a-fk-or]", "")
                        .replaceAll("[\\u3400-\\u4DBF]", "")
                        .trim();
     }

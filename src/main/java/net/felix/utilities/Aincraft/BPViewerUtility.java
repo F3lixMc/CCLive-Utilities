@@ -10,7 +10,7 @@ import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import org.lwjgl.glfw.GLFW;
+
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.InformationenUtility;
@@ -234,8 +234,8 @@ public class BPViewerUtility {
                 // Check if we're in the special inventory (the one with 㬉)
                 Minecraft mcClient = Minecraft.getInstance();
                 boolean isSpecialInventory = false;
-                if (mcClient != null && mcClient.screen != null) {
-                    String screenTitle = mcClient.screen.getTitle().getString();
+                if (mcClient != null && mcClient.gui.screen() != null) {
+                    String screenTitle = mcClient.gui.screen().getTitle().getString();
                     if (ZeichenUtility.containsMoblexicon(screenTitle)) { //Moblexicon
                         isSpecialInventory = true;
                     }
@@ -253,8 +253,8 @@ public class BPViewerUtility {
             // Check if we're in the blueprint shop - if so, don't show checkmarks for any items
             Minecraft mcClient = Minecraft.getInstance();
             boolean isInShop = false;
-            if (mcClient != null && mcClient.screen instanceof AbstractContainerScreen) {
-                AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) mcClient.screen;
+            if (mcClient != null && mcClient.gui.screen() instanceof AbstractContainerScreen) {
+                AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) mcClient.gui.screen();
                 String title = screen.getTitle().getString();
                 String cleanTitle = title.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
                 cleanTitle = cleanTitle.replaceAll("§[0-9a-fk-or]", "");
@@ -362,8 +362,8 @@ public class BPViewerUtility {
                         if (!isInShop) {
                             // Check if we're in the blueprint shop and auto-mark found blueprints
                             Minecraft client = Minecraft.getInstance();
-                            if (client != null && client.screen instanceof AbstractContainerScreen) {
-                                AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+                            if (client != null && client.gui.screen() instanceof AbstractContainerScreen) {
+                                AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
                                 String title = screen.getTitle().getString();
                                 String cleanTitle = title.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF]", "");
                                 cleanTitle = cleanTitle.replaceAll("§[0-9a-fk-or]", "");
@@ -426,8 +426,8 @@ public class BPViewerUtility {
                                     instance.scanBlueprintShopSlots(screen);
                                 } else {
                                     // Even if shop detection fails, try slot scanning if we're hovering over a name tag with blueprints
-                                    if (client.screen instanceof AbstractContainerScreen) {
-                                        instance.scanBlueprintShopSlots((AbstractContainerScreen<?>) client.screen);
+                                    if (client.gui.screen() instanceof AbstractContainerScreen) {
+                                        instance.scanBlueprintShopSlots((AbstractContainerScreen<?>) client.gui.screen());
                                     }
                                 }
                             }
@@ -445,29 +445,29 @@ public class BPViewerUtility {
     private static void registerKeyMappings() {
         toggleKeyMapping = new KeyMapping(
             "key.cclive-utilities.toggle-blueprint-viewer",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_B,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_B,
             KeyCategories.of("cclive-utilities", "blueprints")
         );
         
         nextRarityKeyMapping = new KeyMapping(
             "key.cclive-utilities.next-blueprint-rarity",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_RIGHT,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_RIGHT,
             KeyCategories.of("cclive-utilities", "blueprints")
         );
         
         previousRarityKeyMapping = new KeyMapping(
             "key.cclive-utilities.previous-blueprint-rarity",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_LEFT,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_LEFT,
             KeyCategories.of("cclive-utilities", "blueprints")
         );
         
         toggleMissingModeKeyMapping = new KeyMapping(
             "key.cclive-utilities.toggle-blueprint-missing-mode",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_UNKNOWN,
+            InputConstants.Type.KEYBOARD,
+            InputConstants.UNKNOWN.getValue(),
             KeyCategories.of("cclive-utilities", "blueprints")
         );
         
@@ -491,7 +491,7 @@ public class BPViewerUtility {
             return;
         }
         String stateText = enabled ? "§aEin" : "§cAus";
-        client.gui.setOverlayMessage(Component.literal("§fMissing Mode: " + stateText), false);
+        client.gui.hud.setOverlayMessage(Component.literal("§fMissing Mode: " + stateText), false);
     }
            
            private static void registerCommands() {
@@ -532,7 +532,7 @@ public class BPViewerUtility {
             }
             
             // Hide overlay if F1 menu (debug screen) is open
-            if (client.options.hideGui) {
+            if (client.gui.hud.isHidden()) {
                 return;
             }
             
@@ -1020,8 +1020,8 @@ public class BPViewerUtility {
            }
            
            private void checkBlueprintShopInventory(Minecraft client) {
-               if (client.screen instanceof AbstractContainerScreen) {
-                   AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.screen;
+               if (client.gui.screen() instanceof AbstractContainerScreen) {
+                   AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) client.gui.screen();
                    String title = screen.getTitle().getString();
                    
 

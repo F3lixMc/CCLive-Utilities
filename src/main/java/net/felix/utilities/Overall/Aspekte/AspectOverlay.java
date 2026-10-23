@@ -276,18 +276,18 @@ public class AspectOverlay {
      * Checks if we're currently in a blueprint inventory
      */
     private static boolean isInBlueprintInventory(Minecraft client) {
-        if (client == null || client.screen == null) {
+        if (client == null || client.gui.screen() == null) {
             return false;
         }
         
         // Check if the current screen is a AbstractContainerScreen (inventory-like screen)
-        if (!(client.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
+        if (!(client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen)) {
             return false;
         }
         
         // Get the screen title to check if it's a blueprint inventory
         net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
-            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.screen;
+            (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
         
         String title = handledScreen.getTitle().getString();
         
@@ -369,15 +369,13 @@ public class AspectOverlay {
         }
         
         // Hide overlay if F1 menu (debug screen) is open
-        if (client.options.hideGui) {
+        if (client.gui.hud.isHidden()) {
             return;
         }
         
         // Check if shift is pressed
-        boolean isShiftPressed = InputConstants.isKeyDown(client.getWindow(), 
-                                                       InputConstants.KEY_LSHIFT) || 
-                                InputConstants.isKeyDown(client.getWindow(), 
-                                                       InputConstants.KEY_RSHIFT);
+        boolean isShiftPressed = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT) || 
+                                InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
         
         if (!isShiftPressed) {
             return;
@@ -454,10 +452,8 @@ public class AspectOverlay {
         }
         
         // Check if Shift is pressed
-        boolean isShiftPressed = InputConstants.isKeyDown(client.getWindow(), 
-                                                       InputConstants.KEY_LSHIFT) || 
-                                InputConstants.isKeyDown(client.getWindow(), 
-                                                       InputConstants.KEY_RSHIFT);
+        boolean isShiftPressed = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT) || 
+                                InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
         
         if (!isShiftPressed) {
             // Shift not pressed, don't render overlay
@@ -475,7 +471,7 @@ public class AspectOverlay {
         }
         
         // Hide overlay if F1 menu (debug screen) is open
-        if (client.options.hideGui) {
+        if (client.gui.hud.isHidden()) {
             return;
         }
         
@@ -610,14 +606,13 @@ public class AspectOverlay {
         }
         
         // Hide overlay if F1 menu (debug screen) is open
-        if (client.options.hideGui) {
+        if (client.gui.hud.isHidden()) {
             return;
         }
         
         // Check if shift is pressed (redundant check, but kept for safety)
-        var window = client.getWindow();
-        boolean leftShift = InputConstants.isKeyDown(window, InputConstants.KEY_LSHIFT);
-        boolean rightShift = InputConstants.isKeyDown(window, InputConstants.KEY_RSHIFT);
+        boolean leftShift = InputConstants.isKeyDown(InputConstants.KEY_LSHIFT);
+        boolean rightShift = InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
         boolean isShiftPressed = leftShift || rightShift;
         
         if (!isShiftPressed) {

@@ -1,5 +1,7 @@
 package net.felix.utilities.DragOverlay.Overall;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.ItemViewer.CostItem;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
@@ -878,7 +880,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // Lösung: Rendering immer erlauben, um konsistente Anzeige zu gewährleisten
         
         // Hide overlay if F1 menu (debug screen) is open
-        if (client.options.hideGui) {
+        if (client.gui.hud.isHidden()) {
             return;
         }
         
@@ -1010,7 +1012,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         );
         
         // Anzahl oben rechts - als Textfeld wenn in Inventar, sonst als Text
-        boolean isInInventory = client.screen instanceof AbstractContainerScreen;
+        boolean isInInventory = client.gui.screen() instanceof AbstractContainerScreen;
         int quantity = getQuantityForPage(currentPage, entry);
         
         if (isInInventory) {
@@ -1931,7 +1933,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int totalButtonWidth = leftArrowWidth + spaceWidth + separatorWidth + spaceWidth + rightArrowWidth;
         
         // Berücksichtige Textfeld-Breite + "x"-Präfix wenn in Inventar
-        boolean isInInventory = client.screen instanceof AbstractContainerScreen;
+        boolean isInInventory = client.gui.screen() instanceof AbstractContainerScreen;
         int quantityAreaWidth = getQuantityAreaWidth(client, countText, isInInventory);
         int quantityAreaX = unscaledWidth - quantityAreaWidth - HEADER_COUNT_PADDING;
         
@@ -2015,13 +2017,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (client == null) return false;
         
         // Nur in Inventaren funktionieren
-        if (!(client.screen instanceof AbstractContainerScreen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen)) {
             return false;
         }
         
         // Prüfe zuerst, ob Bestätigungs-Overlay offen ist - dann prüfe Ja/Nein Buttons
         if (showDeleteConfirmation) {
-            if (confirmationJaButton != null && confirmationJaButton.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false)) {
+            if (confirmationJaButton != null && confirmationJaButton.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)) {
                 // Alle Baupläne entfernen
                 ClipboardUtility.clearClipboard();
                 showDeleteConfirmation = false;
@@ -2033,7 +2035,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 return true;
             }
             
-            if (confirmationNeinButton != null && confirmationNeinButton.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false)) {
+            if (confirmationNeinButton != null && confirmationNeinButton.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)) {
                 // Bestätigung abbrechen
                 showDeleteConfirmation = false;
                 confirmationButtonsVisible = false;
@@ -2045,7 +2047,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         // Bestätigungs-Overlay ist nicht offen - prüfe auf Haupt-Delete-Button
-        if (deleteButton != null && deleteButton.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(0, 0)), false)) {
+        if (deleteButton != null && deleteButton.mouseClicked(new net.minecraft.client.input.MouseButtonEvent(mouseX, mouseY, new net.minecraft.client.input.MouseButtonInfo(InputConstants.MOUSE_BUTTON_LEFT, 0)), false)) {
             // Bestätigungs-Overlay öffnen (für Seite 1) oder direkt entfernen (für Seiten 2+)
             int buttonPage = ClipboardUtility.getCurrentPage();
             if (buttonPage == 1) {
@@ -2155,7 +2157,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (client == null) return false;
         
         // Nur in Inventaren funktionieren
-        if (!(client.screen instanceof AbstractContainerScreen)) {
+        if (!(client.gui.screen() instanceof AbstractContainerScreen)) {
             return false;
         }
         
@@ -2278,7 +2280,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (client == null) return;
         
         // Hide tooltips if F1 menu (debug screen) is open
-        if (client.options.hideGui) {
+        if (client.gui.hud.isHidden()) {
             return;
         }
         
@@ -2452,7 +2454,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
     
     private static int computeHeaderLineWidth(Minecraft client, String blueprintName, String countText) {
-        boolean isInInventory = client.screen instanceof AbstractContainerScreen;
+        boolean isInInventory = client.gui.screen() instanceof AbstractContainerScreen;
         int quantityAreaWidth = getQuantityAreaWidth(client, countText, isInInventory);
         int totalButtonWidth = getNavigationButtonsWidth(client);
         int nameEndX = HEADER_NAME_PADDING + client.font.width(blueprintName);
@@ -2619,7 +2621,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         Minecraft client = Minecraft.getInstance();
-        if (client == null || !(client.screen instanceof AbstractContainerScreen)) {
+        if (client == null || !(client.gui.screen() instanceof AbstractContainerScreen)) {
             return false;
         }
         
@@ -2644,7 +2646,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         if (unscaledMouseX >= quantityAreaX && unscaledMouseX <= quantityAreaX + totalWidth
             && unscaledMouseY >= fieldY && unscaledMouseY <= fieldY + outerFieldHeight) {
-            if (button == org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
                 quantityTextField.setFocused(true);
                 quantityTextField.setValue("");
                 return true;
@@ -2681,43 +2683,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             
             // Für Zeicheneingaben: Konvertiere KeyCode zu Zeichen (Zahlen 0-9 und Nummernfeld)
             char digit = 0;
-            if (keyCode >= org.lwjgl.glfw.GLFW.GLFW_KEY_0 && keyCode <= org.lwjgl.glfw.GLFW.GLFW_KEY_9) {
-                // Haupttastatur 0-9
-                digit = (char) ('0' + (keyCode - org.lwjgl.glfw.GLFW.GLFW_KEY_0));
-            } else {
-                // Nummernfeld 0-9 - verwende explizite KeyCodes
-                switch (keyCode) {
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_0:
-                        digit = '0';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_1:
-                        digit = '1';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_2:
-                        digit = '2';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_3:
-                        digit = '3';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_4:
-                        digit = '4';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_5:
-                        digit = '5';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_6:
-                        digit = '6';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_7:
-                        digit = '7';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_8:
-                        digit = '8';
-                        break;
-                    case org.lwjgl.glfw.GLFW.GLFW_KEY_KP_9:
-                        digit = '9';
-                        break;
-                }
+            Character typedDigit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+            if (typedDigit != null) {
+                digit = typedDigit;
             }
             
             if (digit != 0) {
@@ -2758,7 +2726,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         boolean playerListKeyPressed = KeyBindingUtility.isPlayerListKeyPressed();
 
         // Prüfe ob F1 aktiv ist (wie alle anderen GUIs - über hudHidden)
-        boolean f1Active = client.options.hideGui;
+        boolean f1Active = client.gui.hud.isHidden();
 
         // Wenn Spielerliste-Taste gedrückt ist oder F1 aktiv ist, dann ausblenden
         if (playerListKeyPressed || f1Active) {

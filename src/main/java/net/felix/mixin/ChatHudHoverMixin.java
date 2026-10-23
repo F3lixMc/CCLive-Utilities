@@ -54,11 +54,11 @@ abstract class ChatHudHoverMixin {
         // even when no world is loaded (e.g., in main menu with chat history visible)
         
         // Check if Shift is pressed
-        boolean isShiftPressed = (InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), InputConstants.KEY_RSHIFT));
+        boolean isShiftPressed = (InputConstants.isKeyDown(InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT));
         
         // Use Minecraft's built-in method to check if a HoverEvent is being rendered
         // This is the same method Minecraft uses internally to determine tooltip hover
-        ChatComponent chatHud = client.gui.getChat();
+        ChatComponent chatHud = client.gui.hud.getChat();
         boolean hasHoverEvent = false;
         Component hoveredMessage = null;
         
@@ -180,7 +180,7 @@ abstract class ChatHudHoverMixin {
             return null;
         }
         
-        ChatComponent chatHud = client.gui.getChat();
+        ChatComponent chatHud = client.gui.hud.getChat();
         if (chatHud == null) {
             return null;
         }

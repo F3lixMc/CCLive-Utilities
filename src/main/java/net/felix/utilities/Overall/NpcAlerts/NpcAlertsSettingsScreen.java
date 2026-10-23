@@ -275,7 +275,7 @@ public class NpcAlertsSettingsScreen extends Screen {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 0) {
             // Prüfe zuerst ob auf das Schließen-Kreuz geklickt wurde
             int boxWidth = 300;
@@ -435,7 +435,7 @@ public class NpcAlertsSettingsScreen extends Screen {
             } else if (clickedOnGear) {
                 // Öffne Detail-Screen für diese Information
                 if (minecraft != null) {
-                    minecraft.setScreen(new NpcAlertsDetailScreen(this, entry.displayName, entry.configKey));
+                    minecraft.gui.setScreen(new NpcAlertsDetailScreen(this, entry.displayName, entry.configKey));
                 }
                 return true;
             }
@@ -454,7 +454,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         }
         
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
     

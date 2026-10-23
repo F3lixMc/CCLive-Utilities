@@ -1,5 +1,7 @@
 package net.felix.utilities.Town;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.felix.utilities.ItemViewer.ItemData;
 import net.felix.utilities.ItemViewer.ItemViewerGrid;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
@@ -16,7 +18,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import org.lwjgl.glfw.GLFW;
+
 
 import java.util.Collections;
 
@@ -428,7 +430,7 @@ public class CustomKitEditorScreen extends Screen {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (showDeleteConfirmation) {
             return super.mouseClicked(event, doubled);
         }
@@ -511,7 +513,7 @@ public class CustomKitEditorScreen extends Screen {
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double deltaX, double deltaY) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
             if (ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 return true;
@@ -524,7 +526,7 @@ public class CustomKitEditorScreen extends Screen {
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = event.button();
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             return true;
         }
@@ -654,7 +656,7 @@ public class CustomKitEditorScreen extends Screen {
             } else if (returnScreen instanceof KitViewScreen viewScreen) {
                 viewScreen.switchToCustomTab();
             }
-            client.setScreen(returnScreen);
+            client.gui.setScreen(returnScreen);
         } else {
             this.onClose();
         }
@@ -663,9 +665,9 @@ public class CustomKitEditorScreen extends Screen {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int keyCode = event.key();
-        int scanCode = event.scancode();
+        int scanCode = event.keycode();
         int modifiers = event.modifiers();
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == InputConstants.KEY_ESCAPE) {
             if (showDeleteConfirmation) {
                 closeDeleteConfirmation();
                 return true;

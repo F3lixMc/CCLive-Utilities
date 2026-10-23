@@ -9,7 +9,7 @@ public class AspectInfoRenderer {
         // Register world render callback to draw the aspect GUI
         LevelRenderEvents.END_MAIN.register(context -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.screen != null) {
+            if (client.gui.screen() != null) {
                 // Render the aspect GUI as an overlay
                 AspectInfoGUI.getInstance().renderOverlay();
             }

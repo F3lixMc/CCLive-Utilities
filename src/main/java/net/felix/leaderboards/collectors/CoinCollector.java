@@ -6,6 +6,7 @@ import net.felix.utilities.Other.DebugUtility;
 import net.felix.utilities.Overall.DimensionUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -27,6 +28,7 @@ public class CoinCollector implements DataCollector {
     
     // Pattern für die Coin-Antwort: [Legend] Du besitzt aktuell 56,989,382,785 Coins
     private static final Pattern COIN_PATTERN = Pattern.compile(".*\\[.*?\\].*Du besitzt aktuell ([0-9,]+) Coins.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ENGLISH_COIN_MESSAGE = Pattern.compile("you currently own\\s+[0-9][0-9,.]*\\s+coins\\.?", Pattern.CASE_INSENSITIVE);
     
     private long lastCoins = 0;
     private long lastCommandTime = 0;
@@ -55,7 +57,7 @@ public class CoinCollector implements DataCollector {
         long currentTime = System.currentTimeMillis();
         if (currentTime >= nextCommandTime && nextCommandTime > 0) {
             // In der Lobby kein /cc coins; Timer neu planen statt zu senden
-            if (DimensionUtility.isInGeneralLobby(client)) {
+            if (DimensionUtility.isInGeneralLobby(client) || !isOnPlayLegend(client)) {
                 scheduleNextCommand();
                 return;
             }
@@ -69,7 +71,7 @@ public class CoinCollector implements DataCollector {
      * Führt den /cc coins Command aus
      */
     private void executeCoinsCommand(Minecraft client) {
-        if (DimensionUtility.isInGeneralLobby(client)) {
+        if (DimensionUtility.isInGeneralLobby(client) || !isOnPlayLegend(client)) {
             return;
         }
         try {
@@ -94,6 +96,33 @@ public class CoinCollector implements DataCollector {
         } catch (Exception e) {
             System.err.println("❌ Fehler beim Ausführen von /cc coins: " + e.getMessage());
         }
+    }
+
+    private static boolean isOnPlayLegend(Minecraft client) {
+        if (client == null || client.getConnection() == null) {
+            return false;
+        }
+        var serverData = client.getCurrentServer();
+        if (serverData == null) {
+            serverData = client.getConnection().getServerData();
+        }
+        if (serverData != null && (containsPlayLegend(serverData.name) || containsPlayLegend(serverData.ip))) {
+            return true;
+        }
+        try {
+            if (client.getConnection().getConnection() != null) {
+                var address = client.getConnection().getConnection().getRemoteAddress();
+                if (address != null && containsPlayLegend(address.toString())) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private static boolean containsPlayLegend(String value) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains("playlegend.net");
     }
     
     /**
@@ -122,6 +151,11 @@ public class CoinCollector implements DataCollector {
      */
     public boolean processChatMessage(String message) {
         if (!isActive) return false;
+
+        String plainMessage = message.replaceAll("§[0-9a-fk-or]", "");
+        if (ENGLISH_COIN_MESSAGE.matcher(plainMessage).find()) {
+            return true;
+        }
         
         // Debug: Alle Chat-Nachrichten loggen
         if (DebugUtility.isLeaderboardDebuggingEnabled()) {

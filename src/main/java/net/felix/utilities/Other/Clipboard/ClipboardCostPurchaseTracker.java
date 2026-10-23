@@ -88,7 +88,7 @@ public final class ClipboardCostPurchaseTracker {
         AbstractContainerScreen<?> handledScreen = null;
         boolean isFishingCraft = pendingIsFishingCraft;
 
-        if (client.screen instanceof AbstractContainerScreen<?> screen) {
+        if (client.gui.screen() instanceof AbstractContainerScreen<?> screen) {
             handledScreen = screen;
             String title = screen.getTitle() != null ? screen.getTitle().getString() : "";
             isFishingCraft = ZeichenUtility.isFishingComponentsCraftTitle(title);
@@ -185,7 +185,7 @@ public final class ClipboardCostPurchaseTracker {
     private static void applyPurchaseCost(PendingCost pending) {
         if (pending.lowestSeenCurrent < pending.currentBefore) {
             if (pending.isMaterial) {
-                CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(pending.name, pending.lowestSeenCurrent);
+                CollectedMaterialsResourcesStorage.updateMaterial(pending.name, pending.lowestSeenCurrent);
             } else {
                 CollectedMaterialsResourcesStorage.updateResource(pending.name, pending.lowestSeenCurrent);
             }
@@ -195,7 +195,7 @@ public final class ClipboardCostPurchaseTracker {
             return;
         }
         if (pending.isMaterial) {
-            CollectedMaterialsResourcesStorage.subtractSyncedOwnedAmount(pending.name, pending.requiredCost);
+            CollectedMaterialsResourcesStorage.subtractMaterial(pending.name, pending.requiredCost);
         } else {
             CollectedMaterialsResourcesStorage.subtractResource(pending.name, pending.requiredCost);
         }

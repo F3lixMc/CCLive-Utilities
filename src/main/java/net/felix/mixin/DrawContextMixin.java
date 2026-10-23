@@ -27,7 +27,7 @@ public class DrawContextMixin {
         if (colorTop == 0xC0101010 && colorBottom == 0xD0101010) {
             // Prüfen, ob wir in einem "Ausrüstung" Inventar sind
             Minecraft client = Minecraft.getInstance();
-            if (client != null && client.screen instanceof AbstractContainerScreen<?> handledScreen) {
+            if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
                 String title = handledScreen.getTitle().getString();
                 if (ZeichenUtility.containsEquipmentDisplay(title)) { //Equipment Display
                     ci.cancel(); // Rendering abbrechen → Overlay wird nicht gezeichnet

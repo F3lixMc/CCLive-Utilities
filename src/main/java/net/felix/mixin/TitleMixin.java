@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.AnimationBlockerUtility;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.network.chat.Component;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import org.spongepowered.asm.mixin.Mixin;
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
-@Mixin(Gui.class)
+@Mixin(Hud.class)
 public class TitleMixin {
 
     
