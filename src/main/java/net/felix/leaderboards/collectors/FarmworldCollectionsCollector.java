@@ -169,7 +169,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
             if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 int currentCollection = getCollectionFromBossbar(client);
                 if (currentCollection >= 0) {
-                    cachedCollectionForCurrentZone = currentCollection;
+                cachedCollectionForCurrentZone = currentCollection;
                 }
             }
         } catch (Exception e) {
@@ -257,7 +257,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 if (currentCollection >= 0) {
                     cachedCollectionForCurrentZone = currentCollection;
                     if (currentCollection != lastTotalCollection) {
-                        lastTotalCollection = currentCollection;
+                    lastTotalCollection = currentCollection;
                         updateZoneScore(currentZone, currentCollection);
                     }
                 }
@@ -387,7 +387,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
     public long getTotalCollections() {
         return zoneCollections.values().stream().mapToLong(Long::longValue).sum();
     }
-
+    
     private Path zoneCollectionsFile() {
         return CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve(ZONE_COLLECTIONS_FILE);
     }
@@ -406,9 +406,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
                 long value = json.get(zone).getAsLong();
                 if (value >= 0) {
                     zoneCollections.put(zone, value);
+                    }
                 }
-            }
-        } catch (Exception e) {
+            } catch (Exception e) {
             System.err.println("❌ [FarmworldCollections] Zonenstände konnten nicht geladen werden: " + e.getMessage());
         }
     }
@@ -463,27 +463,27 @@ public class FarmworldCollectionsCollector implements DataCollector {
             }
             for (String line : lines) {
                 if (line == null || line.isBlank()) {
-                    continue;
-                }
-                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
+                                    continue;
+                                }
+                                            for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                     if (line.contains(zoneName)) {
-                        return zoneName;
-                    }
-                }
+                                                    return zoneName;
+                                                }
+                                            }
                 String normalized = line.replace("\u27A5", "").replace("->", "").trim();
                 if (normalized.startsWith("[") && normalized.endsWith("]") && normalized.length() > 2) {
                     normalized = normalized.substring(1, normalized.length() - 1).trim();
                 }
                 if (normalized.isEmpty()) {
-                    continue;
-                }
-                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
+                        continue;
+                    }
+                    for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
                     String inner = zoneName.substring(1, zoneName.length() - 1);
                     if (normalized.equalsIgnoreCase(inner)) {
-                        return zoneName;
+                            return zoneName;
+                        }
                     }
                 }
-            }
         } catch (Exception e) {
             System.err.println("❌ [FarmworldCollections] Fehler bei Zone-Suche: " + e.getMessage());
         }

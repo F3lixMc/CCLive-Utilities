@@ -424,7 +424,9 @@ public class InformationenUtility {
 				}
 				// Essence-Bag, -Auswahl, Harvester: keine Ebenen-Nummern
 				hideFloorNumbersInEssenceMenu = ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle);
-				isMaterialBagInventory = ZeichenUtility.containsUiMaterialBag(screenTitle);
+				isMaterialBagInventory = ZeichenUtility.containsUiMaterialBag(screenTitle)
+						|| ZeichenUtility.containsUiRessourceBag(screenTitle)
+						|| screenTitle.contains("Mob-Materialien");
 			}
 			
 			if (CCLiveUtilitiesConfig.HANDLER.instance().enableMod &&

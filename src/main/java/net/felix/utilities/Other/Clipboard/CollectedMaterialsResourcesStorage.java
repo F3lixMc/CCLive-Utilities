@@ -40,12 +40,14 @@ public class CollectedMaterialsResourcesStorage {
     private static final String OLD_RESOURCES_FILE = "collected_resources.json";
     private static final Map<String, Long> materials = new HashMap<>();
     private static final Map<String, Long> resources = new HashMap<>();
+    private static final Map<String, Long> essences = new HashMap<>();
     private static final Map<String, Long> other = new HashMap<>();
     /** Kaktus/Seelen als HUD-Abkürzung (z. B. {@code 8.542KL}) in der JSON-Sektion {@code other}. */
     private static final Map<String, String> otherAbbreviated = new HashMap<>();
     /** Normalisierter Name → Menge (O(1)-Lookup statt linearem Scan). */
     private static final Map<String, Long> normalizedMaterials = new HashMap<>();
     private static final Map<String, Long> normalizedResources = new HashMap<>();
+    private static final Map<String, Long> normalizedEssences = new HashMap<>();
     private static final Map<String, Long> normalizedOther = new HashMap<>();
     private static final Map<String, String> normalizedOtherAbbreviated = new HashMap<>();
     private static final AtomicBoolean saveScheduled = new AtomicBoolean(false);
@@ -122,6 +124,21 @@ public class CollectedMaterialsResourcesStorage {
                 return direct;
             }
             return normalizedResources.getOrDefault(normalizeName(resourceName), 0L);
+        }
+    }
+
+    public static long getEssenceAmount(String essenceName) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (essenceName == null) {
+            return 0L;
+        }
+        synchronized (essences) {
+            Long direct = essences.get(essenceName);
+            if (direct != null) {
+                return direct;
+            }
+            return normalizedEssences.getOrDefault(normalizeName(essenceName), 0L);
         }
     }
 
@@ -334,6 +351,46 @@ public class CollectedMaterialsResourcesStorage {
         Map<String, Long> update = new HashMap<>();
         update.put(name, amount);
         updateResources(update);
+    }
+
+    public static void updateEssence(String name, long amount) {
+        if (name == null || name.isEmpty()) {
+            return;
+        }
+        Map<String, Long> update = new HashMap<>();
+        update.put(name, amount);
+        updateEssences(update);
+    }
+
+    public static void updateEssences(Map<String, Long> updates) {
+        ensureInitialized();
+        refreshIfChanged();
+        if (updates == null || updates.isEmpty()) {
+            return;
+        }
+        boolean changed = false;
+        synchronized (essences) {
+            for (Map.Entry<String, Long> entry : updates.entrySet()) {
+                String name = entry.getKey();
+                Long amount = entry.getValue();
+                if (name == null || name.isEmpty() || amount == null) {
+                    continue;
+                }
+                Long current = essences.get(name);
+                if (current == null || !current.equals(amount)) {
+                    essences.put(name, amount);
+                    changed = true;
+                }
+            }
+        }
+        boolean removedFromResources = removeNames(resources, normalizedResources, updates.keySet());
+        boolean removedFromMaterials = removeNames(materials, normalizedMaterials, updates.keySet());
+        if (changed) {
+            applyNormalizedEssenceUpdates(updates);
+        }
+        if (changed || removedFromResources || removedFromMaterials) {
+            scheduleSave();
+        }
     }
 
     /** Addiert Mengen zu bestehenden Material-Einträgen (z. B. Fisch-Belohnungen im Chat). */
@@ -563,7 +620,7 @@ public class CollectedMaterialsResourcesStorage {
      * Besitzmenge für Pinboard-Materialien (materials + resources, normalisierter Lookup).
      */
     public static long getSyncedOwnedAmount(String name) {
-        return Math.max(getMaterialAmount(name), getResourceAmount(name));
+        return Math.max(Math.max(getMaterialAmount(name), getResourceAmount(name)), getEssenceAmount(name));
     }
 
     /**
@@ -591,6 +648,11 @@ public class CollectedMaterialsResourcesStorage {
         }
         long materialAmount = getMaterialAmount(name);
         long resourceAmount = getResourceAmount(name);
+        long essenceAmount = getEssenceAmount(name);
+        if (materialAmount == 0L && resourceAmount == 0L && essenceAmount > 0L) {
+            updateEssence(name, Math.max(0L, essenceAmount - delta));
+            return;
+        }
         if (materialAmount == 0L && resourceAmount > 0L) {
             updateResource(name, Math.max(0L, resourceAmount - delta));
             return;
@@ -605,6 +667,9 @@ public class CollectedMaterialsResourcesStorage {
         }
         synchronized (resources) {
             resources.clear();
+        }
+        synchronized (essences) {
+            essences.clear();
         }
         synchronized (other) {
             other.clear();
@@ -639,6 +704,9 @@ public class CollectedMaterialsResourcesStorage {
             synchronized (resources) {
                 resources.clear();
             }
+            synchronized (essences) {
+                essences.clear();
+            }
             synchronized (other) {
                 other.clear();
             }
@@ -666,6 +734,9 @@ public class CollectedMaterialsResourcesStorage {
         synchronized (resources) {
             resources.clear();
         }
+        synchronized (essences) {
+            essences.clear();
+        }
         synchronized (other) {
             other.clear();
         }
@@ -684,6 +755,7 @@ public class CollectedMaterialsResourcesStorage {
                 JsonObject root = element.getAsJsonObject();
                 readSection(root, "materials", materials);
                 readSection(root, "resources", resources);
+                readSection(root, "essence", essences);
                 readOtherSection(root);
             }
         } catch (Exception e) {
@@ -691,6 +763,7 @@ public class CollectedMaterialsResourcesStorage {
         }
         
         migrateLegacyOtherEntries();
+        migrateEssenceEntries();
         rebuildNormalizedCaches();
         
         if (storageFile.exists()) {
@@ -701,6 +774,7 @@ public class CollectedMaterialsResourcesStorage {
     private static void rebuildNormalizedCaches() {
         normalizedMaterials.clear();
         normalizedResources.clear();
+        normalizedEssences.clear();
         normalizedOther.clear();
         normalizedOtherAbbreviated.clear();
         synchronized (materials) {
@@ -717,6 +791,14 @@ public class CollectedMaterialsResourcesStorage {
                     continue;
                 }
                 normalizedResources.put(normalizeName(entry.getKey()), entry.getValue());
+            }
+        }
+        synchronized (essences) {
+            for (Map.Entry<String, Long> entry : essences.entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) {
+                    continue;
+                }
+                normalizedEssences.put(normalizeName(entry.getKey()), entry.getValue());
             }
         }
         synchronized (other) {
@@ -851,6 +933,53 @@ public class CollectedMaterialsResourcesStorage {
             return;
         }
         normalizedResources.put(normalizeName(name), amount);
+    }
+
+    private static void applyNormalizedEssenceEntry(String name, Long amount) {
+        if (name == null || amount == null) {
+            return;
+        }
+        normalizedEssences.put(normalizeName(name), amount);
+    }
+
+    private static void applyNormalizedEssenceUpdates(Map<String, Long> updates) {
+        for (Map.Entry<String, Long> entry : updates.entrySet()) {
+            applyNormalizedEssenceEntry(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /** Verschiebt Einträge mit „[Essenz]“ aus materials/resources nach {@code essence}. */
+    private static void migrateEssenceEntries() {
+        boolean changed = moveEssenceNamedEntries(materials);
+        changed |= moveEssenceNamedEntries(resources);
+        if (changed) {
+            scheduleSave();
+        }
+    }
+
+    private static boolean moveEssenceNamedEntries(Map<String, Long> section) {
+        List<Map.Entry<String, Long>> moved = new ArrayList<>();
+        synchronized (section) {
+            List<String> toRemove = new ArrayList<>();
+            for (Map.Entry<String, Long> entry : section.entrySet()) {
+                if (entry.getKey() != null && entry.getKey().contains("[Essenz]") && entry.getValue() != null) {
+                    moved.add(Map.entry(entry.getKey(), entry.getValue()));
+                    toRemove.add(entry.getKey());
+                }
+            }
+            for (String key : toRemove) {
+                section.remove(key);
+            }
+        }
+        if (moved.isEmpty()) {
+            return false;
+        }
+        synchronized (essences) {
+            for (Map.Entry<String, Long> entry : moved) {
+                essences.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return true;
     }
 
     private static void applyNormalizedOtherAbbreviatedEntry(String name, String displayValue) {
@@ -1051,6 +1180,7 @@ public class CollectedMaterialsResourcesStorage {
         JsonObject root = new JsonObject();
         root.add("materials", buildSection(materials));
         root.add("resources", buildSection(resources));
+        root.add("essence", buildSection(essences));
         root.add("other", buildOtherSection());
         return root;
     }
