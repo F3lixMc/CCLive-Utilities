@@ -7523,297 +7523,86 @@ public class InformationenUtility {
 		mkLevelSearchCursorVisible = true;
 		mkLevelSearchCursorBlinkTime = System.currentTimeMillis();
 		
-		// ESC-Taste
-		if (keyCode == 256) {
+		boolean ctrl = KeyBindingUtility.isCtrlDown(modifiers) && !KeyBindingUtility.isAltGrDown(modifiers);
+
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			mkLevelSearchFocused = false;
 			return true;
 		}
 		
-		// Backspace-Taste
-		if (keyCode == 259) {
-			// Strg+Backspace: Lösche alles
-			if (modifiers == 2) { // 2 = Strg
+		if (keyCode == InputConstants.KEY_BACKSPACE) {
+			if (ctrl) {
 				mkLevelSearchText = "";
 				mkLevelSearchCursorPosition = 0;
-				setMKLevelScrollOffset(0); // Reset scroll when search changes
+				setMKLevelScrollOffset(0);
 			} else if (!mkLevelSearchText.isEmpty() && mkLevelSearchCursorPosition > 0) {
-				// Normaler Backspace: Lösche ein Zeichen
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition - 1) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 				mkLevelSearchCursorPosition--;
-				setMKLevelScrollOffset(0); // Reset scroll when search changes
+				setMKLevelScrollOffset(0);
 			}
 			return true;
 		}
 		
-		// Delete-Taste
-		if (keyCode == 261) {
+		if (keyCode == InputConstants.KEY_DELETE) {
 			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition + 1);
-				setMKLevelScrollOffset(0); // Reset scroll when search changes
+				setMKLevelScrollOffset(0);
 			}
 			return true;
 		}
 		
-		// Pfeiltasten
-		if (keyCode == 263) { // Left arrow
+		if (keyCode == InputConstants.KEY_LEFT) {
 			if (mkLevelSearchCursorPosition > 0) {
 				mkLevelSearchCursorPosition--;
 			}
 			return true;
 		}
 		
-		if (keyCode == 262) { // Right arrow
+		if (keyCode == InputConstants.KEY_RIGHT) {
 			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
 				mkLevelSearchCursorPosition++;
 			}
 			return true;
 		}
 		
-		// Handle home/end
-		if (keyCode == 268) { // Home
+		if (keyCode == InputConstants.KEY_HOME) {
 			mkLevelSearchCursorPosition = 0;
 			return true;
 		}
 		
-		if (keyCode == 269) { // End
+		if (keyCode == InputConstants.KEY_END) {
 			mkLevelSearchCursorPosition = mkLevelSearchText.length();
 			return true;
 		}
 		
-		// Strg-Funktionen
-		if (modifiers == 2) { // 2 = Strg
-			switch (keyCode) {
-				case 67: // Strg+C - Kopieren
-					if (!mkLevelSearchText.isEmpty()) {
-						client.keyboardHandler.setClipboard(mkLevelSearchText);
-					}
-					return true;
-				case 86: // Strg+V - Einfügen
-					String clipboardText = client.keyboardHandler.getClipboard();
-					if (clipboardText != null && !clipboardText.isEmpty()) {
-						mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
-											clipboardText +
-											mkLevelSearchText.substring(mkLevelSearchCursorPosition);
-						mkLevelSearchCursorPosition += clipboardText.length();
-						setMKLevelScrollOffset(0); // Reset scroll when search changes
-					}
-					return true;
-				case 65: // Strg+A - Alles markieren (nicht nötig, aber für Konsistenz)
-					return true;
+		if (ctrl && keyCode == InputConstants.KEY_C) {
+			if (!mkLevelSearchText.isEmpty()) {
+				client.keyboardHandler.setClipboard(mkLevelSearchText);
 			}
-		}
-		
-		// Zeicheneingabe (basierend auf SearchBarUtility)
-		// Leertaste
-		if (keyCode == 32) {
-			insertMKLevelCharacter(' ');
 			return true;
 		}
-		
-		// Einfache Sonderzeichen
-		if (keyCode == 188) {
-			insertMKLevelCharacter(',');
-			return true;
-		}
-		
-		if (keyCode == 190) {
-			insertMKLevelCharacter('.');
-			return true;
-		}
-		
-		// Alternative KeyCodes für QWERTZ-Layout
-		if (keyCode == 44) {
-			insertMKLevelCharacter(',');
-			return true;
-		}
-		
-		if (keyCode == 46) {
-			insertMKLevelCharacter('.');
-			return true;
-		}
-		
-		if (keyCode == 189) {
-			insertMKLevelCharacter('-');
-			return true;
-		}
-		
-		if (keyCode == 187) {
-			insertMKLevelCharacter('+');
-			return true;
-		}
-		
-		if (keyCode == 186) {
-			insertMKLevelCharacter(';');
-			return true;
-		}
-		
-		if (keyCode == 222) {
-			insertMKLevelCharacter('"');
-			return true;
-		}
-		
-		if (keyCode == 192) {
-			insertMKLevelCharacter('`');
-			return true;
-		}
-		
-		// AltGr-Kombinationen
-		boolean handled = false;
-		if (modifiers == 6) {
-			switch (keyCode) {
-				case 56:
-					insertMKLevelCharacter('[');
-					handled = true;
-					break;
-				case 57:
-					insertMKLevelCharacter(']');
-					handled = true;
-					break;
-				case 55:
-					insertMKLevelCharacter('{');
-					handled = true;
-					break;
-				case 48:
-					insertMKLevelCharacter('}');
-					handled = true;
-					break;
-				case 81:
-					insertMKLevelCharacter('@');
-					handled = true;
-					break;
+		if (ctrl && keyCode == InputConstants.KEY_V) {
+			String clipboardText = client.keyboardHandler.getClipboard();
+			if (clipboardText != null && !clipboardText.isEmpty()) {
+				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
+									clipboardText +
+									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
+				mkLevelSearchCursorPosition += clipboardText.length();
+				setMKLevelScrollOffset(0);
 			}
+			return true;
 		}
-		
-		// Shift-Kombinationen
-		if (modifiers == 1) {
-			switch (keyCode) {
-				case 55:
-					insertMKLevelCharacter('/');
-					handled = true;
-					break;
-				case 56:
-					insertMKLevelCharacter('(');
-					handled = true;
-					break;
-				case 57:
-					insertMKLevelCharacter(')');
-					handled = true;
-					break;
-				case 48:
-					insertMKLevelCharacter('=');
-					handled = true;
-					break;
-				case 220:
-					insertMKLevelCharacter('|');
-					handled = true;
-					break;
+		if (ctrl) {
+			return true;
+		}
+
+		String typed = KeyBindingUtility.characterFromScancode(keyCode, modifiers);
+		if (typed != null && !typed.isEmpty()) {
+			for (int i = 0; i < typed.length(); i++) {
+				insertMKLevelCharacter(typed.charAt(i));
 			}
-		}
-		
-		if (keyCode == 53 && modifiers == 1) {
-			insertMKLevelCharacter('%');
-			return true;
-		}
-		
-		// Separate Sonderzeichen-Tasten
-		if (keyCode == 92) {
-			insertMKLevelCharacter('#');
-			return true;
-		}
-		
-		if (keyCode == 93) {
-			insertMKLevelCharacter('+');
-			return true;
-		}
-		
-		if (keyCode == 47) {
-			insertMKLevelCharacter('-');
-			return true;
-		}
-		
-		if (keyCode == 162 && modifiers == 0) {
-			insertMKLevelCharacter('<');
-			return true;
-		}
-		
-		if (keyCode == 162 && modifiers == 1) {
-			insertMKLevelCharacter('>');
-			return true;
-		}
-		
-		// Separate ß-Taste
-		if (keyCode == 45) {
-			insertMKLevelCharacter('ß');
-			return true;
-		}
-		
-		// Separate Umlaut-Tasten
-		if (keyCode == 39) {
-			insertMKLevelCharacter('ä');
-			return true;
-		}
-		
-		if (keyCode == 59) {
-			insertMKLevelCharacter('ö');
-			return true;
-		}
-		
-		if (keyCode == 91) {
-			insertMKLevelCharacter('ü');
-			return true;
-		}
-		
-		// Numpad-Tasten
-		if (keyCode == 334) {
-			insertMKLevelCharacter('+');
-			return true;
-		}
-		
-		if (keyCode == 333) {
-			insertMKLevelCharacter('-');
-			return true;
-		}
-		
-		// Numpad-Zahlen 0-9
-		if (keyCode == 320) {
-			insertMKLevelCharacter('0');
-			return true;
-		}
-		
-		if (keyCode >= 321 && keyCode <= 329) {
-			char number = (char) ('0' + (keyCode - 321 + 1));
-			insertMKLevelCharacter(number);
-			return true;
-		}
-		
-		if (handled) {
-			return true;
-		}
-		
-		// Zahlen 0-9
-		if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
-			char number = (char) keyCode;
-			insertMKLevelCharacter(number);
-			return true;
-		}
-		
-		// Buchstaben A-Z (QWERTZ Layout)
-		if (keyCode >= 65 && keyCode <= 90) {
-			char letter;
-			
-			// QWERTZ Layout: Y und Z tauschen
-			if (keyCode == 89) {
-				letter = modifiers == 1 ? 'Z' : 'z';
-			} else if (keyCode == 90) {
-				letter = modifiers == 1 ? 'Y' : 'y';
-			} else {
-				// Normale Buchstaben: Großbuchstaben bei Shift, Kleinbuchstaben ohne Shift
-				letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
-			}
-			
-			insertMKLevelCharacter(letter);
 			return true;
 		}
 		

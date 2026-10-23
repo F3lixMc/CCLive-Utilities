@@ -1,5 +1,6 @@
 package net.felix.utilities.Overall;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Town.ItemDisplayMode;
@@ -1549,9 +1550,8 @@ public class SearchBarUtility {
 	}
 	
 	public static boolean handleKeyPress(int keyCode, int scanCode, int modifiers) {
-		// Hilfe-Screen ESC behandeln
 		if (helpScreenOpen) {
-			if (keyCode == 256) { // ESC
+			if (keyCode == InputConstants.KEY_ESCAPE) {
 				helpScreenOpen = false;
 				return true;
 			}
@@ -1566,67 +1566,58 @@ public class SearchBarUtility {
 			return false;
 		}
 		
-		// Cursor sichtbar machen bei Tastendruck
 		cursorVisible = true;
 		cursorBlinkTime = System.currentTimeMillis();
 		
-		// ESC-Taste
-		if (keyCode == 256) {
+		boolean ctrl = KeyBindingUtility.isCtrlDown(modifiers) && !KeyBindingUtility.isAltGrDown(modifiers);
+		
+		if (keyCode == InputConstants.KEY_ESCAPE) {
 			isSearchBarFocused = false;
 			return true;
 		}
 		
-		// Enter-Taste
-		if (keyCode == 257) {
+		if (keyCode == InputConstants.KEY_RETURN || keyCode == InputConstants.KEY_NUMPADENTER) {
 			performSearch();
-		return true;
+			return true;
 		}
 		
-		// Strg-Funktionen
-		if (modifiers == 2) { // 2 = Strg
-			switch (keyCode) {
-				case 67: // Strg+C - Kopieren
-					if (hasSelection()) {
-						// Kopiere markierten Text
-						String selectedText = searchText.substring(Math.min(selectionStart, selectionEnd), Math.max(selectionStart, selectionEnd));
-						client.keyboardHandler.setClipboard(selectedText);
-					} else if (!searchText.isEmpty()) {
-						// Kopiere gesamten Text wenn nichts markiert ist
-						client.keyboardHandler.setClipboard(searchText);
-					}
-					return true;
-				case 86: // Strg+V - Einfügen
-					String clipboardText = client.keyboardHandler.getClipboard();
-					if (clipboardText != null && !clipboardText.isEmpty()) {
-						if (hasSelection()) {
-							// Ersetze markierten Text
-							int start = Math.min(selectionStart, selectionEnd);
-							int end = Math.max(selectionStart, selectionEnd);
-							searchText = searchText.substring(0, start) + clipboardText + searchText.substring(end);
-							cursorPosition = start + clipboardText.length();
-							clearSelection();
-						} else {
-							// Füge an Cursor-Position ein
-							searchText = searchText.substring(0, cursorPosition) + clipboardText + searchText.substring(cursorPosition);
-							cursorPosition += clipboardText.length();
-						}
-						performSearch();
-					}
-					return true;
-				case 65: // Strg+A - Alles markieren
-					if (!searchText.isEmpty()) {
-						selectionStart = 0;
-						selectionEnd = searchText.length();
-						cursorPosition = searchText.length();
-					}
-					return true;
-			}
-		}
-		
-		// Backspace-Taste
-		if (keyCode == 259) {
+		if (ctrl && keyCode == InputConstants.KEY_C) {
 			if (hasSelection()) {
-				// Lösche markierten Text
+				String selectedText = searchText.substring(Math.min(selectionStart, selectionEnd), Math.max(selectionStart, selectionEnd));
+				client.keyboardHandler.setClipboard(selectedText);
+			} else if (!searchText.isEmpty()) {
+				client.keyboardHandler.setClipboard(searchText);
+			}
+			return true;
+		}
+		if (ctrl && keyCode == InputConstants.KEY_V) {
+			String clipboardText = client.keyboardHandler.getClipboard();
+			if (clipboardText != null && !clipboardText.isEmpty()) {
+				if (hasSelection()) {
+					int start = Math.min(selectionStart, selectionEnd);
+					int end = Math.max(selectionStart, selectionEnd);
+					searchText = searchText.substring(0, start) + clipboardText + searchText.substring(end);
+					cursorPosition = start + clipboardText.length();
+					clearSelection();
+				} else {
+					searchText = searchText.substring(0, cursorPosition) + clipboardText + searchText.substring(cursorPosition);
+					cursorPosition += clipboardText.length();
+				}
+				performSearch();
+			}
+			return true;
+		}
+		if (ctrl && keyCode == InputConstants.KEY_A) {
+			if (!searchText.isEmpty()) {
+				selectionStart = 0;
+				selectionEnd = searchText.length();
+				cursorPosition = searchText.length();
+			}
+			return true;
+		}
+		
+		if (keyCode == InputConstants.KEY_BACKSPACE) {
+			if (hasSelection()) {
 				int start = Math.min(selectionStart, selectionEnd);
 				int end = Math.max(selectionStart, selectionEnd);
 				searchText = searchText.substring(0, start) + searchText.substring(end);
@@ -1634,13 +1625,11 @@ public class SearchBarUtility {
 				clearSelection();
 				performSearch();
 			} else if (cursorPosition > 0) {
-				// Strg+Backspace: Lösche ganzes Wort
-				if (modifiers == 2) { // 2 = Strg
+				if (ctrl) {
 					int wordStart = findWordStart(searchText, cursorPosition);
 					searchText = searchText.substring(0, wordStart) + searchText.substring(cursorPosition);
 					cursorPosition = wordStart;
 				} else {
-					// Normaler Backspace: Lösche ein Zeichen
 					searchText = searchText.substring(0, cursorPosition - 1) + searchText.substring(cursorPosition);
 					cursorPosition--;
 				}
@@ -1649,13 +1638,8 @@ public class SearchBarUtility {
 			return true;
 		}
 		
-
-
-
-		// Delete-Taste
-		if (keyCode == 261) {
+		if (keyCode == InputConstants.KEY_DELETE) {
 			if (hasSelection()) {
-				// Lösche markierten Text
 				int start = Math.min(selectionStart, selectionEnd);
 				int end = Math.max(selectionStart, selectionEnd);
 				searchText = searchText.substring(0, start) + searchText.substring(end);
@@ -1663,243 +1647,35 @@ public class SearchBarUtility {
 				clearSelection();
 				performSearch();
 			} else if (cursorPosition < searchText.length()) {
-				// Delete: Lösche Zeichen nach dem Cursor
 				searchText = searchText.substring(0, cursorPosition) + searchText.substring(cursorPosition + 1);
 				performSearch();
 			}
 			return true;
 		}
-
 		
-		// Pfeiltasten
-		if (keyCode == 263) {
-			clearSelection(); // Auswahl löschen
+		if (keyCode == InputConstants.KEY_LEFT) {
+			clearSelection();
 			if (cursorPosition > 0) {
 				cursorPosition--;
 			}
 			return true;
 		}
 		
-		if (keyCode == 262) {
-			clearSelection(); // Auswahl löschen
+		if (keyCode == InputConstants.KEY_RIGHT) {
+			clearSelection();
 			if (cursorPosition < searchText.length()) {
 				cursorPosition++;
 			}
 			return true;
 		}
-		
 
-		
-
-		
-		// Leertaste
-		if (keyCode == 32) {
-			insertCharacter(' ');
-			return true;
-		}
-		
-		// Einfache Sonderzeichen
-		if (keyCode == 188) {
-			insertCharacter(',');
-			return true;
-		}
-		
-		if (keyCode == 190) {
-			insertCharacter('.');
-			return true;
-		}
-		
-		// Alternative KeyCodes für QWERTZ-Layout
-		if (keyCode == 44) { // Alternative für Komma
-			insertCharacter(',');
-			return true;
-		}
-		
-		if (keyCode == 46) { // Alternative für Punkt
-			insertCharacter('.');
-			return true;
-		}
-		
-		if (keyCode == 189) {
-			insertCharacter('-');
-			return true;
-		}
-		
-		if (keyCode == 187) {
-			insertCharacter('+');
-			return true;
-		}
-		
-		if (keyCode == 186) {
-			insertCharacter(';');
-			return true;
-		}
-		
-		if (keyCode == 222) {
-			insertCharacter('"');
-			return true;
-		}
-		
-		if (keyCode == 192) {
-			insertCharacter('`');
-			return true;
-		}
-		
-		// AltGr-Kombinationen
-		boolean handled = false;
-		if (modifiers == 6) {
-			switch (keyCode) {
-				case 56:
-					insertCharacter('[');
-					handled = true;
-					break;
-				case 57:
-					insertCharacter(']');
-					handled = true;
-					break;
-				case 55:
-					insertCharacter('{');
-					handled = true;
-					break;
-				case 48:
-					insertCharacter('}');
-					handled = true;
-					break;
-				case 81:
-					insertCharacter('@');
-					handled = true;
-					break;
-			}
-		}
-		
-		// Shift-Kombinationen
-		if (modifiers == 1) {
-			switch (keyCode) {
-				case 55:
-					insertCharacter('/');
-					handled = true;
-					break;
-				case 56:
-					insertCharacter('(');
-					handled = true;
-					break;
-				case 57:
-					insertCharacter(')');
-					handled = true;
-					break;
-				case 48:
-					insertCharacter('=');
-					handled = true;
-					break;
-				case 220:
-					insertCharacter('|');
-					handled = true;
-					break;
-			}
-		}
-		
-		if (keyCode == 53 && modifiers == 1) {
-			insertCharacter('%');
-			return true;
-		}
-		
-		// Separate Sonderzeichen-Tasten
-		if (keyCode == 92) {
-			insertCharacter('#');
-			return true;
-		}
-		
-		if (keyCode == 93) {
-			insertCharacter('+');
-			return true;
-		}
-		
-		if (keyCode == 47) {
-			insertCharacter('-');
-			return true;
-		}
-		
-		if (keyCode == 162 && modifiers == 0) {
-			insertCharacter('<');
-			return true;
-		}
-		
-		if (keyCode == 162 && modifiers == 1) {
-			insertCharacter('>');
-			return true;
-		}
-		
-		// Separate ß-Taste
-		if (keyCode == 45) {
-			insertCharacter('ß');
-			return true;
-		}
-		
-		// Separate Umlaut-Tasten
-		if (keyCode == 39) { // ä
-			insertCharacter('ä');
-			return true;
-		}
-		
-		if (keyCode == 59) { // ö
-			insertCharacter('ö');
-			return true;
-		}
-		
-		if (keyCode == 91) { // ü
-			insertCharacter('ü');
-			return true;
-		}
-		
-		// Numpad-Tasten
-		if (keyCode == 334) {
-			insertCharacter('+');
-			return true;
-		}
-		
-		if (keyCode == 333) {
-			insertCharacter('-');
-			return true;
-		}
-		
-		// Numpad-Zahlen 0-9
-		if (keyCode == 320) {
-			insertCharacter('0');
-			return true;
-		}
-		
-		if (keyCode >= 321 && keyCode <= 329) {
-			char number = (char) ('0' + (keyCode - 321 + 1));
-			insertCharacter(number);
+		if (ctrl) {
 			return true;
 		}
 
-		if (handled) {
-			return true;
-		}
-
-		// Zahlen 0-9
-		if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
-			char number = (char) keyCode;
-			insertCharacter(number);
-			return true;
-		}
-
-		// Buchstaben A-Z (QWERTZ Layout)
-		if (keyCode >= 65 && keyCode <= 90) {
-			char letter;
-			
-			// QWERTZ Layout: Y und Z tauschen
-			if (keyCode == 89) {
-				letter = modifiers == 1 ? 'Z' : 'z';
-			} else if (keyCode == 90) {
-				letter = modifiers == 1 ? 'Y' : 'y';
-			} else {
-				// Normale Buchstaben: Großbuchstaben bei Shift, Kleinbuchstaben ohne Shift
-				letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
-			}
-			
-			insertCharacter(letter);
+		String typed = KeyBindingUtility.characterFromScancode(keyCode, modifiers);
+		if (typed != null && !typed.isEmpty()) {
+			insertCharacter(typed.charAt(0));
 			return true;
 		}
 
