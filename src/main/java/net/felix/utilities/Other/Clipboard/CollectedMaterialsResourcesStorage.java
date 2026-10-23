@@ -270,8 +270,11 @@ public class CollectedMaterialsResourcesStorage {
                 }
             }
         }
+        boolean removedFromResources = removeNames(resources, normalizedResources, materialUpdates.keySet());
         if (changed) {
             applyNormalizedMaterialUpdates(materialUpdates);
+        }
+        if (changed || removedFromResources) {
             scheduleSave();
         }
     }
@@ -306,8 +309,11 @@ public class CollectedMaterialsResourcesStorage {
                 }
             }
         }
+        boolean removedFromMaterials = removeNames(materials, normalizedMaterials, resourceUpdates.keySet());
         if (changed) {
             applyNormalizedResourceUpdates(resourceUpdates);
+        }
+        if (changed || removedFromMaterials) {
             scheduleSave();
         }
     }
@@ -359,6 +365,7 @@ public class CollectedMaterialsResourcesStorage {
                 changed = true;
             }
         }
+        boolean removedFromResources = removeNames(resources, normalizedResources, materialDeltas.keySet());
         if (changed) {
             synchronized (materials) {
                 for (String name : materialDeltas.keySet()) {
@@ -367,6 +374,8 @@ public class CollectedMaterialsResourcesStorage {
                     }
                 }
             }
+        }
+        if (changed || removedFromResources) {
             scheduleSave();
         }
     }
@@ -409,6 +418,7 @@ public class CollectedMaterialsResourcesStorage {
                 changed = true;
             }
         }
+        boolean removedFromMaterials = removeNames(materials, normalizedMaterials, resourceDeltas.keySet());
         if (changed) {
             synchronized (resources) {
                 for (String name : resourceDeltas.keySet()) {
@@ -417,6 +427,8 @@ public class CollectedMaterialsResourcesStorage {
                     }
                 }
             }
+        }
+        if (changed || removedFromMaterials) {
             scheduleSave();
         }
     }
@@ -555,72 +567,17 @@ public class CollectedMaterialsResourcesStorage {
     }
 
     /**
-     * Setzt Material- und Ressourcen-Eintrag konsistent (gleicher Name, z. B. nach Material-Bag / Actionbar).
+     * Setzt einen Material-Eintrag. Ressourcen mit demselben Namen werden daraus entfernt.
      */
     public static void setSyncedOwnedAmount(String name, long amount) {
-        if (name == null || name.isEmpty()) {
-            return;
-        }
-        Map<String, Long> update = new HashMap<>();
-        update.put(name, amount);
-        setSyncedOwnedAmounts(update);
+        updateMaterial(name, amount);
     }
 
     /**
-     * Setzt mehrere Material-/Ressourcen-Einträge in einem Durchgang (ein Cache-Update, ein Save).
+     * Setzt mehrere Material-Einträge. Dieselben Namen werden nicht zusätzlich unter resources gespeichert.
      */
     public static void setSyncedOwnedAmounts(Map<String, Long> updates) {
-        ensureInitialized();
-        refreshIfChanged();
-        if (updates == null || updates.isEmpty()) {
-            return;
-        }
-        Map<String, Long> syncedUpdates = new HashMap<>();
-        Map<String, Long> otherUpdates = new HashMap<>();
-        partitionUpdates(updates, syncedUpdates, otherUpdates);
-        if (!otherUpdates.isEmpty()) {
-            updateOther(otherUpdates);
-        }
-        if (syncedUpdates.isEmpty()) {
-            return;
-        }
-        boolean changed = false;
-        synchronized (materials) {
-            for (Map.Entry<String, Long> entry : syncedUpdates.entrySet()) {
-                String name = entry.getKey();
-                Long amount = entry.getValue();
-                if (name == null || name.isEmpty() || amount == null) {
-                    continue;
-                }
-                Long current = materials.get(name);
-                if (current == null || !current.equals(amount)) {
-                    materials.put(name, amount);
-                    changed = true;
-                }
-            }
-        }
-        synchronized (resources) {
-            for (Map.Entry<String, Long> entry : syncedUpdates.entrySet()) {
-                String name = entry.getKey();
-                Long amount = entry.getValue();
-                if (name == null || name.isEmpty() || amount == null) {
-                    continue;
-                }
-                Long current = resources.get(name);
-                if (current == null || !current.equals(amount)) {
-                    resources.put(name, amount);
-                    changed = true;
-                }
-            }
-        }
-        if (changed) {
-            for (Map.Entry<String, Long> entry : syncedUpdates.entrySet()) {
-                if (entry.getKey() != null && entry.getValue() != null) {
-                    applySyncedNormalizedEntry(entry.getKey(), entry.getValue());
-                }
-            }
-            scheduleSave();
-        }
+        updateMaterials(updates);
     }
 
     public static void subtractSyncedOwnedAmount(String name, long delta) {
@@ -632,8 +589,13 @@ public class CollectedMaterialsResourcesStorage {
             updateOther(name, Math.max(0L, current - delta));
             return;
         }
-        long current = getSyncedOwnedAmount(name);
-        setSyncedOwnedAmount(name, Math.max(0L, current - delta));
+        long materialAmount = getMaterialAmount(name);
+        long resourceAmount = getResourceAmount(name);
+        if (materialAmount == 0L && resourceAmount > 0L) {
+            updateResource(name, Math.max(0L, resourceAmount - delta));
+            return;
+        }
+        updateMaterial(name, Math.max(0L, Math.max(materialAmount, resourceAmount) - delta));
     }
     
     public static void resetAll() {
@@ -988,10 +950,33 @@ public class CollectedMaterialsResourcesStorage {
         }
     }
 
-    private static void applySyncedNormalizedEntry(String name, long amount) {
-        String normalized = normalizeName(name);
-        normalizedMaterials.put(normalized, amount);
-        normalizedResources.put(normalized, amount);
+    private static boolean removeNames(Map<String, Long> section, Map<String, Long> normalized, Iterable<String> names) {
+        boolean removed = false;
+        synchronized (section) {
+            for (String name : names) {
+                if (name == null || name.isEmpty()) {
+                    continue;
+                }
+                String normalizedName = normalizeName(name);
+                if (section.remove(name) != null) {
+                    removed = true;
+                }
+                List<String> toRemove = new ArrayList<>();
+                for (Map.Entry<String, Long> entry : section.entrySet()) {
+                    if (entry.getKey() != null && normalizeName(entry.getKey()).equals(normalizedName)) {
+                        toRemove.add(entry.getKey());
+                    }
+                }
+                for (String key : toRemove) {
+                    section.remove(key);
+                    removed = true;
+                }
+                if (normalized.remove(normalizedName) != null) {
+                    removed = true;
+                }
+            }
+        }
+        return removed;
     }
 
     private static void applyNormalizedMaterialUpdates(Map<String, Long> updates) {

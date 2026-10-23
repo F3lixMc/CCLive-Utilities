@@ -71,7 +71,7 @@ public final class ClipboardFarmzoneActionBar {
             return false;
         }
 
-        CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(resourceName, total);
+        CollectedMaterialsResourcesStorage.updateResource(resourceName, total);
         if (CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateEnabled) {
             FarmzoneResourceRateUtility.update(resourceName, total);
         }

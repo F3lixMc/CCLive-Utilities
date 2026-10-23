@@ -78,7 +78,11 @@ public class ClipboardMaterialCollector {
                             String name = cleanMaterialName(matcher.group(1));
                             long amount = parseAmount(matcher.group(2));
                             if (!name.isEmpty() && !isCoinsName(name)) {
-                                collectedMaterials.put(name, amount);
+                                if (isClipboardMaterial(name) || isNonMaterialCost(name)) {
+                                    collectedMaterials.put(name, amount);
+                                } else {
+                                    collectedResources.put(name, amount);
+                                }
                             }
                         }
                     } else if (isCostInventory || isFishingCraft) {
@@ -104,9 +108,7 @@ public class ClipboardMaterialCollector {
         }
         
         if (!collectedMaterials.isEmpty()) {
-            for (Map.Entry<String, Long> entry : collectedMaterials.entrySet()) {
-                CollectedMaterialsResourcesStorage.setSyncedOwnedAmount(entry.getKey(), entry.getValue());
-            }
+            CollectedMaterialsResourcesStorage.updateMaterials(collectedMaterials);
         }
         if (!collectedResources.isEmpty()) {
             CollectedMaterialsResourcesStorage.updateResources(collectedResources);
