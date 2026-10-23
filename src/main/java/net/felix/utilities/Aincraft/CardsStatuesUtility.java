@@ -1,6 +1,7 @@
 package net.felix.utilities.Aincraft;
 
 import net.felix.utilities.Overall.KeyCategories;
+import net.felix.utilities.Overall.ZeichenUtility;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -480,21 +481,25 @@ public class CardsStatuesUtility {
 		// Parse die geparsten Hover-Daten
 		List<String> hoverLines = new ArrayList<>();
 		java.util.Set<String> seenLines = new java.util.HashSet<>(); // Verhindere Duplikate
-		String[] lines = hoverContent.split("\n");
+		String[] lines = hoverContent.split("\n", -1);
 		
 		for (String line : lines) {
 			String trimmed = stripPixelSpacers(line).trim();
-			if (!trimmed.isEmpty()) {
-				// Entferne Formatierungscodes für Vergleich (um Duplikate zu erkennen)
-				String cleanForComparison = stripFormatting(trimmed).trim();
-				if (cleanForComparison.isEmpty()) {
-					continue;
-				}
-				// Füge nur hinzu, wenn wir diese Zeile noch nicht gesehen haben
-				if (!seenLines.contains(cleanForComparison)) {
-					seenLines.add(cleanForComparison);
-					hoverLines.add(trimmed);
-				}
+			if (trimmed.isEmpty()) {
+				// Leere Prestige-Zeile behalten, damit das Kartenlevel in Zeile 3 bleibt
+				hoverLines.add("");
+				continue;
+			}
+			// Entferne Formatierungscodes für Vergleich (um Duplikate zu erkennen)
+			String cleanForComparison = stripFormatting(trimmed).trim();
+			if (cleanForComparison.isEmpty()) {
+				hoverLines.add("");
+				continue;
+			}
+			// Füge nur hinzu, wenn wir diese Zeile noch nicht gesehen haben
+			if (!seenLines.contains(cleanForComparison)) {
+				seenLines.add(cleanForComparison);
+				hoverLines.add(trimmed);
 			}
 		}
 		
@@ -511,17 +516,6 @@ public class CardsStatuesUtility {
 		}
 		
 		for (String line : hoverLines) {
-			// Karten-Level: Zähle Sterne (⭐)
-			int starCount = countStars(line);
-			if (starCount > 0) {
-				cardData.setLevel(String.valueOf(starCount));
-			}
-			
-			// Backup: Maximale Stufe erreicht
-			if (line.contains("Maximale Stufe erreicht!")) {
-				cardData.setLevel("5");
-			}
-			
 			// Nächste Stufe (für Anzeige, nicht für Level-Tracking)
 			if (line.contains("Nächste Stufe:")) {
 				String nextLevel = stripFormatting(line).replaceAll("[^0-9]", "").trim();
@@ -532,6 +526,8 @@ public class CardsStatuesUtility {
 				cardData.setEffect(line);
 			}
 		}
+
+		applyCardLevelAndPrestige(cardData, hoverLines);
 		
 		currentCard = cardData;
 		
@@ -594,12 +590,20 @@ public class CardsStatuesUtility {
 					if (!level.isEmpty()) {
 						statueData.setLevel(level);
 					}
+				} else {
+					int marker = cleanLine.toLowerCase().indexOf("stufe");
+					if (marker >= 0) {
+						int decoded = decodeAincraftNumber(cleanLine.substring(marker + "stufe".length()));
+						if (decoded >= 0) {
+							statueData.setLevel(String.valueOf(decoded));
+						}
+					}
 				}
 			}
 			
-			// Backup: Maximale Stufe erreicht (Level 40)
-			if (line.contains("Maximale Stufe erreicht!")) {
-				statueData.setLevel("40");
+			// Nur wenn keine Stufenzahl gelesen wurde. Das Maximum ist 100.
+			if (line.contains("Maximale Stufe erreicht!") && statueData.getLevel() == null) {
+				statueData.setLevel("100");
 			}
 			
 			// Nächste Stufe (für Anzeige, nicht für Level-Tracking)
@@ -626,6 +630,36 @@ public class CardsStatuesUtility {
 	
 
 	
+	private static int decodeAincraftNumber(String text) {
+		if (text == null || text.isEmpty()) {
+			return -1;
+		}
+		java.util.Map<Character, Integer> digits = ZeichenUtility.getAincraftBottomFontNumbers();
+		if (digits == null || digits.isEmpty()) {
+			return -1;
+		}
+		StringBuilder number = new StringBuilder();
+		for (int offset = 0; offset < text.length(); ) {
+			int codePoint = text.codePointAt(offset);
+			offset += Character.charCount(codePoint);
+			if (codePoint > 0xFFFF) {
+				continue;
+			}
+			Integer digit = digits.get((char) codePoint);
+			if (digit != null) {
+				number.append(digit);
+			}
+		}
+		if (number.length() == 0) {
+			return -1;
+		}
+		try {
+			return Integer.parseInt(number.toString());
+		} catch (NumberFormatException e) {
+			return -1;
+		}
+	}
+
 	private static String getColorFromStyle(Style style) {
 		if (style.getColor() != null) {
 			return style.getColor().serialize();
@@ -638,19 +672,104 @@ public class CardsStatuesUtility {
 	 * @param line Die zu prüfende Zeile
 	 * @return Anzahl der Sterne (0-5)
 	 */
-	private static int countStars(String line) {
+	/**
+	 * Zeile 2 des Karten-Tooltips sind die Prestige-Rauten, Zeile 3 das Kartenlevel.
+	 * Ohne Prestige ist Zeile 2 leer und zählt als Prestige 0.
+	 */
+	private static void applyCardLevelAndPrestige(CardData cardData, List<String> lines) {
+		if (lines == null || lines.size() < 2) {
+			return;
+		}
+		int prestige = 0;
+		for (String line : lines) {
+			prestige += countGoldDiamonds(line);
+		}
+		int level = lines.size() > 2 ? readCardLevelLine(lines.get(2)) : -1;
+		cardData.setPrestige(prestige);
+		if (level >= 0) {
+			cardData.setLevel(String.valueOf(level));
+		}
+	}
+
+	private static int readCardLevelLine(String line) {
+		if (line == null || line.isEmpty()) {
+			return -1;
+		}
+		if (line.contains("Maximale Stufe erreicht!")) {
+			return 5;
+		}
+		int[] stars = countStars(line);
+		if (stars[0] == 0 && stars[1] == 0) {
+			return -1;
+		}
+		return Math.min(stars[0], 5);
+	}
+
+	/**
+	 * {@code 㔛㔙㔖§#FFB600♦㔛㔙㔖} ist Prestige 1.
+	 * Die Pixel-Spacer zählen nicht, nur ♦ hinter §#FFB600.
+	 */
+	private static int countGoldDiamonds(String line) {
 		if (line == null || line.isEmpty()) {
 			return 0;
 		}
-		// Zähle alle ⭐ Zeichen (U+2B50)
+		boolean gold = false;
 		int count = 0;
-		for (char c : line.toCharArray()) {
-			if (c == '⭐') {
+		for (int i = 0; i < line.length(); ) {
+			char c = line.charAt(i);
+			if (c == '§' && i + 1 < line.length()) {
+				if (line.charAt(i + 1) == '#' && i + 7 < line.length()) {
+					gold = line.substring(i + 2, i + 8).equalsIgnoreCase("FFB600");
+					i += 8;
+					continue;
+				}
+				i += 2;
+				continue;
+			}
+			int codePoint = line.codePointAt(i);
+			i += Character.charCount(codePoint);
+			if (gold && codePoint == '♦') {
 				count++;
 			}
 		}
-		// Begrenze auf maximal 5 (sollte nicht passieren, aber sicherheitshalber)
-		return Math.min(count, 5);
+		return count;
+	}
+
+	/**
+	 * Index 0 sind farbige Sterne (das Kartenlevel), Index 1 ausgegraute Sterne.
+	 * Ein ausgegrauter Stern ist Level 0.
+	 */
+	private static int[] countStars(String line) {
+		int[] counts = new int[2];
+		if (line == null || line.isEmpty()) {
+			return counts;
+		}
+		int starKind = -1;
+		for (int i = 0; i < line.length(); ) {
+			char c = line.charAt(i);
+			if (c == '§' && i + 1 < line.length()) {
+				if (line.charAt(i + 1) == '#' && i + 7 < line.length()) {
+					starKind = starKind(line.substring(i + 2, i + 8));
+					i += 8;
+					continue;
+				}
+				i += 2;
+				continue;
+			}
+			if (c == '⭐' && starKind >= 0) {
+				counts[starKind]++;
+			}
+			i++;
+		}
+		return counts;
+	}
+
+	/** 0 = Kartenlevel, 1 = ausgegraut §#6E627D. §#CADADB und §#FFD477 zählen als Level. */
+	private static int starKind(String hex) {
+		if (hex != null && hex.equalsIgnoreCase("6E627D")) {
+			return 1;
+		}
+		return hex == null ? -1 : 0;
 	}
 
 	/**
@@ -1124,6 +1243,7 @@ public class CardsStatuesUtility {
 	public static class CardData {
 		private String name;
 		private String level;
+		private int prestige;
 		private String nextLevel;
 		private String effect;
 		private String color;
@@ -1139,6 +1259,9 @@ public class CardsStatuesUtility {
 		
 		public String getLevel() { return level; }
 		public void setLevel(String level) { this.level = level; }
+
+		public int getPrestige() { return prestige; }
+		public void setPrestige(int prestige) { this.prestige = prestige; }
 		
 		public String getNextLevel() { return nextLevel; }
 		public void setNextLevel(String nextLevel) { this.nextLevel = nextLevel; }
