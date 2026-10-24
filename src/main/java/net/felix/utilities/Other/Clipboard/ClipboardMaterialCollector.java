@@ -112,9 +112,6 @@ public class ClipboardMaterialCollector {
         }
         
         if (!collectedMaterials.isEmpty()) {
-            if (isFishBag || isMobMaterials) {
-                logBagRead(title, collectedMaterials);
-            }
             CollectedMaterialsResourcesStorage.updateMaterials(collectedMaterials);
         }
         if (!collectedResources.isEmpty()) {
@@ -122,7 +119,6 @@ public class ClipboardMaterialCollector {
         }
     }
 
-    private static String lastLoggedBagSignature = "";
     private static String lastCheckedTitle = null;
     private static long lastContentCheckTime = 0L;
     private static boolean lastContentCheckResult = false;
@@ -165,20 +161,6 @@ public class ClipboardMaterialCollector {
         return false;
     }
 
-    private static void logBagRead(String title, Map<String, Long> collected) {
-        String signature = collected.toString();
-        if (signature.equals(lastLoggedBagSignature)) {
-            return;
-        }
-        lastLoggedBagSignature = signature;
-        StringBuilder codePoints = new StringBuilder();
-        title.codePoints().forEach(cp -> {
-            if (cp > 127) {
-                codePoints.append(String.format("U+%04X ", cp));
-            }
-        });
-        System.out.println("[Materialien] Tasche gelesen (Titelzeichen: " + codePoints.toString().trim() + "): " + collected);
-    }
     
     /** Fisch-Tasche: 10–34. Mob-Materialien: jede Reihe ohne die erste Spalte, bis Slot 53. */
     private static boolean isMaterialBagSlot(int slot, boolean fishBag, boolean mobMaterials) {
