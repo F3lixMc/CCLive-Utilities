@@ -1113,10 +1113,15 @@ public class CardsStatuesUtility {
 				continue;
 			}
 			
+			// "Maximale Stufe erreicht!" nicht anzeigen, nur die Zeile "Nächster Prestige [XXX]"
+			if (cleanLine.contains("Maximale Stufe erreicht!")) {
+				continue;
+			}
+			
 			// Überspringe auch die Zeile vor "Statistik" (leere Zeile), aber NICHT "Nächste Stufe"
 			if (i < card.getHoverLines().size() - 1 && card.getHoverLines().get(i + 1).contains("Statistik")) {
-				// Überspringe nur, wenn es keine "Nächste Stufe" Zeile ist
-				if (!cleanLine.contains("Nächste Stufe")) {
+				// Überspringe nur, wenn es keine "Nächste Stufe" / "Nächster Prestige" Zeile ist
+				if (!cleanLine.contains("Nächste Stufe") && !cleanLine.contains("Nächster Prestige")) {
 					continue;
 				}
 			}
