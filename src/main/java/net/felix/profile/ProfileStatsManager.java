@@ -589,8 +589,6 @@ public class ProfileStatsManager {
             for (Map.Entry<String, Integer> entry : cardsLevels.entrySet()) {
                 int prestige = cardPrestigeLevels.getOrDefault(entry.getKey(), 0);
                 prestigeJson.addProperty(entry.getKey(), prestige);
-                System.out.println("[ProfileStats] Sende Karte an Server: " + entry.getKey()
-                        + " = Level " + entry.getValue() + ", Prestige " + prestige);
             }
             payload.add("card_prestiges", prestigeJson);
         }

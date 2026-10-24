@@ -442,7 +442,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
             if (calculatedAllCollections > 0) {
                 // DEBUG: Nur senden wenn aktiviert
                 if (ENABLE_SERVER_UPDATES) {
-                    System.out.println("[FarmworldCollections] Sende an Server: all_collections = " + calculatedAllCollections);
                     LeaderboardManager.getInstance().updateScore("all_collections", calculatedAllCollections);
                 }
             }
@@ -571,7 +570,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
         if (collectionName == null || collectionName.isBlank()) {
             return;
         }
-        System.out.println("[FarmworldCollections] Sende an Server: " + collectionName + " = " + score);
         LeaderboardManager.getInstance().updateScore(collectionName, score);
     }
     
