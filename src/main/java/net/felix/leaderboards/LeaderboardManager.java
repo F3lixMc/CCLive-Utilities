@@ -48,6 +48,10 @@ public class LeaderboardManager {
     // Season-Tracking für automatischen Blueprint-Reset
     private Integer lastKnownSeasonId = null;
     
+    // Online-Status (Heartbeat)
+    private static final long PRESENCE_HEARTBEAT_SECONDS = 30;
+    private java.util.concurrent.ScheduledExecutorService presenceScheduler;
+    
     // Status
     private boolean isEnabled = true;
     private boolean isRegistered = false;
@@ -132,6 +136,10 @@ public class LeaderboardManager {
             checkSeasonChange();
         });
         
+        // Online-Status: Heartbeat starten und beim Verlassen des Servers abmelden
+        startPresenceHeartbeat();
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> sendPresenceLeave());
+        
         // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
         Minecraft client = Minecraft.getInstance();
         if (client != null && client.player != null && client.getConnection() != null) {
@@ -142,6 +150,60 @@ public class LeaderboardManager {
         }
         
         System.out.println("🚀 LeaderboardManager vollständig initialisiert!");
+    }
+    
+    /**
+     * Sendet regelmäßig einen Heartbeat an den Server, damit die Website anzeigen kann,
+     * wie viele Spieler gerade online sind (GET /presence/count).
+     */
+    private void startPresenceHeartbeat() {
+        if (presenceScheduler != null) {
+            return;
+        }
+        presenceScheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "CCLive-Presence");
+            thread.setDaemon(true);
+            return thread;
+        });
+        presenceScheduler.scheduleWithFixedDelay(() -> {
+            try {
+                if (!canSendPresence()) {
+                    return;
+                }
+                httpClient.postWithToken("/presence/heartbeat", new JsonObject(), playerToken);
+            } catch (Exception e) {
+                // Server nicht erreichbar - beim nächsten Intervall erneut versuchen
+            }
+        }, 5, PRESENCE_HEARTBEAT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+    }
+    
+    /**
+     * Meldet den Spieler sofort als offline ab (beim Verlassen eines Servers).
+     */
+    private void sendPresenceLeave() {
+        if (!isEnabled || !isRegistered || playerToken == null) {
+            return;
+        }
+        final String token = playerToken;
+        CompletableFuture.runAsync(() -> {
+            try {
+                httpClient.postWithToken("/presence/leave", new JsonObject(), token);
+            } catch (Exception e) {
+                // Ignorieren - der Server entfernt den Spieler nach dem Timeout automatisch
+            }
+        });
+    }
+    
+    private boolean canSendPresence() {
+        if (!isEnabled || !isRegistered || playerToken == null) {
+            return false;
+        }
+        // Wer die Tracker-Aktivität deaktiviert hat, wird auch nicht als online gemeldet
+        if (!net.felix.CCLiveUtilitiesConfig.HANDLER.instance().trackerActivityEnabled) {
+            return false;
+        }
+        Minecraft client = Minecraft.getInstance();
+        return client != null && client.player != null && client.getConnection() != null;
     }
     
     /**
@@ -620,6 +682,10 @@ public class LeaderboardManager {
      * Stoppt alle Datensammler
      */
     public void shutdown() {
+        if (presenceScheduler != null) {
+            presenceScheduler.shutdownNow();
+            presenceScheduler = null;
+        }
         for (Map.Entry<String, DataCollector> entry : collectors.entrySet()) {
             try {
                 entry.getValue().shutdown();
