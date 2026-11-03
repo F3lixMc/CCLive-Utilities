@@ -214825,7 +214825,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2340,
       "name": "Anfänger-Gewicht",
       "foundAt": [
         {
@@ -214881,7 +214881,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2334,
       "name": "Anfänger-Haken",
       "foundAt": [
         {
@@ -214937,7 +214937,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2333,
       "name": "Anfänger-Köder",
       "foundAt": [
         {
@@ -214993,7 +214993,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2336,
       "name": "Anfänger-Pose",
       "foundAt": [
         {
@@ -215049,7 +215049,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2337,
       "name": "Anfänger-Rolle",
       "foundAt": [
         {
@@ -215105,7 +215105,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2338,
       "name": "Anfänger-Rute",
       "foundAt": [
         {
@@ -215161,7 +215161,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2335,
       "name": "Anfänger-Schnur",
       "foundAt": [
         {
@@ -215217,7 +215217,7 @@
     },
     {
       "id": "minecraft:name_tag",
-      "customModelData": 0,
+      "customModelData": 2339,
       "name": "Anfänger-Spinner",
       "foundAt": [
         {

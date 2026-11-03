@@ -17,11 +17,19 @@ import net.minecraft.network.chat.TextColor;
 public final class KitTooltipHelper {
 
 	private static final int ACTION_GREEN = 0xFF16A80C;
+	private static final int SHIFT_DARK_GREEN = 0xFF00AA00;
 	private static final int SECTION_TITLE_YELLOW = 0xFFFFFF55;
 	private static final int KIT_NAME_AQUA = 0xFF55FFFF;
 	private static final int CARD_EFFECT_GREEN = 0xFF55FF55;
-	private static final int COLUMN_SPACING = 12;
+	private static final int COLUMN_SPACING = 8;
+	private static final int PAIR_GAP = 6;
+	private static final int SCREEN_MARGIN = 8;
 	private static final String BULLET_POINT = "• ";
+	private static final String PREVIEW_HINT_KEY = "Strg+Linksklick";
+	private static final String PREVIEW_HINT_ACTION = "Vorschau";
+	private static final String BP_STATUS_FOUND = " ✓";
+	private static final String BP_STATUS_MISSING = " ✗";
+	private static final int COUNT_YELLOW = 0xFFFFFF55;
 
 	private String cacheKey;
 	private CachedTooltip cache;
@@ -54,7 +62,7 @@ public final class KitTooltipHelper {
 		}
 		return buildInternal(
 			key, textRenderer, header, sections,
-			showSelectActionHint, showEditActionHint, showBpStatus,
+			showSelectActionHint, showEditActionHint, false, false, showBpStatus,
 			blueprintLookup, null, null);
 	}
 
@@ -81,7 +89,7 @@ public final class KitTooltipHelper {
 		}
 		return buildInternal(
 			key, textRenderer, header, sections,
-			showSelectActionHint, showEditActionHint, showBpStatus,
+			showSelectActionHint, showEditActionHint, true, true, showBpStatus,
 			blueprintLookup, fishingFoundLookup, cardFoundLookup);
 	}
 
@@ -92,6 +100,8 @@ public final class KitTooltipHelper {
 			List<SectionData> sections,
 			boolean showSelectActionHint,
 			boolean showEditActionHint,
+			boolean showExtraHint,
+			boolean showPreviewHint,
 			boolean showBpStatus,
 			Function<String, Boolean> blueprintLookup,
 			Function<String, Boolean> fishingFoundLookup,
@@ -111,20 +121,32 @@ public final class KitTooltipHelper {
 		int maxItemNameWidth = 0;
 		int maxModifierWidth = 0;
 		int maxEbeneWidth = 0;
+		boolean anyModifier = false;
 		for (SectionData section : sections) {
+			boolean skipModifier = section.foundMode == KitFilterUtility.KitHoverSection.FoundMode.FISHING;
 			for (KitFilterUtility.ItemInfo itemInfo : section.items) {
 				maxItemTypeWidth = Math.max(maxItemTypeWidth, calculateItemTypeWidth(textRenderer, itemInfo));
 				maxItemNameWidth = Math.max(maxItemNameWidth, calculateItemNameWidth(textRenderer, itemInfo));
-				maxModifierWidth = Math.max(maxModifierWidth, calculateModifierWidth(textRenderer, itemInfo));
+				if (!skipModifier) {
+					int modifierWidth = calculateModifierWidth(textRenderer, itemInfo);
+					if (modifierWidth > 0) {
+						anyModifier = true;
+					}
+					maxModifierWidth = Math.max(maxModifierWidth, modifierWidth);
+				}
 				maxEbeneWidth = Math.max(maxEbeneWidth, calculateEbeneWidth(textRenderer, itemInfo));
 			}
 		}
-		maxModifierWidth = Math.max(maxModifierWidth, textRenderer.width("–"));
+		if (anyModifier) {
+			maxModifierWidth = Math.max(maxModifierWidth, textRenderer.width("–"));
+		} else {
+			maxModifierWidth = 0;
+		}
 
 		int bulletWidth = textRenderer.width(BULLET_POINT);
 		int statusWidth = 0;
 		if (showBpStatus) {
-			statusWidth = textRenderer.width(" ✓") + COLUMN_SPACING;
+			statusWidth = textRenderer.width(BP_STATUS_FOUND) + COLUMN_SPACING;
 		}
 
 		int totalWidth = Math.max(
@@ -142,6 +164,12 @@ public final class KitTooltipHelper {
 		}
 		if (showEditActionHint) {
 			totalWidth = Math.max(totalWidth, textRenderer.width("[Rechtsklick]: Bearbeiten"));
+		}
+		if (showPreviewHint) {
+			totalWidth = Math.max(totalWidth, textRenderer.width("[" + PREVIEW_HINT_KEY + "]: " + PREVIEW_HINT_ACTION));
+		}
+		if (showExtraHint) {
+			totalWidth = Math.max(totalWidth, textRenderer.width("[Shift]: Zusätzliche Infos"));
 		}
 
 		int textHeight = textRenderer.lineHeight;
@@ -165,6 +193,12 @@ public final class KitTooltipHelper {
 				totalHeight += textHeight;
 			}
 		}
+		if (showPreviewHint) {
+			totalHeight += textHeight;
+		}
+		if (showExtraHint) {
+			totalHeight += lineSpacing + textHeight;
+		}
 
 		List<CachedSection> cachedSections = new ArrayList<>();
 		for (SectionData section : sections) {
@@ -179,7 +213,7 @@ public final class KitTooltipHelper {
 				if (lookup != null && !section.items.isEmpty()) {
 					found = new boolean[section.items.size()];
 					for (int i = 0; i < section.items.size(); i++) {
-						found[i] = Boolean.TRUE.equals(lookup.apply(section.items.get(i).name));
+						found[i] = Boolean.TRUE.equals(lookup.apply(blueprintLookupName(section.items.get(i).name)));
 					}
 				}
 			}
@@ -193,6 +227,8 @@ public final class KitTooltipHelper {
 				showBpStatus,
 				showSelectActionHint,
 				showEditActionHint,
+				showExtraHint,
+				showPreviewHint,
 				maxItemTypeWidth,
 				maxItemNameWidth,
 				maxModifierWidth,
@@ -216,48 +252,134 @@ public final class KitTooltipHelper {
 			int screenWidth,
 			int screenHeight
 	) {
+		render(context, textRenderer, tooltip, null, mouseX, mouseY, screenWidth, screenHeight, false);
+	}
+
+	public static void render(
+			GuiGraphicsExtractor context,
+			Font textRenderer,
+			CachedTooltip tooltip,
+			ExtraPanel extra,
+			int mouseX,
+			int mouseY,
+			int screenWidth,
+			int screenHeight
+	) {
+		render(context, textRenderer, tooltip, extra, mouseX, mouseY, screenWidth, screenHeight, extra != null);
+	}
+
+	public static void render(
+			GuiGraphicsExtractor context,
+			Font textRenderer,
+			CachedTooltip tooltip,
+			ExtraPanel extra,
+			int mouseX,
+			int mouseY,
+			int screenWidth,
+			int screenHeight,
+			boolean drawExtra
+	) {
 		if (tooltip == null) {
 			return;
 		}
 
 		int offset = 10;
-		int tooltipWidth = tooltip.totalWidth + tooltip.padding * 2;
+		int mainBoxW = tooltip.totalWidth + tooltip.padding * 2;
+		int mainBoxH = tooltip.totalHeight;
+		int extraBoxW = extra != null ? extra.width + tooltip.padding * 2 : 0;
+		int extraBoxH = extra != null ? extra.height : 0;
 
-		int tooltipX = mouseX + offset;
-		if (tooltipX + tooltipWidth > screenWidth) {
-			tooltipX = mouseX - tooltipWidth - offset;
-			if (tooltipX < tooltip.padding) {
-				tooltipX = tooltip.padding;
+		boolean sideBySide = extra != null && extraBoxW + PAIR_GAP + mainBoxW <= screenWidth;
+		int pairW;
+		int pairH;
+		if (extra == null) {
+			pairW = mainBoxW;
+			pairH = mainBoxH;
+		} else if (sideBySide) {
+			pairW = extraBoxW + PAIR_GAP + mainBoxW;
+			pairH = Math.max(extraBoxH, mainBoxH);
+		} else {
+			pairW = Math.max(extraBoxW, mainBoxW);
+			pairH = extraBoxH + PAIR_GAP + mainBoxH;
+		}
+
+		float scale = 1f;
+		int availW = Math.max(1, screenWidth - SCREEN_MARGIN * 2);
+		int availH = Math.max(1, screenHeight - SCREEN_MARGIN * 2);
+		if (pairW > availW || pairH > availH) {
+			scale = Math.min(1f, Math.min((float) availW / pairW, (float) availH / pairH));
+		}
+		int scaledW = Math.max(1, Math.round(pairW * scale));
+		int scaledH = Math.max(1, Math.round(pairH * scale));
+
+		int pairX = mouseX + offset;
+		if (pairX + scaledW > screenWidth - SCREEN_MARGIN) {
+			pairX = mouseX - scaledW - offset;
+			if (pairX < SCREEN_MARGIN) {
+				pairX = SCREEN_MARGIN;
 			}
 		}
-		if (tooltipX + tooltipWidth > screenWidth) {
-			tooltipX = screenWidth - tooltipWidth - tooltip.padding;
+		if (pairX + scaledW > screenWidth - SCREEN_MARGIN) {
+			pairX = Math.max(SCREEN_MARGIN, screenWidth - scaledW - SCREEN_MARGIN);
 		}
 
-		int tooltipY = mouseY - tooltip.totalHeight - offset;
-		if (tooltipY < tooltip.padding) {
-			tooltipY = mouseY + offset;
-			if (tooltipY + tooltip.totalHeight > screenHeight - tooltip.padding) {
-				tooltipY = screenHeight - tooltip.totalHeight - tooltip.padding;
+		int pairY = mouseY - scaledH - offset;
+		if (pairY < SCREEN_MARGIN) {
+			pairY = mouseY + offset;
+			if (pairY + scaledH > screenHeight - SCREEN_MARGIN) {
+				pairY = screenHeight - scaledH - SCREEN_MARGIN;
 			}
 		}
-		if (tooltipY + tooltip.totalHeight > screenHeight - tooltip.padding) {
-			tooltipY = screenHeight - tooltip.totalHeight - tooltip.padding;
+		if (pairY + scaledH > screenHeight - SCREEN_MARGIN) {
+			pairY = screenHeight - scaledH - SCREEN_MARGIN;
 		}
-		if (tooltipY < tooltip.padding) {
-			tooltipY = tooltip.padding;
+		if (pairY < SCREEN_MARGIN) {
+			pairY = SCREEN_MARGIN;
 		}
 
-		int bgX1 = tooltipX - tooltip.padding;
-		int bgY1 = tooltipY - tooltip.padding;
-		int bgX2 = tooltipX + tooltip.totalWidth + tooltip.padding;
-		int bgY2 = tooltipY + tooltip.totalHeight - tooltip.padding;
+		context.pose().pushMatrix();
+		context.pose().translate(pairX, pairY);
+		context.pose().scale(scale, scale);
 
-		context.fill(bgX1, bgY1, bgX2, bgY2, 0xF0000000);
-		context.fill(bgX1, bgY1, bgX2, bgY1 + 1, 0xFFFFFFFF);
-		context.fill(bgX1, bgY2 - 1, bgX2, bgY2, 0xFFFFFFFF);
-		context.fill(bgX1, bgY1, bgX1 + 1, bgY2, 0xFFFFFFFF);
-		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF);
+		int extraBoxX = 0;
+		int extraBoxY = 0;
+		int mainBoxX;
+		int mainBoxY;
+		if (extra == null) {
+			mainBoxX = 0;
+			mainBoxY = 0;
+		} else if (sideBySide) {
+			mainBoxX = extraBoxW + PAIR_GAP;
+			mainBoxY = 0;
+			extraBoxY = 0;
+		} else {
+			mainBoxX = 0;
+			mainBoxY = extraBoxH + PAIR_GAP;
+			extraBoxX = 0;
+			extraBoxY = 0;
+		}
+
+		if (extra != null && drawExtra) {
+			drawPanelBackground(
+				context,
+				extraBoxX,
+				extraBoxY,
+				extraBoxX + extraBoxW,
+				extraBoxY + extraBoxH);
+			renderExtraContent(
+				context, textRenderer, extra,
+				extraBoxX + extra.padding,
+				extraBoxY + extra.padding);
+		}
+
+		int tooltipX = mainBoxX + tooltip.padding;
+		int tooltipY = mainBoxY;
+		drawPanelBackground(
+			context,
+			tooltipX - tooltip.padding,
+			tooltipY - tooltip.padding,
+			tooltipX + tooltip.totalWidth + tooltip.padding,
+			tooltipY + tooltip.totalHeight - tooltip.padding);
 
 		Component kitName = Component.literal(tooltip.header != null ? tooltip.header : "")
 			.setStyle(Style.EMPTY
@@ -277,7 +399,7 @@ public final class KitTooltipHelper {
 				section.foundMode, tooltipX, currentY);
 		}
 
-		if (tooltip.showSelectActionHint || tooltip.showEditActionHint) {
+		if (tooltip.showSelectActionHint || tooltip.showEditActionHint || tooltip.showPreviewHint) {
 			currentY += tooltip.lineSpacing;
 			if (tooltip.showSelectActionHint) {
 				drawActionHintLine(context, textRenderer, tooltipX, currentY, "Linksklick", "Auswählen");
@@ -285,7 +407,90 @@ public final class KitTooltipHelper {
 			}
 			if (tooltip.showEditActionHint) {
 				drawActionHintLine(context, textRenderer, tooltipX, currentY, "Rechtsklick", "Bearbeiten");
+				currentY += tooltip.textHeight;
 			}
+			if (tooltip.showPreviewHint) {
+				drawActionHintLine(context, textRenderer, tooltipX, currentY, PREVIEW_HINT_KEY, PREVIEW_HINT_ACTION);
+				currentY += tooltip.textHeight;
+			}
+		}
+		if (tooltip.showExtraHint) {
+			currentY += tooltip.lineSpacing;
+			drawActionHintLine(context, textRenderer, tooltipX, currentY, SHIFT_DARK_GREEN, "Shift", "Zusätzliche Infos");
+		}
+		context.pose().popMatrix();
+	}
+
+	public static boolean isShiftHeld() {
+		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+				com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT)
+			|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+				com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT);
+	}
+
+	public static ExtraPanel buildExtraPanel(Font textRenderer, CustomKit kit) {
+		List<ExtraLine> lines = new ArrayList<>();
+		int textHeight = textRenderer.lineHeight;
+		int padding = 4;
+		int lineSpacing = 2;
+		boolean missingBoth = kit == null
+			|| (kit.powerCrystalNames == null && kit.aspectNames == null);
+		if (missingBoth) {
+			lines.add(new ExtraLine("Keine Zusatzdaten gespeichert", false));
+		} else {
+			appendExtraSection(lines, "Machtkristalle", kit.powerCrystalNames);
+			appendExtraSection(lines, "Aspekte", kit.aspectNames);
+		}
+
+		int width = textRenderer.width("Zusätzliche Infos");
+		for (ExtraLine line : lines) {
+			String shown = line.title ? line.text : (BULLET_POINT + line.text);
+			width = Math.max(width, textRenderer.width(shown));
+		}
+		int height = textHeight + padding * 2;
+		if (!lines.isEmpty()) {
+			height += lineSpacing;
+			height += textHeight * lines.size();
+		}
+		return new ExtraPanel(width, height, textHeight, padding, lineSpacing, lines);
+	}
+
+	private static void appendExtraSection(List<ExtraLine> lines, String title, List<String> names) {
+		if (names == null || names.isEmpty()) {
+			return;
+		}
+		lines.add(new ExtraLine(title, true));
+		for (String name : names) {
+			if (name != null && !name.isEmpty()) {
+				lines.add(new ExtraLine(name, false));
+			}
+		}
+	}
+
+	private static void drawPanelBackground(GuiGraphicsExtractor context, int x1, int y1, int x2, int y2) {
+		context.fill(x1, y1, x2, y2, 0xF0000000);
+		context.fill(x1, y1, x2, y1 + 1, 0xFFFFFFFF);
+		context.fill(x1, y2 - 1, x2, y2, 0xFFFFFFFF);
+		context.fill(x1, y1, x1 + 1, y2, 0xFFFFFFFF);
+		context.fill(x2 - 1, y1, x2, y2, 0xFFFFFFFF);
+	}
+
+	private static void renderExtraContent(
+			GuiGraphicsExtractor context,
+			Font textRenderer,
+			ExtraPanel extra,
+			int x,
+			int y
+	) {
+		context.text(textRenderer, "Zusätzliche Infos", x, y, KIT_NAME_AQUA, true);
+		int currentY = y + extra.textHeight + extra.lineSpacing;
+		for (ExtraLine line : extra.lines) {
+			if (line.title) {
+				context.text(textRenderer, line.text, x, currentY, SECTION_TITLE_YELLOW, true);
+			} else {
+				context.text(textRenderer, BULLET_POINT + line.text, x, currentY, 0xFFFFFFFF, true);
+			}
+			currentY += extra.textHeight;
 		}
 	}
 
@@ -315,14 +520,18 @@ public final class KitTooltipHelper {
 				int nameColor = (itemInfo.nameColorString != null && !itemInfo.nameColorString.isEmpty())
 						? itemInfo.nameColor
 						: 0xFFFFFFFF;
-				context.text(textRenderer, itemInfo.name, currentX, currentY, nameColor, true);
+				drawNameWithCount(context, textRenderer, itemInfo.name, currentX, currentY, nameColor);
 			}
 			currentX += tooltip.maxItemNameWidth + COLUMN_SPACING;
 
-			boolean cardEffect = foundMode == KitFilterUtility.KitHoverSection.FoundMode.CARD
-				|| "Karte".equals(itemInfo.itemType);
-			renderModifierColumn(context, textRenderer, itemInfo, currentX, currentY, cardEffect);
-			currentX += tooltip.maxModifierWidth + COLUMN_SPACING;
+			if (foundMode != KitFilterUtility.KitHoverSection.FoundMode.FISHING && tooltip.maxModifierWidth > 0) {
+				boolean cardEffect = foundMode == KitFilterUtility.KitHoverSection.FoundMode.CARD
+					|| "Karte".equals(itemInfo.itemType);
+				renderModifierColumn(context, textRenderer, itemInfo, currentX, currentY, cardEffect);
+				currentX += tooltip.maxModifierWidth + COLUMN_SPACING;
+			} else if (tooltip.maxModifierWidth > 0) {
+				currentX += tooltip.maxModifierWidth + COLUMN_SPACING;
+			}
 
 			if (itemInfo.ebene != null && !itemInfo.ebene.isEmpty()) {
 				context.text(textRenderer, itemInfo.ebene, currentX, currentY, 0xFFFFFFFF, true);
@@ -332,7 +541,7 @@ public final class KitTooltipHelper {
 
 			if (tooltip.showBpStatus && foundFlags != null && i < foundFlags.length) {
 				boolean isFound = foundFlags[i];
-				String statusSymbol = isFound ? " ✓" : " ✗";
+				String statusSymbol = isFound ? BP_STATUS_FOUND : BP_STATUS_MISSING;
 				int statusColor = isFound ? 0xFF00FF00 : 0xFFFF0000;
 				context.text(textRenderer, statusSymbol, currentX, currentY, statusColor, true);
 			}
@@ -393,6 +602,14 @@ public final class KitTooltipHelper {
 		}
 	}
 
+	public static String blueprintLookupName(String name) {
+		if (name == null || name.isEmpty()) {
+			return "";
+		}
+		String cleaned = name.replaceAll("\\s*×\\d+$", "").trim();
+		return net.felix.chat.ShareKitImportHelper.extractEquipmentBaseName(cleaned);
+	}
+
 	private static void drawActionHintLine(
 			GuiGraphicsExtractor context,
 			Font textRenderer,
@@ -401,14 +618,26 @@ public final class KitTooltipHelper {
 			String bracketContent,
 			String actionText
 	) {
+		drawActionHintLine(context, textRenderer, x, y, ACTION_GREEN, bracketContent, actionText);
+	}
+
+	private static void drawActionHintLine(
+			GuiGraphicsExtractor context,
+			Font textRenderer,
+			int x,
+			int y,
+			int bracketColor,
+			String bracketContent,
+			String actionText
+	) {
 		int cursor = x;
-		context.text(textRenderer, "[", cursor, y, ACTION_GREEN, true);
+		context.text(textRenderer, "[", cursor, y, bracketColor, true);
 		cursor += textRenderer.width("[");
-		context.text(textRenderer, bracketContent, cursor, y, ACTION_GREEN, true);
+		context.text(textRenderer, bracketContent, cursor, y, bracketColor, true);
 		cursor += textRenderer.width(bracketContent);
-		context.text(textRenderer, "]", cursor, y, ACTION_GREEN, true);
+		context.text(textRenderer, "]", cursor, y, bracketColor, true);
 		cursor += textRenderer.width("]");
-		context.text(textRenderer, ":", cursor, y, ACTION_GREEN, true);
+		context.text(textRenderer, ":", cursor, y, bracketColor, true);
 		cursor += textRenderer.width(":");
 		context.text(textRenderer, " " + actionText, cursor, y, 0xFFFFFFFF, true);
 	}
@@ -426,6 +655,27 @@ public final class KitTooltipHelper {
 		} catch (NumberFormatException e) {
 			return 0;
 		}
+	}
+
+	private static void drawNameWithCount(
+			GuiGraphicsExtractor context,
+			Font textRenderer,
+			String name,
+			int x,
+			int y,
+			int nameColor
+	) {
+		int times = name.lastIndexOf(" ×");
+		if (times > 0 && times < name.length() - 2) {
+			String suffix = name.substring(times);
+			if (suffix.matches(" ×\\d+")) {
+				String base = name.substring(0, times);
+				context.text(textRenderer, base, x, y, nameColor, true);
+				context.text(textRenderer, suffix, x + textRenderer.width(base), y, COUNT_YELLOW, true);
+				return;
+			}
+		}
+		context.text(textRenderer, name, x, y, nameColor, true);
 	}
 
 	private static int calculateItemTypeWidth(Font textRenderer, KitFilterUtility.ItemInfo itemInfo) {
@@ -512,6 +762,8 @@ public final class KitTooltipHelper {
 		final boolean showBpStatus;
 		final boolean showSelectActionHint;
 		final boolean showEditActionHint;
+		final boolean showExtraHint;
+		final boolean showPreviewHint;
 		final int maxItemTypeWidth;
 		final int maxItemNameWidth;
 		final int maxModifierWidth;
@@ -529,6 +781,8 @@ public final class KitTooltipHelper {
 				boolean showBpStatus,
 				boolean showSelectActionHint,
 				boolean showEditActionHint,
+				boolean showExtraHint,
+				boolean showPreviewHint,
 				int maxItemTypeWidth,
 				int maxItemNameWidth,
 				int maxModifierWidth,
@@ -545,6 +799,8 @@ public final class KitTooltipHelper {
 			this.showBpStatus = showBpStatus;
 			this.showSelectActionHint = showSelectActionHint;
 			this.showEditActionHint = showEditActionHint;
+			this.showExtraHint = showExtraHint;
+			this.showPreviewHint = showPreviewHint;
 			this.maxItemTypeWidth = maxItemTypeWidth;
 			this.maxItemNameWidth = maxItemNameWidth;
 			this.maxModifierWidth = maxModifierWidth;
@@ -555,6 +811,34 @@ public final class KitTooltipHelper {
 			this.textHeight = textHeight;
 			this.padding = padding;
 			this.lineSpacing = lineSpacing;
+		}
+	}
+
+	public static final class ExtraPanel {
+		final int width;
+		final int height;
+		final int textHeight;
+		final int padding;
+		final int lineSpacing;
+		final List<ExtraLine> lines;
+
+		ExtraPanel(int width, int height, int textHeight, int padding, int lineSpacing, List<ExtraLine> lines) {
+			this.width = width;
+			this.height = height;
+			this.textHeight = textHeight;
+			this.padding = padding;
+			this.lineSpacing = lineSpacing;
+			this.lines = lines;
+		}
+	}
+
+	private static final class ExtraLine {
+		final String text;
+		final boolean title;
+
+		ExtraLine(String text, boolean title) {
+			this.text = text;
+			this.title = title;
 		}
 	}
 }

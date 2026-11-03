@@ -37,13 +37,36 @@ public final class CustomKitManager {
     }
 
     public static List<CustomKit> getKitsForButton(int buttonIndex) {
+        return getKitsByOrigin(CustomKit.Origin.MANUAL);
+    }
+
+    public static List<CustomKit> getCopiedKits() {
+        return getKitsByOrigin(CustomKit.Origin.COPIED);
+    }
+
+    public static List<CustomKit> getKitsByOrigin(CustomKit.Origin origin) {
         ensureLoaded();
-        return new ArrayList<>(kits);
+        CustomKit.Origin wanted = origin != null ? origin : CustomKit.Origin.MANUAL;
+        List<CustomKit> out = new ArrayList<>();
+        for (CustomKit kit : kits) {
+            if (kit != null && kit.resolvedOrigin() == wanted) {
+                kit.ensureEquipmentEntries();
+                out.add(kit);
+            }
+        }
+        return out;
     }
 
     public static List<CustomKit> getAllKits() {
         ensureLoaded();
-        return new ArrayList<>(kits);
+        List<CustomKit> out = new ArrayList<>();
+        for (CustomKit kit : kits) {
+            if (kit != null) {
+                kit.ensureEquipmentEntries();
+                out.add(kit);
+            }
+        }
+        return out;
     }
 
     public static CustomKit getKit(String kitId) {
@@ -82,6 +105,10 @@ public final class CustomKitManager {
         if (kit.itemCategories == null) {
             kit.itemCategories = new java.util.HashMap<>();
         }
+        if (kit.equipmentEntries == null) {
+            kit.equipmentEntries = new ArrayList<>();
+        }
+        kit.ensureEquipmentEntries();
         kits.add(kit);
         if (!save()) {
             kits.remove(kit);
@@ -108,6 +135,10 @@ public final class CustomKitManager {
         if (kit.itemCategories == null) {
             kit.itemCategories = new java.util.HashMap<>();
         }
+        if (kit.equipmentEntries == null) {
+            kit.equipmentEntries = new ArrayList<>();
+        }
+        kit.ensureEquipmentEntries();
         for (int i = 0; i < kits.size(); i++) {
             if (kit.id.equals(kits.get(i).id)) {
                 CustomKit previous = kits.get(i);
@@ -239,6 +270,17 @@ public final class CustomKitManager {
             }
         }
         CustomKit kit = new CustomKit(id, name, icon, iconName, items, cards, fishing);
+        kit.powerCrystalNames = readOptionalStringArray(obj, "powerCrystalNames");
+        kit.aspectNames = readOptionalStringArray(obj, "aspectNames");
+        if (obj.has("origin") && obj.get("origin").isJsonPrimitive()) {
+            try {
+                kit.origin = CustomKit.Origin.valueOf(obj.get("origin").getAsString());
+            } catch (IllegalArgumentException ignored) {
+                kit.origin = CustomKit.Origin.MANUAL;
+            }
+        } else {
+            kit.origin = CustomKit.Origin.MANUAL;
+        }
         if (obj.has("itemCategories") && obj.get("itemCategories").isJsonObject()) {
             JsonObject cats = obj.getAsJsonObject("itemCategories");
             for (Map.Entry<String, JsonElement> e : cats.entrySet()) {
@@ -247,6 +289,19 @@ public final class CustomKitManager {
                 }
             }
         }
+        kit.equipmentEntries = readEquipmentEntries(obj);
+        kit.originalCards = readItemDataList(obj, "originalCards");
+        if (obj.has("originalFishingRod") && obj.get("originalFishingRod").isJsonObject()) {
+            kit.originalFishingRod = KitItemDataIo.fromJson(obj.getAsJsonObject("originalFishingRod"));
+        }
+        kit.fishingRodComponentsEdited = obj.has("fishingRodComponentsEdited")
+            && obj.get("fishingRodComponentsEdited").getAsBoolean();
+        if (obj.has("originalPowerCrystalOverview") && obj.get("originalPowerCrystalOverview").isJsonObject()) {
+            kit.originalPowerCrystalOverview = KitItemDataIo.fromJson(obj.getAsJsonObject("originalPowerCrystalOverview"));
+        }
+        kit.powerCrystalOverviewEdited = obj.has("powerCrystalOverviewEdited")
+            && obj.get("powerCrystalOverviewEdited").getAsBoolean();
+        kit.ensureEquipmentEntries();
         return kit;
     }
 
@@ -292,6 +347,19 @@ public final class CustomKitManager {
                     }
                 }
                 obj.add("fishingComponents", fishing);
+                writeOptionalStringArray(obj, "powerCrystalNames", kit.powerCrystalNames);
+                writeOptionalStringArray(obj, "aspectNames", kit.aspectNames);
+                obj.addProperty("origin", kit.resolvedOrigin().name());
+                obj.addProperty("fishingRodComponentsEdited", kit.fishingRodComponentsEdited);
+                obj.addProperty("powerCrystalOverviewEdited", kit.powerCrystalOverviewEdited);
+                writeEquipmentEntries(obj, kit);
+                writeItemDataList(obj, "originalCards", kit.originalCards);
+                if (kit.originalFishingRod != null) {
+                    obj.add("originalFishingRod", KitItemDataIo.toJson(kit.originalFishingRod));
+                }
+                if (kit.originalPowerCrystalOverview != null) {
+                    obj.add("originalPowerCrystalOverview", KitItemDataIo.toJson(kit.originalPowerCrystalOverview));
+                }
                 if (kit.itemCategories != null && !kit.itemCategories.isEmpty()) {
                     JsonObject cats = new JsonObject();
                     for (Map.Entry<String, String> e : kit.itemCategories.entrySet()) {
@@ -311,5 +379,114 @@ public final class CustomKitManager {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static List<String> readOptionalStringArray(JsonObject obj, String key) {
+        if (obj == null || key == null || !obj.has(key) || !obj.get(key).isJsonArray()) {
+            return null;
+        }
+        List<String> out = new ArrayList<>();
+        for (JsonElement el : obj.getAsJsonArray(key)) {
+            if (el != null && el.isJsonPrimitive()) {
+                String value = el.getAsString();
+                if (value != null && !value.isEmpty()) {
+                    out.add(value);
+                }
+            }
+        }
+        return out;
+    }
+
+    private static List<CustomKit.EquipmentEntry> readEquipmentEntries(JsonObject obj) {
+        List<CustomKit.EquipmentEntry> out = new ArrayList<>();
+        if (obj == null || !obj.has("equipmentEntries") || !obj.get("equipmentEntries").isJsonArray()) {
+            return out;
+        }
+        for (JsonElement el : obj.getAsJsonArray("equipmentEntries")) {
+            if (el == null || !el.isJsonObject()) {
+                continue;
+            }
+            JsonObject entryObj = el.getAsJsonObject();
+            CustomKit.EquipmentEntry entry = new CustomKit.EquipmentEntry();
+            entry.jeiName = entryObj.has("jeiName") ? entryObj.get("jeiName").getAsString() : null;
+            entry.slotType = entryObj.has("slotType") ? entryObj.get("slotType").getAsString() : null;
+            if (entryObj.has("inventorySlot") && entryObj.get("inventorySlot").isJsonPrimitive()) {
+                entry.inventorySlot = entryObj.get("inventorySlot").getAsInt();
+            }
+            if (entryObj.has("originalItem") && entryObj.get("originalItem").isJsonObject()) {
+                entry.originalItem = KitItemDataIo.fromJson(entryObj.getAsJsonObject("originalItem"));
+            }
+            entry.capturedAspectNames = readOptionalStringArray(entryObj, "capturedAspectNames");
+            if (entry.jeiName != null && !entry.jeiName.isEmpty()) {
+                out.add(entry);
+            }
+        }
+        return out;
+    }
+
+    private static void writeEquipmentEntries(JsonObject obj, CustomKit kit) {
+        if (kit.equipmentEntries == null || kit.equipmentEntries.isEmpty()) {
+            return;
+        }
+        JsonArray arr = new JsonArray();
+        for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+            if (entry == null || entry.jeiName == null) {
+                continue;
+            }
+            JsonObject entryObj = new JsonObject();
+            entryObj.addProperty("jeiName", entry.jeiName);
+            if (entry.slotType != null) {
+                entryObj.addProperty("slotType", entry.slotType);
+            }
+            if (entry.inventorySlot != null) {
+                entryObj.addProperty("inventorySlot", entry.inventorySlot);
+            }
+            if (entry.originalItem != null) {
+                entryObj.add("originalItem", KitItemDataIo.toJson(entry.originalItem));
+            }
+            writeOptionalStringArray(entryObj, "capturedAspectNames", entry.capturedAspectNames);
+            arr.add(entryObj);
+        }
+        obj.add("equipmentEntries", arr);
+    }
+
+    private static List<net.felix.utilities.ItemViewer.ItemData> readItemDataList(JsonObject obj, String key) {
+        List<net.felix.utilities.ItemViewer.ItemData> out = new ArrayList<>();
+        if (obj == null || !obj.has(key) || !obj.get(key).isJsonArray()) {
+            return out;
+        }
+        for (JsonElement el : obj.getAsJsonArray(key)) {
+            if (el != null && el.isJsonObject()) {
+                out.add(KitItemDataIo.fromJson(el.getAsJsonObject()));
+            }
+        }
+        return out;
+    }
+
+    private static void writeItemDataList(JsonObject obj, String key, List<net.felix.utilities.ItemViewer.ItemData> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        JsonArray arr = new JsonArray();
+        for (net.felix.utilities.ItemViewer.ItemData item : items) {
+            JsonObject json = KitItemDataIo.toJson(item);
+            if (json != null) {
+                arr.add(json);
+            }
+        }
+        obj.add(key, arr);
+    }
+
+    private static void writeOptionalStringArray(JsonObject obj, String key, List<String> values) {
+        if (obj == null || key == null || values == null) {
+            return;
+        }
+        JsonArray arr = new JsonArray();
+        for (String value : values) {
+            if (value != null) {
+                arr.add(value);
+            }
+        }
+        obj.add(key, arr);
     }
 }

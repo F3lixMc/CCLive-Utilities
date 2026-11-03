@@ -32,6 +32,13 @@ bin/
 
 run/
 
+# DevAuth Microsoft-Tokens (nicht ins Repo, auch falls sie außerhalb von run/ landen)
+microsoft_accounts.json
+**/microsoft_accounts.json
+**/.devauth/
+**/devauth/config.toml
+**/devauth/microsoft_accounts.json
+
 # java
 
 hs_err_*.log
@@ -51,3 +58,4 @@ SEASON_MANAGEMENT.md
 public/
 LEADERBOARD_SETUP.md
 PROFILE_STATS_MANAGER.md
+backend_server/

@@ -1340,7 +1340,7 @@ public class ItemViewerUtility {
             
             // Wenn Suchfeld fokussiert ist, nicht togglen (nur Fokus entfernen)
             if (searchFieldFocused) {
-                searchFieldFocused = false;
+                setSearchFieldFocused(false);
                 return true;
             }
             // Gleiche Funktionalität wie die Buttons: minimieren/maximieren statt ausblenden
@@ -1889,13 +1889,13 @@ public class ItemViewerUtility {
     public static boolean handleSearchFieldKeyPress(int keyCode, int scanCode, int modifiers) {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.gui.screen() == null) {
-            searchFieldFocused = false;
+            setSearchFieldFocused(false);
             return false;
         }
 
         // Niemals Tastatureingaben vom Chat oder anderen Screens abfangen
         if (client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) {
-            searchFieldFocused = false;
+            setSearchFieldFocused(false);
             return false;
         }
 
@@ -1903,12 +1903,12 @@ public class ItemViewerUtility {
                 || client.gui.screen() instanceof InventoryScreen
                 || isKitEditorMode();
         if (!canUseSearchInput) {
-            searchFieldFocused = false;
+            setSearchFieldFocused(false);
             return false;
         }
 
         if (!isVisible()) {
-            searchFieldFocused = false;
+            setSearchFieldFocused(false);
             return false;
         }
         
@@ -1932,13 +1932,18 @@ public class ItemViewerUtility {
         
         // Setze Fokus wenn Maus über Suchfeld ist
         if (mouseOverSearch) {
-            searchFieldFocused = true;
+            setSearchFieldFocused(true);
         }
         
         if (!searchFieldFocused) {
             return false;
         }
 
+        if (!searchInputKeyLogged) {
+            SEARCH_INPUT_LOG.info("Viewer search received a key event");
+            searchInputKeyLogged = true;
+        }
+        client.textInputManager().startTextInput(SEARCH_TEXT_INPUT_OWNER);
         searchCursorVisible = true;
         searchCursorBlinkTime = System.currentTimeMillis();
         
@@ -1948,7 +1953,7 @@ public class ItemViewerUtility {
                 helpScreenOpen = false;
                 return true;
             }
-            searchFieldFocused = false;
+            setSearchFieldFocused(false);
             return true;
         }
         
@@ -1958,14 +1963,14 @@ public class ItemViewerUtility {
         }
         
         // Strg-Funktionen
-        if (modifiers == 2) { // 2 = Strg
+        if ((modifiers & InputConstants.MOD_CONTROL) != 0) { // Strg (SDL modifier mask)
             switch (keyCode) {
-                case 67: // Strg+C - Kopieren
+                case InputConstants.KEY_C: // Strg+C - Kopieren
                     if (!currentSearch.isEmpty()) {
                         client.keyboardHandler.setClipboard(currentSearch);
                     }
                     return true;
-                case 86: // Strg+V - Einfügen
+                case InputConstants.KEY_V: // Strg+V - Einfügen
                     String clipboardText = client.keyboardHandler.getClipboard();
                     if (clipboardText != null && !clipboardText.isEmpty()) {
                         currentSearch += clipboardText;
@@ -1973,7 +1978,7 @@ public class ItemViewerUtility {
                         currentPage = 0;
                     }
                     return true;
-                case 65: // Strg+A - Alles markieren
+                case InputConstants.KEY_A: // Strg+A - Alles markieren
                     if (!currentSearch.isEmpty()) {
                         selectionStart = 0;
                         selectionEnd = currentSearch.length();
@@ -2031,7 +2036,7 @@ public class ItemViewerUtility {
         
         // Pfeiltasten für Cursor-Bewegung
         if (keyCode == InputConstants.KEY_LEFT) {
-            if (modifiers == 1) { // Shift + Links = Selektion erweitern
+            if ((modifiers & InputConstants.MOD_SHIFT) != 0) { // Shift + Links = Selektion erweitern
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
                     selectionEnd = cursorPosition;
@@ -2050,7 +2055,7 @@ public class ItemViewerUtility {
         }
         
         if (keyCode == InputConstants.KEY_RIGHT) {
-            if (modifiers == 1) { // Shift + Rechts = Selektion erweitern
+            if ((modifiers & InputConstants.MOD_SHIFT) != 0) { // Shift + Rechts = Selektion erweitern
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
                     selectionEnd = cursorPosition;
@@ -2080,209 +2085,28 @@ public class ItemViewerUtility {
             return true;
         }
         
-        // Leertaste
-        if (keyCode == 32) {
-            insertCharacter(' ');
-            return true;
-        }
-        
-        // AltGr-Kombinationen (müssen VOR normalen Komma/Punkt-Behandlungen geprüft werden)
-        if (modifiers == 6) {
-            switch (keyCode) {
-                case 56:
-                    insertCharacter('[');
-                    return true;
-                case 57:
-                    insertCharacter(']');
-                    return true;
-                case 55:
-                    insertCharacter('{');
-                    return true;
-                case 48:
-                    insertCharacter('}');
-                    return true;
-                case 81:
-                    insertCharacter('@');
-                    return true;
-                case 188: // Komma-Taste mit AltGr = <
-                    insertCharacter('<');
-                    return true;
-                case 190: // Punkt-Taste mit AltGr = >
-                    insertCharacter('>');
-                    return true;
-            }
-        }
-        
-        // < und > mit Shift (müssen VOR normalen Komma/Punkt-Behandlungen geprüft werden)
-        if (modifiers == 1) { // Shift
-            if (keyCode == 188) { // Komma-Taste mit Shift = < (auf einigen Layouts)
-                insertCharacter('<');
-                return true;
-            }
-            if (keyCode == 190) { // Punkt-Taste mit Shift = > (auf einigen Layouts)
-                insertCharacter('>');
-                return true;
-            }
-        }
-        
-        // Sonderzeichen (KeyCodes wie in SearchBarUtility)
-        // Auf deutschen Tastaturen: Komma ohne Shift, Semikolon mit Shift
-        if (keyCode == 188 || keyCode == 44) { // Komma/Semikolon
-            insertCharacter(modifiers == 1 ? ';' : ',');
-            return true;
-        }
-        
-        // Auf deutschen Tastaturen: Punkt ohne Shift, Doppelpunkt mit Shift
-        if (keyCode == 190 || keyCode == 46) { // Punkt/Doppelpunkt
-            insertCharacter(modifiers == 1 ? ':' : '.');
-            return true;
-        }
-        
-        if (keyCode == 189 || keyCode == 47) { // Minus
-            insertCharacter('-');
-            return true;
-        }
-        
-        if (keyCode == 187) { // Plus/Equal
-            insertCharacter(modifiers == 1 ? '+' : '=');
-            return true;
-        }
-        
-        if (keyCode == 186) { // Semikolon/Doppelpunkt
-            // Prüfe ob Shift gedrückt ist (modifiers == 1 = Shift, wie bei anderen Zeichen)
-            insertCharacter(modifiers == 1 ? ':' : ';');
-            return true;
-        }
-        
-        if (keyCode == 222) { // Apostroph/Anführungszeichen
-            insertCharacter('"');
-            return true;
-        }
-        
-        if (keyCode == 192) { // Grave Accent
-            insertCharacter('`');
-            return true;
-        }
-        
-        if (keyCode == 53 && modifiers == 1) { // Prozent mit Shift
-            insertCharacter('%');
-            return true;
-        }
-        
-        if (keyCode == 92) { // Backslash
-            insertCharacter('#');
-            return true;
-        }
-        
-        // Separate +-Taste (wie im Bauplan-Shop)
-        if (keyCode == 93) {
-            insertCharacter('+');
-            return true;
-        }
-        
-        // Shift-Kombinationen
-        if (modifiers == 1) {
-            switch (keyCode) {
-                case 55:
-                    insertCharacter('/');
-                    return true;
-                case 56:
-                    insertCharacter('(');
-                    return true;
-                case 57:
-                    insertCharacter(')');
-                    return true;
-                case 48:
-                    insertCharacter('=');
-                    return true;
-                case 220:
-                    insertCharacter('|');
-                    return true;
-            }
-        }
-        
-        // Direkte Unterstützung für < und > (wie im Bauplan-Shop)
-        // keyCode 162 ohne Shift = <, mit Shift = >
-        if (keyCode == 162) {
-            if (modifiers == 0) {
-                insertCharacter('<');
-            } else if (modifiers == 1) {
-                insertCharacter('>');
-            }
-            return true;
-        }
-        
-        // Separate ß-Taste
-        if (keyCode == 45) {
-            insertCharacter('ß');
-            return true;
-        }
-        
-        // Separate Umlaut-Tasten
-        if (keyCode == 39) { // ä
-            insertCharacter('ä');
-            return true;
-        }
-        
-        if (keyCode == 59) { // ö
-            insertCharacter('ö');
-            return true;
-        }
-        
-        if (keyCode == 91) { // ü
-            insertCharacter('ü');
-            return true;
-        }
-        
-        // Numpad-Tasten
-        if (keyCode == 334) {
-            insertCharacter('+');
-            return true;
-        }
-        
-        if (keyCode == 333) {
-            insertCharacter('-');
-            return true;
-        }
-        
-        // Numpad-Zahlen 0-9
-        if (keyCode == 320) {
-            insertCharacter('0');
-            return true;
-        }
-        
-        if (keyCode >= 321 && keyCode <= 329) {
-            char number = (char) ('0' + (keyCode - 321 + 1));
-            insertCharacter(number);
-            return true;
-        }
-        
-        // Zahlen 0-9
-        if (modifiers == 0 && keyCode >= 48 && keyCode <= 57) {
-            char number = (char) keyCode;
-            insertCharacter(number);
-            return true;
-        }
-        
-        // Buchstaben A-Z (QWERTZ Layout)
-        if (keyCode >= 65 && keyCode <= 90) {
-            char letter;
-            // QWERTZ Layout: Y und Z tauschen
-            if (keyCode == 89) {
-                letter = modifiers == 1 ? 'Z' : 'z';
-            } else if (keyCode == 90) {
-                letter = modifiers == 1 ? 'Y' : 'y';
-            } else {
-                // Normale Buchstaben: Großbuchstaben bei Shift, Kleinbuchstaben ohne Shift
-                letter = modifiers == 1 ? (char) keyCode : (char) (keyCode + 32);
-            }
-            insertCharacter(letter);
-            return true;
-        }
-        
-        return false;
+        // Printable text is delivered by CharacterEvent, independently of keyboard layout.
+        // Consume other keys while focused so inventory shortcuts do not activate.
+        return true;
     }
-    
+
+    public static boolean handleSearchFieldCharTyped(net.minecraft.client.input.CharacterEvent event) {
+        Minecraft client = Minecraft.getInstance();
+        if (!searchFieldFocused || !isVisible() || client == null || client.gui.screen() == null
+                || client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen) return false;
+        if (!(client.gui.screen() instanceof AbstractContainerScreen<?>) && !isKitEditorMode()) return false;
+        if (!searchInputCharacterLogged) {
+            SEARCH_INPUT_LOG.info("Viewer search received a character event (allowed={})", event.isAllowedChatCharacter());
+            searchInputCharacterLogged = true;
+        }
+        if (!event.isAllowedChatCharacter()) return true;
+        String text = event.codepointAsString();
+        for (int i = 0; i < text.length(); i++) insertCharacter(text.charAt(i));
+        searchCursorVisible = true;
+        searchCursorBlinkTime = System.currentTimeMillis();
+        return true;
+    }
+
     /**
      * Fügt ein Zeichen in die Suche ein
      */
@@ -2646,12 +2470,34 @@ public class ItemViewerUtility {
     private static long searchCursorBlinkTime = 0;
     private static boolean searchCursorVisible = true;
 
+    private static final org.slf4j.Logger SEARCH_INPUT_LOG = org.slf4j.LoggerFactory.getLogger("CCLive-SearchInput");
+    private static boolean searchInputKeyLogged;
+    private static boolean searchInputCharacterLogged;
+    private static final Object SEARCH_TEXT_INPUT_OWNER = new Object();
+
+    private static void setSearchFieldFocused(boolean focused) {
+        if (focused && !searchFieldFocused) {
+            searchInputKeyLogged = false;
+            searchInputCharacterLogged = false;
+            SEARCH_INPUT_LOG.info("Viewer search focused; enabling SDL text input");
+        }
+        searchFieldFocused = focused;
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) return;
+        // SDL delivers character events only while a text input owner is active.
+        if (focused) {
+            client.textInputManager().startTextInput(SEARCH_TEXT_INPUT_OWNER);
+        } else {
+            client.textInputManager().stopTextInput(SEARCH_TEXT_INPUT_OWNER);
+        }
+    }
+
     public static boolean isSearchFieldFocused() {
         return searchFieldFocused;
     }
 
     public static void blurSearchFieldFocus() {
-        searchFieldFocused = false;
+        setSearchFieldFocused(false);
         searchCursorVisible = false;
         clearSelection();
     }
@@ -4026,6 +3872,8 @@ public class ItemViewerUtility {
         Minecraft client = Minecraft.getInstance();
 
         if (searchFieldFocused) {
+            client.textInputManager().startTextInput(SEARCH_TEXT_INPUT_OWNER);
+            client.textInputManager().setTextInputArea(x, y, x + width, y + SEARCH_HEIGHT);
             long currentTime = System.currentTimeMillis();
             if (currentTime - searchCursorBlinkTime > 500) {
                 searchCursorVisible = !searchCursorVisible;
@@ -5216,7 +5064,7 @@ public class ItemViewerUtility {
             mouseY >= searchY && mouseY < searchY + SEARCH_HEIGHT) {
             if (button == 0) {
                 // Linksklick: Fokus setzen und Cursor-Position berechnen
-                searchFieldFocused = true;
+                setSearchFieldFocused(true);
                 searchCursorVisible = true;
                 searchCursorBlinkTime = System.currentTimeMillis();
                 // Berechne Cursor-Position basierend auf Mausklick-Position
@@ -5478,7 +5326,7 @@ public class ItemViewerUtility {
         currentSearch = search != null ? search : "";
         cursorPosition = currentSearch.length();
         clearSelection();
-        searchFieldFocused = false;
+        setSearchFieldFocused(false);
         scheduleApplyFilters();
     }
     

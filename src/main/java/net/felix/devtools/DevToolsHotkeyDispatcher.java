@@ -106,13 +106,13 @@ public final class DevToolsHotkeyDispatcher {
             return;
         }
         if (capturingHotkey || shouldIgnoreInput()) {
-            syncReleasedKeys(client);
+            syncReleasedKeys();
             return;
         }
         // Wenn ein Screen offen ist, kommt der Press über ScreenMixin — Tick pollt nur Welt
         if (client.gui.screen() != null && !(client.gui.screen() instanceof DevToolsScreen)) {
             // Inventar: Screen-Hook feuert; Tick hält nur Release-Tracking
-            syncReleasedKeys(client);
+            syncReleasedKeys();
             return;
         }
 
@@ -129,7 +129,7 @@ public final class DevToolsHotkeyDispatcher {
         handledWhileDown.removeIf(k -> !boundKeys.contains(k) && !InputConstants.isKeyDown(k));
     }
 
-    private static void syncReleasedKeys(Minecraft client) {
+    private static void syncReleasedKeys() {
         handledWhileDown.removeIf(k -> !InputConstants.isKeyDown(k));
     }
 

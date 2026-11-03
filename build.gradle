@@ -29,6 +29,21 @@ repositories {
 		name = "Modrinth"
 		url = "https://api.modrinth.com/maven"
 	}
+
+	maven {
+		name = "DevAuth"
+		url = "https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1"
+	}
+}
+
+loom {
+	runs {
+		client {
+			// Offizieller Microsoft-Account für runClient (Browser-Login, kein Passwort in Gradle).
+			vmArg "-Ddevauth.enabled=true"
+			vmArg "-Ddevauth.account=main"
+		}
+	}
 }
 
 fabricApi {
@@ -46,6 +61,12 @@ dependencies {
 	implementation "maven.modrinth:yacl:${project.yacl_version}"
 	implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 	compileOnly "com.mojang:brigadier:1.3.10"
+
+	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
+	// Nur Dev-Laufzeit: Microsoft-Login für runClient, nicht in der gebauten Mod-JAR.
+	runtimeOnly "me.djtheredstoner:DevAuth-fabric:1.2.2"
 }
 
 processResources {
@@ -63,6 +84,10 @@ java {
 	}
 
 	withSourcesJar()
+}
+
+tasks.named('test', Test) {
+	useJUnitPlatform()
 }
 
 jar {
@@ -84,3 +109,4 @@ publishing {
 	repositories {
 	}
 }
+

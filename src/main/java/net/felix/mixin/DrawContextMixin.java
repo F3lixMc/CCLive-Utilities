@@ -19,6 +19,7 @@ import java.util.List;
 /**
  * Mixin for GuiGraphicsExtractor to disable the dark inventory overlay for Equipment Display screens.
  */
+@SuppressWarnings("unused")
 @Mixin(GuiGraphicsExtractor.class)
 public class DrawContextMixin {
 

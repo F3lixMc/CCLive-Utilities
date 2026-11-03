@@ -38,7 +38,6 @@ public final class ItemShareManager {
     private static final Gson GSON = new Gson();
     private static final Pattern ITEM_TOKEN = Pattern.compile("(?i)!item\\b");
     private static final Pattern BUILD_TOKEN = Pattern.compile("(?i)!build\\b");
-    private static final Pattern ITEM_SHARE_REF = Pattern.compile("#ITEM:([A-Za-z0-9_-]+)");
     private static final Pattern ANY_SHARE_REF = Pattern.compile("#(ITEM|BUILD):([A-Za-z0-9_-]+)");
     private static final Pattern ANY_SHARE_TOKEN = Pattern.compile("(?i)!(item|build)\\b");
 
@@ -205,7 +204,7 @@ public final class ItemShareManager {
                 }
 
                 LeaderboardManager lb = LeaderboardManager.getInstance();
-                if (!lb.ensureRegisteredSync()) {
+                if (!lb.awaitRegistration(20_000L)) {
                     debugChat("✗ Upload fehlgeschlagen (nicht registriert). Item bleibt lokal.");
                     sendPlayerFeedback("§cUpload fehlgeschlagen (nicht registriert). Item bleibt lokal.");
                     return;
@@ -479,7 +478,7 @@ public final class ItemShareManager {
                 return null;
             }
             LeaderboardManager lb = LeaderboardManager.getInstance();
-            if (!lb.ensureRegisteredSync()) {
+            if (!lb.awaitRegistration(20_000L)) {
                 return null;
             }
             JsonObject response = httpClient.getWithToken(

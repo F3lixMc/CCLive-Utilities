@@ -30,8 +30,6 @@ public class ChatManager {
 
     /** Prefix-Farbe (#9b029e) — dunkles Lila. */
     private static final int CCLIVE_PREFIX_COLOR = 0x9B029E;
-    /** Name / >> / Nachricht (#fba9fc). */
-    private static final int CCLIVE_TEXT_COLOR = ItemShareManager.CCLIVE_MESSAGE_COLOR;
 
     private final ChatWebSocket webSocket = new ChatWebSocket();
 
@@ -154,8 +152,8 @@ public class ChatManager {
 
         return CompletableFuture.supplyAsync(() -> {
             LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
-            if (!leaderboardManager.ensureRegisteredSync()) {
-                return "Nicht registriert. Warte kurz nach Server-Join oder nutze /cclive lb refresh.";
+            if (!leaderboardManager.awaitRegistration(20_000L)) {
+                return "Nicht registriert. Warte kurz nach Server-Join oder nutze /cclive connection refresh.";
             }
             return null;
         }).thenCompose(regError -> {

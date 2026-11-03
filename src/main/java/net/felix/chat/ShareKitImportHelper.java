@@ -3,6 +3,7 @@ package net.felix.chat;
 import net.felix.utilities.ItemViewer.ItemData;
 import net.felix.utilities.ItemViewer.ItemViewerGrid;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.utilities.Town.BuildSlotMapping;
 import net.felix.utilities.Town.CustomKit;
 import net.felix.utilities.Town.CustomKitManager;
 import net.minecraft.client.Minecraft;
@@ -120,15 +121,7 @@ public final class ShareKitImportHelper {
     }
 
     public static String matchFishingComponentType(String inner) {
-        if (inner == null || inner.isEmpty()) {
-            return null;
-        }
-        for (String type : FISHING_COMPONENT_TYPES) {
-            if (type.equalsIgnoreCase(inner.trim())) {
-                return type;
-            }
-        }
-        return null;
+        return BuildSlotMapping.matchFishingComponentType(inner);
     }
 
     private static boolean isFishingRod(ItemData item) {
@@ -215,9 +208,9 @@ public final class ShareKitImportHelper {
 
         CustomKit kit = new CustomKit();
         kit.name = kitName;
+        kit.origin = CustomKit.Origin.COPIED;
 
         List<String> unresolved = new ArrayList<>();
-        Set<String> seenItems = new LinkedHashSet<>();
         int filledEquipment = 0;
         int overflow = 0;
 
@@ -228,12 +221,16 @@ public final class ShareKitImportHelper {
                     continue;
                 }
                 boolean modules = "modules".equals(key);
-                for (ItemData shareItem : bucket.items) {
+                for (int i = 0; i < bucket.items.size(); i++) {
+                    ItemData shareItem = bucket.items.get(i);
                     if (shareItem == null) {
                         continue;
                     }
-                    if (isFishingRod(shareItem)) {
-                        importFishingRodComponents(shareItem, kit, unresolved);
+                    Integer slot = bucket.slotIndices != null && i < bucket.slotIndices.size()
+                        ? bucket.slotIndices.get(i)
+                        : null;
+                    if (isFishingRod(shareItem) || (slot != null && slot == BuildSlotMapping.FISHING_ROD_SLOT)) {
+                        importFishingRod(shareItem, kit, unresolved);
                         continue;
                     }
                     filledEquipment++;
@@ -251,18 +248,21 @@ public final class ShareKitImportHelper {
                         unresolved.add(shown.isEmpty() ? raw : shown);
                         continue;
                     }
-                    if (!seenItems.add(db.name)) {
-                        continue;
-                    }
-                    if (kit.itemNames.size() >= MAX_KIT_ITEMS) {
+                    if (kit.equipmentEntries.size() >= MAX_KIT_ITEMS) {
                         overflow++;
                         continue;
                     }
-                    kit.itemNames.add(db.name);
-                    if (kit.itemCategories == null) {
-                        kit.itemCategories = new java.util.HashMap<>();
-                    }
-                    kit.itemCategories.put(db.name, key);
+                    CustomKit.EquipmentEntry entry = new CustomKit.EquipmentEntry();
+                    entry.jeiName = db.name;
+                    entry.inventorySlot = slot;
+                    BuildSlotMapping.PieceType type = slot != null
+                        ? BuildSlotMapping.pieceTypeForSlot(slot)
+                        : BuildSlotMapping.resolvePieceType(db);
+                    entry.slotType = type != null ? type.getLabel() : null;
+                    entry.originalItem = net.felix.utilities.Town.KitItemDataIo.copyShareItem(shareItem);
+                    List<String> aspects = BuildShareExtraParser.parseAspectNames(List.of(shareItem));
+                    entry.capturedAspectNames = aspects.isEmpty() ? List.of() : new ArrayList<>(aspects);
+                    kit.equipmentEntries.add(entry);
                     if (kit.iconItemName == null) {
                         kit.iconItemName = db.name;
                         if (db.id != null && !db.id.isEmpty()) {
@@ -271,6 +271,11 @@ public final class ShareKitImportHelper {
                     }
                 }
             }
+        }
+        kit.syncDerivedLists();
+        kit.rebuildAspectNamesFromEntries();
+        if (kit.aspectNames == null && snapshot.aspectNames != null) {
+            kit.aspectNames = new ArrayList<>(snapshot.aspectNames);
         }
 
         if (overflow > 0) {
@@ -283,11 +288,19 @@ public final class ShareKitImportHelper {
                     continue;
                 }
                 String cardLabel = cardDisplayName(card);
-                if (!cardLabel.isEmpty() && !kit.cardNames.contains(cardLabel)) {
+                if (!cardLabel.isEmpty()) {
                     kit.cardNames.add(cardLabel);
+                    kit.originalCards.add(net.felix.utilities.Town.KitItemDataIo.copyShareItem(card));
                 }
             }
         }
+
+        kit.powerCrystalNames = snapshot.powerCrystalNames == null
+            ? null
+            : new ArrayList<>(snapshot.powerCrystalNames);
+        kit.originalPowerCrystalOverview =
+            net.felix.utilities.Town.KitItemDataIo.copyShareItem(snapshot.powerCrystalOverview);
+        kit.powerCrystalOverviewEdited = false;
 
         boolean persisted = CustomKitManager.addKit(kit);
         if (!persisted) {
@@ -307,8 +320,10 @@ public final class ShareKitImportHelper {
         return SaveResult.success(kit.name);
     }
 
-    private static void importFishingRodComponents(
+    private static void importFishingRod(
             ItemData rod, CustomKit kit, List<String> unresolved) {
+        kit.originalFishingRod = net.felix.utilities.Town.KitItemDataIo.copyShareItem(rod);
+        kit.fishingRodComponentsEdited = false;
         List<ParsedFishingComponent> parsed = parseFishingComponentsFromTooltip(rod.chatTooltip);
         if (parsed.isEmpty()) {
             return;

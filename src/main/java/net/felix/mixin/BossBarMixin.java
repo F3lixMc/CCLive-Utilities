@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("unused")
 @Mixin(BossHealthOverlay.class)
 public class BossBarMixin {
 

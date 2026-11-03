@@ -1634,21 +1634,25 @@ public class KitFilterUtility {
 		return customKitCacheKey(kit);
 	}
 
-	/** Nur Ausrüstung (itemNames), ohne Angelkomponenten und ohne Karten. */
+	/** Nur Ausrüstung, ohne Angelkomponenten und ohne Karten. */
 	public static List<ItemInfo> getCustomKitItemInfos(CustomKit kit) {
 		if (kit == null) {
 			return new ArrayList<>();
 		}
+		kit.ensureEquipmentEntries();
 		List<ItemInfo> result = new ArrayList<>();
-		if (kit.itemNames != null) {
-			for (String itemName : kit.itemNames) {
-				ItemInfo info = findItemInfoByName(itemName);
+		if (kit.equipmentEntries != null) {
+			for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+				if (entry == null || entry.jeiName == null) {
+					continue;
+				}
+				ItemInfo info = findItemInfoByName(entry.jeiName);
 				if (info != null) {
 					result.add(info);
 				}
 			}
 		}
-		return result;
+		return collapseSameNames(result);
 	}
 
 	/** Angelkomponenten für Kit-Hover-Abschnitt (Typ aus Speicherung, Metadaten aus items.json). */
@@ -1664,8 +1668,6 @@ public class KitFilterUtility {
 			ItemInfo base = findItemInfoByName(fc.itemName);
 			String type = fc.type != null && !fc.type.isEmpty() ? fc.type : "Komponente";
 			if (base != null) {
-				String modifier = (base.modifier != null && !base.modifier.isEmpty() && !"[]".equals(base.modifier))
-					? base.modifier : "–";
 				result.add(new ItemInfo(
 					base.name,
 					base.ebene,
@@ -1673,9 +1675,9 @@ public class KitFilterUtility {
 					base.nameColor,
 					base.nameColorString,
 					type,
-					modifier));
+					null));
 			} else {
-				result.add(new ItemInfo(fc.itemName, null, null, 0xFFFFFFFF, null, type, "–"));
+				result.add(new ItemInfo(fc.itemName, null, null, 0xFFFFFFFF, null, type, null));
 			}
 		}
 		return result;
@@ -1746,36 +1748,38 @@ public class KitFilterUtility {
 		List<ItemInfo> tools = new ArrayList<>();
 		List<ItemInfo> modules = new ArrayList<>();
 
-		if (kit.itemNames != null) {
-			for (String itemName : kit.itemNames) {
-				ItemInfo info = findItemInfoByName(itemName);
-				if (info == null) {
+		kit.ensureEquipmentEntries();
+		if (kit.equipmentEntries != null) {
+			for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+				if (entry == null || entry.jeiName == null) {
 					continue;
 				}
-				String cat = resolveItemCategory(kit, itemName);
+				ItemInfo info = findItemInfoByName(entry.jeiName);
+				if (info == null) {
+					info = new ItemInfo(entry.jeiName, null, null, 0xFFFFFFFF, null,
+						entry.slotType != null ? entry.slotType : "Item", "–");
+				}
+				String cat = resolveEntryCategory(kit, entry);
 				switch (cat) {
 					case "weapons" -> weapons.add(info);
 					case "tools" -> tools.add(info);
-					case "modules" -> {
-						ItemInfo moduleInfo = forceModuleDisplay(info);
-						modules.add(moduleInfo);
-					}
+					case "modules" -> modules.add(forceModuleDisplay(info));
 					default -> armor.add(info);
 				}
 			}
 		}
 
 		if (!armor.isEmpty()) {
-			sections.add(new KitHoverSection("Rüstung", armor, KitHoverSection.FoundMode.BLUEPRINT));
+			sections.add(new KitHoverSection("Rüstung", collapseSameNames(armor), KitHoverSection.FoundMode.BLUEPRINT));
 		}
 		if (!weapons.isEmpty()) {
-			sections.add(new KitHoverSection("Waffen", weapons, KitHoverSection.FoundMode.BLUEPRINT));
+			sections.add(new KitHoverSection("Waffen", collapseSameNames(weapons), KitHoverSection.FoundMode.BLUEPRINT));
 		}
 		if (!tools.isEmpty()) {
-			sections.add(new KitHoverSection("Werkzeuge", tools, KitHoverSection.FoundMode.BLUEPRINT));
+			sections.add(new KitHoverSection("Werkzeuge", collapseSameNames(tools), KitHoverSection.FoundMode.BLUEPRINT));
 		}
 		if (!modules.isEmpty()) {
-			sections.add(new KitHoverSection("Module", modules, KitHoverSection.FoundMode.BLUEPRINT));
+			sections.add(new KitHoverSection("Module", collapseSameNames(modules), KitHoverSection.FoundMode.BLUEPRINT));
 		}
 
 		List<ItemInfo> fishing = getCustomKitFishingComponentInfos(kit);
@@ -1806,6 +1810,51 @@ public class KitFilterUtility {
 			modifier);
 	}
 
+	private static List<ItemInfo> collapseSameNames(List<ItemInfo> items) {
+		if (items == null || items.isEmpty()) {
+			return items != null ? items : new ArrayList<>();
+		}
+		java.util.LinkedHashMap<String, ItemInfo> first = new java.util.LinkedHashMap<>();
+		java.util.LinkedHashMap<String, Integer> counts = new java.util.LinkedHashMap<>();
+		for (ItemInfo info : items) {
+			if (info == null || info.name == null) {
+				continue;
+			}
+			String key = info.name;
+			counts.put(key, counts.getOrDefault(key, 0) + 1);
+			first.putIfAbsent(key, info);
+		}
+		List<ItemInfo> out = new ArrayList<>();
+		for (java.util.Map.Entry<String, ItemInfo> e : first.entrySet()) {
+			int count = counts.getOrDefault(e.getKey(), 1);
+			ItemInfo info = e.getValue();
+			if (count <= 1) {
+				out.add(info);
+				continue;
+			}
+			out.add(new ItemInfo(
+				info.name + " ×" + count,
+				info.ebene,
+				info.info,
+				info.nameColor,
+				info.nameColorString,
+				info.itemType,
+				info.modifier));
+		}
+		return out;
+	}
+
+	private static String resolveEntryCategory(CustomKit kit, CustomKit.EquipmentEntry entry) {
+		if (entry.inventorySlot != null) {
+			BuildSlotMapping.PieceType type = BuildSlotMapping.pieceTypeForSlot(entry.inventorySlot);
+			BuildSlotMapping.EquipmentCategory category = BuildSlotMapping.categoryForPiece(type);
+			if (category != null) {
+				return category.categoryKey();
+			}
+		}
+		return resolveItemCategory(kit, entry.jeiName);
+	}
+
 	private static String resolveItemCategory(CustomKit kit, String itemName) {
 		if (kit.itemCategories != null) {
 			String stored = kit.itemCategories.get(itemName);
@@ -1824,6 +1873,11 @@ public class KitFilterUtility {
 		if (data == null) {
 			return "armor";
 		}
+		BuildSlotMapping.EquipmentCategory mapped =
+			BuildSlotMapping.categoryForPiece(BuildSlotMapping.resolvePieceType(data));
+		if (mapped != null) {
+			return mapped.categoryKey();
+		}
 		if (isModuleItem(data)) {
 			return "modules";
 		}
@@ -1838,7 +1892,7 @@ public class KitFilterUtility {
 
 		if (type.contains("tool") || type.contains("werkzeug")
 				|| piece.contains("spitzhacke") || piece.contains("schaufel")
-				|| piece.contains("hacke") || tags.contains("tool")) {
+				|| tags.contains("tool")) {
 			return "tools";
 		}
 		if (type.contains("waffe") || type.contains("weapon")
@@ -1867,7 +1921,15 @@ public class KitFilterUtility {
 	private static String customKitCacheKey(CustomKit kit) {
 		StringBuilder key = new StringBuilder(kit.id != null ? kit.id : "");
 		key.append('|').append(kit.name != null ? kit.name : "");
-		if (kit.itemNames != null) {
+		kit.ensureEquipmentEntries();
+		if (kit.equipmentEntries != null) {
+			for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+				if (entry == null) {
+					continue;
+				}
+				key.append('|').append(entry.jeiName).append('@').append(entry.inventorySlot);
+			}
+		} else if (kit.itemNames != null) {
 			for (String itemName : kit.itemNames) {
 				key.append('|').append(itemName);
 			}
@@ -1886,6 +1948,22 @@ public class KitFilterUtility {
 				}
 				key.append('|').append(fc.type).append(':').append(fc.itemName);
 			}
+		}
+		key.append("|crystals");
+		if (kit.powerCrystalNames != null) {
+			for (String name : kit.powerCrystalNames) {
+				key.append('|').append(name);
+			}
+		} else {
+			key.append("|null");
+		}
+		key.append("|aspects");
+		if (kit.aspectNames != null) {
+			for (String name : kit.aspectNames) {
+				key.append('|').append(name);
+			}
+		} else {
+			key.append("|null");
 		}
 		return key.toString();
 	}
@@ -1932,8 +2010,13 @@ public class KitFilterUtility {
 				return new HashSet<>();
 			}
 			Set<String> names = new HashSet<>();
-			if (kit.itemNames != null) {
-				names.addAll(kit.itemNames);
+			kit.ensureEquipmentEntries();
+			if (kit.equipmentEntries != null) {
+				for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+					if (entry != null && entry.jeiName != null && !entry.jeiName.isEmpty()) {
+						names.add(entry.jeiName);
+					}
+				}
 			}
 			if (kit.fishingComponents != null) {
 				for (CustomKit.FishingComponent fc : kit.fishingComponents) {

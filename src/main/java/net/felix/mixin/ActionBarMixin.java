@@ -14,6 +14,7 @@ import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardFarmzoneActionBar;
 
 
+@SuppressWarnings("unused")
 @Mixin(Hud.class)
 public class ActionBarMixin {
     

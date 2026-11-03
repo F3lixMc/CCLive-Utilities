@@ -293,7 +293,9 @@ public class DevToolsScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         recomputeLayout();
-        if (event.button() != 0) {
+        // 26.3/SDL: Linksklick = MOUSE_BUTTON_LEFT (1), nicht GLFW 0
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        if (button != 0) {
             return super.mouseClicked(event, doubled);
         }
         double mouseX = event.x();

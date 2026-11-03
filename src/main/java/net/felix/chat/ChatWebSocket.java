@@ -4,8 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.identity.WebsiteLinkMessages;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.config.LeaderboardConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -156,6 +159,7 @@ public final class ChatWebSocket implements WebSocket.Listener {
         CompletableFuture.runAsync(() -> {
             try {
                 LeaderboardManager lb = LeaderboardManager.getInstance();
+                lb.ensureRegisteredAsync();
                 if (!lb.ensureRegisteredSync()) {
                     connecting.set(false);
                     scheduleReconnect();
@@ -290,6 +294,16 @@ public final class ChatWebSocket implements WebSocket.Listener {
             }
             case "pong" -> {
                 // keep-alive ok
+            }
+            case "website.linked" -> {
+                Minecraft client = Minecraft.getInstance();
+                if (client != null) {
+                    client.execute(() -> {
+                        if (client.player != null) {
+                            client.player.sendSystemMessage(Component.literal("§a" + WebsiteLinkMessages.LINKED));
+                        }
+                    });
+                }
             }
             default -> {
             }

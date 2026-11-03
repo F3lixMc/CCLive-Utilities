@@ -236,7 +236,7 @@ public class ItemViewerGrid {
                 boolean itemChanged = hoveredItem != lastTooltipItem;
                 if (animatedForgingRainbow || itemChanged) {
                     lastTooltipItem = hoveredItem;
-                    cachedTooltipLines = buildTooltipLines(hoveredItem, itemStack, client, true);
+                    cachedTooltipLines = buildTooltipLines(hoveredItem, itemStack, client, true, true);
                 }
                 // Aspect overlay must refresh every hover frame: HandledScreenMixin can clear it
                 // before Item Viewer renders, and same ItemData must re-apply after that clear.
@@ -284,6 +284,11 @@ public class ItemViewerGrid {
     
     private List<Component> buildTooltipLines(ItemData hoveredItem, ItemStack itemStack, Minecraft client,
             boolean includeInteractionHints) {
+        return buildTooltipLines(hoveredItem, itemStack, client, includeInteractionHints, true);
+    }
+
+    private List<Component> buildTooltipLines(ItemData hoveredItem, ItemStack itemStack, Minecraft client,
+            boolean includeInteractionHints, boolean includeCosts) {
                 java.util.List<Component> tooltipLines = new java.util.ArrayList<>();
                 try {
                     tooltipLines.add(itemStack.getHoverName());
@@ -310,7 +315,7 @@ public class ItemViewerGrid {
                     ItemInfo info = hoveredItem.info;
 
                     if ("fish_traps".equals(hoveredItem.category) || Boolean.TRUE.equals(info.fish_trap)) {
-                        appendFishTrapTooltipLines(tooltipLines, hoveredItem, info, includeInteractionHints);
+                        appendFishTrapTooltipLines(tooltipLines, hoveredItem, info, includeInteractionHints, includeCosts);
                         return tooltipLines;
                     }
                     
@@ -389,7 +394,7 @@ public class ItemViewerGrid {
                         }
                         
                         // Kosten für Power Crystal Slots (nach first_upgrade)
-                        appendPriceSection(tooltipLines, hoveredItem, true);
+                        appendPriceSection(tooltipLines, hoveredItem, true, includeCosts);
                         
                         // Forschungs Zeit separat anzeigen (gelb Header, dann grün)
                         if (hoveredItem.time != null && hoveredItem.time.hours != null) {
@@ -612,13 +617,13 @@ public class ItemViewerGrid {
                         }
                         tooltipLines.add(statusText);
                         
-                        if (ItemViewerUtility.isShowCosts()) {
+                        if (includeCosts && ItemViewerUtility.isShowCosts()) {
                             tooltipLines.add(Component.empty());
                         }
                     }
                     
-                    appendPriceSection(tooltipLines, hoveredItem, false);
-                    appendBlueprintShopSection(tooltipLines, hoveredItem);
+                    appendPriceSection(tooltipLines, hoveredItem, false, includeCosts);
+                    appendBlueprintShopSection(tooltipLines, hoveredItem, includeCosts);
                     
                     if (includeInteractionHints) {
                         appendInteractionHints(tooltipLines, hoveredItem, info);
@@ -642,6 +647,10 @@ public class ItemViewerGrid {
     }
 
     public static java.util.List<Component> buildTooltipLinesForItem(ItemData itemData) {
+        return buildTooltipLinesForItem(itemData, true);
+    }
+
+    public static java.util.List<Component> buildTooltipLinesForItem(ItemData itemData, boolean includeCosts) {
         if (itemData == null) {
             return java.util.Collections.emptyList();
         }
@@ -650,7 +659,7 @@ public class ItemViewerGrid {
             return java.util.Collections.emptyList();
         }
         Minecraft client = Minecraft.getInstance();
-        return TOOLTIP_BUILDER.buildTooltipLines(itemData, stack, client, false);
+        return TOOLTIP_BUILDER.buildTooltipLines(itemData, stack, client, false, includeCosts);
     }
 
     private void appendInteractionHints(java.util.List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info) {
@@ -957,7 +966,12 @@ public class ItemViewerGrid {
      * Fügt eine Kosten-Zeile zum Tooltip hinzu, falls vorhanden
      */
     private void appendPriceSection(java.util.List<Component> tooltipLines, ItemData hoveredItem, boolean leadingEmptyLine) {
-        if (!ItemViewerUtility.isShowCosts() || hoveredItem == null || hoveredItem.price == null) {
+        appendPriceSection(tooltipLines, hoveredItem, leadingEmptyLine, true);
+    }
+
+    private void appendPriceSection(java.util.List<Component> tooltipLines, ItemData hoveredItem,
+            boolean leadingEmptyLine, boolean includeCosts) {
+        if (!includeCosts || !ItemViewerUtility.isShowCosts() || hoveredItem == null || hoveredItem.price == null) {
             return;
         }
         if (leadingEmptyLine) {
@@ -978,7 +992,12 @@ public class ItemViewerGrid {
     }
 
     private void appendBlueprintShopSection(java.util.List<Component> tooltipLines, ItemData hoveredItem) {
-        if (!ItemViewerUtility.isShowCosts() || hoveredItem == null
+        appendBlueprintShopSection(tooltipLines, hoveredItem, true);
+    }
+
+    private void appendBlueprintShopSection(java.util.List<Component> tooltipLines, ItemData hoveredItem,
+            boolean includeCosts) {
+        if (!includeCosts || !ItemViewerUtility.isShowCosts() || hoveredItem == null
                 || hoveredItem.blueprint_shop == null || hoveredItem.blueprint_shop.price == null) {
             return;
         }
@@ -1273,7 +1292,7 @@ public class ItemViewerGrid {
     }
 
     private void appendFishTrapTooltipLines(java.util.List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info,
-            boolean includeInteractionHints) {
+            boolean includeInteractionHints, boolean includeCosts) {
         appendFoundAtLocationLines(tooltipLines, hoveredItem);
 
         if (info.catch_time != null && !info.catch_time.isEmpty()) {
@@ -1321,7 +1340,7 @@ public class ItemViewerGrid {
             tooltipLines.add(statusText);
         }
 
-        appendPriceSection(tooltipLines, hoveredItem, true);
+        appendPriceSection(tooltipLines, hoveredItem, true, includeCosts);
 
         if (info.prerequisites != null && !info.prerequisites.isEmpty()) {
             tooltipLines.add(Component.empty());

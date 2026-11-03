@@ -18,6 +18,7 @@ import java.util.UUID;
 /**
  * Mixin to add the CCLive-Utilities icon next to player names in the tab list.
  */
+@SuppressWarnings("unused")
 @Mixin(PlayerTabOverlay.class)
 public abstract class PlayerListHudMixin {
     

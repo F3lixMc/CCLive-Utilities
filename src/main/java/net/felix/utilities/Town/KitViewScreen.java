@@ -53,11 +53,12 @@ public class KitViewScreen extends Screen {
 	private static final int TAB_GAP = 2;
 	private static final int TAB_PADDING_X = 4;
 	private static final int TAB_MIN_WIDTH = 26;
-	private static final String[] TAB_LABELS = {"Alt", "Neu", "Eigene"};
+	private static final String[] TAB_LABELS = {"Alt", "Neu", "Eigene", "Kopiert"};
 	
 	private static final int TAB_ALT = 0;
 	private static final int TAB_NEU = 1;
 	private static final int TAB_EIGENE = 2;
+	private static final int TAB_KOPIERT = 3;
 	private static final int TAB_COLOR_ACTIVE = 0xFF4C635E;
 	private static final int TAB_COLOR_ACTIVE_TOP = 0xFF3D4F4B;
 	private static final int TAB_COLOR_INACTIVE = 0xFF4D6E6D;
@@ -85,7 +86,11 @@ public class KitViewScreen extends Screen {
 	}
 
 	public void switchToCustomTab() {
-		this.activeTab = TAB_EIGENE;
+		switchToCustomTab(false);
+	}
+
+	public void switchToCustomTab(boolean copied) {
+		this.activeTab = copied ? TAB_KOPIERT : TAB_EIGENE;
 		tooltipHelper.clear();
 	}
 	
@@ -179,8 +184,10 @@ public class KitViewScreen extends Screen {
 				renderKitGrid(context, mouseX, mouseY);
 			} else if (activeTab == TAB_NEU) {
 				renderNeuKitGrid(context, mouseX, mouseY);
+			} else if (activeTab == TAB_KOPIERT) {
+				renderCustomKitGrid(context, mouseX, mouseY, CustomKit.Origin.COPIED, false);
 			} else {
-				renderCustomKitGrid(context, mouseX, mouseY);
+				renderCustomKitGrid(context, mouseX, mouseY, CustomKit.Origin.MANUAL, true);
 			}
 		}
 		
@@ -253,7 +260,7 @@ public class KitViewScreen extends Screen {
 		try {
 			BPViewerUtility bpViewer = BPViewerUtility.getInstance();
 			// Verwende die neue öffentliche Methode, die sowohl foundBlueprints als auch floorProgress prüft
-			return bpViewer.isBlueprintFoundAnywhere(blueprintName);
+			return bpViewer.isBlueprintFoundAnywhere(KitTooltipHelper.blueprintLookupName(blueprintName));
 		} catch (Exception e) {
 			// Falls BPViewer nicht verfügbar ist, gebe false zurück
 			return false;
@@ -485,7 +492,7 @@ public class KitViewScreen extends Screen {
 		int[] xs = new int[TAB_LABELS.length];
 		int[] widths = new int[TAB_LABELS.length];
 		computeTabPositions(xs, widths);
-		int[] tabIds = {TAB_ALT, TAB_NEU, TAB_EIGENE};
+		int[] tabIds = {TAB_ALT, TAB_NEU, TAB_EIGENE, TAB_KOPIERT};
 		for (int i = 0; i < TAB_LABELS.length; i++) {
 			renderTab(context, xs[i], tabY, widths[i], TAB_LABELS[i], activeTab == tabIds[i], mouseX, mouseY);
 		}
@@ -520,13 +527,14 @@ public class KitViewScreen extends Screen {
 		context.fill(centerX - 1, centerY - armLength, centerX + 1, centerY + armLength, color);
 	}
 
-	private void renderCustomKitGrid(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+	private void renderCustomKitGrid(GuiGraphicsExtractor context, int mouseX, int mouseY,
+			CustomKit.Origin origin, boolean showPlus) {
 		hoveredCustomKit = null;
 		hoveredPlusSlot = false;
 		hoveredKitType = null;
 		hoveredLevel = -1;
 
-		java.util.List<CustomKit> kits = CustomKitManager.getAllKits();
+		java.util.List<CustomKit> kits = CustomKitManager.getKitsByOrigin(origin);
 		int slotIndex = 0;
 
 		for (CustomKit kit : kits) {
@@ -554,6 +562,9 @@ public class KitViewScreen extends Screen {
 			slotIndex++;
 		}
 
+		if (!showPlus) {
+			return;
+		}
 		int plusCol = slotIndex % CUSTOM_COLUMNS;
 		int plusRow = slotIndex / CUSTOM_COLUMNS;
 		int plusX = gridStartX + plusCol * GRID_SPACING_X;
@@ -582,7 +593,8 @@ public class KitViewScreen extends Screen {
 		}
 		boolean showBpStatus = shouldShowBPViewerStatus();
 		KitTooltipHelper.CachedTooltip cached = tooltipHelper.getOrBuildSections(
-				"custom:" + KitFilterUtility.getCustomKitItemCacheKey(hoveredCustomKit) + tooltipBpCacheSuffix(),
+				"custom:" + KitFilterUtility.getCustomKitItemCacheKey(hoveredCustomKit)
+					+ tooltipBpCacheSuffix() + ":" + this.width + "x" + this.height,
 				this.font,
 				kitName,
 				KitFilterUtility.getCustomKitHoverSections(hoveredCustomKit),
@@ -593,7 +605,10 @@ public class KitViewScreen extends Screen {
 				net.felix.utilities.Aincraft.FishingComponentFoundUtility::isFound,
 				net.felix.profile.ProfileStatsManager::isCardUnlockedLocally
 		);
-		KitTooltipHelper.render(context, this.font, cached, mouseX, mouseY, this.width, this.height);
+		KitTooltipHelper.ExtraPanel extra = KitTooltipHelper.buildExtraPanel(this.font, hoveredCustomKit);
+		KitTooltipHelper.render(
+			context, this.font, cached, extra, mouseX, mouseY, this.width, this.height,
+			KitTooltipHelper.isShiftHeld());
 	}
 
 	private void renderPlusSlotTooltip(GuiGraphicsExtractor context, int mouseX, int mouseY) {
@@ -661,6 +676,20 @@ public class KitViewScreen extends Screen {
 		context.text(this.font, " " + actionText, cursor, y, 0xFFFFFFFF, true);
 	}
 
+	private void openKitPreview(CustomKit kit) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || kit == null) {
+			return;
+		}
+		client.gui.setScreen(new net.felix.chat.BuildShareViewScreen(
+			CustomKitPreviewFactory.fromKit(kit), this, true));
+	}
+
+	private static boolean isControlHeld() {
+		return InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)
+			|| InputConstants.isKeyDown(InputConstants.KEY_RCONTROL);
+	}
+
 	private void openCustomKitEditor(CustomKit existing) {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
@@ -693,10 +722,15 @@ public class KitViewScreen extends Screen {
 				activeTab = TAB_EIGENE;
 				return true;
 			}
+			if (clickedTab == 3) {
+				activeTab = TAB_KOPIERT;
+				return true;
+			}
 		}
 
-		if (activeTab == TAB_EIGENE) {
-			java.util.List<CustomKit> kits = CustomKitManager.getAllKits();
+		if (activeTab == TAB_EIGENE || activeTab == TAB_KOPIERT) {
+			java.util.List<CustomKit> kits = CustomKitManager.getKitsByOrigin(
+				activeTab == TAB_KOPIERT ? CustomKit.Origin.COPIED : CustomKit.Origin.MANUAL);
 			int slotIndex = 0;
 			for (CustomKit kit : kits) {
 				int col = slotIndex % CUSTOM_COLUMNS;
@@ -705,6 +739,10 @@ public class KitViewScreen extends Screen {
 				int slotY = gridStartY + row * GRID_SPACING_Y;
 				if (mouseX >= slotX && mouseX < slotX + SLOT_SIZE
 						&& mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
+					if (button == 0 && isControlHeld()) {
+						openKitPreview(kit);
+						return true;
+					}
 					if (button == 1) {
 						openCustomKitEditor(kit);
 						return true;
@@ -714,7 +752,7 @@ public class KitViewScreen extends Screen {
 				slotIndex++;
 			}
 
-			if (button == 0) {
+			if (button == 0 && activeTab == TAB_EIGENE) {
 				int plusCol = slotIndex % CUSTOM_COLUMNS;
 				int plusRow = slotIndex / CUSTOM_COLUMNS;
 				int plusX = gridStartX + plusCol * GRID_SPACING_X;

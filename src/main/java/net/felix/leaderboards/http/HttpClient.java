@@ -122,7 +122,35 @@ public class HttpClient {
      * Sendet eine POST-Anfrage ohne Token
      */
     public JsonObject post(String endpoint, JsonObject data) throws IOException, InterruptedException {
-        return sendPost(endpoint, data, null);
+        JsonResponse response = sendPostResult(endpoint, data, null);
+        if (response.status() == 200 || response.status() == 201) {
+            return response.body();
+        }
+        logHttpFailure("POST", endpoint, response);
+        return null;
+    }
+
+    public JsonResponse postResult(String endpoint, JsonObject data) throws IOException, InterruptedException {
+        return sendPostResult(endpoint, data, null);
+    }
+
+    public JsonResponse postResultWithToken(String endpoint, JsonObject data, String token) throws IOException, InterruptedException {
+        return sendPostResult(endpoint, data, token);
+    }
+
+    public record JsonResponse(int status, JsonObject body, String raw, String retryAfter) {
+        public String publicError() {
+            if (body != null && body.has("error") && body.get("error").isJsonPrimitive()) {
+                String error = body.get("error").getAsString();
+                String lower = error.toLowerCase();
+                if (lower.contains("token") || lower.contains("secret") || lower.contains("password")
+                        || lower.contains("proofsession") || lower.contains("accesstoken")) {
+                    return null;
+                }
+                return error;
+            }
+            return null;
+        }
     }
     
     /**
@@ -187,45 +215,76 @@ public class HttpClient {
      * Interne Methode für POST-Anfragen
      */
     private JsonObject sendPost(String endpoint, JsonObject data, String token) throws IOException, InterruptedException {
+        JsonResponse response = sendPostResult(endpoint, data, token);
+        if (response.status() == 200 || response.status() == 201) {
+            return response.body();
+        }
+        logHttpFailure("POST", endpoint, response);
+        return null;
+    }
+
+    private JsonResponse sendPostResult(String endpoint, JsonObject data, String token) throws IOException, InterruptedException {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create(config.getServerUrl() + endpoint))
             .timeout(Duration.ofMillis(config.getReadTimeout()))
             .header("Content-Type", "application/json");
-            
-        // Token hinzufügen falls vorhanden
+
         if (token != null) {
             requestBuilder.header("x-auth-token", token);
         }
-        
+
         String jsonBody = gson.toJson(data);
         HttpRequest request = requestBuilder
             .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
             .build();
-            
+
         if (config.isDebugMode()) {
             System.out.println("🌐 HTTP POST: " + config.getServerUrl() + endpoint);
-            System.out.println("📤 Request Body: " + jsonBody);
+            if (!isSensitiveEndpoint(endpoint)) {
+                System.out.println("📤 Request Body: " + jsonBody);
+            }
             if (token != null) {
                 System.out.println("🔐 With Token: vorhanden");
             }
         }
-        
+
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        
-        if (config.isDebugMode()) {
-            System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
-        }
-        
-        if (response.statusCode() == 200 || response.statusCode() == 201) {
-            try {
-                return gson.fromJson(response.body(), JsonObject.class);
-            } catch (JsonSyntaxException e) {
-                System.err.println("❌ JSON Parse Error: " + e.getMessage());
-                return null;
+
+        JsonObject parsed = null;
+        try {
+            if (response.body() != null && !response.body().isBlank()) {
+                parsed = gson.fromJson(response.body(), JsonObject.class);
             }
-        } else {
-            System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
-            return null;
+        } catch (JsonSyntaxException e) {
+            System.err.println("❌ JSON Parse Error: " + e.getMessage());
         }
+        if (config.isDebugMode()) {
+            if (isSensitiveEndpoint(endpoint)) {
+                System.out.println("📡 HTTP Response: " + response.statusCode() + " (Inhalt unterdrückt)");
+            } else {
+                System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
+            }
+        }
+        String retryAfter = response.headers().firstValue("Retry-After").orElse(null);
+        return new JsonResponse(response.statusCode(), parsed, response.body(), retryAfter);
+    }
+
+    private static boolean isSensitiveEndpoint(String endpoint) {
+        String path = endpoint == null ? "" : endpoint.toLowerCase();
+        return path.contains("/register")
+                || path.contains("/website/")
+                || path.contains("/login")
+                || path.contains("/challenge")
+                || path.contains("/confirm");
+    }
+
+    private static void logHttpFailure(String method, String endpoint, JsonResponse response) {
+        String error = response.publicError();
+        if (isSensitiveEndpoint(endpoint)) {
+            System.err.println("❌ HTTP Error " + method + " " + endpoint + " " + response.status()
+                    + (error != null ? " " + error : ""));
+            return;
+        }
+        System.err.println("❌ HTTP Error " + response.status() + (response.raw() != null ? ": " + response.raw() : ""));
     }
 }

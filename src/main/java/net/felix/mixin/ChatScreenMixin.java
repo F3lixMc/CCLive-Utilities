@@ -17,6 +17,7 @@ import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+@SuppressWarnings("unused")
 @Mixin(ChatScreen.class)
 public abstract class ChatScreenMixin {
     
@@ -48,7 +49,8 @@ public abstract class ChatScreenMixin {
     /** Linksklick auf Build-Share-Link öffnet die PNG-Container-Vorschau (kein SuggestCommand). */
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
-        if (event.button() != 0) {
+        // 26.3/SDL: Linksklick = 1 → auf Legacy-0 abbilden
+        if (net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button()) != 0) {
             return;
         }
         if (BuildShareViewScreen.isActive()) {

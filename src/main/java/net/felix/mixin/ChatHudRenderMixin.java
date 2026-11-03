@@ -22,6 +22,7 @@ import net.minecraft.util.Mth;
  * Fallback-Icon-Rendering im Chat, falls keine Icon-Glyphe (ѳ) in der Nachricht steht.
  * Primär rendert die Custom-Font das Icon bereits an der richtigen Stelle.
  */
+@SuppressWarnings("unused")
 @Mixin(ChatComponent.class)
 public abstract class ChatHudRenderMixin {
     

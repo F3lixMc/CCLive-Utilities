@@ -308,7 +308,8 @@ public class ChatTooltipLine {
             return false;
         }
         return "[Linksklick] Ausrüstung auswählen".equals(normalized)
-            || "[Rechtsklick] Cosmetic auswählen".equals(normalized);
+            || "[Rechtsklick] Cosmetic auswählen".equals(normalized)
+            || normalized.contains("Verwalten der Machtkristalle");
     }
 
     /** Share-Anzeige: Action-Hinweise weglassen und trailing Leerzeilen strippen. */

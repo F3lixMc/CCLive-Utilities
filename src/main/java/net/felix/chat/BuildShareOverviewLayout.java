@@ -91,9 +91,11 @@ public final class BuildShareOverviewLayout {
             layout.mid.lines.addAll(tools.lines);
         }
         layout.mid.width = Math.max(weapons.width, tools.width);
+        BuildShareManager.normalizeSnapshot(data);
         layout.right = buildEquipmentColumn(font, "Module",
             data.equipment != null ? data.equipment.get("modules") : null,
             data.modulesScanned, true);
+        appendNameListToColumn(font, layout.right, "Machtkristalle", data.powerCrystalNames);
 
         List<Component> filledCards = collectFilledCardNames(data);
         layout.cardsLeft = new Column();
@@ -270,6 +272,28 @@ public final class BuildShareOverviewLayout {
             }
         }
         return col;
+    }
+
+    private static void appendNameListToColumn(
+            Font font, Column col, String label, List<String> names) {
+        if (col == null || names == null || names.isEmpty()) {
+            return;
+        }
+        if (!col.lines.isEmpty()) {
+            col.lines.add(new LineEntry(Component.literal(" "), 4));
+        }
+        Component header = Component.literal(label).withStyle(ChatFormatting.YELLOW);
+        col.lines.add(new LineEntry(header, font.width(header)));
+        col.width = Math.max(col.width, font.width(header));
+        for (String name : names) {
+            if (name == null || name.isEmpty()) {
+                continue;
+            }
+            Component line = Component.literal(name).withStyle(ChatFormatting.AQUA);
+            int w = font.width(line);
+            col.lines.add(new LineEntry(line, w));
+            col.width = Math.max(col.width, w);
+        }
     }
 
     private static List<Component> collectFilledCardNames(BuildShareManager.BuildSnapshot data) {

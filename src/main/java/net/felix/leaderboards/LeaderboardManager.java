@@ -12,6 +12,8 @@ import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.leaderboards.collectors.MenuHoverCollector;
 import net.felix.leaderboards.collectors.FloorKillsCollector;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
+import net.felix.identity.ModRegistrationTransport;
+import net.felix.identity.PlayerRegistrationService;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.utilities.Other.DebugUtility;
 import net.minecraft.client.Minecraft;
@@ -42,16 +44,29 @@ public class LeaderboardManager {
     private final Map<String, Object> lastSentValues = new ConcurrentHashMap<>();
     
     // Spieler-Token für Authentifizierung
-    private String playerToken = null;
-    private String playerName = null;
+    private final PlayerRegistrationService registration;
     
     // Status
     private boolean isEnabled = true;
-    private boolean isRegistered = false;
     
     private LeaderboardManager() {
         this.config = new LeaderboardConfig();
         this.httpClient = new HttpClient(config);
+        this.registration = new PlayerRegistrationService(
+                new ModRegistrationTransport(httpClient),
+                millis -> Thread.sleep(millis),
+                new PlayerRegistrationService.Log() {
+                    @Override
+                    public void info(String message) {
+                        System.out.println("[LeaderboardManager] " + message);
+                    }
+
+                    @Override
+                    public void warn(String message) {
+                        System.err.println("[LeaderboardManager] " + message);
+                    }
+                }
+        );
         initializeCollectors();
     }
     
@@ -154,110 +169,29 @@ public class LeaderboardManager {
     }
     
     /**
-     * Plant die Spieler-Registrierung mit Retry-Mechanismus
+     * Startet höchstens eine gemeinsame Registrierung. Spieler-Verfügbarkeit
+     * wird abgewartet, ohne pro Tick neue Nachweise zu starten.
      */
     private void schedulePlayerRegistration() {
-        // Versuche sofort zu registrieren
-        if (!tryRegisterPlayer()) {
-            // Falls fehlgeschlagen, versuche es alle 5 Sekunden erneut (max. 12 Versuche = 1 Minute)
-            scheduleRegistrationRetry(0);
-        }
-    }
-    
-    /**
-     * Retry-Mechanismus für die Registrierung
-     */
-    private void scheduleRegistrationRetry(int attempt) {
-        if (attempt >= 12) { // Max. 12 Versuche (1 Minute)
-            System.out.println("⚠️ Spieler-Registrierung nach 1 Minute aufgegeben");
-            return;
-        }
-        
-        // Warte 5 Sekunden und versuche erneut
-        CompletableFuture.delayedExecutor(5, java.util.concurrent.TimeUnit.SECONDS).execute(() -> {
-            if (!isRegistered && !tryRegisterPlayer()) {
-                scheduleRegistrationRetry(attempt + 1);
-            }
-        });
-    }
-    
-    /**
-     * Versucht den Spieler zu registrieren
-     * @return true wenn erfolgreich, false wenn Spieler noch nicht verfügbar
-     */
-    private boolean tryRegisterPlayer() {
-        Minecraft client = Minecraft.getInstance();
-        if (client.player == null) {
-            System.out.println("⚠️ Spieler noch nicht verfügbar - Retry in 5 Sekunden");
-            return false;
-        }
-        
-        registerPlayer();
-        return true;
-    }
-    
-    /**
-     * Registriert den aktuellen Spieler beim Server
-     */
-    private void registerPlayer() {
         if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             System.out.println("⚠️ [LeaderboardManager] Datentracking deaktiviert - Registrierung übersprungen");
             return;
         }
-
-        Minecraft client = Minecraft.getInstance();
-        if (client.player == null) {
-            System.out.println("⚠️ [LeaderboardManager] Spieler nicht verfügbar - Registrierung später versuchen");
-            return;
-        }
-        
-        playerName = client.player.getName().getString();
-        System.out.println("🔍 [LeaderboardManager] Starte Registrierung für Spieler: " + playerName);
-        System.out.println("🔍 [LeaderboardManager] HTTP-Client Status: " + (httpClient != null ? "vorhanden" : "null"));
-        System.out.println("🔍 [LeaderboardManager] Config Status: enabled=" + config.isEnabled());
-        
-        CompletableFuture.supplyAsync(() -> {
-            try {
-                JsonObject requestData = new JsonObject();
-                requestData.addProperty("player", playerName);
-                
-                // Registrierungs-Logs entfernt (nur bei Debug)
-                JsonObject response = httpClient.post("/register", requestData);
-                
-                if (response != null && response.has("token")) {
-                    playerToken = response.get("token").getAsString();
-                    isRegistered = true;
-                    isEnabled = true; // Stelle sicher, dass isEnabled true ist
-                    System.out.println("✅ [LeaderboardManager] Spieler '" + playerName + "' erfolgreich registriert!");
-                    System.out.println("✅ [LeaderboardManager] Token erhalten");
-                    System.out.println("✅ [LeaderboardManager] Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered);
-                    return true;
-                } else {
-                    System.err.println("❌ [LeaderboardManager] Registrierungs-Response ungültig - kein Token gefunden");
-                    if (response != null) {
-                        System.err.println("❌ [LeaderboardManager] Response-Inhalt: " + response.toString());
-                    }
+        CompletableFuture.runAsync(() -> {
+            for (int attempt = 0; attempt < 12; attempt++) {
+                Minecraft client = Minecraft.getInstance();
+                if (client != null && client.player != null) {
+                    registration.ensureRegistered();
+                    return;
                 }
-            } catch (Exception e) {
-                System.err.println("❌ [LeaderboardManager] Registrierung fehlgeschlagen: " + e.getMessage());
-                e.printStackTrace();
-            }
-            return false;
-        }).thenAccept(success -> {
-            if (!success) {
-                // Nur deaktivieren, wenn noch kein Token vorhanden ist
-                // Wenn bereits ein Token existiert, behalte den Status bei
-                if (playerToken == null) {
-                    System.err.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen - Leaderboards deaktiviert");
-                    System.err.println("⚠️ [LeaderboardManager] Aktueller Status: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
-                    isEnabled = false;
-                } else {
-                    // Token bereits vorhanden - verwende es und aktiviere System
-                    System.out.println("⚠️ [LeaderboardManager] Registrierungs-Request fehlgeschlagen, aber Token bereits vorhanden - System bleibt aktiviert");
-                    isRegistered = true;
-                    isEnabled = true;
+                try {
+                    Thread.sleep(5_000L);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
+            System.out.println("⚠️ Spieler-Registrierung: Spieler nach Wartezeit nicht verfügbar");
         });
     }
     
@@ -270,7 +204,7 @@ public class LeaderboardManager {
     public void updateScore(String boardName, long score) {
         if (config.isDebugMode()) {
             System.out.println("🔥 DEBUG: updateScore aufgerufen - boardName=" + boardName + ", score=" + score);
-            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered() + ", playerToken=" + (getPlayerToken() != null ? "vorhanden" : "null"));
         }
         
         // Prüfe ob Tracker-Aktivität aktiviert ist
@@ -288,7 +222,7 @@ public class LeaderboardManager {
             return;
         }
         
-        if (!isEnabled || !isRegistered || playerToken == null) {
+        if (!isEnabled || !isRegistered() || getPlayerToken() == null) {
             if (config.isDebugMode()) {
                 System.out.println("🔥 DEBUG: updateScore ABGEBROCHEN - Bedingungen nicht erfüllt");
             }
@@ -338,7 +272,7 @@ public class LeaderboardManager {
                 requestData.addProperty("board", boardName);
                 requestData.addProperty("score", score);
                 
-                JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
+                JsonObject response = httpClient.postWithToken("/update", requestData, getPlayerToken());
                 if (config.isDebugMode()) {
                     System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
                 }
@@ -395,7 +329,7 @@ public class LeaderboardManager {
     public void updateScoreManual(String boardName, long score) {
         if (config.isDebugMode()) {
             System.out.println("🔥 DEBUG: updateScoreManual aufgerufen - boardName=" + boardName + ", score=" + score);
-            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered() + ", playerToken=" + (getPlayerToken() != null ? "vorhanden" : "null"));
         }
         
         // Prüfe ob Tracker-Aktivität aktiviert ist
@@ -413,7 +347,7 @@ public class LeaderboardManager {
             return;
         }
         
-        if (!isEnabled || !isRegistered || playerToken == null) {
+        if (!isEnabled || !isRegistered() || getPlayerToken() == null) {
             if (config.isDebugMode()) {
                 System.out.println("🔥 DEBUG: updateScoreManual ABGEBROCHEN - Bedingungen nicht erfüllt");
             }
@@ -448,7 +382,7 @@ public class LeaderboardManager {
                 requestData.addProperty("board", boardName);
                 requestData.addProperty("score", score);
                 
-                JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
+                JsonObject response = httpClient.postWithToken("/update", requestData, getPlayerToken());
                 if (config.isDebugMode()) {
                     System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
                 }
@@ -505,7 +439,7 @@ public class LeaderboardManager {
     public void updateScoreAdditive(String boardName, long score) {
         if (config.isDebugMode()) {
             System.out.println("🔥 DEBUG: updateScoreAdditive aufgerufen - boardName=" + boardName + ", score=" + score);
-            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered + ", playerToken=" + (playerToken != null ? "vorhanden" : "null"));
+            System.out.println("🔥 DEBUG: isEnabled=" + isEnabled + ", isRegistered=" + isRegistered() + ", playerToken=" + (getPlayerToken() != null ? "vorhanden" : "null"));
         }
         
         // Prüfe ob Tracker-Aktivität aktiviert ist
@@ -523,7 +457,7 @@ public class LeaderboardManager {
             return;
         }
         
-        if (!isEnabled || !isRegistered || playerToken == null) {
+        if (!isEnabled || !isRegistered() || getPlayerToken() == null) {
             if (config.isDebugMode()) {
                 System.out.println("🔥 DEBUG: updateScoreAdditive ABGEBROCHEN - Bedingungen nicht erfüllt");
             }
@@ -550,7 +484,7 @@ public class LeaderboardManager {
                 requestData.addProperty("board", boardName);
                 requestData.addProperty("score", score);
                 
-                JsonObject response = httpClient.postWithToken("/update", requestData, playerToken);
+                JsonObject response = httpClient.postWithToken("/update", requestData, getPlayerToken());
                 if (config.isDebugMode()) {
                     System.out.println("🔥 DEBUG: HTTP-Response erhalten: " + (response != null ? response.toString() : "null"));
                 }
@@ -574,7 +508,7 @@ public class LeaderboardManager {
      * Holt die Top 10 eines Leaderboards (mit Cooldown-System)
      */
     public CompletableFuture<JsonObject> getLeaderboard(String boardName) {
-        if (!isRegistered || playerToken == null) {
+        if (!isRegistered() || getPlayerToken() == null) {
             return CompletableFuture.completedFuture(null);
         }
         
@@ -592,7 +526,7 @@ public class LeaderboardManager {
         
         return CompletableFuture.supplyAsync(() -> {
             try {
-                JsonObject result = httpClient.get("/leaderboard/" + boardName + "/" + playerName);
+                JsonObject result = httpClient.get("/leaderboard/" + boardName + "/" + getPlayerName());
                 if (result != null) {
                     cooldownManager.markLeaderboardFetched(boardName);
                 }
@@ -621,8 +555,8 @@ public class LeaderboardManager {
     // Getter/Setter
     public boolean isEnabled() { return isEnabled; }
     public void setEnabled(boolean enabled) { this.isEnabled = enabled; }
-    public boolean isRegistered() { return isRegistered; }
-    public String getPlayerName() { return playerName; }
+    public boolean isRegistered() { return registration.hasToken(); }
+    public String getPlayerName() { return registration.playerName(); }
     
     /**
      * Verarbeitet eingehende Chat-Nachrichten für Datensammlung
@@ -666,79 +600,75 @@ public class LeaderboardManager {
     
     
     /**
-     * Stellt sicher, dass ein Auth-Token vorliegt (synchron, für Chat-Senden o.ä.).
-     * @return true wenn Token vorhanden bzw. Registrierung gelungen
+     * True nur wenn bereits ein Token vorliegt. Startet keine neue Registrierung.
      */
     public boolean ensureRegisteredSync() {
-        if (isRegistered && playerToken != null) {
-            return true;
+        return registration.hasToken();
+    }
+
+    /**
+     * Hängt sich an die laufende Registrierung oder startet genau eine.
+     */
+    public CompletableFuture<Boolean> ensureRegisteredAsync() {
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            return CompletableFuture.completedFuture(false);
         }
+        return registration.ensureRegistered();
+    }
+
+    /**
+     * Wartet auf Worker-Threads auf die gemeinsame Registrierung.
+     */
+    public boolean awaitRegistration(long timeoutMs) {
         if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             return false;
         }
-
-        Minecraft client = Minecraft.getInstance();
-        if (client.player == null) {
-            return false;
-        }
-
-        try {
-            playerName = client.player.getName().getString();
-            JsonObject requestData = new JsonObject();
-            requestData.addProperty("player", playerName);
-            JsonObject response = httpClient.post("/register", requestData);
-            if (response != null && response.has("token")) {
-                playerToken = response.get("token").getAsString();
-                isRegistered = true;
-                isEnabled = true;
-                return true;
-            }
-        } catch (Exception e) {
-            System.err.println("❌ [LeaderboardManager] Sync-Registrierung fehlgeschlagen: " + e.getMessage());
-        }
-        return false;
+        return registration.await(timeoutMs);
     }
 
     /**
-     * Manueller Refresh der Registrierung (falls beim Start fehlgeschlagen)
+     * Manueller Refresh über die zentrale Registrierung.
+     * Kein zweiter Vorgang während eines laufenden; 429-Wartezeit bleibt.
      */
-    public void refreshRegistration() {
-        System.out.println("🔄 [LeaderboardManager] Manueller Refresh der Registrierung...");
-        // Speichere das alte Token als Fallback
-        String oldToken = playerToken;
-        isRegistered = false;
-        playerToken = null;
-        isEnabled = true; // Stelle sicher, dass isEnabled wieder true ist
-        registerPlayer();
-        
-        // Falls die Registrierung fehlschlägt, verwende das alte Token als Fallback
-        CompletableFuture.delayedExecutor(5, java.util.concurrent.TimeUnit.SECONDS).execute(() -> {
-            if (!isRegistered && oldToken != null) {
-                System.out.println("⚠️ [LeaderboardManager] Registrierung fehlgeschlagen, verwende altes Token als Fallback");
-                playerToken = oldToken;
-                isRegistered = true;
-                isEnabled = true;
-            }
-        });
+    public PlayerRegistrationService.RefreshOutcome refreshRegistration() {
+        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            return new PlayerRegistrationService.RefreshOutcome(
+                    PlayerRegistrationService.RefreshKind.RATE_LIMITED,
+                    CompletableFuture.completedFuture(false),
+                    0L
+            );
+        }
+        isEnabled = true;
+        return registration.refresh();
+    }
+
+    public PlayerRegistrationService.Status connectionStatus() {
+        return registration.status(net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled() && isEnabled && config.isEnabled());
     }
     
     /**
-     * Diagnose-Funktion: Gibt den aktuellen Status des Leaderboard-Systems aus
+     * Diagnose der CCLive-Verbindung ohne Tokenwerte.
      */
     public void printDiagnostics() {
+        PlayerRegistrationService.Status status = connectionStatus();
         System.out.println("═══════════════════════════════════════════════════════");
-        System.out.println("🔍 [LeaderboardManager] DIAGNOSE");
+        System.out.println("CCLive-Verbindung");
         System.out.println("═══════════════════════════════════════════════════════");
-        System.out.println("Status:");
-        System.out.println("  isEnabled: " + isEnabled);
-        System.out.println("  isRegistered: " + isRegistered);
-        System.out.println("  config.isEnabled(): " + config.isEnabled());
-        System.out.println("  playerName: " + (playerName != null ? playerName : "null"));
-        System.out.println("  playerToken: " + (playerToken != null ? "vorhanden" : "null"));
-        System.out.println("  httpClient: " + (httpClient != null ? "vorhanden" : "null"));
-        System.out.println("  Datensammler: " + collectors.size());
-        System.out.println("  Letzte gesendete Werte: " + lastSentValues.size());
+        System.out.println("  Verbindung: " + (status.trackingEnabled() ? "bereit" : "nicht bereit"));
+        System.out.println("  Registrierung läuft: " + (status.registrationRunning() ? "ja" : "nein"));
+        System.out.println("  Spieler: " + (status.playerName() != null ? status.playerName() : "unbekannt"));
+        System.out.println("  Identität: " + (status.playerUuid() != null ? status.playerUuid() : "fehlt"));
+        System.out.println("  Token: " + (status.hasToken() ? "vorhanden" : "fehlt"));
+        System.out.println("  Nächste Wiederholung: " + formatRetry(status.retryAfterMs()));
         System.out.println("═══════════════════════════════════════════════════════");
+    }
+
+    public static String formatRetry(long retryAfterMs) {
+        if (retryAfterMs <= 0) {
+            return "sofort möglich";
+        }
+        long seconds = Math.max(1L, (retryAfterMs + 999L) / 1000L);
+        return "in " + seconds + "s";
     }
     
     /**
@@ -761,6 +691,6 @@ public class LeaderboardManager {
      * Gibt den Player-Token zurück
      */
     public String getPlayerToken() {
-        return playerToken;
+        return registration.token();
     }
 }

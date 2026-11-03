@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+@SuppressWarnings("unused")
 @Mixin(AbstractContainerScreen.class)
 public abstract class SearchBarInputMixin {
 
@@ -80,6 +81,13 @@ public abstract class SearchBarInputMixin {
         int keyCode = event.key();
         int scanCode = event.keycode();
         int modifiers = event.modifiers();
+
+        // Container screens override keyPressed and may never reach Screen.keyPressed.
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
+            cir.setReturnValue(true);
+            return;
+        }
+
 
         if (keyCode == InputConstants.KEY_ESCAPE) {
             if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayEscape()) {

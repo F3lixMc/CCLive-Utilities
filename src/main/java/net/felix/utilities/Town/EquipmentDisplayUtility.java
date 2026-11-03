@@ -624,10 +624,6 @@ public class EquipmentDisplayUtility {
 	/**
 	 * Zeichnet Statistiken in einem Overlay mit fester Höhe und dynamischer Breite
 	 */
-	private static void drawStatsInOverlay(GuiGraphicsExtractor context, net.minecraft.client.gui.Font textRenderer, Map<String, Double> stats, int overlayX, int overlayY, int overlayWidth, int overlayHeight, boolean isPercentage, int scrollOffset) {
-		drawStatsInOverlay(context, textRenderer, stats, overlayX, overlayY, overlayWidth, overlayHeight, isPercentage, scrollOffset, 0);
-	}
-
 	private static void drawStatsInOverlay(GuiGraphicsExtractor context, net.minecraft.client.gui.Font textRenderer, Map<String, Double> stats, int overlayX, int overlayY, int overlayWidth, int overlayHeight, boolean isPercentage, int scrollOffset, int extraTopPad) {
 		int textX = overlayX + 11; // 11 Pixel Abstand vom Rand (3 + 8 Pixel nach rechts)
 		int yOffset = overlayY + 8 + Math.max(0, extraTopPad); // +extraTopPad: erste Textzeile etwas tiefer

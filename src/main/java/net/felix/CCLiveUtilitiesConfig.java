@@ -1796,14 +1796,22 @@ public class CCLiveUtilitiesConfig {
                 .description(OptionDescription.of(Component.literal(
                         "Aktiviert die Online-Features der Mod.\n\n"
                                 + "AN (Empfohlen): Ermöglicht die Teilnahme an globalen custom Leaderboards, "
-                                + "die Anzeige von custom Hover-Stats im Chat und exklusive Spieler-Icons.\n\n"
+                                + "die Anzeige von custom Hover-Stats im Chat, exklusive Spieler-Icons "
+                                + "und ein optionales Websitekonto. Dabei werden deine Minecraft-UUID und der aktuelle "
+                                + "Anzeigename serverseitig der Community-Identität zugeordnet. Historische Anzeigenamen "
+                                + "können gespeichert werden, gelten aber nicht als Kontoübernahme. "
+                                + "Öffentliche Profil-Codes sind keine Zugangsdaten. Es werden keine Microsoft-Zugangsdaten übertragen.\n\n"
                                 + "AUS: Es werden keinerlei Daten gesendet (Vollständiges Opt-out). "
                                 + "Dadurch verlierst du jedoch den Zugriff auf alle oben genannten Community-Features. "
                                 + "Der Update-Checker bleibt aktiv.")))
                 .binding(true, () -> HANDLER.instance().dataTrackingEnabled, newVal -> HANDLER.instance().dataTrackingEnabled = newVal)
                 .controller(TickBoxControllerBuilder::create)
-                .listener((opt, value) -> {
-                    boolean enabled = Boolean.TRUE.equals(value);
+                .addListener((opt, event) -> {
+                    if (event != OptionEventListener.Event.STATE_CHANGE
+                            && event != OptionEventListener.Event.INITIAL) {
+                        return;
+                    }
+                    boolean enabled = Boolean.TRUE.equals(opt.pendingValue());
                     hoverStatsOption.setAvailable(enabled);
                     chatIconOption.setAvailable(enabled);
                     nametagIconOption.setAvailable(enabled);

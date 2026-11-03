@@ -1018,7 +1018,7 @@ public class InformationenUtility {
 	 * Liest den Aspekt-Namen aus einer ⭐-Tooltip-Zeile, z. B. "[Mond Aspekt]" aus
 	 * "⭐ [Mond Aspekt] (Transferiert)".
 	 */
-	private static String extractBracketAspectNameFromStarLine(String lineText) {
+	public static String extractBracketAspectNameFromStarLine(String lineText) {
 		if (lineText == null || lineText.isEmpty()) {
 			return null;
 		}
@@ -1034,7 +1034,10 @@ public class InformationenUtility {
 			return null;
 		}
 		String aspectName = cleanLine.substring(start + 1, end).trim();
-		return aspectName.isEmpty() ? null : aspectName;
+		if (aspectName.isEmpty() || "transferiert".equalsIgnoreCase(aspectName)) {
+			return null;
+		}
+		return aspectName;
 	}
 
 	/**

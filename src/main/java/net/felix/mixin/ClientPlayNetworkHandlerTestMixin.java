@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Mixin to intercept GameMessageS2CPacket before it reaches the chat.
  * This allows us to modify messages with hover events and prevent the original from showing.
  */
+@SuppressWarnings("unused")
 @Mixin(ClientPacketListener.class)
 public abstract class ClientPlayNetworkHandlerTestMixin {
     

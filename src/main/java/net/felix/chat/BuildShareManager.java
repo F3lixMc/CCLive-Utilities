@@ -90,6 +90,11 @@ public final class BuildShareManager {
     private int equipmentStableTicks;
     private String lastCardsScanHash = "";
     private int cardsStableTicks;
+    private ItemData powerCrystalOverview;
+    /** null = noch nicht gescannt; leere Liste = Scan ohne bestätigte Kristalle. */
+    private List<String> capturedPowerCrystalNames;
+    /** null = noch nicht gescannt; leere Liste = Scan ohne Aspekte. */
+    private List<String> capturedAspectNames;
 
     private int panelScreenX;
     private int panelScreenY;
@@ -164,6 +169,9 @@ public final class BuildShareManager {
         lastCardsScanHash = "";
         cardsStableTicks = 0;
         panelScroll = 0;
+        powerCrystalOverview = null;
+        capturedPowerCrystalNames = null;
+        capturedAspectNames = null;
 
         if (suppressUntilMenuClose) {
             Minecraft client = Minecraft.getInstance();
@@ -309,6 +317,8 @@ public final class BuildShareManager {
                 modulesScanned = true;
             }
         }
+        scanPowerCrystalOverview(client, screen, hash);
+        capturedAspectNames = BuildShareExtraParser.parseAspectNames(collectFilledEquipmentItems());
 
         String scanHash = hash.toString();
         if (scanHash.equals(lastEquipmentScanHash)) {
@@ -979,27 +989,34 @@ public final class BuildShareManager {
         int textMaxW = Math.max(40, w - 12);
         textY = drawClippedLine(context, client, ellipsize(client, "Build-Share", textMaxW),
             x + 6, textY, 0xFFFFFFFF, clipTop, clipBottom, lineH + 2);
-        String kitLine = "Kit: " + (kitName != null && !kitName.isEmpty() ? kitName : "—");
+        String shownKitName = overlayKitName();
+        String kitLine = "Kit: " + (shownKitName != null && !shownKitName.isEmpty() ? shownKitName : "—");
         textY = drawClippedLine(context, client, ellipsize(client, kitLine, textMaxW),
             x + 6, textY, 0xFFCCCCCC, clipTop, clipBottom, lineH + 4);
 
         textY = drawClippedLine(context, client, ellipsize(client, "Ausrüstung", textMaxW),
             x + 6, textY, 0xFFFFD700, clipTop, clipBottom, lineH + 1);
-        if (equipmentRecognized) {
-            int armorFilled = getFilledCount(EquipmentCategory.ARMOR);
+        if (overlayEquipmentRecognized()) {
+            int armorFilled = overlayFilled(EquipmentCategory.ARMOR);
             String status = "Ausrüstung erkannt · " + armorFilled + "/"
                 + EquipmentCategory.ARMOR.getCapacity() + " belegt";
             textY = drawClippedLine(context, client, ellipsize(client, status, textMaxW),
                 x + 6, textY, 0xFF55FF55, clipTop, clipBottom, lineH + 1);
             for (EquipmentCategory category : EquipmentCategory.values()) {
                 String line;
-                if (category == EquipmentCategory.MODULES && !modulesScanned) {
+                if (category == EquipmentCategory.MODULES && !overlayModulesScanned()) {
                     line = category.getDisplayName() + "  —";
                 } else {
                     line = category.getDisplayName() + "  "
-                        + getFilledCount(category) + "/" + category.getCapacity();
+                        + overlayFilled(category) + "/" + category.getCapacity();
                 }
                 textY = drawClippedLine(context, client, ellipsize(client, line, textMaxW - 4),
+                    x + 10, textY, 0xFFDDDDDD, clipTop, clipBottom, lineH);
+            }
+            List<String> crystalNames = overlayPowerCrystalNames();
+            if (crystalNames != null && !crystalNames.isEmpty()) {
+                String crystalLine = "Machtkristalle  " + crystalNames.size();
+                textY = drawClippedLine(context, client, ellipsize(client, crystalLine, textMaxW - 4),
                     x + 10, textY, 0xFFDDDDDD, clipTop, clipBottom, lineH);
             }
         } else {
@@ -1009,9 +1026,9 @@ public final class BuildShareManager {
 
         textY = drawClippedLine(context, client, ellipsize(client, "Karten", textMaxW),
             x + 6, textY + 2, 0xFFFFD700, clipTop, clipBottom, lineH + 1);
-        if (cardsRecognized) {
+        if (overlayCardsRecognized()) {
             String cardsLine = "Karten erkannt · "
-                + getCardFilledCount() + "/" + BuildSlotMapping.getCardCapacity() + " belegt";
+                + overlayCardFilled() + "/" + BuildSlotMapping.getCardCapacity() + " belegt";
             textY = drawClippedLine(context, client, ellipsize(client, cardsLine, textMaxW),
                 x + 6, textY, 0xFF55FF55, clipTop, clipBottom, lineH + 1);
         } else {
@@ -1019,8 +1036,12 @@ public final class BuildShareManager {
                 x + 6, textY, 0xFFFF5555, clipTop, clipBottom, lineH + 1);
         }
 
-        if (currentShareId != null) {
-            drawClippedLine(context, client, ellipsize(client, "ID: " + currentShareId, textMaxW),
+        String statusLine = overlayStatusLine();
+        if (localSnapshot != null || uploading || currentShareId != null) {
+            if (statusLine == null) {
+                statusLine = "";
+            }
+            drawClippedLine(context, client, ellipsize(client, statusLine, textMaxW),
                 x + 6, textY + 2, 0xFF88AAFF, clipTop, clipBottom, lineH);
         }
 
@@ -1082,24 +1103,72 @@ public final class BuildShareManager {
     }
 
     private int computePanelContentHeight() {
-        int lineH = panelCompact ? 9 : 10;
+        int lineH = 10;
         int h = 6 + 12 + 14;
         h += lineH + 1;
-        if (equipmentRecognized) {
+        if (overlayEquipmentRecognized()) {
             h += lineH + 1 + EquipmentCategory.values().length * lineH;
+            List<String> crystalNames = overlayPowerCrystalNames();
+            if (crystalNames != null && !crystalNames.isEmpty()) {
+                h += lineH;
+            }
         } else {
             h += lineH + 1;
         }
         h += 4 + lineH + 1;
         h += lineH + 1;
-        if (currentShareId != null) {
+        if (localSnapshot != null || uploading || currentShareId != null) {
             h += 12;
         }
         return h;
     }
 
-    private int getPanelHeight() {
-        return computePanelContentHeight() + COPY_BUTTON_HEIGHT + BUTTON_GAP + CLEAR_BUTTON_HEIGHT + 10;
+    private String overlayKitName() {
+        return localSnapshot != null ? localSnapshot.kitName : kitName;
+    }
+
+    private boolean overlayEquipmentRecognized() {
+        return localSnapshot != null ? localSnapshot.equipmentRecognized : equipmentRecognized;
+    }
+
+    private boolean overlayCardsRecognized() {
+        return localSnapshot != null ? localSnapshot.cardsRecognized : cardsRecognized;
+    }
+
+    private boolean overlayModulesScanned() {
+        return localSnapshot != null ? localSnapshot.modulesScanned : modulesScanned;
+    }
+
+    private int overlayFilled(EquipmentCategory category) {
+        if (localSnapshot == null || localSnapshot.equipment == null) {
+            return getFilledCount(category);
+        }
+        CategoryBucket bucket = localSnapshot.equipment.get(category.name().toLowerCase());
+        return bucket != null ? bucket.filled : 0;
+    }
+
+    private int overlayCardFilled() {
+        if (localSnapshot == null || localSnapshot.cards == null) {
+            return getCardFilledCount();
+        }
+        return localSnapshot.cards.filled;
+    }
+
+    private List<String> overlayPowerCrystalNames() {
+        return localSnapshot != null ? localSnapshot.powerCrystalNames : capturedPowerCrystalNames;
+    }
+
+    private String overlayStatusLine() {
+        if (uploading) {
+            return "Wird hochgeladen …";
+        }
+        if (currentShareId != null && !currentShareId.isEmpty()) {
+            return "ID: " + currentShareId;
+        }
+        if (localSnapshot != null) {
+            return "Lokal gespeichert";
+        }
+        return null;
     }
 
     public int getOverlayX() {
@@ -1148,9 +1217,11 @@ public final class BuildShareManager {
         }
         BuildSnapshot cached = resolvedCache.get(shareId);
         if (cached != null) {
+            normalizeSnapshot(cached);
             return cached;
         }
         if (localSnapshot != null && shareId.equals(currentShareId)) {
+            normalizeSnapshot(localSnapshot);
             return localSnapshot;
         }
         return null;
@@ -1314,7 +1385,7 @@ public final class BuildShareManager {
                 return null;
             }
             LeaderboardManager lb = LeaderboardManager.getInstance();
-            if (!lb.ensureRegisteredSync()) {
+            if (!lb.awaitRegistration(20_000L)) {
                 return null;
             }
             JsonObject response = httpClient.getWithToken(
@@ -1324,14 +1395,17 @@ public final class BuildShareManager {
             if (response == null || !response.has("data")) {
                 return null;
             }
-            return GSON.fromJson(response.get("data"), BuildSnapshot.class);
+            BuildSnapshot loaded = GSON.fromJson(response.get("data"), BuildSnapshot.class);
+            normalizeSnapshot(loaded);
+            return loaded;
         } catch (Exception e) {
             debug("Resolve fehlgeschlagen für " + shareId + ": " + e.getMessage());
             return null;
         }
     }
 
-    static Component buildBuildHoverTooltip(BuildSnapshot data) {
+        static Component buildBuildHoverTooltip(BuildSnapshot data) {
+        normalizeSnapshot(data);
         MutableComponent combined = Component.empty();
         String title = data.kitName != null && !data.kitName.isEmpty()
             ? ShareTextCleaner.cleanDisplayName(data.kitName) : "Build";
@@ -1346,6 +1420,7 @@ public final class BuildShareManager {
             appendCategoryHover(combined, "Werkzeuge", data.equipment.get("tools"), true);
             boolean modulesOk = data.modulesScanned;
             appendCategoryHover(combined, "Module", data.equipment.get("modules"), modulesOk);
+            appendNameListHover(combined, "Machtkristalle", data.powerCrystalNames);
         }
         if (data.cardsRecognized) {
             appendCategoryHover(combined, "Karten", data.cards, true);
@@ -1443,6 +1518,21 @@ public final class BuildShareManager {
         return null;
     }
 
+    private static void appendNameListHover(MutableComponent out, String label, List<String> names) {
+        if (names == null || names.isEmpty()) {
+            return;
+        }
+        out.append(Component.literal("\n"));
+        out.append(Component.literal(label).withStyle(ChatFormatting.YELLOW));
+        for (String name : names) {
+            if (name == null || name.isEmpty()) {
+                continue;
+            }
+            out.append(Component.literal("\n  "));
+            out.append(Component.literal(name).withStyle(ChatFormatting.AQUA));
+        }
+    }
+
     private void copyBuildAsync() {
         if (!canCopy()) {
             sendPlayerFeedback("§cKein Build-Bereich erkannt.");
@@ -1467,7 +1557,7 @@ public final class BuildShareManager {
                     return;
                 }
                 LeaderboardManager lb = LeaderboardManager.getInstance();
-                if (!lb.ensureRegisteredSync()) {
+                if (!lb.awaitRegistration(20_000L)) {
                     finishUpload(generation, null, snapshot, "§cUpload fehlgeschlagen (nicht registriert). Build bleibt lokal.");
                     return;
                 }
@@ -1494,18 +1584,28 @@ public final class BuildShareManager {
     }
 
     private void finishUpload(int generation, String shareId, BuildSnapshot snapshot, String feedback) {
-        if (generation != sessionGeneration.get()) {
-            debug("Upload-Ergebnis ignoriert (veraltete Generation " + generation + ").");
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
             return;
         }
-        uploading = false;
-        if (shareId != null) {
-            currentShareId = shareId;
-            localSnapshot = snapshot;
-            resolvedCache.put(shareId, snapshot);
-            debug("Upload erfolgreich: " + shareId);
-        }
-        sendPlayerFeedback(feedback);
+        client.execute(() -> {
+            if (generation != sessionGeneration.get()) {
+                debug("Upload-Ergebnis ignoriert (veraltete Generation " + generation + ").");
+                return;
+            }
+            uploading = false;
+            if (localSnapshot != snapshot) {
+                debug("Upload-Ergebnis ignoriert (Snapshot nicht mehr aktuell).");
+                sendPlayerFeedback(feedback);
+                return;
+            }
+            if (shareId != null) {
+                currentShareId = shareId;
+                resolvedCache.put(shareId, snapshot);
+                debug("Upload erfolgreich: " + shareId);
+            }
+            sendPlayerFeedback(feedback);
+        });
     }
 
     private BuildSnapshot createSnapshot() {
@@ -1611,7 +1711,110 @@ public final class BuildShareManager {
         cards.slotLabels = cardLabels;
         cards.statusesSlotIndices = cardStatusSlots;
         snapshot.cards = cards;
+        snapshot.powerCrystalNames = capturedPowerCrystalNames == null
+            ? null : new ArrayList<>(capturedPowerCrystalNames);
+        snapshot.aspectNames = capturedAspectNames == null
+            ? null : new ArrayList<>(capturedAspectNames);
+        snapshot.powerCrystalOverview =
+            (snapshot.powerCrystalNames != null && !snapshot.powerCrystalNames.isEmpty())
+                ? net.felix.utilities.Town.KitItemDataIo.copyShareItem(powerCrystalOverview)
+                : null;
+        normalizeSnapshot(snapshot);
         return snapshot;
+    }
+
+    private void scanPowerCrystalOverview(
+            Minecraft client, AbstractContainerScreen<?> screen, StringBuilder hash) {
+        int slotIndex = BuildSlotMapping.POWER_CRYSTAL_OVERVIEW_SLOT;
+        if (slotIndex < 0 || slotIndex >= screen.getMenu().slots.size()) {
+            hash.append(slotIndex).append("=missing;");
+            if (capturedPowerCrystalNames == null) {
+                capturedPowerCrystalNames = new ArrayList<>();
+            }
+            powerCrystalOverview = null;
+            return;
+        }
+        ItemStack stack = screen.getMenu().slots.get(slotIndex).getItem();
+        String signature = stackSignature(stack);
+        hash.append(slotIndex).append('=').append(signature).append(';');
+        String previous = lastEquipmentSignatures.get(slotIndex);
+        boolean unchanged = signature.equals(previous == null ? "" : previous);
+        lastEquipmentSignatures.put(slotIndex, signature);
+        if (unchanged && capturedPowerCrystalNames != null && equipmentRecognized) {
+            return;
+        }
+        if (isEquipmentEmptyPlaceholder(stack)) {
+            powerCrystalOverview = null;
+            capturedPowerCrystalNames = new ArrayList<>();
+            return;
+        }
+        ItemData data = ItemViewerUtility.captureInventoryStackForShare(client, screen, stack);
+        if (data != null && data.name != null) {
+            data.name = ShareTextCleaner.cleanDisplayName(data.name);
+        }
+        powerCrystalOverview = data;
+        capturedPowerCrystalNames = BuildShareExtraParser.parsePowerCrystalNames(
+            data != null ? data.chatTooltip : null);
+    }
+
+    private List<ItemData> collectFilledEquipmentItems() {
+        List<ItemData> items = new ArrayList<>();
+        for (EquipmentCategory category : EquipmentCategory.values()) {
+            Map<Integer, ItemData> map = equipmentByCategory.get(category);
+            if (map == null) {
+                continue;
+            }
+            items.addAll(map.values());
+        }
+        return items;
+    }
+
+    public static void normalizeSnapshot(BuildSnapshot snapshot) {
+        if (snapshot == null) {
+            return;
+        }
+        sanitizeSnapshotCrystals(snapshot);
+        if (snapshot.equipment == null) {
+            return;
+        }
+        CategoryBucket bucket = snapshot.equipment.get("modules");
+        if (bucket == null) {
+            return;
+        }
+        int cap = EquipmentCategory.MODULES.getCapacity();
+        int[] slots = EquipmentCategory.MODULES.getSlots();
+        bucket.total = cap;
+        if (bucket.slotStatuses == null || bucket.slotStatuses.isEmpty()) {
+            return;
+        }
+        while (bucket.slotStatuses.size() < cap) {
+            bucket.slotStatuses.add("unknown");
+        }
+        if (bucket.slotLabels == null) {
+            bucket.slotLabels = new ArrayList<>();
+        }
+        while (bucket.slotLabels.size() < cap) {
+            bucket.slotLabels.add(EquipmentCategory.MODULES.slotLabel(bucket.slotLabels.size()));
+        }
+        if (bucket.statusesSlotIndices == null) {
+            bucket.statusesSlotIndices = new ArrayList<>();
+        }
+        while (bucket.statusesSlotIndices.size() < cap) {
+            int i = bucket.statusesSlotIndices.size();
+            bucket.statusesSlotIndices.add(i < slots.length ? slots[i] : 52);
+        }
+    }
+
+    private static void sanitizeSnapshotCrystals(BuildSnapshot snapshot) {
+        if (snapshot.powerCrystalNames == null || snapshot.powerCrystalNames.isEmpty()) {
+            snapshot.powerCrystalOverview = null;
+            return;
+        }
+        if (snapshot.powerCrystalOverview == null) {
+            return;
+        }
+        BuildShareExtraParser.stripUnconfirmedCrystalLines(
+            snapshot.powerCrystalOverview, snapshot.powerCrystalNames);
     }
 
     private static int getContainerSlotCount(AbstractContainerScreen<?> screen, Minecraft client) {
@@ -1831,6 +2034,9 @@ public final class BuildShareManager {
         public boolean modulesScanned;
         public Map<String, CategoryBucket> equipment;
         public CategoryBucket cards;
+        public ItemData powerCrystalOverview;
+        public List<String> powerCrystalNames;
+        public List<String> aspectNames;
     }
 
     public static final class CategoryBucket {

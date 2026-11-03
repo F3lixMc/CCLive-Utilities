@@ -5,7 +5,7 @@ package net.felix.leaderboards.config;
  */
 public class LeaderboardConfig {
     // Server-Konfiguration
-    private String serverUrl = "https://cclive.jkb-lasszocken.net"; // Produktions-Server
+    private String serverUrl = "https://cclive-utilities.net"; // Produktions-Server
     private boolean enabled = true;
     
     // Update-Intervalle (in Millisekunden)

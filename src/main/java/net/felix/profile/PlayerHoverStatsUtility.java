@@ -654,6 +654,7 @@ public class PlayerHoverStatsUtility {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 LeaderboardManager lb = LeaderboardManager.getInstance();
+                lb.ensureRegisteredAsync();
                 if (!lb.ensureRegisteredSync()) {
                     return;
                 }

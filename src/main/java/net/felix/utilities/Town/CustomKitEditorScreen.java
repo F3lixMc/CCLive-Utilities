@@ -41,6 +41,9 @@ public class CustomKitEditorScreen extends Screen {
     private static final int ICON_PICKER_COLUMNS = 3;
     private static final int ICON_PICKER_ROWS = 5;
     private static final int ICON_PICKER_GAP = 10;
+    private static final int EXTRA_PANEL_GAP = 8;
+    private static final int EXTRA_LABEL_GAP = 4;
+    private static final int EXTRA_NAME_WIDTH = 120;
     private static final Item[] PRESET_ICON_ITEMS = {
 
             Items.CACTUS,
@@ -98,6 +101,11 @@ public class CustomKitEditorScreen extends Screen {
     private ItemData hoveredSlotItem = null;
     private boolean hoveredEmptyItemSlot = false;
     private String hoveredPresetIconName = null;
+    private int extraPanelX;
+    private int extraPanelY;
+    private Integer selectedEquipmentIndex;
+    private Integer selectedFishingTypeIndex;
+    private Integer selectedCrystalIndex;
 
     public CustomKitEditorScreen(int buttonIndex, Screen returnScreen, AbstractContainerScreen<?> itemViewerScreen) {
         super(Component.literal("Eigenes Kit"));
@@ -105,6 +113,7 @@ public class CustomKitEditorScreen extends Screen {
         this.returnScreen = returnScreen;
         this.itemViewerScreen = itemViewerScreen;
         this.kit = new CustomKit();
+        this.kit.origin = CustomKit.Origin.MANUAL;
         this.editingExisting = false;
     }
 
@@ -114,6 +123,7 @@ public class CustomKitEditorScreen extends Screen {
         this.returnScreen = returnScreen;
         this.itemViewerScreen = itemViewerScreen;
         this.kit = existing != null ? existing.copy() : new CustomKit();
+        this.kit.ensureEquipmentEntries();
         this.editingExisting = existing != null;
     }
 
@@ -133,8 +143,10 @@ public class CustomKitEditorScreen extends Screen {
         int pickerGridHeight = (ICON_PICKER_ROWS - 1) * GRID_SPACING + SLOT_SIZE;
         iconPickerWidth = pickerGridWidth + PADDING * 2 + EXTRA_SIZE * 2;
         iconPickerHeight = pickerGridHeight + PADDING * 2 + EXTRA_SIZE * 2;
-        iconPickerX = panelX - ICON_PICKER_GAP - iconPickerWidth;
-        iconPickerY = panelY;
+        extraPanelX = panelX - EXTRA_PANEL_GAP - extraPanelWidth();
+        extraPanelY = panelY;
+        iconPickerX = extraPanelX - ICON_PICKER_GAP - iconPickerWidth;
+        iconPickerY = extraPanelY;
         iconPickerGridStartX = iconPickerX + PADDING + EXTRA_SIZE;
         iconPickerGridStartY = iconPickerY + PADDING + EXTRA_SIZE;
     }
@@ -212,10 +224,80 @@ public class CustomKitEditorScreen extends Screen {
             }
             clearIconFocus();
         } else if (item.name != null && !item.name.isEmpty()) {
-            int maxItems = GRID_COLUMNS * (GRID_ROWS - 1);
-            if (!kit.itemNames.contains(item.name) && kit.itemNames.size() < maxItems) {
-                kit.itemNames.add(item.name);
+            applyPickedItem(item);
+        }
+    }
+
+    private void applyPickedItem(ItemData item) {
+        kit.ensureEquipmentEntries();
+        if (BuildSlotMapping.isFishingComponent(item) || BuildSlotMapping.matchFishingComponentType(item) != null) {
+            String type = BuildSlotMapping.matchFishingComponentType(item);
+            if (type == null) {
+                return;
             }
+            upsertFishingComponent(type, item.name);
+            return;
+        }
+        if (BuildSlotMapping.isPowerCrystal(item)) {
+            upsertPowerCrystal(item.name);
+            return;
+        }
+        if (BuildSlotMapping.isFishingRod(item)) {
+            return;
+        }
+        CustomKitSlotAssigner.EquipmentAdd result = CustomKitSlotAssigner.addOrOfferReplace(kit, item, false);
+        if (result.result == CustomKitSlotAssigner.AddResult.NEEDS_REPLACE) {
+            BuildSlotMapping.PieceType type = BuildSlotMapping.resolvePieceType(item);
+            Integer slot = result.occupiedSlot;
+            if (selectedEquipmentIndex != null && selectedEquipmentIndex >= 0
+                    && selectedEquipmentIndex < kit.equipmentEntries.size()) {
+                CustomKit.EquipmentEntry selected = kit.equipmentEntries.get(selectedEquipmentIndex);
+                if (selected != null && selected.inventorySlot != null && type != null
+                        && BuildSlotMapping.pieceTypeForSlot(selected.inventorySlot) == type) {
+                    slot = selected.inventorySlot;
+                }
+            }
+            if (slot != null && type != null) {
+                CustomKitSlotAssigner.replaceSlot(kit, slot, item, type);
+            }
+        }
+        selectedEquipmentIndex = null;
+    }
+
+    private void upsertFishingComponent(String type, String itemName) {
+        if (kit.fishingComponents == null) {
+            kit.fishingComponents = new java.util.ArrayList<>();
+        }
+        for (CustomKit.FishingComponent component : kit.fishingComponents) {
+            if (component != null && type.equalsIgnoreCase(component.type)) {
+                component.itemName = itemName;
+                kit.fishingRodComponentsEdited = true;
+                return;
+            }
+        }
+        kit.fishingComponents.add(new CustomKit.FishingComponent(type, itemName));
+        kit.fishingRodComponentsEdited = true;
+    }
+
+    private void upsertPowerCrystal(String name) {
+        if (kit.powerCrystalNames == null) {
+            kit.powerCrystalNames = new java.util.ArrayList<>();
+        }
+        if (selectedCrystalIndex != null && selectedCrystalIndex >= 0
+                && selectedCrystalIndex < kit.powerCrystalNames.size()) {
+            kit.powerCrystalNames.set(selectedCrystalIndex, name);
+            selectedCrystalIndex = null;
+            kit.powerCrystalOverviewEdited = true;
+            return;
+        }
+        if (kit.powerCrystalNames.size() >= 3) {
+            kit.powerCrystalNames.set(2, name);
+        } else if (!kit.powerCrystalNames.contains(name)) {
+            kit.powerCrystalNames.add(name);
+        }
+        kit.powerCrystalOverviewEdited = true;
+        if (kit.powerCrystalNames.isEmpty()) {
+            kit.originalPowerCrystalOverview = null;
         }
     }
 
@@ -269,6 +351,7 @@ public class CustomKitEditorScreen extends Screen {
         }
 
         renderItemList(context, mouseX, mouseY);
+        renderExtraSlots(context, mouseX, mouseY);
 
         if (!showDeleteConfirmation && pickTarget == PickTarget.ICON) {
             renderIconPicker(context, mouseX, mouseY);
@@ -388,25 +471,29 @@ public class CustomKitEditorScreen extends Screen {
     }
 
     private void renderItemList(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        kit.ensureEquipmentEntries();
         int maxItems = GRID_COLUMNS * (GRID_ROWS - 1);
         int[] pos = new int[2];
-        for (int i = 0; i < kit.itemNames.size(); i++) {
+        int count = kit.equipmentEntries.size();
+        for (int i = 0; i < count; i++) {
             getItemSlotPosition(i, pos);
             boolean hovered = mouseX >= pos[0] && mouseX < pos[0] + SLOT_SIZE
                     && mouseY >= pos[1] && mouseY < pos[1] + SLOT_SIZE;
-            renderSlot(context, pos[0], pos[1], false, hovered);
-
-            ItemStack itemStack = kit.createItemDisplayStack(kit.itemNames.get(i));
+            boolean selected = selectedEquipmentIndex != null && selectedEquipmentIndex == i;
+            renderSlot(context, pos[0], pos[1], selected, hovered);
+            CustomKit.EquipmentEntry entry = kit.equipmentEntries.get(i);
+            String name = entry != null ? entry.jeiName : null;
+            ItemStack itemStack = kit.createItemDisplayStack(name);
             if (!itemStack.isEmpty()) {
                 context.item(itemStack, pos[0] + 1, pos[1] + 1, 0);
             }
             if (hovered) {
-                hoveredSlotItem = resolveItemData(kit.itemNames.get(i));
+                hoveredSlotItem = resolveItemData(name);
             }
         }
 
-        if (kit.itemNames.size() < maxItems) {
-            getItemSlotPosition(kit.itemNames.size(), pos);
+        if (count < maxItems) {
+            getItemSlotPosition(count, pos);
             boolean hovered = mouseX >= pos[0] && mouseX < pos[0] + SLOT_SIZE
                     && mouseY >= pos[1] && mouseY < pos[1] + SLOT_SIZE;
             renderSlot(context, pos[0], pos[1], false, hovered);
@@ -414,6 +501,79 @@ public class CustomKitEditorScreen extends Screen {
                 hoveredEmptyItemSlot = true;
             }
         }
+    }
+
+    private static int extraPanelWidth() {
+        return SLOT_SIZE + EXTRA_LABEL_GAP + EXTRA_NAME_WIDTH;
+    }
+
+    private int fishingRowY(int index) {
+        return extraPanelY + 12 + index * GRID_SPACING;
+    }
+
+    private int crystalSectionY() {
+        return fishingRowY(BuildSlotMapping.FISHING_COMPONENT_TYPES.length) + 6;
+    }
+
+    private void renderExtraSlots(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        context.text(this.font, "Angelkomponenten", extraPanelX, extraPanelY, 0xFFFFFF55, false);
+        String[] types = BuildSlotMapping.FISHING_COMPONENT_TYPES;
+        for (int i = 0; i < types.length; i++) {
+            int x = extraPanelX;
+            int slotY = fishingRowY(i);
+            boolean selected = selectedFishingTypeIndex != null && selectedFishingTypeIndex == i;
+            boolean hovered = mouseX >= x && mouseX < x + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE;
+            renderSlot(context, x, slotY, selected, hovered);
+            CustomKit.FishingComponent component = fishingComponent(types[i]);
+            String label = types[i];
+            if (component != null) {
+                ItemStack stack = kit.createItemDisplayStack(component.itemName);
+                if (!stack.isEmpty()) {
+                    context.item(stack, x + 1, slotY + 1, 0);
+                }
+                if (component.itemName != null && !component.itemName.isEmpty()) {
+                    label = component.itemName;
+                }
+                if (hovered) {
+                    hoveredSlotItem = resolveItemData(component.itemName);
+                }
+            }
+            context.text(this.font, label, x + SLOT_SIZE + EXTRA_LABEL_GAP, slotY + 5, 0xFFAAAAAA, false);
+        }
+        int y = crystalSectionY();
+        context.text(this.font, "Machtkristalle", extraPanelX, y, 0xFFFFFF55, false);
+        y += 12;
+        int crystalCount = kit.powerCrystalNames != null ? kit.powerCrystalNames.size() : 0;
+        for (int i = 0; i < 3; i++) {
+            int x = extraPanelX + i * GRID_SPACING;
+            boolean selected = selectedCrystalIndex != null && selectedCrystalIndex == i;
+            boolean hovered = mouseX >= x && mouseX < x + SLOT_SIZE && mouseY >= y && mouseY < y + SLOT_SIZE;
+            renderSlot(context, x, y, selected, hovered);
+            if (i < crystalCount) {
+                String name = kit.powerCrystalNames.get(i);
+                ItemStack stack = kit.createItemDisplayStack(name);
+                if (!stack.isEmpty()) {
+                    context.item(stack, x + 1, y + 1, 0);
+                }
+                if (hovered) {
+                    hoveredSlotItem = resolveItemData(name);
+                }
+            } else if (hovered) {
+                hoveredEmptyItemSlot = true;
+            }
+        }
+    }
+
+    private CustomKit.FishingComponent fishingComponent(String type) {
+        if (kit.fishingComponents == null) {
+            return null;
+        }
+        for (CustomKit.FishingComponent component : kit.fishingComponents) {
+            if (component != null && type.equalsIgnoreCase(component.type)) {
+                return component;
+            }
+        }
+        return null;
     }
 
     private void renderSlot(GuiGraphicsExtractor context, int x, int y, boolean selected, boolean hovered) {
@@ -471,11 +631,19 @@ public class CustomKitEditorScreen extends Screen {
                 return true;
             }
 
+            if (handleExtraSlotClick(mouseX, mouseY, false)) {
+                pickTarget = PickTarget.ADD_ITEM;
+                ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
+                return true;
+            }
+
             int[] pos = new int[2];
-            for (int i = 0; i < kit.itemNames.size(); i++) {
+            kit.ensureEquipmentEntries();
+            for (int i = 0; i < kit.equipmentEntries.size(); i++) {
                 getItemSlotPosition(i, pos);
                 if (mouseX >= pos[0] && mouseX < pos[0] + SLOT_SIZE
                         && mouseY >= pos[1] && mouseY < pos[1] + SLOT_SIZE) {
+                    selectedEquipmentIndex = i;
                     pickTarget = PickTarget.ADD_ITEM;
                     ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
                     return true;
@@ -483,8 +651,8 @@ public class CustomKitEditorScreen extends Screen {
             }
 
             int maxItems = GRID_COLUMNS * (GRID_ROWS - 1);
-            if (kit.itemNames.size() < maxItems) {
-                getItemSlotPosition(kit.itemNames.size(), pos);
+            if (kit.equipmentEntries.size() < maxItems) {
+                getItemSlotPosition(kit.equipmentEntries.size(), pos);
                 if (mouseX >= pos[0] && mouseX < pos[0] + SLOT_SIZE
                         && mouseY >= pos[1] && mouseY < pos[1] + SLOT_SIZE) {
                     pickTarget = PickTarget.ADD_ITEM;
@@ -495,12 +663,17 @@ public class CustomKitEditorScreen extends Screen {
 
             clearIconFocus();
         } else if (button == 1) {
+            if (handleExtraSlotClick(mouseX, mouseY, true)) {
+                return true;
+            }
             int[] pos = new int[2];
-            for (int i = 0; i < kit.itemNames.size(); i++) {
+            kit.ensureEquipmentEntries();
+            for (int i = 0; i < kit.equipmentEntries.size(); i++) {
                 getItemSlotPosition(i, pos);
                 if (mouseX >= pos[0] && mouseX < pos[0] + SLOT_SIZE
                         && mouseY >= pos[1] && mouseY < pos[1] + SLOT_SIZE) {
-                    kit.itemNames.remove(i);
+                    CustomKitSlotAssigner.removeSlot(kit, i);
+                    selectedEquipmentIndex = null;
                     return true;
                 }
             }
@@ -533,9 +706,67 @@ public class CustomKitEditorScreen extends Screen {
         return super.mouseReleased(event);
     }
 
+    private boolean handleExtraSlotClick(double mouseX, double mouseY, boolean rightClick) {
+        String[] types = BuildSlotMapping.FISHING_COMPONENT_TYPES;
+        for (int i = 0; i < types.length; i++) {
+            int x = extraPanelX;
+            int slotY = fishingRowY(i);
+            if (mouseX >= x && mouseX < x + SLOT_SIZE && mouseY >= slotY && mouseY < slotY + SLOT_SIZE) {
+                if (rightClick) {
+                    removeFishingType(types[i]);
+                } else {
+                    selectedFishingTypeIndex = i;
+                    selectedCrystalIndex = null;
+                }
+                return true;
+            }
+        }
+        int y = crystalSectionY() + 12;
+        for (int i = 0; i < 3; i++) {
+            int x = extraPanelX + i * GRID_SPACING;
+            if (mouseX >= x && mouseX < x + SLOT_SIZE && mouseY >= y && mouseY < y + SLOT_SIZE) {
+                if (rightClick) {
+                    removeCrystalAt(i);
+                } else {
+                    selectedCrystalIndex = i;
+                    selectedFishingTypeIndex = null;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void removeFishingType(String type) {
+        if (kit.fishingComponents == null) {
+            return;
+        }
+        kit.fishingComponents.removeIf(c -> c != null && type.equalsIgnoreCase(c.type));
+        kit.fishingRodComponentsEdited = true;
+        selectedFishingTypeIndex = null;
+    }
+
+    private void removeCrystalAt(int index) {
+        if (kit.powerCrystalNames == null || index < 0 || index >= kit.powerCrystalNames.size()) {
+            return;
+        }
+        kit.powerCrystalNames.remove(index);
+        kit.powerCrystalOverviewEdited = true;
+        if (kit.powerCrystalNames.isEmpty()) {
+            kit.originalPowerCrystalOverview = null;
+        }
+        selectedCrystalIndex = null;
+    }
+
     private void onDone() {
         String name = nameField.getValue().trim();
         kit.name = name.isEmpty() ? "Neues Kit" : name;
+        kit.ensureEquipmentEntries();
+        kit.syncDerivedLists();
+        kit.rebuildAspectNamesFromEntries();
+        if (kit.powerCrystalNames != null && kit.powerCrystalNames.isEmpty()) {
+            kit.originalPowerCrystalOverview = null;
+        }
 
         if (editingExisting) {
             CustomKitManager.updateKit(kit);
@@ -652,9 +883,9 @@ public class CustomKitEditorScreen extends Screen {
         Minecraft client = Minecraft.getInstance();
         if (client != null && returnScreen != null) {
             if (returnScreen instanceof KitSelectionScreen kitScreen) {
-                kitScreen.switchToCustomTab();
+                kitScreen.switchToCustomTab(kit.isCopied());
             } else if (returnScreen instanceof KitViewScreen viewScreen) {
-                viewScreen.switchToCustomTab();
+                viewScreen.switchToCustomTab(kit.isCopied());
             }
             client.gui.setScreen(returnScreen);
         } else {

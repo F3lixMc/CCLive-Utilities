@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
  * NOTE: This mixin is currently disabled in mixins.json due to method signature changes in Minecraft 1.21.7.
  * To re-enable, find the correct addMessage method signature and update the @Inject annotation.
  */
+@SuppressWarnings("unused")
 @Mixin(ChatComponent.class)
 public abstract class ChatHudAddMessageMixin {
     

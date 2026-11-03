@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Mixin for InventoryScreen to render aspect overlay in player inventory (survival mode)
  * This is needed because InventoryScreen extends Screen, not AbstractContainerScreen
  */
+@SuppressWarnings("unused")
 @Mixin(InventoryScreen.class)
 public abstract class InventoryScreenMixin {
     

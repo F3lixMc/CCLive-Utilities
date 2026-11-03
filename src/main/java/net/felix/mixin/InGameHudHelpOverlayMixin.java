@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Mixin für Gui, um das Hilfe-Overlay nach allen Screen-Render-Layern zu rendern
  * Wird am RETURN-Punkt injiziert, um sicherzustellen, dass es wirklich über allen Items liegt
  */
+@SuppressWarnings("unused")
 @Mixin(Hud.class)
 public abstract class InGameHudHelpOverlayMixin {
     

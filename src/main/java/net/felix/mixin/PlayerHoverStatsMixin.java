@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Mixin zum Abfangen von Chat-Nachrichten und Hinzufügen von Player-Stats zum Hover-Event
  */
+@SuppressWarnings("unused")
 @Mixin(ClientPacketListener.class)
 public abstract class PlayerHoverStatsMixin {
     

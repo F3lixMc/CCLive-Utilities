@@ -18,9 +18,11 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.chat.ChatManager;
 import net.felix.devtools.DevToolsAccess;
 import net.felix.devtools.DevToolsScreen;
+import net.minecraft.client.Minecraft;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Town.StarForgedSoundUtility;
+import net.felix.identity.WebsiteProfileLogin;
 
 import java.util.concurrent.CompletableFuture;
 import com.google.gson.JsonObject;
@@ -86,13 +88,16 @@ public class CCLiveCommands {
                 .then(literal("status")
                     .executes(CCLiveCommands::showBlueprintStatus)))
             
-            // Leaderboard Commands  
+            // Leaderboard Commands
             .then(literal("lb")
                 .then(leaderboardResetCommand())
+            )
+
+            .then(literal("connection")
                 .then(literal("status")
-                    .executes(CCLiveCommands::showLeaderboardStatus))
+                    .executes(CCLiveCommands::showConnectionStatus))
                 .then(literal("refresh")
-                    .executes(CCLiveCommands::refreshRegistration))
+                    .executes(CCLiveCommands::refreshConnection))
             )
             
             // Player-Stats Commands
@@ -129,6 +134,10 @@ public class CCLiveCommands {
             // Allgemeine Commands
             .then(literal("help")
                 .executes(CCLiveCommands::showHelp))
+            .then(literal("profil")
+                .then(literal("login")
+                    .then(argument("code", StringArgumentType.word())
+                        .executes(CCLiveCommands::profileLogin))))
         );
         
         // /chat Command (separat)
@@ -139,6 +148,18 @@ public class CCLiveCommands {
         );
     }
     
+    private static int profileLogin(CommandContext<FabricClientCommandSource> context) {
+        String code = StringArgumentType.getString(context, "code");
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null) {
+            context.getSource().sendError(Component.literal("§cSpieler nicht verfügbar."));
+            return 0;
+        }
+        context.getSource().sendFeedback(Component.literal("§eBestätigung läuft…"));
+        WebsiteProfileLogin.start(client, code);
+        return 1;
+    }
+
     private static int resetConfig(CommandContext<FabricClientCommandSource> context) {
         try {
             if (CCLiveUtilitiesConfig.resetToDefaults()) {
@@ -344,58 +365,43 @@ public class CCLiveCommands {
     }
     
     /**
-     * Zeigt den Status des Leaderboard-Systems
+     * Zeigt den gemeinsamen Backend-/Authentifizierungszustand. Keine Tokenwerte.
      */
-    private static int showLeaderboardStatus(CommandContext<FabricClientCommandSource> context) {
-        // Prüfe ob Debug-Modus aktiviert ist
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().leaderboardDebugging) {
-            context.getSource().sendError(Component.literal("§cDieser Command ist nur im Debug-Modus verfügbar!"));
-            context.getSource().sendError(Component.literal("§7Aktiviere 'Leaderboard Debugging' in der Config."));
-            return 0;
-        }
-        
+    private static int showConnectionStatus(CommandContext<FabricClientCommandSource> context) {
         LeaderboardManager manager = LeaderboardManager.getInstance();
-        
-        // Zeige Diagnose in der Konsole
         manager.printDiagnostics();
-        
-        // Zeige Status im Chat
-        context.getSource().sendFeedback(Component.literal("§6=== Leaderboard System Status ==="));
-        context.getSource().sendFeedback(Component.literal("§7Aktiviert: " + (manager.isEnabled() ? "§aJa" : "§cNein")));
-        context.getSource().sendFeedback(Component.literal("§7Registriert: " + (manager.isRegistered() ? "§aJa" : "§cNein")));
-        context.getSource().sendFeedback(Component.literal("§7Spieler: " + (manager.getPlayerName() != null ? "§a" + manager.getPlayerName() : "§cUnbekannt")));
-        context.getSource().sendFeedback(Component.literal("§7Token: " + (manager.getPlayerToken() != null ? "§aVorhanden" : "§cFehlt")));
-        context.getSource().sendFeedback(Component.literal("§7Chat-WebSocket: " +
-            (net.felix.chat.ChatManager.getInstance().isWebSocketConnected() ? "§aVerbunden" : "§cGetrennt")));
-        net.felix.utilities.Overall.ServerConnectionGate.refresh();
-        var gate = net.felix.utilities.Overall.ServerConnectionGate.getMatchState();
-        context.getSource().sendFeedback(Component.literal("§7Server-Gate: §f" + gate
-            + " §7Features: " + (net.felix.utilities.Overall.ServerConnectionGate.areFeaturesAllowed() ? "§aAn" : "§cAus")
-            + " §7Uploads: " + (net.felix.utilities.Overall.ServerConnectionGate.isDataUploadAllowed() ? "§aAn" : "§cAus")));
-        String raw = net.felix.utilities.Overall.ServerConnectionGate.getCachedRawAddress();
-        if (raw != null && !raw.isEmpty()) {
-            context.getSource().sendFeedback(Component.literal("§7Remote: §f" + raw));
-        }
-        context.getSource().sendFeedback(Component.literal("§7Siehe Konsole für vollständige Diagnose"));
-        
+        var status = manager.connectionStatus();
+        context.getSource().sendFeedback(Component.literal("§6=== CCLive-Verbindung ==="));
+        context.getSource().sendFeedback(Component.literal("§7Verbindung: " + (status.trackingEnabled() ? "§abereit" : "§cnicht bereit")));
+        context.getSource().sendFeedback(Component.literal("§7Registrierung: " + (status.registrationRunning() ? "§eläuft" : "§7inaktiv")));
+        context.getSource().sendFeedback(Component.literal("§7Spieler: " + (status.playerName() != null ? "§a" + status.playerName() : "§cunbekannt")));
+        context.getSource().sendFeedback(Component.literal("§7Identität: " + (status.playerUuid() != null ? "§a" + status.playerUuid() : "§cfehlt")));
+        context.getSource().sendFeedback(Component.literal("§7Token: " + (status.hasToken() ? "§avorhanden" : "§cfehlt")));
+        context.getSource().sendFeedback(Component.literal("§7WebSocket: " +
+            (ChatManager.getInstance().isWebSocketConnected() ? "§averbunden" : "§cgetrennt")));
+        context.getSource().sendFeedback(Component.literal("§7Nächste Wiederholung: §f" + LeaderboardManager.formatRetry(status.retryAfterMs())));
         return 1;
     }
-    
+
     /**
-     * Erneuert die Registrierung
+     * Erneuert die Mod-Registrierung über die zentrale Operation.
      */
-    private static int refreshRegistration(CommandContext<FabricClientCommandSource> context) {
-        // Prüfe ob Debug-Modus aktiviert ist
-        if (!CCLiveUtilitiesConfig.HANDLER.instance().leaderboardDebugging) {
-            context.getSource().sendError(Component.literal("§cDieser Command ist nur im Debug-Modus verfügbar!"));
-            context.getSource().sendError(Component.literal("§7Aktiviere 'Leaderboard Debugging' in der Config."));
+    private static int refreshConnection(CommandContext<FabricClientCommandSource> context) {
+        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
+            context.getSource().sendError(Component.literal("§cDatentracking ist aus. CCLive-Verbindung wird nicht erneuert."));
             return 0;
         }
-        
-        context.getSource().sendFeedback(Component.literal("§6Erneuere Leaderboard-Registrierung..."));
-        
-        LeaderboardManager.getInstance().refreshRegistration();
-        
+        var outcome = LeaderboardManager.getInstance().refreshRegistration();
+        if (outcome.kind() == net.felix.identity.PlayerRegistrationService.RefreshKind.ATTACHED) {
+            context.getSource().sendFeedback(Component.literal("§eCCLive-Verbindung: Registrierung läuft bereits. Kein zweiter Versuch gestartet."));
+            return 1;
+        }
+        if (outcome.kind() == net.felix.identity.PlayerRegistrationService.RefreshKind.RATE_LIMITED) {
+            context.getSource().sendFeedback(Component.literal("§eCCLive-Verbindung: Wartezeit nach Rate-Limit. Nächste Wiederholung "
+                    + LeaderboardManager.formatRetry(outcome.retryAfterMs()) + "."));
+            return 1;
+        }
+        context.getSource().sendFeedback(Component.literal("§6CCLive-Verbindung wird erneuert…"));
         return 1;
     }
     
@@ -490,6 +496,10 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7/cclive bp reset §f- Alle Baupläne zurücksetzen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive bp set <floor> §f- Floor manuell setzen"));
         context.getSource().sendFeedback(Component.literal(""));
+        context.getSource().sendFeedback(Component.literal("§e§lCCLive-Verbindung:"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive connection status §f- Verbindungs- und Authentifizierungszustand"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive connection refresh §f- Registrierung erneuern"));
+        context.getSource().sendFeedback(Component.literal(""));
         context.getSource().sendFeedback(Component.literal("§e§lLeaderboard Commands:"));
         context.getSource().sendFeedback(Component.literal("§7/cclive lb reset all §f- Alle Scores löschen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive lb reset <board> §f- Spezifischen Score löschen"));
@@ -518,13 +528,13 @@ public class CCLiveCommands {
         }
         
         if (CCLiveUtilitiesConfig.HANDLER.instance().leaderboardDebugging) {
-            context.getSource().sendFeedback(Component.literal("§e§lLeaderboard Debug Commands:"));
-            context.getSource().sendFeedback(Component.literal("§7/cclive lb status §f- Leaderboard-System Status"));
-            context.getSource().sendFeedback(Component.literal("§7/cclive lb refresh §f- Registrierung erneuern"));
+            context.getSource().sendFeedback(Component.literal("§e§lLeaderboard Debug:"));
+            context.getSource().sendFeedback(Component.literal("§7Zusätzliche Debug-Logs in der Konsole"));
             context.getSource().sendFeedback(Component.literal(""));
         }
         
         context.getSource().sendFeedback(Component.literal("§7/cclive config reset §f- Config löschen und mit Standardwerten neu erstellen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive profil login <CODE> §f- Website-Profil bestätigen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive help §f- Diese Hilfe anzeigen"));
         context.getSource().sendFeedback(Component.literal(""));
         context.getSource().sendFeedback(Component.literal("§7Debug-Commands sind nur sichtbar wenn Debug-Modi in der Config aktiviert sind."));

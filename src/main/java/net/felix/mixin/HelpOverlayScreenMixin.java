@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * Separater Mixin für das Hilfe-Overlay in Screen, damit es wirklich über allem liegt
  * Wird mit RETURN injiziert, um sicherzustellen, dass es nach allem anderen gerendert wird
  */
+@SuppressWarnings("unused")
 @Mixin(Screen.class)
 public abstract class HelpOverlayScreenMixin {
     

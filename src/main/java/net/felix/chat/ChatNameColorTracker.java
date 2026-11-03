@@ -161,8 +161,6 @@ public final class ChatNameColorTracker {
         Style style = component.getStyle();
         Style merged = style != null ? style.applyTo(parent) : parent;
         TextColor c = merged.getColor();
-        String own = component.getContents() != null ? component.getString() : "";
-        // getString includes children — use visit for own? Prefer merged color if any text
         if (c != null && component.getSiblings().isEmpty()) {
             return c;
         }
@@ -255,6 +253,7 @@ public final class ChatNameColorTracker {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 LeaderboardManager lb = LeaderboardManager.getInstance();
+                lb.ensureRegisteredAsync();
                 if (!lb.ensureRegisteredSync()) {
                     return;
                 }

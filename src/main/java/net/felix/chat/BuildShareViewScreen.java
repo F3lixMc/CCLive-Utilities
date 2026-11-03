@@ -65,6 +65,7 @@ public class BuildShareViewScreen extends Screen {
 
     private final BuildShareManager.BuildSnapshot snapshot;
     private final Screen previousScreen;
+    private final boolean kitPreviewMode;
     private final Map<Integer, ItemData> equipmentSlots = new HashMap<>();
     private final Map<Integer, ItemData> cardSlots = new HashMap<>();
 
@@ -95,12 +96,17 @@ public class BuildShareViewScreen extends Screen {
     }
 
     public BuildShareViewScreen(BuildShareManager.BuildSnapshot snapshot, Screen previousScreen) {
+        this(snapshot, previousScreen, false);
+    }
+
+    public BuildShareViewScreen(BuildShareManager.BuildSnapshot snapshot, Screen previousScreen, boolean kitPreviewMode) {
         super(Component.literal(
             snapshot != null && snapshot.kitName != null && !snapshot.kitName.isEmpty()
                 ? snapshot.kitName
                 : "Build"));
         this.snapshot = snapshot;
         this.previousScreen = previousScreen;
+        this.kitPreviewMode = kitPreviewMode;
         activeInstance = this;
         BuildShareManager.clearLastHoveredShareId();
         loadItems();
@@ -117,12 +123,19 @@ public class BuildShareViewScreen extends Screen {
         if (snapshot == null) {
             return;
         }
+        BuildShareManager.normalizeSnapshot(snapshot);
         if (snapshot.equipment != null) {
             placeCategory("armor", EquipmentCategory.ARMOR);
             placeCategory("weapons", EquipmentCategory.WEAPONS);
             placeCategory("tools", EquipmentCategory.TOOLS);
             placeCategory("modules", EquipmentCategory.MODULES);
             placeLockedModules();
+        }
+        if (snapshot.powerCrystalNames != null && !snapshot.powerCrystalNames.isEmpty()
+                && snapshot.powerCrystalOverview != null) {
+            equipmentSlots.put(
+                BuildSlotMapping.POWER_CRYSTAL_OVERVIEW_SLOT,
+                snapshot.powerCrystalOverview);
         }
         placeCardsCompact();
     }
@@ -291,7 +304,7 @@ public class BuildShareViewScreen extends Screen {
         recomputeLayout();
         hoveredItem = null;
         statsToggleHovered = isOverStatsToggle(mouseX, mouseY);
-        saveKitHovered = isOverSaveKit(mouseX, mouseY);
+        saveKitHovered = !kitPreviewMode && isOverSaveKit(mouseX, mouseY);
 
         try {
             context.pose().pushMatrix();
@@ -315,13 +328,14 @@ public class BuildShareViewScreen extends Screen {
             context.fill(btnX, btnY, btnX + btnSize, btnY + btnSize, 0x4022AAFF);
         }
 
-        // Save-Kit (Slot 26): Icon in PNG; Hover transparent/weiß, nach Speichern kurz grün
-        int saveX = saveKitButtonX();
-        int saveY = saveKitButtonY() + 2;
-        if (System.currentTimeMillis() < saveKitFlashUntilMs) {
-            context.fill(saveX, saveY, saveX + btnSize, saveY + btnSize, 0x8022AA55);
-        } else if (saveKitHovered) {
-            context.fill(saveX, saveY, saveX + btnSize, saveY + btnSize, 0x80FFFFFF);
+        if (!kitPreviewMode) {
+            int saveX = saveKitButtonX();
+            int saveY = saveKitButtonY() + 2;
+            if (System.currentTimeMillis() < saveKitFlashUntilMs) {
+                context.fill(saveX, saveY, saveX + btnSize, saveY + btnSize, 0x8022AA55);
+            } else if (saveKitHovered) {
+                context.fill(saveX, saveY, saveX + btnSize, saveY + btnSize, 0x80FFFFFF);
+            }
         }
 
         for (Map.Entry<Integer, ItemData> entry : equipmentSlots.entrySet()) {
@@ -408,7 +422,7 @@ public class BuildShareViewScreen extends Screen {
                 }
             }
         } else {
-            lines.addAll(ItemViewerGrid.buildTooltipLinesForItem(item));
+            lines.addAll(ItemViewerGrid.buildTooltipLinesForItem(item, false));
         }
         if (!lines.isEmpty()) {
             context.setComponentTooltipForNextFrame(this.font, lines, mouseX, mouseY);
@@ -467,7 +481,8 @@ public class BuildShareViewScreen extends Screen {
         }
         double mx = event.x();
         double my = event.y();
-        if (event.button() == 0 && isOverSaveKit(mx, my)) {
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        if (!kitPreviewMode && button == 0 && isOverSaveKit(mx, my)) {
             ShareKitImportHelper.SaveResult result = ShareKitImportHelper.saveSnapshotAsCustomKit(snapshot);
             ShareKitImportHelper.sendFeedback(result);
             if (result != null && result.ok) {
@@ -475,7 +490,7 @@ public class BuildShareViewScreen extends Screen {
             }
             return true;
         }
-        if (event.button() == 0 && isOverStatsToggle(mx, my)) {
+        if (button == 0 && isOverStatsToggle(mx, my)) {
             showStatOverlays = !showStatOverlays;
             if (!showStatOverlays) {
                 leftScrollOffset = 0;

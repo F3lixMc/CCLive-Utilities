@@ -17,8 +17,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * Mixin für Screen, um Keybind-Handling und Text-Input auch in geöffneten Screens zu ermöglichen
  */
+@SuppressWarnings("unused")
 @Mixin(Screen.class)
 public class ScreenMixin {
+
+    @Inject(method = "isInputCaptured", at = @At("HEAD"), cancellable = true)
+    private void cclive$captureViewerSearchInput(CallbackInfoReturnable<Boolean> cir) {
+        if (ItemViewerUtility.isSearchFieldFocused() && ItemViewerUtility.isVisible()) {
+            cir.setReturnValue(true);
+        }
+    }
 
     /**
      * Welt-HUD-Overlays vor dem Inventar-Dim zeichnen, damit sie abgedunkelt dahinter sichtbar bleiben.
