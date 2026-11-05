@@ -1,13 +1,22 @@
 package net.felix.leaderboards.collectors;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.CCLiveUtilities;
 import net.felix.leaderboards.LeaderboardManager;
+import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.scores.DisplaySlot;
-import net.minecraft.world.scores.Objective;
-import net.minecraft.world.scores.Scoreboard;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,7 +36,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
     private static final int CACHE_UPDATE_INTERVAL = 20; // Alle 20 Ticks = 1 Sekunde
     private int cachedCollectionForCurrentZone = 0; // Gecachter Wert für die aktuelle Zone
     
-    // Cache für Zone-Collection-Daten
+    // Cache für Zone-Collection-Daten, bleibt über Neustarts in farmworld-collections.json erhalten
+    private static final String ZONE_COLLECTIONS_FILE = "farmworld-collections.json";
+    private static final Gson ZONE_COLLECTIONS_GSON = new GsonBuilder().setPrettyPrinting().create();
     private final Map<String, Long> zoneCollections = new HashMap<>();
     private String lastZone = null;
     private int lastTotalCollection = 0; // Absoluter Collection-Wert aus Bossbar
@@ -64,21 +75,6 @@ public class FarmworldCollectionsCollector implements DataCollector {
         ZONE_TO_COLLECTION.put("[Amethystmine]", "amethyst_collection");
     }
     
-    // Chinesische Zahlen-Mapping (wie in KillsUtility)
-    private static final Map<Character, Integer> CHINESE_NUMBERS = new HashMap<>();
-    static {
-        CHINESE_NUMBERS.put('㚏', 0);
-        CHINESE_NUMBERS.put('㚐', 1);
-        CHINESE_NUMBERS.put('㚑', 2);
-        CHINESE_NUMBERS.put('㚒', 3);
-        CHINESE_NUMBERS.put('㚓', 4);
-        CHINESE_NUMBERS.put('㚔', 5);
-        CHINESE_NUMBERS.put('㚕', 6);
-        CHINESE_NUMBERS.put('㚖', 7);
-        CHINESE_NUMBERS.put('㚗', 8);
-        CHINESE_NUMBERS.put('㚘', 9);
-    }
-    
     @Override
     public void initialize() {
         if (isActive) {
@@ -86,7 +82,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
             return;
         }
         
-        // System.out.println("🔍 [FarmworldCollectionsCollector] Starte Initialisierung...");
+        loadZoneCollections();
         // Registriere Tick-Event für Collection-Tracking
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
         
@@ -172,7 +168,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
             // Nur cachen wenn wir noch in der gleichen Zone sind UND die Zone stabil ist
             if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 int currentCollection = getCollectionFromBossbar(client);
+                if (currentCollection >= 0) {
                 cachedCollectionForCurrentZone = currentCollection;
+                }
             }
         } catch (Exception e) {
             // Silent error handling
@@ -207,18 +205,17 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     return;
                 }
                 
-                // Zone-Wechsel erkannt - speichere die vorherige Zone IMMER (forceSend=true)
-                // So wird der Wert auch gesendet, wenn er noch nicht übermittelt wurde
+                // Letzten noch nicht gesendeten Wert der vorherigen Zone mitnehmen.
+                // Bereits übertragene Stände lösen keinen neuen Upload aus.
                 if (lastZone != null && cachedCollectionForCurrentZone > 0) {
-                    updateZoneScore(lastZone, cachedCollectionForCurrentZone, true);
+                    updateZoneScore(lastZone, cachedCollectionForCurrentZone, false);
                 } else if (lastZone != null && lastTotalCollection > 0) {
-                    // Fallback: Falls kein gecachter Wert vorhanden, verwende lastTotalCollection
-                    updateZoneScore(lastZone, lastTotalCollection, true);
+                    updateZoneScore(lastZone, lastTotalCollection, false);
                 }
-                
-                // Nach dem Speichern der vorherigen Zone All Collections sofort aktualisieren
-                // (zusätzlich zum 60-Sekunden-Intervall), damit kurze Zonen nicht verloren gehen
-                updateAllCollections();
+
+                // Neue Zone startet ohne übernommenen Zähler, damit der erste Bossbar-Wert gesendet wird.
+                lastTotalCollection = -1;
+                cachedCollectionForCurrentZone = 0;
 
                 // Neue Zone als "pending" markieren - warte 5 Sekunden, bevor Bossbar gelesen wird
                 pendingZone = currentZone;
@@ -255,10 +252,14 @@ public class FarmworldCollectionsCollector implements DataCollector {
                     return;
                 }
             } else if (stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
-                // Zone ist bereits stabil - aktualisiere lastTotalCollection kontinuierlich (nur wenn höher)
+                // Während die Zone stabil ist: Bossbar-Zahl senden, sobald sie sich ändert
                 int currentCollection = getCollectionFromBossbar(client);
-                if (currentCollection > lastTotalCollection) {
+                if (currentCollection >= 0) {
+                    cachedCollectionForCurrentZone = currentCollection;
+                    if (currentCollection != lastTotalCollection) {
                     lastTotalCollection = currentCollection;
+                        updateZoneScore(currentZone, currentCollection);
+                    }
                 }
             } else {
                 // Gleiche Zone, aber noch nicht stabil - warte weiter
@@ -297,16 +298,12 @@ public class FarmworldCollectionsCollector implements DataCollector {
         pendingZoneTicks = 0;
 
         int newZoneCollection = getCollectionFromBossbar(client);
+        if (newZoneCollection < 0) {
+            return;
+        }
         lastTotalCollection = newZoneCollection;
         cachedCollectionForCurrentZone = newZoneCollection;
-
-        long cachedCollection = zoneCollections.getOrDefault(stableZone, 0L);
-        if (newZoneCollection < cachedCollection) {
-            zoneCollections.put(stableZone, (long) newZoneCollection);
-            if (ENABLE_SERVER_UPDATES) {
-                LeaderboardManager.getInstance().updateScore(getCollectionNameForZone(stableZone), newZoneCollection);
-            }
-        }
+        updateZoneScore(stableZone, newZoneCollection);
     }
     
     /**
@@ -322,6 +319,9 @@ public class FarmworldCollectionsCollector implements DataCollector {
             // Nur updaten wenn wir noch in der gleichen Zone sind UND die Zone stabil ist (10 Sekunden im Scoreboard)
             if (currentZone.equals(lastZone) && stableZone != null && currentZone.equals(stableZone) && bossBarReadingAllowed) {
                 int totalCollection = getCollectionFromBossbar(client);
+                if (totalCollection < 0) {
+                    return;
+                }
                 
                 // Aktualisiere lastTotalCollection immer
                 lastTotalCollection = totalCollection;
@@ -347,7 +347,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         if (zone == null || collection < 0) return;
         
         String collectionName = getCollectionNameForZone(zone);
-        if (collectionName == null) return;
+        if (collectionName == null || collectionName.isBlank()) return;
         
         // Hole bisherige Collection für diese Zone
         long currentTotal = zoneCollections.getOrDefault(zone, 0L);
@@ -366,11 +366,11 @@ public class FarmworldCollectionsCollector implements DataCollector {
         // Updaten wenn sich der Wert geändert hat ODER wenn forceSend=true (z.B. bei Zone-Wechsel)
         if (newTotal != currentTotal || forceSend) {
             zoneCollections.put(zone, newTotal);
+            saveZoneCollections();
             
             // DEBUG: Nur senden wenn aktiviert
-            if (ENABLE_SERVER_UPDATES) {
-                LeaderboardManager.getInstance().updateScore(collectionName, newTotal);
-            }
+            sendZoneScore(zone, newTotal);
+            updateAllCollections();
         }
     }
     
@@ -382,10 +382,53 @@ public class FarmworldCollectionsCollector implements DataCollector {
     }
     
     /**
-     * Berechnet die Summe aller Collection-Werte aus allen Zonen
+     * Summe aller gespeicherten Zonen, auch solcher aus früheren Sitzungen.
      */
     public long getTotalCollections() {
         return zoneCollections.values().stream().mapToLong(Long::longValue).sum();
+    }
+    
+    private Path zoneCollectionsFile() {
+        return CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve(ZONE_COLLECTIONS_FILE);
+    }
+
+    private void loadZoneCollections() {
+        Path file = zoneCollectionsFile();
+        if (!Files.exists(file)) {
+            return;
+        }
+        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+            for (String zone : json.keySet()) {
+                if (!ZONE_TO_COLLECTION.containsKey(zone) || !json.get(zone).isJsonPrimitive()) {
+                    continue;
+                }
+                long value = json.get(zone).getAsLong();
+                if (value >= 0) {
+                    zoneCollections.put(zone, value);
+                    }
+                }
+            } catch (Exception e) {
+            System.err.println("❌ [FarmworldCollections] Zonenstände konnten nicht geladen werden: " + e.getMessage());
+        }
+    }
+
+    private void saveZoneCollections() {
+        try {
+            Path file = zoneCollectionsFile();
+            Files.createDirectories(file.getParent());
+            JsonObject json = new JsonObject();
+            for (Map.Entry<String, Long> entry : zoneCollections.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null && entry.getValue() >= 0) {
+                    json.addProperty(entry.getKey(), entry.getValue());
+                }
+            }
+            try (Writer writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+                ZONE_COLLECTIONS_GSON.toJson(json, writer);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ [FarmworldCollections] Zonenstände konnten nicht gespeichert werden: " + e.getMessage());
+        }
     }
     
     /**
@@ -408,27 +451,43 @@ public class FarmworldCollectionsCollector implements DataCollector {
     }
     
     /**
-     * Ermittelt die aktuelle Zone aus dem Sidebar-Scoreboard (rechts)
+     * Ermittelt die aktuelle Zone aus den sichtbaren Sidebar-Zeilen.
+     * Dieselbe Team-/Display-Auflösung wie das Farmzone-Overlay, nicht die leeren Owner-IDs.
      */
     private String getCurrentZone(Minecraft client) {
-        if (client == null || client.level == null) return null;
-        Scoreboard scoreboard = client.level.getScoreboard();
-        Objective sidebar = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR);
-        if (sidebar == null) return null;
-
-        // Use the same public API and team decoration as the 26.3 sidebar renderer.
-        for (net.minecraft.world.scores.PlayerScoreEntry entry : scoreboard.listPlayerScores(sidebar)) {
-            if (entry.isHidden()) continue;
-            Component line = net.minecraft.world.scores.PlayerTeam.formatNameForTeam(
-                    scoreboard.getPlayersTeam(entry.owner()), entry.ownerName());
-            String clean = line.getString().replaceAll("§[0-9a-fk-orA-FK-OR]", "").trim();
-            for (String zone : ZONE_TO_COLLECTION.keySet()) {
-                if (clean.contains(zone)) return zone;
+        try {
+            List<String> lines = InformationenUtility.readCleanSidebarLines(client);
+            if (lines == null || lines.isEmpty()) {
+                return null;
             }
+            for (String line : lines) {
+                if (line == null || line.isBlank()) {
+                    continue;
+                }
+                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
+                    if (line.contains(zoneName)) {
+                        return zoneName;
+                    }
+                }
+                String normalized = line.replace("\u27A5", "").replace("->", "").trim();
+                if (normalized.startsWith("[") && normalized.endsWith("]") && normalized.length() > 2) {
+                    normalized = normalized.substring(1, normalized.length() - 1).trim();
+                }
+                if (normalized.isEmpty()) {
+                    continue;
+                }
+                for (String zoneName : ZONE_TO_COLLECTION.keySet()) {
+                    String inner = zoneName.substring(1, zoneName.length() - 1);
+                    if (normalized.equalsIgnoreCase(inner)) {
+                        return zoneName;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("❌ [FarmworldCollections] Fehler bei Zone-Suche: " + e.getMessage());
         }
         return null;
     }
-    
     // Statische Variable für den aktuellen Collection-Wert (wird vom BossBarMixin gesetzt)
     private static int currentBossbarCollection = 0;
     private static long lastBossbarUpdate = 0;
@@ -459,27 +518,37 @@ public class FarmworldCollectionsCollector implements DataCollector {
     }
     
     /**
-     * Gibt den aktuellen Collection-Wert aus der Bossbar zurück
+     * Gibt den aktuellen Collection-Wert aus der Bossbar zurück.
+     * -1, wenn noch kein gültiger Wert gelesen wurde oder der letzte Wert veraltet ist.
+     * 0 ist nur dann ein echter Wert, wenn die Bossbar wirklich 0 dekodiert hat.
      */
     private int getCollectionFromBossbar(Minecraft client) {
-        // Prüfe ob der Wert noch aktuell ist (max. 5 Sekunden alt)
-        long currentTime = System.currentTimeMillis();
-        long age = currentTime - lastBossbarUpdate;
+        if (lastBossbarUpdate <= 0) {
+            return -1;
+        }
+        long age = System.currentTimeMillis() - lastBossbarUpdate;
         if (age > 5000) {
-            // Wert ist zu alt, zurück zu 0
-            return 0;
+            return -1;
         }
         return currentBossbarCollection;
     }
     
     /**
-     * Dekodiert eine chinesische Zahl aus einem Text
+     * Dekodiert die Bossbar-Ziffern über die aktuell geladene Aincraft-Schrift,
+     * nicht über eine fest eingebaute Glyphenliste.
      */
     private static int decodeChineseNumber(String text) {
+        if (text == null || text.isEmpty()) {
+            return -1;
+        }
         try {
+            Map<Character, Integer> digits = ZeichenUtility.getAincraftBottomFontNumbers();
+            if (digits == null || digits.isEmpty()) {
+                return -1;
+            }
             StringBuilder numberStr = new StringBuilder();
             for (char c : text.toCharArray()) {
-                Integer digit = CHINESE_NUMBERS.get(c);
+                Integer digit = digits.get(c);
                 if (digit != null) {
                     numberStr.append(digit);
                 }
@@ -491,6 +560,17 @@ public class FarmworldCollectionsCollector implements DataCollector {
             // Silent error handling
         }
         return -1;
+    }
+
+    private void sendZoneScore(String zone, long score) {
+        if (!ENABLE_SERVER_UPDATES || score < 0) {
+            return;
+        }
+        String collectionName = getCollectionNameForZone(zone);
+        if (collectionName == null || collectionName.isBlank()) {
+            return;
+        }
+        LeaderboardManager.getInstance().updateScore(collectionName, score);
     }
     
     /**
@@ -558,6 +638,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
         if (lastZone != null && lastTotalCollection > 0) {
             updateZoneScore(lastZone, lastTotalCollection, true);
         }
+        saveZoneCollections();
         
         isActive = false;
         // System.out.println("🛑 FarmworldCollectionsCollector gestoppt");

@@ -1962,35 +1962,44 @@ public class ItemViewerUtility {
             return true;
         }
         
-        // Strg-Funktionen
-        if ((modifiers & InputConstants.MOD_CONTROL) != 0) { // Strg (SDL modifier mask)
-            switch (keyCode) {
-                case InputConstants.KEY_C: // Strg+C - Kopieren
-                    if (!currentSearch.isEmpty()) {
-                        client.keyboardHandler.setClipboard(currentSearch);
-                    }
-                    return true;
-                case InputConstants.KEY_V: // Strg+V - Einfügen
-                    String clipboardText = client.keyboardHandler.getClipboard();
-                    if (clipboardText != null && !clipboardText.isEmpty()) {
-                        currentSearch += clipboardText;
-                        scheduleApplyFilters();
-                        currentPage = 0;
-                    }
-                    return true;
-                case InputConstants.KEY_A: // Strg+A - Alles markieren
-                    if (!currentSearch.isEmpty()) {
-                        selectionStart = 0;
-                        selectionEnd = currentSearch.length();
-                    }
-                    return true;
-                case InputConstants.KEY_BACKSPACE: // Strg+Backspace - Wort links löschen
-                    deleteSearchWord(false);
-                    return true;
-                case InputConstants.KEY_DELETE: // Strg+Delete - Wort rechts löschen
-                    deleteSearchWord(true);
-                    return true;
+        boolean ctrl = net.felix.utilities.Overall.KeyBindingUtility.isCtrlDown(modifiers)
+                && !net.felix.utilities.Overall.KeyBindingUtility.isAltGrDown(modifiers);
+        boolean shift = net.felix.utilities.Overall.KeyBindingUtility.isShiftDown(modifiers);
+
+        if (ctrl && keyCode == InputConstants.KEY_C) {
+            if (hasSelection()) {
+                int start = Math.min(selectionStart, selectionEnd);
+                int end = Math.max(selectionStart, selectionEnd);
+                client.keyboardHandler.setClipboard(currentSearch.substring(start, end));
+            } else if (!currentSearch.isEmpty()) {
+                client.keyboardHandler.setClipboard(currentSearch);
             }
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_V) {
+            String clipboardText = client.keyboardHandler.getClipboard();
+            if (clipboardText != null && !clipboardText.isEmpty()) {
+                for (int i = 0; i < clipboardText.length(); i++) {
+                    insertCharacter(clipboardText.charAt(i));
+                }
+            }
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_A) {
+            if (!currentSearch.isEmpty()) {
+                selectionStart = 0;
+                selectionEnd = currentSearch.length();
+                cursorPosition = currentSearch.length();
+            }
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_BACKSPACE) {
+            deleteSearchWord(false);
+            return true;
+        }
+        if (ctrl && keyCode == InputConstants.KEY_DELETE) {
+            deleteSearchWord(true);
+            return true;
         }
         
         // Backspace-Taste
@@ -2036,7 +2045,7 @@ public class ItemViewerUtility {
         
         // Pfeiltasten für Cursor-Bewegung
         if (keyCode == InputConstants.KEY_LEFT) {
-            if ((modifiers & InputConstants.MOD_SHIFT) != 0) { // Shift + Links = Selektion erweitern
+            if (shift) {
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
                     selectionEnd = cursorPosition;
@@ -2055,7 +2064,7 @@ public class ItemViewerUtility {
         }
         
         if (keyCode == InputConstants.KEY_RIGHT) {
-            if ((modifiers & InputConstants.MOD_SHIFT) != 0) { // Shift + Rechts = Selektion erweitern
+            if (shift) {
                 if (selectionStart == -1) {
                     selectionStart = cursorPosition;
                     selectionEnd = cursorPosition;
@@ -2085,8 +2094,10 @@ public class ItemViewerUtility {
             return true;
         }
         
+        if (ctrl) {
+            return true;
+        }
         // Printable text is delivered by CharacterEvent, independently of keyboard layout.
-        // Consume other keys while focused so inventory shortcuts do not activate.
         return true;
     }
 

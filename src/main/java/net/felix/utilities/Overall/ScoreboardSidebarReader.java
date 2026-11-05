@@ -60,13 +60,20 @@ public final class ScoreboardSidebarReader {
 
     private static Component resolveDisplayName(Scoreboard scoreboard, PlayerScoreEntry entry) {
         Component lineText = entry.ownerName();
-        String owner = entry.owner();
-        if (lineText != null && !lineText.getString().equals(owner)) {
+        String owner = entry.owner() == null ? "" : entry.owner();
+        String lineString = lineText == null ? "" : lineText.getString();
+        // Leeres display() (26.3 oft gesetzt, Text steht im Team-Prefix) nicht als Zeile verwenden.
+        if (!lineString.isBlank() && !lineString.equals(owner)) {
             return lineText;
         }
 
         PlayerTeam team = scoreboard.getPlayersTeam(owner);
         Component base = Component.literal(owner);
-        return team != null ? PlayerTeam.formatNameForTeam(team, base) : base;
+        Component formatted = team != null ? PlayerTeam.formatNameForTeam(team, base) : base;
+        String formattedString = formatted.getString();
+        if (!formattedString.isBlank()) {
+            return formatted;
+        }
+        return lineText != null ? lineText : base;
     }
 }
