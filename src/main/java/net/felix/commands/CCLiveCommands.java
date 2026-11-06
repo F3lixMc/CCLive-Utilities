@@ -1,9 +1,12 @@
 package net.felix.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -19,6 +22,7 @@ import net.felix.chat.ChatManager;
 import net.felix.devtools.DevToolsAccess;
 import net.felix.devtools.DevToolsScreen;
 import net.felix.staff.StaffClientAccess;
+import net.felix.staff.StaffModerationCommands;
 import net.felix.staff.StaffNameSuggestions;
 import net.felix.staff.StaffPermsCommands;
 import net.minecraft.client.Minecraft;
@@ -80,7 +84,7 @@ public class CCLiveCommands {
         resetMaterialsAndResourcesProgress();
     }
     
-    private static void registerCCLiveCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
+    static void registerCCLiveCommands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
         dispatcher.register(literal("cclive")
             // Blueprint Commands
             .then(literal("bp")
@@ -128,6 +132,37 @@ public class CCLiveCommands {
             .then(literal("sternen_sound_test")
                 .executes(CCLiveCommands::testStarForgedSound))
             
+            .then(literal("mod")
+                .requires(source -> StaffClientAccess.isStaffCommandVisible())
+                .executes(StaffModerationCommands::openScreen)
+                .then(literal("delete")
+                    .then(argument("id", StringArgumentType.word())
+                        .then(argument("reason", StringArgumentType.greedyString())
+                            .executes(context -> StaffModerationCommands.delete(
+                                context,
+                                parseMessageId(StringArgumentType.getString(context, "id")),
+                                StringArgumentType.getString(context, "reason"))))))
+                .then(literal("mute")
+                    .then(sanctionName("mute", true)))
+                .then(literal("ban")
+                    .then(sanctionName("ban", false)))
+                .then(literal("unmute")
+                    .then(argument("name", StringArgumentType.word())
+                        .suggests(StaffNameSuggestions.activeSanctions("mute"))
+                        .then(argument("reason", StringArgumentType.greedyString())
+                            .executes(context -> StaffModerationCommands.unmute(
+                                context,
+                                StringArgumentType.getString(context, "name"),
+                                StringArgumentType.getString(context, "reason"))))))
+                .then(literal("unban")
+                    .then(argument("name", StringArgumentType.word())
+                        .suggests(StaffNameSuggestions.activeSanctions("ban"))
+                        .then(argument("reason", StringArgumentType.greedyString())
+                            .executes(context -> StaffModerationCommands.unban(
+                                context,
+                                StringArgumentType.getString(context, "name"),
+                                StringArgumentType.getString(context, "reason")))))))
+
             .then(literal("perms")
                 .requires(source -> StaffClientAccess.isAdminCommandVisible())
                 .then(literal("user")
@@ -550,6 +585,16 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7!item §f- Geteiltes Item einfügen (CCLive; sonst → xD)"));
         context.getSource().sendFeedback(Component.literal("§7!build §f- Geteilten Build einfügen (CCLive; sonst → xD)"));
         context.getSource().sendFeedback(Component.literal(""));
+        if (StaffClientAccess.isStaffCommandVisible()) {
+            context.getSource().sendFeedback(Component.literal("§e§lModerationstest (Etappe 3, temporär):"));
+            context.getSource().sendFeedback(Component.literal("§7/cclive mod §f- Testfenster"));
+            context.getSource().sendFeedback(Component.literal("§7/cclive mod delete <id> <grund>"));
+            context.getSource().sendFeedback(Component.literal("§7/cclive mod mute|ban <name> <dauer> <grund>"));
+            context.getSource().sendFeedback(Component.literal("§7Dauer z. B. 10m, 5m, 30m, 2h, 14d. Höchstens 366 Tage."));
+            context.getSource().sendFeedback(Component.literal("§7Permanent: /cclive mod mute|ban <name> permanent confirm <grund>"));
+            context.getSource().sendFeedback(Component.literal("§7/cclive mod unmute|unban <name> <grund>"));
+            context.getSource().sendFeedback(Component.literal(""));
+        }
         if (StaffClientAccess.isAdminCommandVisible()) {
             context.getSource().sendFeedback(Component.literal("§e§lBerechtigungen:"));
             context.getSource().sendFeedback(Component.literal("§7/cclive perms user list §f- Moderatorliste öffnen"));
@@ -589,6 +634,130 @@ public class CCLiveCommands {
     /**
      * Suggestion Provider für Chat-Modi (default/cclive)
      */
+    private static com.mojang.brigadier.builder.RequiredArgumentBuilder<FabricClientCommandSource, String> sanctionName(String action, boolean mute) {
+        return argument("name", StringArgumentType.word())
+            .suggests(StaffNameSuggestions.verifiedPlayers())
+            .then(literal("permanent")
+                .executes(context -> {
+                    context.getSource().sendError(Component.literal(
+                        "§cPermanent nur so: /cclive mod " + action + " <name> permanent confirm <grund>"));
+                    return 0;
+                })
+                .then(literal("confirm")
+                    .then(argument("reason", StringArgumentType.greedyString())
+                        .executes(context -> runPermanentSanction(context, mute)))))
+            .then(argument("duration", TimedDurationArgument.timedDuration())
+                .suggests(durationSuggestions())
+                .then(argument("reason", StringArgumentType.greedyString())
+                    .executes(context -> runSanction(context, mute))));
+    }
+
+    private static int runPermanentSanction(CommandContext<FabricClientCommandSource> context, boolean mute) {
+        String name = StringArgumentType.getString(context, "name");
+        String reason = StringArgumentType.getString(context, "reason");
+        String trimmed = reason == null ? "" : reason.strip();
+        if (trimmed.length() < 3) {
+            context.getSource().sendError(Component.literal("§cBegründung ist Pflicht."));
+            return 0;
+        }
+        return mute
+            ? StaffModerationCommands.mute(context, name, "permanent", true, trimmed)
+            : StaffModerationCommands.ban(context, name, "permanent", true, trimmed);
+    }
+
+    private static int runSanction(CommandContext<FabricClientCommandSource> context, boolean mute) {
+        String name = StringArgumentType.getString(context, "name");
+        String duration = StringArgumentType.getString(context, "duration");
+        String reason = StringArgumentType.getString(context, "reason");
+        String trimmed = reason == null ? "" : reason.strip();
+        boolean permanent = "permanent".equalsIgnoreCase(duration);
+        String action = mute ? "mute" : "ban";
+        if (startsWithToken(trimmed, "confirm")) {
+            if (!permanent) {
+                context.getSource().sendError(Component.literal("§cconfirm ist nur bei einer permanenten Sanktion nötig."));
+                return 0;
+            }
+            String rest = trimmed.substring(7).strip();
+            if (rest.length() < 3) {
+                context.getSource().sendError(Component.literal("§cBegründung ist Pflicht."));
+                return 0;
+            }
+            return mute
+                ? StaffModerationCommands.mute(context, name, duration, true, rest)
+                : StaffModerationCommands.ban(context, name, duration, true, rest);
+        }
+        if (permanent) {
+            context.getSource().sendError(Component.literal(
+                "§cPermanent nur so: /cclive mod " + action + " <name> permanent confirm <grund>"));
+            return 0;
+        }
+        if (trimmed.length() < 3) {
+            context.getSource().sendError(Component.literal("§cBegründung ist Pflicht."));
+            return 0;
+        }
+        return mute
+            ? StaffModerationCommands.mute(context, name, duration, false, trimmed)
+            : StaffModerationCommands.ban(context, name, duration, false, trimmed);
+    }
+
+    private static boolean startsWithToken(String value, String token) {
+        if (value.length() < token.length()) {
+            return false;
+        }
+        if (!value.regionMatches(true, 0, token, 0, token.length())) {
+            return false;
+        }
+        return value.length() == token.length() || Character.isWhitespace(value.charAt(token.length()));
+    }
+
+    private static int parseMessageId(String raw) {
+        try {
+            return Integer.parseInt(raw);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static SuggestionProvider<FabricClientCommandSource> durationSuggestions() {
+        return (context, builder) -> {
+            String input = builder.getRemaining().toLowerCase();
+            for (String value : new String[] { "10m", "1h", "24h", "7d" }) {
+                if (value.startsWith(input)) {
+                    builder.suggest(value);
+                }
+            }
+            return builder.buildFuture();
+        };
+    }
+
+    static final class TimedDurationArgument implements ArgumentType<String> {
+        private TimedDurationArgument() {
+        }
+
+        static TimedDurationArgument timedDuration() {
+            return new TimedDurationArgument();
+        }
+
+        @Override
+        public String parse(StringReader reader) throws CommandSyntaxException {
+            int start = reader.getCursor();
+            String word = reader.readUnquotedString();
+            if (word.equalsIgnoreCase("permanent")) {
+                reader.setCursor(start);
+                throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().createWithContext(reader, "permanent");
+            }
+            if (word.isEmpty()) {
+                throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.readerExpectedInt().createWithContext(reader);
+            }
+            return word;
+        }
+
+        @Override
+        public java.util.Collection<String> getExamples() {
+            return java.util.List.of("10m", "5m", "2h", "14d");
+        }
+    }
+
     private static SuggestionProvider<FabricClientCommandSource> chatModeSuggestions() {
         return (context, builder) -> {
             String input = builder.getRemaining().toLowerCase();

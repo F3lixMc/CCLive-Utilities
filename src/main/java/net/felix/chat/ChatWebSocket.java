@@ -44,14 +44,19 @@ public final class ChatWebSocket implements WebSocket.Listener {
     private final AtomicBoolean connecting = new AtomicBoolean(false);
     private final AtomicBoolean authenticated = new AtomicBoolean(false);
     private final StringBuilder textBuffer = new StringBuilder();
-    private final Map<String, CompletableFuture<String>> pendingSends = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<SendResult>> pendingSends = new ConcurrentHashMap<>();
 
     private volatile Consumer<JsonObject> onChatMessage;
+    private volatile Consumer<JsonObject> onChatDeleted;
     private volatile long reconnectDelayMs = RECONNECT_BASE_MS;
     private volatile boolean wantConnected;
 
     public void setOnChatMessage(Consumer<JsonObject> onChatMessage) {
         this.onChatMessage = onChatMessage;
+    }
+
+    public void setOnChatDeleted(Consumer<JsonObject> onChatDeleted) {
+        this.onChatDeleted = onChatDeleted;
     }
 
     public boolean isConnected() {
@@ -83,23 +88,23 @@ public final class ChatWebSocket implements WebSocket.Listener {
     }
 
     /**
-     * Sendet eine Chat-Nachricht. Rückgabe: null = ok, sonst Fehlermeldung.
+     * Sendet eine Chat-Nachricht. error == null bedeutet Erfolg.
      */
-    public CompletableFuture<String> sendChat(String message) {
+    public CompletableFuture<SendResult> sendChat(String message) {
         if (message == null || message.isBlank()) {
-            return CompletableFuture.completedFuture("Nachricht ist leer.");
+            return CompletableFuture.completedFuture(SendResult.error("Nachricht ist leer."));
         }
         return ensureReady().thenCompose(readyError -> {
             if (readyError != null) {
-                return CompletableFuture.completedFuture(readyError);
+                return CompletableFuture.completedFuture(SendResult.error(readyError));
             }
             WebSocket ws = socket.get();
             if (ws == null || !authenticated.get()) {
-                return CompletableFuture.completedFuture("WebSocket nicht verbunden.");
+                return CompletableFuture.completedFuture(SendResult.error("WebSocket nicht verbunden."));
             }
 
             String requestId = UUID.randomUUID().toString();
-            CompletableFuture<String> future = new CompletableFuture<>();
+            CompletableFuture<SendResult> future = new CompletableFuture<>();
             pendingSends.put(requestId, future);
 
             JsonObject payload = new JsonObject();
@@ -111,15 +116,25 @@ public final class ChatWebSocket implements WebSocket.Listener {
                 ws.sendText(GSON.toJson(payload), true);
             } catch (Exception e) {
                 pendingSends.remove(requestId);
-                return CompletableFuture.completedFuture("Senden fehlgeschlagen: " + e.getMessage());
+                return CompletableFuture.completedFuture(SendResult.error("Senden fehlgeschlagen: " + e.getMessage()));
             }
 
             return future.orTimeout(SEND_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .exceptionally(ex -> {
                     pendingSends.remove(requestId);
-                    return "Timeout beim Chat-Senden.";
+                    return SendResult.error("Timeout beim Chat-Senden.");
                 });
         });
+    }
+
+    public record SendResult(String error, Long messageId, Long timestamp) {
+        static SendResult ok(Long messageId, Long timestamp) {
+            return new SendResult(null, messageId, timestamp);
+        }
+
+        static SendResult error(String error) {
+            return new SendResult(error, null, null);
+        }
     }
 
     private CompletableFuture<String> ensureReady() {
@@ -255,8 +270,8 @@ public final class ChatWebSocket implements WebSocket.Listener {
     }
 
     private void failAllPending(String error) {
-        for (Map.Entry<String, CompletableFuture<String>> entry : pendingSends.entrySet()) {
-            entry.getValue().complete(error);
+        for (Map.Entry<String, CompletableFuture<SendResult>> entry : pendingSends.entrySet()) {
+            entry.getValue().complete(SendResult.error(error));
         }
         pendingSends.clear();
     }
@@ -292,22 +307,33 @@ public final class ChatWebSocket implements WebSocket.Listener {
                     }
                 }
             }
-            case "chat.ack" -> {
-                if (obj.has("requestId")) {
-                    String id = obj.get("requestId").getAsString();
-                    CompletableFuture<String> f = pendingSends.remove(id);
-                    if (f != null) {
-                        f.complete(null);
+            case "chat.deleted" -> {
+                Consumer<JsonObject> deleted = onChatDeleted;
+                if (deleted != null) {
+                    try {
+                        deleted.accept(obj);
+                    } catch (Exception ignored) {
                     }
                 }
             }
-            case "chat.error" -> {
+            case "chat.ack" -> {
+                if (obj.has("requestId")) {
+                    String id = obj.get("requestId").getAsString();
+                    CompletableFuture<SendResult> f = pendingSends.remove(id);
+                    if (f != null) {
+                        Long messageId = longOrNull(obj, "id");
+                        Long timestamp = longOrNull(obj, "timestamp");
+                        f.complete(SendResult.ok(messageId, timestamp));
+                    }
+                }
+            }
+            case "chat.denied", "chat.error" -> {
                 String err = obj.has("error") ? obj.get("error").getAsString() : "Chat-Fehler";
                 if (obj.has("requestId") && !obj.get("requestId").isJsonNull()) {
                     String id = obj.get("requestId").getAsString();
-                    CompletableFuture<String> f = pendingSends.remove(id);
+                    CompletableFuture<SendResult> f = pendingSends.remove(id);
                     if (f != null) {
-                        f.complete(err);
+                        f.complete(SendResult.error(err));
                         return;
                     }
                 }
@@ -327,6 +353,17 @@ public final class ChatWebSocket implements WebSocket.Listener {
             }
             default -> {
             }
+        }
+    }
+
+    private static Long longOrNull(JsonObject obj, String key) {
+        if (obj == null || key == null || !obj.has(key) || obj.get(key).isJsonNull()) {
+            return null;
+        }
+        try {
+            return obj.get(key).getAsLong();
+        } catch (Exception e) {
+            return null;
         }
     }
 

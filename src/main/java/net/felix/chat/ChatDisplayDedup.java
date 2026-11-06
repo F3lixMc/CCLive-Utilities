@@ -10,7 +10,18 @@ public final class ChatDisplayDedup {
     }
 
     public static String exactKey(String player, String message, long timestamp) {
+        return exactKey(null, player, message, timestamp);
+    }
+
+    public static String exactKey(Long messageId, String player, String message, long timestamp) {
+        if (messageId != null && messageId > 0L) {
+            return "id:" + messageId;
+        }
         return String.valueOf(player) + "|" + message + "|" + timestamp;
+    }
+
+    public static boolean skipKnownId(java.util.Set<Long> seenIds, Long messageId) {
+        return messageId != null && messageId > 0L && seenIds != null && seenIds.contains(messageId);
     }
 
     /**

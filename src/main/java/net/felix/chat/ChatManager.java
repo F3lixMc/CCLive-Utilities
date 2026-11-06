@@ -14,7 +14,10 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manager für das CCLive Chat-System.
@@ -35,6 +38,10 @@ public class ChatManager {
     /** Deduplizierung für exakt gleiche WS-Kopien. */
     private final Object displayDedupLock = new Object();
     private volatile String lastDisplayedExactKey = "";
+    private final Set<Long> displayedMessageIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    static final String PLACEHOLDER = "Nachricht von Moderatoren gelöscht!";
+    static final int DELETED_BODY_COLOR = 0xC8C8C8;
+    public static final String MESSAGE_ID_PREFIX = "cclive-msg:";
     private volatile long lastSendAtMs;
     private volatile String lastSendPayload = "";
 
@@ -53,6 +60,7 @@ public class ChatManager {
     private ChatManager() {
         loadChatSettings();
         webSocket.setOnChatMessage(this::onIncomingChatMessage);
+        webSocket.setOnChatDeleted(this::onIncomingDeleted);
     }
 
     public static ChatManager getInstance() {
@@ -164,17 +172,18 @@ public class ChatManager {
                 return CompletableFuture.completedFuture(regError);
             }
             ensureSocketConnected();
-            return webSocket.sendChat(trimmed).thenApply(error -> {
-                if (error == null) {
-                    echoOwnMessage(trimmed);
-                    return null;
+            return webSocket.sendChat(trimmed).thenApply(result -> {
+                if (result == null || result.error() != null) {
+                    return ChatBlockedGlyphs.clientErrorMessage(
+                        result == null ? "Senden fehlgeschlagen." : result.error());
                 }
-                return ChatBlockedGlyphs.clientErrorMessage(error);
+                echoOwnMessage(trimmed, result.messageId(), result.timestamp());
+                return null;
             });
         });
     }
 
-    private void echoOwnMessage(String message) {
+    private void echoOwnMessage(String message, Long messageId, Long timestamp) {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.player == null) {
             return;
@@ -182,8 +191,11 @@ public class ChatManager {
         JsonObject echo = new JsonObject();
         echo.addProperty("player", client.player.getGameProfile().name());
         echo.addProperty("message", message);
-        echo.addProperty("timestamp", System.currentTimeMillis());
+        echo.addProperty("timestamp", timestamp != null ? timestamp : System.currentTimeMillis());
         echo.addProperty("local_echo", true);
+        if (messageId != null) {
+            echo.addProperty("id", messageId);
+        }
         int[] ownColors = ChatNameColorTracker.getInstance().getOwnNameColors();
         if (ownColors.length > 0) {
             echo.addProperty("name_color", ChatNameColors.toHex(ownColors[0]));
@@ -211,8 +223,20 @@ public class ChatManager {
         if (player == null || message == null) {
             return;
         }
+        Long messageId = null;
+        if (msgObj.has("id") && !msgObj.get("id").isJsonNull()) {
+            try {
+                messageId = msgObj.get("id").getAsLong();
+            } catch (Exception ignored) {
+                messageId = null;
+            }
+        }
         long timestamp = msgObj.has("timestamp") ? msgObj.get("timestamp").getAsLong() : System.currentTimeMillis();
+        boolean deleted = isExplicitlyDeleted(msgObj);
         boolean localEcho = msgObj.has("local_echo") && msgObj.get("local_echo").getAsBoolean();
+        if (ChatDisplayDedup.skipKnownId(displayedMessageIds, messageId)) {
+            return;
+        }
         Minecraft selfClient = Minecraft.getInstance();
         String selfName = selfClient != null && selfClient.player != null
             ? selfClient.player.getGameProfile().name()
@@ -227,12 +251,15 @@ public class ChatManager {
         int cactusRank = parseRankField(msgObj, "cactus_rank");
         int soulRank = parseRankField(msgObj, "soul_rank");
 
-        String exactKey = ChatDisplayDedup.exactKey(player, message, timestamp);
+        String exactKey = ChatDisplayDedup.exactKey(messageId, player, message, timestamp);
         synchronized (displayDedupLock) {
             if (ChatDisplayDedup.skipExactDuplicate(lastDisplayedExactKey, exactKey)) {
                 return;
             }
             lastDisplayedExactKey = exactKey;
+            if (messageId != null && messageId > 0L) {
+                displayedMessageIds.add(messageId);
+            }
         }
 
         Minecraft client = Minecraft.getInstance();
@@ -245,10 +272,12 @@ public class ChatManager {
         final int[] nameColorsFinal = nameColors;
         final int cactusRankFinal = cactusRank;
         final int soulRankFinal = soulRank;
+        final Long messageIdFinal = messageId;
+        final boolean deletedFinal = deleted;
 
         CompletableFuture
             .supplyAsync(() -> buildIncomingChatLine(
-                playerFinal, messageFinal, nameColorsFinal, cactusRankFinal, soulRankFinal))
+                playerFinal, messageFinal, nameColorsFinal, cactusRankFinal, soulRankFinal, messageIdFinal, deletedFinal))
             .thenAccept(chatMessage -> {
                 if (chatMessage == null) {
                     return;
@@ -268,8 +297,43 @@ public class ChatManager {
             });
     }
 
+    private void onIncomingDeleted(JsonObject obj) {
+        if (obj == null || !obj.has("id") || obj.get("id").isJsonNull()) {
+            return;
+        }
+        long id;
+        try {
+            id = obj.get("id").getAsLong();
+        } catch (Exception e) {
+            return;
+        }
+        String placeholder = obj.has("placeholder") && obj.get("placeholder").isJsonPrimitive()
+            ? obj.get("placeholder").getAsString()
+            : PLACEHOLDER;
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return;
+        }
+        client.execute(() -> ChatHudMessageIds.replacePlaceholder(client, id, placeholder));
+    }
+
+    static MutableComponent deletedPlaceholderBody() {
+        return Component.literal(PLACEHOLDER).setStyle(Style.EMPTY.withColor(DELETED_BODY_COLOR));
+    }
+
+    static boolean isExplicitlyDeleted(com.google.gson.JsonObject msgObj) {
+        if (msgObj == null || !msgObj.has("deleted") || msgObj.get("deleted").isJsonNull()) {
+            return false;
+        }
+        try {
+            return msgObj.get("deleted").getAsBoolean();
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     private Component buildIncomingChatLine(
-            String player, String message, int[] nameColors, int cactusRank, int soulRank) {
+            String player, String message, int[] nameColors, int cactusRank, int soulRank, Long messageId, boolean deleted) {
         HoverEvent statsHover = null;
         try {
             if (PlayerHoverStatsUtility.isInitialized()) {
@@ -284,16 +348,23 @@ public class ChatManager {
         }
 
         Component body;
-        try {
-            body = ItemShareManager.getInstance().buildMessageBodyAsync(message, null).join();
-        } catch (Exception e) {
-            body = Component.literal(message);
-        }
-        if (body == null) {
-            body = Component.literal(message);
+        if (deleted) {
+            body = deletedPlaceholderBody();
+        } else {
+            try {
+                body = ItemShareManager.getInstance().buildMessageBodyAsync(message, null).join();
+            } catch (Exception e) {
+                body = Component.literal(message);
+            }
+            if (body == null) {
+                body = Component.literal(message);
+            }
         }
 
         Style prefixStyle = Style.EMPTY.withColor(CCLIVE_PREFIX_COLOR);
+        if (messageId != null && messageId > 0L) {
+            prefixStyle = prefixStyle.withInsertion(MESSAGE_ID_PREFIX + messageId);
+        }
         Style arrowStyle = Style.EMPTY.withColor(0xFFFFFF);
         if (statsHover != null) {
             prefixStyle = prefixStyle.withHoverEvent(statsHover);

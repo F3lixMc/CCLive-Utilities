@@ -55,6 +55,30 @@ public final class StaffClientAccess {
         return "admin".equals(cachedRole);
     }
 
+    public static boolean isStaffCommandVisible() {
+        return "admin".equals(cachedRole) || "moderator".equals(cachedRole);
+    }
+
+    public static boolean sanctionStoredWithoutLiveUpdate(JsonObject body) {
+        if (body == null || !body.has("liveUpdated") || !body.get("liveUpdated").isJsonPrimitive()) {
+            return false;
+        }
+        if (body.get("liveUpdated").getAsBoolean()) {
+            return false;
+        }
+        return !body.has("stored") || !body.get("stored").isJsonPrimitive() || body.get("stored").getAsBoolean();
+    }
+
+    public static String sanctionStoredWarning(JsonObject body) {
+        if (body != null && body.has("error") && body.get("error").isJsonPrimitive()) {
+            String text = body.get("error").getAsString();
+            if (!text.isBlank()) {
+                return text;
+            }
+        }
+        return "Die Sanktion ist gespeichert. Laufende Chatverbindungen wurden nicht aktualisiert.";
+    }
+
     public static void refreshAsync() {
         if (!refreshing.compareAndSet(false, true)) return;
         CompletableFuture.runAsync(() -> {
