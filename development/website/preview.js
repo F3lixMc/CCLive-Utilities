@@ -1,0 +1,11 @@
+'use strict';
+const path = require('node:path');
+const backend = path.resolve(__dirname, '../../backend_server');
+const backendRequire = require('node:module').createRequire(path.join(backend, 'package.json'));
+const express = backendRequire('express');
+const app = express();
+app.get('/', (req, res) => res.redirect('/header-demo.html'));
+app.use(express.static(path.join(__dirname, 'demos')));
+app.use(express.static(path.join(backend, 'public')));
+const port = Number(process.env.PREVIEW_PORT || 8766);
+app.listen(port, '127.0.0.1', () => console.log('Lokale Website-Vorschau: http://127.0.0.1:' + port + '/header-demo.html'));

@@ -15,6 +15,7 @@
 		"ChatHudHoverMixin",
 		"ChatHudRenderMixin",
 		"ChatScreenMixin",
+		"ChatScreenSuggestionsAccess",
 		"ClientPlayNetworkHandlerTestMixin",
 		"PlayerHoverStatsMixin",
 		"DrawContextMixin",

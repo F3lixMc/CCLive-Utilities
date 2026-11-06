@@ -6,6 +6,13 @@
       "ascent": 7,
       "height": 8,
       "chars": ["ѳ"]
+    },
+    {
+      "type": "bitmap",
+      "file": "cclive-utilities:icons/admin_icon.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["Ѳ"]
     }
   ]
 }

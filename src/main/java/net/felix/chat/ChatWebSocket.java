@@ -195,6 +195,7 @@ public final class ChatWebSocket implements WebSocket.Listener {
                 auth.addProperty("type", "auth");
                 auth.addProperty("token", token);
                 ws.sendText(GSON.toJson(auth), true);
+                scheduleAuthTimeout(ws);
             } catch (Exception e) {
                 connecting.set(false);
                 authenticated.set(false);
@@ -221,6 +222,22 @@ public final class ChatWebSocket implements WebSocket.Listener {
             return url;
         }
         return "wss://" + url;
+    }
+
+    private void scheduleAuthTimeout(WebSocket ws) {
+        CompletableFuture.delayedExecutor(8, TimeUnit.SECONDS).execute(() -> {
+            if (authenticated.get() || ws == null || socket.get() != ws) {
+                return;
+            }
+            connecting.set(false);
+            authenticated.set(false);
+            socket.compareAndSet(ws, null);
+            try {
+                ws.abort();
+            } catch (Exception ignored) {
+            }
+            scheduleReconnect();
+        });
     }
 
     private void scheduleReconnect() {
@@ -269,7 +286,10 @@ public final class ChatWebSocket implements WebSocket.Listener {
             case "chat.message" -> {
                 Consumer<JsonObject> cb = onChatMessage;
                 if (cb != null) {
-                    cb.accept(obj);
+                    try {
+                        cb.accept(obj);
+                    } catch (Exception ignored) {
+                    }
                 }
             }
             case "chat.ack" -> {
@@ -317,13 +337,18 @@ public final class ChatWebSocket implements WebSocket.Listener {
 
     @Override
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
-        textBuffer.append(data);
-        if (last) {
-            String payload = textBuffer.toString();
-            textBuffer.setLength(0);
-            handleServerPayload(payload);
+        try {
+            textBuffer.append(data);
+            if (last) {
+                String payload = textBuffer.toString();
+                textBuffer.setLength(0);
+                handleServerPayload(payload);
+            }
+        } catch (Exception ignored) {
+            // Payload darf den Receive-Loop nicht abbrechen.
+        } finally {
+            webSocket.request(1);
         }
-        webSocket.request(1);
         return null;
     }
 

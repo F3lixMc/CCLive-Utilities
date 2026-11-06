@@ -8,6 +8,7 @@ import net.felix.chat.BuildShareManager;
 import net.felix.chat.BuildShareViewScreen;
 import net.felix.chat.ChatManager;
 import net.felix.chat.ItemShareManager;
+import net.felix.staff.StaffClientAccess;
 import net.felix.profile.ProfileStatsManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,10 +39,20 @@ public abstract class ChatScreenMixin {
     /**
      * Handles F6 key press in chat screen to open overlay editor
      */
+    @Inject(method = "init", at = @At("TAIL"))
+    private void cclive$onChatOpened(CallbackInfo ci) {
+        StaffClientAccess.refreshAsync();
+        StaffClientAccess.applyCommandVisibility();
+    }
+
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         // Handle F6 key for overlay editor (works in chat)
         if (OverlayEditorUtility.handleKeyPress(event.key())) {
+            cir.setReturnValue(true);
+            return;
+        }
+        if (isChatConfirmKey(event) && blockCcliveGlyphsIfNeeded()) {
             cir.setReturnValue(true);
         }
     }
@@ -112,13 +123,11 @@ public abstract class ChatScreenMixin {
             if (chatMessage.isEmpty()) {
                 return;
             }
+            if (rejectBlockedGlyphs(chatMessage)) {
+                return;
+            }
 
-            chatManager.sendMessage(chatMessage).thenAccept(error -> {
-                if (error != null) {
-                    scheduleChatError("§cChat: " + error);
-                }
-            });
-            trackMessageSent();
+            sendCclive(chatMessage);
             return;
         }
         
@@ -151,13 +160,10 @@ public abstract class ChatScreenMixin {
             }
 
             ci.cancel();
-            
-            chatManager.sendMessage(trimmedMessage).thenAccept(error -> {
-                if (error != null) {
-                    scheduleChatError("§cChat: " + error);
-                }
-            });
-            trackMessageSent();
+            if (rejectBlockedGlyphs(trimmedMessage)) {
+                return;
+            }
+            sendCclive(trimmedMessage);
             return;
         }
 
@@ -181,6 +187,65 @@ public abstract class ChatScreenMixin {
         }
     }
 
+    private boolean blockCcliveGlyphsIfNeeded() {
+        if (this.input == null) {
+            return false;
+        }
+        String message = this.input.getValue();
+        if (message == null || message.trim().isEmpty()) {
+            return false;
+        }
+        String trimmed = message.trim();
+        ChatManager chatManager = ChatManager.getInstance();
+        if (!isCcliveOutgoing(trimmed, chatManager)) {
+            return false;
+        }
+        String body = trimmed.startsWith("@cclive")
+            ? trimmed.substring("@cclive".length()).trim()
+            : trimmed;
+        if (body.isEmpty()) {
+            return false;
+        }
+        return rejectBlockedGlyphs(body);
+    }
+
+    private static boolean isCcliveOutgoing(String trimmed, ChatManager chatManager) {
+        if (trimmed.startsWith("@lp") || trimmed.startsWith("@global") || trimmed.startsWith("/")) {
+            return false;
+        }
+        if (trimmed.startsWith("@cclive")) {
+            return true;
+        }
+        return chatManager.getEffectiveWriteMode() == ChatManager.ChatMode.CCLIVE;
+    }
+
+    private static boolean rejectBlockedGlyphs(String userText) {
+        if (!net.felix.chat.ChatBlockedGlyphs.containsBlockedGlyph(userText)) {
+            return false;
+        }
+        scheduleChatError("§c" + net.felix.chat.ChatBlockedGlyphs.ERROR_MESSAGE);
+        return true;
+    }
+
+    private void sendCclive(String chatMessage) {
+        ChatManager.getInstance().sendMessage(chatMessage).thenAccept(error -> {
+            if (error != null) {
+                if (net.felix.chat.ChatBlockedGlyphs.isBlockedError(error)) {
+                    scheduleChatError("§c" + net.felix.chat.ChatBlockedGlyphs.ERROR_MESSAGE);
+                } else {
+                    scheduleChatError("§cChat: " + error);
+                }
+            }
+        });
+        trackMessageSent();
+    }
+
+    private static boolean isChatConfirmKey(KeyEvent event) {
+        int key = event.key();
+        return key == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN
+            || key == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER;
+    }
+
     private static void sendMinecraftChat(String text) {
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if (client.player != null && client.getConnection() != null && text != null && !text.isEmpty()) {
@@ -188,7 +253,16 @@ public abstract class ChatScreenMixin {
         }
     }
 
+    private static long lastGlyphErrorAtMs;
+
     private static void scheduleChatError(String message) {
+        if (message != null && message.contains(net.felix.chat.ChatBlockedGlyphs.ERROR_MESSAGE)) {
+            long now = System.currentTimeMillis();
+            if (now - lastGlyphErrorAtMs < 500L) {
+                return;
+            }
+            lastGlyphErrorAtMs = now;
+        }
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if (client == null) {
             return;

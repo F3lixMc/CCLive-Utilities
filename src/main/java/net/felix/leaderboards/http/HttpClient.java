@@ -45,44 +45,60 @@ public class HttpClient {
         return sendGet(endpoint, token);
     }
 
+    public JsonResponse getResultWithToken(String endpoint, String token) throws IOException, InterruptedException {
+        return sendGetResult(endpoint, token);
+    }
+
+    public JsonResponse deleteResultWithToken(String endpoint, String token) throws IOException, InterruptedException {
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+            .uri(URI.create(config.getServerUrl() + endpoint))
+            .timeout(Duration.ofMillis(config.getReadTimeout()))
+            .header("Content-Type", "application/json");
+        if (token != null) {
+            requestBuilder.header("x-auth-token", token);
+        }
+        HttpResponse<String> response = client.send(requestBuilder.DELETE().build(), HttpResponse.BodyHandlers.ofString());
+        JsonObject parsed = parseBody(response.body());
+        String retryAfter = response.headers().firstValue("Retry-After").orElse(null);
+        return new JsonResponse(response.statusCode(), parsed, response.body(), retryAfter);
+    }
+
     private JsonObject sendGet(String endpoint, String token) throws IOException, InterruptedException {
+        JsonResponse response = sendGetResult(endpoint, token);
+        if (response.status() == 200) {
+            return response.body();
+        }
+        if (response.status() == 404
+                && (endpoint.contains("/profile/") || endpoint.contains("/share/"))) {
+            return null;
+        }
+        logHttpFailure("GET", endpoint, response);
+        return null;
+    }
+
+    private JsonResponse sendGetResult(String endpoint, String token) throws IOException, InterruptedException {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create(config.getServerUrl() + endpoint))
             .timeout(Duration.ofMillis(config.getReadTimeout()))
             .GET();
-
         if (token != null) {
             requestBuilder.header("x-auth-token", token);
         }
+        HttpResponse<String> response = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+        JsonObject parsed = parseBody(response.body());
+        String retryAfter = response.headers().firstValue("Retry-After").orElse(null);
+        return new JsonResponse(response.statusCode(), parsed, response.body(), retryAfter);
+    }
 
-        HttpRequest request = requestBuilder.build();
-            
-        if (config.isDebugMode()) {
-            System.out.println("🌐 HTTP GET: " + config.getServerUrl() + endpoint);
-        }
-        
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        
-        if (config.isDebugMode()) {
-            System.out.println("📡 HTTP Response: " + response.statusCode() + " - " + response.body());
-        }
-        
-        if (response.statusCode() == 200) {
-            try {
-                return gson.fromJson(response.body(), JsonObject.class);
-            } catch (JsonSyntaxException e) {
-                System.err.println("❌ JSON Parse Error: " + e.getMessage());
-                return null;
+    private JsonObject parseBody(String raw) {
+        try {
+            if (raw != null && !raw.isBlank()) {
+                return gson.fromJson(raw, JsonObject.class);
             }
-        } else {
-            // 404 für Profil-Stats / Shares ist erwartbar - nicht loggen
-            if (response.statusCode() == 404
-                    && (endpoint.contains("/profile/") || endpoint.contains("/share/"))) {
-                return null;
-            }
-            System.err.println("❌ HTTP Error " + response.statusCode() + ": " + response.body());
-            return null;
+        } catch (JsonSyntaxException e) {
+            System.err.println("❌ JSON Parse Error: " + e.getMessage());
         }
+        return null;
     }
     
     /**
@@ -275,7 +291,8 @@ public class HttpClient {
                 || path.contains("/website/")
                 || path.contains("/login")
                 || path.contains("/challenge")
-                || path.contains("/confirm");
+                || path.contains("/confirm")
+                || path.contains("/moderation/");
     }
 
     private static void logHttpFailure(String method, String endpoint, JsonResponse response) {

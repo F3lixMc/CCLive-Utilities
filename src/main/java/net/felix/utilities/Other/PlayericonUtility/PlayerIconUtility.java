@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,6 +18,12 @@ public class PlayerIconUtility {
     // Try both possible locations for the icon
     private static final Identifier ICON_IDENTIFIER = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/icon.png");
     private static final Identifier ICON_IDENTIFIER_ALT = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "icon");
+    private static final Identifier ADMIN_ICON_IDENTIFIER = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/icons/admin_icon.png");
+    /** Standard-Chat-Glyphe (Font default.json). */
+    public static final char CHAT_ICON_MARKER = 'ѳ';
+    /** Admin-Chat-Glyphe für firestarter03 / F3lixMc_. */
+    public static final char ADMIN_CHAT_ICON_MARKER = 'Ѳ';
+    private static final Set<String> ADMIN_ICON_NAMES = Set.of("firestarter03", "f3lixmc_");
     private static boolean iconLoaded = false;
     
     // Set of player UUIDs that have the mod installed
@@ -86,6 +93,29 @@ public class PlayerIconUtility {
         playersWithMod.clear();
     }
     
+    public static boolean usesAdminIcon(String playerName) {
+        return playerName != null && ADMIN_ICON_NAMES.contains(playerName.toLowerCase(Locale.ROOT));
+    }
+
+    public static Identifier iconTextureForPlayer(String playerName) {
+        return usesAdminIcon(playerName) ? ADMIN_ICON_IDENTIFIER : ICON_IDENTIFIER;
+    }
+
+    public static char chatIconMarker(String playerName) {
+        return usesAdminIcon(playerName) ? ADMIN_CHAT_ICON_MARKER : CHAT_ICON_MARKER;
+    }
+
+    public static boolean isChatIconMarker(char ch) {
+        return ch == CHAT_ICON_MARKER || ch == ADMIN_CHAT_ICON_MARKER;
+    }
+
+    public static boolean containsChatIconMarker(String text) {
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+        return text.indexOf(CHAT_ICON_MARKER) >= 0 || text.indexOf(ADMIN_CHAT_ICON_MARKER) >= 0;
+    }
+
     /**
      * Render the icon next to a player name.
      * @param context The draw context
@@ -94,6 +124,10 @@ public class PlayerIconUtility {
      * @param size The size of the icon (both width and height)
      */
     public static void renderIcon(GuiGraphicsExtractor context, int x, int y, int size) {
+        renderIcon(context, x, y, size, null);
+    }
+
+    public static void renderIcon(GuiGraphicsExtractor context, int x, int y, int size, String playerName) {
         try {
             ensureIconLoaded();
             
@@ -106,17 +140,18 @@ public class PlayerIconUtility {
                 return;
             }
             
-            // Try the primary icon location first, fallback to alternative
-            Identifier iconToUse = ICON_IDENTIFIER;
-            try {
-                if (client.getResourceManager() != null) {
-                    var resource = client.getResourceManager().getResource(ICON_IDENTIFIER);
-                    if (resource.isEmpty()) {
-                        iconToUse = ICON_IDENTIFIER_ALT;
+            Identifier iconToUse = iconTextureForPlayer(playerName);
+            if (!usesAdminIcon(playerName)) {
+                try {
+                    if (client.getResourceManager() != null) {
+                        var resource = client.getResourceManager().getResource(ICON_IDENTIFIER);
+                        if (resource.isEmpty()) {
+                            iconToUse = ICON_IDENTIFIER_ALT;
+                        }
                     }
+                } catch (Exception e) {
+                    iconToUse = ICON_IDENTIFIER_ALT;
                 }
-            } catch (Exception e) {
-                iconToUse = ICON_IDENTIFIER_ALT;
             }
             
             // Draw the icon using the correct drawTexture signature

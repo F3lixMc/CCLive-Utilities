@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#0c130e">
+<title>Header-Demo · CCLive Utilities</title>
+<link rel="icon" href="/bilder/icon.png" type="image/png">
+<link rel="stylesheet" href="/main_website-style.css?v=20261103-footer">
+<link rel="stylesheet" href="/header-demo-style.css?v=20261104-demo-community-icons">
+<script src="/header-demo-mobs.js?v=20261104-1" defer></script>
+<script src="/progress-effects.js?v=20261104-3" defer></script>
+<script src="/header-demo-script.js?v=20261104-demo-community-icons" defer></script>
+</head>
+<body class="demo-body">
+<div class="demo-header-space">
+<header class="demo-header" id="demo-header">
+  <div class="demo-header-top">
+    <div class="site-community-links"><a class="site-discord" href="https://discord.gg/7geExrDeqF" target="_blank" rel="noopener noreferrer" aria-label="CCLive Discord-Server öffnen (neuer Tab)"><img src="/bilder/discord-white-icon.png" alt="" width="24" height="24"><span>Discord</span></a><a class="site-modrinth" href="https://modrinth.com/mod/cclive-utilities" target="_blank" rel="noopener noreferrer" aria-label="CCLive Utilities auf Modrinth öffnen (neuer Tab)"><img src="/bilder/modrinth-icon.png" alt="" width="24" height="24"><span>Modrinth</span></a></div>
+    <div class="demo-session">
+      <button class="demo-profile-button" id="demo-profile-button" type="button" aria-expanded="false" aria-controls="demo-profile-menu"><span>firestarter03</span><span class="demo-user-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 22v-4a8 8 0 0 1 16 0v4"/></svg></span><span class="demo-chevron" aria-hidden="true">⌄</span></button>
+      <nav class="demo-profile-menu" id="demo-profile-menu" aria-label="Persönlicher Bereich" hidden>
+        <p class="demo-menu-caption">Dein CCLive Bereich</p>
+        <button type="button" data-page="Mein Profil">Mein Profil</button>
+        <button type="button" data-page="Meine Chats">Meine Chats</button>
+        <button type="button" data-page="Freunde">Freunde</button>
+        <hr>
+        <button type="button" data-page="Einstellungen">Einstellungen</button>
+        <button type="button" data-page="CCLive Control Center">CCLive Control Center <small>Demo</small></button>
+        <hr>
+        <button type="button" class="demo-logout" data-page="Logout">Logout</button>
+      </nav>
+    </div>
+  </div>
+  <button class="demo-brand" type="button" data-page="CCLive" aria-label="CCLive Startseite">
+    <img src="/bilder/icon.png" alt="" width="72" height="72"><span>CCLive Utilities</span>
+  </button>
+  <nav class="demo-navigation" aria-label="Hauptnavigation">
+    <div class="demo-nav-left"><button type="button" data-page="CCLive" aria-current="page">CCLive</button><button type="button" data-page="Downloads">Downloads</button><button type="button" data-page="Creator Hub">Creator Hub</button></div>
+    <div class="demo-nav-right"><button type="button" data-page="Leaderboards">Leaderboards</button><button type="button" data-page="Spieler Statistiken">Spieler Statistiken</button></div>
+  </nav>
+</header>
+</div>
+<main class="demo-main">
+  <section class="demo-data-page" id="demo-leaderboards" hidden aria-labelledby="demo-season-title">
+    <div class="demo-data-heading"><p class="demo-eyebrow">Leaderboards</p><h1 id="demo-season-title">Season X</h1><span class="demo-season-badge" id="demo-season-badge">Aktuelle Season</span></div>
+    <div class="demo-filter-row" aria-label="Leaderboard-Auswahl">
+      <div><label for="demo-lb-season">Season</label><select id="demo-lb-season"><option value="current">Season X · Aktuell</option><option value="previous">Season X−1</option><option value="preseason">Preseason X</option></select></div>
+      <div><label for="demo-lb-type">Leaderboard</label><select id="demo-lb-type"><option value="kills">Alltime Kills</option><option value="floor">Ebenen Kills</option><option value="resources">Abgebaute Ressourcen</option><option value="coins">Aktuelle Coins</option><option value="time">Spielzeit</option><option value="smith">Schmiedeskill</option></select></div>
+    </div>
+    <div class="demo-board-heading" id="demo-board-banner"><img class="demo-board-panorama" id="demo-board-panorama" alt="" aria-hidden="true" hidden><div class="demo-board-title-row"><button type="button" class="demo-board-arrow" id="demo-board-prev" aria-label="Vorheriges Unterleaderboard" hidden>‹</button><h2 id="demo-board-title">Alltime Kills</h2><button type="button" class="demo-board-arrow" id="demo-board-next" aria-label="Nächstes Unterleaderboard" hidden>›</button></div><p class="demo-mob-info" id="demo-mob-info" hidden><strong>Mobart:</strong> — <span aria-hidden="true">|</span> <strong>HP:</strong> —</p><p class="demo-mob-info" id="demo-drop-info" hidden></p><p class="demo-data-note">Designvorschau · Alle Ranglistenwerte sind Beispieldaten.</p></div>
+    <div class="demo-board-layout" id="demo-board-layout">
+      <aside class="demo-subboards" id="demo-subboards" hidden><details open><summary id="demo-subboards-title">Ebene auswählen</summary><div id="demo-subboard-list" class="demo-subboard-list" role="group" aria-labelledby="demo-subboards-title"></div></details><p id="demo-zone-order-note" hidden>Freischaltreihenfolge in dieser Demo vorläufig.</p></aside>
+      <div class="demo-board-content">
+        <section class="demo-own-rank" aria-labelledby="demo-own-title"><div class="demo-own-heading"><h3 id="demo-own-title">Dein Rang</h3><span>Noch kein Eintrag</span></div><table class="demo-ranking demo-own-table"><caption class="demo-sr-only">Dein persönlicher Rang</caption><thead id="demo-own-head"></thead><tbody id="demo-own-body"></tbody></table></section>
+        <div class="demo-ranking-wrap"><table class="demo-ranking" id="demo-ranking-table"><caption class="demo-sr-only" id="demo-ranking-caption">Alltime Kills – Beispieldaten</caption><thead id="demo-ranking-head"></thead><tbody id="demo-ranking-body"></tbody></table></div>
+      </div>
+    </div>
+    <p class="demo-data-footnote">Der persönliche Rang erscheint später nur nach der Anmeldung. Die Demo zeigt den Zustand ohne eigenen Ranglisteneintrag.</p>
+  </section>
+  <section class="demo-data-page" id="demo-player-stats" hidden aria-labelledby="demo-stats-season-title">
+    <div class="demo-data-heading"><p class="demo-eyebrow">Spieler Statistiken</p><h1 id="demo-stats-season-title">Season X</h1><span class="demo-season-badge" id="demo-stats-season-badge">Aktuelle Season</span></div>
+    <div class="demo-stats-layout">
+      <aside class="demo-player-browser" aria-labelledby="demo-player-list-title">
+        <div class="demo-player-browser-heading"><h2 id="demo-player-list-title">Spieler</h2><span id="demo-player-count">—</span></div>
+        <label for="demo-player-search">Spieler suchen</label>
+        <div class="demo-player-search-wrap"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" id="demo-player-search" placeholder="Spielername …" autocomplete="off"></div>
+        <div class="demo-player-list" id="demo-player-list" role="group" aria-labelledby="demo-player-list-title"></div>
+        <p class="demo-player-search-empty" id="demo-player-search-empty" role="status" hidden>Kein Spieler gefunden.</p>
+      </aside>
+      <div class="demo-player-content">
+        <div class="demo-stats-toolbar">
+          <div class="demo-selected-player"><span class="demo-player-avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 22v-4a8 8 0 0 1 16 0v4"/></svg></span><div><h2 id="demo-stats-name">firestarter03</h2><p>Spielerprofil</p></div></div>
+          <div class="demo-filter-row demo-profile-season"><div><label for="demo-stats-season">Season</label><select id="demo-stats-season"><option value="current">Season X · Aktuell</option><option value="previous">Season X−1</option><option value="preseason">Preseason X</option></select></div></div>
+        </div>
+        <p class="demo-data-note demo-stats-note">Designvorschau · Spielernamen sind Beispiele, es werden keine Spielerdaten geladen.</p>
+        <div class="demo-stat-grid"><div><span>Höchste Welle</span><strong>—</strong></div><div><span>Höchste Ebene</span><strong>—</strong></div><div><span>Gefundene Baupläne</span><strong>—</strong></div><div><span>Höchster Schaden</span><strong>—</strong></div></div>
+        <div class="demo-stat-sections"><section class="demo-progress-panel" aria-labelledby="demo-cards-title"><div class="demo-progress-heading"><h3 id="demo-cards-title">Karten</h3><span id="demo-cards-count" aria-live="polite"></span></div><label for="demo-cards-search">Name, Ebene, Prestige oder Level</label><div class="demo-player-search-wrap"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" id="demo-cards-search" placeholder="Karten durchsuchen …" autocomplete="off"></div><p class="demo-progress-hint">z. B. Ebene 22 · Prestige 1 · Level 5</p><div class="demo-progress-scroll"><table class="demo-progress-table"><caption class="demo-sr-only">Karten – Beispielwerte für die Designvorschau</caption><thead><tr><th scope="col">Name</th><th scope="col">Ebene</th><th scope="col">Prestige</th><th scope="col">Level</th></tr></thead><tbody id="demo-cards-body"></tbody></table></div><p class="demo-progress-source">Beispielwerte · kein echter Spielerfortschritt</p></section><section class="demo-progress-panel" aria-labelledby="demo-statues-title"><div class="demo-progress-heading"><h3 id="demo-statues-title">Statuen</h3><span id="demo-statues-count" aria-live="polite"></span></div><label for="demo-statues-search">Name, Ebene oder Level</label><div class="demo-player-search-wrap"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" id="demo-statues-search" placeholder="Statuen durchsuchen …" autocomplete="off"></div><p class="demo-progress-hint">z. B. Schwert · Ebene 1 · Level 100</p><div class="demo-progress-scroll"><table class="demo-progress-table"><caption class="demo-sr-only">Statuen – Beispielwerte für die Designvorschau</caption><thead><tr><th scope="col">Name</th><th scope="col">Ebene</th><th scope="col">Level</th></tr></thead><tbody id="demo-statues-body"></tbody></table></div><p class="demo-progress-source">Beispielwerte · kein echter Spielerfortschritt</p></section></div>
+      </div>
+    </div>
+  </section>
+  <section class="demo-hero" aria-labelledby="demo-page-title">
+    <p class="demo-eyebrow" id="demo-eyebrow">CCLive Utilities</p>
+    <h1 id="demo-page-title">Coming Soon</h1>
+    <p class="demo-description" id="demo-description">Deine Community. Deine Statistiken. Alles an einem Ort.</p>
+    <p class="demo-state" id="demo-state" role="status">Diese Ansicht ist eine Designvorschau ohne Kontofunktionen.</p>
+    <a class="demo-scroll" href="#demo-scroll-area">Nach unten scrollen und Header testen <span aria-hidden="true">↓</span></a>
+  </section>
+  <section class="demo-scroll-area" id="demo-scroll-area" aria-label="Scrollvorschau">
+    <span class="demo-section-line" aria-hidden="true"></span>
+    <p class="demo-eyebrow">Platz für das, was kommt</p>
+    <h2>Mehr CCLive.<br>Weniger Suchen.</h2>
+    <p>Hier entstehen später die Inhalte der Website.</p>
+    <button class="demo-back-top" type="button" id="demo-back-top">Zurück nach oben ↑</button>
+  </section>
+</main>
+<footer class="site-footer">
+<nav class="footer-left" aria-label="Rechtliche Informationen"><a href="/impressum.html">Impressum</a><a href="/datenschutz.html">Datenschutz</a></nav>
+<p class="footer-credit"><span>Created by the CCLive Utilities DreamTeam</span><span>Made 4 You</span></p>
+<nav class="footer-right" aria-label="Cookie-Informationen"><a href="/cookie-hinweise.html">Cookie-Hinweise</a></nav>
+</footer>
+</body></html>

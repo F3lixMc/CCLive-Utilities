@@ -469,7 +469,7 @@ public class PlayerHoverStatsUtility {
         
         try {
             // Icon-Marker bereits vorhanden → nichts ändern
-            if (message.getString() != null && message.getString().indexOf(ICON_MARKER) >= 0) {
+            if (net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.containsChatIconMarker(message.getString())) {
                 return message;
             }
 
@@ -500,7 +500,7 @@ public class PlayerHoverStatsUtility {
                             // Bereits Icon zwischen Name und >>?
                             for (int k = i + 1; k < arrowIndex; k++) {
                                 String between = siblings.get(k).getString();
-                                if (between != null && between.indexOf(ICON_MARKER) >= 0) {
+                                if (net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.containsChatIconMarker(between)) {
                                     return message;
                                 }
                             }
@@ -518,7 +518,9 @@ public class PlayerHoverStatsUtility {
                             Style iconStyle = current.getStyle()
                                 .withFont(new net.minecraft.network.chat.FontDescription.Resource(CUSTOM_FONT))
                                 .withColor(0xFFFFFF);
-                            MutableComponent iconMarker = Component.literal(String.valueOf(ICON_MARKER)).setStyle(iconStyle);
+                            MutableComponent iconMarker = Component.literal(String.valueOf(
+                                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.chatIconMarker(playerName)
+                            )).setStyle(iconStyle);
                             newMessage.append(space);
                             newMessage.append(iconMarker);
 

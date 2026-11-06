@@ -117,7 +117,7 @@ public abstract class ChatHudRenderMixin {
                         String visibleString = visibleText.toString();
 
                         // Glyph-Marker → Font hat das Icon bereits korrekt gerendert
-                        if (visibleString.indexOf(ICON_MARKER) >= 0) {
+                        if (PlayerIconUtility.containsChatIconMarker(visibleString)) {
                             continue;
                         }
 
@@ -133,7 +133,7 @@ public abstract class ChatHudRenderMixin {
                             continue;
                         }
 
-                        if (messageString.indexOf(ICON_MARKER) >= 0) {
+                        if (PlayerIconUtility.containsChatIconMarker(messageString)) {
                             continue;
                         }
 
@@ -161,7 +161,7 @@ public abstract class ChatHudRenderMixin {
                             int nameWidth = client.font.width(playerName);
                             int spaceWidth = client.font.width(" ");
                             int iconX = namePosition + nameWidth + spaceWidth;
-                            PlayerIconUtility.renderIcon(context, iconX, textTop - 1, iconSize);
+                            PlayerIconUtility.renderIcon(context, iconX, textTop - 1, iconSize, playerName);
                         }
                     } catch (Exception e) {
                         continue;

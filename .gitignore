@@ -31,6 +31,7 @@ bin/
 # fabric
 
 run/
+run-alt/
 
 # DevAuth Microsoft-Tokens (nicht ins Repo, auch falls sie außerhalb von run/ landen)
 microsoft_accounts.json

@@ -8,26 +8,25 @@ import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextColor;
 
-import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Erkennt die eigene Namensfarbe aus dem Default-PlayLegend-Chat
- * (Segment direkt vor {@code >>}, Style-Farbe wie {@code #7FE4CA}),
- * speichert lokal und synchronisiert authentifiziert zum Backend.
+ * Erkennt Namensfarben (inkl. Gradient, Buchstabe für Buchstabe) aus dem
+ * Default-PlayLegend-Chat — Segment unmittelbar vor {@code >>}.
+ * Eigene Farben werden lokal gespeichert und zum Backend synchronisiert.
  *
- * <p>Wichtig: Viele Default-Chat-Nachrichten werden in
- * {@code PlayerHoverStatsMixin} abgefangen — dort muss
- * {@link #observeDefaultChatMessage(Component)} auf dem Original aufgerufen werden,
- * sonst sieht der GAME-Event die Nachricht nie.
+ * <p>Viele Default-Chat-Nachrichten werden in {@code PlayerHoverStatsMixin}
+ * abgefangen — dort muss {@link #observeDefaultChatMessage(Component)}
+ * auf dem Original aufgerufen werden.
  */
 public final class ChatNameColorTracker {
     private static final ChatNameColorTracker INSTANCE = new ChatNameColorTracker();
     private final AtomicBoolean syncPending = new AtomicBoolean(false);
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final ConcurrentHashMap<String, int[]> colorsByPlayer = new ConcurrentHashMap<>();
 
     private ChatNameColorTracker() {
     }
@@ -40,12 +39,11 @@ public final class ChatNameColorTracker {
         if (!initialized.compareAndSet(false, true)) {
             return;
         }
-        // Fallback für Nachrichten, die nicht vom Hover-Mixin gecancelt werden
         ClientReceiveMessageEvents.GAME.register(this::onGameMessage);
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
             client.execute(() -> {
-                int rgb = CCLiveUtilitiesConfig.HANDLER.instance().ownChatNameColorRgb;
-                if (isValidRgb(rgb) && rgb != 0xFFFFFF) {
+                rememberOwnFromConfig();
+                if (hasOwnColors()) {
                     syncPending.set(true);
                 }
                 trySyncPending();
@@ -53,35 +51,53 @@ public final class ChatNameColorTracker {
     }
 
     public int getOwnNameColorOrWhite() {
-        int color = CCLiveUtilitiesConfig.HANDLER.instance().ownChatNameColorRgb;
-        return isValidRgb(color) ? (color & 0xFFFFFF) : 0xFFFFFF;
+        int[] colors = getOwnNameColors();
+        return colors.length == 0 ? ChatNameColors.WHITE : colors[0];
+    }
+
+    public int[] getOwnNameColors() {
+        rememberOwnFromConfig();
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.player != null) {
+            int[] cached = colorsByPlayer.get(key(client.player.getGameProfile().name()));
+            if (cached != null && cached.length > 0) {
+                return cached.clone();
+            }
+        }
+        return ChatNameColors.parse(CCLiveUtilitiesConfig.HANDLER.instance().ownChatNameColors);
+    }
+
+    public int[] colorsFor(String player, int[] payloadColors) {
+        if (payloadColors != null && payloadColors.length > 0) {
+            if (player != null && !player.isBlank()) {
+                colorsByPlayer.put(key(player), payloadColors.clone());
+            }
+            return payloadColors;
+        }
+        if (player != null && !player.isBlank()) {
+            int[] cached = colorsByPlayer.get(key(player));
+            if (cached != null && cached.length > 0) {
+                return cached;
+            }
+            Minecraft client = Minecraft.getInstance();
+            if (client != null && client.player != null
+                    && player.equalsIgnoreCase(client.player.getGameProfile().name())) {
+                return getOwnNameColors();
+            }
+        }
+        return new int[0];
     }
 
     public static int parseNameColor(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return 0xFFFFFF;
-        }
-        String s = raw.trim();
-        if (s.startsWith("#")) {
-            s = s.substring(1);
-        }
-        if (s.startsWith("0x") || s.startsWith("0X")) {
-            s = s.substring(2);
-        }
-        try {
-            int value = Integer.parseInt(s, 16);
-            return isValidRgb(value) ? (value & 0xFFFFFF) : 0xFFFFFF;
-        } catch (Exception e) {
-            return 0xFFFFFF;
-        }
+        return ChatNameColors.parseSolid(raw);
     }
 
     public static boolean isValidRgb(int rgb) {
-        return rgb >= 0 && rgb <= 0xFFFFFF;
+        return rgb >= 0 && rgb <= ChatNameColors.WHITE;
     }
 
     public static String toHex(int rgb) {
-        return String.format("#%06X", rgb & 0xFFFFFF);
+        return ChatNameColors.toHex(rgb);
     }
 
     private void onGameMessage(Component message, boolean overlay) {
@@ -92,164 +108,53 @@ public final class ChatNameColorTracker {
     }
 
     /**
-     * Aus Default-Chat (nicht CCLive) die eigene Namensfarbe lesen.
+     * Aus Default-Chat (nicht CCLive) Namensfarben lesen.
      * Öffentlich für PlayerHoverStatsMixin (Original-Paket).
      */
     public void observeDefaultChatMessage(Component message) {
         if (message == null) {
             return;
         }
-        String plain = message.getString();
-        if (plain == null || plain.isEmpty() || plain.contains("[CCLive]")) {
+        ChatNameColors.Sample sample = ChatNameColors.fromComponent(message);
+        if (sample == null || sample.name == null || sample.colors == null || sample.colors.length == 0) {
             return;
         }
+
+        colorsByPlayer.put(key(sample.name), sample.colors.clone());
+
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.player == null) {
             return;
         }
         String self = client.player.getGameProfile().name();
-        if (self == null || self.isEmpty()) {
-            return;
-        }
-        if (!plain.contains(self) || !plain.contains(">>")) {
+        if (self == null || self.isEmpty() || !self.equalsIgnoreCase(sample.name)) {
             return;
         }
 
-        Integer color = extractOwnNameColor(message, self);
-        if (color == null) {
-            return;
-        }
-        int rgb = color & 0xFFFFFF;
-        // Rein weiß aus Style ohne Farbe → als „unbekannt“ nicht speichern,
-        // außer der Style setzt explizit weiß (selten); wir akzeptieren jeden erkannten Wert inkl. Weiß nur bei TextColor != null
         CCLiveUtilitiesConfig cfg = CCLiveUtilitiesConfig.HANDLER.instance();
-        if (cfg.ownChatNameColorRgb == rgb && !syncPending.get()) {
+        String encoded = ChatNameColors.encode(sample.colors);
+        int first = sample.colors[0] & ChatNameColors.WHITE;
+        if (encoded.equals(cfg.ownChatNameColors) && cfg.ownChatNameColorRgb == first && !syncPending.get()) {
             return;
         }
-        cfg.ownChatNameColorRgb = rgb;
+        cfg.ownChatNameColors = encoded;
+        cfg.ownChatNameColorRgb = first;
         CCLiveUtilitiesConfig.HANDLER.save();
         syncPending.set(true);
         trySyncPending();
-    }
-
-    /**
-     * Wie PlayerHoverStats: Segment unmittelbar vor {@code >>} finden
-     * und dessen Style-Farbe lesen (PlayLegend: {@code color: "#7FE4CA"}).
-     */
-    private Integer extractOwnNameColor(Component message, String selfName) {
-        Component nameComponent = findNameComponentBeforeArrow(message, selfName);
-        if (nameComponent == null) {
-            return null;
-        }
-        TextColor color = resolveColor(nameComponent);
-        if (color == null) {
-            return null;
-        }
-        return color.getValue() & 0xFFFFFF;
-    }
-
-    private static TextColor resolveColor(Component component) {
-        TextColor direct = component.getStyle() != null ? component.getStyle().getColor() : null;
-        if (direct != null) {
-            return direct;
-        }
-        // In verschachtelten Parts die erste gesetzte Farbe am eigenen Literal suchen
-        return findFirstColor(component, Style.EMPTY);
-    }
-
-    private static TextColor findFirstColor(Component component, Style parent) {
-        Style style = component.getStyle();
-        Style merged = style != null ? style.applyTo(parent) : parent;
-        TextColor c = merged.getColor();
-        if (c != null && component.getSiblings().isEmpty()) {
-            return c;
-        }
-        if (c != null) {
-            String only = component.getString();
-            if (only != null && !only.isEmpty()) {
-                // keep searching children for more specific
-            }
-        }
-        for (Component sibling : component.getSiblings()) {
-            TextColor found = findFirstColor(sibling, merged);
-            if (found != null) {
-                return found;
-            }
-        }
-        return c;
-    }
-
-    private Component findNameComponentBeforeArrow(Component message, String selfName) {
-        Component found = findNameBeforeArrowInSiblings(message, selfName);
-        if (found != null) {
-            return found;
-        }
-        for (Component sibling : message.getSiblings()) {
-            found = findNameComponentBeforeArrow(sibling, selfName);
-            if (found != null) {
-                return found;
-            }
-        }
-        return null;
-    }
-
-    private Component findNameBeforeArrowInSiblings(Component parent, String selfName) {
-        List<Component> siblings = parent.getSiblings();
-        if (siblings == null || siblings.isEmpty()) {
-            return null;
-        }
-        for (int i = 0; i < siblings.size(); i++) {
-            Component current = siblings.get(i);
-            for (int j = i + 1; j < siblings.size() && j <= i + 3; j++) {
-                String nextText = siblings.get(j).getString();
-                boolean isArrow = nextText != null && (nextText.contains(">>") || nextText.trim().equals(">>"));
-                boolean isSpace = nextText != null && (nextText.trim().isEmpty() || " ".equals(nextText));
-                boolean arrowAfterSpace = isSpace && j + 1 < siblings.size()
-                    && siblings.get(j + 1).getString() != null
-                    && (siblings.get(j + 1).getString().contains(">>")
-                    || siblings.get(j + 1).getString().trim().equals(">>"));
-                // optional Icon-Glyphe zwischen Name und >>
-                boolean isIconThenArrow = nextText != null && nextText.indexOf('ѳ') >= 0 && j + 1 < siblings.size()
-                    && siblings.get(j + 1).getString() != null
-                    && siblings.get(j + 1).getString().contains(">>");
-
-                if (isArrow || arrowAfterSpace || isIconThenArrow) {
-                    String name = current.getString() != null ? current.getString().trim() : "";
-                    if (selfName.equalsIgnoreCase(name)
-                            || selfName.equalsIgnoreCase(name.replaceAll("[^A-Za-z0-9_]", ""))) {
-                        return current;
-                    }
-                    // ggf. zwischen current und >> liegt der Name
-                    for (int k = i; k < j; k++) {
-                        String between = siblings.get(k).getString();
-                        if (between == null) {
-                            continue;
-                        }
-                        String n = between.trim();
-                        if (selfName.equalsIgnoreCase(n)
-                                || selfName.equalsIgnoreCase(n.replaceAll("[^A-Za-z0-9_]", ""))) {
-                            return siblings.get(k);
-                        }
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     public void trySyncPending() {
         if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
             return;
         }
-        int rgb = CCLiveUtilitiesConfig.HANDLER.instance().ownChatNameColorRgb;
-        if (!isValidRgb(rgb)) {
+        int[] colors = getOwnNameColors();
+        if (colors.length == 0) {
             syncPending.set(false);
             return;
         }
-        if (!syncPending.get() && rgb == 0xFFFFFF) {
-            return;
-        }
         syncPending.set(true);
+        final int[] toSend = colors.clone();
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 LeaderboardManager lb = LeaderboardManager.getInstance();
@@ -259,7 +164,8 @@ public final class ChatNameColorTracker {
                 }
                 HttpClient http = lb.getHttpClient();
                 JsonObject body = new JsonObject();
-                body.addProperty("name_color", toHex(rgb));
+                body.addProperty("name_color", ChatNameColors.toHex(toSend[0]));
+                body.add("name_colors", ChatNameColors.toJsonArray(toSend));
                 JsonObject response = http.postWithToken("/player/name-color", body, lb.getPlayerToken());
                 if (response != null && (response.has("success") || response.has("name_color"))) {
                     syncPending.set(false);
@@ -267,5 +173,30 @@ public final class ChatNameColorTracker {
             } catch (Exception ignored) {
             }
         });
+    }
+
+    private boolean hasOwnColors() {
+        int[] colors = getOwnNameColors();
+        return colors.length > 0 && !(colors.length == 1 && colors[0] == ChatNameColors.WHITE);
+    }
+
+    private void rememberOwnFromConfig() {
+        CCLiveUtilitiesConfig cfg = CCLiveUtilitiesConfig.HANDLER.instance();
+        int[] colors = ChatNameColors.parse(cfg.ownChatNameColors);
+        if (colors.length == 0 && isValidRgb(cfg.ownChatNameColorRgb) && cfg.ownChatNameColorRgb != ChatNameColors.WHITE) {
+            colors = new int[] { cfg.ownChatNameColorRgb & ChatNameColors.WHITE };
+            cfg.ownChatNameColors = ChatNameColors.encode(colors);
+        }
+        if (colors.length == 0) {
+            return;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (client != null && client.player != null) {
+            colorsByPlayer.put(key(client.player.getGameProfile().name()), colors);
+        }
+    }
+
+    private static String key(String player) {
+        return player == null ? "" : player.toLowerCase(Locale.ROOT);
     }
 }

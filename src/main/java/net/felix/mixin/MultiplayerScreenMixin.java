@@ -65,11 +65,11 @@ public abstract class MultiplayerScreenMixin extends Screen {
         cclive$closeEntry();
         cclive$links.clear();
         cclive$entry = addRenderableWidget(new PlayLegendServerEntryWidget(this, 0, 0));
-        String[] labels = {"PlayLegend: Shop", "PlayLegend: Discord", "CCLive: Discord", "CCLive: Website – Coming Soon"};
-        String[] urls = {"https://shop.playlegend.net", "https://discord.gg/playlegend", "https://discord.gg/XQrkX4mWkX", null};
+        String[] labels = {"PlayLegend: Shop", "PlayLegend: Discord", "CCLive: Discord", "CCLive: Website"};
+        String[] urls = {"https://shop.playlegend.net", "https://discord.gg/playlegend", "https://discord.gg/7geExrDeqF", "https://cclive-utilities.net/"};
         for (int i = 0; i < labels.length; i++) {
             Button.OnPress action = urls[i] == null ? button -> { } : ConfirmLinkScreen.confirmLink(this, URI.create(urls[i]));
-            Button button = Button.builder(Component.literal(i == 3 ? "W" : ""), action)
+            Button button = Button.builder(Component.literal(""), action)
                     .bounds(0, 0, 20, 20).tooltip(Tooltip.create(Component.literal(labels[i]))).build();
             button.setOverrideRenderHighlightedSprite(button::isHovered);
             cclive$links.add(addRenderableWidget(button));
@@ -116,6 +116,10 @@ public abstract class MultiplayerScreenMixin extends Screen {
                     Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icons/" + textures[i]),
                     button.getX() + 2, button.getY() + 2, 0f, 0f, 16, 16, 128, 128, 128, 128);
         }
+        Button ccliveWebsite = cclive$links.get(3);
+        graphics.blit(RenderPipelines.GUI_TEXTURED,
+                Identifier.fromNamespaceAndPath("cclive-utilities", "textures/icon.png"),
+                ccliveWebsite.getX() + 2, ccliveWebsite.getY() + 2, 0f, 0f, 16, 16, 128, 128, 128, 128);
         cclive$entry.extractOnlineTooltip(graphics, mouseX, mouseY);
     }
 

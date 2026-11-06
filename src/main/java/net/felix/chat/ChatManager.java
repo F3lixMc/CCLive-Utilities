@@ -15,7 +15,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Manager für das CCLive Chat-System.
@@ -33,11 +32,9 @@ public class ChatManager {
 
     private final ChatWebSocket webSocket = new ChatWebSocket();
 
-    /** Deduplizierung für eingehende WS-Nachrichten. */
-    private final AtomicLong lastMessageTimestamp = new AtomicLong(0);
+    /** Deduplizierung für exakt gleiche WS-Kopien. */
     private final Object displayDedupLock = new Object();
-    private volatile String lastDisplayedDedupKey = "";
-    private volatile long lastDisplayedAtMs;
+    private volatile String lastDisplayedExactKey = "";
     private volatile long lastSendAtMs;
     private volatile String lastSendPayload = "";
 
@@ -80,8 +77,10 @@ public class ChatManager {
 
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             // Sichtbarkeit/Schreibmodus bleiben aus Config — nur WS neu verbinden
-            lastMessageTimestamp.set(0);
-            client.execute(this::ensureSocketConnected);
+            client.execute(() -> {
+                ensureSocketConnected();
+                ChatBlockedGlyphs.refreshFromServerAsync();
+            });
         });
 
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
@@ -129,6 +128,10 @@ public class ChatManager {
             return CompletableFuture.completedFuture("Nachricht ist leer.");
         }
 
+        if (ChatBlockedGlyphs.containsBlockedGlyph(message)) {
+            return CompletableFuture.completedFuture(ChatBlockedGlyphs.ERROR_MESSAGE);
+        }
+
         StringBuilder prepared = new StringBuilder();
         String prepareError = ItemShareManager.getInstance().prepareCcliveOutgoing(message.trim(), prepared);
         if (prepareError != null) {
@@ -161,8 +164,32 @@ public class ChatManager {
                 return CompletableFuture.completedFuture(regError);
             }
             ensureSocketConnected();
-            return webSocket.sendChat(trimmed);
+            return webSocket.sendChat(trimmed).thenApply(error -> {
+                if (error == null) {
+                    echoOwnMessage(trimmed);
+                    return null;
+                }
+                return ChatBlockedGlyphs.clientErrorMessage(error);
+            });
         });
+    }
+
+    private void echoOwnMessage(String message) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.player == null) {
+            return;
+        }
+        JsonObject echo = new JsonObject();
+        echo.addProperty("player", client.player.getGameProfile().name());
+        echo.addProperty("message", message);
+        echo.addProperty("timestamp", System.currentTimeMillis());
+        echo.addProperty("local_echo", true);
+        int[] ownColors = ChatNameColorTracker.getInstance().getOwnNameColors();
+        if (ownColors.length > 0) {
+            echo.addProperty("name_color", ChatNameColors.toHex(ownColors[0]));
+            echo.add("name_colors", ChatNameColors.toJsonArray(ownColors));
+        }
+        onIncomingChatMessage(echo);
     }
 
     private void onIncomingChatMessage(JsonObject msgObj) {
@@ -173,35 +200,39 @@ public class ChatManager {
             return;
         }
 
-        String player = msgObj.get("player").getAsString();
-        String message = msgObj.get("message").getAsString();
+        String player;
+        String message;
+        try {
+            player = msgObj.get("player").getAsString();
+            message = msgObj.get("message").getAsString();
+        } catch (Exception e) {
+            return;
+        }
+        if (player == null || message == null) {
+            return;
+        }
         long timestamp = msgObj.has("timestamp") ? msgObj.get("timestamp").getAsLong() : System.currentTimeMillis();
-        int nameColor = ChatNameColorTracker.parseNameColor(
-            msgObj.has("name_color") && !msgObj.get("name_color").isJsonNull()
-                ? msgObj.get("name_color").getAsString()
-                : null);
+        boolean localEcho = msgObj.has("local_echo") && msgObj.get("local_echo").getAsBoolean();
+        Minecraft selfClient = Minecraft.getInstance();
+        String selfName = selfClient != null && selfClient.player != null
+            ? selfClient.player.getGameProfile().name()
+            : null;
+        long now = System.currentTimeMillis();
+        if (ChatDisplayDedup.skipOwnBroadcast(
+                localEcho, player, selfName, message, lastSendPayload, lastSendAtMs, now)) {
+            return;
+        }
+        int[] nameColors = ChatNameColorTracker.getInstance().colorsFor(
+            player, ChatNameColors.parseFromMessage(msgObj));
         int cactusRank = parseRankField(msgObj, "cactus_rank");
         int soulRank = parseRankField(msgObj, "soul_rank");
 
-        // Dedup: doppelte WS-Pushs / Race bei zwei Sockets (gleicher Spieler+Text kurz hintereinander)
-        String softKey = player + "|" + message;
-        String exactKey = softKey + "|" + timestamp;
+        String exactKey = ChatDisplayDedup.exactKey(player, message, timestamp);
         synchronized (displayDedupLock) {
-            long now = System.currentTimeMillis();
-            if (exactKey.equals(lastDisplayedDedupKey)
-                    || (softKey.equals(stripTimestamp(lastDisplayedDedupKey))
-                        && now - lastDisplayedAtMs < 2000L)) {
+            if (ChatDisplayDedup.skipExactDuplicate(lastDisplayedExactKey, exactKey)) {
                 return;
             }
-            long last = lastMessageTimestamp.get();
-            if (timestamp > 0 && timestamp < last) {
-                return;
-            }
-            if (timestamp >= last) {
-                lastMessageTimestamp.set(timestamp);
-            }
-            lastDisplayedDedupKey = exactKey;
-            lastDisplayedAtMs = now;
+            lastDisplayedExactKey = exactKey;
         }
 
         Minecraft client = Minecraft.getInstance();
@@ -209,53 +240,104 @@ public class ChatManager {
             return;
         }
 
-        HoverEvent statsHover = null;
-        if (PlayerHoverStatsUtility.isInitialized()) {
-            Component hoverText = PlayerHoverStatsUtility.createStatsHoverForPlayer(
-                player, cactusRank, soulRank);
-            if (hoverText != null) {
-                statsHover = PlayerHoverStatsUtility.createHoverEvent(hoverText);
-            }
-        }
-        final HoverEvent statsHoverFinal = statsHover;
+        final String playerFinal = player;
+        final String messageFinal = message;
+        final int[] nameColorsFinal = nameColors;
+        final int cactusRankFinal = cactusRank;
+        final int soulRankFinal = soulRank;
 
-        // Body OHNE Stats-Hover — sonst vererbt sich Hover vom Root auf Item-/Build-Links
-        ItemShareManager.getInstance().buildMessageBodyAsync(message, null).thenAccept(body -> {
-            // Stats-Hover NUR auf den Blatt-Segmenten [CCLive]/Name/Icon/>> — nie am Root
-            Style prefixStyle = Style.EMPTY.withColor(CCLIVE_PREFIX_COLOR);
-            Style nameStyle = Style.EMPTY.withColor(nameColor);
-            Style arrowStyle = Style.EMPTY.withColor(0xFFFFFF);
-            if (statsHoverFinal != null) {
-                prefixStyle = prefixStyle.withHoverEvent(statsHoverFinal);
-                nameStyle = nameStyle.withHoverEvent(statsHoverFinal);
-                arrowStyle = arrowStyle.withHoverEvent(statsHoverFinal);
-            }
-
-            MutableComponent chatMessage = Component.empty();
-            chatMessage.append(Component.literal("[CCLive] ").setStyle(prefixStyle));
-            chatMessage.append(Component.literal(player).setStyle(nameStyle));
-
-            if (CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled
-                    && CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
-                Style iconStyle = Style.EMPTY
-                    .withFont(new FontDescription.Resource(ICON_FONT))
-                    .withColor(0xFFFFFF);
-                if (statsHoverFinal != null) {
-                    iconStyle = iconStyle.withHoverEvent(statsHoverFinal);
+        CompletableFuture
+            .supplyAsync(() -> buildIncomingChatLine(
+                playerFinal, messageFinal, nameColorsFinal, cactusRankFinal, soulRankFinal))
+            .thenAccept(chatMessage -> {
+                if (chatMessage == null) {
+                    return;
                 }
-                chatMessage.append(Component.literal(" ").setStyle(arrowStyle));
-                chatMessage.append(Component.literal(String.valueOf(ICON_MARKER)).setStyle(iconStyle));
+                Minecraft mc = Minecraft.getInstance();
+                if (mc != null) {
+                    mc.execute(() -> addCcliveChatLine(mc, chatMessage));
+                }
+            })
+            .exceptionally(ex -> {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc != null) {
+                    Component fallback = Component.literal("[CCLive] " + playerFinal + ">> " + messageFinal);
+                    mc.execute(() -> addCcliveChatLine(mc, fallback));
+                }
+                return null;
+            });
+    }
+
+    private Component buildIncomingChatLine(
+            String player, String message, int[] nameColors, int cactusRank, int soulRank) {
+        HoverEvent statsHover = null;
+        try {
+            if (PlayerHoverStatsUtility.isInitialized()) {
+                Component hoverText = PlayerHoverStatsUtility.createStatsHoverForPlayer(
+                    player, cactusRank, soulRank);
+                if (hoverText != null) {
+                    statsHover = PlayerHoverStatsUtility.createHoverEvent(hoverText);
+                }
             }
+        } catch (Exception ignored) {
+            statsHover = null;
+        }
 
-            chatMessage.append(Component.literal(">> ").setStyle(arrowStyle));
-            chatMessage.append(body);
+        Component body;
+        try {
+            body = ItemShareManager.getInstance().buildMessageBodyAsync(message, null).join();
+        } catch (Exception e) {
+            body = Component.literal(message);
+        }
+        if (body == null) {
+            body = Component.literal(message);
+        }
 
-            client.execute(() -> {
+        Style prefixStyle = Style.EMPTY.withColor(CCLIVE_PREFIX_COLOR);
+        Style arrowStyle = Style.EMPTY.withColor(0xFFFFFF);
+        if (statsHover != null) {
+            prefixStyle = prefixStyle.withHoverEvent(statsHover);
+            arrowStyle = arrowStyle.withHoverEvent(statsHover);
+        }
+
+        MutableComponent chatMessage = Component.empty();
+        chatMessage.append(Component.literal("[CCLive] ").setStyle(prefixStyle));
+        chatMessage.append(ChatNameColors.coloredName(player, nameColors, statsHover));
+
+        if (CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled
+                && CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+            Style iconStyle = Style.EMPTY
+                .withFont(new FontDescription.Resource(ICON_FONT))
+                .withColor(0xFFFFFF);
+            if (statsHover != null) {
+                iconStyle = iconStyle.withHoverEvent(statsHover);
+            }
+            chatMessage.append(Component.literal(" ").setStyle(arrowStyle));
+            chatMessage.append(Component.literal(String.valueOf(
+                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.chatIconMarker(player)
+            )).setStyle(iconStyle));
+        }
+
+        chatMessage.append(Component.literal(">> ").setStyle(arrowStyle));
+        chatMessage.append(body);
+        return chatMessage;
+    }
+
+    private static void addCcliveChatLine(Minecraft client, Component chatMessage) {
+        try {
+            if (client.gui == null || client.gui.hud == null || client.gui.hud.getChat() == null) {
+                return;
+            }
+            // SYSTEM_SERVER bleibt sichtbar, wenn ein Filter SYSTEM_CLIENT unterdrückt.
+            client.gui.hud.getChat().addServerSystemMessage(chatMessage);
+        } catch (Exception e) {
+            try {
                 if (client.gui != null && client.gui.hud.getChat() != null) {
                     client.gui.hud.getChat().addClientSystemMessage(chatMessage);
                 }
-            });
-        });
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     private static int parseRankField(JsonObject msgObj, String key) {
@@ -279,7 +361,7 @@ public class ChatManager {
             cfg.chatShowDefault = true;
         }
         currentChatMode = parseWriteMode(cfg.chatWriteMode);
-        currentChatMode = clampWriteMode(currentChatMode);
+        currentChatMode = ChatChannelRules.clamp(currentChatMode, showDefaultChat, showCCLiveChat);
     }
 
     private void saveChatSettings() {
@@ -297,23 +379,12 @@ public class ChatManager {
         return ChatMode.DEFAULT;
     }
 
-    /** Schreibmodus an sichtbare Chats anpassen. */
-    private ChatMode clampWriteMode(ChatMode mode) {
-        if (mode == ChatMode.CCLIVE && !showCCLiveChat) {
-            return ChatMode.DEFAULT;
-        }
-        if (mode == ChatMode.DEFAULT && !showDefaultChat) {
-            return showCCLiveChat ? ChatMode.CCLIVE : ChatMode.DEFAULT;
-        }
-        return mode;
-    }
-
     /**
      * Effektives Schreibziel: respektiert {@link #currentChatMode}, falls der Kanal sichtbar ist.
      * Sind beide an, gilt der gespeicherte Modus (Standard: Default).
      */
     public ChatMode getEffectiveWriteMode() {
-        return clampWriteMode(currentChatMode);
+        return ChatChannelRules.clamp(currentChatMode, showDefaultChat, showCCLiveChat);
     }
 
     public void setChatMode(ChatMode mode) {
@@ -328,27 +399,12 @@ public class ChatManager {
     }
 
     public void toggleChat(String chatType) {
-        boolean wasDefaultVisible = showDefaultChat;
-
-        if (chatType.equalsIgnoreCase("default")) {
-            showDefaultChat = !showDefaultChat;
-            if (!showDefaultChat && !showCCLiveChat) {
-                showCCLiveChat = true;
-            }
-            // Default aus → Schreiben CCLive; Default wieder an → Schreiben Default
-            if (!showDefaultChat && showCCLiveChat) {
-                currentChatMode = ChatMode.CCLIVE;
-            } else if (showDefaultChat && !wasDefaultVisible) {
-                currentChatMode = ChatMode.DEFAULT;
-            }
-        } else if (chatType.equalsIgnoreCase("cclive")) {
-            showCCLiveChat = !showCCLiveChat;
-            if (!showDefaultChat && !showCCLiveChat) {
-                showDefaultChat = true;
-            }
-        }
-
-        currentChatMode = clampWriteMode(currentChatMode);
+        ChatChannelRules.State next = ChatChannelRules.toggle(
+            new ChatChannelRules.State(showDefaultChat, showCCLiveChat, currentChatMode),
+            chatType);
+        showDefaultChat = next.showDefault();
+        showCCLiveChat = next.showCCLive();
+        currentChatMode = next.writeMode();
         saveChatSettings();
 
         if (showCCLiveChat) {
@@ -369,15 +425,6 @@ public class ChatManager {
 
     public boolean isWebSocketConnected() {
         return webSocket.isConnected();
-    }
-
-    /** exactKey = player|message|timestamp → softKey = player|message */
-    private static String stripTimestamp(String exactKey) {
-        if (exactKey == null || exactKey.isEmpty()) {
-            return "";
-        }
-        int last = exactKey.lastIndexOf('|');
-        return last > 0 ? exactKey.substring(0, last) : exactKey;
     }
 
     public ChatMode getCurrentChatMode() { return currentChatMode; }

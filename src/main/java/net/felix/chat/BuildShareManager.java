@@ -1272,8 +1272,13 @@ public final class BuildShareManager {
         }
 
         if (data == null) {
+            HoverEvent failHover = ItemShareManager.createShowTextHoverPublic(
+                Component.literal("Build konnte nicht geladen werden.").withStyle(ChatFormatting.RED));
             Style style = Style.EMPTY.withColor(ChatFormatting.GRAY)
                 .withInsertion(BUILD_INSERTION_PREFIX + shareId);
+            if (failHover != null) {
+                style = style.withHoverEvent(failHover);
+            }
             return Component.literal("[?]").setStyle(style);
         }
 

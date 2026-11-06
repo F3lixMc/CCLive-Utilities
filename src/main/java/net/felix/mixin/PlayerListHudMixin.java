@@ -75,7 +75,8 @@ public abstract class PlayerListHudMixin {
                 int iconY = y; // Same vertical position as text
                 
                 // Use slightly larger size for better visibility
-                PlayerIconUtility.renderIcon(context, iconX, iconY, 8);
+                String name = entry.getProfile().name();
+                PlayerIconUtility.renderIcon(context, iconX, iconY, 8, name);
             }
         } catch (Exception e) {
             // Silently fail if there's any error

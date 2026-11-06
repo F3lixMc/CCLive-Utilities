@@ -1,0 +1,75 @@
+Hase-Karte	Ausweichchance	4	8	12	16	20	24	Ebene 1Ebene 22	4% | 1%
+Huhn-Karte	Bogenschaden	15	30	45	60	75	90	Ebene 2Ebene 23	4% | 6%
+Schwein-Karte	Leben	10	20	30	40	50	60	Ebene 3Ebene 24	4% | 6%
+Schaf-Karte	Ausweichlevel	4	8	12	16	20	24	Ebene 4Ebene 25	4% | 6%
+Kuh-Karte	Axtschaden	30	60	90	120	150	180	Ebene 5Ebene 26	4% | 6%
+Pferd-Karte	Lauftempo	7%	14%	21%	28%	35%	42%	Ebene 6Ebene 27	3% | 4,5%
+Esel-Karte	Verteidigung	3%	6%	9%	12%	15%	18%	Ebene 7Ebene 28	3% | 4,5%
+Lama-Karte	Schaden	15	30	45	60	75	90	Ebene 8Ebene 29	3% | 4,5%
+Kamel-Karte	Kaktus	80%	220%	470%	900%	1700%	3100%	Ebene 9Ebene 30	2% | 3%
+Ozelot-Karte	Schwertschaden	30	60	90	120	150	180	Ebene 10Ebene 31	4% | 6%
+Ziege-Karte	Bergbau Erfahrung	10%	20%	30%	40%	50%	60%	Ebene 11Ebene 32	2% | 3%
+Fuchs-Karte	Glückslevel	4	8	12	16	20	24	Ebene 12Ebene 33	1% | 1%
+Schildkröte-Karte	Verteidigung	8	16	24	32	40	48	Ebene 13Ebene 34	2% | 3%
+Wolf-Karte	Kritischtrefferchancelevel	4	8	12	16	20	24	Ebene 14Ebene 35	1% | 2%
+Panda-Karte	Vitalität	4	8	12	16	20	24	Ebene 15Ebene 36	1% | 1%
+Polarbär-Karte	Stärke	4	8	12	16	20	24	Ebene 16Ebene 37	1% | 2%
+Axolotl-Karte	Geschicklichkeitslevel	4	8	12	16	20	24	Ebene 17Ebene 38	1% | 1%
+Frosch-Karte	Armbrustschaden	15	30	45	60	75	90	Ebene 39	4% | 5%
+Allay-Karte	Vitalität	10	20	30	40	50	60	Ebene 18	1%
+Biene-Karte	Schild Kapazität	12	24	36	48	60	72	Ebene 19Ebene 40	1% | 3%
+Papagei-Karte	Charakter Erfahrung	6%	12%	18%	24%	30%	36%	Ebene 20	1%
+Fledermaus-Karte	Lebensentzug	2	4	6	8	10	12	Ebene 21	1%
+Tintenfisch-Karte	Schild Kapazität	6%	12%	18%	24%	30%	36%	Ebene 41	5%
+Killer Kaninchen-Karte	Dropchanche	6%	12%	18%	24%	30%	36%	Ebene 42	1,2%
+Spinne-Karte	Schild Regeneration	20	40	60	80	100	120	Ebene 43	1,2%
+Goblin-Karte	Vitalität	6%	12%	18%	24%	30%	36%	Ebene 44	1,2%
+Zombie-Karte	Seelen	35%	80%	145%	230%	345%	400%	Ebene 46	1,2%
+Feuerzombie-Karte	Essenzen Dropchance	8%	16%	24%	32%	40%	48%	Ebene 47	1%
+Wasserzombie-Karte	Lebensregeneration	2	4	6	8	10	12	Ebene 48	1%
+Steinzombie-Karte	Verteidigung	4%	8%	12%	16%	20%	24%	Ebene 49	1%
+Zombie Bewohner-Karte	Münz Menge	20	40	60	80	100	120	Ebene 50	1%
+Mumien-Karte	Klingenschaden	120	240	360	480	600	720	Ebene 51	1%
+Diener-Karte	Schaden	100	200	300	400	500	600	Ebene 52	1%
+Skelett-Karte	Pfeilschaden	100	200	300	400	500	600	Ebene 53	1%
+Schleim-Karte	Charakter Erfahrung	10%	20%	30%	40%	50%	60%	Ebene 54Ebene 63Ebene 88Ebene 95	1%
+Hexe-Karte	Münz Menge	5%	10%	15%	20%	25%	30%	Ebene 55	1%
+Streuner-Karte	Bogenschaden	4%	8%	12%	16%	20%	24%	Ebene 56	1%
+Ertrunkener-Karte	Holzfäller Erfahrung	10%	20%	30%	40%	50%	60%	Ebene 57	1%
+Plünderer-Karte	Armbrustschaden	4%	8%	12%	16%	20%	24%	Ebene 58	1%
+Creeper-Karte	Schaden	200	400	600	800	1000	1200	Ebene 59	1%
+Magier-Karte	Amboss Geschwindigkeit	600	1200	1800	2400	3000	3600	Ebene 60	1%
+Silberfisch-Karte	Amboss Kapazität	8	16	24	32	40	48	Ebene 61	1%
+Wächter-Karte	Ofen Geschwindigkeit	10%	20%	30%	40%	50%	60%	Ebene 62	1%
+Spinnenreiter-Karte	Schild Geschwindigkeit	7%	14%	21%	28%	35%	42%	Ebene 64	1%
+Höhlenspinne-Karte	Münz Menge	20	40	60	80	100	120	Ebene 65	1%
+Skelettpferd-Karte	Pfeilschaden	120	240	360	480	600	720	Ebene 66	1%
+Pilzkuh-Karte	Jackpot	10%	20%	30%	40%	50%	60%	Ebene 67	1%
+Hühnchenreiter-Karte	Klingenschaden	120	240	360	480	600	720	Ebene 68	1%
+Magmaschleim-Karte	Schmelz Geschwindigkeit	15%	30%	45%	60%	80%	100%	Ebene 69Ebene 81Ebene 92Ebene 98	1%
+Skelettpferdreiter-Karte	Charakter Erfahrung	6%	12%	18%	24%	30%	36%	Ebene 70	1%
+Verwüster-Karte	Kritischschadenlevel	4	8	12	16	20	24	Ebene 71	1%
+Eisengolem-Karte	Verteidigung	6%	12%	18%	24%	30%	36%	Ebene 72	1%
+Sniffer-Karte	Holzertrag Chance	7%	14%	21%	28%	35%	42%	Ebene 73	1%
+Schneegolem-Karte	Respawnrate	15%	30%	45%	60%	80%	100%	Ebene 74	1%
+Schweini-Karte	Pfeilschaden	4%	8%	12%	16%	20%	24%	Ebene 75	1%
+Schreiter-Karte	Schmelz Geschwindigkeit	1600	3300	5000	6600	8300	10000	Ebene 76	1%
+Zombie-Schweini-Karte	Schmelzofen Kapazität	160	330	500	660	830	1000	Ebene 77	1%
+Zombie-Eberlein-Karte	Fabrik Erfahrung	15%	30%	45%	60%	80%	100%	Ebene 89	1%
+Schweini-Grobian-Karte	Axtschaden	4%	8%	12%	16%	20%	24%	Ebene 79	1%
+Lohe-Karte	Schmelz Effizienz	10%	20%	30%	40%	50%	60%	Ebene 80	1%
+Ghast-Karte	Amboss Kapazität	15%	30%	45%	60%	80%	100%	Ebene 82	1%
+Leuchttintenfisch-Karte	Boss Schaden	3%	6%	9%	12%	15%	18%	Ebene 83	1%
+Geladener Creeper-Karte	Amboss Erfahrung	15%	30%	45%	60%	80%	100%	Ebene 84	1%
+Phantom-Karte	Kritischtrefferschaden	6%	12%	18%	24%	30%	36%	Ebene 85	1%
+Endermilbe-Karte	Bergbauertrag Chance	7%	14%	21%	28%	35%	42%	Ebene 86	1%
+Vex-Karte	Schwertschaden	4%	8%	12%	16%	20%	24%	Ebene 87	1%
+Hoglin-Karte	Schmelz Kapazität	15%	30%	45%	60%	80%	100%	Ebene 89	1%
+Shulker-Karte	Amboss Geschwindigkeit	8%	16%	24%	32%	40%	48%	Ebene 90	1%
+Enderman-Karte	Kritischtrefferchance	5%	10%	15%	20%	25%	30%	Ebene 91	1%
+Witherskelett-Karte	Klingenschaden	4%	8%	12%	16%	20%	24%	Ebene 93	1%
+Verwüsterreiter-Karte	Kaktusertrag	100%	300%	700%	1900%	3900%	7900%	Ebene 94	1%
+Riesen-Karte	Bossschaden	400	800	1200	1600	2000	2400	Ebene 96	1%
+Wächterältester-Karte	Seelenertrag	50%	100%	200%	350%	500%	700%	Ebene 97	1%
+Wither-Karte	Kritischtrefferschaden	6%	12%	18%	26%	32%	40%	Ebene 99	1%
+Warden-Karte	Bossschaden	4%	8%	12%	16%	20%	24%	Ebene 100	1%

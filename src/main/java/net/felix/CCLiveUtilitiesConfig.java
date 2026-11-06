@@ -381,10 +381,17 @@ public class CCLiveUtilitiesConfig {
 
     /**
      * Zuletzt erkannte eigene Chat-Namensfarbe (0xRRGGBB).
-     * 0xFFFFFF = unbekannt/weiß.
+     * 0xFFFFFF = unbekannt/weiß. Erstes Zeichen bei Gradient.
      */
     @SerialEntry
     public int ownChatNameColorRgb = 0xFFFFFF;
+
+    /**
+     * Eigene Chat-Namensfarben pro Buchstabe, Komma-getrennt ({@code #RRGGBB,#RRGGBB}).
+     * Leer = nur {@link #ownChatNameColorRgb} verwenden.
+     */
+    @SerialEntry
+    public String ownChatNameColors = "";
     
     // Leaderboard Settings
     @SerialEntry

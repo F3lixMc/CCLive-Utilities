@@ -155,7 +155,13 @@ public class PlayerNametagRenderer {
                 // Wie Vanilla-Nametag: see-through nur wenn nicht discrete (sneaken)
                 boolean seeThrough = !player.isDiscrete();
                 int lightLevel = 15728880;
-                renderIconTexture(context.submitNodeCollector(), matrices, iconSize, lightLevel, seeThrough);
+                renderIconTexture(
+                    context.submitNodeCollector(),
+                    matrices,
+                    iconSize,
+                    lightLevel,
+                    seeThrough,
+                    player.getGameProfile().name());
             } finally {
                 matrices.popPose();
             }
@@ -169,7 +175,8 @@ public class PlayerNametagRenderer {
         PoseStack matrices,
         float size,
         int light,
-        boolean seeThrough
+        boolean seeThrough,
+        String playerName
     ) {
         try {
             Minecraft client = Minecraft.getInstance();
@@ -177,26 +184,24 @@ public class PlayerNametagRenderer {
                 return;
             }
             
-            Identifier iconId = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/icon.png");
-            Identifier iconIdAlt = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "icon");
-            
-            Identifier iconToUse = iconId;
-            try {
-                if (client.getResourceManager() != null) {
-                    var resource = client.getResourceManager().getResource(iconId);
-                    if (resource.isEmpty()) {
-                        var resourceAlt = client.getResourceManager().getResource(iconIdAlt);
-                        if (resourceAlt.isPresent()) {
-                            iconToUse = iconIdAlt;
-                        } else {
-                            return;
+            Identifier iconToUse = PlayerIconUtility.iconTextureForPlayer(playerName);
+            if (!PlayerIconUtility.usesAdminIcon(playerName)) {
+                Identifier iconIdAlt = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "icon");
+                try {
+                    if (client.getResourceManager() != null) {
+                        var resource = client.getResourceManager().getResource(iconToUse);
+                        if (resource.isEmpty()) {
+                            var resourceAlt = client.getResourceManager().getResource(iconIdAlt);
+                            if (resourceAlt.isPresent()) {
+                                iconToUse = iconIdAlt;
+                            } else {
+                                return;
+                            }
                         }
                     }
-                } else {
+                } catch (Exception e) {
                     iconToUse = iconIdAlt;
                 }
-            } catch (Exception e) {
-                iconToUse = iconIdAlt;
             }
             
             float halfSize = size / 2.0f;

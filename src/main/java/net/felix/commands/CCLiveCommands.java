@@ -18,6 +18,9 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.chat.ChatManager;
 import net.felix.devtools.DevToolsAccess;
 import net.felix.devtools.DevToolsScreen;
+import net.felix.staff.StaffClientAccess;
+import net.felix.staff.StaffNameSuggestions;
+import net.felix.staff.StaffPermsCommands;
 import net.minecraft.client.Minecraft;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
@@ -41,6 +44,7 @@ public class CCLiveCommands {
 
     public static void register() {
         registerClassSelectionInventoryReset();
+        StaffClientAccess.register();
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             registerCCLiveCommands(dispatcher);
         });
@@ -111,7 +115,9 @@ public class CCLiveCommands {
                 .then(literal("toggle")
                     .then(argument("type", StringArgumentType.string())
                         .suggests(chatTypeSuggestions())
-                        .executes(context -> toggleChat(context, StringArgumentType.getString(context, "type"))))))
+                        .executes(context -> toggleChat(context, StringArgumentType.getString(context, "type")))))
+                .then(literal("export-glyphs")
+                    .executes(CCLiveCommands::exportBlockedGlyphs)))
             
             // Materials/Resources Commands
             .then(literal("materials_resources")
@@ -122,6 +128,20 @@ public class CCLiveCommands {
             .then(literal("sternen_sound_test")
                 .executes(CCLiveCommands::testStarForgedSound))
             
+            .then(literal("perms")
+                .requires(source -> StaffClientAccess.isAdminCommandVisible())
+                .then(literal("user")
+                    .then(literal("list")
+                        .executes(StaffPermsCommands::list))
+                    .then(literal("add")
+                        .then(argument("name", StringArgumentType.word())
+                            .suggests(StaffNameSuggestions.verifiedPlayers())
+                            .executes(context -> StaffPermsCommands.add(context, StringArgumentType.getString(context, "name")))))
+                    .then(literal("remove")
+                        .then(argument("name", StringArgumentType.word())
+                            .suggests(StaffNameSuggestions.currentModerators())
+                            .executes(context -> StaffPermsCommands.remove(context, StringArgumentType.getString(context, "name")))))))
+
             // DevTools (Allowlist / Fabric-Dev)
             .then(literal("devtools")
                 .executes(CCLiveCommands::openDevTools))
@@ -457,6 +477,18 @@ public class CCLiveCommands {
     /**
      * Togglet die Sichtbarkeit eines Chat-Kanals
      */
+    private static int exportBlockedGlyphs(CommandContext<FabricClientCommandSource> context) {
+        java.nio.file.Path path = net.felix.chat.ChatBlockedGlyphs.writeExportFile();
+        if (path == null) {
+            context.getSource().sendError(Component.literal("§cGlyph-Liste konnte nicht geschrieben werden."));
+            return 0;
+        }
+        context.getSource().sendFeedback(Component.literal(
+            "§aGlyph-Sperrliste exportiert: §f" + path.toAbsolutePath()
+                + " §7— Datei auf den Server als blocked-glyphs.json legen."));
+        return 1;
+    }
+
     private static int toggleChat(CommandContext<FabricClientCommandSource> context, String chatType) {
         ChatManager chatManager = ChatManager.getInstance();
         
@@ -511,11 +543,21 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§e§lChat Commands:"));
         context.getSource().sendFeedback(Component.literal("§7/chat <cclive/default> §f- Chat-Modus wechseln"));
         context.getSource().sendFeedback(Component.literal("§7/cclive chat toggle <default/cclive> §f- Chat-Sichtbarkeit togglen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive chat export-glyphs §f- Glyph-Sperrliste für den Server exportieren"));
         context.getSource().sendFeedback(Component.literal("§7@cclive <nachricht> §f- Direkt in CCLive Chat schreiben"));
         context.getSource().sendFeedback(Component.literal("§7@global <nachricht> §f- Direkt in Default/Global Chat schreiben"));
         context.getSource().sendFeedback(Component.literal("§7@lp … §f- Immer in den globalen Minecraft-Chat"));
         context.getSource().sendFeedback(Component.literal("§7!item §f- Geteiltes Item einfügen (CCLive; sonst → xD)"));
+        context.getSource().sendFeedback(Component.literal("§7!build §f- Geteilten Build einfügen (CCLive; sonst → xD)"));
         context.getSource().sendFeedback(Component.literal(""));
+        if (StaffClientAccess.isAdminCommandVisible()) {
+            context.getSource().sendFeedback(Component.literal("§e§lBerechtigungen:"));
+            context.getSource().sendFeedback(Component.literal("§7/cclive perms user list §f- Moderatorliste öffnen"));
+            context.getSource().sendFeedback(Component.literal("§7/cclive perms user add <name> §f- Moderator hinzufügen"));
+            context.getSource().sendFeedback(Component.literal("§7/cclive perms user remove <name> §f- Moderator entfernen"));
+            context.getSource().sendFeedback(Component.literal(""));
+        }
+
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
         context.getSource().sendFeedback(Component.literal("§7/cclive sternen_sound_test §f- Sternengeschmiedet-Sound testen"));
         context.getSource().sendFeedback(Component.literal(""));

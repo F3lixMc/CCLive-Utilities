@@ -43,6 +43,13 @@ loom {
 			vmArg "-Ddevauth.enabled=true"
 			vmArg "-Ddevauth.account=main"
 		}
+		clientAlt {
+			client()
+			name "Minecraft Client (Zweitaccount)"
+			runDir "run-alt"
+			vmArg "-Ddevauth.enabled=true"
+			vmArg "-Ddevauth.account=alt"
+		}
 	}
 }
 

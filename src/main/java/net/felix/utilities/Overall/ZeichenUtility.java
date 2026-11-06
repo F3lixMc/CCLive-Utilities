@@ -191,6 +191,7 @@ public class ZeichenUtility {
             logStatus("[" + trigger + "] Kein ResourceManager.");
             return false;
         }
+        net.felix.chat.ChatBlockedGlyphs.reloadFromResourceManager(manager);
         boolean defaultJsonPresent = manager.getResource(ZeichenFontLoader.MINECRAFT_DEFAULT_FONT).isPresent();
         Map<ZeichenFontLoader.FontProviderKey, List<Integer>> index = indexProviders(manager);
         int providersWithGroup = index.size();
@@ -227,6 +228,7 @@ public class ZeichenUtility {
                     @Override
                     public void onResourceManagerReload(ResourceManager manager) {
                         lastLoadTrigger = "resource-reload";
+                        net.felix.chat.ChatBlockedGlyphs.reloadFromResourceManager(manager);
                         // Immer neu laden (leert zuerst den Cache, dann Pack oder Fallback)
                         loadAllSources();
                         isInitialized = true;
@@ -356,6 +358,11 @@ public class ZeichenUtility {
                 aincraftFontFirstLine = buildGlyphToDecodedMap(cps, STANDARD_LINE_DECODE));
         find(index, "cactusclicker_factory_overlay", "font_first_line").ifPresent(cps ->
                 factoryFontFirstLine = buildGlyphToDecodedMap(cps, STANDARD_LINE_DECODE));
+    }
+
+    public static java.util.Optional<java.util.Set<Integer>> applyBlockedGlyphPackUpdate(
+            ResourceManager manager) {
+        return ZeichenFontLoader.collectCustomGraphicCodePoints(manager);
     }
 
     private static void notifyDependents() {
