@@ -14,6 +14,8 @@ assert.strictEqual(blocked.containsBlocked('😀'), false);
 assert.strictEqual(blocked.parseUPlus('U+1F000'), 0x1F000);
 assert.ok(blocked.snapshot().has(0x0473));
 assert.ok(blocked.snapshot().has(0x0472));
+assert.ok(blocked.snapshot().has(0x047B));
+assert.strictEqual(blocked.containsBlocked('ѻ'), true);
 const json = blocked.toJson();
 assert.strictEqual(json.error_code, 'blocked_glyph');
 assert.ok(json.codepoints.includes('U+0473'));

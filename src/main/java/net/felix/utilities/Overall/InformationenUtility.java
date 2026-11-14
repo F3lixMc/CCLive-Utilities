@@ -8332,6 +8332,11 @@ public class InformationenUtility {
 		return biomDetected;
 	}
 
+	/** Erkannte Farmzone aus dem Cactus-Clicker-Scoreboard, sonst null. */
+	public static String getDetectedFarmzoneName() {
+		return biomDetected ? currentBiomName : null;
+	}
+
 	public static boolean isCollectionBlocksNeededVisible() {
 		return CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayShowBlocksNeeded;
 	}

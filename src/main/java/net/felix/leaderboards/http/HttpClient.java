@@ -38,6 +38,10 @@ public class HttpClient {
         return sendGet(endpoint, null);
     }
 
+    public JsonResponse getResult(String endpoint) throws IOException, InterruptedException {
+        return sendGetResult(endpoint, null);
+    }
+
     /**
      * Sendet eine GET-Anfrage mit Auth-Token
      */

@@ -191709,7 +191709,7 @@
       "name": "Modul-Tasche #1",
       "foundAt": [
         {
-          "collection": "Eichenholz I"
+          "collection": "Farbiklevel 20"
         }
       ],
       "price": {
@@ -191771,7 +191771,7 @@
       "name": "Modul-Tasche #2",
       "foundAt": [
         {
-          "collection": "Kupfer IV"
+          "collection": "Farbiklevel 55"
         }
       ],
       "price": {
@@ -191833,7 +191833,7 @@
       "name": "Modul-Tasche #3",
       "foundAt": [
         {
-          "collection": "Pilzholz IV"
+          "collection": "Farbiklevel 100"
         }
       ],
       "price": {
@@ -191895,7 +191895,7 @@
       "name": "Modul-Tasche #4",
       "foundAt": [
         {
-          "collection": "Diamanten V"
+          "collection": "Farbiklevel 400"
         }
       ],
       "price": {
@@ -191957,7 +191957,7 @@
       "name": "Modul-Tasche #5",
       "foundAt": [
         {
-          "collection": "Obsidian VI"
+          "collection": "Farbiklevel 600"
         }
       ],
       "price": {
@@ -192019,7 +192019,7 @@
       "name": "Modul-Tasche #6",
       "foundAt": [
         {
-          "collection": "Echokristall VII"
+          "collection": "Farbiklevel 800"
         }
       ],
       "price": {

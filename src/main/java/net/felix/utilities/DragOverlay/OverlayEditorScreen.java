@@ -20,9 +20,12 @@ import net.felix.utilities.DragOverlay.Aincraft.MaterialTrackerDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.LeaderboardDraggableOverlay;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
 import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
+import net.felix.utilities.DragOverlay.Factory.FactoryLevelDraggableOverlay;
+import net.felix.utilities.Factory.FactoryLevelTracker;
 import net.felix.utilities.DragOverlay.Factory.MKLevelDraggableOverlay;
 import net.felix.utilities.DragOverlay.Farmworld.CollectionDraggableOverlay;
 import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverlay;
@@ -160,6 +163,10 @@ public class OverlayEditorScreen extends Screen {
         if (isInPlayerNameDimension() && !isInAnyInventory) {
             overlays.add(new BossHPDraggableOverlay());
         }
+
+        if (FactoryLevelTracker.isInFactory()) {
+            overlays.add(new FactoryLevelDraggableOverlay());
+        }
         
         if (isInChatScreen) {
             // In chat screen, show chat-specific overlays
@@ -280,9 +287,25 @@ public class OverlayEditorScreen extends Screen {
             }
         }
         
+        // Rangliste nur im eigenen Spielerinventar. Die Position bleibt an der Inventarkante.
+        if (previousScreen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
+            overlays.add(new LeaderboardDraggableOverlay());
+        }
+
         // Clipboard is available everywhere
         overlays.add(new ClipboardDraggableOverlay());
-        overlays.add(new BuildShareDraggableOverlay());
+        if (isBuildShareEditorContext()) {
+            overlays.add(new BuildShareDraggableOverlay());
+        }
+    }
+
+    /** Build-Share nur im Kleiderschrank und im Equipment, nicht in jedem F6-Menü. */
+    private boolean isBuildShareEditorContext() {
+        if (!(previousScreen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen)) {
+            return false;
+        }
+        String title = screen.getTitle().getString();
+        return ZeichenUtility.containsEquipmentDisplay(title) || ZeichenUtility.isWardrobeFullTitle(title);
     }
     
     /**
@@ -677,7 +700,7 @@ public class OverlayEditorScreen extends Screen {
             for (DraggableOverlay overlay : overlays) {
                 if (overlay.isConfigEnabled() && overlay.isHovered((int) mouseX, (int) mouseY)) {
                     // Check if dragging is allowed for this overlay
-                    if (!canDragOverlay(overlay)) {
+                    if (!canDragOverlay(overlay) || !overlay.allowsMove()) {
                         continue;
                     }
                     draggingOverlay = overlay;
@@ -1219,6 +1242,10 @@ public class OverlayEditorScreen extends Screen {
             boolean newValue = !overlay.isConfigEnabled();
             config.showBossHP = newValue;
             config.bossHPEnabled = newValue;
+        } else if (overlay instanceof FactoryLevelDraggableOverlay) {
+            boolean newValue = !overlay.isConfigEnabled();
+            config.showFactoryLevel = newValue;
+            config.factoryLevelEnabled = newValue;
         } else if (overlay instanceof CardsDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.showCard = newValue;
@@ -1252,6 +1279,8 @@ public class OverlayEditorScreen extends Screen {
                 // Overlay-Picker steuert das Overlay selbst → Anzeige auf Overlay setzen
                 config.coinTrackerDisplayMode = net.felix.CoinTrackerDisplayMode.OVERLAY;
             }
+        } else if (overlay instanceof LeaderboardDraggableOverlay) {
+            config.leaderboardVisible = !config.leaderboardVisible;
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.miningLumberjackOverlayEnabled = newValue;

@@ -3,6 +3,7 @@ package net.felix.mixin;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,7 +23,10 @@ public abstract class HelpOverlayScreenMixin {
      */
     @Inject(method = "extractRenderState", at = @At(value = "RETURN"))
     private void renderHelpOverlayAtReturn(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        // Rendere Help-Overlay ganz am Ende, damit es über allem liegt
+        // Im Spielerinventar zeichnet InventoryScreenMixin die Hilfe nach der Rangliste.
+        if ((Object) this instanceof InventoryScreen) {
+            return;
+        }
         ItemViewerUtility.renderHelpOverlay(context);
         ItemViewerUtility.renderFilterOverlay(context);
     }

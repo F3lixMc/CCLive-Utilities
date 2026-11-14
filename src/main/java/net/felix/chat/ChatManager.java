@@ -30,9 +30,6 @@ public class ChatManager {
     private static final char ICON_MARKER = 'ѳ';
     private static final Identifier ICON_FONT = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
 
-    /** Prefix-Farbe (#9b029e) — dunkles Lila. */
-    private static final int CCLIVE_PREFIX_COLOR = 0x9B029E;
-
     private final ChatWebSocket webSocket = new ChatWebSocket();
 
     /** Deduplizierung für exakt gleiche WS-Kopien. */
@@ -88,6 +85,7 @@ public class ChatManager {
             client.execute(() -> {
                 ensureSocketConnected();
                 ChatBlockedGlyphs.refreshFromServerAsync();
+                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.refreshModeratorNamesIfDue();
             });
         });
 
@@ -101,6 +99,7 @@ public class ChatManager {
             }
             if (client.player.tickCount > 0 && client.player.tickCount % 100 == 0) {
                 ensureSocketConnected();
+                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.refreshModeratorNamesIfDue();
             }
         });
 
@@ -220,7 +219,7 @@ public class ChatManager {
         } catch (Exception e) {
             return;
         }
-        if (player == null || message == null) {
+        if (player == null || message == null || !shouldInsertPreparedLine(player)) {
             return;
         }
         Long messageId = null;
@@ -284,14 +283,22 @@ public class ChatManager {
                 }
                 Minecraft mc = Minecraft.getInstance();
                 if (mc != null) {
-                    mc.execute(() -> addCcliveChatLine(mc, chatMessage));
+                    mc.execute(() -> {
+                        if (shouldInsertPreparedLine(playerFinal)) {
+                            addCcliveChatLine(mc, chatMessage);
+                        }
+                    });
                 }
             })
             .exceptionally(ex -> {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc != null) {
                     Component fallback = Component.literal("[CCLive] " + playerFinal + ">> " + messageFinal);
-                    mc.execute(() -> addCcliveChatLine(mc, fallback));
+                    mc.execute(() -> {
+                        if (shouldInsertPreparedLine(playerFinal)) {
+                            addCcliveChatLine(mc, fallback);
+                        }
+                    });
                 }
                 return null;
             });
@@ -361,20 +368,7 @@ public class ChatManager {
             }
         }
 
-        Style prefixStyle = Style.EMPTY.withColor(CCLIVE_PREFIX_COLOR);
-        if (messageId != null && messageId > 0L) {
-            prefixStyle = prefixStyle.withInsertion(MESSAGE_ID_PREFIX + messageId);
-        }
-        Style arrowStyle = Style.EMPTY.withColor(0xFFFFFF);
-        if (statsHover != null) {
-            prefixStyle = prefixStyle.withHoverEvent(statsHover);
-            arrowStyle = arrowStyle.withHoverEvent(statsHover);
-        }
-
-        MutableComponent chatMessage = Component.empty();
-        chatMessage.append(Component.literal("[CCLive] ").setStyle(prefixStyle));
-        chatMessage.append(ChatNameColors.coloredName(player, nameColors, statsHover));
-
+        Component icon = null;
         if (CCLiveUtilitiesConfig.HANDLER.instance().chatIconEnabled
                 && CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
             Style iconStyle = Style.EMPTY
@@ -383,15 +377,43 @@ public class ChatManager {
             if (statsHover != null) {
                 iconStyle = iconStyle.withHoverEvent(statsHover);
             }
-            chatMessage.append(Component.literal(" ").setStyle(arrowStyle));
-            chatMessage.append(Component.literal(String.valueOf(
+            icon = Component.literal(String.valueOf(
                 net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.chatIconMarker(player)
-            )).setStyle(iconStyle));
+            )).setStyle(iconStyle);
         }
+        return ChatLineTarget.compose(player, messageId, nameColors, statsHover, icon, body);
+    }
 
-        chatMessage.append(Component.literal(">> ").setStyle(arrowStyle));
-        chatMessage.append(body);
-        return chatMessage;
+    /**
+     * Letzte Prüfung, bevor eine vorbereitete Zeile in den Chat kommt.
+     * Dieselbe Regel gilt für Live-Nachrichten und nachgeladene Historie.
+     */
+    static boolean shouldInsertPreparedLine(String player) {
+        return shouldInsertPreparedLine(
+            player,
+            ChatIgnoreList.shared(),
+            ChatIgnoreList.localAccountId(),
+            ChatIgnoreList.localPlayerName(),
+            ChatPlayerSearch.selfId());
+    }
+
+    static boolean shouldInsertPreparedLine(String player, ChatIgnoreList list, String accountId) {
+        return shouldInsertPreparedLine(player, list, accountId, null, null);
+    }
+
+    static boolean shouldInsertPreparedLine(String player, ChatIgnoreList list, String accountId,
+                                            String localName, Long localPlayerId) {
+        if (player == null || player.isBlank()) {
+            return false;
+        }
+        if (list == null || accountId == null) {
+            return true;
+        }
+        Long storedId = list.playerId(accountId, player);
+        if (ChatIgnoreList.isOwn(player, localName, storedId, localPlayerId)) {
+            return true;
+        }
+        return !list.ignores(accountId, player);
     }
 
     private static void addCcliveChatLine(Minecraft client, Component chatMessage) {

@@ -21,9 +21,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @SuppressWarnings("unused")
 @Mixin(ChatScreen.class)
 public abstract class ChatScreenMixin {
-    
+
     @Shadow
     protected EditBox input;
+
+    private boolean cclive$openRulesAfterClose;
+    private String cclive$rulesDraft;
     
     /**
      * Zählt gesendete Chat-Nachrichten für Profile-Stats.
@@ -57,13 +60,49 @@ public abstract class ChatScreenMixin {
         }
     }
 
-    /** Linksklick auf Build-Share-Link öffnet die PNG-Container-Vorschau (kein SuggestCommand). */
-    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
-        // 26.3/SDL: Linksklick = 1 → auf Legacy-0 abbilden
-        if (net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button()) != 0) {
+    @Inject(method = "keyPressed", at = @At("RETURN"))
+    private void cclive$openRulesAfterClose(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+        if (!cclive$openRulesAfterClose) {
             return;
         }
+        cclive$openRulesAfterClose = false;
+        String draft = cclive$rulesDraft;
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if (client == null || client.gui == null || draft == null) {
+            return;
+        }
+        if (client.gui.hud != null && client.gui.hud.getChat() != null) {
+            client.gui.hud.getChat().saveAsDraft(draft);
+        }
+        if (!(client.gui.screen() instanceof net.felix.chat.ChatRulesScreen)) {
+            client.gui.setScreen(net.felix.chat.ChatRulesScreen.forAcceptance());
+        }
+    }
+
+    @Inject(method = "removed", at = @At("HEAD"))
+    private void cclive$closeContextMenu(CallbackInfo ci) {
+        net.felix.chat.ChatContextMenu.dismissWithScreen(this);
+    }
+
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
+        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        if (button == 1) {
+            if (net.felix.chat.ChatContextMenu.tryOpen(event.x(), event.y())) {
+                cir.setReturnValue(true);
+            } else {
+                net.felix.chat.ChatContextMenu.close();
+            }
+            return;
+        }
+        if (button != 0) {
+            return;
+        }
+        if (net.felix.chat.ChatContextMenu.handleClick(event.x(), event.y(), button)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        // 26.3/SDL: Linksklick = 1 → auf Legacy-0 abbilden. Dieser Pfad bleibt der bisherige Linksklick.
         if (BuildShareViewScreen.isActive()) {
             cir.setReturnValue(true);
             return;
@@ -126,6 +165,9 @@ public abstract class ChatScreenMixin {
             if (rejectBlockedGlyphs(chatMessage)) {
                 return;
             }
+            if (holdForChatRules(trimmedMessage)) {
+                return;
+            }
 
             sendCclive(chatMessage);
             return;
@@ -161,6 +203,9 @@ public abstract class ChatScreenMixin {
 
             ci.cancel();
             if (rejectBlockedGlyphs(trimmedMessage)) {
+                return;
+            }
+            if (holdForChatRules(trimmedMessage)) {
                 return;
             }
             sendCclive(trimmedMessage);
@@ -224,6 +269,23 @@ public abstract class ChatScreenMixin {
             return false;
         }
         scheduleChatError("§c" + net.felix.chat.ChatBlockedGlyphs.ERROR_MESSAGE);
+        return true;
+    }
+
+    private boolean holdForChatRules(String rawInput) {
+        if (!net.felix.chat.ChatRulesAcceptance.isRulesGatedSend(
+                rawInput, ChatManager.getInstance().getEffectiveWriteMode() == ChatManager.ChatMode.CCLIVE)) {
+            return false;
+        }
+        net.felix.chat.ChatRulesAcceptance store = net.felix.chat.ChatRulesAcceptance.shared();
+        String accountId = net.felix.chat.ChatIgnoreList.localAccountId();
+        Integer seasonId = net.felix.leaderboards.SeasonChangeGate.confirmedSeasonId();
+        if (!store.shouldHold(accountId, seasonId)) {
+            return false;
+        }
+        store.hold(rawInput);
+        cclive$rulesDraft = rawInput;
+        cclive$openRulesAfterClose = true;
         return true;
     }
 

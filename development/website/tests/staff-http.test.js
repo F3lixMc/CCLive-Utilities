@@ -230,6 +230,17 @@ function adminHeaders(token) {
     assert.strictEqual(listAsMod.status, 200);
     assert.strictEqual(listAsMod.json.online, 1);
 
+    const iconsAsPlain = await request(app, {
+      path: '/moderation/staff/icons',
+      headers: { 'x-test-uuid': OTHER_UUID, 'x-test-pid': '44', 'x-test-player': 'Plain' }
+    });
+    assert.strictEqual(iconsAsPlain.status, 200);
+    assert.deepStrictEqual(iconsAsPlain.json.players, ['ModUser']);
+    assert.strictEqual(iconsAsPlain.json.moderators, undefined);
+
+    const iconsNoToken = await request(app, { path: '/moderation/staff/icons' });
+    assert.strictEqual(iconsNoToken.status, 401);
+
     const addAsMod = await request(app, {
       method: 'POST',
       path: '/moderation/staff/moderators',

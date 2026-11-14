@@ -25,10 +25,15 @@ public abstract class InGameHudHelpOverlayMixin {
     private void renderHelpOverlayAtReturn(GuiGraphicsExtractor context, DeltaTracker tickCounter, CallbackInfo ci) {
         // Rendere Help-Overlay nur wenn ein Screen offen ist und das Overlay geöffnet ist
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-        if (client != null && client.gui.screen() != null && ItemViewerUtility.isOverlayOpen()) {
-            ItemViewerUtility.renderHelpOverlay(context);
-            ItemViewerUtility.renderFilterOverlay(context);
+        if (client == null || client.gui.screen() == null || !ItemViewerUtility.isOverlayOpen()) {
+            return;
         }
+        // Das HUD liegt vor dem Inventar. Dort zeichnet InventoryScreenMixin die Hilfe nach der Rangliste.
+        if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
+            return;
+        }
+        ItemViewerUtility.renderHelpOverlay(context);
+        ItemViewerUtility.renderFilterOverlay(context);
     }
 }
 

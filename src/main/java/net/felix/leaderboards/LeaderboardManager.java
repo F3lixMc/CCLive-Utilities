@@ -12,14 +12,18 @@ import net.felix.leaderboards.collectors.CoinCollector;
 import net.felix.leaderboards.collectors.MenuHoverCollector;
 import net.felix.leaderboards.collectors.FloorKillsCollector;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
+import net.felix.leaderboards.collectors.SmithSkillCollector;
+import net.felix.leaderboards.panel.LeaderboardInventoryOverlay;
+import net.felix.leaderboards.panel.SmithSkill;
+import net.felix.utilities.Other.DebugUtility;
 import net.felix.identity.ModRegistrationTransport;
 import net.felix.identity.PlayerRegistrationService;
 import net.felix.leaderboards.http.HttpClient;
-import net.felix.utilities.Other.DebugUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.felix.leaderboards.config.LeaderboardConfig;
 import net.felix.leaderboards.cooldown.LeaderboardCooldownManager;
+import net.felix.utilities.Overall.ServerConnectionGate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +53,8 @@ public class LeaderboardManager {
     // Online-Status (Heartbeat)
     private static final long PRESENCE_HEARTBEAT_SECONDS = 30;
     private java.util.concurrent.ScheduledExecutorService presenceScheduler;
+    private final java.util.concurrent.atomic.AtomicInteger presenceEpoch = new java.util.concurrent.atomic.AtomicInteger();
+    private volatile boolean presenceListed;
     
     // Status
     private boolean isEnabled = true;
@@ -105,6 +111,9 @@ public class LeaderboardManager {
         
         // Statistik-Sammler (Fallback für andere Stats)
         collectors.put("stats", new StatsCollector());
+
+        collectors.put("smith_skill", new SmithSkillCollector());
+        collectors.put("factory_level", new net.felix.leaderboards.collectors.FactoryLevelCollector());
         
         // Farmworld-Collection-Sammler (Zone-basierte Collections)
         collectors.put("farmworld_collections", new FarmworldCollectionsCollector());
@@ -142,22 +151,31 @@ public class LeaderboardManager {
         
         // Season-Gate (Upload-Sperre + lokaler Progress-Reset) vor Score-Updates
         SeasonChangeGate.getInstance().initialize();
+        SmithSkillUpload.getInstance().start();
+        FactoryLevelUpload.getInstance().start();
 
         // Registriere Server-Join Event für verzögerte Registrierung
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
             System.out.println("🌐 [LeaderboardManager] Server beigetreten - starte Spieler-Registrierung...");
             schedulePlayerRegistration();
+            LeaderboardSync.getInstance().onJoin();
+            LeaderboardInventoryOverlay.onServerChanged();
         });
         
         // Online-Status: Heartbeat starten und beim Verlassen des Servers abmelden
         startPresenceHeartbeat();
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> sendPresenceLeave());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            LeaderboardSync.getInstance().onDisconnect();
+            LeaderboardInventoryOverlay.onServerChanged();
+            sendPresenceLeave();
+        });
         
         // Prüfe ob Spieler bereits auf einem Server ist (z.B. wenn Mod während des Spiels geladen wird)
         Minecraft client = Minecraft.getInstance();
         if (client != null && client.player != null && client.getConnection() != null) {
             System.out.println("🌐 [LeaderboardManager] Spieler bereits auf Server - starte sofortige Registrierung...");
             schedulePlayerRegistration();
+            LeaderboardSync.getInstance().onJoin();
         }
         
         System.out.println("🚀 LeaderboardManager vollständig initialisiert!");
@@ -188,9 +206,17 @@ public class LeaderboardManager {
         presenceScheduler.scheduleWithFixedDelay(() -> {
             try {
                 if (!canSendPresence()) {
+                    if (presenceListed) {
+                        sendPresenceLeave();
+                    }
                     return;
                 }
+                int epoch = presenceEpoch.get();
+                presenceListed = true;
                 httpClient.postWithToken("/presence/heartbeat", new JsonObject(), getPlayerToken());
+                if (presenceEpoch.get() != epoch || !canSendPresence()) {
+                    sendPresenceLeave();
+                }
             } catch (Exception e) {
                 // Server nicht erreichbar - beim nächsten Intervall erneut versuchen
             }
@@ -198,9 +224,11 @@ public class LeaderboardManager {
     }
 
     /**
-     * Meldet den Spieler sofort als offline ab (beim Verlassen eines Servers).
+     * Meldet den Spieler sofort als offline ab (beim Verlassen von PlayLegend oder bei einem Verbindungsabbruch).
      */
     private void sendPresenceLeave() {
+        presenceEpoch.incrementAndGet();
+        presenceListed = false;
         if (!isEnabled || !isRegistered() || getPlayerToken() == null) {
             return;
         }
@@ -214,19 +242,94 @@ public class LeaderboardManager {
         });
     }
 
+    /**
+     * Nur ein registrierter CCLive-Nutzer mit aktiver PlayLegend-Verbindung zählt.
+     * Die Dev-Freigabe gilt hier nicht: Hauptmenü, Einzelspieler und andere Server bleiben draußen.
+     */
+    static boolean countsOnPlayLegend(boolean modEnabled, boolean registered, boolean hasToken,
+                                       boolean trackingEnabled, boolean hasPlayer, boolean hasConnection,
+                                       ServerConnectionGate.MatchState state) {
+        return modEnabled && registered && hasToken && trackingEnabled
+            && hasPlayer && hasConnection
+            && state == ServerConnectionGate.MatchState.ALLOWED;
+    }
+
     private boolean canSendPresence() {
-        if (!isEnabled || !isRegistered() || getPlayerToken() == null) {
-            return false;
-        }
-        if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
-            return false;
-        }
         Minecraft client = Minecraft.getInstance();
-        return client != null && client.player != null && client.getConnection() != null;
+        boolean hasPlayer = client != null && client.player != null;
+        boolean hasConnection = client != null && client.getConnection() != null;
+        return countsOnPlayLegend(
+            isEnabled,
+            isRegistered(),
+            getPlayerToken() != null,
+            net.felix.CCLiveUtilitiesConfig.HANDLER.instance().dataTrackingEnabled,
+            hasPlayer,
+            hasConnection,
+            ServerConnectionGate.getMatchState());
     }
 
     private boolean canUploadSeasonalScores() {
         return SeasonChangeGate.getInstance().areSeasonUploadsAllowed();
+    }
+
+    /**
+     * Schmiedeskill wird gesammelt und erst im Fenster vor dem Sync hochgeladen.
+     * Level und XP ersetzen einen schlechteren lokalen Stand. Ein unverändertes Fenster wird nicht erneut gesendet.
+     */
+    public boolean canUploadSmithSkill() {
+        return isEnabled
+                && isRegistered()
+                && getPlayerToken() != null
+                && net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()
+                && canUploadSeasonalScores();
+    }
+
+    public boolean canUploadFactoryLevel() {
+        return isEnabled
+                && isRegistered()
+                && getPlayerToken() != null
+                && net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()
+                && canUploadSeasonalScores();
+    }
+
+    public boolean postFactoryLevel(int seasonId, boolean preseason, int level) {
+        String token = getPlayerToken();
+        if (token == null || !FactoryLevel.fits(level)) {
+            return false;
+        }
+        try {
+            JsonObject requestData = new JsonObject();
+            requestData.addProperty("board", FactoryLevel.BOARD);
+            requestData.addProperty("level", level);
+            requestData.addProperty("seasonId", seasonId);
+            requestData.addProperty("isPreseason", preseason);
+            JsonObject response = httpClient.postWithToken("/update", requestData, token);
+            return response != null && response.has("success") && response.get("success").getAsBoolean();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean postSmithSkill(int seasonId, boolean preseason, int level, long xp) {
+        String token = getPlayerToken();
+        if (token == null || !SmithSkill.fits(level, xp)) {
+            return false;
+        }
+        String shown = SmithSkill.display(level, xp);
+        try {
+            JsonObject requestData = new JsonObject();
+            requestData.addProperty("board", SmithSkill.BOARD);
+            requestData.addProperty("level", SmithSkill.levelText(level));
+            requestData.addProperty("xp", SmithSkill.xpText(xp));
+            requestData.addProperty("seasonId", seasonId);
+            requestData.addProperty("isPreseason", preseason);
+            JsonObject response = httpClient.postWithToken("/update", requestData, token);
+            return response != null && response.has("success") && response.get("success").getAsBoolean();
+        } catch (Exception e) {
+            String reason = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            DebugUtility.debugPlayerStats("smith-send", "Schmiedeskill " + shown + " nicht gesendet: " + reason);
+            return false;
+        }
     }
     
     /**
@@ -598,11 +701,31 @@ public class LeaderboardManager {
             }
         });
     }
+
+    /**
+     * Eine Zehnerseite und die eigene Zeile für die Leaderboard-Ansicht, ohne den Tooltip-Cooldown.
+     * Seite 1 sind die Plätze 1–10.
+     */
+    public CompletableFuture<JsonObject> getLeaderboardForPanel(String boardName, int page) {
+        if (!isRegistered() || getPlayerName() == null || getPlayerName().isBlank()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        int safePage = Math.max(1, page);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return httpClient.get("/leaderboard/" + boardName + "/" + getPlayerName() + "?page=" + safePage);
+            } catch (Exception e) {
+                System.err.println("❌ Fehler beim Abrufen von Leaderboard " + boardName + ": " + e.getMessage());
+                return null;
+            }
+        });
+    }
     
     /**
      * Stoppt alle Datensammler
      */
     public void shutdown() {
+        LeaderboardSync.getInstance().shutdown();
         if (presenceScheduler != null) {
             presenceScheduler.shutdownNow();
             presenceScheduler = null;

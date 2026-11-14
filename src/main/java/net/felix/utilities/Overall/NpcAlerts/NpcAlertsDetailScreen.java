@@ -62,6 +62,7 @@ public class NpcAlertsDetailScreen extends Screen {
     }
     
     private int getWarnInputY(int boxY) {
+        if ("forschung".equals(configKey)) return getMachtkristalleLevelCheckboxY(boxY);
         return isMachtkristalleKey() ? boxY + 150 : boxY + 125;
     }
     
@@ -417,7 +418,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             if ("forschung".equals(configKey)) {
-                int inputY = getMachtkristalleLevelCheckboxY(boxY);
+                int inputY = getWarnInputY(boxY);
                 int inputX = boxX + 10;
                 int inputWidth = 100;
                 int inputHeight = 16;
@@ -1031,7 +1032,7 @@ public class NpcAlertsDetailScreen extends Screen {
             boolean isRecyclerClose = configKey.equals("recycler");
             boolean isRecyclerSlotClose = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
             boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay();
-            int baseBoxHeightClose = hasIconOptionClose ? 275 : 235;
+            int baseBoxHeightClose = (hasIconOptionClose ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
             if (isMachtkristalleClose) {
                 baseBoxHeightClose += 85;
             }

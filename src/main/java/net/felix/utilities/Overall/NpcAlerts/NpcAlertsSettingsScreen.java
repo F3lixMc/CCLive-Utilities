@@ -137,7 +137,8 @@ public class NpcAlertsSettingsScreen extends Screen {
         int checkboxX = boxX + 10;
         
         // Zeile 1: Alle NPC Alerts-Overlays sichtbar (nur Sichtbarkeit)
-        boolean overlaysVisible = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible;
+        var config = CCLiveUtilitiesConfig.HANDLER.instance();
+        boolean overlaysVisible = config.npcAlertsUtilityEnabled && config.npcAlertsOverlaysVisible;
         int globalCheckboxY = y;
         context.fill(checkboxX, globalCheckboxY, checkboxX + checkboxSize, globalCheckboxY + checkboxSize, 0xFF808080);
         context.outline(checkboxX, globalCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
@@ -360,8 +361,10 @@ public class NpcAlertsSettingsScreen extends Screen {
         boolean clickedGlobalText = mouseX >= globalTextX && mouseX <= globalTextX + globalTextWidth &&
             mouseY >= globalCheckboxY && mouseY <= globalCheckboxY + globalTextHeight;
         if (clickedGlobalBox || clickedGlobalText) {
-            CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible =
-                !CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsOverlaysVisible;
+            var config = CCLiveUtilitiesConfig.HANDLER.instance();
+            boolean enable = !config.npcAlertsUtilityEnabled || !config.npcAlertsOverlaysVisible;
+            if (enable) config.npcAlertsUtilityEnabled = true;
+            config.npcAlertsOverlaysVisible = enable;
             CCLiveUtilitiesConfig.HANDLER.save();
             if (parent instanceof OverlayEditorScreen) {
                 ((OverlayEditorScreen) parent).refreshOverlays();

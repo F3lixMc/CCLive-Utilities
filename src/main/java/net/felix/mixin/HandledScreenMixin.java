@@ -26,11 +26,26 @@ public abstract class HandledScreenMixin {
      * Injects at the very end of the render method to ensure our overlays are drawn last
      * This preserves all normal rendering while ensuring our overlays appear above tooltips
      */
+    /**
+     * Die Rangliste liegt über dem dunklen Inventar-Hintergrund und unter Clipboard, Item Viewer und den anderen Overlays.
+     * Der Hintergrund endet vor extractContents. Die Overlays hängen an Screen.extractRenderState, das diese Methode als Erstes aufruft.
+     */
+    @Inject(method = "extractContents", at = @At("HEAD"))
+    private void onExtractContents(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        if (!((Object) this instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen)) {
+            return;
+        }
+        net.felix.leaderboards.panel.LeaderboardInventoryOverlay.render(
+            context, mouseX, mouseY, leftPos, topPos, imageHeight);
+        context.nextStratum();
+    }
+
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onRender(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
         
-        // Überspringe InventoryScreen - wird im ScreenMixin behandelt, um Doppel-Rendering zu vermeiden
+        // Überspringe InventoryScreen - wird im ScreenMixin behandelt, um Doppel-Rendering zu vermeiden.
+        // Das Überlebensinventar ruft diese Methode nicht auf.
         if (screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
             return;
         }
@@ -217,6 +232,12 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
+        if ((Object) this instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
+                && net.felix.leaderboards.panel.LeaderboardInventoryOverlay.mouseClicked(
+                    mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
+            cir.setReturnValue(true);
+            return;
+        }
 
         net.felix.utilities.ItemViewer.ItemViewerUtility.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
@@ -304,6 +325,16 @@ public abstract class HandledScreenMixin {
         // Kosten-Inventare: Kauf-Kosten merken und nach Klick ggf. abziehen
         net.felix.utilities.Other.Clipboard.ClipboardCostPurchaseTracker.handleMouseClick(
                 legendPlusScreen, mouseX, mouseY, button, leftPos, topPos);
+    }
+
+    @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)
+    private void onLeaderboardScroll(double mouseX, double mouseY, double horizontal, double vertical,
+                                     CallbackInfoReturnable<Boolean> cir) {
+        if ((Object) this instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
+                && net.felix.leaderboards.panel.LeaderboardInventoryOverlay.mouseScrolled(
+                    mouseX, mouseY, vertical, leftPos, topPos, imageHeight)) {
+            cir.setReturnValue(true);
+        }
     }
     
     /**

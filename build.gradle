@@ -50,6 +50,13 @@ loom {
 			vmArg "-Ddevauth.enabled=true"
 			vmArg "-Ddevauth.account=alt"
 		}
+		clientOffline {
+			client()
+			name "Minecraft Client (offline)"
+			vmArg "-Ddevauth.enabled=false"
+			programArg "--username"
+			programArg "TestClient"
+		}
 	}
 }
 

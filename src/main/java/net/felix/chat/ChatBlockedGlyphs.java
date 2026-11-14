@@ -43,6 +43,7 @@ public final class ChatBlockedGlyphs {
         Set<Integer> core = new LinkedHashSet<>();
         core.add(Character.codePointAt(String.valueOf(PlayerIconUtility.CHAT_ICON_MARKER), 0));
         core.add(Character.codePointAt(String.valueOf(PlayerIconUtility.ADMIN_CHAT_ICON_MARKER), 0));
+        core.add(Character.codePointAt(String.valueOf(PlayerIconUtility.MOD_CHAT_ICON_MARKER), 0));
         return Collections.unmodifiableSet(core);
     }
 
@@ -141,7 +142,7 @@ public final class ChatBlockedGlyphs {
         root.addProperty("format", 1);
         root.addProperty("error_code", ERROR_CODE);
         JsonArray sources = new JsonArray();
-        sources.add("mod-core (CCLive-Chat-Icons ѳ/Ѳ)");
+        sources.add("mod-core (CCLive-Chat-Icons ѳ/Ѳ/ѻ)");
         sources.add("minecraft:font/default.json bitmap/space mit group, plus Nicht-Vanilla-Referenzen");
         sources.add("cclive-utilities:font/default.json");
         root.add("sources", sources);

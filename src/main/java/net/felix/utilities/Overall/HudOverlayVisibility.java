@@ -6,6 +6,7 @@ import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Aincraft.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Factory.BossHPUtility;
+import net.felix.utilities.Factory.FactoryLevelTracker;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -64,6 +65,7 @@ public final class HudOverlayVisibility {
             InformationenUtility.onHudRender(context, tickCounter);
             NpcAlertsUtility.onHudRender(context, tickCounter);
             BossHPUtility.onHudRender(context, tickCounter);
+            FactoryLevelTracker.onHudRender(context, tickCounter);
             BPViewerUtility bp = BPViewerUtility.getInstance();
             if (bp != null) {
                 bp.onHudRender(context, tickCounter);

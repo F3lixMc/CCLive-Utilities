@@ -2,6 +2,8 @@ package net.felix.utilities.Other.PlayericonUtility;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,5 +21,23 @@ class PlayerIconUtilityTest {
         assertEquals(PlayerIconUtility.CHAT_ICON_MARKER, PlayerIconUtility.chatIconMarker("Steve"));
         assertTrue(PlayerIconUtility.iconTextureForPlayer("F3lixMc_").getPath().endsWith("admin_icon.png"));
         assertTrue(PlayerIconUtility.iconTextureForPlayer("Steve").getPath().endsWith("icon.png"));
+    }
+
+    @Test
+    void moderatorNamesUseModIconUnlessTheyAreAdmins() {
+        try {
+            PlayerIconUtility.replaceModeratorNames(List.of("ModUser", "firestarter03"));
+            assertTrue(PlayerIconUtility.usesModIcon("ModUser"));
+            assertTrue(PlayerIconUtility.usesModIcon("moduser"));
+            assertFalse(PlayerIconUtility.usesModIcon("firestarter03"));
+            assertFalse(PlayerIconUtility.usesModIcon("Steve"));
+            assertFalse(PlayerIconUtility.usesModIcon(null));
+            assertEquals(PlayerIconUtility.MOD_CHAT_ICON_MARKER, PlayerIconUtility.chatIconMarker("ModUser"));
+            assertEquals(PlayerIconUtility.ADMIN_CHAT_ICON_MARKER, PlayerIconUtility.chatIconMarker("firestarter03"));
+            assertTrue(PlayerIconUtility.iconTextureForPlayer("ModUser").getPath().endsWith("mod_icon.png"));
+            assertTrue(PlayerIconUtility.containsChatIconMarker("Hallo ѻ"));
+        } finally {
+            PlayerIconUtility.replaceModeratorNames(List.of());
+        }
     }
 }

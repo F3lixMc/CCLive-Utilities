@@ -330,8 +330,7 @@ public final class BuildShareManager {
 
         if (!equipmentRecognized && equipmentStableTicks >= STABLE_TICKS_REQUIRED) {
             equipmentRecognized = true;
-            debug("Ausrüstung erkannt · " + getFilledCount(EquipmentCategory.ARMOR)
-                + "/" + EquipmentCategory.ARMOR.getCapacity() + " belegt (Rüstung).");
+            debug(equipmentRecognizedLine(getFilledCount(EquipmentCategory.ARMOR)));
         }
     }
 
@@ -998,8 +997,7 @@ public final class BuildShareManager {
             x + 6, textY, 0xFFFFD700, clipTop, clipBottom, lineH + 1);
         if (overlayEquipmentRecognized()) {
             int armorFilled = overlayFilled(EquipmentCategory.ARMOR);
-            String status = "Ausrüstung erkannt · " + armorFilled + "/"
-                + EquipmentCategory.ARMOR.getCapacity() + " belegt";
+            String status = equipmentRecognizedLine(armorFilled);
             textY = drawClippedLine(context, client, ellipsize(client, status, textMaxW),
                 x + 6, textY, 0xFF55FF55, clipTop, clipBottom, lineH + 1);
             for (EquipmentCategory category : EquipmentCategory.values()) {
@@ -1137,6 +1135,11 @@ public final class BuildShareManager {
 
     private boolean overlayModulesScanned() {
         return localSnapshot != null ? localSnapshot.modulesScanned : modulesScanned;
+    }
+
+    /** Menüzeile. Hinter der Kapazität steht nichts mehr. */
+    static String equipmentRecognizedLine(int filled) {
+        return "Ausrüstung erkannt - " + filled + "/" + EquipmentCategory.ARMOR.getCapacity();
     }
 
     private int overlayFilled(EquipmentCategory category) {

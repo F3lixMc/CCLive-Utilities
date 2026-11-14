@@ -8,6 +8,7 @@ import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Aincraft.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Factory.BossHPUtility;
+import net.felix.utilities.Factory.FactoryLevelTracker;
 import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.felix.utilities.Overall.KillAnimationUtility;
@@ -67,6 +68,7 @@ public class CCLiveUtilities implements ModInitializer {
 		SchmiedTrackerUtility.initialize();
 		MaterialTrackerUtility.initialize();
 		BossHPUtility.initialize();
+		FactoryLevelTracker.initialize();
 		CardsStatuesUtility.initialize();
 		KillsUtility.initialize();
 		InformationenUtility.initialize();

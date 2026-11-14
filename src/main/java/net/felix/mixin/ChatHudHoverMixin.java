@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -279,7 +280,12 @@ abstract class ChatHudHoverMixin {
         
         return false;
     }
-    
-    
+
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void cclive$chatContextMenu(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+        if ((Object) this instanceof ChatScreen) {
+            net.felix.chat.ChatContextMenu.render(context, mouseX, mouseY);
+        }
+    }
 }
 

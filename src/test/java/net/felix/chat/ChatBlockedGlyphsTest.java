@@ -28,6 +28,7 @@ class ChatBlockedGlyphsTest {
         assertTrue(ChatBlockedGlyphs.containsBlockedGlyph("Ѳstart"));
         assertTrue(ChatBlockedGlyphs.containsBlockedGlyph("mit ѳ mitte"));
         assertTrue(ChatBlockedGlyphs.containsBlockedGlyph("ende Ѳ"));
+        assertTrue(ChatBlockedGlyphs.containsBlockedGlyph("ѻ"));
     }
 
     @Test

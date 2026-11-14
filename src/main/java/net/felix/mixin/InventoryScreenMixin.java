@@ -1,5 +1,6 @@
 package net.felix.mixin;
 
+import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
@@ -36,6 +37,12 @@ public abstract class InventoryScreenMixin {
                     // Ignore rendering errors
                 }
             }
+        }
+        // Hilfe und Filter liegen über der Rangliste und den übrigen Inventar-Overlays.
+        if (ItemViewerUtility.isOverlayOpen()) {
+            context.nextStratum();
+            ItemViewerUtility.renderHelpOverlay(context);
+            ItemViewerUtility.renderFilterOverlay(context);
         }
     }
 }

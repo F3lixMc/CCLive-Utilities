@@ -270,6 +270,8 @@ public class CCLiveUtilitiesConfig {
         boolean changed = false;
         changed |= alignBoolPair(v -> c.bossHPEnabled = v, () -> c.bossHPEnabled,
                 v -> c.showBossHP = v, () -> c.showBossHP);
+        changed |= alignBoolPair(v -> c.factoryLevelEnabled = v, () -> c.factoryLevelEnabled,
+                v -> c.showFactoryLevel = v, () -> c.showFactoryLevel);
         changed |= alignBoolPair(v -> c.materialTrackerEnabled = v, () -> c.materialTrackerEnabled,
                 v -> c.showMaterialTracker = v, () -> c.showMaterialTracker);
         changed |= alignBoolPair(v -> c.killsUtilityEnabled = v, () -> c.killsUtilityEnabled,
@@ -606,6 +608,13 @@ public class CCLiveUtilitiesConfig {
 
     @SerialEntry
     public float coinTrackerScale = 1.0f;
+
+    /** Rangliste im Spielerinventar. Die Position bleibt am Inventar, nur Größe und Sichtbarkeit sind frei. */
+    @SerialEntry
+    public boolean leaderboardVisible = true;
+
+    @SerialEntry
+    public float leaderboardScale = net.felix.leaderboards.panel.LeaderboardInventoryOverlay.DEFAULT_SCALE;
 
     @SerialEntry
     public CoinTrackerDisplayMode coinTrackerDisplayMode = CoinTrackerDisplayMode.OVERLAY;
@@ -1068,6 +1077,25 @@ public class CCLiveUtilitiesConfig {
 
     @SerialEntry
     public boolean bossHPShowEta = true; // Restzeit-Anzeige (ETA) im Boss-HP-Overlay
+
+    // Fabriklevel Progress
+    @SerialEntry
+    public boolean factoryLevelEnabled = true;
+
+    @SerialEntry
+    public boolean showFactoryLevel = true;
+
+    @SerialEntry
+    public int factoryLevelX = 8;
+
+    @SerialEntry
+    public int factoryLevelY = 36;
+
+    @SerialEntry
+    public float factoryLevelScale = 1.0f;
+
+    @SerialEntry
+    public boolean factoryLevelShowBackground = true;
     
     // MKLevel Settings
     @SerialEntry
@@ -1762,7 +1790,7 @@ public class CCLiveUtilitiesConfig {
                 .name(Component.literal("Hover Stats: Gewählter Stat"))
                 .description(OptionDescription.of(Component.literal(
                         "Welcher Wert soll anderen Spielern angezeigt werden, wenn sie im Chat über deinen Namen hovern?\n\n"
-                                + "- Spielzeit\n- Max Coins\n- Gesendete Nachrichten\n- Gefundene Baupläne\n- Max Schaden\n\n"
+                                + "- Spielzeit\n- Max Coins\n- Gesendete Nachrichten\n- Gefundene Baupläne\n- Max Schaden\n- Schmiedelevel\n\n"
                                 + "!!! Erfordert ein aktives 'Daten Tracking'.")))
                 .binding(
                         net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
@@ -2070,6 +2098,24 @@ public class CCLiveUtilitiesConfig {
                                         .name(Component.literal("Restzeit anzeigen"))
                                         .description(OptionDescription.of(Component.literal("Zeile „Benötigte Zeit“ (geschätzte Restzeit basierend auf DPM und aktueller Boss-HP) im Boss-HP-Overlay ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().bossHPShowEta, newVal -> HANDLER.instance().bossHPShowEta = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Fabriklevel Progress"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Fabriklevel-Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt in der Fabrik das nächste Ziellevel und eine geschätzte Restzeit")))
+                                        .binding(true, () -> HANDLER.instance().factoryLevelEnabled && HANDLER.instance().showFactoryLevel, newVal -> {
+                                            HANDLER.instance().factoryLevelEnabled = newVal;
+                                            HANDLER.instance().showFactoryLevel = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter dem Fabriklevel-Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().factoryLevelShowBackground, newVal -> HANDLER.instance().factoryLevelShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
@@ -2692,7 +2738,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                         .option(Option.<Boolean>createBuilder()
                                 .name(Component.literal("Player Stats Debugging"))
-                                .description(OptionDescription.of(Component.literal("Aktiviert Debug-Nachrichten für das Senden von Player-Stats")))
+                                .description(OptionDescription.of(Component.literal("Aktiviert Debug-Nachrichten für Player-Stats und den Schmiedeskill im Chat und in der Konsole")))
                                 .binding(false, () -> HANDLER.instance().playerStatsDebugging, newVal -> HANDLER.instance().playerStatsDebugging = newVal)
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())

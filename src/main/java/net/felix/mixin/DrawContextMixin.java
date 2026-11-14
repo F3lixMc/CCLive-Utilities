@@ -46,6 +46,10 @@ public class DrawContextMixin {
      */
     @Inject(method = "componentHoverEffect", at = @At("HEAD"), cancellable = true)
     private void cclive$replaceBuildShareHover(Font font, Style style, int mouseX, int mouseY, CallbackInfo ci) {
+        if (net.felix.chat.ChatContextMenu.hidesPlayerStatsHover()) {
+            ci.cancel();
+            return;
+        }
         String shareId = BuildShareManager.extractShareIdFromStyle(style);
         if (shareId == null || shareId.isEmpty()) {
             return;

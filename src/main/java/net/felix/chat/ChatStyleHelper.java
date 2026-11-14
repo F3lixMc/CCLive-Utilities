@@ -2,11 +2,17 @@ package net.felix.chat;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ActiveTextCollector;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.TextAlignment;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.renderer.state.gui.GuiTextRenderState;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.FormattedCharSequence;
+import org.joml.Matrix3x2f;
 
 /**
  * Ermittelt den Chat-{@link Style} unter der Maus (26.1+: {@link ActiveTextCollector.ClickableStyleFinder}).
@@ -16,9 +22,35 @@ public final class ChatStyleHelper {
     }
 
     /**
-     * Style exakt unter den Mauskoordinaten (Vanilla-Klick-Hit-Test).
-     * {@code includeInsertions(true)}, damit Build-Links ohne ClickEvent gefunden werden.
+     * Style des Glyphen unter der Maus, mit derselben Chat-Geometrie wie der gerenderte Chat.
+     * Anders als der Vanilla-Finder zählen auch Hover-Stile ohne ClickEvent und ohne Insertion.
      */
+    public static Style getRenderedChatStyle(double mouseX, double mouseY) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || client.gui == null || client.font == null || client.getWindow() == null) {
+            return null;
+        }
+        ChatComponent chatHud = client.gui.hud.getChat();
+        if (chatHud == null) {
+            return null;
+        }
+        try {
+            ChatComponent.DisplayMode mode = ChatComponent.DisplayMode.FOREGROUND;
+            if (client.gui.screen() instanceof ChatScreen) {
+                mode = resolveChatDisplayMode(client.gui.screen());
+            }
+            RenderedStyleFinder finder = new RenderedStyleFinder(client.font, (int) mouseX, (int) mouseY);
+            chatHud.captureClickableText(
+                finder,
+                client.getWindow().getGuiScaledHeight(),
+                client.gui.hud.getGuiTicks(),
+                mode);
+            return finder.result;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     public static Style getHoveredChatStyle(double mouseX, double mouseY) {
         Style fromFinder = getStyleViaClickableFinder(mouseX, mouseY);
         if (fromFinder != null) {
@@ -190,5 +222,57 @@ public final class ChatStyleHelper {
         }
         String s = String.valueOf(event);
         return s.isEmpty() || "null".equals(s) ? null : s;
+    }
+
+    /**
+     * Wie {@link ActiveTextCollector.ClickableStyleFinder}, aber jeder Glyphen-Stil unter dem Cursor zählt.
+     * Der Chat liefert dafür dieselben umbrochenen Zeilen wie beim Zeichnen.
+     */
+    private static final class RenderedStyleFinder implements ActiveTextCollector {
+        private final Font font;
+        private final int testX;
+        private final int testY;
+        private ActiveTextCollector.Parameters defaultParameters = new ActiveTextCollector.Parameters(new Matrix3x2f());
+        private Style result;
+
+        private RenderedStyleFinder(Font font, int testX, int testY) {
+            this.font = font;
+            this.testX = testX;
+            this.testY = testY;
+        }
+
+        @Override
+        public ActiveTextCollector.Parameters defaultParameters() {
+            return defaultParameters;
+        }
+
+        @Override
+        public void defaultParameters(ActiveTextCollector.Parameters parameters) {
+            defaultParameters = parameters;
+        }
+
+        @Override
+        public void accept(TextAlignment alignment, int x, int y, ActiveTextCollector.Parameters parameters,
+                           FormattedCharSequence text) {
+            int left = alignment.calculateLeft(x, font, text);
+            GuiTextRenderState state = new GuiTextRenderState(
+                font,
+                text,
+                parameters.pose(),
+                left,
+                y,
+                ARGB.white(parameters.opacity()),
+                0,
+                true,
+                true,
+                parameters.scissor());
+            ActiveTextCollector.findElementUnderCursor(state, testX, testY, style -> result = style);
+        }
+
+        @Override
+        public void acceptScrolling(Component text, int x, int y, int width, int height, int offset,
+                                    ActiveTextCollector.Parameters parameters) {
+            defaultScrollingHelper(text, x, y, width, height, offset, font.width(text), 9, parameters);
+        }
     }
 }

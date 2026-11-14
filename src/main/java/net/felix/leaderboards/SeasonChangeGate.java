@@ -75,6 +75,18 @@ public final class SeasonChangeGate {
         return uploadsAllowed.get();
     }
 
+    /**
+     * Zuletzt erfolgreich verarbeitete Season.
+     * Eine fehlende oder noch laufende Antwort ändert {@code lastProcessedSeasonId} nicht.
+     */
+    public static Integer confirmedSeasonId() {
+        return confirmedSeasonId(CCLiveUtilitiesConfig.HANDLER.instance().lastProcessedSeasonId);
+    }
+
+    static Integer confirmedSeasonId(int lastProcessedSeasonId) {
+        return lastProcessedSeasonId < 0 ? null : lastProcessedSeasonId;
+    }
+
     private void onJoin() {
         uploadsAllowed.set(false);
         long epoch = checkEpoch.incrementAndGet();
@@ -151,7 +163,7 @@ public final class SeasonChangeGate {
             CCLiveUtilitiesConfig cfg = CCLiveUtilitiesConfig.HANDLER.instance();
             int lastId = cfg.lastProcessedSeasonId;
             boolean lastPre = cfg.lastProcessedPreseason;
-            boolean needsReset = lastId == -1 || lastId != info.seasonId || lastPre != info.isPreseason;
+            boolean needsReset = needsLocalReset(lastId, lastPre, info.seasonId, info.isPreseason);
 
             if (!needsReset) {
                 if (epoch != checkEpoch.get()) {
@@ -254,20 +266,24 @@ public final class SeasonChangeGate {
         if (client == null) {
             return;
         }
-        String label;
-        if (info.isPreseason) {
-            label = "Preseason " + info.seasonId;
-        } else if (info.name != null && !info.name.isEmpty()) {
-            label = info.name;
-        } else {
-            label = "Season " + info.seasonId;
-        }
+        String label = resetLabel(info.seasonId, info.isPreseason);
         String message = "§d[CCLive] §fLokaler Spielerfortschritt für " + label + " zurückgesetzt.";
         client.execute(() -> {
             if (client.player != null) {
                 client.player.sendSystemMessage(Component.literal(message));
             }
         });
+    }
+
+    /** Erneuter Reset bei neuer Id und wenn dieselbe Id von der Preseason in die Season wechselt. */
+    static boolean needsLocalReset(int lastId, boolean lastPre, int seasonId, boolean isPreseason) {
+        return lastId == -1 || lastId != seasonId || lastPre != isPreseason;
+    }
+
+    /** Angezeigte Nummer ist die Id minus 1. Id 9 ist Season 8, Id 10 in der Preseason ist Preseason 9. */
+    static String resetLabel(int seasonId, boolean isPreseason) {
+        int shown = Math.max(0, seasonId - 1);
+        return (isPreseason ? "Preseason " : "Season ") + shown;
     }
 
     private static final class SeasonInfo {

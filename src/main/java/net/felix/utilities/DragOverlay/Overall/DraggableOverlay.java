@@ -44,6 +44,13 @@ public interface DraggableOverlay {
     default void setSize(int width, int height) {
         // Standard-Implementierung: nichts tun
     }
+
+    /**
+     * false hält das Overlay an seiner festen Stelle. Die Größe bleibt über den Ziehpunkt änderbar.
+     */
+    default boolean allowsMove() {
+        return true;
+    }
     
     /**
      * Rendert das Overlay im Edit-Modus mit zusätzlichen visuellen Indikatoren

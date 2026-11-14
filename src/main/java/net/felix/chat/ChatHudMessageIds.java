@@ -35,6 +35,38 @@ public final class ChatHudMessageIds {
         }
     }
 
+    static int removeByPlayer(List<GuiMessage> messages, String player) {
+        if (messages == null || player == null || player.isBlank()) {
+            return 0;
+        }
+        int removed = 0;
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            GuiMessage current = messages.get(i);
+            if (current == null) {
+                continue;
+            }
+            String name = ChatLineTarget.playerOf(current.content());
+            if (name != null && name.equalsIgnoreCase(player)) {
+                messages.remove(i);
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    public static void removeByPlayer(Minecraft client, String player) {
+        if (client == null || client.gui == null || client.gui.hud == null) {
+            return;
+        }
+        ChatComponent chat = client.gui.hud.getChat();
+        if (!(chat instanceof ChatHudMessagesAccess access)) {
+            return;
+        }
+        if (removeByPlayer(access.cclive$allMessages(), player) > 0) {
+            access.cclive$refreshTrimmedMessages();
+        }
+    }
+
     static int replaceMatching(List<GuiMessage> messages, long messageId, String placeholder) {
         if (messages == null || messageId <= 0L) {
             return 0;

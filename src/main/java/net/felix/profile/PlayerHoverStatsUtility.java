@@ -5,6 +5,8 @@ import com.google.gson.JsonParser;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
+import net.felix.leaderboards.panel.SmithSkill;
+import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -28,7 +30,8 @@ public class PlayerHoverStatsUtility {
         MAX_COINS("max_coins", "Max Coins"),
         MESSAGES_SENT("messages_sent", "Gesendete Nachrichten"),
         BLUEPRINTS_FOUND("blueprints_found", "Gefundene Baupläne"),
-        MAX_DAMAGE("max_damage", "Max Schaden");
+        MAX_DAMAGE("max_damage", "Max Schaden"),
+        SMITH_LEVEL("smith_level", "Schmiedelevel");
         
         private final String value;
         private final String displayName;
@@ -64,9 +67,9 @@ public class PlayerHoverStatsUtility {
     private static boolean isInitialized = false;
     private static HttpClient httpClient;
     
-    // Cache für Spieler-Stats (um wiederholte HTTP-Requests zu vermeiden)
-    private static final java.util.Map<String, CachedStats> statsCache = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long CACHE_DURATION_MS = 60000; // 1 Minute Cache-Dauer
+    private static final ProfileFetchCoalescer profileFetches = new ProfileFetchCoalescer(CACHE_DURATION_MS);
+    private static final BackgroundLoad playtimeLoads = new BackgroundLoad();
 
     /** Lokaler Cache: Spieler → Kaktus-/Seelenrang (aus Default-Chat-Hover). */
     private static final java.util.Map<String, CachedRanks> rankCache = new java.util.concurrent.ConcurrentHashMap<>();
@@ -95,23 +98,6 @@ public class PlayerHoverStatsUtility {
         
         CachedPlaytime(String playtime) {
             this.playtime = playtime;
-            this.timestamp = System.currentTimeMillis();
-        }
-        
-        boolean isExpired() {
-            return System.currentTimeMillis() - timestamp > CACHE_DURATION_MS;
-        }
-    }
-    
-    /**
-     * Gecachte Stats für einen Spieler
-     */
-    private static class CachedStats {
-        final JsonObject stats;
-        final long timestamp;
-        
-        CachedStats(JsonObject stats) {
-            this.stats = stats;
             this.timestamp = System.currentTimeMillis();
         }
         
@@ -193,38 +179,7 @@ public class PlayerHoverStatsUtility {
                 // Silent error handling("[PlayerHoverStats] 🔍 Hole Stats vom Server für: " + playerName);
             }
             
-            // Prüfe Cache zuerst
-            CachedStats cached = statsCache.get(playerName.toLowerCase());
-            JsonObject stats = null;
-            
-            if (cached != null && !cached.isExpired()) {
-                // Verwende gecachte Stats
-                stats = cached.stats;
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ✅ Stats aus Cache für: " + playerName);
-                }
-            } else {
-                // Hole Stats vom Server (asynchron, um Freezes zu vermeiden)
-                // Da wir die Nachricht sofort modifizieren müssen, verwenden wir einen Timeout
-                try {
-                    // Versuche synchron mit kurzem Timeout (falls möglich)
-                    // Falls das zu lange dauert, verwende Cache oder null
-                    stats = httpClient.get("/profile/" + playerName);
-                    
-                    // Speichere im Cache
-                    if (stats != null) {
-                        statsCache.put(playerName.toLowerCase(), new CachedStats(stats));
-                    }
-                } catch (Exception e) {
-                    // Bei Fehler: Verwende gecachte Stats falls vorhanden (auch wenn abgelaufen)
-                    if (cached != null) {
-                        stats = cached.stats;
-                        if (debugging) {
-                            // Silent error handling("[PlayerHoverStats] ⚠️ Request fehlgeschlagen, verwende abgelaufenen Cache für: " + playerName);
-                        }
-                    }
-                }
-            }
+            JsonObject stats = profileNow(playerName);
             
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] 🔍 Stats-Response: " + (stats != null ? stats.toString() : "null"));
@@ -234,7 +189,17 @@ public class PlayerHoverStatsUtility {
                 if (debugging) {
                     // Silent error handling("[PlayerHoverStats] ⚠️ Keine Stats gefunden für: " + playerName);
                 }
-                return null; // Spieler nicht registriert oder Fehler → kein Hover-Override
+                Minecraft client = Minecraft.getInstance();
+                if (client.getConnection() != null) {
+                    for (var entry : client.getConnection().getOnlinePlayers()) {
+                        var profile = entry.getProfile();
+                        if (profile != null && playerName.equalsIgnoreCase(profile.name())
+                                && PlayerIconUtility.hasMod(profile.id())) {
+                            return insertIconBetweenNameAndArrow(originalMessage, playerName);
+                        }
+                    }
+                }
+                return null;
             }
             
             // Prüfe ob Stats vorhanden sind
@@ -618,7 +583,7 @@ public class PlayerHoverStatsUtility {
             cacheRanks(playerName, cactus, soul);
         }
 
-        JsonObject stats = fetchStatsForPlayer(playerName);
+        JsonObject stats = profileNow(playerName);
         if (stats == null || !stats.has("player") || stats.get("player").isJsonNull()) {
             return null;
         }
@@ -674,22 +639,14 @@ public class PlayerHoverStatsUtility {
         });
     }
 
-    private static JsonObject fetchStatsForPlayer(String playerName) {
-        CachedStats cached = statsCache.get(playerName.toLowerCase());
-        if (cached != null && !cached.isExpired()) {
-            return cached.stats;
+    private static JsonObject profileNow(String playerName) {
+        if (httpClient == null || playerName == null || playerName.isBlank()) {
+            return null;
         }
-        try {
-            JsonObject stats = httpClient.get("/profile/" + playerName);
-            if (stats != null) {
-                statsCache.put(playerName.toLowerCase(), new CachedStats(stats));
-            } else if (cached != null) {
-                return cached.stats;
-            }
-            return stats;
-        } catch (Exception e) {
-            return cached != null ? cached.stats : null;
-        }
+        return ChatHoverProfiles.current(profileFetches, playerName, "current", player -> {
+            net.felix.leaderboards.http.HttpClient.JsonResponse response = httpClient.getResult("/profile/" + player);
+            return new ProfileFetchCoalescer.Result(response.status(), response.body());
+        }, System.currentTimeMillis());
     }
 
     /**
@@ -1355,6 +1312,27 @@ public class PlayerHoverStatsUtility {
         }
         return null;
     }
+
+    /**
+     * Schmiedelevel mit weißem Hammer. Ohne erfassten Stand bleibt die übergebene Spielzeit stehen.
+     * Level 0 ist ein Stand. XP stehen hier nicht.
+     */
+    public static String hoverStatLine(JsonObject stats, String playtimeLine) {
+        String line = smithLevelLine(stats);
+        return line != null ? line : playtimeLine;
+    }
+
+    public static String smithLevelLine(JsonObject stats) {
+        if (stats == null || !stats.has("smith_level") || stats.get("smith_level").isJsonNull()) {
+            return null;
+        }
+        String level = stats.get("smith_level").getAsString().trim();
+        Long value = SmithSkill.xpWithinLong(level);
+        if (value == null || value > SmithSkill.MAX_LEVEL) {
+            return null;
+        }
+        return "§f⚒ §f" + value;
+    }
     
     /**
      * Holt den Wert für die gewählte Stat
@@ -1379,6 +1357,8 @@ public class PlayerHoverStatsUtility {
                 return getBlueprintsFoundValue(stats);
             case "max_damage":
                 return getMaxDamageValue(stats);
+            case "smith_level":
+                return hoverStatLine(stats, getPlaytimeValue(playerName));
             default:
                 return getPlaytimeValue(playerName); // Fallback zu Playtime
         }
@@ -1414,150 +1394,23 @@ public class PlayerHoverStatsUtility {
             
             // Verwende den übergebenen Spielernamen, oder fallback zum aktuellen Spieler
             String searchPlayerName = playerName != null ? playerName : manager.getPlayerName();
+            if (searchPlayerName == null || searchPlayerName.isBlank()) {
+                return null;
+            }
             
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] 🔍 Versuche Playtime für Spieler '" + searchPlayerName + "' zu holen...");
             }
             
-            // Prüfe Cache zuerst
-            CachedPlaytime cached = playtimeCache.get(searchPlayerName.toLowerCase());
-            if (cached != null && !cached.isExpired()) {
-                // Verwende gecachte Playtime
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ✅ Playtime aus Cache für: " + searchPlayerName);
-                }
-                return cached.playtime;
-            }
-            
-            // Hole Playtime direkt für den spezifischen Spieler vom Leaderboard
-            // Direkter HTTP-Request für den spezifischen Spieler (synchron, aber mit Cache)
-            String endpoint = "/leaderboard/playtime/" + searchPlayerName;
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] 🔍 HTTP GET Request: " + endpoint);
-                // Silent error handling("[PlayerHoverStats] 🔍 HttpClient ist " + (httpClient != null ? "initialisiert" : "NULL"));
-            }
-            
-            if (httpClient == null) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ❌ HttpClient ist null - kann Playtime nicht abrufen");
-                }
-                // Verwende abgelaufenen Cache falls vorhanden
-                if (cached != null) {
-                    return cached.playtime;
-                }
-                return null;
-            }
-            
-            JsonObject result = null;
-            try {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] 🔍 Sende HTTP GET Request...");
-                }
-                result = httpClient.get(endpoint);
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ✅ HTTP GET Request abgeschlossen");
-                }
-            } catch (java.io.IOException e) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ❌ IOException beim HTTP GET: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            } catch (InterruptedException e) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ❌ InterruptedException beim HTTP GET: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            } catch (Exception e) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ❌ Unerwartete Exception beim HTTP GET: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-                    e.printStackTrace();
+            String cacheKey = searchPlayerName.toLowerCase();
+            CachedPlaytime cached = playtimeCache.get(cacheKey);
+            if (cached == null || cached.isExpired()) {
+                if (httpClient != null) {
+                    String name = searchPlayerName;
+                    playtimeLoads.start(cacheKey, () -> loadPlaytime(name));
                 }
             }
-            
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] 🔍 Leaderboard-Result erhalten: " + (result != null ? result.toString() : "null"));
-            }
-            
-            if (result == null) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ⚠️ Kein Leaderboard-Result für playtime (result ist null)");
-                    // Silent error handling("[PlayerHoverStats] 💡 Tipp: Aktiviere 'Leaderboard Debugging' in der Config, um HTTP-Details zu sehen");
-                }
-                return null;
-            }
-            
-            long playtimeSeconds = 0;
-            
-            // Versuche zuerst "self" zu holen (für den spezifischen Spieler)
-            if (result.has("self") && !result.get("self").isJsonNull()) {
-                JsonObject self = result.getAsJsonObject("self");
-                if (self.has("score") && !self.get("score").isJsonNull()) {
-                    playtimeSeconds = self.get("score").getAsLong();
-                    if (debugging) {
-                        // Silent error handling("[PlayerHoverStats] ✅ Playtime aus 'self' geholt: " + playtimeSeconds);
-                    }
-                }
-            }
-            
-            // Falls "self" null ist, suche im "top"-Array nach dem Spieler (Fallback)
-            if (playtimeSeconds == 0 && result.has("top")) {
-                com.google.gson.JsonArray top = result.getAsJsonArray("top");
-                
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] 🔍 Suche Spieler '" + searchPlayerName + "' im top-Array...");
-                }
-                
-                if (top != null && searchPlayerName != null) {
-                    for (int i = 0; i < top.size(); i++) {
-                        JsonObject entry = top.get(i).getAsJsonObject();
-                        if (entry.has("player") && entry.get("player").getAsString().equals(searchPlayerName)) {
-                            if (entry.has("score") && !entry.get("score").isJsonNull()) {
-                                playtimeSeconds = entry.get("score").getAsLong();
-                                if (debugging) {
-                                    // Silent error handling("[PlayerHoverStats] ✅ Playtime aus 'top'-Array geholt für '" + searchPlayerName + "': " + playtimeSeconds);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                if (playtimeSeconds == 0 && debugging) {
-                    // Silent error handling("[PlayerHoverStats] ⚠️ Spieler '" + searchPlayerName + "' nicht im top-Array gefunden");
-                }
-            }
-            
-            if (playtimeSeconds <= 0) {
-                if (debugging) {
-                    // Silent error handling("[PlayerHoverStats] ⚠️ Playtime ist 0 oder nicht gefunden");
-                }
-                return null;
-            }
-            
-            // Formatiere Playtime (Tage:Stunden:Minuten oder Stunden:Minuten)
-            long days = playtimeSeconds / 86400;
-            long hours = (playtimeSeconds % 86400) / 3600;
-            long minutes = (playtimeSeconds % 3600) / 60;
-            
-            StringBuilder playtimeStr = new StringBuilder();
-            if (days > 0) {
-                playtimeStr.append(days).append("d ");
-            }
-            if (hours > 0 || days > 0) {
-                playtimeStr.append(hours).append("h ");
-            }
-            playtimeStr.append(minutes).append("m");
-            
-            if (debugging) {
-                // Silent error handling("[PlayerHoverStats] ✅ Playtime formatiert: " + playtimeStr.toString() + " (aus " + playtimeSeconds + " Sekunden)");
-            }
-            
-            String playtimeValue = "§7⏱ §f" + playtimeStr.toString();
-            
-            // Speichere im Cache
-            playtimeCache.put(searchPlayerName.toLowerCase(), new CachedPlaytime(playtimeValue));
-            
-            return playtimeValue;
+            return cached != null ? cached.playtime : null;
         } catch (Exception e) {
             if (debugging) {
                 // Silent error handling("[PlayerHoverStats] ❌ Fehler beim Abrufen von Playtime: " + e.getMessage());
@@ -1565,6 +1418,56 @@ public class PlayerHoverStatsUtility {
             }
             return null;
         }
+    }
+
+    private static void loadPlaytime(String searchPlayerName) {
+        if (httpClient == null || searchPlayerName == null || searchPlayerName.isBlank()) {
+            return;
+        }
+        JsonObject result;
+        try {
+            result = httpClient.get("/leaderboard/playtime/" + searchPlayerName);
+        } catch (Exception e) {
+            return;
+        }
+        if (result == null) {
+            return;
+        }
+        long playtimeSeconds = 0;
+        if (result.has("self") && !result.get("self").isJsonNull()) {
+            JsonObject self = result.getAsJsonObject("self");
+            if (self.has("score") && !self.get("score").isJsonNull()) {
+                playtimeSeconds = self.get("score").getAsLong();
+            }
+        }
+        if (playtimeSeconds == 0 && result.has("top")) {
+            com.google.gson.JsonArray top = result.getAsJsonArray("top");
+            if (top != null) {
+                for (int i = 0; i < top.size(); i++) {
+                    JsonObject entry = top.get(i).getAsJsonObject();
+                    if (entry.has("player") && entry.get("player").getAsString().equals(searchPlayerName)
+                            && entry.has("score") && !entry.get("score").isJsonNull()) {
+                        playtimeSeconds = entry.get("score").getAsLong();
+                        break;
+                    }
+                }
+            }
+        }
+        if (playtimeSeconds <= 0) {
+            return;
+        }
+        long days = playtimeSeconds / 86400;
+        long hours = (playtimeSeconds % 86400) / 3600;
+        long minutes = (playtimeSeconds % 3600) / 60;
+        StringBuilder playtimeStr = new StringBuilder();
+        if (days > 0) {
+            playtimeStr.append(days).append("d ");
+        }
+        if (hours > 0 || days > 0) {
+            playtimeStr.append(hours).append("h ");
+        }
+        playtimeStr.append(minutes).append("m");
+        playtimeCache.put(searchPlayerName.toLowerCase(), new CachedPlaytime("§7⏱ §f" + playtimeStr));
     }
     
     /**

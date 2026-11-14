@@ -264,9 +264,10 @@ public final class ItemShareManager {
 
         // statsHover absichtlich nicht auf Body-Klartext — nur Prefix/Name/>> (ChatManager)
         Style messageStyle = Style.EMPTY.withColor(CCLIVE_MESSAGE_COLOR);
+        List<String> domains = allowedDomains();
         Matcher matcher = ANY_SHARE_REF.matcher(rawMessage);
         if (!matcher.find()) {
-            return Component.literal(rawMessage).setStyle(messageStyle);
+            return ChatLinkSpans.render(rawMessage, messageStyle, domains);
         }
 
         MutableComponent result = Component.empty();
@@ -274,8 +275,8 @@ public final class ItemShareManager {
         matcher.reset();
         while (matcher.find()) {
             if (matcher.start() > lastEnd) {
-                result.append(Component.literal(rawMessage.substring(lastEnd, matcher.start()))
-                    .setStyle(messageStyle));
+                result.append(ChatLinkSpans.render(
+                    rawMessage.substring(lastEnd, matcher.start()), messageStyle, domains));
             }
             String type = matcher.group(1);
             String shareId = matcher.group(2);
@@ -287,9 +288,17 @@ public final class ItemShareManager {
             lastEnd = matcher.end();
         }
         if (lastEnd < rawMessage.length()) {
-            result.append(Component.literal(rawMessage.substring(lastEnd)).setStyle(messageStyle));
+            result.append(ChatLinkSpans.render(rawMessage.substring(lastEnd), messageStyle, domains));
         }
         return result;
+    }
+
+    private static List<String> allowedDomains() {
+        try {
+            return ChatAllowedDomains.current();
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     private Component resolveLinkComponent(String shareId, boolean allowRetry) {

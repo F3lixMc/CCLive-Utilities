@@ -13,6 +13,13 @@
       "ascent": 7,
       "height": 8,
       "chars": ["Ѳ"]
+    },
+    {
+      "type": "bitmap",
+      "file": "cclive-utilities:icons/mod_icon.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": ["ѻ"]
     }
   ]
 }

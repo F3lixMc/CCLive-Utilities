@@ -25,6 +25,10 @@ public class MouseScrollMixin {
             double mouseX = client.mouseHandler.xpos() * (double) client.getWindow().getGuiScaledWidth() / (double) windowWidth;
             double mouseY = client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) windowHeight;
             
+            if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
+                    && net.felix.leaderboards.panel.LeaderboardInventoryOverlay.coversScroll(mouseX, mouseY)) {
+                return;
+            }
             if (ItemViewerUtility.handleMouseScroll(mouseX, mouseY, vertical)) {
                 // ItemViewer hat das Event behandelt
                 // Hinweis: onMouseScroll ist nicht cancellable, daher können wir das Event nicht verhindern

@@ -148,7 +148,9 @@ public class PlayerNametagRenderer {
                 float halfSize = iconSize / 2.0f;
                 float spacing = 2.0f;
                 float iconOffsetX = nameWidth / 2.0f + spacing + halfSize;
-                float iconOffsetY = 9.0f / 2.0f;
+                String profileName = player.getGameProfile().name();
+                boolean roleIcon = PlayerIconUtility.usesAdminIcon(profileName) || PlayerIconUtility.usesModIcon(profileName);
+                float iconOffsetY = 9.0f / 2.0f - (roleIcon ? 2.0f : 0.0f);
                 
                 matrices.translate(iconOffsetX, iconOffsetY, 0.0f);
                 
@@ -161,7 +163,7 @@ public class PlayerNametagRenderer {
                     iconSize,
                     lightLevel,
                     seeThrough,
-                    player.getGameProfile().name());
+                    profileName);
             } finally {
                 matrices.popPose();
             }
@@ -185,7 +187,7 @@ public class PlayerNametagRenderer {
             }
             
             Identifier iconToUse = PlayerIconUtility.iconTextureForPlayer(playerName);
-            if (!PlayerIconUtility.usesAdminIcon(playerName)) {
+            if (!PlayerIconUtility.usesAdminIcon(playerName) && !PlayerIconUtility.usesModIcon(playerName)) {
                 Identifier iconIdAlt = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "icon");
                 try {
                     if (client.getResourceManager() != null) {

@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility-Klasse für einheitliche Debug-Nachrichten und Item-Logging
@@ -67,6 +68,57 @@ public class DebugUtility {
         if (CCLiveUtilitiesConfig.HANDLER.instance().leaderboardDebugging) {
             sendDebugMessage(message);
         }
+    }
+
+    /** Sync-Zeile für den Leaderboard-Debugmodus: Konsole und, wenn ein Spieler da ist, Chat. */
+    public static void debugLeaderboardSync(String message) {
+        if (!isLeaderboardDebuggingEnabled() || message == null || message.isBlank()) {
+            return;
+        }
+        System.out.println("[CCLive Leaderboard] " + message);
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return;
+        }
+        client.execute(() -> {
+            if (client.player != null && isLeaderboardDebuggingEnabled()) {
+                client.player.sendSystemMessage(Component.literal("§d[CCLive] §f" + message));
+            }
+        });
+    }
+
+    private static final Map<String, String> playerStatsDebugText = new ConcurrentHashMap<>();
+    private static final Map<String, Long> playerStatsDebugAt = new ConcurrentHashMap<>();
+
+    /** Konsole und Chat, nur bei Player Stats Debugging. Gleiche Meldung höchstens alle 15 Sekunden. */
+    public static void debugPlayerStats(String key, String message) {
+        if (!isPlayerStatsDebuggingEnabled() || message == null || message.isBlank()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        String previous = playerStatsDebugText.get(key);
+        Long last = playerStatsDebugAt.get(key);
+        boolean changed = !message.equals(previous);
+        boolean due = last == null || now - last >= 15_000L;
+        if (!changed && !due) {
+            return;
+        }
+        playerStatsDebugText.put(key, message);
+        playerStatsDebugAt.put(key, now);
+        System.out.println("[CCLive Player Stats] " + message);
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return;
+        }
+        client.execute(() -> {
+            if (client.player != null && isPlayerStatsDebuggingEnabled()) {
+                client.player.sendSystemMessage(Component.literal("§d[CCLive] §f" + message));
+            }
+        });
+    }
+
+    public static boolean isPlayerStatsDebuggingEnabled() {
+        return CCLiveUtilitiesConfig.HANDLER.instance().playerStatsDebugging;
     }
     
     /**

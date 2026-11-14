@@ -144,13 +144,7 @@ public class ScreenMixin {
                 net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
             }
             
-            // Rendere Help-Overlay ganz am Ende, damit es über allem liegt (wie im Blueprint Shop)
-            if (ItemViewerUtility.isHelpOverlayOpen()) {
-                ItemViewerUtility.renderHelpOverlay(context);
-            }
-            if (ItemViewerUtility.isOverlayOpen()) {
-                ItemViewerUtility.renderFilterOverlay(context);
-            }
+            // Hilfe folgt erst am Ende von InventoryScreen.extractRenderState.
             
             // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
             ItemViewerUtility.renderMinimizedButtonIfNeeded(context);

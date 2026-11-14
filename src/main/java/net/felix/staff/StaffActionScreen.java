@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class StaffActionScreen extends Screen {
     private final long capturedEpoch;
     private final String capturedToken;
+    private final String prefilledPlayer;
+    private final String prefilledMessageId;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private EditBox messageId;
     private EditBox playerName;
@@ -24,15 +26,28 @@ public class StaffActionScreen extends Screen {
     private String status = "Etappe-3-Test. Kein Rechtsklick-Menü.";
 
     public StaffActionScreen() {
+        this(null, null);
+    }
+
+    public StaffActionScreen(String player, Long messageId) {
         super(Component.literal("CCLive Moderation"));
         this.capturedEpoch = StaffClientAccess.epoch();
         this.capturedToken = StaffClientAccess.token();
+        this.prefilledPlayer = player == null ? "" : player;
+        this.prefilledMessageId = messageText(messageId);
+        if (!this.prefilledPlayer.isEmpty()) {
+            status = "Spieler und Nachrichten-ID aus der Chatzeile. Grund und Dauer bleiben Pflicht.";
+        }
     }
 
     public static void open() {
+        open(null, null);
+    }
+
+    public static void open(String player, Long messageId) {
         Minecraft client = Minecraft.getInstance();
         if (client != null) {
-            client.execute(() -> client.gui.setScreen(new StaffActionScreen()));
+            client.execute(() -> client.gui.setScreen(new StaffActionScreen(player, messageId)));
         }
     }
 
@@ -45,6 +60,12 @@ public class StaffActionScreen extends Screen {
         playerName = field(x, y + 24, "Spieler");
         duration = field(x, y + 48, "Dauer z. B. 5m, 2h, 14d, permanent");
         reason = field(x, y + 72, "Begründung");
+        if (!prefilledPlayer.isEmpty()) {
+            playerName.setValue(prefilledPlayer);
+        }
+        if (!prefilledMessageId.isEmpty()) {
+            messageId.setValue(prefilledMessageId);
+        }
         addRenderableWidget(Button.builder(Component.literal("Löschen"), b -> post(
                 "/moderation/actions/message/delete", deleteBody()))
                 .bounds(x, y + 104, 90, 20).build());
@@ -95,14 +116,30 @@ public class StaffActionScreen extends Screen {
     }
 
     private JsonObject deleteBody() {
+        return deleteRequest(messageId.getValue(), reason.getValue());
+    }
+
+    static String messageText(Long messageId) {
+        return messageId != null && messageId > 0L ? Long.toString(messageId) : "";
+    }
+
+    static JsonObject deleteRequest(String messageIdText, String reason) {
         JsonObject body = new JsonObject();
         try {
-            body.addProperty("messageId", Integer.parseInt(messageId.getValue().trim()));
+            body.addProperty("messageId", Integer.parseInt(messageIdText == null ? "" : messageIdText.trim()));
         } catch (Exception e) {
             body.addProperty("messageId", 0);
         }
-        body.addProperty("reason", reason.getValue());
+        body.addProperty("reason", reason == null ? "" : reason);
         return body;
+    }
+
+    String prefilledPlayer() {
+        return prefilledPlayer;
+    }
+
+    String prefilledMessageId() {
+        return prefilledMessageId;
     }
 
     private JsonObject sanctionBody() {

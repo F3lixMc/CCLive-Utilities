@@ -1,6 +1,38 @@
 # Etappe 3 — Übergabe
 
-Stand: 6.11.2026. Etappe 3 ist im Code korrigiert. Kein Deployment, kein Mod-JAR. Etappe 4 ist nicht begonnen. Etappe 2 bleibt unverändert wirksam: Rollen, Control-Center-Zugang, Modverwaltung, Adminbefehle einschließlich Sichtbarkeit und Autocomplete.
+Stand: 12.11.2026. Der offene Layoutpunkt ist geschlossen: das Moderationsformular liegt in Admin- und Moderatoransicht in einem eigenen Kasten. Kein Deployment, kein Mod-JAR. Etappe 4 ist nicht begonnen. Etappe 2 bleibt unverändert wirksam: Rollen, Control-Center-Zugang, Modverwaltung, Adminbefehle einschließlich Sichtbarkeit und Autocomplete.
+
+## Layout: Moderationsformular
+
+Das Formular stand ohne eigenen Rahmen im Chatbereich. Der Button hieß nur „Leeren“ und teilte sich die Zeile mit dem Teamhinweis.
+
+Der Kasten ist das Formular selbst: feiner Rand in der vorhandenen Linienfarbe, leicht abgesetzter Grund, abgerundete Ecken. Oben links steht „Moderationsaktion“, oben rechts der bisherige gedämpft rote Umriss-Button, jetzt mit der Beschriftung „Formular leeren“. Der Tooltip nennt zusätzlich, dass Eingaben und Auswahl zurückgesetzt werden. Der Teamhinweis bleibt darunter. Mute, Bann, Ersetzen und die übrigen Felder sind unverändert. Dieselbe Markierung gilt im Control Center und auf der Moderator-Startseite.
+
+In einem schmalen Fenster bleibt der Button rechts und wird nicht auf die volle Breite gezogen. Reicht die Zeile nicht für Titel und Button, rutscht der Button in die nächste Zeile und bleibt dort rechts.
+
+### Tatsächlich ausgeführter Nachtest
+
+Lokal im Browser gegen einen statischen Dateiserver, nicht gegen das laufende Backend und nicht live:
+
+- Moderator-Start, breit: Kasten sichtbar, „Moderationsaktion“ links, „Formular leeren“ rechts in derselben Zeile, gedämpft rot, nicht über die volle Breite.
+- Moderator-Start, schmales Fenster: Titel bleibt links. Der Button rutscht darunter, bleibt rechts und wird nicht auf die volle Breite gezogen.
+- Admin-Übersicht: derselbe Kasten, Titel links, Button rechts. Ein Klick auf „Formular leeren“ hat Spielername, Begründung und die Permanent-Auswahl geleert.
+- „Anfrage fehlgeschlagen“ kam nur, weil der lokale Dateiserver keine Moderations-API hat.
+
+### Betroffene Dateien
+
+Nichts davon wurde hochgeladen. Diese Datei nicht hochladen.
+
+- `backend_server/public/admin-style.css` — Kasten, Titelzeile, Button bleibt rechts und schmal
+- `backend_server/public/admin-workspace.js` — Titel und Beschriftung im Control Center
+- `backend_server/public/staff-home.html` — dieselbe Zeile in der Moderatoransicht
+- `backend_server/admin_ui/admin.html` — Cache-Stand `20261112-etappe3h` für Stil und Workspace
+
+`staff-moderation.js` ist unverändert. Der Button behält die ID `chatmod-clear` und setzt weiter nur Eingaben, Fehler und Auswahl zurück.
+
+### Neustart
+
+Kein Backend-Neustart. Die Website hart neu laden, damit `?v=20261112-etappe3h` gilt.
 
 ## Nachbesserung nach dem zweiten Live-Test
 

@@ -98,6 +98,7 @@ public class CCLiveCommands {
             
             // Leaderboard Commands
             .then(literal("lb")
+                .executes(CCLiveCommands::showLeaderboardHint)
                 .then(leaderboardResetCommand())
             )
 
@@ -121,7 +122,18 @@ public class CCLiveCommands {
                         .suggests(chatTypeSuggestions())
                         .executes(context -> toggleChat(context, StringArgumentType.getString(context, "type")))))
                 .then(literal("export-glyphs")
-                    .executes(CCLiveCommands::exportBlockedGlyphs)))
+                    .executes(CCLiveCommands::exportBlockedGlyphs))
+                .then(literal("ignore")
+                    .then(literal("list")
+                        .executes(CCLiveCommands::openIgnoreList))))
+            .then(literal("chatrules")
+                .executes(CCLiveCommands::openChatRules))
+            .then(literal("report")
+                .then(argument("player", StringArgumentType.word())
+                    .executes(context -> submitReport(context, ""))
+                    .then(argument("reason", StringArgumentType.greedyString())
+                        .executes(context -> submitReport(
+                            context, StringArgumentType.getString(context, "reason"))))))
             
             // Materials/Resources Commands
             .then(literal("materials_resources")
@@ -263,6 +275,11 @@ public class CCLiveCommands {
     /**
      * Zeigt Blueprint-System Status
      */
+    private static int showLeaderboardHint(CommandContext<FabricClientCommandSource> context) {
+        context.getSource().sendFeedback(Component.literal("§7Die Rangliste steht links im eigenen Inventar."));
+        return 1;
+    }
+
     private static int showBlueprintStatus(CommandContext<FabricClientCommandSource> context) {
         // Prüfe ob Debug-Modus aktiviert ist
         if (!CCLiveUtilitiesConfig.HANDLER.instance().blueprintDebugging) {
@@ -509,6 +526,22 @@ public class CCLiveCommands {
         return 1;
     }
     
+    private static int submitReport(CommandContext<FabricClientCommandSource> context, String reason) {
+        String player = StringArgumentType.getString(context, "player");
+        net.felix.chat.ChatReport.request(player, null, reason);
+        return 1;
+    }
+
+    private static int openIgnoreList(CommandContext<FabricClientCommandSource> context) {
+        net.felix.chat.ChatIgnoreScreen.open();
+        return 1;
+    }
+
+    private static int openChatRules(CommandContext<FabricClientCommandSource> context) {
+        net.felix.chat.ChatRulesScreen.open();
+        return 1;
+    }
+
     /**
      * Togglet die Sichtbarkeit eines Chat-Kanals
      */
@@ -568,6 +601,7 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7/cclive connection refresh §f- Registrierung erneuern"));
         context.getSource().sendFeedback(Component.literal(""));
         context.getSource().sendFeedback(Component.literal("§e§lLeaderboard Commands:"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive lb §f- Rangliste steht links im eigenen Inventar"));
         context.getSource().sendFeedback(Component.literal("§7/cclive lb reset all §f- Alle Scores löschen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive lb reset <board> §f- Spezifischen Score löschen"));
         context.getSource().sendFeedback(Component.literal("§7  Verfügbare Boards: current_coins, alltime_kills, playtime,"));
@@ -579,6 +613,8 @@ public class CCLiveCommands {
         context.getSource().sendFeedback(Component.literal("§7/chat <cclive/default> §f- Chat-Modus wechseln"));
         context.getSource().sendFeedback(Component.literal("§7/cclive chat toggle <default/cclive> §f- Chat-Sichtbarkeit togglen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive chat export-glyphs §f- Glyph-Sperrliste für den Server exportieren"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive chat ignore list §f- Ignorierte Spieler anzeigen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive report <spieler> [grund] §f- Spieler im CCLive-Chat melden"));
         context.getSource().sendFeedback(Component.literal("§7@cclive <nachricht> §f- Direkt in CCLive Chat schreiben"));
         context.getSource().sendFeedback(Component.literal("§7@global <nachricht> §f- Direkt in Default/Global Chat schreiben"));
         context.getSource().sendFeedback(Component.literal("§7@lp … §f- Immer in den globalen Minecraft-Chat"));
