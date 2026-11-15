@@ -118,8 +118,17 @@ public final class FactoryLevelTracker {
         textY += LINE_HEIGHT;
         for (String line : lines) {
             if (!line.isEmpty()) {
-                context.text(client.font, Component.literal(line), PADDING, textY,
-                        FactoryLevelDisplay.colorFor(line), true);
+                FactoryLevelDisplay.LinePaint paint = FactoryLevelDisplay.paint(line);
+                int textX = PADDING;
+                if (!paint.label().isEmpty()) {
+                    context.text(client.font, Component.literal(paint.label()), textX, textY,
+                            paint.labelColor(), true);
+                    textX += client.font.width(paint.label());
+                }
+                if (!paint.value().isEmpty()) {
+                    context.text(client.font, Component.literal(paint.value()), textX, textY,
+                            paint.valueColor(), true);
+                }
             }
             textY += LINE_HEIGHT;
         }

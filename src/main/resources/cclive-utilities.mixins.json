@@ -19,6 +19,8 @@
 		"ChatScreenSuggestionsAccess",
 		"ClientPlayNetworkHandlerTestMixin",
 		"PlayerHoverStatsMixin",
+		"PlayerNametagIconMixin",
+		"PlayerTextDisplayIconMixin",
 		"DrawContextMixin",
 		"ScreenMixin",
 		"ViewerSearchKeyboardMixin",

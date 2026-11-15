@@ -51,12 +51,6 @@ public class PlayerIconUtility {
      */
     public static void initialize() {
         loadIcon();
-        // Initialize nametag rendering
-        try {
-            PlayerNametagRenderer.initialize();
-        } catch (Exception e) {
-            // Silent error handling
-        }
     }
     
     /**

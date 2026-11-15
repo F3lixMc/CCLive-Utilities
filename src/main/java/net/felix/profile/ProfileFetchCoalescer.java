@@ -44,6 +44,10 @@ public final class ProfileFetchCoalescer {
         return cached != null && now - cached.at < ttlMs;
     }
 
+    CompletableFuture<JsonObject> pendingResult(String player, String season) {
+        return inflight.get(key(player, season));
+    }
+
     public boolean pending(String player, String season) {
         return inflight.containsKey(key(player, season));
     }

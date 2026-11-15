@@ -286,79 +286,65 @@ public final class KitTooltipHelper {
 		int offset = 10;
 		int mainBoxW = tooltip.totalWidth + tooltip.padding * 2;
 		int mainBoxH = tooltip.totalHeight;
-		int extraBoxW = extra != null ? extra.width + tooltip.padding * 2 : 0;
+		int extraBoxW = extra != null ? extra.width + extra.padding * 2 : 0;
 		int extraBoxH = extra != null ? extra.height : 0;
+		int right = screenWidth - SCREEN_MARGIN;
+		int bottom = screenHeight - SCREEN_MARGIN;
+		int availW = Math.max(1, right - SCREEN_MARGIN);
+		int availH = Math.max(1, bottom - SCREEN_MARGIN);
 
-		boolean sideBySide = extra != null && extraBoxW + PAIR_GAP + mainBoxW <= screenWidth;
-		int pairW;
-		int pairH;
-		if (extra == null) {
-			pairW = mainBoxW;
-			pairH = mainBoxH;
-		} else if (sideBySide) {
-			pairW = extraBoxW + PAIR_GAP + mainBoxW;
-			pairH = Math.max(extraBoxH, mainBoxH);
-		} else {
-			pairW = Math.max(extraBoxW, mainBoxW);
-			pairH = extraBoxH + PAIR_GAP + mainBoxH;
-		}
+		int mainX = mouseX + offset;
+		if (mainX + mainBoxW > right) mainX = mouseX - mainBoxW - offset;
+		mainX = Math.max(SCREEN_MARGIN, Math.min(mainX, right - mainBoxW));
+		int mainY = mouseY - mainBoxH - offset;
+		if (mainY < SCREEN_MARGIN) mainY = mouseY + offset;
+		mainY = Math.max(SCREEN_MARGIN, Math.min(mainY, bottom - mainBoxH));
 
+		int extraX = mainX;
+		int extraY = mainY - extraBoxH - PAIR_GAP;
 		float scale = 1f;
-		int availW = Math.max(1, screenWidth - SCREEN_MARGIN * 2);
-		int availH = Math.max(1, screenHeight - SCREEN_MARGIN * 2);
-		if (pairW > availW || pairH > availH) {
-			scale = Math.min(1f, Math.min((float) availW / pairW, (float) availH / pairH));
-		}
-		int scaledW = Math.max(1, Math.round(pairW * scale));
-		int scaledH = Math.max(1, Math.round(pairH * scale));
-
-		int pairX = mouseX + offset;
-		if (pairX + scaledW > screenWidth - SCREEN_MARGIN) {
-			pairX = mouseX - scaledW - offset;
-			if (pairX < SCREEN_MARGIN) {
-				pairX = SCREEN_MARGIN;
+		int originX = 0;
+		int originY = 0;
+		boolean showExtra = extra != null && drawExtra;
+		if (showExtra) {
+			extraX = Math.max(SCREEN_MARGIN, Math.min(mainX, right - extraBoxW));
+			if (extraY < SCREEN_MARGIN && extraBoxH <= availH) {
+				if (mainX + mainBoxW + PAIR_GAP + extraBoxW <= right) {
+					extraX = mainX + mainBoxW + PAIR_GAP;
+					extraY = Math.min(mainY, bottom - extraBoxH);
+				} else if (mainX - PAIR_GAP - extraBoxW >= SCREEN_MARGIN) {
+					extraX = mainX - PAIR_GAP - extraBoxW;
+					extraY = Math.min(mainY, bottom - extraBoxH);
+				}
 			}
-		}
-		if (pairX + scaledW > screenWidth - SCREEN_MARGIN) {
-			pairX = Math.max(SCREEN_MARGIN, screenWidth - scaledW - SCREEN_MARGIN);
-		}
-
-		int pairY = mouseY - scaledH - offset;
-		if (pairY < SCREEN_MARGIN) {
-			pairY = mouseY + offset;
-			if (pairY + scaledH > screenHeight - SCREEN_MARGIN) {
-				pairY = screenHeight - scaledH - SCREEN_MARGIN;
+			if (extraY < SCREEN_MARGIN || extraBoxW > availW || mainBoxW > availW || mainBoxH > availH) {
+				boolean sideBySide = mainBoxW + PAIR_GAP + extraBoxW <= availW;
+				int pairW = sideBySide ? mainBoxW + PAIR_GAP + extraBoxW : Math.max(mainBoxW, extraBoxW);
+				int pairH = sideBySide ? Math.max(mainBoxH, extraBoxH) : mainBoxH + PAIR_GAP + extraBoxH;
+				scale = Math.min(1f, Math.min((float) availW / pairW, (float) availH / pairH));
+				originX = Math.max(SCREEN_MARGIN, Math.min(mainX, right - Math.round(pairW * scale)));
+				originY = Math.max(SCREEN_MARGIN, Math.min(mainY, bottom - Math.round(pairH * scale)));
+				mainX = 0;
+				mainY = sideBySide ? 0 : extraBoxH + PAIR_GAP;
+				extraX = sideBySide ? mainBoxW + PAIR_GAP : 0;
+				extraY = 0;
 			}
-		}
-		if (pairY + scaledH > screenHeight - SCREEN_MARGIN) {
-			pairY = screenHeight - scaledH - SCREEN_MARGIN;
-		}
-		if (pairY < SCREEN_MARGIN) {
-			pairY = SCREEN_MARGIN;
+		} else if (mainBoxW > availW || mainBoxH > availH) {
+			scale = Math.min((float) availW / mainBoxW, (float) availH / mainBoxH);
+			originX = mainX;
+			originY = mainY;
+			mainX = 0;
+			mainY = 0;
 		}
 
 		context.pose().pushMatrix();
-		context.pose().translate(pairX, pairY);
+		context.pose().translate(originX, originY);
 		context.pose().scale(scale, scale);
 
-		int extraBoxX = 0;
-		int extraBoxY = 0;
-		int mainBoxX;
-		int mainBoxY;
-		if (extra == null) {
-			mainBoxX = 0;
-			mainBoxY = 0;
-		} else if (sideBySide) {
-			mainBoxX = extraBoxW + PAIR_GAP;
-			mainBoxY = 0;
-			extraBoxY = 0;
-		} else {
-			mainBoxX = 0;
-			mainBoxY = extraBoxH + PAIR_GAP;
-			extraBoxX = 0;
-			extraBoxY = 0;
-		}
-
+		int mainBoxX = mainX;
+		int mainBoxY = mainY;
+		int extraBoxX = extraX;
+		int extraBoxY = extraY;
 		if (extra != null && drawExtra) {
 			drawPanelBackground(
 				context,

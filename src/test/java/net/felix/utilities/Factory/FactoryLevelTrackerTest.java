@@ -37,6 +37,18 @@ class FactoryLevelTrackerTest {
         assertTrue(FactoryLevelDisplay.lineCount(149) > FactoryLevelDisplay.lineCount(79));
         assertTrue(FactoryLevelDisplay.body(349, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Machtkristallslot 3"));
         assertTrue(FactoryLevelDisplay.body(249, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Recycler"));
+
+        FactoryLevelDisplay.LinePaint goal = FactoryLevelDisplay.paint("Nächstes Ziel: Level 150");
+        assertEquals("Nächstes Ziel: ", goal.label());
+        assertEquals(FactoryLevelDisplay.LABEL_COLOR, goal.labelColor());
+        assertEquals("Level 150", goal.value());
+        assertEquals(FactoryLevelDisplay.GOAL_COLOR, goal.valueColor());
+
+        FactoryLevelDisplay.LinePaint time = FactoryLevelDisplay.paint("Dauer bis Ziel: 2h");
+        assertEquals("Dauer bis Ziel: ", time.label());
+        assertEquals(FactoryLevelDisplay.LABEL_COLOR, time.labelColor());
+        assertEquals("2h", time.value());
+        assertEquals(FactoryLevelDisplay.TIME_COLOR, time.valueColor());
     }
 
     @Test

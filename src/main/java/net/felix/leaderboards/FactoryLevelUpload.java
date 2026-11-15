@@ -25,7 +25,7 @@ public final class FactoryLevelUpload {
     private volatile boolean started;
 
     private FactoryLevelUpload() {
-        Path file = CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve("factory-level.json");
+        Path file = CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve("factory-level-playlegend.json");
         this.outbox = new FactoryLevelOutbox(file);
     }
 
@@ -74,7 +74,7 @@ public final class FactoryLevelUpload {
             SmithSkillOutbox.Clock clock = sync == null
                     ? null
                     : new SmithSkillOutbox.Clock(sync.receivedAt(), sync.serverTime(), sync.nextSyncAt());
-            boolean allowed = manager != null && manager.canUploadFactoryLevel();
+            boolean allowed = manager != null && manager.canUploadBufferedScore();
             long now = System.currentTimeMillis();
             FactoryLevelOutbox.Attempt attempt = outbox.begin(account, phase, now, clock, allowed);
             if (attempt == null) {

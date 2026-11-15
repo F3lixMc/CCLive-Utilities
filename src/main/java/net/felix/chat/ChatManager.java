@@ -36,6 +36,9 @@ public class ChatManager {
     private final Object displayDedupLock = new Object();
     private volatile String lastDisplayedExactKey = "";
     private final Set<Long> displayedMessageIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    // Accessed only on the client thread, like the chat HUD.
+    private final java.util.Map<Long, String> recentDeletions = new java.util.LinkedHashMap<>();
+    private static final int RECENT_DELETION_LIMIT = 1000;
     static final String PLACEHOLDER = "Nachricht von Moderatoren gelöscht!";
     static final int DELETED_BODY_COLOR = 0xC8C8C8;
     public static final String MESSAGE_ID_PREFIX = "cclive-msg:";
@@ -285,7 +288,7 @@ public class ChatManager {
                 if (mc != null) {
                     mc.execute(() -> {
                         if (shouldInsertPreparedLine(playerFinal)) {
-                            addCcliveChatLine(mc, chatMessage);
+                            addPreparedLine(mc, messageIdFinal, chatMessage);
                         }
                     });
                 }
@@ -293,10 +296,11 @@ public class ChatManager {
             .exceptionally(ex -> {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc != null) {
-                    Component fallback = Component.literal("[CCLive] " + playerFinal + ">> " + messageFinal);
+                    Component body = deletedFinal ? deletedPlaceholderBody() : Component.literal(messageFinal);
+                    Component fallback = ChatLineTarget.compose(playerFinal, messageIdFinal, nameColorsFinal, null, null, body);
                     mc.execute(() -> {
                         if (shouldInsertPreparedLine(playerFinal)) {
-                            addCcliveChatLine(mc, fallback);
+                            addPreparedLine(mc, messageIdFinal, fallback);
                         }
                     });
                 }
@@ -321,7 +325,13 @@ public class ChatManager {
         if (client == null) {
             return;
         }
-        client.execute(() -> ChatHudMessageIds.replacePlaceholder(client, id, placeholder));
+        client.execute(() -> {
+            recentDeletions.put(id, placeholder);
+            if (recentDeletions.size() > RECENT_DELETION_LIMIT) {
+                recentDeletions.remove(recentDeletions.keySet().iterator().next());
+            }
+            ChatHudMessageIds.replacePlaceholder(client, id, placeholder);
+        });
     }
 
     static MutableComponent deletedPlaceholderBody() {
@@ -414,6 +424,12 @@ public class ChatManager {
             return true;
         }
         return !list.ignores(accountId, player);
+    }
+
+    private void addPreparedLine(Minecraft client, Long messageId, Component line) {
+        String placeholder = messageId == null ? null : recentDeletions.get(messageId);
+        Component displayed = placeholder == null ? line : ChatHudMessageIds.replaceMessageBody(line, placeholder);
+        if (displayed != null) addCcliveChatLine(client, displayed);
     }
 
     private static void addCcliveChatLine(Minecraft client, Component chatMessage) {

@@ -3,6 +3,7 @@ package net.felix.mixin;
 import net.felix.profile.PlayerHoverStatsUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,7 +28,7 @@ public abstract class PlayerHoverStatsMixin {
         cancellable = true
     )
     private void onGameMessage(ClientboundSystemChatPacket packet, CallbackInfo ci) {
-        if (packet == null) {
+        if (packet == null || packet.overlay()) {
             return;
         }
         
@@ -44,28 +45,41 @@ public abstract class PlayerHoverStatsMixin {
             return;
         }
         
-        // Versuche die Nachricht mit Player-Stats zu modifizieren
-        Component modified = PlayerHoverStatsUtility.processChatMessage(originalMessage);
-        
-        if (modified == null || modified == originalMessage) {
-            // Keine Modifikation nötig oder möglich → Nachricht normal durchlassen
-            return;
-        }
-        
-        // Modifizierte Nachricht gefunden → Original abbrechen und modifizierte Version hinzufügen
-        ci.cancel();
-
-        // handleSystemChat kann auf dem Netty-Thread laufen – Chat/GUI nur auf dem Render-Thread anfassen
         Minecraft client = Minecraft.getInstance();
-        if (client == null) {
-            return;
-        }
-        Component messageToAdd = modified;
+        if (client == null) return;
+
+        Component modified = PlayerHoverStatsUtility.processChatMessage(originalMessage);
+        if (modified == originalMessage) modified = null;
+        var profile = PlayerHoverStatsUtility.pendingChatProfile(originalMessage);
+        if (modified == null && profile == null) return;
+
+        Component displayed = modified == null ? originalMessage : modified;
+        ci.cancel();
         client.execute(() -> {
-            if (client.gui != null && client.gui.hud.getChat() != null) {
-                client.gui.hud.getChat().addClientSystemMessage(messageToAdd);
-            }
+            if (client.getConnection() != (Object) this || client.gui == null || client.gui.hud == null) return;
+            var chat = client.gui.hud.getChat();
+            chat.addClientSystemMessage(displayed);
+            if (profile == null || !(chat instanceof ChatHudMessagesAccess access)) return;
+            var messages = access.cclive$allMessages();
+            GuiMessage added = messages.isEmpty() ? null : messages.getFirst();
+            if (added == null || added.content() != displayed) return;
+
+            profile.thenAccept(stats -> {
+                if (stats == null) return;
+                client.execute(() -> {
+                    if (client.getConnection() != (Object) this) return;
+                    for (int i = 0; i < messages.size(); i++) {
+                        if (messages.get(i) != added) continue;
+                        Component updated = PlayerHoverStatsUtility.processChatMessage(originalMessage);
+                        if (updated != null && !updated.equals(displayed)) {
+                            messages.set(i, new GuiMessage(added.addedTime(), updated,
+                                    added.signature(), added.source(), added.tag()));
+                            access.cclive$refreshTrimmedMessages();
+                        }
+                        break;
+                    }
+                });
+            });
         });
     }
 }
-

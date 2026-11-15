@@ -10,9 +10,12 @@ public final class FactoryLevelDisplay {
     public static final String TITLE = "Fabriklevel Progress";
     public static final String ALL_UNLOCKED = "Alle Ziele freigeschaltet";
     public static final int TITLE_COLOR = 0xFFFFFF00;
+    public static final int LABEL_COLOR = 0xFFFFFFFF;
     public static final int GOAL_COLOR = 0xFF55FF55;
     public static final int UNLOCK_COLOR = 0xFF55FFFF;
     public static final int TIME_COLOR = 0xFFFFFF55;
+    public static final String GOAL_LABEL = "Nächstes Ziel: ";
+    public static final String DURATION_LABEL = "Dauer bis Ziel: ";
 
     private static final List<Unlock> UNLOCKS = List.of(
             new Unlock(3, "Forschungsraum"),
@@ -54,7 +57,7 @@ public final class FactoryLevelDisplay {
             return List.of(ALL_UNLOCKED);
         }
         List<String> lines = new ArrayList<>();
-        lines.add("Nächstes Ziel: Level " + next.level);
+        lines.add(GOAL_LABEL + "Level " + next.level);
         for (String name : next.names) {
             lines.add("• " + name);
         }
@@ -65,10 +68,20 @@ public final class FactoryLevelDisplay {
         return List.copyOf(lines);
     }
 
-    public static int colorFor(String line) {
-        if (line.startsWith("Dauer bis Ziel")) {
-            return TIME_COLOR;
+    public record LinePaint(String label, int labelColor, String value, int valueColor) {
+    }
+
+    public static LinePaint paint(String line) {
+        if (line.startsWith(DURATION_LABEL)) {
+            return new LinePaint(DURATION_LABEL, LABEL_COLOR, line.substring(DURATION_LABEL.length()), TIME_COLOR);
         }
+        if (line.startsWith(GOAL_LABEL)) {
+            return new LinePaint(GOAL_LABEL, LABEL_COLOR, line.substring(GOAL_LABEL.length()), GOAL_COLOR);
+        }
+        return new LinePaint("", 0, line, colorFor(line));
+    }
+
+    public static int colorFor(String line) {
         if (line.startsWith("•")) {
             return UNLOCK_COLOR;
         }
@@ -89,7 +102,7 @@ public final class FactoryLevelDisplay {
         } else {
             value = "Wird ermittelt …";
         }
-        return "Dauer bis Ziel: " + value;
+        return DURATION_LABEL + value;
     }
 
     public static String formatDuration(long remainingMillis) {

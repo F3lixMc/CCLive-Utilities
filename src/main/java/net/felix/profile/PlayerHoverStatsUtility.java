@@ -639,6 +639,16 @@ public class PlayerHoverStatsUtility {
         });
     }
 
+    public static java.util.concurrent.CompletableFuture<JsonObject> pendingChatProfile(Component message) {
+        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) return null;
+        String playerName = extractPlayerNameFromText(message);
+        if (playerName == null) return null;
+        var pending = profileFetches.pendingResult(playerName, "current");
+        if (pending != null) return pending;
+        var profile = profileFetches.available(playerName, "current");
+        return profile == null ? null : java.util.concurrent.CompletableFuture.completedFuture(profile);
+    }
+
     private static JsonObject profileNow(String playerName) {
         if (httpClient == null || playerName == null || playerName.isBlank()) {
             return null;

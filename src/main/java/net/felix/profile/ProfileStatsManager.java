@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.felix.CCLiveUtilities;
@@ -65,10 +66,8 @@ public class ProfileStatsManager {
     // Blueprint-Count (gesamt, wird direkt gesetzt, nicht additiv)
     private int currentBlueprintCount = 0;
     
-    // Playtime-Tracking (für Leaderboard)
-    private long playtimeTicks = 0; // Ticks seit letztem Update
-    private static final int PLAYTIME_UPDATE_INTERVAL = 1200; // Alle 60 Sekunden (20 ticks/sec * 60)
-    
+    private final PlaytimeTracker playtime;
+
     // Playtime nur wenn Server-Gate Uploads erlaubt (PlayLegend / Dev)
     private boolean isOnAllowedServerForPlaytime = false;
     
@@ -93,6 +92,7 @@ public class ProfileStatsManager {
         // Erstelle File-Pfad für JSON-Datei
         Path configDir = CCLiveUtilities.getConfigDir().resolve("cclive-utilities");
         this.saveFile = configDir.resolve(SAVE_FILE_NAME).toFile();
+        this.playtime = new PlaytimeTracker(configDir.resolve("playtime.json"));
     }
     
     public static ProfileStatsManager getInstance() {
@@ -194,13 +194,8 @@ public class ProfileStatsManager {
         
         // Registriere Disconnect-Event: Finales Update + Reset Server-Flag
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            playtime.checkpoint(false);
             if (isEnabled) {
-                // Sende restliche Playtime BEVOR wir das Flag zurücksetzen
-                if (isOnAllowedServerForPlaytime && playtimeTicks > 0) {
-                    sendPlaytimeToLeaderboard(); // Sende restliche Playtime
-                    playtimeTicks = 0;
-                }
-                
                 sendStatsUpdate(true); // Finales Update für andere Stats
             }
             
@@ -208,6 +203,8 @@ public class ProfileStatsManager {
             isOnAllowedServerForPlaytime = false;
         });
         
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> playtime.close());
+
         isInitialized = true;
         if (isDebugEnabled()) {
             // Silent error handling("[ProfileStats] ✅ ProfileStatsManager initialisiert");
@@ -222,27 +219,10 @@ public class ProfileStatsManager {
             return;
         }
         
-        // Playtime NUR auf Multiplayer-Servern UND auf dem erlaubten Server tracken
-        // getNetworkHandler() ist null im Singleplayer, nicht null auf Servern
-        // isOnAllowedServerForPlaytime wurde bereits beim Server-Join geprüft (effizienter)
-        boolean isOnServer = client.getConnection() != null;
-        
-        if (isOnServer && isOnAllowedServerForPlaytime) {
-            // Playtime tracken (für Leaderboard) - nur auf dem erlaubten Server
-            playtimeTicks++;
-            
-            // Playtime regelmäßig an Leaderboard senden
-            if (playtimeTicks >= PLAYTIME_UPDATE_INTERVAL) {
-                if (isDebugEnabled()) {
-                    // Silent error handling("⏱️ [ProfileStats] PLAYTIME_UPDATE_INTERVAL erreicht - playtimeTicks=" + playtimeTicks);
-                }
-                sendPlaytimeToLeaderboard();
-                playtimeTicks = 0; // Reset nach Update
-            }
-        } else {
-            // Playtime wird nicht getrackt (nicht auf Server oder nicht auf erlaubtem Server)
+        if (client.getConnection() != null && isOnAllowedServerForPlaytime) {
+            playtime.tick(client.player.getUUID());
         }
-        
+
         // Periodisch Stats sammeln und senden (auch im Singleplayer, falls gewünscht)
         tickCounter++;
         if (tickCounter >= UPDATE_INTERVAL) {
@@ -257,52 +237,6 @@ public class ProfileStatsManager {
         // Nur alle 10 Ticks prüfen (0.5 Sekunden) um Performance zu verbessern
         if (client.player.tickCount % 10 == 0) {
             checkCardsStatuesMenuForChanges(client);
-        }
-    }
-    
-    /**
-     * Sendet Playtime an Leaderboard-System
-     */
-    private void sendPlaytimeToLeaderboard() {
-        boolean debug = isDebugEnabled();
-        if (debug) {
-            // Silent error handling("⏱️ [ProfileStats] sendPlaytimeToLeaderboard() aufgerufen");
-            // Silent error handling("⏱️ [ProfileStats] isRegistered: " + leaderboardManager.isRegistered());
-            // Silent error handling("⏱️ [ProfileStats] playtimeTicks: " + playtimeTicks);
-            // Silent error handling("⏱️ [ProfileStats] isOnAllowedServerForPlaytime: " + isOnAllowedServerForPlaytime);
-        }
-        
-        LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
-        if (!leaderboardManager.isRegistered()) {
-            if (debug) {
-                // Silent error handling("⏱️ [ProfileStats] ABGEBROCHEN - nicht registriert");
-            }
-            return;
-        }
-        
-        // Berechne Playtime in Sekunden
-        long playtimeSeconds = playtimeTicks / 20; // Ticks zu Sekunden
-        if (debug) {
-            // Silent error handling("⏱️ [ProfileStats] playtimeSeconds berechnet: " + playtimeSeconds);
-        }
-        
-        if (playtimeSeconds <= 0) {
-            if (debug) {
-                // Silent error handling("⏱️ [ProfileStats] ABGEBROCHEN - playtimeSeconds <= 0");
-            }
-            return; // Keine Playtime zu senden
-        }
-        
-        // Sende als Leaderboard "playtime" (additiv)
-        // Der Server summiert automatisch
-        // Verwende updateScoreAdditive() damit additive Updates nicht blockiert werden
-        if (debug) {
-            // Silent error handling("⏱️ [ProfileStats] Rufe updateScoreAdditive auf für playtime = " + playtimeSeconds + " Sekunden");
-        }
-        leaderboardManager.updateScoreAdditive("playtime", playtimeSeconds);
-        
-        if (debug) {
-            // Silent error handling("[ProfileStats] ⏱️ Playtime gesendet: " + playtimeSeconds + " Sekunden (gesamt: " + (playtimeTicks / 20) + " Ticks)");
         }
     }
     
@@ -555,7 +489,6 @@ public class ProfileStatsManager {
     private void resetAdditiveCounters() {
         messagesSentSinceUpdate = 0;
         // currentBlueprintCount wird nicht zurückgesetzt, da es die Gesamtzahl ist
-        // playtimeTicks wird nicht zurückgesetzt, da es für Leaderboard verwendet wird
     }
     
     /**
@@ -565,7 +498,6 @@ public class ProfileStatsManager {
      */
     private void resetCounters() {
         resetAdditiveCounters();
-        playtimeTicks = 0; // Playtime auch zurücksetzen beim Join
         highestFloor = 0;
         highestWave = 0;
         maxCoins = 0;

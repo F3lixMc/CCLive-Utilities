@@ -284,7 +284,7 @@ public class LeaderboardManager {
                 && canUploadSeasonalScores();
     }
 
-    public boolean canUploadFactoryLevel() {
+    public boolean canUploadBufferedScore() {
         return isEnabled
                 && isRegistered()
                 && getPlayerToken() != null

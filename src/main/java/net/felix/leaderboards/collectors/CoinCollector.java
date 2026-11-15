@@ -4,9 +4,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.Other.DebugUtility;
 import net.felix.utilities.Overall.DimensionUtility;
+import net.felix.utilities.Overall.ServerConnectionGate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -57,7 +57,7 @@ public class CoinCollector implements DataCollector {
         long currentTime = System.currentTimeMillis();
         if (currentTime >= nextCommandTime && nextCommandTime > 0) {
             // In der Lobby kein /cc coins; Timer neu planen statt zu senden
-            if (DimensionUtility.isInGeneralLobby(client) || !isOnPlayLegend(client)) {
+            if (DimensionUtility.isInGeneralLobby(client) || !ServerConnectionGate.isDataUploadAllowed()) {
                 scheduleNextCommand();
                 return;
             }
@@ -71,7 +71,7 @@ public class CoinCollector implements DataCollector {
      * Führt den /cc coins Command aus
      */
     private void executeCoinsCommand(Minecraft client) {
-        if (DimensionUtility.isInGeneralLobby(client) || !isOnPlayLegend(client)) {
+        if (DimensionUtility.isInGeneralLobby(client) || !ServerConnectionGate.isDataUploadAllowed()) {
             return;
         }
         try {
@@ -98,33 +98,6 @@ public class CoinCollector implements DataCollector {
         }
     }
 
-    private static boolean isOnPlayLegend(Minecraft client) {
-        if (client == null || client.getConnection() == null) {
-            return false;
-        }
-        var serverData = client.getCurrentServer();
-        if (serverData == null) {
-            serverData = client.getConnection().getServerData();
-        }
-        if (serverData != null && (containsPlayLegend(serverData.name) || containsPlayLegend(serverData.ip))) {
-            return true;
-        }
-        try {
-            if (client.getConnection().getConnection() != null) {
-                var address = client.getConnection().getConnection().getRemoteAddress();
-                if (address != null && containsPlayLegend(address.toString())) {
-                    return true;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return false;
-    }
-
-    private static boolean containsPlayLegend(String value) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains("playlegend.net");
-    }
-    
     /**
      * Plant den nächsten Command-Zeitpunkt
      */

@@ -25,7 +25,7 @@ public final class SmithSkillUpload {
     private volatile boolean loaded;
 
     private SmithSkillUpload() {
-        Path file = CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve("smith-skill.json");
+        Path file = CCLiveUtilities.getConfigDir().resolve("cclive-utilities").resolve("smith-skill-playlegend.json");
         this.outbox = new SmithSkillOutbox(file);
     }
 

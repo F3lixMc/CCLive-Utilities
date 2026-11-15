@@ -1,5 +1,7 @@
 package net.felix.utilities.Overall.NpcAlerts;
 
+import net.felix.utilities.Overall.KeyBindingUtility;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -44,6 +46,26 @@ public class NpcAlertsDetailScreen extends Screen {
     private static final int SETTINGS_ROW_PERCENT = 100;
     private static final int SETTINGS_ROW_LEVEL = 125;
     private static final int SETTINGS_EXTRA_HEIGHT = 15;
+    private static final int SETTINGS_BOX_WIDTH = 300;
+    private static final int CRYSTAL_EXTRA_HEIGHT = 85;
+    private static final int CRYSTAL_SEPARATE_EXTRA_HEIGHT = 60;
+    private static final int CRYSTAL_BOTTOM_TRIM = 30;
+    private static final int PANEL_TOP_MARGIN = 36;
+    private static final int PANEL_EDGE_MARGIN = 12;
+
+    private float settingsScale() {
+        if (!isMachtkristalleKey() || !getSeparateOverlay()) return 1.0f;
+        int panelHeight = 275 + SETTINGS_EXTRA_HEIGHT + CRYSTAL_EXTRA_HEIGHT
+            + CRYSTAL_SEPARATE_EXTRA_HEIGHT - CRYSTAL_BOTTOM_TRIM;
+        float fitWidth = Math.max(1, width - 2 * PANEL_EDGE_MARGIN) / (float) SETTINGS_BOX_WIDTH;
+        // An odd panel height can shift the integer box origin by half a pixel.
+        float fitHeight = Math.max(1, height - PANEL_TOP_MARGIN - PANEL_EDGE_MARGIN) / (panelHeight + 1.0f);
+        return Math.min(0.85f, Math.min(fitWidth, fitHeight));
+    }
+
+    private float settingsCenterY(float scale) {
+        return scale == 1.0f ? height / 2.0f : (height + PANEL_TOP_MARGIN - PANEL_EDGE_MARGIN) / 2.0f;
+    }
     
     private int getScreenMessageCheckboxY(int boxY) {
         return boxY + SETTINGS_ROW_SCREEN_MESSAGE;
@@ -142,14 +164,25 @@ public class NpcAlertsDetailScreen extends Screen {
         titleWidget.extractRenderState(context, mouseX, mouseY, delta);
         
         // Render settings box
-        renderSettingsBox(context, mouseX, mouseY);
+        float scale = settingsScale();
+        float offsetX = width / 2.0f * (1.0f - scale);
+        float offsetY = settingsCenterY(scale) - height / 2.0f * scale;
+        context.pose().pushMatrix();
+        try {
+            context.pose().translate(offsetX, offsetY);
+            context.pose().scale(scale, scale);
+            renderSettingsBox(context, (int) Math.floor((mouseX - offsetX) / scale),
+                (int) Math.floor((mouseY - offsetY) / scale));
+        } finally {
+            context.pose().popMatrix();
+        }
         
         // Render buttons
         super.extractRenderState(context, mouseX, mouseY, delta);
     }
     
     private void renderSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
-        int boxWidth = 300;
+        int boxWidth = SETTINGS_BOX_WIDTH;
         // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
         boolean hasIconOption = configKey.equals("forschung") || configKey.equals("amboss") || 
                                configKey.equals("schmelzofen") || configKey.equals("seelen") || 
@@ -165,7 +198,7 @@ public class NpcAlertsDetailScreen extends Screen {
         int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
-            baseBoxHeight += 85; // 3 Slot-Checkboxen + Level-Checkbox
+            baseBoxHeight += CRYSTAL_EXTRA_HEIGHT; // 3 Slot-Checkboxen + Level-Checkbox
         }
         // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
         if (isRecycler || isRecyclerSlot) {
@@ -175,10 +208,10 @@ public class NpcAlertsDetailScreen extends Screen {
         int heightIncrease = 0;
         if (hasSeparateOverlay) {
             if (isMachtkristalle) {
-                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
+                heightIncrease = CRYSTAL_SEPARATE_EXTRA_HEIGHT; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
                 boxHeight += heightIncrease;
                 // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
-                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+                boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
             } else if (isRecycler || isRecyclerSlot) {
                 heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
                 boxHeight += heightIncrease;
@@ -190,7 +223,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
         } else if (isMachtkristalle) {
             // Reduziere die Höhe für Machtkristalle, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
-            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
         } else if (isRecycler || isRecyclerSlot) {
             // Reduziere die Höhe für Recycler, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
             boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
@@ -1014,13 +1047,14 @@ public class NpcAlertsDetailScreen extends Screen {
     
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
-        double mouseX = event.x();
-        double mouseY = event.y();
+        float scale = settingsScale();
+        double mouseX = (event.x() - width / 2.0f) / scale + width / 2.0f;
+        double mouseY = (event.y() - settingsCenterY(scale)) / scale + height / 2.0f;
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 0) {
             // Prüfe ob auf das Schließen-Kreuz geklickt wurde
             // Verwende exakt die gleiche Berechnung wie im Rendering
-            int boxWidth = 300;
+            int boxWidth = SETTINGS_BOX_WIDTH;
             // Berechne Höhe und Y-Position wie im Rendering
             boolean hasIconOptionClose = configKey.equals("forschung") || configKey.equals("amboss") || 
                                        configKey.equals("schmelzofen") || configKey.equals("seelen") || 
@@ -1034,7 +1068,7 @@ public class NpcAlertsDetailScreen extends Screen {
             boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay();
             int baseBoxHeightClose = (hasIconOptionClose ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
             if (isMachtkristalleClose) {
-                baseBoxHeightClose += 85;
+                baseBoxHeightClose += CRYSTAL_EXTRA_HEIGHT;
             }
             if (isRecyclerClose || isRecyclerSlotClose) {
                 baseBoxHeightClose += 60;
@@ -1043,9 +1077,9 @@ public class NpcAlertsDetailScreen extends Screen {
             int heightIncreaseClose = 0;
             if (hasSeparateOverlayClose) {
                 if (isMachtkristalleClose) {
-                    heightIncreaseClose = 60;
+                    heightIncreaseClose = CRYSTAL_SEPARATE_EXTRA_HEIGHT;
                     boxHeightClose += heightIncreaseClose;
-                    boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+                    boxHeightClose -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
                 } else if (isRecyclerClose || isRecyclerSlotClose) {
                     heightIncreaseClose = 60;
                     boxHeightClose += heightIncreaseClose;
@@ -1055,7 +1089,7 @@ public class NpcAlertsDetailScreen extends Screen {
                     boxHeightClose += heightIncreaseClose;
                 }
             } else if (isMachtkristalleClose) {
-                boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+                boxHeightClose -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
             } else if (isRecyclerClose || isRecyclerSlotClose) {
                 boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
             }
@@ -1086,7 +1120,7 @@ public class NpcAlertsDetailScreen extends Screen {
             return false;
         }
         
-        int boxWidth = 300;
+        int boxWidth = SETTINGS_BOX_WIDTH;
         // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
         boolean hasIconOption = configKey.equals("forschung") || configKey.equals("amboss") || 
                                configKey.equals("schmelzofen") || configKey.equals("seelen") || 
@@ -1102,7 +1136,7 @@ public class NpcAlertsDetailScreen extends Screen {
             int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
-            baseBoxHeight += 85; // 3 Slot-Checkboxen + Level-Checkbox
+            baseBoxHeight += CRYSTAL_EXTRA_HEIGHT; // 3 Slot-Checkboxen + Level-Checkbox
         }
         // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
         if (isRecycler || isRecyclerSlot) {
@@ -1112,10 +1146,10 @@ public class NpcAlertsDetailScreen extends Screen {
         int heightIncrease = 0;
         if (hasSeparateOverlay) {
             if (isMachtkristalle) {
-                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
+                heightIncrease = CRYSTAL_SEPARATE_EXTRA_HEIGHT; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
                 boxHeight += heightIncrease;
                 // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
-                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+                boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
             } else if (isRecycler || isRecyclerSlot) {
                 heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
                 boxHeight += heightIncrease;
@@ -1127,7 +1161,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
         } else if (isMachtkristalle) {
             // Reduziere die Höhe für Machtkristalle, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
-            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+            boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
         } else if (isRecycler || isRecyclerSlot) {
             // Reduziere die Höhe für Recycler, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
             boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
@@ -1691,41 +1725,37 @@ public class NpcAlertsDetailScreen extends Screen {
     }
     
     @Override
-    public boolean charTyped(net.minecraft.client.input.CharacterEvent event) {
-        char chr = (char) event.codepoint();
-        if (isEditingWarnPercent) {
-            if (chr >= '0' && chr <= '9' && warnPercentInput.length() < 12) {
-                warnPercentInput += chr;
-                saveWarnPercent();
-            }
-            return true;
-        }
-        return super.charTyped(event);
-    }
-    
-    @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
-        int keyCode = event.key();
         if (isEditingWarnPercent) {
-            if (keyCode == 259) { // Backspace
-                if (!warnPercentInput.isEmpty()) {
-                    warnPercentInput = warnPercentInput.substring(0, warnPercentInput.length() - 1);
-                    // Automatisch speichern nach Backspace
+            int key = event.key();
+            Character digit = KeyBindingUtility.digitFromScancode(key);
+            if (digit != null) {
+                if (warnPercentInput.length() < 12) {
+                    warnPercentInput += digit;
                     saveWarnPercent();
                 }
                 return true;
-            } else if (keyCode == 257 || keyCode == 335) { // Enter oder Numpad Enter
+            }
+            if (key == InputConstants.KEY_BACKSPACE) {
+                if (!warnPercentInput.isEmpty()) {
+                    warnPercentInput = warnPercentInput.substring(0, warnPercentInput.length() - 1);
+                    saveWarnPercent();
+                }
+                return true;
+            }
+            if (key == InputConstants.KEY_RETURN || key == InputConstants.KEY_NUMPADENTER) {
                 saveWarnPercent();
                 isEditingWarnPercent = false;
                 return true;
-            } else if (keyCode == 256) { // Escape
+            }
+            if (key == InputConstants.KEY_ESCAPE) {
                 isEditingWarnPercent = false;
                 return true;
             }
         }
         return super.keyPressed(event);
     }
-    
+
     private void saveWarnPercent() {
         if ("komboKiste".equals(configKey)) {
             try {
