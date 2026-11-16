@@ -1,5 +1,6 @@
 package net.felix.mixin;
 
+import net.felix.features.information.aspects.AspectChatMessages;
 import net.felix.utilities.Town.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -9,7 +10,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.features.information.aspects.AspectChatMessages;
 
 /**
  * Mixin to intercept GameMessageS2CPacket before it reaches the chat.
@@ -46,7 +46,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         String messageText = originalMessage.getString();
         if (messageText != null && (messageText.contains("[Bauplan]") || messageText.contains("Kombo") || messageText.contains("Belohnungen"))) {
             // Check for blueprint BEFORE modifying the message
-            net.felix.utilities.Aincraft.BPViewerUtility bpInstance = net.felix.utilities.Aincraft.BPViewerUtility.getInstance();
+            net.felix.utilities.Aincraft.blueprints.BPViewerUtility bpInstance = net.felix.utilities.Aincraft.blueprints.BPViewerUtility.getInstance();
             if (bpInstance != null) {
                 bpInstance.checkForBlueprint(originalMessage, messageText);
             }

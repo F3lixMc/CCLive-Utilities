@@ -1,9 +1,8 @@
 package net.felix.utilities.Town;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.BPViewerUtility;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -13,7 +12,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-
 
 /**
  * View-Only Screen für die Anzeige der Kits-Tabelle
@@ -602,7 +600,7 @@ public class KitViewScreen extends Screen {
 				true,
 				showBpStatus,
 				this::isBlueprintFound,
-				net.felix.utilities.Aincraft.FishingComponentFoundUtility::isFound,
+				net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility::isFound,
 				net.felix.profile.ProfileStatsManager::isCardUnlockedLocally
 		);
 		KitTooltipHelper.ExtraPanel extra = KitTooltipHelper.buildExtraPanel(this.font, hoveredCustomKit);

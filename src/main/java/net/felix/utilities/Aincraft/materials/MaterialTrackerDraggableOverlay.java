@@ -1,15 +1,14 @@
-package net.felix.utilities.DragOverlay.Aincraft;
+package net.felix.utilities.Aincraft.materials;
 
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.utilities.Overall.ActionBarData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-import java.util.List;
 
 /**
  * Draggable Overlay für den Material Tracker

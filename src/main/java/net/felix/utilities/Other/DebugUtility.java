@@ -1,10 +1,16 @@
 package net.felix.utilities.Other;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.ItemInfoUtility;
+import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.BossHealthOverlay;
@@ -21,13 +27,6 @@ import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.PlayerScoreEntry;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
-import com.mojang.blaze3d.platform.InputConstants;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility-Klasse für einheitliche Debug-Nachrichten und Item-Logging

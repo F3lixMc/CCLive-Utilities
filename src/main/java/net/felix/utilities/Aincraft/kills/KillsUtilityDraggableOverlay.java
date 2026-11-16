@@ -1,7 +1,6 @@
-package net.felix.utilities.DragOverlay.Aincraft;
+package net.felix.utilities.Aincraft.kills;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

@@ -1,9 +1,11 @@
 package net.felix.utilities.Overall;
 
-import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.Aincraft.CardsStatuesUtility;
-import net.felix.utilities.Aincraft.KillsUtility;
-import net.felix.utilities.Aincraft.MaterialTrackerUtility;
+import net.felix.features.information.InformationFeature;
+import net.felix.features.npcalerts.NpcAlertsFeature;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.cardsstatues.CardsStatuesUtility;
+import net.felix.utilities.Aincraft.kills.KillsUtility;
+import net.felix.utilities.Aincraft.materials.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Factory.FactoryLevelTracker;
@@ -11,8 +13,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.felix.features.information.InformationFeature;
-import net.felix.features.npcalerts.NpcAlertsFeature;
 
 /**
  * In 26.1 können {@code HudElementRegistry.addLast}-Overlays über dem Inventar-Dim landen.

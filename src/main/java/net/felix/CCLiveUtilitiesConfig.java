@@ -1,21 +1,22 @@
 package net.felix;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.*;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+import net.felix.utilities.Aincraft.materials.MaterialTrackerDisplayMode;
 import net.felix.utilities.Town.ItemDisplayMode;
 import net.felix.utilities.Town.OverlayType;
 import net.felix.utilities.Town.SchmiedItemDisplayMode;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
 
 public class CCLiveUtilitiesConfig {
     public static final ConfigClassHandler<CCLiveUtilitiesConfig> HANDLER = ConfigClassHandler.createBuilder(CCLiveUtilitiesConfig.class)

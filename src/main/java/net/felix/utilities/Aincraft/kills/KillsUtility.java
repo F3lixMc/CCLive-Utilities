@@ -1,13 +1,13 @@
-package net.felix.utilities.Aincraft;
+package net.felix.utilities.Aincraft.kills;
 
-import net.felix.utilities.Overall.KeyCategories;
-
+import com.mojang.blaze3d.platform.InputConstants;
+import java.util.Map;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.KeyCategories;
 import net.felix.utilities.Overall.SessionRateUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
@@ -17,8 +17,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-import com.mojang.blaze3d.platform.InputConstants;
-import java.util.Map;
 
 public class KillsUtility {
 	

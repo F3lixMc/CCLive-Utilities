@@ -1,31 +1,30 @@
 package net.felix;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import net.fabricmc.api.ModInitializer;
-import net.felix.utilities.Aincraft.CardsStatuesUtility;
-import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.Aincraft.KillsUtility;
-import net.felix.utilities.Aincraft.MaterialTrackerUtility;
+import net.felix.chat.ChatManager;
+import net.felix.commands.CCLiveCommands;
+import net.felix.features.information.InformationFeature;
+import net.felix.features.npcalerts.NpcAlertsFeature;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.profile.PlayerHoverStatsUtility;
+import net.felix.profile.ProfileStatsManager;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.cardsstatues.CardsStatuesUtility;
+import net.felix.utilities.Aincraft.kills.DamageTrackingUtility;
+import net.felix.utilities.Aincraft.kills.KillAnimationUtility;
+import net.felix.utilities.Aincraft.kills.KillsUtility;
+import net.felix.utilities.Aincraft.materials.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Factory.FactoryLevelTracker;
 import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
-import net.felix.utilities.Overall.KillAnimationUtility;
-import net.felix.utilities.Overall.DamageTrackingUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.ModSounds;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.commands.CCLiveCommands;
-import net.felix.chat.ChatManager;
-import net.felix.profile.ProfileStatsManager;
-import net.felix.profile.PlayerHoverStatsUtility;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import net.felix.features.information.InformationFeature;
-import net.felix.features.npcalerts.NpcAlertsFeature;
 
 public class CCLiveUtilities implements ModInitializer {
 	public static final String MOD_ID = "cclive-utilities";
@@ -75,8 +74,8 @@ public class CCLiveUtilities implements ModInitializer {
 		AnimationBlockerUtility.initialize();
 		KillAnimationUtility.initialize();
 		BPViewerUtility.initialize();
-		net.felix.utilities.Aincraft.FishingComponentFoundUtility.initialize();
-		net.felix.utilities.Aincraft.FishTrapFoundUtility.initialize();
+		net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility.initialize();
+		net.felix.utilities.Aincraft.fishing.FishTrapFoundUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();

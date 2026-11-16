@@ -1,25 +1,24 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Aincraft.KillsUtility;
-import net.felix.utilities.Factory.WaveUtility;
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.UUID;
+import net.felix.features.information.collections.CollectionTracker;
+import net.felix.features.itemviewer.inventory.HudStatsReader;
+import net.felix.features.npcalerts.parser.KomboKisteReader;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
+import net.felix.utilities.Aincraft.kills.KillsUtility;
+import net.felix.utilities.Factory.WaveUtility;
+import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
-import net.felix.utilities.Overall.CoinTrackerUtility;
-import net.felix.features.itemviewer.inventory.HudStatsReader;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.UUID;
-import net.felix.features.information.collections.CollectionTracker;
-import net.felix.features.npcalerts.parser.KomboKisteReader;
 
 @SuppressWarnings("unused")
 @Mixin(BossHealthOverlay.class)

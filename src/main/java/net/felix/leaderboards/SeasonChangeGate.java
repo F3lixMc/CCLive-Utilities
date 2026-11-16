@@ -2,15 +2,6 @@ package net.felix.leaderboards;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.leaderboards.http.HttpClient;
-import net.felix.profile.ProfileStatsManager;
-import net.felix.utilities.Overall.LocalSeasonProgressReset;
-import net.felix.utilities.Overall.ServerConnectionGate;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -18,6 +9,14 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.leaderboards.http.HttpClient;
+import net.felix.profile.ProfileStatsManager;
+import net.felix.utilities.Aincraft.fishing.LocalSeasonProgressReset;
+import net.felix.utilities.Overall.ServerConnectionGate;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * Season-/Preseason-Pruefung am Join: Upload-Gate, lokaler Progress-Reset, Epoch gegen stale Disconnect-Antworten.

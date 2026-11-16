@@ -1,12 +1,11 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
+import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import org.spongepowered.asm.mixin.Mixin;

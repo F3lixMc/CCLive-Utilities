@@ -3,7 +3,7 @@ package net.felix.features.itemviewer.inventory;
 import com.google.gson.JsonObject;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.tooltip.TooltipCache;
-import net.felix.utilities.Aincraft.BPViewerUtility;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
 import net.minecraft.client.Minecraft;
 
 import static net.felix.features.itemviewer.search.ItemFilterPipeline.applyFilters;
@@ -106,10 +106,10 @@ public final class FoundStatus {
             return false;
         }
         if ("fishing_components".equals(item.category)) {
-            return net.felix.utilities.Aincraft.FishingComponentFoundUtility.isFound(item.name);
+            return net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility.isFound(item.name);
         }
         if ("fish_traps".equals(item.category)) {
-            return net.felix.utilities.Aincraft.FishTrapFoundUtility.isFound(item.name);
+            return net.felix.utilities.Aincraft.fishing.FishTrapFoundUtility.isFound(item.name);
         }
         return isBlueprintFound(item.name);
     }

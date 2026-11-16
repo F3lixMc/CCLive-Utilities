@@ -1,11 +1,9 @@
-package net.felix.utilities.Aincraft;
+package net.felix.utilities.Aincraft.iteminfo;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.fabricmc.loader.api.FabricLoader;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -14,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.fabricmc.loader.api.FabricLoader;
 
 final class ExtractedItemsStorage {
 	static final String SECTION_BLUEPRINTS = "blueprints";

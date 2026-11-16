@@ -1,11 +1,18 @@
 package net.felix.utilities.DragOverlay.Overall;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.*;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.BPViewerUtility;
+import net.felix.features.information.materials.MaterialDatabase;
+import net.felix.features.information.materials.MaterialFloorInfo;
+import net.felix.features.information.materials.MaterialRarityColors;
 import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.ItemCatalog;
 import net.felix.features.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardPaperShredsCollector;
@@ -20,15 +27,6 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
-
-import java.math.BigDecimal;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.*;
-import net.felix.features.information.materials.MaterialDatabase;
-import net.felix.features.information.materials.MaterialFloorInfo;
-import net.felix.features.information.materials.MaterialRarityColors;
-import net.felix.features.itemviewer.data.ItemCatalog;
 
 /**
  * Draggable Overlay für das Clipboard (Bauplan-Kosten)

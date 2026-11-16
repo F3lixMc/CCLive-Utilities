@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Aincraft.kills;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilitiesConfig;

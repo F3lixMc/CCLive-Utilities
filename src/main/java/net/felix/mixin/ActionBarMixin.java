@@ -1,18 +1,16 @@
 package net.felix.mixin;
 
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.materials.ActionBarData;
+import net.felix.utilities.Factory.BossHPUtility;
+import net.felix.utilities.Other.Clipboard.ClipboardFarmzoneActionBar;
+import net.minecraft.client.gui.Hud;
+import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import net.felix.utilities.Overall.ActionBarData;
-import net.minecraft.client.gui.Hud;
-import net.minecraft.network.chat.Component;
-import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.Factory.BossHPUtility;
-import net.felix.utilities.Other.Clipboard.ClipboardFarmzoneActionBar;
-
 
 @SuppressWarnings("unused")
 @Mixin(Hud.class)

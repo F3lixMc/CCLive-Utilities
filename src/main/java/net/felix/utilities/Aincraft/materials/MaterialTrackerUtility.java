@@ -1,19 +1,17 @@
-package net.felix.utilities.Aincraft;
+package net.felix.utilities.Aincraft.materials;
 
-import net.felix.utilities.Overall.KeyCategories;
-
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import org.joml.Matrix3x2fStack;
+import java.util.ArrayList;
+import java.util.List;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.MaterialTrackerDisplayMode;
-import net.felix.utilities.Overall.ActionBarData;
 import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.KeyCategories;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.OverlayType;
 import net.minecraft.client.DeltaTracker;
@@ -23,8 +21,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import java.util.List;
-import java.util.ArrayList;
+import org.joml.Matrix3x2fStack;
 
 public class MaterialTrackerUtility {
 	

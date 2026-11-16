@@ -1,5 +1,8 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Aincraft.kills;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.profile.ProfileStatsManager;
 import net.minecraft.client.Minecraft;
@@ -7,9 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.AABB;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * Utility zum Tracken des maximalen Schadens, der dem Spieler angezeigt wird.

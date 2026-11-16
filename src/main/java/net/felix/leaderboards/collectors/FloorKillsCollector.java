@@ -1,13 +1,12 @@
 package net.felix.leaderboards.collectors;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.Aincraft.KillsUtility;
-import net.minecraft.client.Minecraft;
-import net.felix.utilities.Aincraft.BPViewerUtility;
-
 import java.util.HashMap;
 import java.util.Map;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.kills.KillsUtility;
+import net.minecraft.client.Minecraft;
 
 /**
  * Sammelt Floor-spezifische Kill-Daten

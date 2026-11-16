@@ -1,11 +1,14 @@
 package net.felix.utilities.Overall;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.CoinTrackerDisplayMode;
-import net.felix.MaterialTrackerDisplayMode;
 import net.felix.ResourceTrackerDisplayMode;
-import net.felix.utilities.Aincraft.MaterialRateUtility;
-import net.felix.utilities.Aincraft.MaterialTrackerUtility;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
+import net.felix.utilities.Aincraft.materials.MaterialRateUtility;
+import net.felix.utilities.Aincraft.materials.MaterialTrackerDisplayMode;
+import net.felix.utilities.Aincraft.materials.MaterialTrackerUtility;
 import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -15,9 +18,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
-import java.util.ArrayList;
-import java.util.List;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Ersetzt die Vanilla-Sidebar: Server-Zeilen auslesen, CPM einfügen, im Vanilla-Stil rendern.

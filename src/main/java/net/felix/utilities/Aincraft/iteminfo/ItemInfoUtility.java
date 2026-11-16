@@ -1,15 +1,21 @@
-package net.felix.utilities.Aincraft;
-
-import net.felix.utilities.Overall.KeyCategories;
-
+package net.felix.utilities.Aincraft.iteminfo;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.InputConstants;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
+import net.felix.features.information.blueprints.BlueprintChatParser;
+import net.felix.features.information.blueprints.BlueprintNameAndColor;
+import net.felix.utilities.Overall.KeyCategories;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -19,14 +25,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.IntStream;
-import net.felix.features.information.blueprints.BlueprintChatParser;
-import net.felix.features.information.blueprints.BlueprintNameAndColor;
 
 public class ItemInfoUtility {
 

@@ -1,9 +1,9 @@
 package net.felix.features.itemviewer.inventory;
 
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.Aincraft.FishTrapFoundUtility;
-import net.felix.utilities.Aincraft.FishingComponentFoundUtility;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.fishing.FishTrapFoundUtility;
+import net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility;
 
 /**
  * Prüft, ob ein Item-Viewer-Eintrag bereits gefunden wurde.

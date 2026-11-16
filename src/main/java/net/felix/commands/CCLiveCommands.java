@@ -1,38 +1,37 @@
 package net.felix.commands;
 
+import com.google.gson.JsonObject;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.utilities.Overall.ZeichenUtility;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.chat.Component;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.chat.ChatManager;
 import net.felix.devtools.DevToolsAccess;
 import net.felix.devtools.DevToolsScreen;
+import net.felix.identity.WebsiteProfileLogin;
+import net.felix.leaderboards.LeaderboardManager;
 import net.felix.staff.StaffClientAccess;
 import net.felix.staff.StaffModerationCommands;
 import net.felix.staff.StaffNameSuggestions;
 import net.felix.staff.StaffPermsCommands;
-import net.minecraft.client.Minecraft;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.StarForgedSoundUtility;
-import net.felix.identity.WebsiteProfileLogin;
-
-import java.util.concurrent.CompletableFuture;
-import com.google.gson.JsonObject;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.*;
 

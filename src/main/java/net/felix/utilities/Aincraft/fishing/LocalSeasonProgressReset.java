@@ -1,9 +1,7 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Aincraft.fishing;
 
 import net.felix.profile.ProfileStatsManager;
-import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.Aincraft.FishTrapFoundUtility;
-import net.felix.utilities.Aincraft.FishingComponentFoundUtility;
+import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
 import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;

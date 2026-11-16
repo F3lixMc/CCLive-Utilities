@@ -3,9 +3,9 @@ package net.felix.mixin;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.client.input.MouseButtonEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -116,8 +116,8 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Overall.Aspekte.AspectOverlay.clearTooltipBounds();
         
         // Item-Info-Overlay (nicht registrierte Baupläne / Angel-Komponenten markieren)
-        if (net.felix.utilities.Aincraft.ItemInfoUtility.isSupportedInventory(screen)) {
-            net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, leftPos, topPos);
+        if (net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility.isSupportedInventory(screen)) {
+            net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, leftPos, topPos);
         }
         
         // Render MkLevel overlay in "Machtkristalle Verbessern" inventory

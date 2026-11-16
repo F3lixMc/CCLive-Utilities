@@ -1,4 +1,4 @@
-package net.felix.utilities.Aincraft;
+package net.felix.utilities.Aincraft.iteminfo;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

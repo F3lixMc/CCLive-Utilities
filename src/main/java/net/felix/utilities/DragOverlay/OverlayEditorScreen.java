@@ -1,8 +1,35 @@
 package net.felix.utilities.DragOverlay;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
+import java.util.ArrayList;
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.information.collections.CollectionTracker;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
+import net.felix.features.npcalerts.overlay.draggable.AspectDraggableOverlay;
+import net.felix.features.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
+import net.felix.features.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
+import net.felix.features.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
+import net.felix.utilities.Aincraft.blueprints.BlueprintViewerDraggableOverlay;
+import net.felix.utilities.Aincraft.cardsstatues.CardsDraggableOverlay;
+import net.felix.utilities.Aincraft.cardsstatues.StatuesDraggableOverlay;
+import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
+import net.felix.utilities.Aincraft.materials.MaterialTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
+import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
+import net.felix.utilities.DragOverlay.Factory.FactoryLevelDraggableOverlay;
+import net.felix.utilities.DragOverlay.Factory.MkLevelDraggableOverlay;
+import net.felix.utilities.DragOverlay.Farmworld.CollectionDraggableOverlay;
+import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.Overall.LeaderboardDraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.HideUncraftableButtonDraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.HideWrongClassButtonDraggableOverlay;
+import net.felix.utilities.DragOverlay.Schmied.KitFilterButtonDraggableOverlay;
+import net.felix.utilities.Factory.FactoryLevelTracker;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -12,37 +39,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.felix.utilities.DragOverlay.Aincraft.BlueprintViewerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.CardsDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.KillsUtilityDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.MaterialTrackerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.LeaderboardDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
-import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
-import net.felix.utilities.DragOverlay.Factory.FactoryLevelDraggableOverlay;
-import net.felix.utilities.Factory.FactoryLevelTracker;
-import net.felix.utilities.DragOverlay.Factory.MkLevelDraggableOverlay;
-import net.felix.utilities.DragOverlay.Farmworld.CollectionDraggableOverlay;
-import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.HideUncraftableButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.HideWrongClassButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.KitFilterButtonDraggableOverlay;
-import net.felix.features.npcalerts.overlay.draggable.AspectDraggableOverlay;
-import net.felix.features.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
-import net.felix.features.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
 import org.joml.Matrix3x2fStack;
-
-
-import java.util.ArrayList;
-import java.util.List;
-import net.felix.features.information.collections.CollectionTracker;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
-import net.felix.features.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
 
 /**
  * Screen für das Drag-and-Drop-Positionieren von Overlays

@@ -1,12 +1,5 @@
-package net.felix.utilities.Aincraft;
+package net.felix.utilities.Aincraft.materials;
 
-import net.felix.utilities.Overall.ActionBarData;
-import net.felix.utilities.Overall.HudNumberSuffixUtility;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextColor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -14,6 +7,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.utilities.Overall.HudNumberSuffixUtility;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 /**
  * Berechnet Materialien pro Minute aus Action-Bar-Session-Daten.

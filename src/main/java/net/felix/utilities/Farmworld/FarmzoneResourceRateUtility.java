@@ -1,12 +1,12 @@
 package net.felix.utilities.Farmworld;
 
-import net.felix.utilities.Aincraft.MaterialRateUtility;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.utilities.Aincraft.materials.MaterialRateUtility;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 
 /**
  * Berechnet Ressourcen pro Minute aus Farmzone-Actionbar ({@code +ZAHL NAME [ANZAHL]}).

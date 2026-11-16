@@ -169,7 +169,7 @@ public final class InventoryItemCapture {
             if (cmd.floats() != null && !cmd.floats().isEmpty()) {
                 snapshot.customModelData = cmd.floats().get(0).intValue();
             } else {
-                Integer legacy = net.felix.utilities.Aincraft.ItemInfoUtility.extractCustomModelData(stack);
+                Integer legacy = net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility.extractCustomModelData(stack);
                 if (legacy != null) {
                     snapshot.customModelData = legacy;
                 }
