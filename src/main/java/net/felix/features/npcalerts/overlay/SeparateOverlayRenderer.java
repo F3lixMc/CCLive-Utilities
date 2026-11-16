@@ -2,13 +2,11 @@ package net.felix.features.npcalerts.overlay;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.npcalerts.data.CapacityData;
 import net.felix.features.npcalerts.data.MachtkristallSlot;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import org.joml.Matrix3x2fStack;
 
 import static net.felix.features.npcalerts.data.NpcAlertState.ambossCapacity;
 import static net.felix.features.npcalerts.data.NpcAlertState.essenzenCapacity;
@@ -23,18 +21,7 @@ import static net.felix.features.npcalerts.data.NpcAlertState.schmelzofenCapacit
 import static net.felix.features.npcalerts.data.NpcAlertState.seelenCapacity;
 import static net.felix.features.npcalerts.message.ScreenMessages.getMachtkristallShowWarning;
 import static net.felix.features.npcalerts.message.ScreenMessages.shouldShowForschungWarning;
-import static net.felix.features.npcalerts.overlay.AlertIcons.AMBOSS_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.ESSENZEN_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.FORSCHUNG_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.JAEGER_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.KOMBO_KISTE_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.MACHTKRISTALL_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.RECYCLER_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.SCHMELZOFEN_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.SEELEN_ICON;
-import static net.felix.features.npcalerts.overlay.AlertSettings.getPercentColorForConfigKey;
-import static net.felix.features.npcalerts.overlay.AlertSettings.getSeparateOverlayScale;
-import static net.felix.features.npcalerts.overlay.AlertSettings.getTextColorForConfigKey;
+import static net.felix.features.npcalerts.overlay.MultiLineOverlayRenderer.renderMultiLineOverlay;
 import static net.felix.features.npcalerts.overlay.PercentFormatter.formatPercent;
 import static net.felix.features.npcalerts.overlay.SingleInfoOverlayRenderer.renderSingleInfoOverlay;
 import static net.felix.features.npcalerts.parser.KomboKisteReader.getKomboKisteFractionDisplay;
@@ -44,6 +31,8 @@ import static net.felix.features.npcalerts.parser.KomboKisteReader.getKomboKiste
  */
 public final class SeparateOverlayRenderer {
 
+	private static final int MACHTKRISTALL_SLOT_COUNT = 3;
+
 	private SeparateOverlayRenderer() {
 	}
 
@@ -51,645 +40,297 @@ public final class SeparateOverlayRenderer {
 	 * Rendert separate Overlays für einzelne Informationen
 	 */
 	static void renderSeparateOverlays(GuiGraphicsExtractor context, Minecraft client) {
-		// Forschung
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschung && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay) {
-			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
-			if (showPercent) {
-				if (forschung.isValid()) {
-					// Forschung zählt runter: wenn current näher an max ist, ist der Prozent höher
-					// Prozent = (current / max) * 100
-					percent = formatPercent(forschung.current, forschung.max);
+		renderForschung(context, client);
+		renderAmboss(context, client);
+		renderSchmelzofen(context, client);
+		renderJaeger(context, client);
+		renderSeelen(context, client);
+		renderEssenzen(context, client);
+		renderKomboKiste(context, client);
+		renderMachtkristalle(context, client);
+		renderRecycler(context, client);
+	}
+
+	private static void renderForschung(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsForschung && config.npcAlertsForschungSeparateOverlay)) {
+			return;
+		}
+
+		String percent = null;
+		boolean showPercent = config.showNpcAlertsForschungPercent;
+		if (showPercent) {
+			if (forschung.isValid()) {
+				// Forschung zählt runter: wenn current näher an max ist, ist der Prozent höher
+				percent = formatPercent(forschung.current, forschung.max);
+			} else {
+				String displayString = forschung.getDisplayString();
+				if (displayString != null && displayString.contains("Nicht im Tab-Widget")) {
+					// Keine Prozentanzeige wenn "Nicht im Tab-Widget"
+					showPercent = false;
 				} else {
-					// Prüfe ob "Nicht im Tab-Widget" angezeigt wird
-					String displayString = forschung.getDisplayString();
-					if (displayString != null && displayString.contains("Nicht im Tab-Widget")) {
-						// Keine Prozentanzeige wenn "Nicht im Tab-Widget"
-						showPercent = false;
-						percent = null;
-					} else {
-						// Zeige "?%" wenn Daten noch nicht verfügbar sind
-						percent = "?%";
-					}
+					// Zeige "?%" wenn Daten noch nicht verfügbar sind
+					percent = "?%";
 				}
 			}
-			// Warnung: wenn verbleibender Wert <= Schwelle (0-23)
-			int warnValue = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
-			boolean showWarning = shouldShowForschungWarning(warnValue);
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
-			String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
-			renderSingleInfoOverlay(context, client, displayText, 
+		}
+		// Warnung: wenn verbleibender Wert <= Schwelle (0-23)
+		boolean showWarning = shouldShowForschungWarning(config.npcAlertsForschungWarnValue);
+		boolean showIcon = config.npcAlertsForschungShowIcon;
+		String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
+		renderSingleInfoOverlay(context, client, displayText,
 				percent, showPercent, showWarning, "forschung", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground);
+				config.npcAlertsForschungX, config.npcAlertsForschungY, config.npcAlertsForschungShowBackground);
+	}
+
+	private static void renderAmboss(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsAmboss && config.npcAlertsAmbossSeparateOverlay)) {
+			return;
 		}
-		
-		// Amboss
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmboss && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay) {
-			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
-			if (showPercent && ambossCapacity.isValid()) {
-				percent = formatPercent(ambossCapacity.current, ambossCapacity.max);
-			}
-			double currentPercent = ambossCapacity.isValid() ? 
-				((double)ambossCapacity.current / (double)ambossCapacity.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
-			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
-			String displayText = showIcon ? ambossCapacity.getDisplayString() : "Amboss: " + ambossCapacity.getDisplayString();
-			renderSingleInfoOverlay(context, client, displayText, 
-				percent, showPercent, showWarning, "amboss", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground);
+		renderCapacityOverlay(context, client, ambossCapacity, ambossCapacity.getDisplayString(), "Amboss: ", "amboss",
+				config.showNpcAlertsAmbossPercent, config.npcAlertsAmbossWarnPercent, config.npcAlertsAmbossShowIcon,
+				config.npcAlertsAmbossX, config.npcAlertsAmbossY, config.npcAlertsAmbossShowBackground);
+	}
+
+	private static void renderSchmelzofen(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsSchmelzofen && config.npcAlertsSchmelzofenSeparateOverlay)) {
+			return;
 		}
-		
-		// Schmelzofen
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofen && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay) {
-			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
-			if (showPercent && schmelzofenCapacity.isValid()) {
-				percent = formatPercent(schmelzofenCapacity.current, schmelzofenCapacity.max);
-			}
-			double currentPercent = schmelzofenCapacity.isValid() ? 
-				((double)schmelzofenCapacity.current / (double)schmelzofenCapacity.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
-			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
-			String displayText = showIcon ? schmelzofenCapacity.getDisplayString() : "Schmelzofen: " + schmelzofenCapacity.getDisplayString();
-			renderSingleInfoOverlay(context, client, displayText, 
-				percent, showPercent, showWarning, "schmelzofen", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground);
+		renderCapacityOverlay(context, client, schmelzofenCapacity, schmelzofenCapacity.getDisplayString(), "Schmelzofen: ", "schmelzofen",
+				config.showNpcAlertsSchmelzofenPercent, config.npcAlertsSchmelzofenWarnPercent, config.npcAlertsSchmelzofenShowIcon,
+				config.npcAlertsSchmelzofenX, config.npcAlertsSchmelzofenY, config.npcAlertsSchmelzofenShowBackground);
+	}
+
+	private static void renderJaeger(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsJaeger && config.npcAlertsJaegerSeparateOverlay)) {
+			return;
 		}
-		
-		// Jäger
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaeger && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay) {
-			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
-			if (showPercent && jaegerCapacity.isValid()) {
-				percent = formatPercent(jaegerCapacity.current, jaegerCapacity.max);
-			}
-			double currentPercent = jaegerCapacity.isValid() ? 
-				((double)jaegerCapacity.current / (double)jaegerCapacity.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
-			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
-			String displayText = showIcon ? jaegerCapacity.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + jaegerCapacity.getDisplayStringWithoutCurrentSuffix();
-			renderSingleInfoOverlay(context, client, displayText, 
-				percent, showPercent, showWarning, "jaeger", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground);
+		renderCapacityOverlay(context, client, jaegerCapacity, jaegerCapacity.getDisplayStringWithoutCurrentSuffix(), "Jäger: ", "jaeger",
+				config.showNpcAlertsJaegerPercent, config.npcAlertsJaegerWarnPercent, config.npcAlertsJaegerShowIcon,
+				config.npcAlertsJaegerX, config.npcAlertsJaegerY, config.npcAlertsJaegerShowBackground);
+	}
+
+	private static void renderSeelen(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsSeelen && config.npcAlertsSeelenSeparateOverlay)) {
+			return;
 		}
-		
-		// Seelen
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelen && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay) {
-			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
-			if (showPercent && seelenCapacity.isValid()) {
-				percent = formatPercent(seelenCapacity.current, seelenCapacity.max);
-			}
-			double currentPercent = seelenCapacity.isValid() ? 
-				((double)seelenCapacity.current / (double)seelenCapacity.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
-			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
-			String displayText = showIcon ? seelenCapacity.getDisplayString() : "Seelen: " + seelenCapacity.getDisplayString();
-			renderSingleInfoOverlay(context, client, displayText, 
-				percent, showPercent, showWarning, "seelen", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground);
+		renderCapacityOverlay(context, client, seelenCapacity, seelenCapacity.getDisplayString(), "Seelen: ", "seelen",
+				config.showNpcAlertsSeelenPercent, config.npcAlertsSeelenWarnPercent, config.npcAlertsSeelenShowIcon,
+				config.npcAlertsSeelenX, config.npcAlertsSeelenY, config.npcAlertsSeelenShowBackground);
+	}
+
+	private static void renderEssenzen(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsEssenzen && config.npcAlertsEssenzenSeparateOverlay)) {
+			return;
 		}
-		
-		// Essenzen
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzen && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay) {
-			String percent = null;
-			boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
-			if (showPercent && essenzenCapacity.isValid()) {
-				percent = formatPercent(essenzenCapacity.current, essenzenCapacity.max);
-			}
-			double currentPercent = essenzenCapacity.isValid() ? 
-				((double)essenzenCapacity.current / (double)essenzenCapacity.max) * 100.0 : 0;
-			double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
-			boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
-			String displayText = showIcon ? essenzenCapacity.getDisplayString() : "Essenzen: " + essenzenCapacity.getDisplayString();
-			renderSingleInfoOverlay(context, client, displayText, 
-				percent, showPercent, showWarning, "essenzen", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground);
-		}
-		
-		// Kombo Kiste
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsKomboKiste && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay) {
-			boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
-			String fraction = getKomboKisteFractionDisplay();
-			String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
-			renderSingleInfoOverlay(context, client, displayText, 
-				null, false, showWarning, "komboKiste", showIcon,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteX,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteY,
-				net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground);
-		}
-		
-		// Machtkristalle - prüfe ob einzeln oder zusammen gerendert werden soll
-		if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalle && 
-		    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay) {
-			// Prüfe welche Slots einzeln gerendert werden sollen
-			boolean slot1Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
-			boolean slot2Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
-			boolean slot3Separate = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
-			boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
-			
-			// Liste für Slots, die zusammen gerendert werden sollen
-			List<LineWithPercent> mkLines = new ArrayList<>();
-			int yOffset = 0; // Für einzelne Overlays
-			
-			for (int i = 0; i < 3; i++) {
-				// Prüfe ob dieser Slot aktiviert ist
-				boolean slotEnabled;
-				switch (i) {
-					case 0:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
-						break;
-					case 1:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
-						break;
-					case 2:
-						slotEnabled = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
-						break;
-					default:
-						slotEnabled = true;
-						break;
-				}
-				
-				// Überspringe diesen Slot, wenn er deaktiviert ist
-				if (!slotEnabled) {
-					continue;
-				}
-				
-				MachtkristallSlot slot = machtkristallSlots[i];
-				boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-				
-				String displayText;
-				String percentText = null;
-				
-				// Prüfe zuerst ob Slot nicht gefunden wurde (keine Machtkristall-Einträge in Tab-Liste)
-				// Dies muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
-				if (slot.isNotFound()) {
-					// Slot nicht gefunden (keine Machtkristall-Einträge in Tab-Liste)
-					displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
-				} else if (slot.isEmpty()) {
-					// Slot ist leer (durch "[Kein Machtkristall ausgewählt]" markiert)
-					displayText = showIcon ? "-" : "MK " + (i + 1) + ": -";
-				} else {
-					// Machtkristall gefunden - prüfe ob Daten verfügbar sind
-					displayText = slot.getDisplayText();
-					percentText = slot.getPercentText();
-					if (displayText == null) {
-						displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
-					} else if (showIcon) {
-						// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-						displayText = MachtkristallSlot.stripIconPrefix(displayText);
-					}
-				}
-				
-				// Warnung: wenn Prozent >= dem Warnwert ist (wie bei Amboss)
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
-				boolean showWarning = getMachtkristallShowWarning(slot, warnPercent);
-				
-				if (slotSeparate) {
-					// Rendere einzeln mit individueller Position
-					int slotX, slotY;
-					switch (i) {
-						case 0:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1X;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Y;
-							break;
-						case 1:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2X;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Y;
-							break;
-						case 2:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3X;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Y;
-							break;
-						default:
-							slotX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleX;
-							slotY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleY;
-							break;
-					}
-					// Bestimme den richtigen configKey für die Skalierung
-					String slotConfigKey;
-					switch (i) {
-						case 0:
-							slotConfigKey = "machtkristalleSlot1";
-							break;
-						case 1:
-							slotConfigKey = "machtkristalleSlot2";
-							break;
-						case 2:
-							slotConfigKey = "machtkristalleSlot3";
-							break;
-						default:
-							slotConfigKey = "machtkristalle";
-							break;
-					}
-					renderSingleInfoOverlay(context, client, 
-						displayText, 
-						percentText, percentText != null, showWarning, slotConfigKey, showIcon,
-						slotX,
-						slotY,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground);
-				} else {
-					// Füge zur Liste hinzu (wird zusammen gerendert)
-					mkLines.add(new LineWithPercent(displayText, percentText, percentText != null, showWarning, "machtkristalle", showIcon));
-				}
-			}
-			
-			// Rendere alle Zeilen, die zusammen gerendert werden sollen, in einem einzigen Overlay
-			if (!mkLines.isEmpty()) {
-				// Berechne Y-Position für das Multi-Line-Overlay (nach den einzelnen Overlays)
-				int multiLineY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleY + yOffset;
-				renderMultiLineOverlay(context, client, mkLines,
-					net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleX,
-					multiLineY,
-					net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground,
-					"machtkristalle");
-			}
-		}
-		
-		// Recycler Slots - prüfe ob einzeln oder zusammen gerendert werden soll
-		// Prüfe ob mindestens ein Recycler-Slot aktiviert ist und "Separates Overlay" hat
-		boolean recyclerSlot1Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
-		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
-		boolean recyclerSlot2Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
-		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
-		boolean recyclerSlot3Active = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
-		                              net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
-		
-		if (recyclerSlot1Active || recyclerSlot2Active || recyclerSlot3Active) {
-			// Prüfe welche Slots einzeln gerendert werden sollen
-			boolean slot1Separate = recyclerSlot1Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
-			boolean slot2Separate = recyclerSlot2Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
-			boolean slot3Separate = recyclerSlot3Active && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
-			
-			// Liste für Slots, die zusammen gerendert werden sollen
-			List<LineWithPercent> recyclerLines = new ArrayList<>();
-			
-			// Recycler Slot 1
-			if (recyclerSlot1Active) {
-				String percent = null;
-				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
-				if (showPercent && recyclerSlot1.isValid()) {
-					percent = formatPercent(recyclerSlot1.current, recyclerSlot1.max);
-				}
-				double currentPercent = recyclerSlot1.isValid() ? 
-					((double)recyclerSlot1.current / (double)recyclerSlot1.max) * 100.0 : 0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
-				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
-				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
-				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
-				// Wenn Icon aktiviert ist, zeige nur die Werte (oder "Nicht im Tab-Widget" wenn nicht gültig)
-				// Das Icon wird dann automatisch vor dem Text angezeigt
-				String displayText = showIcon ? recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + recyclerSlot1.getDisplayString();
-				
-				if (slot1Separate) {
-					// Rendere einzeln mit individueller Position
-					renderSingleInfoOverlay(context, client, displayText, 
-						percent, showPercent, showWarning, "recyclerSlot1", showIcon,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1X,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Y,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
-				} else {
-					// Füge zur Liste hinzu (wird zusammen gerendert)
-					recyclerLines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot1", showIcon));
-				}
-			}
-			
-			// Recycler Slot 2
-			if (recyclerSlot2Active) {
-				String percent = null;
-				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
-				if (showPercent && recyclerSlot2.isValid()) {
-					percent = formatPercent(recyclerSlot2.current, recyclerSlot2.max);
-				}
-				double currentPercent = recyclerSlot2.isValid() ? 
-					((double)recyclerSlot2.current / (double)recyclerSlot2.max) * 100.0 : 0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
-				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
-				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
-				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
-				String displayText = showIcon ? recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + recyclerSlot2.getDisplayString();
-				
-				if (slot2Separate) {
-					// Rendere einzeln mit individueller Position
-					renderSingleInfoOverlay(context, client, displayText, 
-						percent, showPercent, showWarning, "recyclerSlot2", showIcon,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2X,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Y,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
-				} else {
-					// Füge zur Liste hinzu (wird zusammen gerendert)
-					recyclerLines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot2", showIcon));
-				}
-			}
-			
-			// Recycler Slot 3
-			if (recyclerSlot3Active) {
-				String percent = null;
-				boolean showPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
-				if (showPercent && recyclerSlot3.isValid()) {
-					percent = formatPercent(recyclerSlot3.current, recyclerSlot3.max);
-				}
-				double currentPercent = recyclerSlot3.isValid() ? 
-					((double)recyclerSlot3.current / (double)recyclerSlot3.max) * 100.0 : 0;
-				double warnPercent = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
-				// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
-				boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
-				boolean showIcon = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
-				String displayText = showIcon ? recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + recyclerSlot3.getDisplayString();
-				
-				if (slot3Separate) {
-					// Rendere einzeln mit individueller Position
-					renderSingleInfoOverlay(context, client, displayText, 
-						percent, showPercent, showWarning, "recyclerSlot3", showIcon,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3X,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Y,
-						net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground);
-				} else {
-					// Füge zur Liste hinzu (wird zusammen gerendert)
-					recyclerLines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, "recyclerSlot3", showIcon));
-				}
-			}
-			
-			// Rendere alle Zeilen, die zusammen gerendert werden sollen, in einem einzigen Overlay
-			if (!recyclerLines.isEmpty()) {
-				// Verwende die gemeinsame Position für das Multi-Line-Overlay
-				int baseX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerX;
-				int baseY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerY;
-				boolean showBackground = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground;
-				
-				renderMultiLineOverlay(context, client, recyclerLines,
-					baseX,
-					baseY,
-					showBackground,
-					"recycler"); // Verwende "recycler" als configKey für Farben
-			}
-		}
+		renderCapacityOverlay(context, client, essenzenCapacity, essenzenCapacity.getDisplayString(), "Essenzen: ", "essenzen",
+				config.showNpcAlertsEssenzenPercent, config.npcAlertsEssenzenWarnPercent, config.npcAlertsEssenzenShowIcon,
+				config.npcAlertsEssenzenX, config.npcAlertsEssenzenY, config.npcAlertsEssenzenShowBackground);
 	}
 
 	/**
-	 * Rendert ein Multi-Line-Overlay (für Machtkristalle, die alle 3 Slots in einem Overlay anzeigen)
+	 * Gemeinsame Darstellung der Füllstand-Alerts (Amboss, Schmelzofen, Jäger, Seelen, Essenzen):
+	 * Prozentwert und Warnung, sobald der Füllstand die Warnschwelle erreicht.
 	 */
-	private static void renderMultiLineOverlay(GuiGraphicsExtractor context, Minecraft client,
-		List<LineWithPercent> lines, int xPosition, int yPosition, boolean showBackground, String configKey) {
-		if (lines.isEmpty()) {
+	private static void renderCapacityOverlay(GuiGraphicsExtractor context, Minecraft client, CapacityData capacity,
+			String valueText, String label, String configKey, boolean showPercent, double warnPercent,
+			boolean showIcon, int x, int y, boolean showBackground) {
+		String percent = null;
+		if (showPercent && capacity.isValid()) {
+			percent = formatPercent(capacity.current, capacity.max);
+		}
+		double currentPercent = capacity.isValid()
+				? ((double) capacity.current / (double) capacity.max) * 100.0
+				: 0;
+		boolean showWarning = warnPercent >= 0 && currentPercent >= warnPercent;
+		String displayText = showIcon ? valueText : label + valueText;
+		renderSingleInfoOverlay(context, client, displayText,
+				percent, showPercent, showWarning, configKey, showIcon,
+				x, y, showBackground);
+	}
+
+	private static void renderKomboKiste(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsKomboKiste && config.npcAlertsKomboKisteSeparateOverlay)) {
 			return;
 		}
-		
-		final int PADDING = 5;
-		final int LINE_HEIGHT = client.font.lineHeight + 2;
-		
-		// Berechne die maximale Breite des Textes
-		int maxWidth = 0;
-		for (LineWithPercent line : lines) {
-			int width = 0;
-			// Wenn Icon aktiviert ist, füge Icon-Breite hinzu
-			if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
-			                                                   "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
-			                                                   "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || "komboKiste".equals(line.configKey) || 
-			                                                   "machtkristalle".equals(line.configKey) ||
-			                                                   "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
-			                                                   "recyclerSlot3".equals(line.configKey)))) {
-				int iconSize = (int)(client.font.lineHeight * 1.5);
-				width += iconSize + 2; // Icon + Abstand
-				width += client.font.width(": "); // Doppelpunkt nach Icon
-			}
-			width += client.font.width(line.text);
-			if (line.showPercent && line.percentText != null) {
-				width += client.font.width(" " + line.percentText);
-			}
-			if (width > maxWidth) {
-				maxWidth = width;
-			}
+		boolean showWarning = komboKiste.isValid() && komboKiste.current >= komboKiste.max;
+		boolean showIcon = config.npcAlertsKomboKisteShowIcon;
+		String fraction = getKomboKisteFractionDisplay();
+		String displayText = showIcon ? fraction : "Kombo Kiste: " + fraction;
+		renderSingleInfoOverlay(context, client, displayText,
+				null, false, showWarning, "komboKiste", showIcon,
+				config.npcAlertsKomboKisteX, config.npcAlertsKomboKisteY, config.npcAlertsKomboKisteShowBackground);
+	}
+
+	/**
+	 * Machtkristalle: Slots mit eigener Position werden einzeln gezeichnet,
+	 * alle anderen zusammen in einem Multi-Line-Overlay.
+	 */
+	private static void renderMachtkristalle(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!(config.showNpcAlertsMachtkristalle && config.npcAlertsMachtkristalleSeparateOverlay)) {
+			return;
 		}
-		
-		// Berechne die tatsächliche Zeilenhöhe
-		int actualLineHeight = LINE_HEIGHT;
-		// Berücksichtige Icons bei der Höhenberechnung
-		for (LineWithPercent line : lines) {
-			if (line.showIcon && line.configKey != null) {
-				int iconSize = (int)(client.font.lineHeight * 1.5);
-				actualLineHeight = Math.max(actualLineHeight, iconSize);
-			}
-		}
-		
-		// Berechne unskalierte Overlay-Dimensionen komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
-		int unscaledWidth = maxWidth + (PADDING * 2);
-		int unscaledHeight = (lines.size() * actualLineHeight) + (PADDING * 2);
-		
-		// Get scale
-		float scale = getSeparateOverlayScale(configKey);
-		if (scale <= 0) scale = 1.0f;
-		
-		// Berechne skalierte Dimensionen
-		int overlayWidth = Math.round(unscaledWidth * scale);
-		int overlayHeight = Math.round(unscaledHeight * scale);
-		
-		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
-		int baseX = xPosition;
-		
-		// Determine if overlay is on left or right side of screen
-		int screenWidth = client.getWindow().getGuiScaledWidth();
-		boolean isOnLeftSide = baseX < screenWidth / 2;
-		
-		// Calculate X position based on side (same logic as Mining overlays)
-		int posX;
-		if (isOnLeftSide) {
-			// On left side: keep left edge fixed, expand to the right
-			posX = baseX;
-		} else {
-			// On right side: keep right edge fixed, expand to the left
-			// Right edge is: baseX (since baseX is on the right side, it represents the right edge)
-			// Keep this right edge fixed, so left edge moves left when width increases
-			posX = baseX - overlayWidth;
-		}
-		
-		// Ensure overlay stays within screen bounds
-		posX = Math.max(0, Math.min(posX, screenWidth - overlayWidth));
-		int posY = yPosition;
-		
-		// Zeichne Hintergrund (wenn aktiviert) - skaliert
-		if (showBackground) {
-			context.fill(posX, posY, posX + overlayWidth, posY + overlayHeight, 0x80000000);
-		}
-		
-		// Render content with scale using matrix transformation
-		Matrix3x2fStack matrices = context.pose();
-		matrices.pushMatrix();
-		matrices.translate(posX, posY);
-		matrices.scale(scale, scale);
-		
-		// Zeichne alle Zeilen
-		int currentY = PADDING;
-		int warningColor = 0xFFFF0000; // Rot für Warnungen
-		for (LineWithPercent line : lines) {
-			if (line.text == null || line.text.trim().isEmpty()) {
-				currentY += actualLineHeight;
+
+		boolean showIcon = config.npcAlertsMachtkristalleShowIcon;
+		List<LineWithPercent> sharedLines = new ArrayList<>();
+
+		for (int i = 0; i < MACHTKRISTALL_SLOT_COUNT; i++) {
+			if (!isMachtkristallSlotEnabled(config, i)) {
 				continue;
 			}
-			
-			// Hole konfigurierte Farben für diese Zeile (basierend auf line.configKey, nicht configKey)
-			// Wenn line.configKey null ist, verwende den übergebenen configKey als Fallback
-			String colorConfigKey = (line.configKey != null && !line.configKey.isEmpty()) ? line.configKey : configKey;
-			int textColor = getTextColorForConfigKey(colorConfigKey);
-			int percentColor = getPercentColorForConfigKey(colorConfigKey);
-			
-			// Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
-			int currentTextColor = textColor;
-			if (line.showWarning) {
-				// Blink-Animation: alle 300ms wechseln
-				boolean isVisible = (System.currentTimeMillis() / 300) % 2 == 0;
-				if (isVisible) {
-					currentTextColor = warningColor;
-				} else {
-					currentTextColor = textColor;
-				}
-			}
-			
-			int currentX = PADDING;
-			
-			// Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
-			if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
-			                                        "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
-			                                        "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || "komboKiste".equals(line.configKey) || 
-			                                        "machtkristalle".equals(line.configKey) ||
-			                                        "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
-			                                        "recyclerSlot3".equals(line.configKey)))) {
-				int iconSize = (int)(client.font.lineHeight * 1.5);
-				// Zentriere Icon vertikal: Zeilen-Mitte minus die Hälfte der Icon-Höhe
-				int lineCenterY = currentY + actualLineHeight / 2;
-				int iconY = lineCenterY - iconSize / 2;
-				Identifier iconToUse = null;
-				String fallbackText = null;
-				
-				if ("forschung".equals(line.configKey)) {
-					iconToUse = FORSCHUNG_ICON;
-					fallbackText = "Forschung: ";
-				} else if ("amboss".equals(line.configKey)) {
-					iconToUse = AMBOSS_ICON;
-					fallbackText = "Amboss: ";
-				} else if ("schmelzofen".equals(line.configKey)) {
-					iconToUse = SCHMELZOFEN_ICON;
-					fallbackText = "Schmelzofen: ";
-				} else if ("seelen".equals(line.configKey)) {
-					iconToUse = SEELEN_ICON;
-					fallbackText = "Seelen: ";
-				} else if ("essenzen".equals(line.configKey)) {
-					iconToUse = ESSENZEN_ICON;
-					fallbackText = "Essenzen: ";
-				} else if ("jaeger".equals(line.configKey)) {
-					iconToUse = JAEGER_ICON;
-					fallbackText = "Jäger: ";
-				} else if ("komboKiste".equals(line.configKey)) {
-					iconToUse = KOMBO_KISTE_ICON;
-					fallbackText = "Kombo Kiste: ";
-				} else if ("recyclerSlot1".equals(line.configKey)) {
-					iconToUse = RECYCLER_ICON;
-					fallbackText = "Recycler Slot 1: ";
-				} else if ("recyclerSlot2".equals(line.configKey)) {
-					iconToUse = RECYCLER_ICON;
-					fallbackText = "Recycler Slot 2: ";
-				} else if ("recyclerSlot3".equals(line.configKey)) {
-					iconToUse = RECYCLER_ICON;
-					fallbackText = "Recycler Slot 3: ";
-				} else if ("machtkristalle".equals(line.configKey)) {
-					iconToUse = MACHTKRISTALL_ICON;
-					fallbackText = "MK: ";
-				}
-				
-				if (iconToUse != null) {
-					int textYForIcon = currentY; // Standard Y-Position für Text
-					try {
-						context.blit(
-							RenderPipelines.GUI_TEXTURED,
-							iconToUse,
-							currentX, iconY,
-							0.0f, 0.0f,
-							iconSize, iconSize,
-							iconSize, iconSize
-						);
-						currentX += iconSize + 2; // Abstand nach Icon
-						// Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-						textYForIcon = lineCenterY - client.font.lineHeight / 2;
-					} catch (Exception e) {
-						// Fallback: Zeichne Text wenn Icon nicht geladen werden kann
-						if (fallbackText != null) {
-							context.text(client.font, Component.literal(fallbackText), currentX, currentY, currentTextColor, true);
-							currentX += client.font.width(fallbackText);
-						}
-					}
-					// Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-					context.text(client.font, Component.literal(": "), currentX, textYForIcon, currentTextColor, true);
-					currentX += client.font.width(": ");
-					// Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-					context.text(client.font, Component.literal(line.text), currentX, textYForIcon, currentTextColor, true);
-					currentX += client.font.width(line.text);
-				} else {
-					// Fallback: Zeichne normalen Text
-					context.text(client.font, Component.literal(line.text), currentX, currentY, currentTextColor, true);
-					currentX += client.font.width(line.text);
-				}
+
+			MachtkristallSlot slot = machtkristallSlots[i];
+			String displayText = machtkristallDisplayText(slot, i, showIcon);
+			String percentText = (slot.isNotFound() || slot.isEmpty()) ? null : slot.getPercentText();
+			// Warnung: wenn Prozent >= dem Warnwert ist (wie bei Amboss)
+			boolean showWarning = getMachtkristallShowWarning(slot, config.npcAlertsMachtkristalleWarnPercent);
+
+			if (isMachtkristallSlotSeparate(config, i)) {
+				renderSingleInfoOverlay(context, client,
+						displayText,
+						percentText, percentText != null, showWarning, "machtkristalleSlot" + (i + 1), showIcon,
+						machtkristallSlotX(config, i), machtkristallSlotY(config, i),
+						config.npcAlertsMachtkristalleShowBackground);
 			} else {
-				// Zeichne Text ohne Icon
-				context.text(
-					client.font,
-					line.text,
-					currentX,
-					currentY,
-					currentTextColor,
-					true
-				);
-				currentX += client.font.width(line.text);
+				sharedLines.add(new LineWithPercent(displayText, percentText, percentText != null, showWarning, "machtkristalle", showIcon));
 			}
-			
-			// Zeichne Prozente, wenn vorhanden
-			if (line.showPercent && line.percentText != null) {
-				int percentY = currentY;
-				// Wenn Icon aktiviert ist, zentriere Prozente vertikal zum Icon
-				if (line.showIcon && line.configKey != null) {
-					int lineCenterY = currentY + actualLineHeight / 2;
-					percentY = lineCenterY - client.font.lineHeight / 2;
-				}
-				// Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
-				int currentPercentColor = line.showWarning ? currentTextColor : percentColor;
-				context.text(
-					client.font,
-					" " + line.percentText,
-					currentX,
-					percentY,
-					currentPercentColor,
-					true
-				);
-			}
-			
-			currentY += actualLineHeight;
 		}
-		
-		matrices.popMatrix();
+
+		if (!sharedLines.isEmpty()) {
+			renderMultiLineOverlay(context, client, sharedLines,
+					config.npcAlertsMachtkristalleX,
+					config.npcAlertsMachtkristalleY,
+					config.npcAlertsMachtkristalleShowBackground,
+					"machtkristalle");
+		}
+	}
+
+	private static boolean isMachtkristallSlotEnabled(CCLiveUtilitiesConfig config, int index) {
+		return switch (index) {
+			case 0 -> config.showNpcAlertsMachtkristalleSlot1;
+			case 1 -> config.showNpcAlertsMachtkristalleSlot2;
+			case 2 -> config.showNpcAlertsMachtkristalleSlot3;
+			default -> true;
+		};
+	}
+
+	private static boolean isMachtkristallSlotSeparate(CCLiveUtilitiesConfig config, int index) {
+		return switch (index) {
+			case 0 -> config.npcAlertsMachtkristalleSlot1Separate;
+			case 1 -> config.npcAlertsMachtkristalleSlot2Separate;
+			case 2 -> config.npcAlertsMachtkristalleSlot3Separate;
+			default -> false;
+		};
+	}
+
+	private static int machtkristallSlotX(CCLiveUtilitiesConfig config, int index) {
+		return switch (index) {
+			case 0 -> config.npcAlertsMachtkristalleSlot1X;
+			case 1 -> config.npcAlertsMachtkristalleSlot2X;
+			case 2 -> config.npcAlertsMachtkristalleSlot3X;
+			default -> config.npcAlertsMachtkristalleX;
+		};
+	}
+
+	private static int machtkristallSlotY(CCLiveUtilitiesConfig config, int index) {
+		return switch (index) {
+			case 0 -> config.npcAlertsMachtkristalleSlot1Y;
+			case 1 -> config.npcAlertsMachtkristalleSlot2Y;
+			case 2 -> config.npcAlertsMachtkristalleSlot3Y;
+			default -> config.npcAlertsMachtkristalleY;
+		};
+	}
+
+	private static String machtkristallDisplayText(MachtkristallSlot slot, int index, boolean showIcon) {
+		String prefix = "MK " + (index + 1) + ": ";
+		// isNotFound() muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
+		if (slot.isNotFound()) {
+			return showIcon ? "Nicht im Tab-Widget" : prefix + "Nicht im Tab-Widget";
+		}
+		if (slot.isEmpty()) {
+			return showIcon ? "-" : prefix + "-";
+		}
+		String displayText = slot.getDisplayText();
+		if (displayText == null) {
+			return showIcon ? "?" : prefix + "?";
+		}
+		// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
+		return showIcon ? MachtkristallSlot.stripIconPrefix(displayText) : displayText;
+	}
+
+	/**
+	 * Recycler: Slots mit "Separates Overlay" werden einzeln (eigene Position) oder zusammen
+	 * in einem Multi-Line-Overlay gezeichnet.
+	 */
+	private static void renderRecycler(GuiGraphicsExtractor context, Minecraft client) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		boolean slot1Active = config.showNpcAlertsRecyclerSlot1 && config.npcAlertsRecyclerSlot1SeparateOverlay;
+		boolean slot2Active = config.showNpcAlertsRecyclerSlot2 && config.npcAlertsRecyclerSlot2SeparateOverlay;
+		boolean slot3Active = config.showNpcAlertsRecyclerSlot3 && config.npcAlertsRecyclerSlot3SeparateOverlay;
+		if (!(slot1Active || slot2Active || slot3Active)) {
+			return;
+		}
+
+		List<LineWithPercent> sharedLines = new ArrayList<>();
+		if (slot1Active) {
+			renderOrCollectRecyclerSlot(context, client, recyclerSlot1, "recyclerSlot1", "Recycler Slot 1: ",
+					config.npcAlertsRecyclerSlot1ShowIcon, config.npcAlertsRecyclerSlot1Separate,
+					config.npcAlertsRecyclerSlot1X, config.npcAlertsRecyclerSlot1Y, sharedLines);
+		}
+		if (slot2Active) {
+			renderOrCollectRecyclerSlot(context, client, recyclerSlot2, "recyclerSlot2", "Recycler Slot 2: ",
+					config.npcAlertsRecyclerSlot2ShowIcon, config.npcAlertsRecyclerSlot2Separate,
+					config.npcAlertsRecyclerSlot2X, config.npcAlertsRecyclerSlot2Y, sharedLines);
+		}
+		if (slot3Active) {
+			renderOrCollectRecyclerSlot(context, client, recyclerSlot3, "recyclerSlot3", "Recycler Slot 3: ",
+					config.npcAlertsRecyclerSlot3ShowIcon, config.npcAlertsRecyclerSlot3Separate,
+					config.npcAlertsRecyclerSlot3X, config.npcAlertsRecyclerSlot3Y, sharedLines);
+		}
+
+		if (!sharedLines.isEmpty()) {
+			// Gemeinsame Position; "recycler" ist der configKey für die Farben
+			renderMultiLineOverlay(context, client, sharedLines,
+					config.npcAlertsRecyclerX,
+					config.npcAlertsRecyclerY,
+					config.npcAlertsRecyclerShowBackground,
+					"recycler");
+		}
+	}
+
+	/** Zeichnet einen Recycler-Slot einzeln oder hängt ihn an die gemeinsame Zeilenliste an. */
+	private static void renderOrCollectRecyclerSlot(GuiGraphicsExtractor context, Minecraft client, CapacityData slot,
+			String configKey, String label, boolean showIcon, boolean separate, int x, int y,
+			List<LineWithPercent> sharedLines) {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+
+		boolean showPercent = config.showNpcAlertsRecyclerPercent;
+		String percent = null;
+		if (showPercent && slot.isValid()) {
+			percent = formatPercent(slot.current, slot.max);
+		}
+		double currentPercent = slot.isValid()
+				? ((double) slot.current / (double) slot.max) * 100.0
+				: 0;
+		double warnPercent = config.npcAlertsRecyclerWarnPercent;
+		// Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
+		boolean showWarning = warnPercent >= 0 && currentPercent <= warnPercent;
+		// Mit Icon nur die Werte; das Icon wird automatisch vor dem Text gezeichnet
+		String displayText = showIcon ? slot.getDisplayString() : label + slot.getDisplayString();
+
+		if (separate) {
+			renderSingleInfoOverlay(context, client, displayText,
+					percent, showPercent, showWarning, configKey, showIcon,
+					x, y, config.npcAlertsRecyclerShowBackground);
+		} else {
+			sharedLines.add(new LineWithPercent(displayText, percent, showPercent, showWarning, configKey, showIcon));
+		}
 	}
 }

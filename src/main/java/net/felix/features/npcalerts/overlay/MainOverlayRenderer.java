@@ -9,18 +9,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 
-import static net.felix.features.npcalerts.overlay.AlertIcons.AMBOSS_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.ESSENZEN_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.FORSCHUNG_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.JAEGER_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.KOMBO_KISTE_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.MACHTKRISTALL_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.RECYCLER_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.SCHMELZOFEN_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.SEELEN_ICON;
 import static net.felix.features.npcalerts.overlay.AlertSettings.getPercentColorForConfigKey;
 import static net.felix.features.npcalerts.overlay.AlertSettings.getTextColorForConfigKey;
 import static net.felix.features.npcalerts.overlay.MainOverlayLines.getMainOverlayLines;
+import static net.felix.features.npcalerts.overlay.OverlayLayout.PADDING;
 import static net.felix.features.npcalerts.overlay.SeparateOverlayRenderer.renderSeparateOverlays;
 
 /**
@@ -28,9 +20,6 @@ import static net.felix.features.npcalerts.overlay.SeparateOverlayRenderer.rende
  */
 public final class MainOverlayRenderer {
 
-	private static final int PADDING = 5;
-	private static final int WARNING_COLOR = 0xFFFF0000; // Rot für Warnungen
-	private static final long WARNING_BLINK_MILLIS = 300;
 	private static final int ICON_LINE_EXTRA_SPACING = 2;
 
 	private MainOverlayRenderer() {
@@ -57,11 +46,11 @@ public final class MainOverlayRenderer {
 			return;
 		}
 
-		int actualLineHeight = computeActualLineHeight(client, lines);
+		int actualLineHeight = OverlayLayout.computeActualLineHeight(client, lines);
 		int iconLineCount = countIconLines(lines);
 
 		// Unskalierte Dimensionen komplett dynamisch aus dem Inhalt (wie BossHP-Overlay)
-		int unscaledWidth = measureMaxLineWidth(client, lines) + (PADDING * 2);
+		int unscaledWidth = OverlayLayout.measureMaxLineWidth(client, lines) + (PADDING * 2);
 		int unscaledHeight = (lines.size() * actualLineHeight) + (iconLineCount * ICON_LINE_EXTRA_SPACING) + (PADDING * 2);
 
 		float scale = config.npcAlertsMainOverlayScale;
@@ -72,7 +61,7 @@ public final class MainOverlayRenderer {
 		int overlayHeight = Math.round(unscaledHeight * scale);
 
 		int screenWidth = client.getWindow().getGuiScaledWidth();
-		int posX = computeOverlayX(config.npcAlertsMainOverlayX, overlayWidth, screenWidth);
+		int posX = OverlayLayout.computeOverlayX(config.npcAlertsMainOverlayX, overlayWidth, screenWidth);
 		int posY = config.npcAlertsMainOverlayY;
 
 		if (config.npcAlertsMainOverlayShowBackground) {
@@ -90,42 +79,9 @@ public final class MainOverlayRenderer {
 		renderSeparateOverlays(context, client);
 	}
 
-	private static int iconSize(Minecraft client) {
-		return (int) (client.font.lineHeight * 1.5); // Icon-Größe = 1.5x Text-Höhe
-	}
-
 	/** Zeile wird mit Icon gezeichnet (Icon aktiviert und Config-Key vorhanden). */
 	private static boolean hasIcon(LineWithPercent line) {
 		return line.showIcon && line.configKey != null;
-	}
-
-	/** Breite der längsten Zeile inklusive Icon, Doppelpunkt und Prozentwert. */
-	private static int measureMaxLineWidth(Minecraft client, List<LineWithPercent> lines) {
-		int maxWidth = 0;
-		for (LineWithPercent line : lines) {
-			int width = 0;
-			if (line.showIcon && iconForKey(line.configKey) != null) {
-				width += iconSize(client) + 2; // Icon + Abstand
-				width += client.font.width(": "); // Doppelpunkt nach Icon
-			}
-			width += client.font.width(line.text);
-			if (line.showPercent && line.percentText != null) {
-				width += client.font.width(" " + line.percentText); // Abstand + Prozente
-			}
-			maxWidth = Math.max(maxWidth, width);
-		}
-		return maxWidth;
-	}
-
-	/** Zeilenhöhe: Maximum aus Text-Höhe und Icon-Höhe, sobald mindestens eine Zeile ein Icon hat. */
-	private static int computeActualLineHeight(Minecraft client, List<LineWithPercent> lines) {
-		int actualLineHeight = client.font.lineHeight + 2;
-		for (LineWithPercent line : lines) {
-			if (hasIcon(line)) {
-				actualLineHeight = Math.max(actualLineHeight, iconSize(client));
-			}
-		}
-		return actualLineHeight;
 	}
 
 	private static int countIconLines(List<LineWithPercent> lines) {
@@ -136,16 +92,6 @@ public final class MainOverlayRenderer {
 			}
 		}
 		return count;
-	}
-
-	/**
-	 * Linke Kante hängt fest, wenn das Overlay auf der linken Bildschirmhälfte liegt;
-	 * auf der rechten Hälfte ist baseX die rechte Kante. Das Ergebnis bleibt im Bildschirm.
-	 */
-	private static int computeOverlayX(int baseX, int overlayWidth, int screenWidth) {
-		boolean isOnLeftSide = baseX < screenWidth / 2;
-		int posX = isOnLeftSide ? baseX : baseX - overlayWidth;
-		return Math.max(0, Math.min(posX, screenWidth - overlayWidth));
 	}
 
 	/** Zeichnet alle Zeilen vertikal zentriert (Koordinaten relativ zur Overlay-Ecke). */
@@ -179,7 +125,7 @@ public final class MainOverlayRenderer {
 	private static void drawLine(GuiGraphicsExtractor context, Minecraft client, LineWithPercent line, int currentY,
 			int actualLineHeight, int textColor, int percentColor) {
 		try {
-			int currentTextColor = blinkingWarningColor(line, textColor);
+			int currentTextColor = WarningBlink.colorFor(line.showWarning, textColor);
 			int currentX = hasIcon(line)
 					? drawIconAndText(context, client, line, currentTextColor, currentY, actualLineHeight)
 					: drawPlainText(context, client, line, currentTextColor, currentY);
@@ -187,15 +133,6 @@ public final class MainOverlayRenderer {
 		} catch (Exception e) {
 			drawLineWithStringFallback(context, client, line, currentY, textColor, percentColor);
 		}
-	}
-
-	/** Rot und blinkend, solange die Warnung der Zeile aktiv ist. */
-	private static int blinkingWarningColor(LineWithPercent line, int textColor) {
-		if (!line.showWarning) {
-			return textColor;
-		}
-		boolean isVisible = (System.currentTimeMillis() / WARNING_BLINK_MILLIS) % 2 == 0;
-		return isVisible ? WARNING_COLOR : textColor;
 	}
 
 	/** Zeichnet den Text ohne Icon und liefert die X-Position hinter dem Text. */
@@ -211,13 +148,13 @@ public final class MainOverlayRenderer {
 	 */
 	private static int drawIconAndText(GuiGraphicsExtractor context, Minecraft client, LineWithPercent line,
 			int currentTextColor, int currentY, int actualLineHeight) {
-		Identifier icon = iconForKey(line.configKey);
+		Identifier icon = AlertIcons.iconForKey(line.configKey);
 		if (icon == null) {
 			return drawPlainText(context, client, line, currentTextColor, currentY);
 		}
 
 		int currentX = PADDING;
-		int iconSize = iconSize(client);
+		int iconSize = OverlayLayout.iconSize(client);
 		int lineCenterY = currentY + actualLineHeight / 2;
 		int iconY = lineCenterY - iconSize / 2;
 		boolean iconDrawn = false;
@@ -236,7 +173,7 @@ public final class MainOverlayRenderer {
 			textYForIcon = lineCenterY - client.font.lineHeight / 2;
 		} catch (Exception e) {
 			// Fallback: Label-Text, wenn das Icon nicht geladen werden kann
-			String fallbackText = fallbackLabelForKey(line.configKey);
+			String fallbackText = AlertIcons.fallbackLabelForKey(line.configKey);
 			if (fallbackText != null) {
 				context.text(client.font, Component.literal(fallbackText), currentX, currentY, currentTextColor, true);
 				currentX += client.font.width(fallbackText);
@@ -267,7 +204,7 @@ public final class MainOverlayRenderer {
 	private static void drawLineWithStringFallback(GuiGraphicsExtractor context, Minecraft client, LineWithPercent line,
 			int currentY, int textColor, int percentColor) {
 		try {
-			int currentTextColor = blinkingWarningColor(line, textColor);
+			int currentTextColor = WarningBlink.colorFor(line.showWarning, textColor);
 			context.text(client.font, line.text, PADDING, currentY, currentTextColor, true);
 
 			if (line.showPercent && line.percentText != null) {
@@ -278,45 +215,5 @@ public final class MainOverlayRenderer {
 		} catch (Exception e) {
 			// Ignoriere Fehler
 		}
-	}
-
-	/** Icon-Textur eines Alerts, oder {@code null} wenn der Key kein Icon hat. */
-	private static Identifier iconForKey(String configKey) {
-		if (configKey == null) {
-			return null;
-		}
-		return switch (configKey) {
-			case "forschung" -> FORSCHUNG_ICON;
-			case "amboss" -> AMBOSS_ICON;
-			case "schmelzofen" -> SCHMELZOFEN_ICON;
-			case "seelen" -> SEELEN_ICON;
-			case "essenzen" -> ESSENZEN_ICON;
-			case "jaeger" -> JAEGER_ICON;
-			case "komboKiste" -> KOMBO_KISTE_ICON;
-			case "recyclerSlot1", "recyclerSlot2", "recyclerSlot3" -> RECYCLER_ICON;
-			case "machtkristalle" -> MACHTKRISTALL_ICON;
-			default -> null;
-		};
-	}
-
-	/** Label, das statt des Icons gezeichnet wird, wenn die Textur nicht geladen werden kann. */
-	private static String fallbackLabelForKey(String configKey) {
-		if (configKey == null) {
-			return null;
-		}
-		return switch (configKey) {
-			case "forschung" -> "Forschung: ";
-			case "amboss" -> "Amboss: ";
-			case "schmelzofen" -> "Schmelzofen: ";
-			case "seelen" -> "Seelen: ";
-			case "essenzen" -> "Essenzen: ";
-			case "jaeger" -> "Jäger: ";
-			case "komboKiste" -> "Kombo Kiste: ";
-			case "recyclerSlot1" -> "Recycler Slot 1: ";
-			case "recyclerSlot2" -> "Recycler Slot 2: ";
-			case "recyclerSlot3" -> "Recycler Slot 3: ";
-			case "machtkristalle" -> "MK: ";
-			default -> null;
-		};
 	}
 }
