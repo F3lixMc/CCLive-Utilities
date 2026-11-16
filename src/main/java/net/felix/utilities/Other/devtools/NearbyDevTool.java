@@ -1,9 +1,8 @@
-package net.felix.devtools;
-
-import net.minecraft.resources.Identifier;
+package net.felix.utilities.Other.devtools;
 
 import java.util.Collections;
 import java.util.List;
+import net.minecraft.resources.Identifier;
 
 public final class NearbyDevTool implements DevTool {
 

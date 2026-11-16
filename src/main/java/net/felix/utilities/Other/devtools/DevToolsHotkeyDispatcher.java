@@ -1,4 +1,4 @@
-package net.felix.devtools;
+package net.felix.utilities.Other.devtools;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.HashSet;

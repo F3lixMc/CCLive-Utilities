@@ -93,7 +93,7 @@ public class ScreenMixin {
         }
 
         // DevTools-Hotkeys (Inventar erlaubt; Dedup mit Client-Tick)
-        if (net.felix.devtools.DevToolsHotkeyDispatcher.handleScreenKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Other.devtools.DevToolsHotkeyDispatcher.handleScreenKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }

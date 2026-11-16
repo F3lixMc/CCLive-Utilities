@@ -113,8 +113,8 @@ public class CCLiveUtilities implements ModInitializer {
 		
 		// DevTools (Allowlist / Fabric-Dev; unabhängig von ServerConnectionGate)
 		try {
-			net.felix.devtools.DevToolsRegistry.initialize();
-			net.felix.devtools.DevToolsHotkeyDispatcher.initialize();
+			net.felix.utilities.Other.devtools.DevToolsRegistry.initialize();
+			net.felix.utilities.Other.devtools.DevToolsHotkeyDispatcher.initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}

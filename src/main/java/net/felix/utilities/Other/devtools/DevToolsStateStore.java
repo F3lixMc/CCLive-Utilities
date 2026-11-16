@@ -1,4 +1,4 @@
-package net.felix.devtools;
+package net.felix.utilities.Other.devtools;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -6,8 +6,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.felix.CCLiveUtilities;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +13,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.felix.CCLiveUtilities;
 
 /**
  * Persistenz: An/Aus, Hotkey (null = ungebunden), gewählter Modus.

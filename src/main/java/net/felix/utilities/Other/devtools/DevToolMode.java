@@ -1,4 +1,4 @@
-package net.felix.devtools;
+package net.felix.utilities.Other.devtools;
 
 /**
  * Ein optionaler Modus eines DevTools (z. B. Single / Container).

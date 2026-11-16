@@ -1,4 +1,4 @@
-package net.felix.devtools;
+package net.felix.utilities.Other.devtools;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,4 +1,4 @@
-package net.felix.devtools;
+package net.felix.utilities.Other.devtools;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;

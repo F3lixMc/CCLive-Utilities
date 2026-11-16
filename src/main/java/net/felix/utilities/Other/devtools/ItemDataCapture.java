@@ -1,10 +1,14 @@
-package net.felix.devtools;
+package net.felix.utilities.Other.devtools;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
+import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
@@ -16,11 +20,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.component.ItemLore;
-
-import java.lang.reflect.Field;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Liest ItemStacks aus dem geöffneten Container (nur Komponenten als Primärquelle).
