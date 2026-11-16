@@ -1,6 +1,8 @@
 package net.felix.features.itemviewer.ui;
 
 import com.google.gson.JsonObject;
+import net.felix.features.itemviewer.filtermenu.FilterMenu;
+import net.felix.features.itemviewer.filtermenu.FilterMenuInput;
 import net.felix.features.itemviewer.inventory.FavoriteBlueprintsStore;
 import net.felix.features.itemviewer.inventory.HudStatsReader;
 import net.felix.features.itemviewer.inventory.InventoryFilter;
@@ -78,7 +80,7 @@ public final class ViewerInputHandler {
      * @return true wenn das Scroll-Event behandelt wurde, false sonst
      */
     public static boolean handleMouseScroll(double mouseX, double mouseY, double vertical) {
-        if (ItemViewerFilterMenu.handleScroll(mouseX, mouseY, vertical)) {
+        if (FilterMenuInput.handleScroll(mouseX, mouseY, vertical)) {
             return true;
         }
         // Prüfe zuerst ob Hilfe-Overlay geöffnet ist und Maus darüber ist
@@ -378,16 +380,16 @@ public final class ViewerInputHandler {
             helpScreenOpen = !helpScreenOpen;
             blurSearchFieldFocus();
             if (helpScreenOpen) {
-                ItemViewerFilterMenu.close();
+                FilterMenu.close();
             }
             return true;
         }
         
         if (button == 0 && mouseX >= pos.filterButtonX && mouseX < pos.filterButtonX + FILTER_BUTTON_SIZE &&
             mouseY >= pos.filterButtonY && mouseY < pos.filterButtonY + FILTER_BUTTON_SIZE) {
-            ItemViewerFilterMenu.toggle(allItems, currentSearch);
+            FilterMenu.toggle(allItems, currentSearch);
             blurSearchFieldFocus();
-            if (ItemViewerFilterMenu.isOpen()) {
+            if (FilterMenu.isOpen()) {
                 helpScreenOpen = false;
                 activeCategoryOverlay = null;
             }

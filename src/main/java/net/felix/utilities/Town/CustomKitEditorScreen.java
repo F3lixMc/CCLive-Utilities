@@ -600,7 +600,7 @@ public class CustomKitEditorScreen extends Screen {
             return super.mouseClicked(event, doubled);
         }
 
-        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
+        if (net.felix.features.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (FilterOverlayControls.handleFilterOverlayClick(mouseX, mouseY, button)) {
                 return true;
             }
@@ -692,7 +692,7 @@ public class CustomKitEditorScreen extends Screen {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
-        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
+        if (net.felix.features.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (FilterOverlayControls.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 return true;
             }

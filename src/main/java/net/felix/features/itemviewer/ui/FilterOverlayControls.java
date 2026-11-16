@@ -1,5 +1,8 @@
 package net.felix.features.itemviewer.ui;
 
+import net.felix.features.itemviewer.filtermenu.FilterMenu;
+import net.felix.features.itemviewer.filtermenu.FilterMenuInput;
+import net.felix.features.itemviewer.filtermenu.FilterMenuRenderer;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import static net.felix.features.itemviewer.ui.ViewerState.helpScreenOpen;
@@ -13,37 +16,37 @@ public final class FilterOverlayControls {
     }
 
     public static void renderFilterOverlay(GuiGraphicsExtractor context) {
-        ItemViewerFilterMenu.render(context);
+        FilterMenuRenderer.render(context);
     }
 
     public static boolean isOverlayOpen() {
-        return helpScreenOpen || ItemViewerFilterMenu.isOpen();
+        return helpScreenOpen || FilterMenu.isOpen();
     }
 
     public static boolean handleFilterOverlayEscape() {
-        return ItemViewerFilterMenu.handleEscape();
+        return FilterMenu.handleEscape();
     }
 
     public static void closeFilterOverlay() {
-        ItemViewerFilterMenu.close();
+        FilterMenu.close();
     }
 
     public static boolean handleFilterOverlayClick(double mouseX, double mouseY, int button) {
-        return ItemViewerFilterMenu.handleClick(mouseX, mouseY, button);
+        return FilterMenuInput.handleClick(mouseX, mouseY, button);
     }
 
     public static boolean handleFilterOverlayDrag(double mouseX, double mouseY, int button) {
-        return ItemViewerFilterMenu.handleMouseDrag(mouseX, mouseY, button);
+        return FilterMenuInput.handleMouseDrag(mouseX, mouseY, button);
     }
 
     public static boolean handleFilterOverlayRelease(double mouseX, double mouseY, int button) {
-        return ItemViewerFilterMenu.handleMouseRelease(mouseX, mouseY, button);
+        return FilterMenuInput.handleMouseRelease(mouseX, mouseY, button);
     }
 
     public static boolean handleFilterOverlayKeyPress(int keyCode, int scanCode, int modifiers) {
-        if (!ItemViewerFilterMenu.isOpen()) {
+        if (!FilterMenu.isOpen()) {
             return false;
         }
-        return ItemViewerFilterMenu.handleKeyPress(keyCode, scanCode, modifiers);
+        return FilterMenuInput.handleKeyPress(keyCode, scanCode, modifiers);
     }
 }

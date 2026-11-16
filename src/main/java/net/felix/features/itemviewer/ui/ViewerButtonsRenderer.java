@@ -1,5 +1,6 @@
 package net.felix.features.itemviewer.ui;
 
+import net.felix.features.itemviewer.filtermenu.FilterMenu;
 import net.felix.features.itemviewer.search.SortMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -97,7 +98,7 @@ public final class ViewerButtonsRenderer {
         Minecraft client = Minecraft.getInstance();
         boolean isHovered = lastMouseX >= x && lastMouseX < x + FILTER_BUTTON_SIZE
                 && lastMouseY >= y && lastMouseY < y + FILTER_BUTTON_SIZE;
-        boolean active = ItemViewerFilterMenu.isOpen();
+        boolean active = FilterMenu.isOpen();
         int bgColor = active ? 0xFF2D4A2D : (isHovered ? 0xFF404040 : 0x80000000);
         context.fill(x, y, x + FILTER_BUTTON_SIZE, y + FILTER_BUTTON_SIZE, bgColor);
         int borderColor = active || isHovered ? 0xFFFFFFFF : 0xFF808080;

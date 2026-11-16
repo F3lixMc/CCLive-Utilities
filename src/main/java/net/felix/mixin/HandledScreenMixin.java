@@ -226,7 +226,7 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
-        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
+        if (net.felix.features.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
@@ -345,7 +345,7 @@ public abstract class HandledScreenMixin {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
-        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
+        if (net.felix.features.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;

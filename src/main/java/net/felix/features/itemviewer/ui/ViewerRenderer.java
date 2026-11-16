@@ -3,6 +3,7 @@ package net.felix.features.itemviewer.ui;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.filtermenu.FilterMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -308,7 +309,7 @@ public final class ViewerRenderer {
             context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
         }
         
-        if (filterHovered && !ItemViewerFilterMenu.isOpen()) {
+        if (filterHovered && !FilterMenu.isOpen()) {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.literal("Filter"));
             context.setComponentTooltipForNextFrame(client.font, tooltip, lastMouseX, lastMouseY);
