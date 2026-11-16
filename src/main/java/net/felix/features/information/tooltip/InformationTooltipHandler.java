@@ -1,17 +1,16 @@
 package net.felix.features.information.tooltip;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.information.materials.MaterialFloorInfo;
+import net.felix.features.information.materials.MaterialInfo;
+import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.item.ItemStack;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.regex.Pattern;
-import net.felix.utilities.Overall.ZeichenUtility;
-import net.felix.features.information.materials.MaterialFloorInfo;
-import net.felix.features.information.materials.MaterialInfo;
 
 import static net.felix.features.information.aspects.AspectTooltip.addAspectNameToTooltip;
 import static net.felix.features.information.blueprints.BlueprintFloorTooltip.addFloorNumberToBlueprintNames;
@@ -24,13 +23,12 @@ import static net.felix.features.information.gadgets.GadgetTooltip.checkForGadge
 import static net.felix.features.information.licenses.LicenseTooltip.checkForLicenseInformation;
 import static net.felix.features.information.licenses.LicenseTooltip.isItemInLicenseSlot;
 import static net.felix.features.information.materials.MaterialDatabase.materialsDatabase;
+import static net.felix.features.information.materials.MaterialRarityColors.formatMaterialLocationSuffix;
+import static net.felix.features.information.materials.MaterialRarityColors.getMaterialLocationRarityColor;
 import static net.felix.features.information.moblexicon.MoblexiconTooltip.addMoblexiconHpToTooltip;
 import static net.felix.features.information.ponds.FishingMaterials.appendFishingMaterialLocationToLine;
 import static net.felix.features.information.ponds.PondTooltip.checkForPondInformation;
 import static net.felix.features.information.tooltip.ClipboardPinTooltip.addClipboardPinTextToTooltip;
-import static net.felix.features.information.materials.MaterialRarityColors.formatMaterialLocationSuffix;
-import static net.felix.features.information.materials.MaterialRarityColors.getMaterialLocationRarityColor;
-
 
 /**
  * Tooltip-Callback: ergaenzt Item-Tooltips um Aspekt-, Ebenen-, Material-, Lizenz-, Gadget- und Moblexikon-Informationen.
@@ -48,353 +46,272 @@ public final class InformationTooltipHandler {
 		if (stack == null || lines == null || lines.isEmpty()) {
 			return;
 		}
-		
+
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			return;
 		}
-		
-		// Always process aspect information (even if informationenUtilityEnabled is off)
-		// Add aspect name to tooltip (always visible) - works in inventories
+
+		// Aspekt-, Ebenen- und Pin-Informationen immer (auch wenn das Informationen-Utility aus ist)
 		addAspectNameToTooltip(lines, client, stack);
-		
-		// Add floor number to blueprint names in inventories
 		addFloorNumberToBlueprintNames(lines, client);
-		
-		// Add floor numbers to cards and statues names in inventories
 		addFloorNumberToCardsStatuesNames(lines, client);
-		
-		// Add clipboard pin text input for forge inventories (before other processing)
+		// Clipboard-Pin-Texteingabe fuer Forge-Inventare (vor der uebrigen Verarbeitung)
 		addClipboardPinTextToTooltip(lines, client);
-		
-		// Only process other information if Informationen Utility is enabled in config
-		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
-			!CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled) {
+
+		// Alles Weitere nur, wenn das Informationen-Utility aktiviert ist
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() || !config.informationenUtilityEnabled) {
 			return;
 		}
-		
-		// Check if we're in the special inventory (Moblexicon)
-		boolean isSpecialInventory = false;
-		boolean isLicenseInventory = false;
-		boolean isQuickTravelInventory = false;
-		boolean isMaterialBagInventory = false;
-		boolean hideFloorNumbersInEssenceMenu = false;
-		String screenTitle = "";
-		if (client.gui.screen() != null) {
-			screenTitle = client.gui.screen().getTitle().getString();
-			if (ZeichenUtility.containsMoblexicon(screenTitle)) {
-				isSpecialInventory = true;
-			}
-			// Check for license inventory character (friends_request_accept_deny)
-			if (ZeichenUtility.containsFriendsRequestAcceptDeny(screenTitle)) {
-				isLicenseInventory = true;
-			}
-			if (ZeichenUtility.containsFarmzoneQuickTravel(screenTitle)) {
-				isQuickTravelInventory = true;
-			}
-			// Essence-Bag, -Auswahl, Harvester: keine Ebenen-Nummern
-			hideFloorNumbersInEssenceMenu = ZeichenUtility.shouldHideFloorNumbersInEssenceMenus(screenTitle);
-			isMaterialBagInventory = ZeichenUtility.containsUiMaterialBag(screenTitle)
-					|| ZeichenUtility.containsUiRessourceBag(screenTitle)
-					|| screenTitle.contains("Mob-Materialien");
-		}
-		
-		if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
-			CCLiveUtilitiesConfig.HANDLER.instance().informationenUtilityEnabled &&
-			CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay &&
-			client.gui.screen() != null &&
-			ZeichenUtility.containsEssenceBagUi(screenTitle)) {
+
+		TooltipInventoryContext inventory = TooltipInventoryContext.of(client);
+
+		if (config.showWaveDisplay && inventory.hasScreen() && ZeichenUtility.containsEssenceBagUi(inventory.title())) {
 			addEssenceBagWaveDisplayToTooltip(lines, stack);
 		}
-		
-		if (hideFloorNumbersInEssenceMenu) {
+		if (inventory.hideFloorNumbers()) {
 			return;
 		}
 
 		// Teich-Zuordnung in Schnellreise-Inventaren (unabhängig von Ebenen-Einstellung)
-		if (isQuickTravelInventory && CCLiveUtilitiesConfig.HANDLER.instance().showLicenseInformation) {
+		if (inventory.quickTravel() && config.showLicenseInformation) {
 			checkForPondInformation(lines);
 		}
-		
-		if (isSpecialInventory && CCLiveUtilitiesConfig.HANDLER.instance().moblexiconHpEnabled) {
+		if (inventory.special() && config.moblexiconHpEnabled) {
 			addMoblexiconHpToTooltip(lines);
 		}
-		
-		// Check if the respective setting is enabled for this inventory type
-		boolean showFloorInfoInCurrentInventory = isSpecialInventory
-				? CCLiveUtilitiesConfig.HANDLER.instance().showEbenenInSpecialInventory
-				: CCLiveUtilitiesConfig.HANDLER.instance().showEbenenInNormalInventories;
 
-		if (isSpecialInventory && !showFloorInfoInCurrentInventory
-				&& !CCLiveUtilitiesConfig.HANDLER.instance().moblexiconCardsStatuesInfoEnabled) {
+		// Ist die Einstellung fuer diesen Inventar-Typ aktiv?
+		boolean showFloorInfoInCurrentInventory = inventory.special()
+				? config.showEbenenInSpecialInventory
+				: config.showEbenenInNormalInventories;
+		if (inventory.special() && !showFloorInfoInCurrentInventory && !config.moblexiconCardsStatuesInfoEnabled) {
 			return;
 		}
-		if (!isSpecialInventory && !showFloorInfoInCurrentInventory) {
+		if (!inventory.special() && !showFloorInfoInCurrentInventory) {
 			return;
 		}
-		
-		// In special inventory (㬉), check all lines for [Karte]/[Statue] but only first line for material names
-		// In other inventories, check all lines for material names
-		int startIndex = 0;
-		int endIndex = lines.size(); // Always check all lines to find [Karte] or [Statue]
-		
-		for (int i = startIndex; i < endIndex; i++) {
+
+		addLineInformation(lines, inventory, showFloorInfoInCurrentInventory);
+
+		// Lizenz-Informationen im Lizenz-Inventar (ち), wenn das Item in einem Lizenz-Slot liegt
+		if (inventory.license() && config.showLicenseInformation && isItemInLicenseSlot(stack, client)) {
+			checkForLicenseInformation(lines, client);
+		}
+		addGadgetInformation(lines, inventory.title(), config);
+	}
+
+	/** Gadget-Informationen im Inventar "Module [Upgraden]" bzw. beim Ingenieur. */
+	private static void addGadgetInformation(List<Component> lines, String screenTitle, CCLiveUtilitiesConfig config) {
+		if (!config.showModuleInformation) {
+			return;
+		}
+		String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
+			.replaceAll("[\\u3400-\\u4DBF]", "");
+		if (cleanScreenTitle.contains("Module [Upgraden]")) {
+			checkForGadgetInformation(lines, false);
+		}
+		if (cleanScreenTitle.contains("[Ingenieur]")) {
+			checkForGadgetInformation(lines, true);
+		}
+	}
+
+	/** Titel von Inventaren, in denen keine Level-/Ebenen-Informationen ergaenzt werden. */
+	private static boolean skipsLevelInformation(String screenTitle) {
+		return screenTitle.contains("Essenz [Auswahl]") || screenTitle.contains("Essenz-Tasche")
+			|| screenTitle.contains("Essenzernter") || ZeichenUtility.containsLegendPlusUiBackground(screenTitle)
+			|| screenTitle.contains("Machtkristalle Verbessern")
+			|| screenTitle.contains("Fabrik Skins") || screenTitle.contains("Fabrik Skins Menü")
+			|| screenTitle.contains("Factory Bridge Skins")
+			|| screenTitle.contains("Factory Tower Skins")
+			|| screenTitle.contains("Factory Field Skins")
+			|| screenTitle.contains("Factory Banner Skins") || screenTitle.contains("Factory Banner Slots")
+			|| ZeichenUtility.containsHunterUiBackground(screenTitle);
+	}
+
+	/**
+	 * Geht alle Zeilen durch und ergaenzt Essenz-Wellen, Karten-/Statuen-Effekte sowie Material- und Angel-Fundorte.
+	 * Das Ende der Schleife steht vorab fest; eingefuegte Zeilen werden uebersprungen.
+	 */
+	private static void addLineInformation(List<Component> lines, TooltipInventoryContext inventory,
+										   boolean showFloorInfoInCurrentInventory) {
+		String screenTitle = inventory.title();
+		boolean isEssenceImprovementInventory = screenTitle.contains("Machtkristalle Verbessern");
+		// Die Legend+-UI (ui_background) ist hier bereits enthalten: keine Material-Ebenen
+		boolean skipLevelInformation = skipsLevelInformation(screenTitle);
+		int endIndex = lines.size();
+
+		for (int i = 0; i < endIndex; i++) {
 			Component line = lines.get(i);
 			String lineText = line.getString();
-			
-			// Skip if lineText is null or empty
 			if (lineText == null || lineText.isEmpty()) {
 				continue;
 			}
-			
-			// Remove Minecraft formatting codes (like §a, §b, etc.)
-			String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "");
-			
-			// Also remove the Unicode formatting characters that appear as 㔻㔶
-			cleanLineText = cleanLineText.replaceAll("[\\u3400-\\u4DBF]", "");
-			
-			// Check if we're in the "Machtkristalle Verbessern" inventory for essence information
-			boolean isEssenceImprovementInventory = screenTitle.contains("Machtkristalle Verbessern");
-			
-			// Check for essence information in "Machtkristalle Verbessern" inventory FIRST
-			if (isEssenceImprovementInventory && lineText.contains("[Essenz]")) {
-				// Get the text before the colon (if present) to remove the count info
-				String textBeforeColon = cleanLineText;
-				if (cleanLineText.contains(":")) {
-					textBeforeColon = cleanLineText.substring(0, cleanLineText.indexOf(":")).trim();
-				}
-				
-				// Remove leading dash/minus if present
-				if (textBeforeColon.startsWith("-")) {
-					textBeforeColon = textBeforeColon.substring(1).trim();
-				}
-				
-				// The textBeforeColon already contains the full essence name including [Essenz] and Tier
-				String essenceNameToSearch = textBeforeColon;
-				
-				if (CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay) {
-					String waveText = getWaveDisplayForEssenceName(essenceNameToSearch);
-					Component essenceInfoText = Component.literal(" -> Welle: ")
-						.withStyle(style -> style.withColor(0xC0C0C0)) // Light gray
-						.append(Component.literal(waveText)
-							.withStyle(style -> style.withColor(0x55FF55))); // Light green
-					
-					// Add the essence info line after the current line
-					lines.add(i + 1, essenceInfoText);
-					
-					// Skip the next line since we just added essence info
-					i++;
-					continue; // Skip other processing for this line
-				}
-			}
-			
-			// Skip Essenz items that should not show level information (but allow essence improvement inventory)
-			if (screenTitle.contains("Essenz [Auswahl]") || screenTitle.contains("Essenz-Tasche") ||
-				screenTitle.contains("Essenzernter") || ZeichenUtility.containsLegendPlusUiBackground(screenTitle) ||
-				screenTitle.contains("Machtkristalle Verbessern") ||
-				screenTitle.contains("Fabrik Skins") || screenTitle.contains("Fabrik Skins Menü") ||
-				screenTitle.contains("Factory Bridge Skins") ||
-				screenTitle.contains("Factory Tower Skins") ||
-				screenTitle.contains("Factory Field Skins") ||
-				screenTitle.contains("Factory Banner Skins") || screenTitle.contains("Factory Banner Slots") || 
-				
-				 ZeichenUtility.containsHunterUiBackground(screenTitle)){ //Hunter ui_background
-				
+
+			// Minecraft-Formatierungscodes (§a, §b, ...) und die Unicode-Zeichen 㔻㔶 entfernen
+			String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "")
+				.replaceAll("[\\u3400-\\u4DBF]", "");
+
+			// Essenz-Informationen im Inventar "Machtkristalle Verbessern" zuerst
+			if (isEssenceImprovementInventory && lineText.contains("[Essenz]")
+					&& addEssenceWaveLine(lines, i, cleanLineText)) {
+				i++; // die eben eingefuegte Zeile ueberspringen
 				continue;
 			}
-			
-			// Extract the part before the first '[' to get just the material name
+			if (skipLevelInformation) {
+				continue;
+			}
+
+			// Nur der Teil vor der ersten '[' ist der Materialname
 			String materialNamePart = cleanLineText;
 			if (cleanLineText.contains("[")) {
 				materialNamePart = cleanLineText.substring(0, cleanLineText.indexOf("[")).trim();
 			}
-			
-			// Skip if the material name part is empty
 			if (materialNamePart.isEmpty()) {
 				continue;
 			}
-			
-			// Process lines with [Karte] or [Statue] in Moblexicon to add effect information
-			if ((lineText.contains("[Karte]") || lineText.contains("[Statue]")) && isSpecialInventory
+
+			boolean isCardOrStatue = lineText.contains("[Karte]") || lineText.contains("[Statue]");
+			// Moblexikon: Effekt-Informationen fuer [Karte] und [Statue]
+			if (isCardOrStatue && inventory.special()
 					&& CCLiveUtilitiesConfig.HANDLER.instance().moblexiconCardsStatuesInfoEnabled) {
-				// Extract the name (text before [Karte] or [Statue])
-				String name = "";
-				String effect = null;
-				boolean isCard = false;
-				
-				if (lineText.contains("[Karte]")) {
-					int index = cleanLineText.indexOf("[Karte]");
-					if (index > 0) {
-						name = cleanLineText.substring(0, index).trim();
-						// Remove any leading dashes or special characters
-						name = name.replaceAll("^[-\\s]+", "").trim();
-						effect = cardsEffects.get(name);
-						isCard = true;
-						
-						// Try to find the card with case-insensitive search if not found
-						if (effect == null) {
-							for (Map.Entry<String, String> entry : cardsEffects.entrySet()) {
-								if (entry.getKey().equalsIgnoreCase(name)) {
-									effect = entry.getValue();
-									break;
-								}
-							}
-						}
-					}
-				} else if (lineText.contains("[Statue]")) {
-					int index = cleanLineText.indexOf("[Statue]");
-					if (index > 0) {
-						name = cleanLineText.substring(0, index).trim();
-						// Remove any leading dashes or special characters
-						name = name.replaceAll("^[-\\s]+", "").trim();
-						effect = statuesEffects.get(name);
-						isCard = false;
-						
-						// Try to find the statue with case-insensitive search if not found
-						if (effect == null) {
-							for (Map.Entry<String, String> entry : statuesEffects.entrySet()) {
-								if (entry.getKey().equalsIgnoreCase(name)) {
-									effect = entry.getValue();
-									break;
-								}
-							}
-						}
-					}
-				}
-				
-				// If effect found, append it to the line
-				if (effect != null && !effect.isEmpty()) {
-					// Determine color: Green (0x55FF55) for cards, Aqua (0x55FFFF) for statues
-					int effectColor = isCard ? 0x55FF55 : 0x55FFFF; // Green for cards, Aqua for statues
-					
-					// Create new text: original line (with preserved formatting) + " - " + effect
-					MutableComponent newLine = line.copy() // Preserve original formatting and style
-						.append(Component.literal(" - ").withStyle(style -> style.withColor(0xC0C0C0))) // Light gray separator
-						.append(Component.literal(effect).withStyle(style -> style.withColor(effectColor))); // Green for cards, Aqua for statues
-					
-					// Replace the line
-					lines.set(i, newLine);
-				}
-				continue; // Skip further processing for this line
-			}
-			
-			// Skip if the line contains [Karte] or [Statue] in non-special inventories
-			if (lineText.contains("[Karte]") || lineText.contains("[Statue]")) {
+				appendCardOrStatueEffect(lines, i, line, lineText, cleanLineText);
 				continue;
 			}
-
+			// In anderen Inventaren werden [Karte]/[Statue]-Zeilen uebersprungen
+			if (isCardOrStatue) {
+				continue;
+			}
 			if (!showFloorInfoInCurrentInventory) {
 				continue;
 			}
-			
-			// In special inventory, only process material names on the first line
-			if (isSpecialInventory && i > 0) {
+			// Im Spezial-Inventar nur die Materialnamen der ersten Zeile
+			if (inventory.special() && i > 0) {
 				continue;
 			}
 
-			// Legend+-UI (cactusclicker_legend_plus / ui_background): keine Material-Ebenen
-			if (ZeichenUtility.containsLegendPlusUiBackground(screenTitle)) {
-				continue;
-			}
-			
-			// Sort materials by length (longest first) to avoid shorter names matching before longer ones
-			List<Map.Entry<String, MaterialInfo>> sortedMaterials = new ArrayList<>(materialsDatabase.entrySet());
-			sortedMaterials.sort((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()));
-
-			boolean materialLocationAdded = false;
-			
-			// Look for materials in the material name part (longest first)
-			for (Map.Entry<String, MaterialInfo> entry : sortedMaterials) {
-				String materialName = entry.getKey();
-				MaterialInfo info = entry.getValue();
-				
-				// Use word boundaries to avoid partial matches
-				// This ensures "Schweinehuf" doesn't match "Kräftiger Schweinehuf"
-				// Also handles German characters like "ß" properly
-				String escapedMaterialName = java.util.regex.Pattern.quote(materialName);
-				String pattern = "\\b" + escapedMaterialName + "\\b";
-				
-				if (java.util.regex.Pattern.compile(pattern, java.util.regex.Pattern.UNICODE_CHARACTER_CLASS).matcher(materialNamePart).find()) {
-					// Skip if this is a blueprint line - let BPViewerUtility handle it
-					if (lineText.contains("[Bauplan]")) {
-						continue; // Skip blueprint lines to avoid conflicts
-					}
-					
-					// In special inventory, only show floor info for mob names, not materials
-					if (isSpecialInventory && !info.rarity.equals("mob")) {
-						continue; // Skip materials in special inventory
-					}
-					
-					// Material-Bag: Ebene nur hinter Materiallisten, nicht im Item-Namen
-					if (isMaterialBagInventory && i == 0) {
-						break;
-					}
-					
-					// Create new text with material info appended to the same line
-
-					MaterialFloorInfo locationInfo = new MaterialFloorInfo(
-						info.floor, info.pond, null, info.rarity, info.color);
-					String locationSuffix = formatMaterialLocationSuffix(locationInfo);
-					int color = getMaterialLocationRarityColor(locationInfo);
-
-					Component materialInfo;
-					if (!locationSuffix.isEmpty()) {
-						materialInfo = Component.literal(locationSuffix)
-							.withStyle(style -> style.withColor(color));
-					} else if (isSpecialInventory) {
-						materialInfo = Component.literal(" [" + info.floor + "]")
-							.withStyle(style -> style.withColor(color));
-					} else {
-						materialInfo = Component.literal(" [Ebene " + info.floor + "]")
-							.withStyle(style -> style.withColor(color));
-					}
-					
-					// Combine original line with material info
-					Component combinedText = line.copy().append(materialInfo);
-					
-					// Replace the original line
-					lines.set(i, combinedText);
-					materialLocationAdded = true;
-					break; // Only add info for the first match in this line
-				}
-			}
-
+			boolean materialLocationAdded = appendMaterialLocation(lines, i, line, lineText, materialNamePart, inventory);
 			if (!materialLocationAdded) {
 				appendFishingMaterialLocationToLine(
-					lines, i, line, cleanLineText, isSpecialInventory, isMaterialBagInventory);
+					lines, i, line, cleanLineText, inventory.special(), inventory.materialBag());
 			}
 		}
-		
-		// Check for license information in inventories with ち
-		if (isLicenseInventory && CCLiveUtilitiesConfig.HANDLER.instance().showLicenseInformation) {
-			// Check if the hovered item is in one of the license slots
-			if (isItemInLicenseSlot(stack, client)) {
-				checkForLicenseInformation(lines, client);
-			}
-		}
+	}
 
-		// Check for gadget information in "Module [Upgraden]" inventory
-		if (CCLiveUtilitiesConfig.HANDLER.instance().showModuleInformation) {
-			boolean isModuleUpgradeInventory = false;
-			boolean isEngineerInventory = false;
-			if (client.gui.screen() != null) {
-				String cleanScreenTitle = screenTitle.replaceAll("§[0-9a-fk-or]", "")
-					.replaceAll("[\\u3400-\\u4DBF]", "");
-				if (cleanScreenTitle.contains("Module [Upgraden]")) {
-					isModuleUpgradeInventory = true;
+	/**
+	 * Fuegt nach der Zeile " -> Welle: ..." ein.
+	 * @return true, wenn eine Zeile eingefuegt wurde (nur wenn die Wellen-Anzeige aktiv ist)
+	 */
+	private static boolean addEssenceWaveLine(List<Component> lines, int index, String cleanLineText) {
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().showWaveDisplay) {
+			return false;
+		}
+		// Text vor dem Doppelpunkt, ohne Mengenangabe
+		String textBeforeColon = cleanLineText;
+		if (cleanLineText.contains(":")) {
+			textBeforeColon = cleanLineText.substring(0, cleanLineText.indexOf(":")).trim();
+		}
+		// Fuehrenden Bindestrich entfernen
+		if (textBeforeColon.startsWith("-")) {
+			textBeforeColon = textBeforeColon.substring(1).trim();
+		}
+		// textBeforeColon enthaelt bereits den vollen Essenznamen inkl. [Essenz] und Tier
+		String waveText = getWaveDisplayForEssenceName(textBeforeColon);
+		Component essenceInfoText = Component.literal(" -> Welle: ")
+			.withStyle(style -> style.withColor(0xC0C0C0)) // Light gray
+			.append(Component.literal(waveText)
+				.withStyle(style -> style.withColor(0x55FF55))); // Light green
+		lines.add(index + 1, essenceInfoText);
+		return true;
+	}
+
+	/** Haengt den Effekt einer Karte (gruen) oder Statue (aqua) hinter die Zeile, falls bekannt. */
+	private static void appendCardOrStatueEffect(List<Component> lines, int index, Component line,
+												 String lineText, String cleanLineText) {
+		boolean isCard = lineText.contains("[Karte]");
+		int markerIndex = cleanLineText.indexOf(isCard ? "[Karte]" : "[Statue]");
+		if (markerIndex <= 0) {
+			return;
+		}
+		// Name vor dem Marker, ohne fuehrende Bindestriche oder Leerraum
+		String name = cleanLineText.substring(0, markerIndex).trim().replaceAll("^[-\\s]+", "").trim();
+		String effect = findEffect(isCard ? cardsEffects : statuesEffects, name);
+		if (effect == null || effect.isEmpty()) {
+			return;
+		}
+		int effectColor = isCard ? 0x55FF55 : 0x55FFFF; // Green for cards, Aqua for statues
+		// Originalzeile (mit Formatierung) + " - " + Effekt
+		MutableComponent newLine = line.copy()
+			.append(Component.literal(" - ").withStyle(style -> style.withColor(0xC0C0C0))) // Light gray separator
+			.append(Component.literal(effect).withStyle(style -> style.withColor(effectColor)));
+		lines.set(index, newLine);
+	}
+
+	/** Exakter Treffer, sonst Treffer ohne Beachtung der Gross-/Kleinschreibung. */
+	private static String findEffect(Map<String, String> effects, String name) {
+		String effect = effects.get(name);
+		if (effect == null) {
+			for (Map.Entry<String, String> entry : effects.entrySet()) {
+				if (entry.getKey().equalsIgnoreCase(name)) {
+					return entry.getValue();
 				}
-				if (cleanScreenTitle.contains("[Ingenieur]")) {
-					isEngineerInventory = true;
-				}
-			}
-			
-			if (isModuleUpgradeInventory) {
-				checkForGadgetInformation(lines, false);
-			}
-			
-			if (isEngineerInventory) {
-				checkForGadgetInformation(lines, true);
 			}
 		}
+		return effect;
+	}
+
+	/**
+	 * Haengt Ebene/Teich des ersten passenden Materials (laengste Namen zuerst) an die Zeile an.
+	 * @return true, wenn die Zeile ergaenzt wurde
+	 */
+	private static boolean appendMaterialLocation(List<Component> lines, int index, Component line, String lineText,
+												  String materialNamePart, TooltipInventoryContext inventory) {
+		// Nach Laenge sortieren (laengste zuerst), damit kuerzere Namen nicht vor laengeren matchen
+		List<Map.Entry<String, MaterialInfo>> sortedMaterials = new ArrayList<>(materialsDatabase.entrySet());
+		sortedMaterials.sort((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()));
+
+		for (Map.Entry<String, MaterialInfo> entry : sortedMaterials) {
+			String materialName = entry.getKey();
+			MaterialInfo info = entry.getValue();
+
+			// Wortgrenzen verhindern Teiltreffer ("Schweinehuf" vs. "Kräftiger Schweinehuf"), auch bei "ß"
+			String pattern = "\\b" + Pattern.quote(materialName) + "\\b";
+			if (!Pattern.compile(pattern, Pattern.UNICODE_CHARACTER_CLASS).matcher(materialNamePart).find()) {
+				continue;
+			}
+			// Bauplan-Zeilen uebernimmt der Blueprint-Viewer
+			if (lineText.contains("[Bauplan]")) {
+				continue;
+			}
+			// Im Spezial-Inventar Ebenen nur fuer Mob-Namen, nicht fuer Materialien
+			if (inventory.special() && !info.rarity.equals("mob")) {
+				continue;
+			}
+			// Material-Tasche: Ebene nur hinter Materiallisten, nicht im Item-Namen
+			if (inventory.materialBag() && index == 0) {
+				return false;
+			}
+
+			lines.set(index, line.copy().append(createMaterialInfoText(info, inventory.special())));
+			return true; // nur der erste Treffer pro Zeile
+		}
+		return false;
+	}
+
+	private static Component createMaterialInfoText(MaterialInfo info, boolean isSpecialInventory) {
+		MaterialFloorInfo locationInfo = new MaterialFloorInfo(info.floor, info.pond, null, info.rarity, info.color);
+		String locationSuffix = formatMaterialLocationSuffix(locationInfo);
+		int color = getMaterialLocationRarityColor(locationInfo);
+
+		String text;
+		if (!locationSuffix.isEmpty()) {
+			text = locationSuffix;
+		} else if (isSpecialInventory) {
+			text = " [" + info.floor + "]";
+		} else {
+			text = " [Ebene " + info.floor + "]";
+		}
+		return Component.literal(text).withStyle(style -> style.withColor(color));
 	}
 }

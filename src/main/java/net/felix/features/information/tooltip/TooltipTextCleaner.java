@@ -1,8 +1,7 @@
 package net.felix.features.information.tooltip;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.network.chat.Component;
 
 /**
  * Textbereinigung fuer Tooltip-Zeilen und Chat-Komponenten.

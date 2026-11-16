@@ -1,9 +1,9 @@
 package net.felix.features.information.tooltip;
 
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import java.util.List;
 
 /**
  * Pin-Eingabe im Tooltip fuer Schmiede-Inventare.
