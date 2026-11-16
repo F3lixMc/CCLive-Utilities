@@ -7,9 +7,9 @@ import net.felix.utilities.Overall.ZeichenUtility;
 /**
  * Textbereinigung fuer Tooltip-Zeilen und Chat-Komponenten.
  */
-public final class TooltipText {
+public final class TooltipTextCleaner {
 
-	private TooltipText() {
+	private TooltipTextCleaner() {
 	}
 
 	public static String cleanTooltipText(String lineText) {

@@ -23,8 +23,8 @@ import net.felix.features.information.farmzone.FarmzoneScoreboard;
 import net.felix.features.information.gadgets.GadgetDatabase;
 import net.felix.features.information.licenses.LicenseDatabase;
 import net.felix.features.information.materials.MaterialDatabase;
-import net.felix.features.information.mklevel.MKLevelDatabase;
-import net.felix.features.information.mklevel.MKLevelInputHandler;
+import net.felix.features.information.mklevel.MkLevelDatabase;
+import net.felix.features.information.mklevel.MkLevelInputHandler;
 import net.felix.features.information.tooltip.InformationTooltipHandler;
 import net.felix.features.information.xp.MiningLumberjackOverlay;
 import net.felix.features.information.xp.MiningLumberjackTracker;
@@ -74,7 +74,7 @@ public final class InformationFeature {
 		LicenseDatabase.loadLicensesDatabase();
 		GadgetDatabase.loadGadgetsDatabase();
 		BlueprintDatabase.loadBlueprintsDatabase();
-		MKLevelDatabase.loadMKLevelDatabase();
+		MkLevelDatabase.loadMkLevelDatabase();
 		CollectionDatabase.loadCollectionsDatabase();
 	}
 
@@ -95,7 +95,7 @@ public final class InformationFeature {
 		MiningLumberjackTracker.onClientTick(client);
 		tickResourceRate(client);
 		CollectionTracker.onClientTick(client);
-		MKLevelInputHandler.onClientTick(client);
+		MkLevelInputHandler.onClientTick(client);
 	}
 
 	private static void tickResourceRate(Minecraft client) {
@@ -131,7 +131,7 @@ public final class InformationFeature {
 		}
 
 		// Update XP data from tab list (works even when tab list is closed)
-		MiningLumberjackTracker.updateXPFromTabList(client);
+		MiningLumberjackTracker.updateXpFromTabList(client);
 
 		// Update overlay visibility timers (after XP data update)
 		MiningLumberjackTracker.refreshOverlayVisibility();

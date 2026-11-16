@@ -9,34 +9,34 @@ import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 
-import static net.felix.features.information.mklevel.MKLevelOverlayRenderer.calculateMKLevelContentHeights;
-import static net.felix.features.information.mklevel.MKLevelOverlayRenderer.calculateMKLevelTotalLineHeight;
-import static net.felix.features.information.mklevel.MKLevelState.getMKLevelScrollOffset;
-import static net.felix.features.information.mklevel.MKLevelState.isInMKLevelInventory;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelActiveTab;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelOverlayHovered;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelScrollbarDragging;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchCursorBlinkTime;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchCursorPosition;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchCursorVisible;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchFocused;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchText;
-import static net.felix.features.information.mklevel.MKLevelState.setMKLevelScrollOffset;
-import static net.felix.features.information.tooltip.TooltipText.getPlainTextFromText;
+import static net.felix.features.information.mklevel.MkLevelOverlayRenderer.calculateMkLevelContentHeights;
+import static net.felix.features.information.mklevel.MkLevelOverlayRenderer.calculateMkLevelTotalLineHeight;
+import static net.felix.features.information.mklevel.MkLevelState.getMkLevelScrollOffset;
+import static net.felix.features.information.mklevel.MkLevelState.isInMkLevelInventory;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelActiveTab;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelOverlayHovered;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelScrollbarDragging;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchCursorBlinkTime;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchCursorPosition;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchCursorVisible;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchFocused;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchText;
+import static net.felix.features.information.mklevel.MkLevelState.setMkLevelScrollOffset;
+import static net.felix.features.information.tooltip.TooltipTextCleaner.getPlainTextFromText;
 
 
 /**
  * Maus- und Tastatureingaben des MK-Level-Overlays (Scrollen, Suche).
  */
-public final class MKLevelInputHandler {
+public final class MkLevelInputHandler {
 
-	private MKLevelInputHandler() {
+	private MkLevelInputHandler() {
 	}
 
 	/**
-	 * Handles scrolling for MKLevel overlay
+	 * Handles scrolling for MkLevel overlay
 	 */
-	private static void handleMKLevelScrolling(Minecraft client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
+	private static void handleMkLevelScrolling(Minecraft client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
 		if (client == null || client.getWindow() == null) {
 			return;
 		}
@@ -51,14 +51,14 @@ public final class MKLevelInputHandler {
 		int mouseX = (int) client.mouseHandler.xpos() * client.getWindow().getGuiScaledWidth() / windowWidth;
 		int mouseY = (int) client.mouseHandler.ypos() * client.getWindow().getGuiScaledHeight() / windowHeight;
 		
-		// Calculate overlay position using config (same as renderMKLevelOverlay)
+		// Calculate overlay position using config (same as renderMkLevelOverlay)
 		int screenWidth = client.getWindow().getGuiScaledWidth();
 		
 		if (screenWidth <= 0) {
 			return;
 		}
 		
-		// Get position from config (same as renderMKLevelOverlay)
+		// Get position from config (same as renderMkLevelOverlay)
 		int xPos = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX;
 		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
@@ -104,10 +104,10 @@ public final class MKLevelInputHandler {
 	}
 
 	/**
-	 * Handles mouse scroll for MKLevel overlay
+	 * Handles mouse scroll for MkLevel overlay
 	 */
-	public static void onMKLevelMouseScroll(double vertical) {
-		if (!isInMKLevelInventory) {
+	public static void onMkLevelMouseScroll(double vertical) {
+		if (!isInMkLevelInventory) {
 			return;
 		}
 		
@@ -115,10 +115,10 @@ public final class MKLevelInputHandler {
 			// Scroll by line height for smooth line-by-line scrolling
 			int lineHeight = 12;
 			int scrollAmount = (int) (vertical * lineHeight);
-			int currentOffset = getMKLevelScrollOffset();
+			int currentOffset = getMkLevelScrollOffset();
 			currentOffset -= scrollAmount;
 			currentOffset = Math.max(0, currentOffset);
-			setMKLevelScrollOffset(currentOffset);
+			setMkLevelScrollOffset(currentOffset);
 			
 			// Limit scroll offset based on actual entry heights (including spacing)
 			Minecraft client = Minecraft.getInstance();
@@ -134,58 +134,58 @@ public final class MKLevelInputHandler {
 					// Account for contentOffset in available height calculation
 					int availableHeight = inventoryHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
 					
-					int[] heights = calculateMKLevelContentHeights(lineHeight);
+					int[] heights = calculateMkLevelContentHeights(lineHeight);
 					int totalHeight = heights[0];
 					int lastEntryHeight = heights[1];
 					int maxScroll = Math.max(0, totalHeight - availableHeight + lastEntryHeight);
-					setMKLevelScrollOffset(Math.min(getMKLevelScrollOffset(), maxScroll));
+					setMkLevelScrollOffset(Math.min(getMkLevelScrollOffset(), maxScroll));
 				} catch (Exception e) {
-					int[] heights = calculateMKLevelContentHeights(lineHeight);
+					int[] heights = calculateMkLevelContentHeights(lineHeight);
 					int totalHeight = heights[0];
 					int lastEntryHeight = heights[1];
 					int estimatedAvailableHeight = 166 - 16 - 10 - 3;
 					int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
-					setMKLevelScrollOffset(Math.min(getMKLevelScrollOffset(), maxScroll));
+					setMkLevelScrollOffset(Math.min(getMkLevelScrollOffset(), maxScroll));
 				}
 			} else {
-				int[] heights = calculateMKLevelContentHeights(lineHeight);
+				int[] heights = calculateMkLevelContentHeights(lineHeight);
 				int totalHeight = heights[0];
 				int lastEntryHeight = heights[1];
 				int estimatedAvailableHeight = 166 - 16 - 10 - 3;
 				int maxScroll = Math.max(0, totalHeight - estimatedAvailableHeight + lastEntryHeight);
-				setMKLevelScrollOffset(Math.min(getMKLevelScrollOffset(), maxScroll));
+				setMkLevelScrollOffset(Math.min(getMkLevelScrollOffset(), maxScroll));
 			}
 		}
 	}
 
 	/**
-	 * Handles mouse click for MKLevel search bar
+	 * Handles mouse click for MkLevel search bar
 	 * @param inventoryX X position of the inventory (from mixin shadow field)
 	 * @param inventoryY Y position of the inventory (from mixin shadow field)
 	 * @param inventoryHeight Height of the inventory (from mixin shadow field)
 	 */
-	public static boolean handleMKLevelSearchClick(double mouseX, double mouseY, int button, int inventoryX, int inventoryY, int inventoryHeight) {
+	public static boolean handleMkLevelSearchClick(double mouseX, double mouseY, int button, int inventoryX, int inventoryY, int inventoryHeight) {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.getWindow() == null) {
 			return false;
 		}
 		
-		// Check if we're in the MKLevel inventory - check directly instead of relying on isInMKLevelInventory
+		// Check if we're in the MkLevel inventory - check directly instead of relying on isInMkLevelInventory
 		// This ensures it works even if onClientTick hasn't run yet
-		boolean inMKLevelInventory = false;
+		boolean inMkLevelInventory = false;
 		if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
-			inMKLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
+			inMkLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
 		}
 		
-		if (!inMKLevelInventory) {
+		if (!inMkLevelInventory) {
 			return false;
 		}
 		
-		// Check if MKLevel overlay is enabled
+		// Check if MkLevel overlay is enabled
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled) {
 			return false;
 		}
@@ -223,7 +223,7 @@ public final class MKLevelInputHandler {
 		
 		int buttonY = overlayY - Math.round(unscaledButtonHeight * scale);
 		int buttonHeight = Math.round(unscaledButtonHeight * scale);
-		MKLevelOverlayTab[] tabs = {MKLevelOverlayTab.INDIVIDUAL, MKLevelOverlayTab.COMBINED, MKLevelOverlayTab.TOTAL_ESSENCES};
+		MkLevelOverlayTab[] tabs = {MkLevelOverlayTab.INDIVIDUAL, MkLevelOverlayTab.COMBINED, MkLevelOverlayTab.TOTAL_ESSENCES};
 		
 		for (int i = 0; i < tabCount; i++) {
 			int buttonX = overlayX + Math.round(i * unscaledButtonWidth * scale);
@@ -268,7 +268,7 @@ public final class MKLevelInputHandler {
 			} else if (button == 1) { // Right click - clear search
 				mkLevelSearchText = "";
 				mkLevelSearchCursorPosition = 0;
-				setMKLevelScrollOffset(0);
+				setMkLevelScrollOffset(0);
 				return true;
 			}
 		} else {
@@ -289,7 +289,7 @@ public final class MKLevelInputHandler {
 			if (button == 0) { // Left click
 				// Calculate total content height
 				int lineHeight = 12;
-				int totalContentHeight = calculateMKLevelTotalLineHeight(lineHeight);
+				int totalContentHeight = calculateMkLevelTotalLineHeight(lineHeight);
 				int availableHeight = unscaledHeight - unscaledPadding * 2 - unscaledSearchBarHeight - 2 - unscaledContentOffset;
 				
 				if (totalContentHeight > availableHeight) {
@@ -298,7 +298,7 @@ public final class MKLevelInputHandler {
 					int handleHeight = Math.max(10, (int) (scrollbarHeight * scrollRatio));
 					
 					// Calculate current handle position
-					float scrollProgress = (float) getMKLevelScrollOffset() / (totalContentHeight - availableHeight);
+					float scrollProgress = (float) getMkLevelScrollOffset() / (totalContentHeight - availableHeight);
 					scrollProgress = Math.max(0.0f, Math.min(1.0f, scrollProgress));
 					int handleY = scrollbarTop + (int) ((scrollbarHeight - handleHeight) * scrollProgress);
 					
@@ -312,7 +312,7 @@ public final class MKLevelInputHandler {
 						float clickProgress = (float) (mouseY - scrollbarTop) / scrollbarHeight;
 						clickProgress = Math.max(0.0f, Math.min(1.0f, clickProgress));
 						int newOffset = (int) (clickProgress * (totalContentHeight - availableHeight));
-						setMKLevelScrollOffset(Math.max(0, Math.min(newOffset, totalContentHeight - availableHeight)));
+						setMkLevelScrollOffset(Math.max(0, Math.min(newOffset, totalContentHeight - availableHeight)));
 						return true;
 					}
 				}
@@ -323,9 +323,9 @@ public final class MKLevelInputHandler {
 	}
 
 	/**
-	 * Handles mouse drag for MKLevel scrollbar
+	 * Handles mouse drag for MkLevel scrollbar
 	 */
-	public static boolean handleMKLevelScrollbarDrag(double mouseX, double mouseY, int button, int inventoryX, int inventoryY, int inventoryHeight) {
+	public static boolean handleMkLevelScrollbarDrag(double mouseX, double mouseY, int button, int inventoryX, int inventoryY, int inventoryHeight) {
 		if (!mkLevelScrollbarDragging || button != 0) {
 			return false;
 		}
@@ -354,7 +354,7 @@ public final class MKLevelInputHandler {
 		
 		// Calculate total content height
 		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
-		int totalContentHeight = calculateMKLevelTotalLineHeight(lineHeight);
+		int totalContentHeight = calculateMkLevelTotalLineHeight(lineHeight);
 		
 		if (totalContentHeight <= availableHeight) {
 			return false;
@@ -372,15 +372,15 @@ public final class MKLevelInputHandler {
 		// Calculate new scroll offset
 		int maxScroll = totalContentHeight - availableHeight;
 		int newOffset = (int) (progress * maxScroll);
-		setMKLevelScrollOffset(Math.max(0, Math.min(newOffset, maxScroll)));
+		setMkLevelScrollOffset(Math.max(0, Math.min(newOffset, maxScroll)));
 		
 		return true;
 	}
 
 	/**
-	 * Handles mouse release for MKLevel scrollbar
+	 * Handles mouse release for MkLevel scrollbar
 	 */
-	public static boolean handleMKLevelScrollbarRelease(double mouseX, double mouseY, int button) {
+	public static boolean handleMkLevelScrollbarRelease(double mouseX, double mouseY, int button) {
 		if (mkLevelScrollbarDragging && button == 0) {
 			mkLevelScrollbarDragging = false;
 			return true;
@@ -415,10 +415,10 @@ public final class MKLevelInputHandler {
 	}
 
 	/**
-	 * Handles character input for MKLevel search bar
+	 * Handles character input for MkLevel search bar
 	 */
-	public static boolean handleMKLevelCharTyped(char chr, int modifiers) {
-		if (!isInMKLevelInventory || !mkLevelSearchFocused) {
+	public static boolean handleMkLevelCharTyped(char chr, int modifiers) {
+		if (!isInMkLevelInventory || !mkLevelSearchFocused) {
 			return false;
 		}
 		
@@ -428,7 +428,7 @@ public final class MKLevelInputHandler {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition - 1) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 				mkLevelSearchCursorPosition--;
-				setMKLevelScrollOffset(0); // Reset scroll when search changes
+				setMkLevelScrollOffset(0); // Reset scroll when search changes
 			}
 			return true;
 		}
@@ -438,7 +438,7 @@ public final class MKLevelInputHandler {
 			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition + 1);
-				setMKLevelScrollOffset(0); // Reset scroll when search changes
+				setMkLevelScrollOffset(0); // Reset scroll when search changes
 			}
 			return true;
 		}
@@ -449,7 +449,7 @@ public final class MKLevelInputHandler {
 								chr +
 								mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 			mkLevelSearchCursorPosition++;
-			setMKLevelScrollOffset(0); // Reset scroll when search changes
+			setMkLevelScrollOffset(0); // Reset scroll when search changes
 			return true;
 		}
 		
@@ -457,11 +457,11 @@ public final class MKLevelInputHandler {
 	}
 
 	/**
-	 * Handles key press for MKLevel search bar
+	 * Handles key press for MkLevel search bar
 	 * Based on SearchBarUtility.handleKeyPress
 	 */
-	public static boolean handleMKLevelKeyPressed(int keyCode, int scanCode, int modifiers) {
-		// Check if search bar is focused - if it is, we're definitely in the MKLevel inventory
+	public static boolean handleMkLevelKeyPressed(int keyCode, int scanCode, int modifiers) {
+		// Check if search bar is focused - if it is, we're definitely in the MkLevel inventory
 		if (!mkLevelSearchFocused) {
 			return false;
 		}
@@ -471,17 +471,17 @@ public final class MKLevelInputHandler {
 			return false;
 		}
 		
-		// Double-check that we're still in the MKLevel inventory
-		boolean inMKLevelInventory = false;
+		// Double-check that we're still in the MkLevel inventory
+		boolean inMkLevelInventory = false;
 		if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
-			inMKLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
+			inMkLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
 		}
 		
-		if (!inMKLevelInventory) {
+		if (!inMkLevelInventory) {
 			// Unfocus if we're no longer in the inventory
 			mkLevelSearchFocused = false;
 			return false;
@@ -502,12 +502,12 @@ public final class MKLevelInputHandler {
 			if (ctrl) {
 				mkLevelSearchText = "";
 				mkLevelSearchCursorPosition = 0;
-				setMKLevelScrollOffset(0);
+				setMkLevelScrollOffset(0);
 			} else if (!mkLevelSearchText.isEmpty() && mkLevelSearchCursorPosition > 0) {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition - 1) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 				mkLevelSearchCursorPosition--;
-				setMKLevelScrollOffset(0);
+				setMkLevelScrollOffset(0);
 			}
 			return true;
 		}
@@ -516,7 +516,7 @@ public final class MKLevelInputHandler {
 			if (mkLevelSearchCursorPosition < mkLevelSearchText.length()) {
 				mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition + 1);
-				setMKLevelScrollOffset(0);
+				setMkLevelScrollOffset(0);
 			}
 			return true;
 		}
@@ -558,7 +558,7 @@ public final class MKLevelInputHandler {
 									clipboardText +
 									mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 				mkLevelSearchCursorPosition += clipboardText.length();
-				setMKLevelScrollOffset(0);
+				setMkLevelScrollOffset(0);
 			}
 			return true;
 		}
@@ -569,7 +569,7 @@ public final class MKLevelInputHandler {
 		String typed = KeyBindingUtility.characterFromScancode(keyCode, modifiers);
 		if (typed != null && !typed.isEmpty()) {
 			for (int i = 0; i < typed.length(); i++) {
-				insertMKLevelCharacter(typed.charAt(i));
+				insertMkLevelCharacter(typed.charAt(i));
 			}
 			return true;
 		}
@@ -580,12 +580,12 @@ public final class MKLevelInputHandler {
 	/**
 	 * Inserts a character at the cursor position
 	 */
-	private static void insertMKLevelCharacter(char character) {
+	private static void insertMkLevelCharacter(char character) {
 		mkLevelSearchText = mkLevelSearchText.substring(0, mkLevelSearchCursorPosition) +
 							character +
 							mkLevelSearchText.substring(mkLevelSearchCursorPosition);
 		mkLevelSearchCursorPosition++;
-		setMKLevelScrollOffset(0); // Reset scroll when search changes
+		setMkLevelScrollOffset(0); // Reset scroll when search changes
 	}
 
 	/**
@@ -593,24 +593,24 @@ public final class MKLevelInputHandler {
 	 * steuert das Cursor-Blinken und verarbeitet das Scrollen.
 	 */
 	public static void onClientTick(Minecraft client) {
-		// Check if we're in MKLevel inventory
+		// Check if we're in MkLevel inventory
 		if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
 			Component titleText = handledScreen.getTitle();
 			String title = getPlainTextFromText(titleText);
 			String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
-			boolean wasInMKLevelInventory = isInMKLevelInventory;
+			boolean wasInMkLevelInventory = isInMkLevelInventory;
 			// Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
-			isInMKLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
+			isInMkLevelInventory = ZeichenUtility.isMkLevelInventoryTitle(title, titleWithUnicode);
 
 			// Reset search when leaving inventory (nur wenn man wirklich ein anderes Inventar öffnet)
 			// Die Scroll-Position wird NICHT zurückgesetzt, damit sie beim erneuten Öffnen erhalten bleibt
-			if (wasInMKLevelInventory && !isInMKLevelInventory) {
+			if (wasInMkLevelInventory && !isInMkLevelInventory) {
 				mkLevelSearchText = "";
 				mkLevelSearchFocused = false;
 				mkLevelSearchCursorPosition = 0;
 			}
 
-			if (isInMKLevelInventory) {
+			if (isInMkLevelInventory) {
 				// Update cursor blink
 				if (mkLevelSearchFocused) {
 					long currentTime = System.currentTimeMillis();
@@ -638,18 +638,18 @@ public final class MKLevelInputHandler {
 					int inventoryWidth = bgWidthField.getInt(handledScreen);
 					int inventoryHeight = bgHeightField.getInt(handledScreen);
 
-					handleMKLevelScrolling(client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
+					handleMkLevelScrolling(client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
 				} catch (Exception e) {
 					// Fallback to default values
 					int inventoryWidth = 176;
 					int inventoryHeight = 166;
 					int inventoryX = (client.getWindow().getGuiScaledWidth() - inventoryWidth) / 2;
 					int inventoryY = (client.getWindow().getGuiScaledHeight() - inventoryHeight) / 2;
-					handleMKLevelScrolling(client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
+					handleMkLevelScrolling(client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
 				}
 			}
 		} else {
-			isInMKLevelInventory = false;
+			isInMkLevelInventory = false;
 		}
 	}
 }

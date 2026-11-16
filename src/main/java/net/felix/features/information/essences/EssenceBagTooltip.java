@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static net.felix.features.information.essences.EssenceWaveNames.getWaveDisplayForEssenceMobAndTier;
-import static net.felix.features.information.tooltip.TooltipText.cleanTooltipLineForMatching;
+import static net.felix.features.information.tooltip.TooltipTextCleaner.cleanTooltipLineForMatching;
 
 
 /**

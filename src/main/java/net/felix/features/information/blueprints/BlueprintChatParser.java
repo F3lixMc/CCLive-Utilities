@@ -107,10 +107,10 @@ public final class BlueprintChatParser {
 		int epicColor2 = 0xFFA335EE; // Actual epic color used in game
 		int legendaryColor1 = 0xFFFC7E00; // Original legendary color
 		int legendaryColor2 = 0xFFFF8000; // Actual legendary color used in game
-		int epicColor1RGB = epicColor1 & 0x00FFFFFF;
-		int epicColor2RGB = epicColor2 & 0x00FFFFFF;
-		int legendaryColor1RGB = legendaryColor1 & 0x00FFFFFF;
-		int legendaryColor2RGB = legendaryColor2 & 0x00FFFFFF;
+		int epicColor1Rgb = epicColor1 & 0x00FFFFFF;
+		int epicColor2Rgb = epicColor2 & 0x00FFFFFF;
+		int legendaryColor1Rgb = legendaryColor1 & 0x00FFFFFF;
+		int legendaryColor2Rgb = legendaryColor2 & 0x00FFFFFF;
 		
 		final StringBuilder blueprintName = new StringBuilder();
 		final boolean[] inBlueprintNameColor = {false};
@@ -125,13 +125,13 @@ public final class BlueprintChatParser {
 			String currentRarity = null;
 			if (style != null && style.getColor() != null) {
 				int styleColor = style.getColor().getValue();
-				int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
+				int styleColorRgb = styleColor & 0x00FFFFFF; // Remove alpha
 				
 				// Check for Epic color (both variants)
-				if (styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) {
+				if (styleColorRgb == epicColor1Rgb || styleColorRgb == epicColor2Rgb) {
 					hasTargetColor = true;
 					currentRarity = "epic";
-				} else if (styleColorRGB == legendaryColor1RGB || styleColorRGB == legendaryColor2RGB) {
+				} else if (styleColorRgb == legendaryColor1Rgb || styleColorRgb == legendaryColor2Rgb) {
 					hasTargetColor = true;
 					currentRarity = "legendary";
 				}
@@ -219,14 +219,14 @@ public final class BlueprintChatParser {
 		int epicColor2 = 0xFFA335EE;
 		int legendaryColor1 = 0xFFFC7E00;
 		int legendaryColor2 = 0xFFFF8000;
-		int epicColor1RGB = epicColor1 & 0x00FFFFFF;
-		int epicColor2RGB = epicColor2 & 0x00FFFFFF;
-		int legendaryColor1RGB = legendaryColor1 & 0x00FFFFFF;
-		int legendaryColor2RGB = legendaryColor2 & 0x00FFFFFF;
+		int epicColor1Rgb = epicColor1 & 0x00FFFFFF;
+		int epicColor2Rgb = epicColor2 & 0x00FFFFFF;
+		int legendaryColor1Rgb = legendaryColor1 & 0x00FFFFFF;
+		int legendaryColor2Rgb = legendaryColor2 & 0x00FFFFFF;
 		// Uncommon / rare (Cactus Clicker style blueprint rows)
-		int uncommonColorRGB = 0x001EFF00;
-		int rareColorRGB = 0x000070DD;
-		int commonWhiteRGB = 0x00FFFFFF;
+		int uncommonColorRgb = 0x001EFF00;
+		int rareColorRgb = 0x000070DD;
+		int commonWhiteRgb = 0x00FFFFFF;
 		
 		// First, collect all text with their styles to find the blueprint name section
 		final java.util.List<net.minecraft.network.chat.Style> styles = new java.util.ArrayList<>();
@@ -284,16 +284,16 @@ public final class BlueprintChatParser {
 				// First matching tier wins (prefix glyphs before the colored name are skipped if still null)
 				if (detectedRarity[0] == null && style != null && style.getColor() != null) {
 					int styleColor = style.getColor().getValue();
-					int styleColorRGB = styleColor & 0x00FFFFFF;
-					if (styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) {
+					int styleColorRgb = styleColor & 0x00FFFFFF;
+					if (styleColorRgb == epicColor1Rgb || styleColorRgb == epicColor2Rgb) {
 						detectedRarity[0] = "epic";
-					} else if (styleColorRGB == legendaryColor1RGB || styleColorRGB == legendaryColor2RGB) {
+					} else if (styleColorRgb == legendaryColor1Rgb || styleColorRgb == legendaryColor2Rgb) {
 						detectedRarity[0] = "legendary";
-					} else if (styleColorRGB == rareColorRGB) {
+					} else if (styleColorRgb == rareColorRgb) {
 						detectedRarity[0] = "rare";
-					} else if (styleColorRGB == uncommonColorRGB) {
+					} else if (styleColorRgb == uncommonColorRgb) {
 						detectedRarity[0] = "uncommon";
-					} else if (styleColorRGB == commonWhiteRGB) {
+					} else if (styleColorRgb == commonWhiteRgb) {
 						detectedRarity[0] = "common";
 					}
 				}
@@ -343,8 +343,8 @@ public final class BlueprintChatParser {
 		// Epic colors: #A134EB (RGB: 161, 52, 235) OR #A335EE (RGB: 163, 53, 238)
 		int epicColor1 = 0xFFA134EB;
 		int epicColor2 = 0xFFA335EE;
-		int epicColor1RGB = epicColor1 & 0x00FFFFFF;
-		int epicColor2RGB = epicColor2 & 0x00FFFFFF;
+		int epicColor1Rgb = epicColor1 & 0x00FFFFFF;
+		int epicColor2Rgb = epicColor2 & 0x00FFFFFF;
 		
 		// Convert to OrderedText to iterate through styled parts
 		net.minecraft.util.FormattedCharSequence orderedText = text.getVisualOrderText();
@@ -353,9 +353,9 @@ public final class BlueprintChatParser {
 		orderedText.accept((index, style, codePoint) -> {
 			if (style != null && style.getColor() != null) {
 				int styleColor = style.getColor().getValue();
-				int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
+				int styleColorRgb = styleColor & 0x00FFFFFF; // Remove alpha
 				
-				if (styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) {
+				if (styleColorRgb == epicColor1Rgb || styleColorRgb == epicColor2Rgb) {
 					hasEpicColor[0] = true;
 					return false; // Stop processing
 				}
@@ -379,8 +379,8 @@ public final class BlueprintChatParser {
 		// Target colors: #FC7E00 (RGB: 252, 126, 0) OR #FF8000 (RGB: 255, 128, 0) - both are used in game
 		int targetColor1 = 0xFFFC7E00; // Original legendary color
 		int targetColor2 = 0xFFFF8000; // Alternative legendary color
-		int targetColor1RGB = targetColor1 & 0x00FFFFFF; // Remove alpha
-		int targetColor2RGB = targetColor2 & 0x00FFFFFF; // Remove alpha
+		int targetColor1Rgb = targetColor1 & 0x00FFFFFF; // Remove alpha
+		int targetColor2Rgb = targetColor2 & 0x00FFFFFF; // Remove alpha
 		
 		StringBuilder blueprintName = new StringBuilder();
 		final boolean[] inBlueprintNameColor = {false};
@@ -393,8 +393,8 @@ public final class BlueprintChatParser {
 			boolean hasTargetColor = false;
 			if (style != null && style.getColor() != null) {
 				int styleColor = style.getColor().getValue();
-				int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
-				if (styleColorRGB == targetColor1RGB || styleColorRGB == targetColor2RGB) {
+				int styleColorRgb = styleColor & 0x00FFFFFF; // Remove alpha
+				if (styleColorRgb == targetColor1Rgb || styleColorRgb == targetColor2Rgb) {
 					hasTargetColor = true;
 				}
 			}

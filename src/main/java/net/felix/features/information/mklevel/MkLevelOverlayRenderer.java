@@ -6,40 +6,40 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import java.util.List;
 import java.util.ArrayList;
 
-import static net.felix.features.information.essences.EssenceWaveNames.getWaveDisplayForMKLevelEssence;
-import static net.felix.features.information.mklevel.MKLevelState.getMKLevelScrollOffset;
-import static net.felix.features.information.mklevel.MKLevelState.isInMKLevelInventory;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelActiveTab;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelLastKnownHeight;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelScrollbarDragging;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchCursorPosition;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchCursorVisible;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchFocused;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelSearchText;
-import static net.felix.features.information.mklevel.MKLevelState.setMKLevelScrollOffset;
+import static net.felix.features.information.essences.EssenceWaveNames.getWaveDisplayForMkLevelEssence;
+import static net.felix.features.information.mklevel.MkLevelState.getMkLevelScrollOffset;
+import static net.felix.features.information.mklevel.MkLevelState.isInMkLevelInventory;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelActiveTab;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelLastKnownHeight;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelScrollbarDragging;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchCursorPosition;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchCursorVisible;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchFocused;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchText;
+import static net.felix.features.information.mklevel.MkLevelState.setMkLevelScrollOffset;
 import static net.felix.features.information.util.NumberFormatting.formatNumberWithSeparator;
-import static net.felix.features.information.mklevel.MKLevelDatabase.filterCombinedWaves;
-import static net.felix.features.information.mklevel.MKLevelDatabase.filterMKLevelEntries;
-import static net.felix.features.information.mklevel.MKLevelDatabase.filterTotalEssenceEntries;
+import static net.felix.features.information.mklevel.MkLevelDatabase.filterCombinedWaves;
+import static net.felix.features.information.mklevel.MkLevelDatabase.filterMkLevelEntries;
+import static net.felix.features.information.mklevel.MkLevelDatabase.filterTotalEssenceEntries;
 
 
 /**
  * Zeichnet das MK-Level-Overlay.
  */
-public final class MKLevelOverlayRenderer {
+public final class MkLevelOverlayRenderer {
 
-	private MKLevelOverlayRenderer() {
+	private MkLevelOverlayRenderer() {
 	}
 
 	/**
-	 * Renders MKLevel overlay
+	 * Renders MkLevel overlay
 	 */
-	public static void renderMKLevelOverlay(GuiGraphicsExtractor context, Minecraft client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
-		if (client == null || client.getWindow() == null || !isInMKLevelInventory) {
+	public static void renderMkLevelOverlay(GuiGraphicsExtractor context, Minecraft client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
+		if (client == null || client.getWindow() == null || !isInMkLevelInventory) {
 			return;
 		}
 		
-		// Check if MKLevel overlay is enabled
+		// Check if MkLevel overlay is enabled
 		if (!CCLiveUtilitiesConfig.HANDLER.instance().mkLevelEnabled) {
 			return;
 		}
@@ -101,7 +101,7 @@ public final class MKLevelOverlayRenderer {
 		int tabCount = 3;
 		int buttonWidth = unscaledWidth / tabCount;
 		String[] tabLabels = {"Einzelne", "Kombiniert", "Gesamt"};
-		MKLevelOverlayTab[] tabs = {MKLevelOverlayTab.INDIVIDUAL, MKLevelOverlayTab.COMBINED, MKLevelOverlayTab.TOTAL_ESSENCES};
+		MkLevelOverlayTab[] tabs = {MkLevelOverlayTab.INDIVIDUAL, MkLevelOverlayTab.COMBINED, MkLevelOverlayTab.TOTAL_ESSENCES};
 		
 		for (int i = 0; i < tabCount; i++) {
 			boolean active = mkLevelActiveTab == tabs[i];
@@ -157,8 +157,8 @@ public final class MKLevelOverlayRenderer {
 		// Calculate available height for content
 		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
 		
-		List<RenderLine> allLines = buildMKLevelRenderLines(client);
-		renderMKLevelScrollableLines(context, client, allLines, textX, contentY, maxY, availableHeight, lineHeight);
+		List<MkLevelRenderLine> allLines = buildMkLevelRenderLines(client);
+		renderMkLevelScrollableLines(context, client, allLines, textX, contentY, maxY, availableHeight, lineHeight);
 		
 		// Draw scrollbar on the right side
 		// Scrollbar goes from bottom of overlay to bottom of search bar
@@ -172,7 +172,7 @@ public final class MKLevelOverlayRenderer {
 		if (scrollbarHeight > 0) {
 			// Calculate total content height using the same method as rendering
 			// We need to count the actual number of lines that will be rendered
-			int totalContentHeight = calculateMKLevelTotalLineHeight(lineHeight);
+			int totalContentHeight = calculateMkLevelTotalLineHeight(lineHeight);
 			
 			// Only show scrollbar if content is taller than visible area
 			if (totalContentHeight > availableHeight) {
@@ -188,7 +188,7 @@ public final class MKLevelOverlayRenderer {
 				// Calculate handle position based on scroll offset
 				int maxScroll = totalContentHeight - availableHeight;
 				float scrollProgress = maxScroll > 0 ? 
-					(float) getMKLevelScrollOffset() / maxScroll : 0.0f;
+					(float) getMkLevelScrollOffset() / maxScroll : 0.0f;
 				scrollProgress = Math.max(0.0f, Math.min(1.0f, scrollProgress));
 				
 				// When scrollProgress is 1.0, handle should be at the bottom
@@ -210,13 +210,13 @@ public final class MKLevelOverlayRenderer {
 		matrices.popMatrix();
 	}
 
-	static int[] calculateMKLevelContentHeights(int lineHeight) {
+	static int[] calculateMkLevelContentHeights(int lineHeight) {
 		int totalHeight = 0;
 		int lastEntryHeight = 0;
 		
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> {
-				List<MKLevelInfo> entries = filterMKLevelEntries(mkLevelSearchText);
+				List<MkLevelInfo> entries = filterMkLevelEntries(mkLevelSearchText);
 				int height = 4 * lineHeight;
 				totalHeight += entries.size() * height;
 				if (!entries.isEmpty()) {
@@ -247,10 +247,10 @@ public final class MKLevelOverlayRenderer {
 		return new int[] { totalHeight, lastEntryHeight };
 	}
 
-	static int calculateMKLevelTotalLineHeight(int lineHeight) {
+	static int calculateMkLevelTotalLineHeight(int lineHeight) {
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> {
-				return filterMKLevelEntries(mkLevelSearchText).size() * 4 * lineHeight;
+				return filterMkLevelEntries(mkLevelSearchText).size() * 4 * lineHeight;
 			}
 			case COMBINED -> {
 				int totalContentHeight = 0;
@@ -275,72 +275,72 @@ public final class MKLevelOverlayRenderer {
 		}
 	}
 
-	private static List<RenderLine> buildMKLevelRenderLines(Minecraft client) {
-		List<RenderLine> allLines = new ArrayList<>();
+	private static List<MkLevelRenderLine> buildMkLevelRenderLines(Minecraft client) {
+		List<MkLevelRenderLine> allLines = new ArrayList<>();
 		
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> {
-				for (MKLevelInfo levelInfo : filterMKLevelEntries(mkLevelSearchText)) {
-					allLines.add(new RenderLine("-Level " + levelInfo.level, 0xFFFFFF00));
-					allLines.add(new RenderLine(" " + levelInfo.essence + ", x" + formatNumberWithSeparator(levelInfo.amount), 0xFFFFFFFF));
-					String waveDisplay = getWaveDisplayForMKLevelEssence(levelInfo.essence);
+				for (MkLevelInfo levelInfo : filterMkLevelEntries(mkLevelSearchText)) {
+					allLines.add(new MkLevelRenderLine("-Level " + levelInfo.level, 0xFFFFFF00));
+					allLines.add(new MkLevelRenderLine(" " + levelInfo.essence + ", x" + formatNumberWithSeparator(levelInfo.amount), 0xFFFFFFFF));
+					String waveDisplay = getWaveDisplayForMkLevelEssence(levelInfo.essence);
 					if (waveDisplay != null) {
 						String wavePrefix = "-> Welle: ";
-						allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.font.width(wavePrefix)));
+						allLines.add(new MkLevelRenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.font.width(wavePrefix)));
 					}
-					allLines.add(new RenderLine("", 0xFFFFFFFF));
+					allLines.add(new MkLevelRenderLine("", 0xFFFFFFFF));
 				}
 			}
 			case COMBINED -> {
 				for (CombinedWaveInfo waveInfo : filterCombinedWaves(mkLevelSearchText)) {
-					allLines.add(new RenderLine("-Level (" + waveInfo.level + ")", 0xFFFFFF00));
+					allLines.add(new MkLevelRenderLine("-Level (" + waveInfo.level + ")", 0xFFFFFF00));
 					String wavePrefix = "-> Welle: ";
 					String waveNumber = String.valueOf(waveInfo.wave);
-					allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveNumber, 0xFF55FF55, client.font.width(wavePrefix)));
+					allLines.add(new MkLevelRenderLine(wavePrefix, 0xFFC0C0C0, 0, waveNumber, 0xFF55FF55, client.font.width(wavePrefix)));
 					
 					if (waveInfo.without != null && !waveInfo.without.isEmpty()) {
 						String withoutHeader = "Ohne: ";
 						int withoutHeaderWidth = client.font.width(withoutHeader);
 						
 						String firstEssence = waveInfo.without.get(0).trim();
-						String essenceWaveDisplay = getWaveDisplayForMKLevelEssence(firstEssence);
+						String essenceWaveDisplay = getWaveDisplayForMkLevelEssence(firstEssence);
 						if (essenceWaveDisplay != null) {
 							String wavePrefixText = " -> Welle: ";
 							int essenceNameWidth = client.font.width(firstEssence);
 							int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
 							int waveNumX = wavePrefixX + client.font.width(wavePrefixText);
-							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555, 0, wavePrefixText, 0xFFC0C0C0, wavePrefixX, essenceWaveDisplay, 0xFF55FF55, waveNumX));
+							allLines.add(new MkLevelRenderLine(withoutHeader + firstEssence, 0xFFFF5555, 0, wavePrefixText, 0xFFC0C0C0, wavePrefixX, essenceWaveDisplay, 0xFF55FF55, waveNumX));
 						} else {
-							allLines.add(new RenderLine(withoutHeader + firstEssence, 0xFFFF5555));
+							allLines.add(new MkLevelRenderLine(withoutHeader + firstEssence, 0xFFFF5555));
 						}
 						
 						for (int i = 1; i < waveInfo.without.size(); i++) {
 							String essenceName = waveInfo.without.get(i).trim();
-							String waveDisplay = getWaveDisplayForMKLevelEssence(essenceName);
+							String waveDisplay = getWaveDisplayForMkLevelEssence(essenceName);
 							if (waveDisplay != null) {
 								String wavePrefixText = " -> Welle: ";
 								int essenceNameWidth = client.font.width(essenceName);
 								int wavePrefixX = withoutHeaderWidth + essenceNameWidth;
 								int waveNumX = wavePrefixX + client.font.width(wavePrefixText);
-								allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, wavePrefixText, 0xFFC0C0C0, wavePrefixX, waveDisplay, 0xFF55FF55, waveNumX));
+								allLines.add(new MkLevelRenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, wavePrefixText, 0xFFC0C0C0, wavePrefixX, waveDisplay, 0xFF55FF55, waveNumX));
 							} else {
-								allLines.add(new RenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, "", 0, 0));
+								allLines.add(new MkLevelRenderLine(essenceName, 0xFFFF5555, withoutHeaderWidth, "", 0, 0));
 							}
 						}
 					}
 					
-					allLines.add(new RenderLine("", 0xFFFFFFFF));
+					allLines.add(new MkLevelRenderLine("", 0xFFFFFFFF));
 				}
 			}
 			case TOTAL_ESSENCES -> {
 				for (TotalEssenceInfo essenceInfo : filterTotalEssenceEntries(mkLevelSearchText)) {
-					allLines.add(new RenderLine(" " + essenceInfo.essence + ", x" + formatNumberWithSeparator(essenceInfo.totalAmount), 0xFFFFFFFF));
-					String waveDisplay = getWaveDisplayForMKLevelEssence(essenceInfo.essence);
+					allLines.add(new MkLevelRenderLine(" " + essenceInfo.essence + ", x" + formatNumberWithSeparator(essenceInfo.totalAmount), 0xFFFFFFFF));
+					String waveDisplay = getWaveDisplayForMkLevelEssence(essenceInfo.essence);
 					if (waveDisplay != null) {
 						String wavePrefix = "-> Welle: ";
-						allLines.add(new RenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.font.width(wavePrefix)));
+						allLines.add(new MkLevelRenderLine(wavePrefix, 0xFFC0C0C0, 0, waveDisplay, 0xFF55FF55, client.font.width(wavePrefix)));
 					}
-					allLines.add(new RenderLine("", 0xFFFFFFFF));
+					allLines.add(new MkLevelRenderLine("", 0xFFFFFFFF));
 				}
 			}
 		}
@@ -348,14 +348,14 @@ public final class MKLevelOverlayRenderer {
 		return allLines;
 	}
 
-	private static void renderMKLevelScrollableLines(GuiGraphicsExtractor context, Minecraft client, List<RenderLine> allLines,
+	private static void renderMkLevelScrollableLines(GuiGraphicsExtractor context, Minecraft client, List<MkLevelRenderLine> allLines,
 			int textX, int contentY, int maxY, int availableHeight, int lineHeight) {
 		int totalHeight = allLines.size() * lineHeight;
 		int maxScrollOffset = Math.max(0, totalHeight - availableHeight);
 		
-		int scrollOffset = getMKLevelScrollOffset();
+		int scrollOffset = getMkLevelScrollOffset();
 		if (scrollOffset > maxScrollOffset) {
-			setMKLevelScrollOffset(maxScrollOffset);
+			setMkLevelScrollOffset(maxScrollOffset);
 			scrollOffset = maxScrollOffset;
 		}
 		
@@ -364,7 +364,7 @@ public final class MKLevelOverlayRenderer {
 		int textY = contentY;
 		
 		if (startLine > 0) {
-			String moreText = mkLevelActiveTab == MKLevelOverlayTab.TOTAL_ESSENCES
+			String moreText = mkLevelActiveTab == MkLevelOverlayTab.TOTAL_ESSENCES
 				? "↑ Weitere Essenzen (Scrollen)"
 				: "↑ Weitere Level (Scrollen)";
 			context.text(client.font, moreText, textX, textY, 0x80FFFFFF, true);
@@ -381,7 +381,7 @@ public final class MKLevelOverlayRenderer {
 				break;
 			}
 			if (textY + lineHeight > minRenderY) {
-				RenderLine line = allLines.get(i);
+				MkLevelRenderLine line = allLines.get(i);
 				if (line.hasSecondPart) {
 					context.text(client.font, line.text, textX + line.xOffset, textY, line.color, true);
 					context.text(client.font, line.secondPartText, textX + line.secondPartXOffset, textY, line.secondPartColor, true);
@@ -395,9 +395,9 @@ public final class MKLevelOverlayRenderer {
 			textY += lineHeight;
 		}
 		
-		boolean hasMoreLines = getMKLevelScrollOffset() < maxScrollOffset;
+		boolean hasMoreLines = getMkLevelScrollOffset() < maxScrollOffset;
 		if (hasMoreLines && textY < maxY) {
-			String moreText = mkLevelActiveTab == MKLevelOverlayTab.TOTAL_ESSENCES
+			String moreText = mkLevelActiveTab == MkLevelOverlayTab.TOTAL_ESSENCES
 				? "↓ Weitere Essenzen (Scrollen)"
 				: "↓ Weitere Level (Scrollen)";
 			context.text(client.font, moreText, textX, textY, 0x80FFFFFF, true);

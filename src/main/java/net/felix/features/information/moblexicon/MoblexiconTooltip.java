@@ -12,7 +12,7 @@ import net.felix.utilities.Overall.OpferungMkDamageData;
 import net.felix.features.information.materials.MaterialInfo;
 
 import static net.felix.features.information.materials.MaterialDatabase.materialsDatabase;
-import static net.felix.features.information.tooltip.TooltipText.cleanTooltipText;
+import static net.felix.features.information.tooltip.TooltipTextCleaner.cleanTooltipText;
 
 
 /**

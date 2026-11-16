@@ -5,12 +5,12 @@ import java.util.List;
 /**
  * Laufzeit-Zustand des MK-Level-Overlays (Scroll, Suche, aktiver Tab).
  */
-public final class MKLevelState {
+public final class MkLevelState {
 
-	private MKLevelState() {
+	private MkLevelState() {
 	}
 
-	// MKLevel overlay scroll variables - separate offsets for each tab
+	// MkLevel overlay scroll variables - separate offsets for each tab
 	private static int mkLevelScrollOffsetIndividual = 0; // Scroll offset for "Einzelne Wellen"
 
 	private static int mkLevelScrollOffsetCombined = 0; // Scroll offset for "Kombinierte Wellen"
@@ -19,9 +19,9 @@ public final class MKLevelState {
 
 	static boolean mkLevelOverlayHovered = false;
 
-	static boolean isInMKLevelInventory = false;
+	static boolean isInMkLevelInventory = false;
 
-	// MKLevel overlay search variables
+	// MkLevel overlay search variables
 	static String mkLevelSearchText = "";
 
 	static boolean mkLevelSearchFocused = false;
@@ -32,15 +32,15 @@ public final class MKLevelState {
 
 	static boolean mkLevelSearchCursorVisible = true;
 
-	// MKLevel overlay height cache (updated when overlay is rendered, used by F6 editor)
+	// MkLevel overlay height cache (updated when overlay is rendered, used by F6 editor)
 	static int mkLevelLastKnownHeight = 166; // Default height
 
-	static MKLevelOverlayTab mkLevelActiveTab = MKLevelOverlayTab.INDIVIDUAL;
+	static MkLevelOverlayTab mkLevelActiveTab = MkLevelOverlayTab.INDIVIDUAL;
 
 	static List<TotalEssenceInfo> mkLevelTotalEssencesCache = null;
 
 	// Helper method to get current scroll offset based on active tab
-	static int getMKLevelScrollOffset() {
+	static int getMkLevelScrollOffset() {
 		return switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> mkLevelScrollOffsetIndividual;
 			case COMBINED -> mkLevelScrollOffsetCombined;
@@ -49,7 +49,7 @@ public final class MKLevelState {
 	}
 
 	// Helper method to set current scroll offset based on active tab
-	static void setMKLevelScrollOffset(int offset) {
+	static void setMkLevelScrollOffset(int offset) {
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> mkLevelScrollOffsetIndividual = offset;
 			case COMBINED -> mkLevelScrollOffsetCombined = offset;
@@ -57,14 +57,14 @@ public final class MKLevelState {
 		}
 	}
 
-	// MKLevel scrollbar dragging state
+	// MkLevel scrollbar dragging state
 	static boolean mkLevelScrollbarDragging = false;
 
 	/**
-	 * Gets the last known height of the MKLevel overlay (cached from last render)
+	 * Gets the last known height of the MkLevel overlay (cached from last render)
 	 * Used by F6 editor to avoid reflection issues on server
 	 */
-	public static int getMKLevelLastKnownHeight() {
+	public static int getMkLevelLastKnownHeight() {
 		return mkLevelLastKnownHeight;
 	}
 }

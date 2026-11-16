@@ -5,8 +5,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import static net.felix.features.information.util.NumberFormatting.formatNumberWithSeparator;
-import static net.felix.features.information.xp.MiningLumberjackTracker.lumberjackXP;
-import static net.felix.features.information.xp.MiningLumberjackTracker.miningXP;
+import static net.felix.features.information.xp.MiningLumberjackTracker.lumberjackXp;
+import static net.felix.features.information.xp.MiningLumberjackTracker.miningXp;
 import static net.felix.features.information.util.NumberFormatting.formatDoubleWithSeparator;
 import static net.felix.features.information.xp.MiningLumberjackTracker.calculateTimeToNextLevel;
 import static net.felix.features.information.util.NumberFormatting.formatTime;
@@ -24,14 +24,14 @@ public final class MiningLumberjackOverlay {
 	 * Gets the header text for mining overlay (includes level if available)
 	 */
 	public static String getMiningOverlayHeader() {
-		return miningXP.level > 0 ? String.format("Bergbau [lvl. %d]", miningXP.level) : "Bergbau";
+		return miningXp.level > 0 ? String.format("Bergbau [lvl. %d]", miningXp.level) : "Bergbau";
 	}
 
 	/**
 	 * Gets the header text for lumberjack overlay (includes level if available)
 	 */
 	public static String getLumberjackOverlayHeader() {
-		return lumberjackXP.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXP.level) : "Holzfäller";
+		return lumberjackXp.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXp.level) : "Holzfäller";
 	}
 
 	/**
@@ -44,15 +44,15 @@ public final class MiningLumberjackOverlay {
 		
 		int padding = 5;
 		String header = getMiningOverlayHeader();
-		String lastXP = "Letzte XP: " + (miningXP.lastGainedXP > 0 ? formatNumberWithSeparator(miningXP.lastGainedXP) : "0");
-		String xpPerMin = miningXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXP.xpPerMinute) : "XP/Min: -";
-		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
-		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
-		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		String lastXp = "Letzte XP: " + (miningXp.lastGainedXp > 0 ? formatNumberWithSeparator(miningXp.lastGainedXp) : "0");
+		String xpPerMin = miningXp.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXp.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = miningXp.requiredXp - miningXp.currentXp;
+		String requiredXp = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXp));
 		
-		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXp));
 		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXp));
 		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, 100);
 		return maxWidth + padding * 2;
@@ -67,13 +67,13 @@ public final class MiningLumberjackOverlay {
 		}
 		
 		String header = getMiningOverlayHeader();
-		String lastXP = "Letzte XP: " + (miningXP.lastGainedXP > 0 ? formatNumberWithSeparator(miningXP.lastGainedXP) : "0");
-		String xpPerMin = miningXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXP.xpPerMinute) : "XP/Min: -";
-		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
-		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
-		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		String lastXp = "Letzte XP: " + (miningXp.lastGainedXp > 0 ? formatNumberWithSeparator(miningXp.lastGainedXp) : "0");
+		String xpPerMin = miningXp.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXp.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = miningXp.requiredXp - miningXp.currentXp;
+		String requiredXp = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXp));
 
-		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
+		return new String[]{header, lastXp, xpPerMin, timeToNext, requiredXp};
 	}
 
 	/**
@@ -85,13 +85,13 @@ public final class MiningLumberjackOverlay {
 		}
 		
 		String header = getLumberjackOverlayHeader();
-		String lastXP = "Letzte XP: " + (lumberjackXP.lastGainedXP > 0 ? formatNumberWithSeparator(lumberjackXP.lastGainedXP) : "0");
-		String xpPerMin = lumberjackXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXP.xpPerMinute) : "XP/Min: -";
-		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
-		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
-		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		String lastXp = "Letzte XP: " + (lumberjackXp.lastGainedXp > 0 ? formatNumberWithSeparator(lumberjackXp.lastGainedXp) : "0");
+		String xpPerMin = lumberjackXp.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXp.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = lumberjackXp.requiredXp - lumberjackXp.currentXp;
+		String requiredXp = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXp));
 
-		return new String[]{header, lastXP, xpPerMin, timeToNext, requiredXP};
+		return new String[]{header, lastXp, xpPerMin, timeToNext, requiredXp};
 	}
 
 	/**
@@ -104,15 +104,15 @@ public final class MiningLumberjackOverlay {
 		
 		int padding = 5;
 		String header = getLumberjackOverlayHeader();
-		String lastXP = "Letzte XP: " + (lumberjackXP.lastGainedXP > 0 ? formatNumberWithSeparator(lumberjackXP.lastGainedXP) : "0");
-		String xpPerMin = lumberjackXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXP.xpPerMinute) : "XP/Min: -";
-		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
-		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
-		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		String lastXp = "Letzte XP: " + (lumberjackXp.lastGainedXp > 0 ? formatNumberWithSeparator(lumberjackXp.lastGainedXp) : "0");
+		String xpPerMin = lumberjackXp.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXp.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = lumberjackXp.requiredXp - lumberjackXp.currentXp;
+		String requiredXp = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXp));
 		
-		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXp));
 		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXp));
 		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, 100);
 		return maxWidth + padding * 2;
@@ -141,16 +141,16 @@ public final class MiningLumberjackOverlay {
 		int minOverlayWidth = 100;
 		
 		// Calculate text width
-		String header = miningXP.level > 0 ? String.format("Bergbau [lvl. %d]", miningXP.level) : "Bergbau";
-		String lastXP = "Letzte XP: " + (miningXP.lastGainedXP > 0 ? formatNumberWithSeparator(miningXP.lastGainedXP) : "0");
-		String xpPerMin = miningXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXP.xpPerMinute) : "XP/Min: -";
-		long xpNeeded = miningXP.requiredXP - miningXP.currentXP;
-		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
-		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXP));
+		String header = miningXp.level > 0 ? String.format("Bergbau [lvl. %d]", miningXp.level) : "Bergbau";
+		String lastXp = "Letzte XP: " + (miningXp.lastGainedXp > 0 ? formatNumberWithSeparator(miningXp.lastGainedXp) : "0");
+		String xpPerMin = miningXp.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(miningXp.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = miningXp.requiredXp - miningXp.currentXp;
+		String requiredXp = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(miningXp));
 		
-		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXp));
 		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXp));
 		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
@@ -198,13 +198,13 @@ public final class MiningLumberjackOverlay {
 		int textY = padding;
 		context.text(client.font, header, padding, textY, headerColor, true);
 		textY += lineHeight;
-		context.text(client.font, lastXP, padding, textY, textColor, true);
+		context.text(client.font, lastXp, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.text(client.font, xpPerMin, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.text(client.font, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.text(client.font, requiredXP, padding, textY, textColor, true);
+		context.text(client.font, requiredXp, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}
@@ -232,16 +232,16 @@ public final class MiningLumberjackOverlay {
 		int minOverlayWidth = 100;
 		
 		// Calculate text width
-		String header = lumberjackXP.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXP.level) : "Holzfäller";
-		String lastXP = "Letzte XP: " + (lumberjackXP.lastGainedXP > 0 ? formatNumberWithSeparator(lumberjackXP.lastGainedXP) : "0");
-		String xpPerMin = lumberjackXP.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXP.xpPerMinute) : "XP/Min: -";
-		long xpNeeded = lumberjackXP.requiredXP - lumberjackXP.currentXP;
-		String requiredXP = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
-		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXP));
+		String header = lumberjackXp.level > 0 ? String.format("Holzfäller [lvl. %d]", lumberjackXp.level) : "Holzfäller";
+		String lastXp = "Letzte XP: " + (lumberjackXp.lastGainedXp > 0 ? formatNumberWithSeparator(lumberjackXp.lastGainedXp) : "0");
+		String xpPerMin = lumberjackXp.xpPerMinute > 0 ? "XP/Min: " + formatDoubleWithSeparator(lumberjackXp.xpPerMinute) : "XP/Min: -";
+		long xpNeeded = lumberjackXp.requiredXp - lumberjackXp.currentXp;
+		String requiredXp = "Benötigte XP: " + (xpNeeded > 0 ? formatNumberWithSeparator(xpNeeded) : "0");
+		String timeToNext = "Zeit bis Level: " + formatTime(calculateTimeToNextLevel(lumberjackXp));
 		
-		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXP));
+		int maxWidth = Math.max(client.font.width(header), client.font.width(lastXp));
 		maxWidth = Math.max(maxWidth, client.font.width(xpPerMin));
-		maxWidth = Math.max(maxWidth, client.font.width(requiredXP));
+		maxWidth = Math.max(maxWidth, client.font.width(requiredXp));
 		maxWidth = Math.max(maxWidth, client.font.width(timeToNext));
 		maxWidth = Math.max(maxWidth, minOverlayWidth);
 		int overlayWidth = maxWidth + padding * 2;
@@ -289,13 +289,13 @@ public final class MiningLumberjackOverlay {
 		int textY = padding;
 		context.text(client.font, header, padding, textY, headerColor, true);
 		textY += lineHeight;
-		context.text(client.font, lastXP, padding, textY, textColor, true);
+		context.text(client.font, lastXp, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.text(client.font, xpPerMin, padding, textY, textColor, true);
 		textY += lineHeight;
 		context.text(client.font, timeToNext, padding, textY, textColor, true);
 		textY += lineHeight;
-		context.text(client.font, requiredXP, padding, textY, textColor, true);
+		context.text(client.font, requiredXp, padding, textY, textColor, true);
 		
 		matrices.popMatrix();
 	}

@@ -82,7 +82,7 @@ public class NpcAlertsUtility {
 		}
 	}
 	
-	public static class XPData {
+	public static class SkillXpData {
 		public java.math.BigInteger current = java.math.BigInteger.valueOf(-1);
 		public java.math.BigInteger required = java.math.BigInteger.valueOf(-1);
 		public String currentFormatted = null; // Formatierter String (z.B. "1,234")
@@ -243,7 +243,7 @@ public class NpcAlertsUtility {
 	// Machtkristalle (3 Slots, in Reihenfolge)
 	public static class MachtkristallSlot {
 		public String name = null; // null wenn leer
-		public XPData xpData = new XPData();
+		public SkillXpData xpData = new SkillXpData();
 		
 		public boolean isEmpty() {
 			return name == null;
@@ -360,7 +360,7 @@ public class NpcAlertsUtility {
 	
 	// Legacy: Für Kompatibilität mit bestehendem Code
 	@Deprecated
-	public static final Map<String, XPData> machtkristalle = new HashMap<>();
+	public static final Map<String, SkillXpData> machtkristalle = new HashMap<>();
 	
 	// Recycler Slots
 	public static final CapacityData recyclerSlot1 = new CapacityData();
@@ -599,7 +599,7 @@ public class NpcAlertsUtility {
 		// Setze alle Slots zunächst auf leer
 		for (int i = 0; i < 3; i++) {
 			machtkristallSlots[i].name = null;
-			machtkristallSlots[i].xpData = new XPData();
+			machtkristallSlots[i].xpData = new SkillXpData();
 		}
 		
 		// Leere Legacy-HashMap
@@ -649,7 +649,7 @@ public class NpcAlertsUtility {
 				// Setze einen speziellen Marker-Namen, um zu signalisieren, dass der Slot nicht gefunden wurde
 				machtkristallSlots[i].name = ""; // Leerer String signalisiert "nicht gefunden"
 				// Stelle sicher, dass xpData auch als ungültig markiert ist
-				machtkristallSlots[i].xpData = new XPData(); // current = -1, required = -1
+				machtkristallSlots[i].xpData = new SkillXpData(); // current = -1, required = -1
 			}
 		} else {
 			// Wenn Machtkristall-Einträge gefunden wurden, markiere die restlichen Slots als "nicht gefunden"
@@ -657,7 +657,7 @@ public class NpcAlertsUtility {
 			for (int i = currentSlot; i < 3; i++) {
 				// Diese Slots wurden nicht in der Tab-Liste gefunden
 				machtkristallSlots[i].name = ""; // Leerer String signalisiert "nicht gefunden"
-				machtkristallSlots[i].xpData = new XPData(); // current = -1, required = -1
+				machtkristallSlots[i].xpData = new SkillXpData(); // current = -1, required = -1
 			}
 		}
 	}
@@ -865,7 +865,7 @@ public class NpcAlertsUtility {
 		int headerIndex,
 		java.util.function.Function<Integer, String> getEntryText,
 		java.util.function.Function<String, String> removeFormatting,
-		XPData data,
+		SkillXpData data,
 		String debugName
 	) {
 		// Suche nach der Datenzeile nach dem Header
@@ -959,8 +959,8 @@ public class NpcAlertsUtility {
 	/**
 	 * Gibt XP-Daten für einen bestimmten Machtkristall zurück
 	 */
-	public static XPData getMachtkristallXP(String kristallName) {
-		return machtkristalle.getOrDefault(kristallName, new XPData());
+	public static SkillXpData getMachtkristallXP(String kristallName) {
+		return machtkristalle.getOrDefault(kristallName, new SkillXpData());
 	}
 	
 	/**

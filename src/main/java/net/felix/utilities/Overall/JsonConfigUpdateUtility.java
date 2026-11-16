@@ -208,7 +208,7 @@ public class JsonConfigUpdateUtility {
                     net.felix.utilities.Town.KitFilterUtility.reloadKitsDatabase();
                     break;
                 case "MKLevel.json":
-                    net.felix.features.information.mklevel.MKLevelDatabase.reloadMKLevelDatabase();
+                    net.felix.features.information.mklevel.MkLevelDatabase.reloadMkLevelDatabase();
                     break;
             }
         } catch (Exception e) {

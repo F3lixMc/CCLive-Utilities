@@ -1097,18 +1097,18 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean factoryLevelShowBackground = true;
     
-    // MKLevel Settings
+    // MkLevel Settings
     @SerialEntry
-    public boolean mkLevelEnabled = true; // MKLevel Overlay aktiviert
+    public boolean mkLevelEnabled = true; // MkLevel Overlay aktiviert
     
     @SerialEntry
-    public float mkLevelScale = 1.0f; // Skalierung des MKLevel Overlays
+    public float mkLevelScale = 1.0f; // Skalierung des MkLevel Overlays
     
     @SerialEntry
-    public int mkLevelX = 135; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
+    public int mkLevelX = 135; // X-Position des MkLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
     
     @SerialEntry
-    public int mkLevelY = 115; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
+    public int mkLevelY = 115; // Y-Position des MkLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
     
     // Cards/Statues Settings
     @SerialEntry

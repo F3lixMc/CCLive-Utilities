@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.features.information.mklevel.MKLevelInputHandler;
+import net.felix.features.information.mklevel.MkLevelInputHandler;
 
 @SuppressWarnings("unused")
 @Mixin(MouseHandler.class)
@@ -48,7 +48,7 @@ public class MouseScrollMixin {
         
         // Übergebe das Scroll-Event an die EquipmentDisplayUtility
         EquipmentDisplayUtility.onMouseScroll(vertical);
-        // Übergebe das Scroll-Event an den MKLevelInputHandler für das MKLevel Overlay
-        MKLevelInputHandler.onMKLevelMouseScroll(vertical);
+        // Übergebe das Scroll-Event an den MkLevelInputHandler für das MkLevel Overlay
+        MkLevelInputHandler.onMkLevelMouseScroll(vertical);
     }
 } 

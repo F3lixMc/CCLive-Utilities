@@ -120,8 +120,8 @@ public abstract class HandledScreenMixin {
             net.felix.utilities.Aincraft.ItemInfoUtility.renderUnregisteredItemOverlays(context, screen, leftPos, topPos);
         }
         
-        // Render MKLevel overlay in "Machtkristalle Verbessern" inventory
-        renderMKLevelOverlay(context);
+        // Render MkLevel overlay in "Machtkristalle Verbessern" inventory
+        renderMkLevelOverlay(context);
         
         // Render Item Viewer overlay (nach allen anderen Overlays, damit es über dem dunklen Hintergrund liegt)
         renderItemViewer(context, mouseX, mouseY);
@@ -161,22 +161,22 @@ public abstract class HandledScreenMixin {
     }
     
     /**
-     * Renders MKLevel overlay if we're in the "Machtkristalle Verbessern" inventory or Essence Harvester UI (Glyph "㮌")
+     * Renders MkLevel overlay if we're in the "Machtkristalle Verbessern" inventory or Essence Harvester UI (Glyph "㮌")
      */
-    private void renderMKLevelOverlay(GuiGraphicsExtractor context) {
+    private void renderMkLevelOverlay(GuiGraphicsExtractor context) {
         try {
             AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             net.minecraft.network.chat.Component titleText = screen.getTitle();
             
             // Prüfe direkt auf dem Text-Objekt (bevor getPlainTextFromText Unicode-Zeichen entfernt)
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
-            String titlePlain = net.felix.features.information.tooltip.TooltipText.getPlainTextFromText(titleText);
+            String titlePlain = net.felix.features.information.tooltip.TooltipTextCleaner.getPlainTextFromText(titleText);
             
             // Prüfe sowohl "Machtkristalle Verbessern" als auch das Glyph "㮌" (Essence Harvester UI)
             // Verwende titleWithUnicode für die Glyph-Prüfung, da getPlainTextFromText Unicode entfernt
             if (ZeichenUtility.isMkLevelInventoryTitle(titlePlain, titleWithUnicode)) {
                 // Get actual inventory dimensions from the screen using shadow fields
-                net.felix.features.information.mklevel.MKLevelOverlayRenderer.renderMKLevelOverlay(context, net.minecraft.client.Minecraft.getInstance(), leftPos, topPos, imageWidth, imageHeight);
+                net.felix.features.information.mklevel.MkLevelOverlayRenderer.renderMkLevelOverlay(context, net.minecraft.client.Minecraft.getInstance(), leftPos, topPos, imageWidth, imageHeight);
             }
         } catch (Exception e) {
             // Ignore rendering errors
@@ -303,8 +303,8 @@ public abstract class HandledScreenMixin {
             }
         }
         
-        // Handle clicks on MKLevel search bar and scrollbar - pass screen position directly from mixin (@Shadow fields)
-        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelSearchClick(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
+        // Handle clicks on MkLevel search bar and scrollbar - pass screen position directly from mixin (@Shadow fields)
+        if (net.felix.features.information.mklevel.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
         
@@ -338,7 +338,7 @@ public abstract class HandledScreenMixin {
     }
     
     /**
-     * Handles mouse dragging for MKLevel scrollbar
+     * Handles mouse dragging for MkLevel scrollbar
      */
     @Inject(method = "mouseDragged", at = @At("HEAD"), cancellable = true)
     private void onMouseDragged(MouseButtonEvent event, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
@@ -351,7 +351,7 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
-        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
+        if (net.felix.features.information.mklevel.MkLevelInputHandler.handleMkLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
     }
@@ -368,7 +368,7 @@ public abstract class HandledScreenMixin {
             cir.setReturnValue(true);
             return;
         }
-        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelScrollbarRelease(mouseX, mouseY, button)) {
+        if (net.felix.features.information.mklevel.MkLevelInputHandler.handleMkLevelScrollbarRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
     }

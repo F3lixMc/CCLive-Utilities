@@ -1,8 +1,8 @@
 package net.felix.features.information.mklevel;
 
 
-// MKLevel overlay mode
-public enum MKLevelOverlayTab {
+// MkLevel overlay mode
+public enum MkLevelOverlayTab {
 	INDIVIDUAL,
 	COMBINED,
 	TOTAL_ESSENCES

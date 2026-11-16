@@ -14,7 +14,7 @@ public final class EssenceWaveNames {
 	}
 
 	/**
-	 * MKLevel mob name (without trailing {@code T<n>}) to the mob base string used in Essenz.json names, when they differ.
+	 * MkLevel mob name (without trailing {@code T<n>}) to the mob base string used in Essenz.json names, when they differ.
 	 */
 	private static String mkLevelMobNameToEssenzMobBase(String mkMobName) {
 		if (mkMobName == null) {
@@ -59,11 +59,11 @@ public final class EssenceWaveNames {
 			}
 		}
 		
-		String mkWave = getWaveDisplayForMKLevelEssence(mobBase + " T" + tier);
+		String mkWave = getWaveDisplayForMkLevelEssence(mobBase + " T" + tier);
 		if (mkWave != null && !"?".equals(mkWave)) {
 			return mkWave;
 		}
-		mkWave = getWaveDisplayForMKLevelEssence(convertToPlural(mobBase) + " T" + tier);
+		mkWave = getWaveDisplayForMkLevelEssence(convertToPlural(mobBase) + " T" + tier);
 		if (mkWave != null && !"?".equals(mkWave)) {
 			return mkWave;
 		}
@@ -72,9 +72,9 @@ public final class EssenceWaveNames {
 	}
 
 	/**
-	 * Wave display for MKLevel essence names (e.g. "Pferd T1"). Returns {@code null} if the name format is invalid.
+	 * Wave display for MkLevel essence names (e.g. "Pferd T1"). Returns {@code null} if the name format is invalid.
 	 */
-	private static boolean isValidMKLevelEssenceName(String mkLevelEssenceName) {
+	private static boolean isValidMkLevelEssenceName(String mkLevelEssenceName) {
 		if (mkLevelEssenceName == null || mkLevelEssenceName.isEmpty()) {
 			return false;
 		}
@@ -82,11 +82,11 @@ public final class EssenceWaveNames {
 		return parts.length >= 2 && parts[parts.length - 1].matches("(?i)T\\d+");
 	}
 
-	public static String getWaveDisplayForMKLevelEssence(String mkLevelEssenceName) {
-		if (!isValidMKLevelEssenceName(mkLevelEssenceName)) {
+	public static String getWaveDisplayForMkLevelEssence(String mkLevelEssenceName) {
+		if (!isValidMkLevelEssenceName(mkLevelEssenceName)) {
 			return null;
 		}
-		EssenceInfo info = findEssenceInfoForMKLevelName(mkLevelEssenceName);
+		EssenceInfo info = findEssenceInfoForMkLevelName(mkLevelEssenceName);
 		if (info == null || info.wave == null) {
 			return "?";
 		}
@@ -94,9 +94,9 @@ public final class EssenceWaveNames {
 	}
 
 	/**
-	 * Finds essence data from MKLevel format (e.g., "Pferd T1", "Piglin Brute T9", "Pferde T8") via Essenz.json keys.
+	 * Finds essence data from MkLevel format (e.g., "Pferd T1", "Piglin Brute T9", "Pferde T8") via Essenz.json keys.
 	 */
-	private static EssenceInfo findEssenceInfoForMKLevelName(String mkLevelEssenceName) {
+	private static EssenceInfo findEssenceInfoForMkLevelName(String mkLevelEssenceName) {
 		if (mkLevelEssenceName == null || mkLevelEssenceName.isEmpty()) {
 			return null;
 		}

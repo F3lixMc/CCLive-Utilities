@@ -18,9 +18,9 @@ public final class MiningLumberjackTracker {
 	private MiningLumberjackTracker() {
 	}
 
-	static XPData miningXP = new XPData();
+	static SkillXpData miningXp = new SkillXpData();
 
-	static XPData lumberjackXP = new XPData();
+	static SkillXpData lumberjackXp = new SkillXpData();
 
 	public static long lastTabListCheck = 0;
 
@@ -48,11 +48,11 @@ public final class MiningLumberjackTracker {
 	 * Updates overlay visibility based on timer
 	 * Overlay is visible for 10 seconds after last XP change
 	 */
-	private static void updateOverlayVisibility(XPData xpData) {
+	private static void updateOverlayVisibility(SkillXpData xpData) {
 		long currentTime = System.currentTimeMillis();
 		
-		if (xpData.lastXPChangeTime > 0) {
-			long timeSinceLastChange = currentTime - xpData.lastXPChangeTime;
+		if (xpData.lastXpChangeTime > 0) {
+			long timeSinceLastChange = currentTime - xpData.lastXpChangeTime;
 			// Show overlay if less than 10 seconds have passed since last XP change
 			boolean wasShowing = xpData.shouldShowOverlay;
 			xpData.shouldShowOverlay = timeSinceLastChange < OVERLAY_DISPLAY_DURATION;
@@ -62,7 +62,7 @@ public final class MiningLumberjackTracker {
 				// Overlay just got hidden - stop timer
 				xpData.sessionStartTime = 0;
 				xpData.xpPerMinute = 0.0;
-				resetXpmTracking(xpData);
+				resetXpPerMinuteTracking(xpData);
 			}
 			
 			// Reset XP calculation 10 seconds after overlay is hidden (20 seconds total)
@@ -70,11 +70,11 @@ public final class MiningLumberjackTracker {
 			if (timeSinceLastChange >= OVERLAY_DISPLAY_DURATION + 10000) {
 				// Reset all tracking data
 				xpData.sessionStartTime = 0;
-				xpData.newXP = 0;
+				xpData.newXp = 0;
 				xpData.xpPerMinute = 0.0;
-				xpData.initialXP = -1;
-				resetXpmTracking(xpData);
-				// Keep lastXPChangeTime for potential future use
+				xpData.initialXp = -1;
+				resetXpPerMinuteTracking(xpData);
+				// Keep lastXpChangeTime for potential future use
 			}
 		} else {
 			xpData.shouldShowOverlay = false;
@@ -82,7 +82,7 @@ public final class MiningLumberjackTracker {
 			if (xpData.sessionStartTime > 0) {
 				xpData.sessionStartTime = 0;
 				xpData.xpPerMinute = 0.0;
-				resetXpmTracking(xpData);
+				resetXpPerMinuteTracking(xpData);
 			}
 		}
 	}
@@ -90,28 +90,28 @@ public final class MiningLumberjackTracker {
 	/**
 	 * Updates XP per minute calculation continuously (like updateKPM in KillsUtility)
 	 */
-	private static void updateXPM(XPData xpData) {
+	private static void updateXpPerMinute(SkillXpData xpData) {
 		long now = System.currentTimeMillis();
-		boolean xpChanged = xpData.newXP != xpData.lastXpmNewXp;
+		boolean xpChanged = xpData.newXp != xpData.lastXpmNewXp;
 		if (!SessionRateUtility.shouldRecalculate(xpData.lastXpmUpdateTime, xpChanged)) {
 			return;
 		}
 
 		xpData.lastXpmUpdateTime = now;
-		xpData.lastXpmNewXp = xpData.newXP;
+		xpData.lastXpmNewXp = xpData.newXp;
 
-		if (xpData.sessionStartTime != 0 && xpData.newXP > 0) {
+		if (xpData.sessionStartTime != 0 && xpData.newXp > 0) {
 			long sessionDuration = now - xpData.sessionStartTime;
 			if (sessionDuration > 0) {
 				double minutesElapsed = (double) sessionDuration / 60000.0;
-				xpData.xpPerMinute = (double) xpData.newXP / minutesElapsed;
+				xpData.xpPerMinute = (double) xpData.newXp / minutesElapsed;
 			}
 		} else {
 			xpData.xpPerMinute = 0.0;
 		}
 	}
 
-	private static void resetXpmTracking(XPData xpData) {
+	private static void resetXpPerMinuteTracking(SkillXpData xpData) {
 		xpData.lastXpmUpdateTime = 0;
 		xpData.lastXpmNewXp = 0;
 	}
@@ -120,14 +120,14 @@ public final class MiningLumberjackTracker {
 	 * Updates XP data from tab list for both mining and lumberjack
 	 * Works even when the tab list is closed - the player list is always available
 	 */
-	public static void updateXPFromTabList(Minecraft client) {
+	public static void updateXpFromTabList(Minecraft client) {
 		// Check for dimension change and reset initialization flags
 		if (client.level != null) {
 			String newDimension = client.level.dimension().identifier().getPath();
 			if (currentDimension == null || !currentDimension.equals(newDimension)) {
 				// Dimension changed - reset initialization flags
-				miningXP.isInitializedInCurrentDimension = false;
-				lumberjackXP.isInitializedInCurrentDimension = false;
+				miningXp.isInitializedInCurrentDimension = false;
+				lumberjackXp.isInitializedInCurrentDimension = false;
 				currentDimension = newDimension;
 			}
 		}
@@ -198,10 +198,10 @@ public final class MiningLumberjackTracker {
 				for (int j = i + 1; j < Math.min(i + 5, entries.size()); j++) {
 					String xpText = getEntryText.apply(j);
 					if (xpText != null) {
-						String cleanXPText = removeFormatting.apply(xpText);
+						String cleanXpText = removeFormatting.apply(xpText);
 						// Check if this line matches the XP format (contains "/" and "[")
-						if (cleanXPText.contains("/") && cleanXPText.contains("[")) {
-							parseXPLine(cleanXPText, miningXP);
+						if (cleanXpText.contains("/") && cleanXpText.contains("[")) {
+							parseXpLine(cleanXpText, miningXp);
 							break;
 						}
 					}
@@ -220,10 +220,10 @@ public final class MiningLumberjackTracker {
 				for (int j = i + 1; j < Math.min(i + 5, entries.size()); j++) {
 					String xpText = getEntryText.apply(j);
 					if (xpText != null) {
-						String cleanXPText = removeFormatting.apply(xpText);
+						String cleanXpText = removeFormatting.apply(xpText);
 						// Check if this line matches the XP format (contains "/" and "[")
-						if (cleanXPText.contains("/") && cleanXPText.contains("[")) {
-							parseXPLine(cleanXPText, lumberjackXP);
+						if (cleanXpText.contains("/") && cleanXpText.contains("[")) {
+							parseXpLine(cleanXpText, lumberjackXp);
 							break;
 						}
 					}
@@ -235,7 +235,7 @@ public final class MiningLumberjackTracker {
 	/**
 	 * Parses XP line in format: "AKTUELLE XP / BENÖTIGTE XP [Level]"
 	 */
-	private static void parseXPLine(String xpLine, XPData xpData) {
+	private static void parseXpLine(String xpLine, SkillXpData xpData) {
 		if (xpLine == null || xpLine.isEmpty()) {
 			return;
 		}
@@ -259,67 +259,67 @@ public final class MiningLumberjackTracker {
 			String[] parts = xpPart.split("/");
 			if (parts.length == 2) {
 				// Remove all non-digit characters except dots and commas (for thousands separators)
-				String currentXPStr = parts[0].trim().replaceAll("[^0-9.,]", "").replace(",", "").replace(".", "");
-				String requiredXPStr = parts[1].trim().replaceAll("[^0-9.,]", "").replace(",", "").replace(".", "");
+				String currentXpStr = parts[0].trim().replaceAll("[^0-9.,]", "").replace(",", "").replace(".", "");
+				String requiredXpStr = parts[1].trim().replaceAll("[^0-9.,]", "").replace(",", "").replace(".", "");
 				
-				long newCurrentXP = Long.parseLong(currentXPStr);
-				long newRequiredXP = Long.parseLong(requiredXPStr);
+				long newCurrentXp = Long.parseLong(currentXpStr);
+				long newRequiredXp = Long.parseLong(requiredXpStr);
 				
 				// Always update current XP and required XP first (before checking for changes)
 				// This ensures we have the latest values for comparison
-				long oldCurrentXP = xpData.currentXP;
-				xpData.currentXP = newCurrentXP;
-				xpData.requiredXP = newRequiredXP;
+				long oldCurrentXp = xpData.currentXp;
+				xpData.currentXp = newCurrentXp;
+				xpData.requiredXp = newRequiredXp;
 				
 				// Check if this is the first time we're seeing values in this dimension
 				boolean isFirstTimeInDimension = !xpData.isInitializedInCurrentDimension;
 				
 				// Mark as initialized if we have valid XP data
-				if (newCurrentXP > 0) {
+				if (newCurrentXp > 0) {
 					xpData.isInitializedInCurrentDimension = true;
 				}
 				
 				// Check if XP changed (but ignore if this is the first time in this dimension)
-				boolean xpChanged = (newCurrentXP != oldCurrentXP);
+				boolean xpChanged = (newCurrentXp != oldCurrentXp);
 				
 				// Track previous overlay state to detect when overlay is shown for the first time
 				boolean wasShowingOverlay = xpData.shouldShowOverlay;
 				
 				// Only show overlay if XP changed AND it's not the first time we're seeing values in this dimension
 				if (xpChanged && !isFirstTimeInDimension) {
-					long xpGained = newCurrentXP - oldCurrentXP;
+					long xpGained = newCurrentXp - oldCurrentXp;
 					
 					// XP increased - track the gain and show overlay
 					if (xpGained > 0) {
-						xpData.lastGainedXP = xpGained;
+						xpData.lastGainedXp = xpGained;
 						// Reset overlay timer - show overlay for 10 seconds
-						xpData.lastXPChangeTime = System.currentTimeMillis();
+						xpData.lastXpChangeTime = System.currentTimeMillis();
 						xpData.shouldShowOverlay = true;
 						
 						// Start timer when overlay is shown for the first time
 						if (!wasShowingOverlay && xpData.sessionStartTime == 0) {
-							xpData.initialXP = newCurrentXP - xpGained; // Set initial to value before this gain
-							xpData.newXP = xpGained;
+							xpData.initialXp = newCurrentXp - xpGained; // Set initial to value before this gain
+							xpData.newXp = xpGained;
 							xpData.sessionStartTime = System.currentTimeMillis();
 						} else if (xpData.sessionStartTime > 0) {
-							// Timer already running, just update newXP
-							if (xpData.initialXP >= 0) {
-								xpData.newXP = newCurrentXP - xpData.initialXP;
+							// Timer already running, just update newXp
+							if (xpData.initialXp >= 0) {
+								xpData.newXp = newCurrentXp - xpData.initialXp;
 							}
 						}
 						
 						// Hide the other overlay when this one gets XP
-						if (xpData == miningXP) {
-							lumberjackXP.shouldShowOverlay = false;
-							lumberjackXP.lastXPChangeTime = 0;
-						} else if (xpData == lumberjackXP) {
-							miningXP.shouldShowOverlay = false;
-							miningXP.lastXPChangeTime = 0;
+						if (xpData == miningXp) {
+							lumberjackXp.shouldShowOverlay = false;
+							lumberjackXp.lastXpChangeTime = 0;
+						} else if (xpData == lumberjackXp) {
+							miningXp.shouldShowOverlay = false;
+							miningXp.lastXpChangeTime = 0;
 						}
 					} else if (xpGained < 0) {
 						// XP decreased (level up or reset) - reset tracking like KillsUtility
-						xpData.initialXP = newCurrentXP;
-						xpData.newXP = 0;
+						xpData.initialXp = newCurrentXp;
+						xpData.newXp = 0;
 						// Only start timer if overlay is being shown
 						if (!wasShowingOverlay) {
 						xpData.sessionStartTime = System.currentTimeMillis();
@@ -327,19 +327,19 @@ public final class MiningLumberjackTracker {
 							xpData.sessionStartTime = System.currentTimeMillis(); // Reset timer on level up
 						}
 						// Also reset overlay timer on level up
-						xpData.lastXPChangeTime = System.currentTimeMillis();
+						xpData.lastXpChangeTime = System.currentTimeMillis();
 						xpData.shouldShowOverlay = true;
 					}
 				}
 				
-				// Calculate newXP (like newKills in KillsUtility)
+				// Calculate newXp (like newKills in KillsUtility)
 				// Only update if timer is running (overlay is showing)
-				if (xpData.initialXP >= 0 && xpData.sessionStartTime > 0) {
-					xpData.newXP = newCurrentXP - xpData.initialXP;
-					if (xpData.newXP < 0) {
+				if (xpData.initialXp >= 0 && xpData.sessionStartTime > 0) {
+					xpData.newXp = newCurrentXp - xpData.initialXp;
+					if (xpData.newXp < 0) {
 						// Level up happened, reset
-						xpData.initialXP = newCurrentXP;
-						xpData.newXP = 0;
+						xpData.initialXp = newCurrentXp;
+						xpData.newXp = 0;
 						xpData.sessionStartTime = System.currentTimeMillis();
 					}
 				}
@@ -353,14 +353,14 @@ public final class MiningLumberjackTracker {
 	 * Calculates time until next level in minutes
 	 * Always uses average XP per minute (xpPerMinute) for consistent calculation
 	 */
-	static double calculateTimeToNextLevel(XPData xpData) {
+	static double calculateTimeToNextLevel(SkillXpData xpData) {
 		// Always use average XP per minute for time calculation
 		// This gives a consistent estimate based on your overall mining speed
 		if (xpData.xpPerMinute <= 0) {
 			return -1; // Unknown - no data yet
 		}
 		
-		long xpNeeded = xpData.requiredXP - xpData.currentXP;
+		long xpNeeded = xpData.requiredXp - xpData.currentXp;
 		if (xpNeeded <= 0) {
 			return 0; // Already at max or level up
 		}
@@ -395,24 +395,24 @@ public final class MiningLumberjackTracker {
 		FarmzoneResourceRateUtility.resetSession();
 
 		// Reset mining XP tracking
-		miningXP.sessionStartTime = 0;
-		miningXP.newXP = 0;
-		miningXP.xpPerMinute = 0.0;
-		resetXpmTracking(miningXP);
-		miningXP.initialXP = -1;
-		miningXP.shouldShowOverlay = false;
-		miningXP.lastXPChangeTime = 0;
-		miningXP.isInitializedInCurrentDimension = false;
+		miningXp.sessionStartTime = 0;
+		miningXp.newXp = 0;
+		miningXp.xpPerMinute = 0.0;
+		resetXpPerMinuteTracking(miningXp);
+		miningXp.initialXp = -1;
+		miningXp.shouldShowOverlay = false;
+		miningXp.lastXpChangeTime = 0;
+		miningXp.isInitializedInCurrentDimension = false;
 		
 		// Reset lumberjack XP tracking
-		lumberjackXP.sessionStartTime = 0;
-		lumberjackXP.newXP = 0;
-		lumberjackXP.xpPerMinute = 0.0;
-		resetXpmTracking(lumberjackXP);
-		lumberjackXP.initialXP = -1;
-		lumberjackXP.shouldShowOverlay = false;
-		lumberjackXP.lastXPChangeTime = 0;
-		lumberjackXP.isInitializedInCurrentDimension = false;
+		lumberjackXp.sessionStartTime = 0;
+		lumberjackXp.newXp = 0;
+		lumberjackXp.xpPerMinute = 0.0;
+		resetXpPerMinuteTracking(lumberjackXp);
+		lumberjackXp.initialXp = -1;
+		lumberjackXp.shouldShowOverlay = false;
+		lumberjackXp.lastXpChangeTime = 0;
+		lumberjackXp.isInitializedInCurrentDimension = false;
 	}
 
 	/**
@@ -424,11 +424,11 @@ public final class MiningLumberjackTracker {
 		checkMiningLumberjackDimensionChange(client);
 
 		// Update XP per minute calculation (only if overlay is currently showing)
-		if (miningXP.shouldShowOverlay && miningXP.sessionStartTime > 0) {
-			updateXPM(miningXP);
+		if (miningXp.shouldShowOverlay && miningXp.sessionStartTime > 0) {
+			updateXpPerMinute(miningXp);
 		}
-		if (lumberjackXP.shouldShowOverlay && lumberjackXP.sessionStartTime > 0) {
-			updateXPM(lumberjackXP);
+		if (lumberjackXp.shouldShowOverlay && lumberjackXp.sessionStartTime > 0) {
+			updateXpPerMinute(lumberjackXp);
 		}
 
 		refreshOverlayVisibility();
@@ -436,8 +436,8 @@ public final class MiningLumberjackTracker {
 
 	/** Aktualisiert die Sichtbarkeits-Timer beider Overlays. */
 	public static void refreshOverlayVisibility() {
-		updateOverlayVisibility(miningXP);
-		updateOverlayVisibility(lumberjackXP);
+		updateOverlayVisibility(miningXp);
+		updateOverlayVisibility(lumberjackXp);
 	}
 
 	/** {@code false}, solange Tab (Spielerliste) gedrueckt ist. */
@@ -447,11 +447,11 @@ public final class MiningLumberjackTracker {
 
 	/** {@code true}, wenn sich die Bergbau-XP kuerzlich geaendert hat und das Overlay sichtbar sein soll. */
 	public static boolean isMiningOverlayActive() {
-		return miningXP.shouldShowOverlay;
+		return miningXp.shouldShowOverlay;
 	}
 
 	/** {@code true}, wenn sich die Holzfaeller-XP kuerzlich geaendert hat und das Overlay sichtbar sein soll. */
 	public static boolean isLumberjackOverlayActive() {
-		return lumberjackXP.shouldShowOverlay;
+		return lumberjackXp.shouldShowOverlay;
 	}
 }

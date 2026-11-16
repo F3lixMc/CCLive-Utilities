@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.felix.features.information.essences.EssenceWaveNames.getWaveDisplayForMKLevelEssence;
-import static net.felix.features.information.mklevel.MKLevelState.mkLevelTotalEssencesCache;
+import static net.felix.features.information.essences.EssenceWaveNames.getWaveDisplayForMkLevelEssence;
+import static net.felix.features.information.mklevel.MkLevelState.mkLevelTotalEssencesCache;
 import static net.felix.features.information.util.JsonConfigFiles.getConfigFilePath;
 import static net.felix.features.information.util.NumberFormatting.formatNumberWithSeparator;
 
@@ -17,20 +17,20 @@ import static net.felix.features.information.util.NumberFormatting.formatNumberW
 /**
  * MK-Level-Daten (MKLevel.json) und Filter fuer die Anzeige.
  */
-public final class MKLevelDatabase {
+public final class MkLevelDatabase {
 
-	private MKLevelDatabase() {
+	private MkLevelDatabase() {
 	}
 
-	// MKLevel tracking - List of level data from MKLevel.json
-	private static List<MKLevelInfo> mkLevelDatabase = new ArrayList<>();
+	// MkLevel tracking - List of level data from MKLevel.json
+	private static List<MkLevelInfo> mkLevelDatabase = new ArrayList<>();
 
 	private static List<CombinedWaveInfo> mkLevelCombinedWavesDatabase = new ArrayList<>();
 
 	/**
-	 * Loads the MKLevel database from MKLevel.json
+	 * Loads the MkLevel database from MKLevel.json
 	 */
-	public static void loadMKLevelDatabase() {
+	public static void loadMkLevelDatabase() {
 		try {
 			// Versuche zuerst lokale Datei zu laden, sonst Mod-Ressourcen
 			java.nio.file.Path resource = getConfigFilePath("MKLevel.json");
@@ -52,7 +52,7 @@ public final class MKLevelDatabase {
 							String essence = levelData.get("Essence").getAsString();
 							int amount = levelData.get("Amount").getAsInt();
 							
-							mkLevelDatabase.add(new MKLevelInfo(level, essence, amount));
+							mkLevelDatabase.add(new MkLevelInfo(level, essence, amount));
 						}
 					}
 					
@@ -100,22 +100,22 @@ public final class MKLevelDatabase {
 				}
 			}
 		} catch (Exception e) {
-			// Silent error handling("Failed to load MKLevel database: " + e.getMessage());
+			// Silent error handling("Failed to load MkLevel database: " + e.getMessage());
 			// Silent error handling
 		}
 	}
 
 	/**
-	 * Filters MKLevel entries based on search text
+	 * Filters MkLevel entries based on search text
 	 * Searches in Level, Essence, and Amount
 	 */
-	private static List<TotalEssenceInfo> getMKLevelTotalEssences() {
+	private static List<TotalEssenceInfo> getMkLevelTotalEssences() {
 		if (mkLevelTotalEssencesCache != null) {
 			return mkLevelTotalEssencesCache;
 		}
 		
 		java.util.LinkedHashMap<String, Integer> totals = new java.util.LinkedHashMap<>();
-		for (MKLevelInfo entry : mkLevelDatabase) {
+		for (MkLevelInfo entry : mkLevelDatabase) {
 			totals.merge(entry.essence, entry.amount, Integer::sum);
 		}
 		
@@ -125,8 +125,8 @@ public final class MKLevelDatabase {
 		}
 		
 		result.sort((a, b) -> {
-			int waveA = mkLevelParseWaveSortKey(getWaveDisplayForMKLevelEssence(a.essence));
-			int waveB = mkLevelParseWaveSortKey(getWaveDisplayForMKLevelEssence(b.essence));
+			int waveA = mkLevelParseWaveSortKey(getWaveDisplayForMkLevelEssence(a.essence));
+			int waveB = mkLevelParseWaveSortKey(getWaveDisplayForMkLevelEssence(b.essence));
 			if (waveA != waveB) {
 				return Integer.compare(waveA, waveB);
 			}
@@ -149,7 +149,7 @@ public final class MKLevelDatabase {
 	}
 
 	static List<TotalEssenceInfo> filterTotalEssenceEntries(String searchText) {
-		List<TotalEssenceInfo> all = getMKLevelTotalEssences();
+		List<TotalEssenceInfo> all = getMkLevelTotalEssences();
 		if (searchText == null || searchText.trim().isEmpty()) {
 			return all;
 		}
@@ -176,7 +176,7 @@ public final class MKLevelDatabase {
 			if (isWaveOnlySearch) {
 				matches = true;
 			} else if (waveFromSearch != null) {
-				String waveDisplay = getWaveDisplayForMKLevelEssence(entry.essence);
+				String waveDisplay = getWaveDisplayForMkLevelEssence(entry.essence);
 				if (waveDisplay != null && !"?".equals(waveDisplay) && waveDisplay.contains(String.valueOf(waveFromSearch))) {
 					matches = true;
 				}
@@ -191,7 +191,7 @@ public final class MKLevelDatabase {
 					}
 				}
 				if (!matches) {
-					String waveDisplay = getWaveDisplayForMKLevelEssence(entry.essence);
+					String waveDisplay = getWaveDisplayForMkLevelEssence(entry.essence);
 					if (waveDisplay != null && waveDisplay.toLowerCase().contains(searchLower)) {
 						matches = true;
 					}
@@ -206,13 +206,13 @@ public final class MKLevelDatabase {
 		return filtered;
 	}
 
-	static List<MKLevelInfo> filterMKLevelEntries(String searchText) {
+	static List<MkLevelInfo> filterMkLevelEntries(String searchText) {
 		if (searchText == null || searchText.trim().isEmpty()) {
 			return mkLevelDatabase;
 		}
 		
 		String searchLower = searchText.toLowerCase().trim();
-		List<MKLevelInfo> filtered = new ArrayList<>();
+		List<MkLevelInfo> filtered = new ArrayList<>();
 		
 		// Check if search text contains "level" followed by a number (e.g., "Level 10", "level10", "level 10", "Level: 10")
 		Integer levelFromSearch = null;
@@ -252,7 +252,7 @@ public final class MKLevelDatabase {
 			}
 		}
 		
-		for (MKLevelInfo entry : mkLevelDatabase) {
+		for (MkLevelInfo entry : mkLevelDatabase) {
 			boolean matches = false;
 			
 			// If search text starts with "Level" (for live search), show all entries
@@ -265,7 +265,7 @@ public final class MKLevelDatabase {
 			}
 			// Search for "Welle X" pattern - search for waves containing the number as substring
 			else if (waveFromSearch != null) {
-				String waveDisplay = getWaveDisplayForMKLevelEssence(entry.essence);
+				String waveDisplay = getWaveDisplayForMkLevelEssence(entry.essence);
 				if (waveDisplay != null && !"?".equals(waveDisplay)) {
 					String searchWaveStr = String.valueOf(waveFromSearch);
 					if (waveDisplay.contains(searchWaveStr)) {
@@ -305,7 +305,7 @@ public final class MKLevelDatabase {
 				
 				// Search in Wave display (number or "?")
 				if (!matches) {
-					String waveDisplay = getWaveDisplayForMKLevelEssence(entry.essence);
+					String waveDisplay = getWaveDisplayForMkLevelEssence(entry.essence);
 					if (waveDisplay != null && waveDisplay.toLowerCase().contains(searchLower)) {
 						matches = true;
 					}
@@ -397,12 +397,12 @@ public final class MKLevelDatabase {
 	}
 
 	/**
-	 * Lädt die MKLevel-Datenbank neu (nach Update vom Server)
+	 * Lädt die MkLevel-Datenbank neu (nach Update vom Server)
 	 */
-	public static void reloadMKLevelDatabase() {
+	public static void reloadMkLevelDatabase() {
 		mkLevelDatabase.clear();
 		mkLevelCombinedWavesDatabase.clear();
 		mkLevelTotalEssencesCache = null;
-		loadMKLevelDatabase();
+		loadMkLevelDatabase();
 	}
 }

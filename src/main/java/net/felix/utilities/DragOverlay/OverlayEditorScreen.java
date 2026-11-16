@@ -26,7 +26,7 @@ import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
 import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
 import net.felix.utilities.DragOverlay.Factory.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Factory.FactoryLevelTracker;
-import net.felix.utilities.DragOverlay.Factory.MKLevelDraggableOverlay;
+import net.felix.utilities.DragOverlay.Factory.MkLevelDraggableOverlay;
 import net.felix.utilities.DragOverlay.Farmworld.CollectionDraggableOverlay;
 import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.HideUncraftableButtonDraggableOverlay;
@@ -191,7 +191,7 @@ public class OverlayEditorScreen extends Screen {
         
         // Star Aspect Overlay - available ONLY in inventories EXCEPT blueprint inventories and "Machtkristalle Verbessern" inventory
         // This is for items with "⭐" in tooltip, different from the blueprint Aspect Overlay
-        if (isInAnyInventory && !isInBlueprintInventory && !isInMKLevelInventory()) {
+        if (isInAnyInventory && !isInBlueprintInventory && !isInMkLevelInventory()) {
             overlays.add(new StarAspectOverlayDraggableOverlay());
         }
         
@@ -222,16 +222,16 @@ public class OverlayEditorScreen extends Screen {
                     overlays.add(new CollectionDraggableOverlay());
                 }
                 
-                // MKLevel overlay - only available in "Machtkristalle Verbessern" inventory
-                if (isInMKLevelInventory()) {
-                    overlays.add(new MKLevelDraggableOverlay());
+                // MkLevel overlay - only available in "Machtkristalle Verbessern" inventory
+                if (isInMkLevelInventory()) {
+                    overlays.add(new MkLevelDraggableOverlay());
                 }
                 
                 // Note: Aspect Overlay and Hide Uncraftable Button are only available in blueprint inventories
                 // Note: Star Aspect Overlay is available in all inventories EXCEPT blueprint inventories
                 // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬃, 㬄, 㬅, 㬆)
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
-                // Note: MKLevel Overlay is only available in "Machtkristalle Verbessern" inventory
+                // Note: MkLevel Overlay is only available in "Machtkristalle Verbessern" inventory
             }
         }
         
@@ -426,7 +426,7 @@ public class OverlayEditorScreen extends Screen {
     /**
      * Check if the player is currently in the "Machtkristalle Verbessern" inventory
      */
-    private boolean isInMKLevelInventory() {
+    private boolean isInMkLevelInventory() {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.gui.screen() == null) {
             return false;
@@ -437,7 +437,7 @@ public class OverlayEditorScreen extends Screen {
             return false;
         }
         
-        // Get the screen title to check if it's the MKLevel inventory
+        // Get the screen title to check if it's the MkLevel inventory
         net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
             (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
         
@@ -445,7 +445,7 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if the title contains "Machtkristalle Verbessern" or the Glyph "㮌" (Essence Harvester UI)
         return ZeichenUtility.isMkLevelInventoryTitle(
-                net.felix.features.information.tooltip.TooltipText.getPlainTextFromText(handledScreen.getTitle()),
+                net.felix.features.information.tooltip.TooltipTextCleaner.getPlainTextFromText(handledScreen.getTitle()),
                 title);
     }
     
@@ -764,14 +764,14 @@ public class OverlayEditorScreen extends Screen {
                     int screenHeight = client.getWindow().getGuiScaledHeight();
                     int currentY = resizingOverlay.getY();
                     
-                    // Prüfe, ob es das MKLevel-Overlay ist (sollte immer von oben links vergrößern)
-                    boolean isMKLevelOverlay = resizingOverlay instanceof MKLevelDraggableOverlay;
+                    // Prüfe, ob es das MkLevel-Overlay ist (sollte immer von oben links vergrößern)
+                    boolean isMkLevelOverlay = resizingOverlay instanceof MkLevelDraggableOverlay;
                     
                     int newX;
                     int newY = currentY;
                     
-                    if (isMKLevelOverlay) {
-                        // Für MKLevel: Obere linke Ecke immer fixiert
+                    if (isMkLevelOverlay) {
+                        // Für MkLevel: Obere linke Ecke immer fixiert
                         newX = resizeStartOverlayX;
                         // Stelle sicher, dass das Overlay nicht aus dem Bildschirm ragt
                         if (newX + newWidth > screenWidth) {
@@ -1309,7 +1309,7 @@ public class OverlayEditorScreen extends Screen {
             config.showHideWrongClassButton = newValue;
         } else if (overlay instanceof KitFilterButtonDraggableOverlay) {
             config.kitFilterButtonsEnabled = !config.kitFilterButtonsEnabled;
-        } else if (overlay instanceof MKLevelDraggableOverlay) {
+        } else if (overlay instanceof MkLevelDraggableOverlay) {
             config.mkLevelEnabled = !config.mkLevelEnabled;
         } else if (overlay instanceof ClipboardDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();

@@ -156,10 +156,10 @@ public final class BlueprintFloorTooltip {
 		int epicColor2 = 0xFFA335EE;
 		int legendaryColor1 = 0xFFFC7E00;
 		int legendaryColor2 = 0xFFFF8000;
-		int epicColor1RGB = epicColor1 & 0x00FFFFFF;
-		int epicColor2RGB = epicColor2 & 0x00FFFFFF;
-		int legendaryColor1RGB = legendaryColor1 & 0x00FFFFFF;
-		int legendaryColor2RGB = legendaryColor2 & 0x00FFFFFF;
+		int epicColor1Rgb = epicColor1 & 0x00FFFFFF;
+		int epicColor2Rgb = epicColor2 & 0x00FFFFFF;
+		int legendaryColor1Rgb = legendaryColor1 & 0x00FFFFFF;
+		int legendaryColor2Rgb = legendaryColor2 & 0x00FFFFFF;
 		
 		// Convert to OrderedText to iterate through styled parts
 		net.minecraft.util.FormattedCharSequence orderedText = itemNameText.getVisualOrderText();
@@ -208,14 +208,14 @@ public final class BlueprintFloorTooltip {
 				// Check the color only for the blueprint name section
 				if (style != null && style.getColor() != null) {
 					int styleColor = style.getColor().getValue();
-					int styleColorRGB = styleColor & 0x00FFFFFF; // Remove alpha
+					int styleColorRgb = styleColor & 0x00FFFFFF; // Remove alpha
 					
 					// Check for Epic color (floor 1)
-					if (styleColorRGB == epicColor1RGB || styleColorRGB == epicColor2RGB) {
+					if (styleColorRgb == epicColor1Rgb || styleColorRgb == epicColor2Rgb) {
 						return 1;
 					}
 					// Check for Legendary color (floor 85)
-					if (styleColorRGB == legendaryColor1RGB || styleColorRGB == legendaryColor2RGB) {
+					if (styleColorRgb == legendaryColor1Rgb || styleColorRgb == legendaryColor2Rgb) {
 						return 85;
 					}
 				}

@@ -4,7 +4,7 @@ package net.felix.features.information.mklevel;
 /**
  * Data class to represent a single line to render
  */
-public class RenderLine {
+public class MkLevelRenderLine {
 	public final String text;
 	public final int color;
 	public final int xOffset; // Additional X offset for alignment
@@ -17,7 +17,7 @@ public class RenderLine {
 	public final int thirdPartColor;
 	public final int thirdPartXOffset; // X offset for third part
 	
-	public RenderLine(String text, int color) {
+	public MkLevelRenderLine(String text, int color) {
 		this.text = text;
 		this.color = color;
 		this.xOffset = 0;
@@ -31,7 +31,7 @@ public class RenderLine {
 		this.thirdPartXOffset = 0;
 	}
 	
-	public RenderLine(String text, int color, int xOffset, String secondPartText, int secondPartColor, int secondPartXOffset) {
+	public MkLevelRenderLine(String text, int color, int xOffset, String secondPartText, int secondPartColor, int secondPartXOffset) {
 		this.text = text;
 		this.color = color;
 		this.xOffset = xOffset;
@@ -45,7 +45,7 @@ public class RenderLine {
 		this.thirdPartXOffset = 0;
 	}
 	
-	public RenderLine(String text, int color, int xOffset, String secondPartText, int secondPartColor, int secondPartXOffset, String thirdPartText, int thirdPartColor, int thirdPartXOffset) {
+	public MkLevelRenderLine(String text, int color, int xOffset, String secondPartText, int secondPartColor, int secondPartXOffset, String thirdPartText, int thirdPartColor, int thirdPartXOffset) {
 		this.text = text;
 		this.color = color;
 		this.xOffset = xOffset;

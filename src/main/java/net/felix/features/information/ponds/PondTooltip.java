@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 import static net.felix.features.information.materials.MaterialRarityColors.getRarityColor;
 import static net.felix.features.information.ponds.PondDatabase.pondsDatabase;
-import static net.felix.features.information.tooltip.TooltipText.cleanTooltipLineForMatching;
+import static net.felix.features.information.tooltip.TooltipTextCleaner.cleanTooltipLineForMatching;
 
 
 /**

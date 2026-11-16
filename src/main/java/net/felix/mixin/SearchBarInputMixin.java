@@ -53,7 +53,7 @@ public abstract class SearchBarInputMixin {
             cir.setReturnValue(true);
         }
         
-        // Handle MKLevel search bar clicks - need to get position from screen
+        // Handle MkLevel search bar clicks - need to get position from screen
         // We can't use @Shadow here, so we'll use reflection as fallback
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if (client != null && client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
@@ -67,7 +67,7 @@ public abstract class SearchBarInputMixin {
                 int inventoryX = xField.getInt(handledScreen);
                 int inventoryY = yField.getInt(handledScreen);
                 int inventoryHeight = bgHeightField.getInt(handledScreen);
-                if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
+                if (net.felix.features.information.mklevel.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
                     cir.setReturnValue(true);
                 }
             } catch (Exception e) {
@@ -132,7 +132,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle ItemInfo auto-click hotkey (works in inventories)
-        // Get screen position using reflection (same pattern as MKLevel)
+        // Get screen position using reflection (same pattern as MkLevel)
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if (client != null && client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
             try {
@@ -207,8 +207,8 @@ public abstract class SearchBarInputMixin {
             cir.setReturnValue(true);
         }
         
-        // Handle key press for MKLevel search bar
-        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelKeyPressed(keyCode, scanCode, modifiers)) {
+        // Handle key press for MkLevel search bar
+        if (net.felix.features.information.mklevel.MkLevelInputHandler.handleMkLevelKeyPressed(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
         }
     }
