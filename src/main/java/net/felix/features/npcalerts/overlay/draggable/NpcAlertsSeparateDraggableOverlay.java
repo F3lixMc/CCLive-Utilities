@@ -5,6 +5,8 @@ import net.felix.features.npcalerts.data.CapacityData;
 import net.felix.features.npcalerts.data.MachtkristallSlot;
 import net.felix.features.npcalerts.data.NpcAlertState;
 import net.felix.features.npcalerts.message.ScreenMessages;
+import net.felix.features.npcalerts.overlay.AlertIcons;
+import net.felix.features.npcalerts.overlay.AlertSettings;
 import net.felix.features.npcalerts.overlay.PercentFormatter;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.minecraft.client.Minecraft;
@@ -24,18 +26,10 @@ import static net.felix.features.npcalerts.config.SeparateOverlayConfig.loadX;
 import static net.felix.features.npcalerts.config.SeparateOverlayConfig.loadY;
 import static net.felix.features.npcalerts.config.SeparateOverlayConfig.saveX;
 import static net.felix.features.npcalerts.config.SeparateOverlayConfig.saveY;
-import static net.felix.features.npcalerts.overlay.AlertIcons.AMBOSS_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.ESSENZEN_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.FORSCHUNG_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.JAEGER_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.KOMBO_KISTE_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.MACHTKRISTALL_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.RECYCLER_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.SCHMELZOFEN_ICON;
-import static net.felix.features.npcalerts.overlay.AlertIcons.SEELEN_ICON;
 import static net.felix.features.npcalerts.overlay.SeparateOverlayContent.getDisplayText;
 import static net.felix.features.npcalerts.overlay.SeparateOverlayContent.getPercentText;
 import static net.felix.features.npcalerts.overlay.SeparateOverlayContent.isWarningVisible;
+import static net.felix.features.npcalerts.overlay.SeparateOverlayContent.machtkristallDisplayText;
 
 /**
  * Draggable Overlay für einzelne NPC Alerts Overlays
@@ -43,6 +37,10 @@ import static net.felix.features.npcalerts.overlay.SeparateOverlayContent.isWarn
 public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
 
     private static final float MIN_SCALE = 0.05f;
+    private static final int OVERLAY_PADDING = 5;
+    private static final int WARNING_COLOR = 0xFFFF0000;
+    private static final int PERCENT_COLOR_DEFAULT = 0xFFFFFF00;
+    private static final long WARNING_BLINK_MILLIS = 300;
 
     private final String configKey;
 
@@ -196,241 +194,87 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     private int calculateUnscaledWidth() {
         Minecraft client = Minecraft.getInstance();
         if (client == null) return 200;
-        
-        // Für Machtkristalle: berechne maximale Breite über alle Zeilen, die im Multi-Line-Overlay sind
+
         if ("machtkristalle".equals(configKey)) {
-            boolean showIcon = isIconVisible(configKey);
-            // Prüfe welche Slots einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
-            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
-            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
-            
-            int maxWidth = 0;
-            for (int i = 0; i < 3; i++) {
-                boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-                // Überspringe Slots, die einzeln gerendert werden
-                if (slotSeparate) {
-                    continue;
-                }
-                
-                MachtkristallSlot slot = NpcAlertState.machtkristallSlots[i];
-                int width = 0;
-                
-                // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
-                if (showIcon) {
-                    int iconSize = (int)(client.font.lineHeight * 1.5);
-                    width += iconSize + 2; // Icon + Abstand
-                    width += client.font.width(": "); // Doppelpunkt nach Icon
-                }
-                
-                // Text-Breite (gleiche Logik wie in renderSeparateOverlays)
-                String displayText;
-                if (slot.isNotFound()) {
-                    displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
-                } else if (slot.isEmpty()) {
-                    displayText = showIcon ? "-" : "MK " + (i + 1) + ": -";
-                } else {
-                    displayText = slot.getDisplayText();
-                    if (displayText == null) {
-                        displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
-                    } else if (showIcon) {
-                        // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                        displayText = MachtkristallSlot.stripIconPrefix(displayText);
-                    }
-                }
-                width += client.font.width(displayText);
-                
-                // Prozent-Breite
-                String percentText = slot.getPercentText();
-                if (percentText != null) {
-                    width += client.font.width(" " + percentText);
-                }
-                
-                if (width > maxWidth) {
-                    maxWidth = width;
-                }
-            }
-            int padding = 5;
-            // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
-            return maxWidth + (padding * 2);
+            return measureMachtkristallOverlayWidth(client);
         }
-        
-        // Für Recycler: mehrere Zeilen möglich
         if ("recycler".equals(configKey)) {
-            boolean showIcon = isIconVisible(configKey);
-            boolean showPercent = isPercentVisible(configKey);
-            // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
-            
-            int maxWidth = 0;
-            for (int i = 0; i < 3; i++) {
-                // Prüfe ob dieser Slot aktiviert ist
-                boolean slotEnabled;
-                switch (i) {
-                    case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
-                        break;
-                    case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
-                        break;
-                    case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
-                        break;
-                    default:
-                        slotEnabled = true;
-                        break;
-                }
-                
-                // Überspringe diesen Slot, wenn er deaktiviert ist
-                if (!slotEnabled) {
-                    continue;
-                }
-                
-                boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
-                boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-                // Überspringe Slots, die nicht aktiv sind oder einzeln gerendert werden
-                if (!slotActive || slotSeparate) {
-                    continue;
-                }
-                
-                CapacityData recyclerSlot = (i == 0) ? NpcAlertState.recyclerSlot1 : 
-                                                          (i == 1) ? NpcAlertState.recyclerSlot2 : 
-                                                          NpcAlertState.recyclerSlot3;
-                int width = 0;
-                
-                // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
-                if (showIcon) {
-                    int iconSize = (int)(client.font.lineHeight * 1.5);
-                    width += iconSize + 2; // Icon + Abstand
-                    width += client.font.width(": "); // Doppelpunkt nach Icon
-                }
-                
-                // Text-Breite
-                String displayText;
-                if (!recyclerSlot.isValid()) {
-                    displayText = showIcon ? "Nicht im Tab-Widget" : "Recycler Slot " + (i + 1) + ": Nicht im Tab-Widget";
-                } else {
-                    displayText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
-                }
-                width += client.font.width(displayText);
-                
-                // Prozent-Breite
-                if (showPercent && recyclerSlot.isValid()) {
-                    String percentText = PercentFormatter.formatPercent(recyclerSlot.current, recyclerSlot.max);
-                    width += client.font.width(" " + percentText);
-                }
-                
-                if (width > maxWidth) {
-                    maxWidth = width;
-                }
-            }
-            int padding = 5;
-            // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
-            return maxWidth + (padding * 2);
+            return measureRecyclerOverlayWidth(client);
         }
-        
-        // Für einzelne MK Slots: berechne Breite basierend auf tatsächlichem Text
-        if ("machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || "machtkristalleSlot3".equals(configKey)) {
-            int slotIndex = configKey.equals("machtkristalleSlot1") ? 0 : (configKey.equals("machtkristalleSlot2") ? 1 : 2);
-            
-            // Prüfe ob dieser Slot aktiviert ist
-            boolean slotEnabled;
-            switch (slotIndex) {
-                case 0:
-                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
-                    break;
-                case 1:
-                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
-                    break;
-                case 2:
-                    slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
-                    break;
-                default:
-                    slotEnabled = true;
-                    break;
-            }
-            
-            // Wenn Slot deaktiviert ist, gib 0 zurück (Overlay wird nicht gerendert)
-            if (!slotEnabled) {
-                return 0;
-            }
-            
-            MachtkristallSlot slot = NpcAlertState.machtkristallSlots[slotIndex];
-            boolean showIcon = isIconVisible(configKey);
-            String percentText = slot.getPercentText();
-            boolean showPercent = percentText != null;
-            
-            int width = 0;
-            // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
-            if (showIcon) {
-                int iconSize = (int)(client.font.lineHeight * 1.5);
-                width += iconSize + 2; // Icon + Abstand
-                width += client.font.width(": "); // Doppelpunkt nach Icon
-            }
-            
-            // Text-Breite (gleiche Logik wie in renderSeparateOverlays)
-            String displayText;
-            if (slot.isNotFound()) {
-                displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (slotIndex + 1) + ": Nicht im Tab-Widget";
-            } else if (slot.isEmpty()) {
-                displayText = showIcon ? "-" : "MK " + (slotIndex + 1) + ": -";
-            } else {
-                displayText = slot.getDisplayText();
-                if (displayText == null) {
-                    displayText = showIcon ? "?" : "MK " + (slotIndex + 1) + ": ?";
-                } else if (showIcon) {
-                    // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                    displayText = MachtkristallSlot.stripIconPrefix(displayText);
-                }
-            }
-            width += client.font.width(displayText);
-            
-            // Prozent-Breite
-            if (showPercent && percentText != null) {
-                width += client.font.width(" " + percentText);
-            }
-            
-            int padding = 5;
-            // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
-            return width + (padding * 2);
+        if (isMachtkristallSlotKey(configKey)) {
+            return measureSingleMachtkristallSlotWidth(client);
         }
-        
-        String text = getDisplayText(configKey, displayName);
-        String percentText = getPercentText(configKey);
-        boolean showPercent = isPercentVisible(configKey);
+        return measureSingleLineWidth(client);
+    }
+
+    /** Breite des Multi-Line-Overlays: breiteste Zeile aller Machtkristall-Slots, die nicht einzeln gerendert werden. */
+    private int measureMachtkristallOverlayWidth(Minecraft client) {
         boolean showIcon = isIconVisible(configKey);
-        
-        int width = 0;
-        // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
-        if (showIcon && (configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
-                                                "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
-                                                "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
-                                                "komboKiste".equals(configKey) ||
-                                                "machtkristalle".equals(configKey) ||
-                                                "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
-                                                "machtkristalleSlot3".equals(configKey) ||
-                                                "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
-                                                "recyclerSlot3".equals(configKey)))) {
-            int iconSize = (int)(client.font.lineHeight * 1.5);
-            width += iconSize + 2; // Icon + Abstand
-            width += client.font.width(": "); // Doppelpunkt nach Icon
+        int maxWidth = 0;
+        for (int i = 0; i < 3; i++) {
+            // Wie bisher werden hier auch deaktivierte Slots berücksichtigt (nur "einzeln" wird übersprungen)
+            if (isMachtkristallSlotSeparate(i)) {
+                continue;
+            }
+            MachtkristallSlot slot = NpcAlertState.machtkristallSlots[i];
+            int width = iconPrefixWidth(client, showIcon)
+                + client.font.width(machtkristallDisplayText(slot, i, showIcon))
+                + percentSuffixWidth(client, slot.getPercentText());
+            maxWidth = Math.max(maxWidth, width);
         }
-        width += client.font.width(text);
-        if (showPercent && percentText != null) {
-            width += client.font.width(" " + percentText);
+        return maxWidth + OVERLAY_PADDING * 2;
+    }
+
+    /** Breite des Multi-Line-Overlays: breiteste Zeile aller Recycler-Slots im gemeinsamen Overlay. */
+    private int measureRecyclerOverlayWidth(Minecraft client) {
+        boolean showIcon = isIconVisible(configKey);
+        boolean showPercent = isPercentVisible(configKey);
+        int maxWidth = 0;
+        for (int i : AlertSettings.getRecyclerSlotsInSharedOverlay()) {
+            CapacityData slot = recyclerSlotAt(i);
+            int width = iconPrefixWidth(client, showIcon)
+                + client.font.width(recyclerDisplayText(slot, i, showIcon))
+                + percentSuffixWidth(client, recyclerPercentText(slot, showPercent));
+            maxWidth = Math.max(maxWidth, width);
         }
-        
-        int padding = 5;
-        // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
-        return width + (padding * 2);
+        return maxWidth + OVERLAY_PADDING * 2;
+    }
+
+    /** Breite eines einzelnen Machtkristall-Slot-Overlays (0, wenn der Slot deaktiviert ist). */
+    private int measureSingleMachtkristallSlotWidth(Minecraft client) {
+        int slotIndex = machtkristallSlotIndex(configKey);
+        if (!AlertSettings.isNpcAlertMachtkristallSlotEnabled(slotIndex)) {
+            return 0;
+        }
+        MachtkristallSlot slot = NpcAlertState.machtkristallSlots[slotIndex];
+        boolean showIcon = isIconVisible(configKey);
+        int width = iconPrefixWidth(client, showIcon)
+            + client.font.width(machtkristallDisplayText(slot, slotIndex, showIcon))
+            + percentSuffixWidth(client, slot.getPercentText());
+        return width + OVERLAY_PADDING * 2;
+    }
+
+    private int measureSingleLineWidth(Minecraft client) {
+        String text = getDisplayText(configKey, displayName);
+        String percentText = isPercentVisible(configKey) ? getPercentText(configKey) : null;
+        boolean showIcon = isIconVisible(configKey) && AlertIcons.iconForKey(configKey) != null;
+        int width = iconPrefixWidth(client, showIcon)
+            + client.font.width(text)
+            + percentSuffixWidth(client, percentText);
+        return width + OVERLAY_PADDING * 2;
+    }
+
+    /** Breite von Icon, Abstand und Doppelpunkt (0 ohne Icon). */
+    private static int iconPrefixWidth(Minecraft client, boolean showIcon) {
+        if (!showIcon) {
+            return 0;
+        }
+        int iconSize = (int) (client.font.lineHeight * 1.5);
+        return iconSize + 2 + client.font.width(": ");
+    }
+
+    private static int percentSuffixWidth(Minecraft client, String percentText) {
+        return percentText == null ? 0 : client.font.width(" " + percentText);
     }
 
     /**
@@ -440,148 +284,52 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
         Minecraft client = Minecraft.getInstance();
         if (client == null) return 20;
         int lineHeight = client.font.lineHeight + 2;
-        int padding = 5;
-        
-        // Für Machtkristalle: mehrere Zeilen möglich
+
+        int lineCount = 1;
         if ("machtkristalle".equals(configKey)) {
-            // Prüfe welche Slots einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
-            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
-            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
-            
-            // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
-            int lineCount = 0;
-            for (int i = 0; i < 3; i++) {
-                // Prüfe ob dieser Slot aktiviert ist
-                boolean slotEnabled;
-                switch (i) {
-                    case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
-                        break;
-                    case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
-                        break;
-                    case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
-                        break;
-                    default:
-                        slotEnabled = true;
-                        break;
-                }
-                
-                // Überspringe diesen Slot, wenn er deaktiviert ist
-                if (!slotEnabled) {
-                    continue;
-                }
-                
-                boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-                if (!slotSeparate) {
-                    lineCount++;
-                }
-            }
-            
-            return (lineCount * lineHeight) + (padding * 2);
+            lineCount = AlertSettings.getMachtkristallSlotsInSharedOverlay().size();
+        } else if ("recycler".equals(configKey)) {
+            lineCount = AlertSettings.getRecyclerSlotsInSharedOverlay().size();
         }
-        
-        // Für Recycler: mehrere Zeilen möglich
-        if ("recycler".equals(configKey)) {
-            // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
-            
-            // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
-            int lineCount = 0;
-            for (int i = 0; i < 3; i++) {
-                // Prüfe ob dieser Slot aktiviert ist
-                boolean slotEnabled;
-                switch (i) {
-                    case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
-                        break;
-                    case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
-                        break;
-                    case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
-                        break;
-                    default:
-                        slotEnabled = true;
-                        break;
-                }
-                
-                // Überspringe diesen Slot, wenn er deaktiviert ist
-                if (!slotEnabled) {
-                    continue;
-                }
-                
-                boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
-                boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-                if (slotActive && !slotSeparate) {
-                    lineCount++;
-                }
-            }
-            
-            return (lineCount * lineHeight) + (padding * 2);
-        }
-        
-        // Für Recycler: mehrere Zeilen möglich
-        if ("recycler".equals(configKey)) {
-            // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
-            
-            // Zähle nur die Slots, die im Multi-Line-Overlay sind UND aktiviert sind
-            int lineCount = 0;
-            for (int i = 0; i < 3; i++) {
-                // Prüfe ob dieser Slot aktiviert ist
-                boolean slotEnabled;
-                switch (i) {
-                    case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
-                        break;
-                    case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
-                        break;
-                    case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
-                        break;
-                    default:
-                        slotEnabled = true;
-                        break;
-                }
-                
-                // Überspringe diesen Slot, wenn er deaktiviert ist
-                if (!slotEnabled) {
-                    continue;
-                }
-                
-                boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
-                boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-                if (slotActive && !slotSeparate) {
-                    lineCount++;
-                }
-            }
-            
-            return (lineCount * lineHeight) + (padding * 2);
-        }
-        
-        return lineHeight + (padding * 2);
+        return lineCount * lineHeight + OVERLAY_PADDING * 2;
     }
 
+    private static boolean isMachtkristallSlotKey(String key) {
+        return "machtkristalleSlot1".equals(key) || "machtkristalleSlot2".equals(key) || "machtkristalleSlot3".equals(key);
+    }
+
+    private static int machtkristallSlotIndex(String key) {
+        return "machtkristalleSlot1".equals(key) ? 0 : ("machtkristalleSlot2".equals(key) ? 1 : 2);
+    }
+
+    private static boolean isMachtkristallSlotSeparate(int slotIndex) {
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        return switch (slotIndex) {
+            case 0 -> config.npcAlertsMachtkristalleSlot1Separate;
+            case 1 -> config.npcAlertsMachtkristalleSlot2Separate;
+            case 2 -> config.npcAlertsMachtkristalleSlot3Separate;
+            default -> false;
+        };
+    }
+
+    private static CapacityData recyclerSlotAt(int slotIndex) {
+        return switch (slotIndex) {
+            case 0 -> NpcAlertState.recyclerSlot1;
+            case 1 -> NpcAlertState.recyclerSlot2;
+            default -> NpcAlertState.recyclerSlot3;
+        };
+    }
+
+    private static String recyclerDisplayText(CapacityData slot, int slotIndex, boolean showIcon) {
+        if (!slot.isValid()) {
+            return showIcon ? "Nicht im Tab-Widget" : "Recycler Slot " + (slotIndex + 1) + ": Nicht im Tab-Widget";
+        }
+        return showIcon ? slot.getDisplayString() : "Recycler Slot " + (slotIndex + 1) + ": " + slot.getDisplayString();
+    }
+
+    private static String recyclerPercentText(CapacityData slot, boolean showPercent) {
+        return showPercent && slot.isValid() ? PercentFormatter.formatPercent(slot.current, slot.max) : null;
+    }
     @Override
     public int getWidth() {
         // Return scaled width
@@ -647,445 +395,174 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         Minecraft client = Minecraft.getInstance();
         if (client == null) return;
-        
+
         int x = getX();
         int y = getY();
         int width = getWidth();
         int height = getHeight();
-        
-        // Get scale
+
         float scale = getScale();
         if (scale <= 0) scale = 1.0f;
-        
-        // Render border for edit mode (scaled)
+
+        // Rahmen und Hintergrund im Edit-Modus (skaliert)
         context.outline(x, y, width, height, 0xFFFF0000);
-        
-        // Render background (scaled)
         context.fill(x, y, x + width, y + height, 0x80000000);
-        
-        // Render content with scale using matrix transformation
+
+        // Inhalt mit Skalierung über die Matrix zeichnen
         Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
-        
-        // Render actual content (same as real overlay)
+
+        drawContent(context, client);
+
+        matrices.popMatrix();
+    }
+
+    /** Zeichnet den Inhalt wie das echte Overlay (relativ zu (x, y) nach der Matrix-Transformation). */
+    private void drawContent(GuiGraphicsExtractor context, Minecraft client) {
+        boolean showIcon = isIconVisible(configKey);
+        int lineHeight = client.font.lineHeight + 2;
+        if ("machtkristalle".equals(configKey)) {
+            drawMachtkristallLines(context, client, showIcon, lineHeight);
+        } else if ("recycler".equals(configKey)) {
+            drawRecyclerLines(context, client, showIcon, lineHeight);
+        } else {
+            drawSingleLine(context, client, showIcon, lineHeight);
+        }
+    }
+
+    /** Einzeiliges Overlay: optional Icon mit Doppelpunkt, Text und Prozentwert. */
+    private void drawSingleLine(GuiGraphicsExtractor context, Minecraft client, boolean showIcon, int lineHeight) {
         String text = getDisplayText(configKey, displayName);
         String percentText = getPercentText(configKey);
         boolean showPercent = isPercentVisible(configKey);
         boolean showWarning = isWarningVisible(configKey);
-        boolean showIcon = isIconVisible(configKey);
-        
-        int currentX = 5; // Relativ zu (x, y) nach Matrix-Transformation
-        int lineHeight = client.font.lineHeight + 2;
-        int unscaledHeight = calculateUnscaledHeight();
-        int overlayCenterY = unscaledHeight / 2;
+
+        int overlayCenterY = calculateUnscaledHeight() / 2;
         int currentY = overlayCenterY - client.font.lineHeight / 2;
-        
-        // Lade Farben aus Config (für Recycler-Slots)
+        int currentX = OVERLAY_PADDING;
+
+        // Farben aus der Config gibt es nur für die Recycler-Slots
         int textColor = 0xFFFFFFFF;
-        int percentColor = 0xFFFFFF00;
-        if (configKey != null) {
-            if ("recyclerSlot1".equals(configKey)) {
-                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
-                textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
-                percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
-            } else if ("recyclerSlot2".equals(configKey)) {
-                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
-                textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
-                percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
-            } else if ("recyclerSlot3".equals(configKey)) {
-                java.awt.Color color = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
-                textColor = (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-                java.awt.Color percentColorObj = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
-                percentColor = (percentColorObj.getAlpha() << 24) | (percentColorObj.getRed() << 16) | (percentColorObj.getGreen() << 8) | percentColorObj.getBlue();
-            }
+        int percentColor = PERCENT_COLOR_DEFAULT;
+        if (isRecyclerSlotKey(configKey)) {
+            textColor = AlertSettings.getTextColorForConfigKey(configKey);
+            percentColor = AlertSettings.getPercentColorForConfigKey(configKey);
         }
-        int warningColor = 0xFFFF0000;
-        
-        // Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
-        int currentTextColor = textColor;
-        if (showWarning) {
-            // Blink-Animation: alle 300ms wechseln
-            boolean isVisible = (System.currentTimeMillis() / 300) % 2 == 0;
-            if (isVisible) {
-                currentTextColor = warningColor;
-            } else {
-                currentTextColor = textColor;
-            }
-        }
-        
-        // Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
-        if (showIcon && (configKey != null && ("forschung".equals(configKey) || "amboss".equals(configKey) || 
-                                                "schmelzofen".equals(configKey) || "seelen".equals(configKey) || 
-                                                "essenzen".equals(configKey) || "jaeger".equals(configKey) || 
-                                                "komboKiste".equals(configKey) ||
-                                                "machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
-                                                "machtkristalleSlot3".equals(configKey) ||
-                                                "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || 
-                                                "recyclerSlot3".equals(configKey)))) {
+        // Rot und blinkend, wenn eine Warnung aktiv ist
+        int currentTextColor = showWarning ? blinkingWarningColor(textColor) : textColor;
+
+        Identifier icon = AlertIcons.iconForKey(configKey);
+        if (showIcon && icon != null) {
             int iconSize = lineHeight;
-            // Zentriere Icon vertikal: Overlay-Mitte minus die Hälfte der Icon-Höhe (overlayCenterY wurde bereits berechnet)
             int iconY = overlayCenterY - iconSize / 2;
-            Identifier iconToUse = null;
-            
-            if ("forschung".equals(configKey)) {
-                iconToUse = FORSCHUNG_ICON;
-            } else if ("amboss".equals(configKey)) {
-                iconToUse = AMBOSS_ICON;
-            } else if ("schmelzofen".equals(configKey)) {
-                iconToUse = SCHMELZOFEN_ICON;
-            } else if ("seelen".equals(configKey)) {
-                iconToUse = SEELEN_ICON;
-            } else if ("essenzen".equals(configKey)) {
-                iconToUse = ESSENZEN_ICON;
-            } else if ("jaeger".equals(configKey)) {
-                iconToUse = JAEGER_ICON;
-            } else if ("komboKiste".equals(configKey)) {
-                iconToUse = KOMBO_KISTE_ICON;
-            } else if ("machtkristalleSlot1".equals(configKey) || "machtkristalleSlot2".equals(configKey) || 
-                       "machtkristalleSlot3".equals(configKey)) {
-                iconToUse = MACHTKRISTALL_ICON;
-            } else if ("recycler".equals(configKey) || "recyclerSlot1".equals(configKey) || "recyclerSlot2".equals(configKey) || "recyclerSlot3".equals(configKey)) {
-                iconToUse = RECYCLER_ICON;
+            if (blitIcon(context, icon, currentX, iconY, iconSize)) {
+                currentX += iconSize + 2;
             }
-            
-            if (iconToUse != null) {
-                try {
-                    context.blit(
-                        RenderPipelines.GUI_TEXTURED,
-                        iconToUse,
-                        currentX, iconY,
-                        0.0f, 0.0f,
-                        iconSize, iconSize,
-                        iconSize, iconSize
-                    );
-                    currentX += iconSize + 2; // Abstand nach Icon
-                } catch (Exception e) {
-                    // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
-                }
-            }
-            // Zeichne Doppelpunkt nach dem Icon
-            context.text(
-                client.font,
-                ": ",
-                currentX, currentY,
-                currentTextColor,
-                true
-            );
+            context.text(client.font, ": ", currentX, currentY, currentTextColor, true);
             currentX += client.font.width(": ");
         }
-        
-        // Render main text (mehrzeilig für Machtkristalle)
-        if ("machtkristalle".equals(configKey)) {
-            // Prüfe welche Slots einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean slot1Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
-            boolean slot2Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
-            boolean slot3Separate = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
-            
-            // Für Multi-Line-Overlay: Starte oben mit PADDING, nicht zentriert
-            int lineY = 5; // PADDING
-            int mkPercentColor = 0xFFFFFF00; // Gelb für Prozente
-            int iconSize = showIcon ? lineHeight : 0;
-            
-            for (int i = 0; i < 3; i++) {
-                // Prüfe ob dieser Slot aktiviert ist
-                boolean slotEnabled;
-                switch (i) {
-                    case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
-                        break;
-                    case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
-                        break;
-                    case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
-                        break;
-                    default:
-                        slotEnabled = true;
-                        break;
-                }
-                
-                // Überspringe diesen Slot, wenn er deaktiviert ist
-                if (!slotEnabled) {
-                    continue;
-                }
-                
-                boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-                // Überspringe Slots, die einzeln gerendert werden
-                if (slotSeparate) {
-                    continue;
-                }
-                
-                MachtkristallSlot slot = NpcAlertState.machtkristallSlots[i];
-                int lineX = currentX;
-                int lineCenterY = lineY + lineHeight / 2;
-                
-                // Berechne displayText (gleiche Logik wie in renderSeparateOverlays)
-                String displayText;
-                String slotPercentText = null;
-                if (slot.isNotFound()) {
-                    displayText = showIcon ? "Nicht im Tab-Widget" : "MK " + (i + 1) + ": Nicht im Tab-Widget";
-                } else if (slot.isEmpty()) {
-                    displayText = showIcon ? "-" : "MK " + (i + 1) + ": -";
-                } else {
-                    displayText = slot.getDisplayText();
-                    slotPercentText = slot.getPercentText();
-                    if (displayText == null) {
-                        displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
-                    } else if (showIcon) {
-                        // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                        displayText = MachtkristallSlot.stripIconPrefix(displayText);
-                    }
-                }
-                
-                boolean lineShowWarning = ScreenMessages.shouldShowMachtkristallWarning(slot);
-                int lineTextColor = textColor;
-                int linePercentColor = mkPercentColor;
-                if (lineShowWarning) {
-                    boolean isVisible = (System.currentTimeMillis() / 300) % 2 == 0;
-                    lineTextColor = isVisible ? warningColor : textColor;
-                    linePercentColor = lineTextColor;
-                }
-                
-                // Berechne Text-Y-Position (vertikal zentriert zum Icon, wie im originalen Overlay)
-                int textYForIcon = lineY; // Standard Y-Position für Text
-                
-                // Zeichne Icon für jede Zeile, wenn aktiviert
-                if (showIcon) {
-                    int iconY = lineCenterY - iconSize / 2;
-                    try {
-                        context.blit(
-                            RenderPipelines.GUI_TEXTURED,
-                            MACHTKRISTALL_ICON,
-                            lineX, iconY,
-                            0.0f, 0.0f,
-                            iconSize, iconSize,
-                            iconSize, iconSize
-                        );
-                        lineX += iconSize + 2; // Icon + Abstand
-                        // Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-                        textYForIcon = lineCenterY - client.font.lineHeight / 2;
-                    } catch (Exception e) {
-                        // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
-                    }
-                    // Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-                    context.text(
-                        client.font,
-                        ": ",
-                        lineX, textYForIcon,
-                        lineTextColor,
-                        true
-                    );
-                    lineX += client.font.width(": ");
-                }
-                
-                // Zeichne Haupttext (vertikal zentriert zum Icon, wenn Icon aktiviert)
-                context.text(
-                    client.font,
-                    displayText,
-                    lineX, textYForIcon,
-                    lineTextColor,
-                    true
-                );
-                lineX += client.font.width(displayText);
-                
-                // Zeichne Prozentwert in gelb, falls vorhanden (vertikal zentriert zum Icon)
-                if (slotPercentText != null) {
-                    context.text(
-                        client.font,
-                        " " + slotPercentText,
-                        lineX, textYForIcon,
-                        linePercentColor,
-                        true
-                    );
-                }
-                
-                lineY += lineHeight;
-            }
-        } else if ("recycler".equals(configKey)) {
-            // Prüfe welche Slots aktiv sind und einzeln gerendert werden (diese werden nicht im Multi-Line-Overlay sein)
-            boolean recyclerSlot1Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
-            boolean recyclerSlot2Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
-            boolean recyclerSlot3Active = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 && 
-                                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
-            boolean slot1Separate = recyclerSlot1Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
-            boolean slot2Separate = recyclerSlot2Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
-            boolean slot3Separate = recyclerSlot3Active && CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
-            
-            // Für Multi-Line-Overlay: Starte oben mit PADDING, nicht zentriert
-            int lineY = 5; // PADDING
-            int iconSize = showIcon ? lineHeight : 0;
-            
-            for (int i = 0; i < 3; i++) {
-                // Lade Farben für diesen Slot aus Config
-                int recyclerTextColor = 0xFFFFFFFF;
-                int recyclerPercentColor = 0xFFFFFF00;
-                switch (i) {
-                    case 0:
-                        java.awt.Color color1 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
-                        recyclerTextColor = (color1.getAlpha() << 24) | (color1.getRed() << 16) | (color1.getGreen() << 8) | color1.getBlue();
-                        java.awt.Color percentColor1 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
-                        recyclerPercentColor = (percentColor1.getAlpha() << 24) | (percentColor1.getRed() << 16) | (percentColor1.getGreen() << 8) | percentColor1.getBlue();
-                        break;
-                    case 1:
-                        java.awt.Color color2 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
-                        recyclerTextColor = (color2.getAlpha() << 24) | (color2.getRed() << 16) | (color2.getGreen() << 8) | color2.getBlue();
-                        java.awt.Color percentColor2 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
-                        recyclerPercentColor = (percentColor2.getAlpha() << 24) | (percentColor2.getRed() << 16) | (percentColor2.getGreen() << 8) | percentColor2.getBlue();
-                        break;
-                    case 2:
-                        java.awt.Color color3 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
-                        recyclerTextColor = (color3.getAlpha() << 24) | (color3.getRed() << 16) | (color3.getGreen() << 8) | color3.getBlue();
-                        java.awt.Color percentColor3 = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
-                        recyclerPercentColor = (percentColor3.getAlpha() << 24) | (percentColor3.getRed() << 16) | (percentColor3.getGreen() << 8) | percentColor3.getBlue();
-                        break;
-                }
-                
-                int recyclerCurrentTextColor = recyclerTextColor;
-                // Prüfe ob dieser Slot aktiviert ist
-                boolean slotEnabled;
-                switch (i) {
-                    case 0:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
-                        break;
-                    case 1:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
-                        break;
-                    case 2:
-                        slotEnabled = CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
-                        break;
-                    default:
-                        slotEnabled = true;
-                        break;
-                }
-                
-                // Überspringe diesen Slot, wenn er deaktiviert ist
-                if (!slotEnabled) {
-                    continue;
-                }
-                
-                boolean slotActive = (i == 0 && recyclerSlot1Active) || (i == 1 && recyclerSlot2Active) || (i == 2 && recyclerSlot3Active);
-                boolean slotSeparate = (i == 0 && slot1Separate) || (i == 1 && slot2Separate) || (i == 2 && slot3Separate);
-                // Überspringe Slots, die nicht aktiv sind oder einzeln gerendert werden
-                if (!slotActive || slotSeparate) {
-                    continue;
-                }
-                
-                CapacityData recyclerSlot = (i == 0) ? NpcAlertState.recyclerSlot1 : 
-                                                          (i == 1) ? NpcAlertState.recyclerSlot2 : 
-                                                          NpcAlertState.recyclerSlot3;
-                int lineX = currentX;
-                int lineCenterY = lineY + lineHeight / 2;
-                
-                // Berechne displayText
-                String displayText;
-                String slotPercentText = null;
-                if (!recyclerSlot.isValid()) {
-                    displayText = showIcon ? "Nicht im Tab-Widget" : "Recycler Slot " + (i + 1) + ": Nicht im Tab-Widget";
-                } else {
-                    displayText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
-                    if (showPercent && recyclerSlot.isValid()) {
-                        slotPercentText = PercentFormatter.formatPercent(recyclerSlot.current, recyclerSlot.max);
-                    }
-                }
-                
-                // Berechne Text-Y-Position (vertikal zentriert zum Icon, wie im originalen Overlay)
-                int textYForIcon = lineY; // Standard Y-Position für Text
-                
-                // Zeichne Icon für jede Zeile, wenn aktiviert
-                if (showIcon) {
-                    int iconY = lineCenterY - iconSize / 2;
-                    try {
-                        context.blit(
-                            RenderPipelines.GUI_TEXTURED,
-                            RECYCLER_ICON,
-                            lineX, iconY,
-                            0.0f, 0.0f,
-                            iconSize, iconSize,
-                            iconSize, iconSize
-                        );
-                        lineX += iconSize + 2; // Icon + Abstand
-                        // Zentriere Text vertikal zum Icon: Icon-Mitte minus die Hälfte der Text-Höhe
-                        textYForIcon = lineCenterY - client.font.lineHeight / 2;
-                    } catch (Exception e) {
-                        // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
-                    }
-                    // Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-                    context.text(
-                        client.font,
-                        ": ",
-                        lineX, textYForIcon,
-                        recyclerCurrentTextColor,
-                        true
-                    );
-                    lineX += client.font.width(": ");
-                }
-                
-                // Zeichne Haupttext (vertikal zentriert zum Icon, wenn Icon aktiviert)
-                context.text(
-                    client.font,
-                    displayText,
-                    lineX, textYForIcon,
-                    recyclerCurrentTextColor,
-                    true
-                );
-                lineX += client.font.width(displayText);
-                
-                // Zeichne Prozentwert mit konfigurierter Farbe, falls vorhanden (vertikal zentriert zum Icon)
-                if (slotPercentText != null) {
-                    context.text(
-                        client.font,
-                        " " + slotPercentText,
-                        lineX, textYForIcon,
-                        recyclerPercentColor,
-                        true
-                    );
-                }
-                
-                lineY += lineHeight;
-            }
-        } else {
-            // Einzeiliger Text
-            // Für einzelne MK Slots: entferne "MK [Name]: " wenn Icon aktiviert ist
-            String displayText = text;
-            if (showIcon && (configKey != null && ("machtkristalleSlot1".equals(configKey) || 
-                                                    "machtkristalleSlot2".equals(configKey) || 
-                                                    "machtkristalleSlot3".equals(configKey)))) {
-                // Entferne "MK [Name]: " oder "MK X: " Präfix wenn Icon angezeigt wird
-                displayText = MachtkristallSlot.stripIconPrefix(displayText);
-            }
-            context.text(
-                client.font,
-                displayText,
-                currentX, currentY,
-                currentTextColor,
-                true
-            );
-            currentX += client.font.width(displayText);
-            
-            // Render percent if enabled
-            // Wenn Warnung aktiv ist, blinkt auch der Prozentwert rot
-            if (showPercent && percentText != null) {
-                int currentPercentColor = showWarning ? currentTextColor : percentColor;
-                context.text(
-                    client.font,
-                    " " + percentText,
-                    currentX, currentY,
-                    currentPercentColor,
-                    true
-                );
-                currentX += client.font.width(" " + percentText);
-            }
+
+        // Einzelne MK-Slots: "MK [Name]: " entfernen, wenn das Icon angezeigt wird
+        String displayText = text;
+        if (showIcon && isMachtkristallSlotKey(configKey)) {
+            displayText = MachtkristallSlot.stripIconPrefix(displayText);
         }
-        
-        matrices.popMatrix();
+        context.text(client.font, displayText, currentX, currentY, currentTextColor, true);
+        currentX += client.font.width(displayText);
+
+        // Bei aktiver Warnung blinkt auch der Prozentwert rot
+        if (showPercent && percentText != null) {
+            int currentPercentColor = showWarning ? currentTextColor : percentColor;
+            context.text(client.font, " " + percentText, currentX, currentY, currentPercentColor, true);
+        }
     }
 
+    /** Multi-Line-Overlay mit allen Machtkristall-Slots, die nicht einzeln gerendert werden. */
+    private void drawMachtkristallLines(GuiGraphicsExtractor context, Minecraft client, boolean showIcon, int lineHeight) {
+        int lineY = OVERLAY_PADDING;
+        for (int i : AlertSettings.getMachtkristallSlotsInSharedOverlay()) {
+            MachtkristallSlot slot = NpcAlertState.machtkristallSlots[i];
+            String displayText = machtkristallDisplayText(slot, i, showIcon);
+            String slotPercentText = (slot.isNotFound() || slot.isEmpty()) ? null : slot.getPercentText();
+
+            int lineTextColor = 0xFFFFFFFF;
+            int linePercentColor = PERCENT_COLOR_DEFAULT;
+            if (ScreenMessages.shouldShowMachtkristallWarning(slot)) {
+                lineTextColor = blinkingWarningColor(lineTextColor);
+                linePercentColor = lineTextColor;
+            }
+
+            drawIconTextLine(context, client, showIcon ? AlertIcons.MACHTKRISTALL_ICON : null, lineY, lineHeight,
+                displayText, slotPercentText, lineTextColor, linePercentColor);
+            lineY += lineHeight;
+        }
+    }
+
+    /** Multi-Line-Overlay mit allen Recycler-Slots im gemeinsamen Overlay (Farben je Slot aus der Config). */
+    private void drawRecyclerLines(GuiGraphicsExtractor context, Minecraft client, boolean showIcon, int lineHeight) {
+        boolean showPercent = isPercentVisible(configKey);
+        int lineY = OVERLAY_PADDING;
+        for (int i : AlertSettings.getRecyclerSlotsInSharedOverlay()) {
+            CapacityData slot = recyclerSlotAt(i);
+            String slotKey = "recyclerSlot" + (i + 1);
+            drawIconTextLine(context, client, showIcon ? AlertIcons.RECYCLER_ICON : null, lineY, lineHeight,
+                recyclerDisplayText(slot, i, showIcon), recyclerPercentText(slot, showPercent),
+                AlertSettings.getTextColorForConfigKey(slotKey), AlertSettings.getPercentColorForConfigKey(slotKey));
+            lineY += lineHeight;
+        }
+    }
+
+    /**
+     * Eine Zeile eines Multi-Line-Overlays: optional Icon + Doppelpunkt (icon != null), Text, Prozentwert.
+     * Der Text wird vertikal zum Icon zentriert.
+     */
+    private static void drawIconTextLine(GuiGraphicsExtractor context, Minecraft client, Identifier icon, int lineY,
+                                         int lineHeight, String displayText, String percentText,
+                                         int textColor, int percentColor) {
+        int lineX = OVERLAY_PADDING;
+        int lineCenterY = lineY + lineHeight / 2;
+        int textY = lineY;
+
+        if (icon != null) {
+            int iconSize = lineHeight;
+            if (blitIcon(context, icon, lineX, lineCenterY - iconSize / 2, iconSize)) {
+                lineX += iconSize + 2;
+                textY = lineCenterY - client.font.lineHeight / 2;
+            }
+            context.text(client.font, ": ", lineX, textY, textColor, true);
+            lineX += client.font.width(": ");
+        }
+
+        context.text(client.font, displayText, lineX, textY, textColor, true);
+        lineX += client.font.width(displayText);
+
+        if (percentText != null) {
+            context.text(client.font, " " + percentText, lineX, textY, percentColor, true);
+        }
+    }
+
+    /** Zeichnet das Icon; false, wenn es nicht geladen werden konnte. */
+    private static boolean blitIcon(GuiGraphicsExtractor context, Identifier icon, int x, int y, int size) {
+        try {
+            context.blit(RenderPipelines.GUI_TEXTURED, icon, x, y, 0.0f, 0.0f, size, size, size, size);
+            return true;
+        } catch (Exception e) {
+            // Fallback: nur Text zeichnen, wenn das Icon nicht geladen werden kann
+            return false;
+        }
+    }
+
+    private static boolean isRecyclerSlotKey(String key) {
+        return "recyclerSlot1".equals(key) || "recyclerSlot2".equals(key) || "recyclerSlot3".equals(key);
+    }
+
+    /** Wechselt alle 300 ms zwischen Warnfarbe (Rot) und der normalen Textfarbe. */
+    private static int blinkingWarningColor(int normalColor) {
+        boolean isVisible = (System.currentTimeMillis() / WARNING_BLINK_MILLIS) % 2 == 0;
+        return isVisible ? WARNING_COLOR : normalColor;
+    }
     @Override
     public void savePosition() {
         // Position is already saved in setPosition()

@@ -339,4 +339,24 @@ public final class SeparateOverlayContent {
         }
         return false;
     }
+
+    /**
+     * Anzeigetext eines Machtkristall-Slots (index 0-2); mit Icon ohne "MK n:"-Präfix.
+     */
+    public static String machtkristallDisplayText(MachtkristallSlot slot, int index, boolean showIcon) {
+        String prefix = "MK " + (index + 1) + ": ";
+        // isNotFound() muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
+        if (slot.isNotFound()) {
+            return showIcon ? "Nicht im Tab-Widget" : prefix + "Nicht im Tab-Widget";
+        }
+        if (slot.isEmpty()) {
+            return showIcon ? "-" : prefix + "-";
+        }
+        String displayText = slot.getDisplayText();
+        if (displayText == null) {
+            return showIcon ? "?" : prefix + "?";
+        }
+        // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
+        return showIcon ? MachtkristallSlot.stripIconPrefix(displayText) : displayText;
+    }
 }

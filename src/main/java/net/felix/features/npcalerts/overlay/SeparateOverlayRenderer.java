@@ -23,6 +23,7 @@ import static net.felix.features.npcalerts.message.ScreenMessages.getMachtkrista
 import static net.felix.features.npcalerts.message.ScreenMessages.shouldShowForschungWarning;
 import static net.felix.features.npcalerts.overlay.MultiLineOverlayRenderer.renderMultiLineOverlay;
 import static net.felix.features.npcalerts.overlay.PercentFormatter.formatPercent;
+import static net.felix.features.npcalerts.overlay.SeparateOverlayContent.machtkristallDisplayText;
 import static net.felix.features.npcalerts.overlay.SingleInfoOverlayRenderer.renderSingleInfoOverlay;
 import static net.felix.features.npcalerts.parser.KomboKisteReader.getKomboKisteFractionDisplay;
 
@@ -246,23 +247,6 @@ public final class SeparateOverlayRenderer {
 			case 2 -> config.npcAlertsMachtkristalleSlot3Y;
 			default -> config.npcAlertsMachtkristalleY;
 		};
-	}
-
-	private static String machtkristallDisplayText(MachtkristallSlot slot, int index, boolean showIcon) {
-		String prefix = "MK " + (index + 1) + ": ";
-		// isNotFound() muss VOR isEmpty() geprüft werden, da isNotFound() true ist wenn name = ""
-		if (slot.isNotFound()) {
-			return showIcon ? "Nicht im Tab-Widget" : prefix + "Nicht im Tab-Widget";
-		}
-		if (slot.isEmpty()) {
-			return showIcon ? "-" : prefix + "-";
-		}
-		String displayText = slot.getDisplayText();
-		if (displayText == null) {
-			return showIcon ? "?" : prefix + "?";
-		}
-		// Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-		return showIcon ? MachtkristallSlot.stripIconPrefix(displayText) : displayText;
 	}
 
 	/**

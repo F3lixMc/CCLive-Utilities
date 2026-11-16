@@ -1,5 +1,7 @@
 package net.felix.features.npcalerts.overlay;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
 
 /**
@@ -182,5 +184,50 @@ public final class AlertSettings {
 				return 0xFFFFFF00;
 		}
 		return (color.getAlpha() << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+	}
+
+	/**
+	 * Machtkristall-Slots (0-2), die im gemeinsamen Multi-Line-Overlay erscheinen:
+	 * aktiviert und nicht als einzelnes Overlay eingestellt.
+	 */
+	public static List<Integer> getMachtkristallSlotsInSharedOverlay() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		boolean[] separate = {
+			config.npcAlertsMachtkristalleSlot1Separate,
+			config.npcAlertsMachtkristalleSlot2Separate,
+			config.npcAlertsMachtkristalleSlot3Separate
+		};
+		List<Integer> slots = new ArrayList<>();
+		for (int i = 0; i < separate.length; i++) {
+			if (isNpcAlertMachtkristallSlotEnabled(i) && !separate[i]) {
+				slots.add(i);
+			}
+		}
+		return slots;
+	}
+
+	/**
+	 * Recycler-Slots (0-2), die im gemeinsamen Multi-Line-Overlay erscheinen:
+	 * aktiviert, mit "Separates Overlay" und nicht als einzelnes Overlay eingestellt.
+	 */
+	public static List<Integer> getRecyclerSlotsInSharedOverlay() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		boolean[] active = {
+			config.showNpcAlertsRecyclerSlot1 && config.npcAlertsRecyclerSlot1SeparateOverlay,
+			config.showNpcAlertsRecyclerSlot2 && config.npcAlertsRecyclerSlot2SeparateOverlay,
+			config.showNpcAlertsRecyclerSlot3 && config.npcAlertsRecyclerSlot3SeparateOverlay
+		};
+		boolean[] separate = {
+			active[0] && config.npcAlertsRecyclerSlot1Separate,
+			active[1] && config.npcAlertsRecyclerSlot2Separate,
+			active[2] && config.npcAlertsRecyclerSlot3Separate
+		};
+		List<Integer> slots = new ArrayList<>();
+		for (int i = 0; i < active.length; i++) {
+			if (isNpcAlertRecyclerSlotEnabled(i) && active[i] && !separate[i]) {
+				slots.add(i);
+			}
+		}
+		return slots;
 	}
 }
