@@ -7,7 +7,7 @@ import net.felix.utilities.Aincraft.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Factory.FactoryLevelTracker;
-import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
+import net.felix.features.npcalerts.NpcAlertsUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

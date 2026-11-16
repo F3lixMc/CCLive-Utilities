@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.NpcAlerts;
+package net.felix.features.npcalerts;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;

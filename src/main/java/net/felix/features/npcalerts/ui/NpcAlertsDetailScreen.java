@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.NpcAlerts;
+package net.felix.features.npcalerts.ui;
 
 import net.felix.utilities.Overall.KeyBindingUtility;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -2355,11 +2355,11 @@ public class NpcAlertsDetailScreen extends Screen {
             if (currentParent instanceof OverlayEditorScreen) {
                 ((OverlayEditorScreen) currentParent).refreshOverlays();
                 break;
-            } else if (currentParent instanceof net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen) {
+            } else if (currentParent instanceof net.felix.features.npcalerts.ui.NpcAlertsSettingsScreen) {
                 // NpcAlertsSettingsScreen hat auch ein parent, das das OverlayEditorScreen sein könnte
                 // Wir müssen das parent des NpcAlertsSettingsScreen prüfen
                 try {
-                    java.lang.reflect.Field parentField = net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen.class.getDeclaredField("parent");
+                    java.lang.reflect.Field parentField = net.felix.features.npcalerts.ui.NpcAlertsSettingsScreen.class.getDeclaredField("parent");
                     parentField.setAccessible(true);
                     Screen settingsParent = (Screen) parentField.get(currentParent);
                     if (settingsParent instanceof OverlayEditorScreen) {

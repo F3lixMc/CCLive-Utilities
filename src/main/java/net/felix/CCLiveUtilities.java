@@ -12,7 +12,7 @@ import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.felix.utilities.Overall.KillAnimationUtility;
 import net.felix.utilities.Overall.DamageTrackingUtility;
-import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
+import net.felix.features.npcalerts.NpcAlertsUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.ModSounds;

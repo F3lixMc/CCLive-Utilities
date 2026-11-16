@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.NpcAlerts;
+package net.felix.features.npcalerts.ui;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;

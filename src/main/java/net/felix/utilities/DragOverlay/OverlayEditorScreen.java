@@ -32,10 +32,10 @@ import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverla
 import net.felix.utilities.DragOverlay.Schmied.HideUncraftableButtonDraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.HideWrongClassButtonDraggableOverlay;
 import net.felix.utilities.DragOverlay.Schmied.KitFilterButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.AspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.StarAspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsMainDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsSeparateDraggableOverlay;
+import net.felix.features.npcalerts.overlay.draggable.AspectDraggableOverlay;
+import net.felix.features.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
+import net.felix.features.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
+import net.felix.features.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
 import org.joml.Matrix3x2fStack;
 
 
@@ -175,7 +175,7 @@ public class OverlayEditorScreen extends Screen {
         } else if (isInBlueprintInventory) {
             // In blueprint inventory screens, show overlays that are relevant
             // AspectOverlay is only shown in blueprint inventories
-            overlays.add(new AspectOverlayDraggableOverlay());
+            overlays.add(new AspectDraggableOverlay());
             
             // Hide Uncraftable and Hide Wrong Class buttons are only in blueprint inventories
             overlays.add(new HideUncraftableButtonDraggableOverlay());
@@ -192,7 +192,7 @@ public class OverlayEditorScreen extends Screen {
         // Star Aspect Overlay - available ONLY in inventories EXCEPT blueprint inventories and "Machtkristalle Verbessern" inventory
         // This is for items with "⭐" in tooltip, different from the blueprint Aspect Overlay
         if (isInAnyInventory && !isInBlueprintInventory && !isInMkLevelInventory()) {
-            overlays.add(new StarAspectOverlayDraggableOverlay());
+            overlays.add(new StarAspectDraggableOverlay());
         }
         
         if (!isInBlueprintInventory) {
@@ -481,7 +481,7 @@ public class OverlayEditorScreen extends Screen {
             button -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client != null) {
-                    client.gui.setScreen(new net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen(this));
+                    client.gui.setScreen(new net.felix.features.npcalerts.ui.NpcAlertsSettingsScreen(this));
                 }
             }
         ).bounds(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
@@ -1291,11 +1291,11 @@ public class OverlayEditorScreen extends Screen {
             config.showLumberjackOverlay = newValue;
         } else if (overlay instanceof CollectionDraggableOverlay) {
             config.showCollectionOverlay = !config.showCollectionOverlay;
-        } else if (overlay instanceof AspectOverlayDraggableOverlay) {
+        } else if (overlay instanceof AspectDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.showAspectOverlay = newValue;
             config.aspectOverlayEnabled = newValue;
-        } else if (overlay instanceof StarAspectOverlayDraggableOverlay) {
+        } else if (overlay instanceof StarAspectDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.showAspectOverlay = newValue;
             config.aspectOverlayEnabled = newValue;

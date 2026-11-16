@@ -1,4 +1,4 @@
-package net.felix.utilities.DragOverlay.NpcAlerts;
+package net.felix.features.npcalerts.overlay.draggable;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
@@ -7,26 +7,31 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /**
- * Draggable Overlay für das Star Aspect Overlay (für Items mit "⭐" im Tooltip)
+ * Draggable Overlay für das Aspect Overlay
  */
-public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
+public class AspectDraggableOverlay implements DraggableOverlay {
     
-    private static final int DEFAULT_WIDTH = 210;
-    private static final int DEFAULT_HEIGHT = 110;
+    private static final int DEFAULT_WIDTH = 200;
+    private static final int DEFAULT_HEIGHT = 100;
     
     @Override
     public String getOverlayName() {
-        return "Star Aspect Overlay";
+        return "Aspect Overlay";
     }
     
     @Override
     public int getX() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayX;
+        Minecraft client = Minecraft.getInstance();
+        if (client.getWindow() == null) return 0;
+        
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX;
+        return screenWidth - DEFAULT_WIDTH - xOffset;
     }
     
     @Override
     public int getY() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayY;
+        return CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY;
     }
     
     @Override
@@ -41,8 +46,15 @@ public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void setPosition(int x, int y) {
-        CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayX = x;
-        CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayY = y;
+        Minecraft client = Minecraft.getInstance();
+        if (client.getWindow() == null) return;
+        
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int xOffset = screenWidth - DEFAULT_WIDTH - x;
+        int yOffset = y;
+        
+        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX = xOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY = yOffset;
     }
     
     @Override
@@ -72,17 +84,25 @@ public class StarAspectOverlayDraggableOverlay implements DraggableOverlay {
         // Render sample text
         context.text(
             Minecraft.getInstance().font,
-            "Aspekt Name",
+            "Aspect: Fire",
             x + 8, y + 25,
-            0xFFFCA800,
+            0xFFFFFFFF,
             true
         );
         
         context.text(
             Minecraft.getInstance().font,
-            "Beschreibung des Aspektes",
+            "Description: Burns enemies",
             x + 8, y + 38,
-            0xFF54FC54,
+            0xFFFFFFFF,
+            true
+        );
+        
+        context.text(
+            Minecraft.getInstance().font,
+            "Item: Fire Sword",
+            x + 8, y + 51,
+            0xFFFFFFFF,
             true
         );
     }
@@ -104,13 +124,12 @@ return CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled &&
     
     @Override
     public Component getTooltip() {
-        return Component.literal("Star Aspect Overlay - Shows aspect information for items with ⭐ in tooltip");
+        return Component.literal("Aspect Overlay - Shows aspect information for blueprint items");
     }
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayX = 7;
-        CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayY = 15;
+        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX = 530;
+        CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY = 120;
     }
 }
-

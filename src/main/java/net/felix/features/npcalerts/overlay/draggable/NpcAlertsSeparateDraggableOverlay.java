@@ -1,9 +1,9 @@
-package net.felix.utilities.DragOverlay.NpcAlerts;
+package net.felix.features.npcalerts.overlay.draggable;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
+import net.felix.features.npcalerts.NpcAlertsUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;

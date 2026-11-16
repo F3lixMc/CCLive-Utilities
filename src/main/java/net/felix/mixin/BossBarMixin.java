@@ -10,7 +10,7 @@ import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.features.itemviewer.inventory.HudStatsReader;
-import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
+import net.felix.features.npcalerts.NpcAlertsUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
