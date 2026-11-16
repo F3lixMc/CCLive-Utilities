@@ -104,12 +104,7 @@ public final class ItemCatalog {
             // Erstelle leere Liste als Fallback
             allItems = new ArrayList<>();
             filteredItems = new ArrayList<>();
-            knownSearchTags = null;
-            knownCostItemNames = null;
-            knownMaterialNames = null;
-            knownResourceNames = null;
-            knownMaterialPickerEntries = null;
-            knownResourcePickerEntries = null;
+            clearKnownSuggestions();
         }
     }
 
@@ -118,239 +113,116 @@ public final class ItemCatalog {
      */
     public static void loadFromFile(java.nio.file.Path file) throws Exception {
         try (var inputStream = java.nio.file.Files.newInputStream(file)) {
-            // Lese die gesamte Datei als String, um sie zweimal zu parsen
+            // Die Datei wird zweimal geparst: als JsonObject (vollständige JSON-Objekte) und als ItemListData
             String jsonContent = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-            
-            // Parse als JsonObject für vollständige JSON-Objekte
             JsonObject rootJson = JsonParser.parseString(jsonContent).getAsJsonObject();
-            
-            // Parse als ItemListData für ItemData-Objekte
+
+            ItemListData data;
             try (var reader = new java.io.StringReader(jsonContent)) {
                 Type type = new TypeToken<ItemListData>(){}.getType();
-                ItemListData data = gson.fromJson(reader, type);
-                
-                if (data != null) {
-                    allItems = new ArrayList<>();
-                    knownSearchTags = null;
-            knownCostItemNames = null;
-            knownMaterialNames = null;
-            knownResourceNames = null;
-            knownMaterialPickerEntries = null;
-            knownResourcePickerEntries = null;
-                    
-                    // Unterstütze verschiedene Strukturen:
-                    // 1. Alte Struktur: {"items": [...]}
-                    if (data.items != null && !data.items.isEmpty()) {
-                        for (ItemData item : data.items) {
-                            item.category = "items";
-                        }
-                        allItems.addAll(data.items);
-                    }
-                    
-                    // 2. Neue Struktur (Deutsch): {"bauplan": [...], "fähigkeiten": [...], "module": [...]}
-                    if (data.bauplan != null && !data.bauplan.isEmpty()) {
-                        // Extrahiere JSON-Objekte für Baupläne
-                        if (rootJson.has("bauplan") && rootJson.get("bauplan").isJsonArray()) {
-                            var bauplanArray = rootJson.getAsJsonArray("bauplan");
-                            for (int i = 0; i < bauplanArray.size() && i < data.bauplan.size(); i++) {
-                                JsonElement element = bauplanArray.get(i);
-                                if (element.isJsonObject()) {
-                                    JsonObject jsonObj = element.getAsJsonObject();
-                                    ItemData item = data.bauplan.get(i);
-                                    item.jsonObject = jsonObj;
-                                    item.category = "blueprints"; // Normalisiere zu englisch
-                                    
-                                    // Speichere in Map für Favoriten
-                                    if (item.name != null && !item.name.isEmpty()) {
-                                        blueprintJsonMap.put(item.name, jsonObj);
-                                    }
-                                }
-                            }
-                        } else {
-                            // Fallback: Keine JSON-Objekte verfügbar
-                            for (ItemData item : data.bauplan) {
-                                item.category = "blueprints"; // Normalisiere zu englisch
-                            }
-                        }
-                        allItems.addAll(data.bauplan);
-                    }
-                    if (data.fähigkeiten != null && !data.fähigkeiten.isEmpty()) {
-                        for (ItemData item : data.fähigkeiten) {
-                            item.category = "abilities"; // Normalisiere zu englisch
-                        }
-                        allItems.addAll(data.fähigkeiten);
-                    }
-                    if (data.module != null && !data.module.isEmpty()) {
-                        for (ItemData item : data.module) {
-                            item.category = "modules"; // Normalisiere zu englisch
-                        }
-                        allItems.addAll(data.module);
-                    }
-                    
-                    // 3. Neue Struktur (Englisch): {"blueprints": [...], "abilities": [...], "modules": [...]}
-                    if (data.blueprints != null && !data.blueprints.isEmpty()) {
-                        // Extrahiere JSON-Objekte für Blueprints
-                        if (rootJson.has("blueprints") && rootJson.get("blueprints").isJsonArray()) {
-                            var blueprintsArray = rootJson.getAsJsonArray("blueprints");
-                            for (int i = 0; i < blueprintsArray.size() && i < data.blueprints.size(); i++) {
-                                JsonElement element = blueprintsArray.get(i);
-                                if (element.isJsonObject()) {
-                                    JsonObject jsonObj = element.getAsJsonObject();
-                                    ItemData item = data.blueprints.get(i);
-                                    item.jsonObject = jsonObj;
-                                    item.category = "blueprints";
-                                    
-                                    // Speichere in Map für Favoriten
-                                    if (item.name != null && !item.name.isEmpty()) {
-                                        blueprintJsonMap.put(item.name, jsonObj);
-                                    }
-                                }
-                            }
-                        } else {
-                            // Fallback: Keine JSON-Objekte verfügbar
-                            for (ItemData item : data.blueprints) {
-                                item.category = "blueprints";
-                            }
-                        }
-                        allItems.addAll(data.blueprints);
-                    }
-                    if (data.abilities != null && !data.abilities.isEmpty()) {
-                        for (ItemData item : data.abilities) {
-                            item.category = "abilities";
-                        }
-                        allItems.addAll(data.abilities);
-                    }
-                    if (data.modules != null && !data.modules.isEmpty()) {
-                        for (ItemData item : data.modules) {
-                            item.category = "modules";
-                        }
-                        allItems.addAll(data.modules);
-                    }
-                    if (data.runes != null && !data.runes.isEmpty()) {
-                        for (ItemData item : data.runes) {
-                            item.category = "runes";
-                        }
-                        allItems.addAll(data.runes);
-                    }
-                    if (data.power_crystals != null && !data.power_crystals.isEmpty()) {
-                        for (ItemData item : data.power_crystals) {
-                            item.category = "power_crystals";
-                        }
-                        allItems.addAll(data.power_crystals);
-                    }
-                    if (data.power_crystal_slots != null && !data.power_crystal_slots.isEmpty()) {
-                        for (ItemData item : data.power_crystal_slots) {
-                            item.category = "power_crystal_slots";
-                        }
-                        allItems.addAll(data.power_crystal_slots);
-                    }
-                    if (data.essences != null && !data.essences.isEmpty()) {
-                        for (ItemData item : data.essences) {
-                            item.category = "essences";
-                        }
-                        allItems.addAll(data.essences);
-                    }
-                    if (data.fishing_components != null && !data.fishing_components.isEmpty()) {
-                        if (rootJson.has("fishing_components") && rootJson.get("fishing_components").isJsonArray()) {
-                            var fishingComponentsArray = rootJson.getAsJsonArray("fishing_components");
-                            for (int i = 0; i < fishingComponentsArray.size() && i < data.fishing_components.size(); i++) {
-                                JsonElement element = fishingComponentsArray.get(i);
-                                if (element.isJsonObject()) {
-                                    JsonObject jsonObj = element.getAsJsonObject();
-                                    ItemData item = data.fishing_components.get(i);
-                                    item.jsonObject = jsonObj;
-                                    item.category = "fishing_components";
-                                }
-                            }
-                        } else {
-                            for (ItemData item : data.fishing_components) {
-                                item.category = "fishing_components";
-                            }
-                        }
-                        allItems.addAll(data.fishing_components);
-                    }
-                    if (data.fish_traps != null && !data.fish_traps.isEmpty()) {
-                        if (rootJson.has("fish_traps") && rootJson.get("fish_traps").isJsonArray()) {
-                            var fishTrapsArray = rootJson.getAsJsonArray("fish_traps");
-                            for (int i = 0; i < fishTrapsArray.size() && i < data.fish_traps.size(); i++) {
-                                JsonElement element = fishTrapsArray.get(i);
-                                if (element.isJsonObject()) {
-                                    JsonObject jsonObj = element.getAsJsonObject();
-                                    ItemData item = data.fish_traps.get(i);
-                                    item.jsonObject = jsonObj;
-                                    item.category = "fish_traps";
-                                    if (item.name != null && !item.name.isEmpty()) {
-                                        blueprintJsonMap.put(item.name, jsonObj);
-                                    }
-                                }
-                            }
-                        } else {
-                            for (ItemData item : data.fish_traps) {
-                                item.category = "fish_traps";
-                            }
-                        }
-                        allItems.addAll(data.fish_traps);
-                    }
-                    if (data.module_bags != null && !data.module_bags.isEmpty()) {
-                        for (ItemData item : data.module_bags) {
-                            item.category = "module_bags";
-                        }
-                        allItems.addAll(data.module_bags);
-                    }
-                    if (data.card_slots != null && !data.card_slots.isEmpty()) {
-                        // Extrahiere JSON-Objekte für Card Slots
-                        if (rootJson.has("card_slots") && rootJson.get("card_slots").isJsonArray()) {
-                            var cardSlotArray = rootJson.getAsJsonArray("card_slots");
-                            for (int i = 0; i < cardSlotArray.size() && i < data.card_slots.size(); i++) {
-                                JsonElement element = cardSlotArray.get(i);
-                                if (element.isJsonObject()) {
-                                    JsonObject jsonObj = element.getAsJsonObject();
-                                    ItemData item = data.card_slots.get(i);
-                                    item.jsonObject = jsonObj;
-                                    item.category = "card_slots";
-                                }
-                            }
-                        } else {
-                            // Fallback: Keine JSON-Objekte verfügbar
-                            for (ItemData item : data.card_slots) {
-                                item.category = "card_slots";
-                            }
-                        }
-                        allItems.addAll(data.card_slots);
-                    }
-                    if (data.licence != null && !data.licence.isEmpty()) {
-                        // Extrahiere JSON-Objekte für Lizenzen
-                        if (rootJson.has("licence") && rootJson.get("licence").isJsonArray()) {
-                            var licenceArray = rootJson.getAsJsonArray("licence");
-                            for (int i = 0; i < licenceArray.size() && i < data.licence.size(); i++) {
-                                JsonElement element = licenceArray.get(i);
-                                if (element.isJsonObject()) {
-                                    JsonObject jsonObj = element.getAsJsonObject();
-                                    ItemData item = data.licence.get(i);
-                                    item.jsonObject = jsonObj;
-                                    item.category = "licence";
-                                }
-                            }
-                        } else {
-                            // Fallback: Keine JSON-Objekte verfügbar
-                            for (ItemData item : data.licence) {
-                                item.category = "licence";
-                            }
-                        }
-                        allItems.addAll(data.licence);
-                    }
-                    
-                    if (!allItems.isEmpty()) {
-                        rebuildItemNameIndex();
-                        rebuildKnownSearchTags();
-                        rebuildKnownCostItemNames();
-                        ItemStackCache.clearItemStackCache();
-                    }
-                }
+                data = gson.fromJson(reader, type);
+            }
+            if (data == null) {
+                return;
+            }
+
+            allItems = new ArrayList<>();
+            clearKnownSuggestions();
+            collectAllItems(data, rootJson);
+
+            if (!allItems.isEmpty()) {
+                rebuildItemNameIndex();
+                rebuildKnownSearchTags();
+                rebuildKnownCostItemNames();
+                ItemStackCache.clearItemStackCache();
             }
         }
     }
 
+    private static void clearKnownSuggestions() {
+        knownSearchTags = null;
+        knownCostItemNames = null;
+        knownMaterialNames = null;
+        knownResourceNames = null;
+        knownMaterialPickerEntries = null;
+        knownResourcePickerEntries = null;
+    }
+
+    /**
+     * Sammelt die Items aller unterstützten Strukturen in {@link #allItems}; die Kategorien werden dabei
+     * auf englische Namen normalisiert.
+     * Unterstützt: alte Struktur ({"items": [...]}), deutsche Struktur ({"bauplan", "fähigkeiten", "module"})
+     * und englische Struktur ({"blueprints", "abilities", "modules", ...}).
+     */
+    private static void collectAllItems(ItemListData data, JsonObject rootJson) {
+        // 1. Alte Struktur
+        addItems(data.items, "items");
+
+        // 2. Neue Struktur (Deutsch)
+        addItemsWithJson(rootJson, "bauplan", data.bauplan, "blueprints", true);
+        addItems(data.fähigkeiten, "abilities");
+        addItems(data.module, "modules");
+
+        // 3. Neue Struktur (Englisch)
+        addItemsWithJson(rootJson, "blueprints", data.blueprints, "blueprints", true);
+        addItems(data.abilities, "abilities");
+        addItems(data.modules, "modules");
+        addItems(data.runes, "runes");
+        addItems(data.power_crystals, "power_crystals");
+        addItems(data.power_crystal_slots, "power_crystal_slots");
+        addItems(data.essences, "essences");
+        addItemsWithJson(rootJson, "fishing_components", data.fishing_components, "fishing_components", false);
+        addItemsWithJson(rootJson, "fish_traps", data.fish_traps, "fish_traps", true);
+        addItems(data.module_bags, "module_bags");
+        addItemsWithJson(rootJson, "card_slots", data.card_slots, "card_slots", false);
+        addItemsWithJson(rootJson, "licence", data.licence, "licence", false);
+    }
+
+    /** Setzt die Kategorie und hängt die Items an, falls die Liste vorhanden und nicht leer ist. */
+    private static void addItems(List<ItemData> items, String category) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        for (ItemData item : items) {
+            item.category = category;
+        }
+        allItems.addAll(items);
+    }
+
+    /**
+     * Wie {@link #addItems}, hängt aber zusätzlich das zugehörige JSON-Objekt (gleicher Index im Array
+     * {@code jsonKey} der Datei) an jedes Item. Ohne passendes JSON-Array bekommen die Items nur die Kategorie.
+     *
+     * @param registerInBlueprintMap legt benannte Items in {@code blueprintJsonMap} ab (für Favoriten)
+     */
+    private static void addItemsWithJson(JsonObject rootJson, String jsonKey, List<ItemData> items, String category,
+            boolean registerInBlueprintMap) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        if (rootJson.has(jsonKey) && rootJson.get(jsonKey).isJsonArray()) {
+            var jsonArray = rootJson.getAsJsonArray(jsonKey);
+            for (int i = 0; i < jsonArray.size() && i < items.size(); i++) {
+                JsonElement element = jsonArray.get(i);
+                if (!element.isJsonObject()) {
+                    continue;
+                }
+                JsonObject jsonObj = element.getAsJsonObject();
+                ItemData item = items.get(i);
+                item.jsonObject = jsonObj;
+                item.category = category;
+                if (registerInBlueprintMap && item.name != null && !item.name.isEmpty()) {
+                    blueprintJsonMap.put(item.name, jsonObj);
+                }
+            }
+        } else {
+            // Fallback: Keine JSON-Objekte verfügbar
+            for (ItemData item : items) {
+                item.category = category;
+            }
+        }
+        allItems.addAll(items);
+    }
     /**
      * Prüft ob Items geladen sind und wartet ggf. kurz
      */
