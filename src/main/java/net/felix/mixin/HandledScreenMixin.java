@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -35,7 +35,7 @@ public abstract class HandledScreenMixin {
         if (!((Object) this instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen)) {
             return;
         }
-        net.felix.utilities.Community.leaderboards.panel.LeaderboardInventoryOverlay.render(
+        net.felix.Community.leaderboards.panel.LeaderboardInventoryOverlay.render(
             context, mouseX, mouseY, leftPos, topPos, imageHeight);
         context.nextStratum();
     }
@@ -54,7 +54,7 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Other.debug.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Container-Geometrie für Build-Share (links am Inventar statt Screen-Rand)
-        net.felix.utilities.Community.chat.ContainerScreenBounds.update(leftPos, topPos, imageWidth, imageHeight);
+        net.felix.Community.chat.ContainerScreenBounds.update(leftPos, topPos, imageWidth, imageHeight);
 
         // Update mouse position for Item Viewer
         net.felix.utilities.Overall.itemviewer.ui.ViewerState.updateMousePosition(mouseX, mouseY);
@@ -72,7 +72,7 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
         
         // Build-Share Overlay (Ausrüstung / Karten / Wardrobe)
-        net.felix.utilities.Community.buildshare.BuildShareDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+        net.felix.Community.buildshare.BuildShareDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
         
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
@@ -233,7 +233,7 @@ public abstract class HandledScreenMixin {
             }
         }
         if ((Object) this instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
-                && net.felix.utilities.Community.leaderboards.panel.LeaderboardInventoryOverlay.mouseClicked(
+                && net.felix.Community.leaderboards.panel.LeaderboardInventoryOverlay.mouseClicked(
                     mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
             return;
@@ -243,7 +243,7 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Overall.searchbar.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
 
         // Build-Share vor Clipboard: gleiches Eck-Gebiet, sonst schluckt Clipboard Delete/Pfeile die Klicks
-        if (net.felix.utilities.Community.buildshare.BuildShareDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY, button)) {
+        if (net.felix.Community.buildshare.BuildShareDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY, button)) {
             cir.setReturnValue(true);
             return;
         }
@@ -257,7 +257,7 @@ public abstract class HandledScreenMixin {
         // Wardrobe: Hover + Rechtsklick → Kit-Name (Server-Klick nicht blockieren)
         if (button == 1) {
             AbstractContainerScreen<?> wardrobeScreen = (AbstractContainerScreen<?>) (Object) this;
-            net.felix.utilities.Community.chat.BuildShareManager.getInstance().handleWardrobeRightClick(wardrobeScreen, button);
+            net.felix.Community.chat.BuildShareManager.getInstance().handleWardrobeRightClick(wardrobeScreen, button);
         }
         
         // Handle clicks on Clipboard quantity text field
@@ -331,7 +331,7 @@ public abstract class HandledScreenMixin {
     private void onLeaderboardScroll(double mouseX, double mouseY, double horizontal, double vertical,
                                      CallbackInfoReturnable<Boolean> cir) {
         if ((Object) this instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
-                && net.felix.utilities.Community.leaderboards.panel.LeaderboardInventoryOverlay.mouseScrolled(
+                && net.felix.Community.leaderboards.panel.LeaderboardInventoryOverlay.mouseScrolled(
                     mouseX, mouseY, vertical, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }

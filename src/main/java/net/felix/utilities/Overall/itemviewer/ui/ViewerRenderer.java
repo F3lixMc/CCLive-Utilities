@@ -122,10 +122,10 @@ public final class ViewerRenderer {
         if (screen != null) {
             net.minecraft.network.chat.Component titleText = screen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
-            if (net.felix.utilities.Overall.glyphs.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+            if (net.felix.utilities.Other.glyphs.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
-            if (net.felix.utilities.Overall.glyphs.ZeichenUtility.shouldHideItemViewerForInventoryTitle(titleWithUnicode)) {
+            if (net.felix.utilities.Other.glyphs.ZeichenUtility.shouldHideItemViewerForInventoryTitle(titleWithUnicode)) {
                 return; // Equipment / Legend+ / Luftschiff / Glimfang-Shop: kein Item-Viewer
             }
         }

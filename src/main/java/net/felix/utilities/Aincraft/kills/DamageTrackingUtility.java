@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.utilities.Community.profile.ProfileStatsManager;
+import net.felix.Community.profile.ProfileStatsManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;

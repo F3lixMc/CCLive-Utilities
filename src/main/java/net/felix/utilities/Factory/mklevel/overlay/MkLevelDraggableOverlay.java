@@ -2,7 +2,7 @@ package net.felix.utilities.Factory.mklevel.overlay;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;

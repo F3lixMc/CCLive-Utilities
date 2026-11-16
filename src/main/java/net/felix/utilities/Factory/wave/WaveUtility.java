@@ -2,8 +2,8 @@ package net.felix.utilities.Factory.wave;
 
 import java.util.Map;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Community.profile.ProfileStatsManager;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.Community.profile.ProfileStatsManager;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 
 /**

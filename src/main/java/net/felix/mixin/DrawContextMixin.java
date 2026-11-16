@@ -1,9 +1,9 @@
 package net.felix.mixin;
 
 import java.util.List;
-import net.felix.utilities.Community.chat.BuildShareManager;
-import net.felix.utilities.Community.chat.BuildShareOverviewLayout;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.Community.chat.BuildShareManager;
+import net.felix.Community.chat.BuildShareOverviewLayout;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -45,7 +45,7 @@ public class DrawContextMixin {
      */
     @Inject(method = "componentHoverEffect", at = @At("HEAD"), cancellable = true)
     private void cclive$replaceBuildShareHover(Font font, Style style, int mouseX, int mouseY, CallbackInfo ci) {
-        if (net.felix.utilities.Community.chat.ChatContextMenu.hidesPlayerStatsHover()) {
+        if (net.felix.Community.chat.ChatContextMenu.hidesPlayerStatsHover()) {
             ci.cancel();
             return;
         }

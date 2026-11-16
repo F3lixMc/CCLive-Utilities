@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Community.profile.PlayerHoverStatsUtility;
+import net.felix.Community.profile.PlayerHoverStatsUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
@@ -38,7 +38,7 @@ public abstract class PlayerHoverStatsMixin {
         }
 
         // Namensfarbe aus Original-Default-Chat (vor Cancel/Umbau durch Hover-Stats)
-        net.felix.utilities.Community.chat.ChatNameColorTracker.getInstance().observeDefaultChatMessage(originalMessage);
+        net.felix.Community.chat.ChatNameColorTracker.getInstance().observeDefaultChatMessage(originalMessage);
         
         // Prüfe ob PlayerHoverStatsUtility initialisiert ist
         if (!PlayerHoverStatsUtility.isInitialized()) {

@@ -13,9 +13,9 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayType;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.felix.utilities.Other.keybinding.KeyCategories;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
@@ -532,7 +532,7 @@ public class CardsStatuesUtility {
 		
 		// Informiere ProfileStatsManager sofort über die neue Karte
 		try {
-			net.felix.utilities.Community.profile.ProfileStatsManager.getInstance().onCardFromChat(cardData);
+			net.felix.Community.profile.ProfileStatsManager.getInstance().onCardFromChat(cardData);
 		} catch (Exception e) {
 			// Silent error handling("[CardsStatues] ❌ Fehler beim Aufruf von onCardFromChat: " + e.getMessage());
 			// Silent error handling
@@ -620,7 +620,7 @@ public class CardsStatuesUtility {
 		
 		// Informiere ProfileStatsManager sofort über die neue Statue
 		try {
-			net.felix.utilities.Community.profile.ProfileStatsManager.getInstance().onStatueFromChat(statueData);
+			net.felix.Community.profile.ProfileStatsManager.getInstance().onStatueFromChat(statueData);
 		} catch (Exception e) {
 			// Silent error handling("[CardsStatues] ❌ Fehler beim Aufruf von onStatueFromChat: " + e.getMessage());
 			// Silent error handling

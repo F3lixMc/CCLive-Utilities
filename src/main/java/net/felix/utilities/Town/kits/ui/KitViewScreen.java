@@ -606,7 +606,7 @@ public class KitViewScreen extends Screen {
 				showBpStatus,
 				this::isBlueprintFound,
 				net.felix.utilities.Farmworld.fishing.found.FishingComponentFoundUtility::isFound,
-				net.felix.utilities.Community.profile.ProfileStatsManager::isCardUnlockedLocally
+				net.felix.Community.profile.ProfileStatsManager::isCardUnlockedLocally
 		);
 		KitTooltipHelper.ExtraPanel extra = KitTooltipHelper.buildExtraPanel(this.font, hoveredCustomKit);
 		KitTooltipHelper.render(
@@ -684,7 +684,7 @@ public class KitViewScreen extends Screen {
 		if (client == null || kit == null) {
 			return;
 		}
-		client.gui.setScreen(new net.felix.utilities.Community.chat.BuildShareViewScreen(
+		client.gui.setScreen(new net.felix.Community.chat.BuildShareViewScreen(
 			CustomKitPreviewFactory.fromKit(kit), this, true));
 	}
 

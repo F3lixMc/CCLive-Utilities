@@ -9,8 +9,8 @@ import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Community.leaderboards.LeaderboardManager;
-import net.felix.utilities.Community.leaderboards.config.LeaderboardConfig;
+import net.felix.Community.leaderboards.LeaderboardManager;
+import net.felix.Community.leaderboards.config.LeaderboardConfig;
 
 /**
  * Utility-Klasse zum automatischen Update von JSON-Config-Dateien vom Server

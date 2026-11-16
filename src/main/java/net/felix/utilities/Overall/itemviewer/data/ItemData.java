@@ -27,6 +27,6 @@ public class ItemData {
     public JsonObject jsonObject;        // Vollständiges JSON-Objekt (für Favoriten)
     public Integer clipboard_id;         // Optional: Interne ID für Clipboard (nur für Baupläne mit doppelten Namen)
     /** Inventar-Tooltip für Chat-Shares (konkretes Item inkl. Farbe/Stil, nicht Template). */
-    public java.util.List<net.felix.utilities.Community.chat.ChatTooltipLine> chatTooltip;
+    public java.util.List<net.felix.Community.chat.ChatTooltipLine> chatTooltip;
 }
 

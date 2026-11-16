@@ -3,7 +3,7 @@ package net.felix.utilities.Aincraft.blueprints.tooltip;
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.blueprints.data.BlueprintNameAndColor;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 

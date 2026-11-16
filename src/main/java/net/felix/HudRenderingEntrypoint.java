@@ -14,7 +14,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         // Zeichen aus Resourcepack (minecraft:font/default.json) – erster Versuch beim Client-Start
-        net.felix.utilities.Overall.glyphs.ZeichenUtility.reloadFromActiveResourcePack("client-init");
+        net.felix.utilities.Other.glyphs.ZeichenUtility.reloadFromActiveResourcePack("client-init");
 
         // Verifiziere, dass die Font-Definition geladen wird
         // Die Font wird automatisch aus assets/cclive-utilities/font/default.json geladen

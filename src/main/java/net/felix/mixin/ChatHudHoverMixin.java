@@ -28,14 +28,14 @@ abstract class ChatHudHoverMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onRender(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Während Build-Vorschau: keinerlei Chat-Hover (Stats/Item/Build/Aspekt)
-        if (net.felix.utilities.Community.chat.BuildShareViewScreen.isActive()) {
+        if (net.felix.Community.chat.BuildShareViewScreen.isActive()) {
             AspectOverlay.onHoverStopped();
-            net.felix.utilities.Community.chat.BuildShareManager.clearLastHoveredShareId();
+            net.felix.Community.chat.BuildShareManager.clearLastHoveredShareId();
             return;
         }
 
         // Build-Share: shareId für Linksklick merken (Panel kommt aus componentHoverEffect)
-        net.felix.utilities.Community.chat.BuildShareOverviewLayout.trackHoverAtMouse(mouseX, mouseY);
+        net.felix.Community.chat.BuildShareOverviewLayout.trackHoverAtMouse(mouseX, mouseY);
 
         // IMPORTANT: Don't clear overlay if we're hovering over an item with "⭐" in tooltip
         // Items with "⭐" are managed by addAspectNameToTooltip, not by this chat hover mixin
@@ -169,7 +169,7 @@ abstract class ChatHudHoverMixin {
         // Both conditions are met: Shift pressed AND HoverEvent present
         // 1) CCLive Item-Share-Links (!item)
         if (hoveredStyle != null
-                && net.felix.utilities.Community.chat.ItemShareManager.getInstance().tryShowAspectOverlayForShare(hoveredStyle)) {
+                && net.felix.Community.chat.ItemShareManager.getInstance().tryShowAspectOverlayForShare(hoveredStyle)) {
             AspectOverlay.renderForegroundForChat(context);
             return;
         }
@@ -285,7 +285,7 @@ abstract class ChatHudHoverMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void cclive$chatContextMenu(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if ((Object) this instanceof ChatScreen) {
-            net.felix.utilities.Community.chat.ChatContextMenu.render(context, mouseX, mouseY);
+            net.felix.Community.chat.ChatContextMenu.render(context, mouseX, mouseY);
         }
     }
 }

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.utilities.Other.playericon.PlayerIconUtility;
+import net.felix.Community.playericon.PlayerIconUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

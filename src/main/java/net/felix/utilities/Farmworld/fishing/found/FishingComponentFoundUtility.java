@@ -20,7 +20,7 @@ import java.util.stream.IntStream;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilities;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.Slot;

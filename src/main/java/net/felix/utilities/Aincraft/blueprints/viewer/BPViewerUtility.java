@@ -34,9 +34,9 @@ import net.felix.utilities.Aincraft.blueprints.data.BlueprintNameAndColor;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.fishing.found.FishTrapFoundUtility;
 import net.felix.utilities.Farmworld.fishing.found.FishingComponentFoundUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.felix.utilities.Other.keybinding.KeyCategories;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
@@ -1491,7 +1491,7 @@ public class BPViewerUtility {
         
         // Reset blueprints_found in player_stats (Backend) — nur manueller/Command-Pfad
         try {
-            net.felix.utilities.Community.profile.ProfileStatsManager profileStatsManager = net.felix.utilities.Community.profile.ProfileStatsManager.getInstance();
+            net.felix.Community.profile.ProfileStatsManager profileStatsManager = net.felix.Community.profile.ProfileStatsManager.getInstance();
             profileStatsManager.resetBlueprintCount();
         } catch (Exception e) {
             // Ignoriere Fehler wenn ProfileStatsManager nicht verfügbar ist

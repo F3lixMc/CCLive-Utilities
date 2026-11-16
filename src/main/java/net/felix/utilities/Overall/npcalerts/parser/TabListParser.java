@@ -2,7 +2,7 @@ package net.felix.utilities.Overall.npcalerts.parser;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Overall.npcalerts.data.CapacityData;
 import net.felix.utilities.Overall.npcalerts.data.XpProgress;
 import net.minecraft.client.Minecraft;

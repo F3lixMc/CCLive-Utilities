@@ -1,6 +1,6 @@
 package net.felix.utilities.Aincraft.information.tooltip;
 
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.network.chat.Component;
 
 /**

@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
-import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Overall.itemviewer.data.ItemCatalog;
 import net.felix.utilities.Overall.itemviewer.search.ItemFilterPipeline;
 import net.minecraft.client.Minecraft;

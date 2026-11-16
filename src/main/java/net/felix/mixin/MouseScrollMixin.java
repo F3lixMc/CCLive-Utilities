@@ -26,7 +26,7 @@ public class MouseScrollMixin {
             double mouseY = client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) windowHeight;
             
             if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
-                    && net.felix.utilities.Community.leaderboards.panel.LeaderboardInventoryOverlay.coversScroll(mouseX, mouseY)) {
+                    && net.felix.Community.leaderboards.panel.LeaderboardInventoryOverlay.coversScroll(mouseX, mouseY)) {
                 return;
             }
             if (ViewerInputHandler.handleMouseScroll(mouseX, mouseY, vertical)) {
@@ -35,13 +35,13 @@ public class MouseScrollMixin {
                 // Das ist aber in Ordnung, da wir nur die Pagination ändern
                 return;
             }
-            if (net.felix.utilities.Community.chat.BuildShareViewScreen.isActive()) {
-                net.felix.utilities.Community.chat.BuildShareViewScreen view = net.felix.utilities.Community.chat.BuildShareViewScreen.getActive();
+            if (net.felix.Community.chat.BuildShareViewScreen.isActive()) {
+                net.felix.Community.chat.BuildShareViewScreen view = net.felix.Community.chat.BuildShareViewScreen.getActive();
                 if (view != null && view.handleStatOverlayScroll(mouseX, mouseY, vertical)) {
                     return;
                 }
             }
-            if (net.felix.utilities.Community.chat.BuildShareManager.getInstance().handleOverlayScroll(mouseX, mouseY, vertical)) {
+            if (net.felix.Community.chat.BuildShareManager.getInstance().handleOverlayScroll(mouseX, mouseY, vertical)) {
                 return;
             }
         }

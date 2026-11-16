@@ -9,7 +9,7 @@ import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.felix.utilities.Community.staff.StaffClientAccess;
+import net.felix.Community.staff.StaffClientAccess;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

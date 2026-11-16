@@ -87,7 +87,7 @@ public class ScreenMixin {
         }
 
         // CCLive Chat: Item für Share kopieren (Inventar/Chest)
-        if (net.felix.utilities.Community.chat.ItemShareManager.getInstance().handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.Community.chat.ItemShareManager.getInstance().handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }
@@ -127,7 +127,7 @@ public class ScreenMixin {
             AbstractContainerScreen<?> handledScreen = (AbstractContainerScreen<?>) screen;
             net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
-            if (net.felix.utilities.Overall.glyphs.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+            if (net.felix.utilities.Other.glyphs.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
             

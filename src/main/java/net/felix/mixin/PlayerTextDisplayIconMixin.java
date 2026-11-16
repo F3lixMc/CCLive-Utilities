@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
 import java.util.List;
-import net.felix.utilities.Other.playericon.PlayerNametagIcons;
+import net.felix.Community.playericon.PlayerNametagIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.DisplayRenderer;
 import net.minecraft.client.renderer.entity.state.TextDisplayEntityRenderState;

@@ -93,7 +93,7 @@ public class PlayLegendServerEntryWidget extends AbstractWidget {
                 && net.felix.CCLiveUtilitiesConfig.HANDLER.instance().dataTrackingEnabled) {
             countLoading = true;
             nextCountRequest = Util.getMillis() + 30000;
-            String base = new net.felix.utilities.Community.leaderboards.config.LeaderboardConfig().getServerUrl();
+            String base = new net.felix.Community.leaderboards.config.LeaderboardConfig().getServerUrl();
             var request = java.net.http.HttpRequest.newBuilder(java.net.URI.create(base + "/presence/count"))
                 .timeout(java.time.Duration.ofSeconds(5)).GET().build();
             final int epoch = this.pingEpoch;

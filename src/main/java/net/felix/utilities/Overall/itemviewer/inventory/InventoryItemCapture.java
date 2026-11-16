@@ -95,7 +95,7 @@ public final class InventoryItemCapture {
             return null;
         }
 
-        java.util.List<net.felix.utilities.Community.chat.ChatTooltipLine> tooltipLines =
+        java.util.List<net.felix.Community.chat.ChatTooltipLine> tooltipLines =
             extractShareTooltipLines(handledScreen, client, stack);
         String rawName = extractItemNameFromTooltip(handledScreen, client, stack);
         if (rawName == null || rawName.isEmpty()) {
@@ -110,7 +110,7 @@ public final class InventoryItemCapture {
             template = findItemByName(lookupName);
         }
 
-        return net.felix.utilities.Community.chat.ItemShareManager.buildSnapshotFromTooltip(displayName, tooltipLines, template);
+        return net.felix.Community.chat.ItemShareManager.buildSnapshotFromTooltip(displayName, tooltipLines, template);
     }
 
     /**
@@ -124,7 +124,7 @@ public final class InventoryItemCapture {
             return null;
         }
 
-        java.util.List<net.felix.utilities.Community.chat.ChatTooltipLine> tooltipLines =
+        java.util.List<net.felix.Community.chat.ChatTooltipLine> tooltipLines =
             extractShareTooltipLines(handledScreen, client, stack);
         String rawName = extractItemNameFromTooltip(handledScreen, client, stack);
         if (rawName == null || rawName.isEmpty()) {
@@ -139,7 +139,7 @@ public final class InventoryItemCapture {
             template = findItemByName(lookupName);
         }
 
-        ItemData snapshot = net.felix.utilities.Community.chat.ItemShareManager.buildSnapshotFromTooltip(
+        ItemData snapshot = net.felix.Community.chat.ItemShareManager.buildSnapshotFromTooltip(
             displayName, tooltipLines, template);
         // Live-Stack hat Vorrang für Icon (Modul-Platzhalter oft nicht in ItemViewer)
         applyLiveStackVisuals(snapshot, stack);
@@ -205,7 +205,7 @@ public final class InventoryItemCapture {
     /**
      * Inventar-Tooltip als formatierte Zeilen, ohne Vanilla-Attribute und ohne Advanced-IDs.
      */
-    private static java.util.List<net.felix.utilities.Community.chat.ChatTooltipLine> extractShareTooltipLines(
+    private static java.util.List<net.felix.Community.chat.ChatTooltipLine> extractShareTooltipLines(
             net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen,
             Minecraft client,
             net.minecraft.world.item.ItemStack stack) {
@@ -266,10 +266,10 @@ public final class InventoryItemCapture {
         }
 
         java.util.List<net.minecraft.network.chat.Component> filtered =
-            net.felix.utilities.Community.chat.ChatTooltipLine.filterInventoryTooltip(rawLines);
-        java.util.List<net.felix.utilities.Community.chat.ChatTooltipLine> result = new java.util.ArrayList<>();
+            net.felix.Community.chat.ChatTooltipLine.filterInventoryTooltip(rawLines);
+        java.util.List<net.felix.Community.chat.ChatTooltipLine> result = new java.util.ArrayList<>();
         for (net.minecraft.network.chat.Component line : filtered) {
-            result.add(net.felix.utilities.Community.chat.ChatTooltipLine.fromComponent(line));
+            result.add(net.felix.Community.chat.ChatTooltipLine.fromComponent(line));
         }
         return result;
     }
@@ -537,6 +537,6 @@ public final class InventoryItemCapture {
 
     /** Anzeigename: Layout-Glyphen/Spacer weg, Schmiedegrad in [] bleibt erhalten. */
     private static String cleanItemNameForDisplay(String itemName) {
-        return net.felix.utilities.Community.chat.ShareTextCleaner.cleanDisplayName(itemName);
+        return net.felix.Community.chat.ShareTextCleaner.cleanDisplayName(itemName);
     }
 }

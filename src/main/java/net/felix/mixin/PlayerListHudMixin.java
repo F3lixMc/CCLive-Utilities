@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
 import java.util.UUID;
-import net.felix.utilities.Other.playericon.PlayerIconUtility;
+import net.felix.Community.playericon.PlayerIconUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;

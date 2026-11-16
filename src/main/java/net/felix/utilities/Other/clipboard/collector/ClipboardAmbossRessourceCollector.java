@@ -71,9 +71,9 @@ public class ClipboardAmbossRessourceCollector {
         
         net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
         String screenTitle = titleText != null ? titleText.getString() : "";
-        boolean isEssenceBag = net.felix.utilities.Overall.glyphs.ZeichenUtility.containsEssenceBagUi(screenTitle);
+        boolean isEssenceBag = net.felix.utilities.Other.glyphs.ZeichenUtility.containsEssenceBagUi(screenTitle);
         boolean isCostInventory = ClipboardCostInventoryUtility.usesSchmiedCostTooltipFormat(handledScreen);
-        boolean isFishingCraft = net.felix.utilities.Overall.glyphs.ZeichenUtility.isFishingComponentsCraftTitle(screenTitle);
+        boolean isFishingCraft = net.felix.utilities.Other.glyphs.ZeichenUtility.isFishingComponentsCraftTitle(screenTitle);
         
         if (!isEssenceBag && !isCostInventory && !isFishingCraft) {
             lastScreenTitle = "";

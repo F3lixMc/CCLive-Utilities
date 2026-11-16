@@ -223,7 +223,7 @@ public final class ViewerInputHandler {
             }
             String currentTitle = handledScreen.getTitle().getString();
             return isKitEditorMode()
-                    || !net.felix.utilities.Overall.glyphs.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
+                    || !net.felix.utilities.Other.glyphs.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
                     || helpScreenOpen;
         }
         return client.gui.screen() != null;
