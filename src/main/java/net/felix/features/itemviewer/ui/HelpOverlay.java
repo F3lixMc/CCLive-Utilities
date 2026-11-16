@@ -1,5 +1,7 @@
 package net.felix.features.itemviewer.ui;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -18,6 +20,37 @@ import static net.felix.features.itemviewer.ui.ViewerState.lastMouseY;
  */
 public final class HelpOverlay {
 
+    private static final int BUTTON_HEIGHT = 16;
+    private static final int MAX_BUTTONS_PER_ROW = 4;
+    private static final int BUTTON_SPACING_Y = 20; // Muss mit computeCategoryButtons übereinstimmen
+    private static final int BASE_HEIGHT = 500; // Mindesthöhe der Box vor dem Button-Bereich
+    private static final int CLOSE_BUTTON_SIZE = 15;
+
+    private static final String[] HELP_TEXT = {
+        "Grundlegende Suche:",
+        "• Suche nach Item-Namen",
+        "",
+        "Erweiterte Suche:",
+        "• #Tag - Tags (z.B. #Schuhe exakt, #Schuh als Vorschau mit Teiltreffern)",
+        "• @Stat>Wert - Stats (z.B. @Schaden>=100, @Rüstung<50)",
+        "• @Ebene>Wert - Ebenen (z.B. @Ebene>=50, @Ebene<30, >e5, e4)",
+        "• Operatoren: >, <, =, >=, <=",
+        "• +Modifier - Suche nach Modifiern (z.B. +Andere, +Andere:2)",
+        "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0, material:<50, ressource:>100)",
+        "• material:Anzahl / material:Name - Ebenen-Material (z.B. material:51, material:Spinnfaden, material:<50). Operatoren: >, <, =, >=, <=",
+        "• Gültige Kategorien: material, ressource, ofen, amboss",
+        "• @Aspekt Name - Suche nach Aspekten (z.B. @Aspekt der Flamme)",
+        "",
+        "Sortierung:",
+        "• Standard - Sortiert nach Tags",
+        "• Name A-Z - Alphabetisch nach Namen",
+        "• Ebene Ebene 1-100 - Sortiert nach Ebene",
+        "",
+        "Navigation:",
+        "• Nutze die Pfeile unten für Seitenwechsel oder Scrollen",
+        "• ESC schließt das Hilfe-Overlay",
+        ""
+    };
     private HelpOverlay() {
     }
 
@@ -70,109 +103,32 @@ public final class HelpOverlay {
         if (!helpScreenOpen || button != 0) {
             return false;
         }
-        
+
         Minecraft client = Minecraft.getInstance();
         if (client == null) {
             return false;
         }
-        
-        int screenWidth = client.getWindow().getGuiScaledWidth();
-        int screenHeight = client.getWindow().getGuiScaledHeight();
-        
-        // Berechne boxHeight mit gleicher Logik wie beim Rendering
-        int buttonHeight = 16;
-        int maxButtonsPerRow = 4;
-        int buttonSpacingY = 20; // Muss mit computeCategoryButtons übereinstimmen
-        int numButtonRows = (int) Math.ceil((double) CATEGORY_BUTTON_DEFS.size() / maxButtonsPerRow);
-        int baseHeight = 500; // Erhöht von 450 auf 500 für mehr Platz
-        // Berechne benötigte Höhe für Button-Bereich (inkl. Header und Abstände)
-        int headerHeight = client.font.lineHeight;
-        int spacing = 4;
-        // Gesamte Button-Bereich-Höhe: Header + Abstand + (alle Zeilen * Button-Höhe) + (Abstände zwischen Zeilen)
-        int buttonAreaHeight = headerHeight + spacing + (numButtonRows * buttonHeight) + ((numButtonRows - 1) * buttonSpacingY);
-        // Zusätzliche Höhe: Button-Bereich + 20px Padding unten + 15px Abstand zum Text
-        int additionalHeight = buttonAreaHeight + 35; // 20px Padding unten + 15px Abstand zum Text
-        int boxWidth = Math.min(400, screenWidth - 40);
-        int boxHeight = Math.min(baseHeight + additionalHeight, screenHeight - 40);
-        int boxX = (screenWidth - boxWidth) / 2;
-        int boxY = (screenHeight - boxHeight) / 2;
-        int closeButtonX = boxX + boxWidth - 20;
-        int closeButtonY = boxY + 5;
-        int closeButtonSize = 15;
-        
-        // Prüfe Klick auf Schließen-Button
-        if (mouseX >= closeButtonX && mouseX < closeButtonX + closeButtonSize &&
-            mouseY >= closeButtonY && mouseY < closeButtonY + closeButtonSize) {
+
+        HelpBox box = computeBox(client);
+
+        // Klick auf Schließen-Button
+        if (isInside(mouseX, mouseY, box.closeButtonX(), box.closeButtonY(), CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE)) {
             helpScreenOpen = false;
             activeCategoryOverlay = null;
             return true;
         }
 
-        // Berechne Button-Position (gleiche Logik wie beim Rendering)
-        // Berechne buttonY so, dass alle Buttons innerhalb des Overlays bleiben
-        // Die letzte Zeile sollte bei boxY + boxHeight - 8 enden
-        // Die letzte Zeile endet bei: buttonY + (numButtonRows - 1) * buttonSpacingY + buttonHeight
-        // Also: buttonY = boxY + boxHeight - 8 - (numButtonRows - 1) * buttonSpacingY - buttonHeight
-        int buttonY = boxY + boxHeight - 8 - ((numButtonRows - 1) * buttonSpacingY) - buttonHeight;
-        int startX = boxX + 15;
-        
-        // Prüfe Klick auf Tag-Overlay (wenn geöffnet) - VOR Button-Checks, damit Overlay-Klicks nicht Buttons blockieren
-        if (activeCategoryOverlay != null && activeCategoryOverlay.tags != null && !activeCategoryOverlay.tags.isEmpty()) {
-            int lineHeight = client.font.lineHeight + 2;
-            int maxTagsPerColumn = 10;
-            int numTags = activeCategoryOverlay.tags.size();
-            
-            // Berechne Anzahl der Spalten (jede Spalte hat maximal 10 Tags)
-            int numColumns = (int) Math.ceil((double) numTags / maxTagsPerColumn);
-            
-            // Berechne Anzahl der Zeilen (maximal 10 pro Spalte)
-            int numRows = Math.min(maxTagsPerColumn, numTags);
-            int overlayHeight = numRows * lineHeight + 6;
-            
-            // Berechne Breite für jede Spalte
-            java.util.List<Integer> columnWidths = new java.util.ArrayList<>();
-            for (int col = 0; col < numColumns; col++) {
-                int columnWidth = 0;
-                int startIdx = col * maxTagsPerColumn;
-                int endIdx = Math.min(startIdx + maxTagsPerColumn, numTags);
-                for (int i = startIdx; i < endIdx; i++) {
-                    columnWidth = Math.max(columnWidth, client.font.width(activeCategoryOverlay.tags.get(i)));
-                }
-                columnWidth += 12; // Padding
-                columnWidths.add(columnWidth);
-            }
-            
-            // Berechne Gesamtbreite des Overlays
-            int columnSpacing = 8; // Abstand zwischen den Spalten
-            int overlayWidth = 0;
-            for (int i = 0; i < columnWidths.size(); i++) {
-                overlayWidth += columnWidths.get(i);
-                if (i < columnWidths.size() - 1) {
-                    overlayWidth += columnSpacing;
-                }
-            }
-            
-            int ox = activeCategoryOverlay.x;
-            int oy = activeCategoryOverlay.y + activeCategoryOverlay.height + 6;
-            if (oy + overlayHeight > boxY + boxHeight - 8) {
-                oy = activeCategoryOverlay.y - overlayHeight - 6;
-            }
-            if (ox + overlayWidth > boxX + boxWidth - 8) {
-                ox = boxX + boxWidth - overlayWidth - 8;
-            }
-            
-            // Wenn Klick im Tag-Overlay-Bereich, verhindere andere Aktionen
-            if (mouseX >= ox && mouseX < ox + overlayWidth &&
-                mouseY >= oy && mouseY < oy + overlayHeight) {
-                return true; // Klick im Tag-Overlay, verhindere andere Aktionen
-            }
+        // Tag-Overlay (wenn geöffnet) VOR den Button-Checks, damit Overlay-Klicks Buttons nicht blockieren
+        if (isClickInsideTagOverlay(client, box, mouseX, mouseY)) {
+            return true;
         }
-        
-        // Kategorie-Buttons prüfen (VOR anderen Checks, damit Klicks funktionieren)
-        java.util.List<CategoryButton> buttons = computeCategoryButtons(client.font, boxX, boxY, boxWidth, boxHeight, buttonY, startX);
+
+        // Kategorie-Buttons (gleiche Position wie beim Rendering, aber ohne Mindest-Abstand zum Text)
+        int buttonY = computeButtonY(box);
+        int startX = box.x() + 15;
+        List<CategoryButton> buttons = computeCategoryButtons(client.font, box.x(), box.y(), box.width(), box.height(), buttonY, startX);
         for (CategoryButton btn : buttons) {
-            if (mouseX >= btn.x && mouseX < btn.x + btn.width &&
-                mouseY >= btn.y && mouseY < btn.y + btn.height) {
+            if (isInside(mouseX, mouseY, btn.x, btn.y, btn.width, btn.height)) {
                 // Toggle aktuelles Overlay
                 if (activeCategoryOverlay != null && activeCategoryOverlay.name.equals(btn.name)) {
                     activeCategoryOverlay = null;
@@ -182,23 +138,112 @@ public final class HelpOverlay {
                 return true;
             }
         }
-        
+
         // Klick auf andere Bereiche innerhalb der Hilfe-Box schließt das Kategorie-Overlay (falls offen)
         if (activeCategoryOverlay != null) {
             activeCategoryOverlay = null;
             return true;
         }
-        
+
         // Klick außerhalb des Hilfe-Overlays schließt es
-        if (mouseX < boxX || mouseX >= boxX + boxWidth ||
-            mouseY < boxY || mouseY >= boxY + boxHeight) {
+        if (!isInside(mouseX, mouseY, box.x(), box.y(), box.width(), box.height())) {
             helpScreenOpen = false;
             activeCategoryOverlay = null;
             return true;
         }
-        
+
         // Klick innerhalb des Overlays verhindert andere Klicks
         return true;
+    }
+
+    private static boolean isInside(double mouseX, double mouseY, int x, int y, int width, int height) {
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+    }
+
+    /** Position und Größe der Hilfe-Box (angepasst an Bildschirmgröße und Anzahl der Button-Zeilen). */
+    private record HelpBox(int x, int y, int width, int height) {
+        int closeButtonX() {
+            return x + width - 20;
+        }
+
+        int closeButtonY() {
+            return y + 5;
+        }
+    }
+
+    private static int numButtonRows() {
+        return (int) Math.ceil((double) CATEGORY_BUTTON_DEFS.size() / MAX_BUTTONS_PER_ROW);
+    }
+
+    /** Gleiche Logik für Rendering und Klick-Behandlung. */
+    private static HelpBox computeBox(Minecraft client) {
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+
+        int numButtonRows = numButtonRows();
+        // Gesamte Button-Bereich-Höhe: Header + Abstand + (alle Zeilen * Button-Höhe) + (Abstände zwischen Zeilen)
+        int headerHeight = client.font.lineHeight;
+        int spacing = 4;
+        int buttonAreaHeight = headerHeight + spacing + (numButtonRows * BUTTON_HEIGHT) + ((numButtonRows - 1) * BUTTON_SPACING_Y);
+        // Zusätzliche Höhe: Button-Bereich + 20px Padding unten + 15px Abstand zum Text
+        int additionalHeight = buttonAreaHeight + 35;
+
+        int boxWidth = Math.min(400, screenWidth - 40); // Max 400px oder Bildschirmbreite - 40px
+        int boxHeight = Math.min(BASE_HEIGHT + additionalHeight, screenHeight - 40);
+        int boxX = (screenWidth - boxWidth) / 2;
+        int boxY = (screenHeight - boxHeight) / 2;
+        return new HelpBox(boxX, boxY, boxWidth, boxHeight);
+    }
+
+    /**
+     * Y-Position der Kategorie-Buttons, sodass alle Zeilen innerhalb der Box bleiben:
+     * die letzte Zeile endet bei boxY + boxHeight - 8.
+     */
+    private static int computeButtonY(HelpBox box) {
+        return box.y() + box.height() - 8 - ((numButtonRows() - 1) * BUTTON_SPACING_Y) - BUTTON_HEIGHT;
+    }
+
+    /** Prüft, ob der Klick im geöffneten Tag-Overlay einer Kategorie liegt (verhindert dann andere Aktionen). */
+    private static boolean isClickInsideTagOverlay(Minecraft client, HelpBox box, double mouseX, double mouseY) {
+        CategoryButton overlay = activeCategoryOverlay;
+        if (overlay == null || overlay.tags == null || overlay.tags.isEmpty()) {
+            return false;
+        }
+        int lineHeight = client.font.lineHeight + 2;
+        int maxTagsPerColumn = 10;
+        int numTags = overlay.tags.size();
+
+        // Jede Spalte hat maximal 10 Tags
+        int numColumns = (int) Math.ceil((double) numTags / maxTagsPerColumn);
+        int numRows = Math.min(maxTagsPerColumn, numTags);
+        int overlayHeight = numRows * lineHeight + 6;
+
+        // Gesamtbreite: Breite jeder Spalte (längster Tag + Padding) plus Abstand zwischen den Spalten
+        int columnSpacing = 8;
+        int overlayWidth = 0;
+        for (int col = 0; col < numColumns; col++) {
+            int columnWidth = 0;
+            int startIdx = col * maxTagsPerColumn;
+            int endIdx = Math.min(startIdx + maxTagsPerColumn, numTags);
+            for (int i = startIdx; i < endIdx; i++) {
+                columnWidth = Math.max(columnWidth, client.font.width(overlay.tags.get(i)));
+            }
+            columnWidth += 12; // Padding
+            overlayWidth += columnWidth;
+            if (col < numColumns - 1) {
+                overlayWidth += columnSpacing;
+            }
+        }
+
+        int ox = overlay.x;
+        int oy = overlay.y + overlay.height + 6;
+        if (oy + overlayHeight > box.y() + box.height() - 8) {
+            oy = overlay.y - overlayHeight - 6;
+        }
+        if (ox + overlayWidth > box.x() + box.width() - 8) {
+            ox = box.x() + box.width() - overlayWidth - 8;
+        }
+        return isInside(mouseX, mouseY, ox, oy, overlayWidth, overlayHeight);
     }
 
     /**
@@ -207,242 +252,159 @@ public final class HelpOverlay {
     public static void drawHelpScreen(GuiGraphicsExtractor context, Minecraft client) {
         int screenWidth = client.getWindow().getGuiScaledWidth();
         int screenHeight = client.getWindow().getGuiScaledHeight();
-        
+
         // Hintergrund-Overlay
         context.fill(0, 0, screenWidth, screenHeight, 0x80000000);
-        
-        // Berechne benötigte Höhe für Button-Bereich (mehrere Zeilen möglich)
-        int buttonHeight = 16;
-        int maxButtonsPerRow = 4;
-        int buttonSpacingY = 20; // Muss mit computeCategoryButtons übereinstimmen
-        int numButtonRows = (int) Math.ceil((double) CATEGORY_BUTTON_DEFS.size() / maxButtonsPerRow);
-        
-        // Hilfe-Box - Angepasste Größe für verschiedene Bildschirmgrößen
-        // Mindesthöhe: 500px (erhöht für mehr Platz) + zusätzlicher Platz für Button-Zeilen
-        int baseHeight = 500; // Erhöht von 450 auf 500 für mehr Platz
-        // Berechne benötigte Höhe für Button-Bereich (inkl. Header und Abstände)
-        int headerHeight = client.font.lineHeight;
-        int spacing = 4;
-        // Gesamte Button-Bereich-Höhe: Header + Abstand + (alle Zeilen * Button-Höhe) + (Abstände zwischen Zeilen)
-        int buttonAreaHeight = headerHeight + spacing + (numButtonRows * buttonHeight) + ((numButtonRows - 1) * buttonSpacingY);
-        // Zusätzliche Höhe: Button-Bereich + 20px Padding unten + 15px Abstand zum Text
-        int additionalHeight = buttonAreaHeight + 35; // 20px Padding unten + 15px Abstand zum Text
-        int boxWidth = Math.min(400, screenWidth - 40); // Max 400px oder Bildschirmbreite - 40px
-        int boxHeight = Math.min(baseHeight + additionalHeight, screenHeight - 40); // Dynamische Höhe basierend auf Button-Zeilen
-        int boxX = (screenWidth - boxWidth) / 2;
-        int boxY = (screenHeight - boxHeight) / 2;
-        
+
+        HelpBox box = computeBox(client);
+
         // Prüfe ob Maus über dem Hilfe-Overlay ist (für Scrolling)
-        helpScreenHovered = lastMouseX >= boxX && lastMouseX < boxX + boxWidth &&
-                           lastMouseY >= boxY && lastMouseY < boxY + boxHeight;
-        
-        // Box-Hintergrund
-        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
-        
-        // Box-Rahmen
-        context.fill(boxX, boxY, boxX + boxWidth, boxY + 1, 0xFFFFFFFF);
-        context.fill(boxX, boxY + boxHeight - 1, boxX + boxWidth, boxY + boxHeight, 0xFFFFFFFF);
-        context.fill(boxX, boxY, boxX + 1, boxY + boxHeight, 0xFFFFFFFF);
-        context.fill(boxX + boxWidth - 1, boxY, boxX + boxWidth, boxY + boxHeight, 0xFFFFFFFF);
-        
-        // Schließen-Button (X oben rechts)
-        int closeButtonX = boxX + boxWidth - 20;
-        int closeButtonY = boxY + 5;
-        int closeButtonSize = 15;
-        boolean closeHovered = lastMouseX >= closeButtonX && lastMouseX < closeButtonX + closeButtonSize &&
-                               lastMouseY >= closeButtonY && lastMouseY < closeButtonY + closeButtonSize;
-        
-        // Schließen-Button Hintergrund
-        context.fill(closeButtonX, closeButtonY, closeButtonX + closeButtonSize, closeButtonY + closeButtonSize, 
-                     closeHovered ? 0xFF404040 : 0x80000000);
-        // Schließen-Button Rahmen
-        context.fill(closeButtonX, closeButtonY, closeButtonX + closeButtonSize, closeButtonY + 1, 0xFFFFFFFF);
-        context.fill(closeButtonX, closeButtonY + closeButtonSize - 1, closeButtonX + closeButtonSize, closeButtonY + closeButtonSize, 0xFFFFFFFF);
-        context.fill(closeButtonX, closeButtonY, closeButtonX + 1, closeButtonY + closeButtonSize, 0xFFFFFFFF);
-        context.fill(closeButtonX + closeButtonSize - 1, closeButtonY, closeButtonX + closeButtonSize, closeButtonY + closeButtonSize, 0xFFFFFFFF);
-        
-        // X-Zeichen im Schließen-Button
-        String closeText = "×";
-        int closeTextWidth = client.font.width(closeText);
-        int closeTextHeight = client.font.lineHeight;
-        int closeTextX = closeButtonX + (closeButtonSize - closeTextWidth) / 2 + 1; // Horizontal zentriert (+1 für bessere visuelle Zentrierung)
-        int closeTextY = closeButtonY + (closeButtonSize - closeTextHeight) / 2 + 1; // Vertikal zentriert (+1 für bessere Zentrierung)
-        context.text(
-            client.font,
-            closeText,
-            closeTextX,
-            closeTextY,
-            0xFFFFFFFF,
-            true
-        );
-        
+        helpScreenHovered = isInside(lastMouseX, lastMouseY, box.x(), box.y(), box.width(), box.height());
+
+        drawBoxBackground(context, box);
+        drawCloseButton(context, client, box);
+
         // Titel
         String title = "Item Viewer Hilfe";
         int titleWidth = client.font.width(title);
-        context.text(
-            client.font,
-            title,
-            boxX + (boxWidth - titleWidth) / 2,
-            boxY + 10,
-            0xFFFFFF00,
-            true
-        );
-        
-        // Hilfe-Text mit Scrolling
-        int textStartY = boxY + 35;
+        context.text(client.font, title, box.x() + (box.width() - titleWidth) / 2, box.y() + 10, 0xFFFFFF00, true);
+
+        // Hilfe-Text mit Scrolling, oberhalb der Kategorie-Buttons
+        int textStartY = box.y() + 35;
         int lineHeight = 11;
-        int textX = boxX + 15;
-        int maxTextWidth = boxWidth - 30;
-        
-        // Berechne verfügbare Höhe für Text (oberhalb der Buttons)
-        int numRows = (int) Math.ceil((double) CATEGORY_BUTTON_DEFS.size() / maxButtonsPerRow);
-        // headerHeight und spacing wurden bereits oben definiert
-        int buttonY = boxY + boxHeight - 8 - ((numRows - 1) * buttonSpacingY) - buttonHeight;
+        int buttonY = computeButtonY(box);
         int minButtonYForText = textStartY + 15; // Mindestens 15px nach dem letzten Text
         if (buttonY < minButtonYForText) {
             buttonY = minButtonYForText;
         }
-        int availableTextHeight = buttonY - textStartY - 15; // Verfügbare Höhe für Text
-        
-        String[] helpText = {
-            "Grundlegende Suche:",
-            "• Suche nach Item-Namen",
-            "",
-            "Erweiterte Suche:",
-            "• #Tag - Tags (z.B. #Schuhe exakt, #Schuh als Vorschau mit Teiltreffern)",
-            "• @Stat>Wert - Stats (z.B. @Schaden>=100, @Rüstung<50)",
-            "• @Ebene>Wert - Ebenen (z.B. @Ebene>=50, @Ebene<30, >e5, e4)",
-            "• Operatoren: >, <, =, >=, <=",
-            "• +Modifier - Suche nach Modifiern (z.B. +Andere, +Andere:2)",
-            "• Kosten:Anzahl - Suche nach Kosten (z.B. amboss:0, material:<50, ressource:>100)",
-            "• material:Anzahl / material:Name - Ebenen-Material (z.B. material:51, material:Spinnfaden, material:<50). Operatoren: >, <, =, >=, <=",
-            "• Gültige Kategorien: material, ressource, ofen, amboss",
-            "• @Aspekt Name - Suche nach Aspekten (z.B. @Aspekt der Flamme)",
-            "",
-            "Sortierung:",
-            "• Standard - Sortiert nach Tags",
-            "• Name A-Z - Alphabetisch nach Namen",
-            "• Ebene Ebene 1-100 - Sortiert nach Ebene",
-            "",
-            "Navigation:",
-            "• Nutze die Pfeile unten für Seitenwechsel oder Scrollen",
-            "• ESC schließt das Hilfe-Overlay",
-            ""
-        };
-        
-        // Berechne Gesamthöhe des Textes (mit Umbrechung)
-        java.util.List<String> allTextLines = new java.util.ArrayList<>();
-        for (String line : helpText) {
-            if (client.font.width(line) > maxTextWidth && !line.isEmpty()) {
-                String[] words = line.split(" ");
-                String currentLine = "";
-                for (String word : words) {
-                    String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
-                    if (client.font.width(testLine) > maxTextWidth) {
-                        if (!currentLine.isEmpty()) {
-                            allTextLines.add(currentLine);
-                            currentLine = word;
-                        } else {
-                            allTextLines.add(word);
-                        }
-                    } else {
-                        currentLine = testLine;
-                    }
-                }
-                if (!currentLine.isEmpty()) {
-                    allTextLines.add(currentLine);
-                }
-            } else {
-                allTextLines.add(line);
-            }
-        }
-        
+        int availableTextHeight = buttonY - textStartY - 15;
+
+        List<String> allTextLines = wrapLines(client, HELP_TEXT, box.width() - 30);
         int totalTextHeight = allTextLines.size() * lineHeight;
-        
+
         // Begrenze Scroll-Offset
         int maxScrollOffset = Math.max(0, totalTextHeight - availableTextHeight);
         helpScreenScrollOffset = Math.min(helpScreenScrollOffset, maxScrollOffset);
-        
-        // Berechne Start-Index basierend auf Scroll-Offset
+
         int startLineIndex = helpScreenScrollOffset / lineHeight;
         int visibleLines = (int) Math.ceil((double) availableTextHeight / lineHeight) + 1;
-        
-        // Zeichne sichtbare Zeilen
+
+        drawVisibleTextLines(context, client, box, allTextLines, textStartY, lineHeight, buttonY, startLineIndex, visibleLines);
+
+        if (helpScreenScrollOffset > 0) {
+            drawCenteredHint(context, client, box, String.format("↑ %d weitere (Scrollen)", startLineIndex), textStartY - 2);
+        }
+
+        drawCategorySection(context, client, box, buttonY, lineHeight, maxScrollOffset,
+                startLineIndex, visibleLines, allTextLines.size());
+    }
+
+    /** Box-Hintergrund mit weißem 1px-Rahmen. */
+    private static void drawBoxBackground(GuiGraphicsExtractor context, HelpBox box) {
+        int boxX = box.x();
+        int boxY = box.y();
+        int boxWidth = box.width();
+        int boxHeight = box.height();
+        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
+        context.fill(boxX, boxY, boxX + boxWidth, boxY + 1, 0xFFFFFFFF);
+        context.fill(boxX, boxY + boxHeight - 1, boxX + boxWidth, boxY + boxHeight, 0xFFFFFFFF);
+        context.fill(boxX, boxY, boxX + 1, boxY + boxHeight, 0xFFFFFFFF);
+        context.fill(boxX + boxWidth - 1, boxY, boxX + boxWidth, boxY + boxHeight, 0xFFFFFFFF);
+    }
+
+    /** Schließen-Button (X oben rechts) mit Hover-Farbe, Rahmen und zentriertem "×". */
+    private static void drawCloseButton(GuiGraphicsExtractor context, Minecraft client, HelpBox box) {
+        int closeButtonX = box.closeButtonX();
+        int closeButtonY = box.closeButtonY();
+        int closeButtonSize = CLOSE_BUTTON_SIZE;
+        boolean closeHovered = isInside(lastMouseX, lastMouseY, closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+
+        context.fill(closeButtonX, closeButtonY, closeButtonX + closeButtonSize, closeButtonY + closeButtonSize,
+                closeHovered ? 0xFF404040 : 0x80000000);
+        context.fill(closeButtonX, closeButtonY, closeButtonX + closeButtonSize, closeButtonY + 1, 0xFFFFFFFF);
+        context.fill(closeButtonX, closeButtonY + closeButtonSize - 1, closeButtonX + closeButtonSize, closeButtonY + closeButtonSize, 0xFFFFFFFF);
+        context.fill(closeButtonX, closeButtonY, closeButtonX + 1, closeButtonY + closeButtonSize, 0xFFFFFFFF);
+        context.fill(closeButtonX + closeButtonSize - 1, closeButtonY, closeButtonX + closeButtonSize, closeButtonY + closeButtonSize, 0xFFFFFFFF);
+
+        // +1 für bessere visuelle Zentrierung
+        String closeText = "×";
+        int closeTextX = closeButtonX + (closeButtonSize - client.font.width(closeText)) / 2 + 1;
+        int closeTextY = closeButtonY + (closeButtonSize - client.font.lineHeight) / 2 + 1;
+        context.text(client.font, closeText, closeTextX, closeTextY, 0xFFFFFFFF, true);
+    }
+
+    /** Bricht zu lange Zeilen an Wortgrenzen um; leere Zeilen und kurze Zeilen bleiben unverändert. */
+    private static List<String> wrapLines(Minecraft client, String[] lines, int maxTextWidth) {
+        List<String> wrapped = new ArrayList<>();
+        for (String line : lines) {
+            if (client.font.width(line) <= maxTextWidth || line.isEmpty()) {
+                wrapped.add(line);
+                continue;
+            }
+            String currentLine = "";
+            for (String word : line.split(" ")) {
+                String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
+                if (client.font.width(testLine) > maxTextWidth) {
+                    if (!currentLine.isEmpty()) {
+                        wrapped.add(currentLine);
+                        currentLine = word;
+                    } else {
+                        wrapped.add(word);
+                    }
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (!currentLine.isEmpty()) {
+                wrapped.add(currentLine);
+            }
+        }
+        return wrapped;
+    }
+
+    /** Zeichnet die aktuell sichtbaren Textzeilen entsprechend dem Scroll-Offset. */
+    private static void drawVisibleTextLines(GuiGraphicsExtractor context, Minecraft client, HelpBox box,
+            List<String> allTextLines, int textStartY, int lineHeight, int buttonY, int startLineIndex, int visibleLines) {
+        int textX = box.x() + 15;
         int textY = textStartY - (helpScreenScrollOffset % lineHeight);
         for (int i = startLineIndex; i < allTextLines.size() && i < startLineIndex + visibleLines; i++) {
-            String line = allTextLines.get(i);
             if (textY >= textStartY - lineHeight && textY < buttonY) {
-                context.text(
-                    client.font,
-                    line,
-                    textX,
-                    textY,
-                    0xFFFFFFFF,
-                    true
-                );
+                context.text(client.font, allTextLines.get(i), textX, textY, 0xFFFFFFFF, true);
             }
             textY += lineHeight;
         }
-        
-        // Zeige Scroll-Indikatoren wenn nötig
-        if (helpScreenScrollOffset > 0) {
-            String moreText = String.format("↑ %d weitere (Scrollen)", startLineIndex);
-            int moreTextWidth = client.font.width(moreText);
-            context.text(
-                client.font,
-                moreText,
-                boxX + (boxWidth - moreTextWidth) / 2,
-                textStartY - 2,
-                0xFFFFFF00,
-                true
-            );
-        }
-        
-        // Kategorie-Buttons und Tag-Overlay (ganz unten)
-        // numRows und buttonY wurden bereits oben berechnet
-        // buttonY wurde bereits oben berechnet
-        int finalButtonY = buttonY;
-        
-        // Prüfe ob genug Platz vorhanden ist (maxScrollOffset == 0 bedeutet genug Platz)
+    }
+
+    private static void drawCenteredHint(GuiGraphicsExtractor context, Minecraft client, HelpBox box, String text, int y) {
+        int textWidth = client.font.width(text);
+        context.text(client.font, text, box.x() + (box.width() - textWidth) / 2, y, 0xFFFFFF00, true);
+    }
+
+    /**
+     * Kategorie-Buttons ganz unten. Bei genug Platz (z.B. GUI Scale 3) immer sichtbar; bei wenig Platz
+     * (z.B. GUI Scale 4) erst nach dem Scrollen, davor erscheint ein Hinweis.
+     */
+    private static void drawCategorySection(GuiGraphicsExtractor context, Minecraft client, HelpBox box, int buttonY,
+            int lineHeight, int maxScrollOffset, int startLineIndex, int visibleLines, int totalLineCount) {
         boolean hasEnoughSpace = (maxScrollOffset == 0);
-        
         if (hasEnoughSpace) {
-            // Bei genug Platz (z.B. GUI Scale 3): Buttons immer anzeigen, keine Scroll-Logik
-            renderCategoryButtons(context, client.font, boxX, boxY, boxWidth, boxHeight, finalButtonY);
-        } else {
-            // Bei wenig Platz (z.B. GUI Scale 4): Buttons nur anzeigen, wenn gescrollt wurde
-            if (helpScreenScrollOffset > 0) {
-                // Zeige "↓ X weitere (Scrollen)" nur wenn noch mehr Text vorhanden ist
-                if (helpScreenScrollOffset < maxScrollOffset) {
-                    int remainingLines = allTextLines.size() - (startLineIndex + visibleLines);
-                    if (remainingLines > 0) {
-                        String moreText = String.format("↓ %d weitere (Scrollen)", remainingLines);
-                        int moreTextWidth = client.font.width(moreText);
-                        context.text(
-                            client.font,
-                            moreText,
-                            boxX + (boxWidth - moreTextWidth) / 2,
-                            buttonY - lineHeight - 2,
-                            0xFFFFFF00,
-                            true
-                        );
-                    }
+            renderCategoryButtons(context, client.font, box.x(), box.y(), box.width(), box.height(), buttonY);
+            return;
+        }
+
+        if (helpScreenScrollOffset > 0) {
+            // "↓ X weitere (Scrollen)" nur wenn noch mehr Text vorhanden ist
+            if (helpScreenScrollOffset < maxScrollOffset) {
+                int remainingLines = totalLineCount - (startLineIndex + visibleLines);
+                if (remainingLines > 0) {
+                    drawCenteredHint(context, client, box,
+                            String.format("↓ %d weitere (Scrollen)", remainingLines), buttonY - lineHeight - 2);
                 }
-                renderCategoryButtons(context, client.font, boxX, boxY, boxWidth, boxHeight, finalButtonY);
-            } else {
-                // Zeige Hinweis zum Scrollen in der untersten Zeile (nur wenn noch mehr Text vorhanden ist)
-                String scrollHint = "↓ Scrollen für Kategorien mit Tags";
-                int scrollHintWidth = client.font.width(scrollHint);
-                int scrollHintY = buttonY - lineHeight - 2 + 15; // 15px tiefer
-                context.text(
-                    client.font,
-                    scrollHint,
-                    boxX + (boxWidth - scrollHintWidth) / 2,
-                    scrollHintY,
-                    0xFFFFFF00,
-                    true
-                );
             }
+            renderCategoryButtons(context, client.font, box.x(), box.y(), box.width(), box.height(), buttonY);
+        } else {
+            // Hinweis zum Scrollen in der untersten Zeile (15px tiefer)
+            drawCenteredHint(context, client, box, "↓ Scrollen für Kategorien mit Tags", buttonY - lineHeight - 2 + 15);
         }
     }
 }
