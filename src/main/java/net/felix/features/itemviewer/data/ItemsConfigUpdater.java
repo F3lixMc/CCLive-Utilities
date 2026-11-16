@@ -1,6 +1,6 @@
 package net.felix.features.itemviewer.data;
 
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
+import net.felix.features.itemviewer.ui.ItemStackCache;
 
 import static net.felix.features.itemviewer.data.ItemCatalog.allItems;
 import static net.felix.features.itemviewer.data.ItemCatalog.itemByName;
@@ -89,7 +89,7 @@ public final class ItemsConfigUpdater {
                                     allItems.clear();
                                     filteredItems.clear();
                                     itemByName.clear();
-                                    ItemViewerGrid.clearItemStackCache();
+                                    ItemStackCache.clearItemStackCache();
                                     loadItemsAsync();
                                     
                                     System.out.println("✅ [ItemViewer] Items-Config aktualisiert (Version " + serverVersion + ")");

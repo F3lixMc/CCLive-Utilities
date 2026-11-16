@@ -9,7 +9,6 @@ import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.data.ItemInfo;
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
 import net.felix.utilities.Overall.KeyCategories;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -30,6 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.features.itemviewer.inventory.InventoryItemCapture;
 import net.felix.features.itemviewer.search.SearchFieldState;
+import net.felix.features.itemviewer.tooltip.ForgingTooltipText;
+import net.felix.features.itemviewer.tooltip.TooltipColors;
 
 /**
  * Session-Cache + Server-Shares für CCLive-Chat Item-Links (!item / #ITEM:…).
@@ -341,7 +342,7 @@ public final class ItemShareManager {
         HoverEvent itemHover = createShowTextHover(hoverTooltip);
         Component namePart = nameFromSnapshot(data);
         // Klammern = gleiche Primärfarbe wie der Anzeigename (nicht dunkleres getChatLinkColor)
-        int linkColor = primaryColorFrom(namePart, ItemViewerGrid.getChatLinkColor(data) & 0xFFFFFF);
+        int linkColor = primaryColorFrom(namePart, TooltipColors.getChatLinkColor(data) & 0xFFFFFF);
 
         debugChat("Link [" + displayName + "] rarity=" + rarity
             + " forging=" + data.forgingCondition
@@ -557,7 +558,7 @@ public final class ItemShareManager {
         }
         String plain = data.name != null && !data.name.isEmpty()
             ? ShareTextCleaner.cleanDisplayName(data.name) : "Item";
-        int color = ItemViewerGrid.getChatLinkColor(data) & 0xFFFFFF;
+        int color = TooltipColors.getChatLinkColor(data) & 0xFFFFFF;
         return Component.literal(plain).setStyle(Style.EMPTY.withColor(color));
     }
 
@@ -648,7 +649,7 @@ public final class ItemShareManager {
         }
 
         // Schmiedegrad aus Anzeigenamen merken (für Chat-Link-Farbe)
-        String forgingFromName = ItemViewerGrid.extractForgingConditionFromName(snapshot.name);
+        String forgingFromName = ForgingTooltipText.extractForgingConditionFromName(snapshot.name);
         if (forgingFromName != null) {
             snapshot.forgingCondition = forgingFromName;
         } else if (template != null && template.forgingCondition != null) {
@@ -670,7 +671,7 @@ public final class ItemShareManager {
             ChatTooltipLine nameLine = new ChatTooltipLine();
             ChatTooltipLine.ChatTooltipPart part = new ChatTooltipLine.ChatTooltipPart();
             part.text = snapshot.name;
-            part.color = ItemViewerGrid.getChatLinkColor(snapshot) & 0xFFFFFF;
+            part.color = TooltipColors.getChatLinkColor(snapshot) & 0xFFFFFF;
             nameLine.parts.add(part);
             storedTooltip.add(nameLine);
         }

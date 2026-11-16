@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.fabricmc.loader.api.FabricLoader;
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
+import net.felix.features.itemviewer.ui.ItemStackCache;
 import net.minecraft.world.item.ItemStack;
 
 import static net.felix.features.itemviewer.data.ItemsConfigUpdater.ITEMS_CONFIG_FILE;
@@ -344,7 +344,7 @@ public final class ItemCatalog {
                         rebuildItemNameIndex();
                         rebuildKnownSearchTags();
                         rebuildKnownCostItemNames();
-                        ItemViewerGrid.clearItemStackCache();
+                        ItemStackCache.clearItemStackCache();
                     }
                 }
             }
@@ -406,7 +406,7 @@ public final class ItemCatalog {
         if (itemData == null) {
             return ItemStack.EMPTY;
         }
-        return ItemViewerGrid.createDisplayStack(itemData);
+        return ItemStackCache.createDisplayStack(itemData);
     }
 
     public static ItemData findItemByNameFuzzy(String itemName) {

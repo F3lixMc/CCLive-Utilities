@@ -9,7 +9,6 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.BuildSlotMapping;
 import net.felix.utilities.Town.BuildSlotMapping.EquipmentCategory;

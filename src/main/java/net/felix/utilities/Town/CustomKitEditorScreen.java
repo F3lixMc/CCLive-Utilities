@@ -3,7 +3,6 @@ package net.felix.utilities.Town;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -26,6 +25,7 @@ import net.felix.features.itemviewer.search.SearchFieldState;
 import net.felix.features.itemviewer.ui.FilterOverlayControls;
 import net.felix.features.itemviewer.ui.ViewerInputHandler;
 import net.felix.features.itemviewer.ui.ViewerState;
+import net.felix.features.itemviewer.tooltip.ItemTooltipBuilder;
 
 /**
  * Editor zum Erstellen/Bearbeiten eines eigenen Kits.
@@ -373,8 +373,8 @@ public class CustomKitEditorScreen extends Screen {
         }
 
         if (!showDeleteConfirmation && hoveredSlotItem != null) {
-            ItemViewerGrid.updateAspectOverlayForItem(hoveredSlotItem);
-            ItemViewerGrid.renderItemTooltip(context, hoveredSlotItem, mouseX, mouseY);
+            ItemTooltipBuilder.updateAspectOverlayForItem(hoveredSlotItem);
+            ItemTooltipBuilder.renderItemTooltip(context, hoveredSlotItem, mouseX, mouseY);
         } else if (!showDeleteConfirmation && hoveredPresetIconName != null) {
             context.setComponentTooltipForNextFrame(
                     this.font,

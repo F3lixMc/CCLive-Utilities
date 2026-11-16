@@ -2,7 +2,6 @@ package net.felix.chat;
 
 import net.felix.CCLiveUtilities;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
 import net.felix.utilities.Town.BuildSlotMapping;
 import net.felix.utilities.Town.BuildSlotMapping.EquipmentCategory;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
@@ -22,6 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.felix.features.itemviewer.tooltip.ItemTooltipBuilder;
+import net.felix.features.itemviewer.ui.ItemStackCache;
 
 /**
  * Lokale Build-Share-Vorschau mit equipmentinventory_open_both.png.
@@ -388,7 +389,7 @@ public class BuildShareViewScreen extends Screen {
         if (item == null) {
             return;
         }
-        ItemStack stack = ItemViewerGrid.createDisplayStack(item);
+        ItemStack stack = ItemStackCache.createDisplayStack(item);
         int size = slotScreenSize();
         if (stack != null && !stack.isEmpty()) {
             if (uiScale >= 0.99f) {
@@ -422,7 +423,7 @@ public class BuildShareViewScreen extends Screen {
                 }
             }
         } else {
-            lines.addAll(ItemViewerGrid.buildTooltipLinesForItem(item, false));
+            lines.addAll(ItemTooltipBuilder.buildTooltipLinesForItem(item, false));
         }
         if (!lines.isEmpty()) {
             context.setComponentTooltipForNextFrame(this.font, lines, mouseX, mouseY);

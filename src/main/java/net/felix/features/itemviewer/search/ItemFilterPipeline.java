@@ -9,6 +9,7 @@ import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.inventory.FavoriteBlueprintsStore;
 import net.felix.features.itemviewer.inventory.FoundItemChecker;
 import net.felix.features.itemviewer.inventory.InventoryFilter;
+import net.felix.features.itemviewer.tooltip.TooltipCache;
 import net.felix.features.itemviewer.ui.ItemViewerGrid;
 import net.minecraft.client.Minecraft;
 
@@ -115,7 +116,7 @@ public final class ItemFilterPipeline {
         } else {
             applySorting();
             invalidatePageItemsCache();
-            ItemViewerGrid.invalidateTooltipCache();
+            TooltipCache.invalidateTooltipCache();
         }
     }
 

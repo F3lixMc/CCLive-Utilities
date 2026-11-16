@@ -7,6 +7,7 @@ import net.felix.features.itemviewer.inventory.FavoriteBlueprintsStore;
 import net.felix.features.itemviewer.inventory.HudStatsReader;
 import net.felix.features.itemviewer.inventory.InventoryFilter;
 import net.felix.features.itemviewer.search.SortMode;
+import net.felix.features.itemviewer.tooltip.TooltipCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 
@@ -223,7 +224,7 @@ public final class ViewerInputHandler {
                 if (mouseX >= costsButtonX && mouseX < costsButtonX + menuButtonWidth
                         && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
                     showCosts = !showCosts;
-                    ItemViewerGrid.invalidateTooltipCache();
+                    TooltipCache.invalidateTooltipCache();
                     return true;
                 }
                 if (mouseX >= ownedButtonX && mouseX < ownedButtonX + menuButtonWidth
@@ -232,7 +233,7 @@ public final class ViewerInputHandler {
                     if (!showOwnedResources) {
                         HudStatsReader.clear();
                     }
-                    ItemViewerGrid.invalidateTooltipCache();
+                    TooltipCache.invalidateTooltipCache();
                     return true;
                 }
 
@@ -363,7 +364,7 @@ public final class ViewerInputHandler {
                         }
                     }
 
-                    ItemViewerGrid.invalidateTooltipCache();
+                    TooltipCache.invalidateTooltipCache();
 
                     if (favoritesMode) {
                         applyFilters();

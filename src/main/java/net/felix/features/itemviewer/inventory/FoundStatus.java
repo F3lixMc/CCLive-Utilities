@@ -2,7 +2,7 @@ package net.felix.features.itemviewer.inventory;
 
 import com.google.gson.JsonObject;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
+import net.felix.features.itemviewer.tooltip.TooltipCache;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.minecraft.client.Minecraft;
 
@@ -30,7 +30,7 @@ public final class FoundStatus {
             net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.invalidateRenderSnapshot();
             if (currentSortMode.filtersNotFoundOnly()) {
                 applyFilters();
-                ItemViewerGrid.invalidateTooltipCache();
+                TooltipCache.invalidateTooltipCache();
             }
         };
         Minecraft client = Minecraft.getInstance();

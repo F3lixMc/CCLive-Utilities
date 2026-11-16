@@ -1,7 +1,6 @@
 package net.felix.chat;
 
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ui.ItemViewerGrid;
 import net.felix.utilities.Town.BuildSlotMapping;
 import net.felix.utilities.Town.CustomKit;
 import net.felix.utilities.Town.CustomKitManager;
@@ -17,6 +16,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.features.itemviewer.tooltip.ForgingTooltipText;
 
 /**
  * Speichert einen Build-Share-Snapshot als eigenes CustomKit
@@ -85,7 +85,7 @@ public final class ShareKitImportHelper {
                  "titangeschmiedet",
                  "lavageschmiedet",
                  "frostgeschmiedet" -> true;
-            default -> ItemViewerGrid.extractForgingConditionFromName("[" + inner + "]") != null;
+            default -> ForgingTooltipText.extractForgingConditionFromName("[" + inner + "]") != null;
         };
     }
 
