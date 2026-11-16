@@ -87,7 +87,7 @@ public class ScreenMixin {
         }
 
         // CCLive Chat: Item für Share kopieren (Inventar/Chest)
-        if (net.felix.chat.ItemShareManager.getInstance().handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Community.chat.ItemShareManager.getInstance().handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }

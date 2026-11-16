@@ -532,7 +532,7 @@ public class CardsStatuesUtility {
 		
 		// Informiere ProfileStatsManager sofort über die neue Karte
 		try {
-			net.felix.profile.ProfileStatsManager.getInstance().onCardFromChat(cardData);
+			net.felix.utilities.Community.profile.ProfileStatsManager.getInstance().onCardFromChat(cardData);
 		} catch (Exception e) {
 			// Silent error handling("[CardsStatues] ❌ Fehler beim Aufruf von onCardFromChat: " + e.getMessage());
 			// Silent error handling
@@ -620,7 +620,7 @@ public class CardsStatuesUtility {
 		
 		// Informiere ProfileStatsManager sofort über die neue Statue
 		try {
-			net.felix.profile.ProfileStatsManager.getInstance().onStatueFromChat(statueData);
+			net.felix.utilities.Community.profile.ProfileStatsManager.getInstance().onStatueFromChat(statueData);
 		} catch (Exception e) {
 			// Silent error handling("[CardsStatues] ❌ Fehler beim Aufruf von onStatueFromChat: " + e.getMessage());
 			// Silent error handling

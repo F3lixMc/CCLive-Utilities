@@ -4,14 +4,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.felix.staff.StaffClientAccess;
-import org.junit.jupiter.api.Test;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.felix.utilities.Community.staff.StaffClientAccess;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

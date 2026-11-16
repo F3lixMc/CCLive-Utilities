@@ -126,7 +126,7 @@ public class CCLiveUtilitiesConfig {
         
         // Migration für hoverStatsChosenStat von String zu Enum
         if (config.hoverStatsChosenStatString != null && !config.hoverStatsChosenStatString.isEmpty()) {
-            config.hoverStatsChosenStat = net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.fromString(config.hoverStatsChosenStatString);
+            config.hoverStatsChosenStat = net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType.fromString(config.hoverStatsChosenStatString);
             config.hoverStatsChosenStatString = null;
             HANDLER.save();
         }
@@ -507,7 +507,7 @@ public class CCLiveUtilitiesConfig {
     
     // Player Hover Stats Settings
     @SerialEntry
-    public net.felix.profile.PlayerHoverStatsUtility.HoverStatsType hoverStatsChosenStat = net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME; // Stat die in Chat-Hover-Events angezeigt wird
+    public net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType hoverStatsChosenStat = net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME; // Stat die in Chat-Hover-Events angezeigt wird
     
     // Migration für hoverStatsChosenStat von String zu Enum
     @SerialEntry
@@ -617,7 +617,7 @@ public class CCLiveUtilitiesConfig {
     public boolean leaderboardVisible = true;
 
     @SerialEntry
-    public float leaderboardScale = net.felix.leaderboards.panel.LeaderboardInventoryOverlay.DEFAULT_SCALE;
+    public float leaderboardScale = net.felix.utilities.Community.leaderboards.panel.LeaderboardInventoryOverlay.DEFAULT_SCALE;
 
     @SerialEntry
     public CoinTrackerDisplayMode coinTrackerDisplayMode = CoinTrackerDisplayMode.OVERLAY;
@@ -1774,7 +1774,7 @@ public class CCLiveUtilitiesConfig {
     public Color miningLumberjackOverlayTextColor = new Color(0xFFFFFFFF);
 
     private static Option<Boolean> dataTrackingOption;
-    private static Option<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType> hoverStatsOption;
+    private static Option<net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType> hoverStatsOption;
     private static Option<Boolean> chatIconOption;
     private static Option<Boolean> nametagIconOption;
     private static boolean dataTrackingUiBuilt = false;
@@ -1789,20 +1789,20 @@ public class CCLiveUtilitiesConfig {
         }
         dataTrackingUiBuilt = true;
 
-        hoverStatsOption = Option.<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
+        hoverStatsOption = Option.<net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
                 .name(Component.literal("Hover Stats: Gewählter Stat"))
                 .description(OptionDescription.of(Component.literal(
                         "Welcher Wert soll anderen Spielern angezeigt werden, wenn sie im Chat über deinen Namen hovern?\n\n"
                                 + "- Spielzeit\n- Max Coins\n- Gesendete Nachrichten\n- Gefundene Baupläne\n- Max Schaden\n- Schmiedelevel\n\n"
                                 + "!!! Erfordert ein aktives 'Daten Tracking'.")))
                 .binding(
-                        net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
+                        net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
                         () -> HANDLER.instance().hoverStatsChosenStat != null
                                 ? HANDLER.instance().hoverStatsChosenStat
-                                : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
+                                : net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
                         newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
                 .controller(opt -> EnumControllerBuilder.create(opt)
-                        .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)
+                        .enumClass(net.felix.utilities.Community.profile.PlayerHoverStatsUtility.HoverStatsType.class)
                         .formatValue(value -> value != null
                                 ? Component.literal(value.getDisplayName())
                                 : Component.literal("Spielzeit")))

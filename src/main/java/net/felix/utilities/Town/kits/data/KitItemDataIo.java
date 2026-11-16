@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
-import net.felix.chat.ChatTooltipLine;
+import net.felix.utilities.Community.chat.ChatTooltipLine;
 import net.felix.utilities.Overall.itemviewer.data.ItemData;
 
 /**

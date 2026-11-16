@@ -145,12 +145,12 @@ public class PlayerIconNetworking {
             }
 
             // Get HttpClient from LeaderboardManager
-            net.felix.leaderboards.LeaderboardManager manager = net.felix.leaderboards.LeaderboardManager.getInstance();
+            net.felix.utilities.Community.leaderboards.LeaderboardManager manager = net.felix.utilities.Community.leaderboards.LeaderboardManager.getInstance();
             if (manager == null) {
                 return;
             }
             
-            net.felix.leaderboards.http.HttpClient httpClient = manager.getHttpClient();
+            net.felix.utilities.Community.leaderboards.http.HttpClient httpClient = manager.getHttpClient();
             if (httpClient == null) {
                 return;
             }

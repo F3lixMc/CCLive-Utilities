@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.leaderboards.config.LeaderboardConfig;
+import net.felix.utilities.Community.leaderboards.config.LeaderboardConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;

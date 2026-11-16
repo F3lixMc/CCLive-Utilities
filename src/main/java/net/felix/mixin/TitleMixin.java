@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
+import net.felix.utilities.Community.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Overall.animationblocker.AnimationBlockerUtility;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.network.chat.Component;

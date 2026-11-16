@@ -1,11 +1,11 @@
 package net.felix.mixin;
 
-import net.felix.chat.BuildShareManager;
-import net.felix.chat.BuildShareViewScreen;
-import net.felix.chat.ChatManager;
-import net.felix.chat.ItemShareManager;
-import net.felix.profile.ProfileStatsManager;
-import net.felix.staff.StaffClientAccess;
+import net.felix.utilities.Community.chat.BuildShareManager;
+import net.felix.utilities.Community.chat.BuildShareViewScreen;
+import net.felix.utilities.Community.chat.ChatManager;
+import net.felix.utilities.Community.chat.ItemShareManager;
+import net.felix.utilities.Community.profile.ProfileStatsManager;
+import net.felix.utilities.Community.staff.StaffClientAccess;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -74,31 +74,31 @@ public abstract class ChatScreenMixin {
         if (client.gui.hud != null && client.gui.hud.getChat() != null) {
             client.gui.hud.getChat().saveAsDraft(draft);
         }
-        if (!(client.gui.screen() instanceof net.felix.chat.ChatRulesScreen)) {
-            client.gui.setScreen(net.felix.chat.ChatRulesScreen.forAcceptance());
+        if (!(client.gui.screen() instanceof net.felix.utilities.Community.chat.ChatRulesScreen)) {
+            client.gui.setScreen(net.felix.utilities.Community.chat.ChatRulesScreen.forAcceptance());
         }
     }
 
     @Inject(method = "removed", at = @At("HEAD"))
     private void cclive$closeContextMenu(CallbackInfo ci) {
-        net.felix.chat.ChatContextMenu.dismissWithScreen(this);
+        net.felix.utilities.Community.chat.ChatContextMenu.dismissWithScreen(this);
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 1) {
-            if (net.felix.chat.ChatContextMenu.tryOpen(event.x(), event.y())) {
+            if (net.felix.utilities.Community.chat.ChatContextMenu.tryOpen(event.x(), event.y())) {
                 cir.setReturnValue(true);
             } else {
-                net.felix.chat.ChatContextMenu.close();
+                net.felix.utilities.Community.chat.ChatContextMenu.close();
             }
             return;
         }
         if (button != 0) {
             return;
         }
-        if (net.felix.chat.ChatContextMenu.handleClick(event.x(), event.y(), button)) {
+        if (net.felix.utilities.Community.chat.ChatContextMenu.handleClick(event.x(), event.y(), button)) {
             cir.setReturnValue(true);
             return;
         }
@@ -114,9 +114,9 @@ public abstract class ChatScreenMixin {
         }
         // Alte SuggestCommand-Links (cclive-build:…) nicht in den Chat schreiben
         net.minecraft.network.chat.Style style =
-            net.felix.chat.ChatStyleHelper.getHoveredChatStyle(event.x(), event.y());
+            net.felix.utilities.Community.chat.ChatStyleHelper.getHoveredChatStyle(event.x(), event.y());
         if (style != null && style.getClickEvent() != null) {
-            String clickVal = net.felix.chat.ChatStyleHelper.clickEventValue(style.getClickEvent());
+            String clickVal = net.felix.utilities.Community.chat.ChatStyleHelper.clickEventValue(style.getClickEvent());
             if (clickVal != null && clickVal.startsWith(BuildShareManager.BUILD_INSERTION_PREFIX)) {
                 String id = clickVal.substring(BuildShareManager.BUILD_INSERTION_PREFIX.length());
                 BuildShareManager.getInstance().openBuildScreen(id);
@@ -265,21 +265,21 @@ public abstract class ChatScreenMixin {
     }
 
     private static boolean rejectBlockedGlyphs(String userText) {
-        if (!net.felix.chat.ChatBlockedGlyphs.containsBlockedGlyph(userText)) {
+        if (!net.felix.utilities.Community.chat.ChatBlockedGlyphs.containsBlockedGlyph(userText)) {
             return false;
         }
-        scheduleChatError("§c" + net.felix.chat.ChatBlockedGlyphs.ERROR_MESSAGE);
+        scheduleChatError("§c" + net.felix.utilities.Community.chat.ChatBlockedGlyphs.ERROR_MESSAGE);
         return true;
     }
 
     private boolean holdForChatRules(String rawInput) {
-        if (!net.felix.chat.ChatRulesAcceptance.isRulesGatedSend(
+        if (!net.felix.utilities.Community.chat.ChatRulesAcceptance.isRulesGatedSend(
                 rawInput, ChatManager.getInstance().getEffectiveWriteMode() == ChatManager.ChatMode.CCLIVE)) {
             return false;
         }
-        net.felix.chat.ChatRulesAcceptance store = net.felix.chat.ChatRulesAcceptance.shared();
-        String accountId = net.felix.chat.ChatIgnoreList.localAccountId();
-        Integer seasonId = net.felix.leaderboards.SeasonChangeGate.confirmedSeasonId();
+        net.felix.utilities.Community.chat.ChatRulesAcceptance store = net.felix.utilities.Community.chat.ChatRulesAcceptance.shared();
+        String accountId = net.felix.utilities.Community.chat.ChatIgnoreList.localAccountId();
+        Integer seasonId = net.felix.utilities.Community.leaderboards.SeasonChangeGate.confirmedSeasonId();
         if (!store.shouldHold(accountId, seasonId)) {
             return false;
         }
@@ -292,8 +292,8 @@ public abstract class ChatScreenMixin {
     private void sendCclive(String chatMessage) {
         ChatManager.getInstance().sendMessage(chatMessage).thenAccept(error -> {
             if (error != null) {
-                if (net.felix.chat.ChatBlockedGlyphs.isBlockedError(error)) {
-                    scheduleChatError("§c" + net.felix.chat.ChatBlockedGlyphs.ERROR_MESSAGE);
+                if (net.felix.utilities.Community.chat.ChatBlockedGlyphs.isBlockedError(error)) {
+                    scheduleChatError("§c" + net.felix.utilities.Community.chat.ChatBlockedGlyphs.ERROR_MESSAGE);
                 } else {
                     scheduleChatError("§cChat: " + error);
                 }
@@ -318,7 +318,7 @@ public abstract class ChatScreenMixin {
     private static long lastGlyphErrorAtMs;
 
     private static void scheduleChatError(String message) {
-        if (message != null && message.contains(net.felix.chat.ChatBlockedGlyphs.ERROR_MESSAGE)) {
+        if (message != null && message.contains(net.felix.utilities.Community.chat.ChatBlockedGlyphs.ERROR_MESSAGE)) {
             long now = System.currentTimeMillis();
             if (now - lastGlyphErrorAtMs < 500L) {
                 return;

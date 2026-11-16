@@ -1,7 +1,7 @@
 package net.felix.utilities.Farmworld.fishing.found;
 
-import net.felix.profile.ProfileStatsManager;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
+import net.felix.utilities.Community.profile.ProfileStatsManager;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;

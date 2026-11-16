@@ -3,11 +3,7 @@ package net.felix;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import net.fabricmc.api.ModInitializer;
-import net.felix.chat.ChatManager;
 import net.felix.commands.CCLiveCommands;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.profile.PlayerHoverStatsUtility;
-import net.felix.profile.ProfileStatsManager;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsStatuesUtility;
 import net.felix.utilities.Aincraft.information.InformationFeature;
@@ -15,6 +11,10 @@ import net.felix.utilities.Aincraft.kills.DamageTrackingUtility;
 import net.felix.utilities.Aincraft.kills.KillAnimationUtility;
 import net.felix.utilities.Aincraft.kills.KillsUtility;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerUtility;
+import net.felix.utilities.Community.chat.ChatManager;
+import net.felix.utilities.Community.leaderboards.LeaderboardManager;
+import net.felix.utilities.Community.profile.PlayerHoverStatsUtility;
+import net.felix.utilities.Community.profile.ProfileStatsManager;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
@@ -90,9 +90,9 @@ public class CCLiveUtilities implements ModInitializer {
 		// Initialisiere Chat-System
 		try {
 			ChatManager.getInstance().initialize();
-			net.felix.chat.ChatNameColorTracker.getInstance().initialize();
-			net.felix.chat.ItemShareManager.getInstance().initialize();
-			net.felix.chat.BuildShareManager.getInstance().initialize();
+			net.felix.utilities.Community.chat.ChatNameColorTracker.getInstance().initialize();
+			net.felix.utilities.Community.chat.ItemShareManager.getInstance().initialize();
+			net.felix.utilities.Community.chat.BuildShareManager.getInstance().initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}

@@ -193,7 +193,7 @@ public class ZeichenUtility {
             logStatus("[" + trigger + "] Kein ResourceManager.");
             return false;
         }
-        net.felix.chat.ChatBlockedGlyphs.reloadFromResourceManager(manager);
+        net.felix.utilities.Community.chat.ChatBlockedGlyphs.reloadFromResourceManager(manager);
         boolean defaultJsonPresent = manager.getResource(ZeichenFontLoader.MINECRAFT_DEFAULT_FONT).isPresent();
         Map<ZeichenFontLoader.FontProviderKey, List<Integer>> index = indexProviders(manager);
         int providersWithGroup = index.size();
@@ -230,7 +230,7 @@ public class ZeichenUtility {
                     @Override
                     public void onResourceManagerReload(ResourceManager manager) {
                         lastLoadTrigger = "resource-reload";
-                        net.felix.chat.ChatBlockedGlyphs.reloadFromResourceManager(manager);
+                        net.felix.utilities.Community.chat.ChatBlockedGlyphs.reloadFromResourceManager(manager);
                         // Immer neu laden (leert zuerst den Cache, dann Pack oder Fallback)
                         loadAllSources();
                         isInitialized = true;

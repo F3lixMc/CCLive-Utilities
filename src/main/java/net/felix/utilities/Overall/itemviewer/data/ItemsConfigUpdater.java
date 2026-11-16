@@ -28,12 +28,12 @@ public final class ItemsConfigUpdater {
     public static void checkAndUpdateItemsConfig() {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
-                net.felix.leaderboards.LeaderboardManager manager = net.felix.leaderboards.LeaderboardManager.getInstance();
+                net.felix.utilities.Community.leaderboards.LeaderboardManager manager = net.felix.utilities.Community.leaderboards.LeaderboardManager.getInstance();
                 if (manager == null) {
                     return;
                 }
                 
-                net.felix.leaderboards.config.LeaderboardConfig config = new net.felix.leaderboards.config.LeaderboardConfig();
+                net.felix.utilities.Community.leaderboards.config.LeaderboardConfig config = new net.felix.utilities.Community.leaderboards.config.LeaderboardConfig();
                 String serverUrl = config.getServerUrl();
                 
                 // Items-Download braucht keine Registrierung (nur GET)
