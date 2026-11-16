@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall;
+package net.felix.utilities.Factory.mklevel;
 
 /**
  * Machtkristall-Level und Fortschritt aus Tablist-XP (benötigte XP → Level, aktuelle XP → Prozent).

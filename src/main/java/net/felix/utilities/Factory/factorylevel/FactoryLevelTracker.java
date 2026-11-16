@@ -1,5 +1,6 @@
-package net.felix.utilities.Factory;
+package net.felix.utilities.Factory.factorylevel;
 
+import java.util.List;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -13,8 +14,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-
-import java.util.List;
 
 /**
  * Fabriklevel-Tracker. Misst nur in der Fabrik und zeichnet das Overlay über die HUD-Registry.

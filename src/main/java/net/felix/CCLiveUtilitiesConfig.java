@@ -11,6 +11,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.utilities.Aincraft.materials.MaterialTrackerDisplayMode;
+import net.felix.utilities.Farmworld.collections.ResourceTrackerDisplayMode;
 import net.felix.utilities.Town.ItemDisplayMode;
 import net.felix.utilities.Town.OverlayType;
 import net.felix.utilities.Town.SchmiedItemDisplayMode;

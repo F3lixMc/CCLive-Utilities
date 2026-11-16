@@ -1,6 +1,6 @@
 package net.felix.features.npcalerts.data;
 
-import net.felix.utilities.Overall.PowerCrystalLevelUtility;
+import net.felix.utilities.Factory.mklevel.PowerCrystalLevelUtility;
 
 // Machtkristalle (3 Slots, in Reihenfolge)
 public class MachtkristallSlot {

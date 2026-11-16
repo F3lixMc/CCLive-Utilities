@@ -1,12 +1,12 @@
 package net.felix.utilities.Other.Clipboard;
 
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.CCLiveUtilitiesConfig;
 import net.felix.features.information.farmzone.FarmzoneScoreboard;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * Liest Farmzone-Ressourcen aus der Actionbar ({@code +XXX NAME [GESAMT]}) und speichert

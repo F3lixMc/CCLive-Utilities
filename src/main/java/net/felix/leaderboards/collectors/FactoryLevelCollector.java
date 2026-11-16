@@ -3,7 +3,7 @@ package net.felix.leaderboards.collectors;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.leaderboards.FactoryLevel;
 import net.felix.leaderboards.FactoryLevelUpload;
-import net.felix.utilities.Factory.FactoryLevelPresence;
+import net.felix.utilities.Factory.factorylevel.FactoryLevelPresence;
 import net.minecraft.client.Minecraft;
 
 /**

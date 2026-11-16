@@ -1,10 +1,10 @@
-package net.felix.utilities.Factory;
+package net.felix.utilities.Factory.wave;
 
+import java.util.Map;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.profile.ProfileStatsManager;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
-import java.util.Map;
 
 /**
  * Utility für das Tracken der höchsten Welle in der Fabrik.

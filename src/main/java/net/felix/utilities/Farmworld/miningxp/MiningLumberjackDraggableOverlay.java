@@ -1,11 +1,11 @@
-package net.felix.utilities.DragOverlay.Farmworld;
+package net.felix.utilities.Farmworld.miningxp;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.information.xp.MiningLumberjackOverlay;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.felix.features.information.xp.MiningLumberjackOverlay;
 
 /**
  * Draggable Overlay für Mining und Lumberjack Overlays

@@ -2,7 +2,7 @@ package net.felix.mixin;
 
 import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
 import net.felix.utilities.Aincraft.materials.ActionBarData;
-import net.felix.utilities.Factory.BossHPUtility;
+import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardFarmzoneActionBar;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.network.chat.Component;

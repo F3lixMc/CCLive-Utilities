@@ -1,4 +1,4 @@
-package net.felix.utilities.Farmworld;
+package net.felix.utilities.Farmworld.farmzone;
 
 import java.util.Locale;
 import java.util.regex.Matcher;

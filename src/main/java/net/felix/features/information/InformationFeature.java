@@ -4,14 +4,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
-import net.felix.utilities.Overall.Aspekte.AspectOverlay;
-import net.felix.utilities.Overall.Aspekte.AspectOverlayRenderer;
-import net.felix.utilities.Overall.HudOverlayVisibility;
-import net.minecraft.client.DeltaTracker;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.resources.Identifier;
 import net.felix.features.information.aspects.AspectDatabase;
 import net.felix.features.information.blueprints.BlueprintDatabase;
 import net.felix.features.information.cards.CardsStatuesDatabase;
@@ -28,6 +20,14 @@ import net.felix.features.information.mklevel.MkLevelInputHandler;
 import net.felix.features.information.tooltip.InformationTooltipHandler;
 import net.felix.features.information.xp.MiningLumberjackOverlay;
 import net.felix.features.information.xp.MiningLumberjackTracker;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
+import net.felix.utilities.Overall.Aspekte.AspectOverlay;
+import net.felix.utilities.Overall.Aspekte.AspectOverlayRenderer;
+import net.felix.utilities.Overall.HudOverlayVisibility;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 
 /**
  * Einstiegspunkt der Informationen-Features: laedt die Datenbanken und registriert

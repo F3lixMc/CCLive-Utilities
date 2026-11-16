@@ -1,13 +1,13 @@
 package net.felix.features.information.collections;
 
-import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.felix.CCLiveUtilitiesConfig;
-import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.felix.utilities.Overall.KeyCategories;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 
 import static net.felix.features.information.collections.CollectionDatabase.collectionsDatabase;
 import static net.felix.features.information.farmzone.FarmzoneScoreboard.extractBiomFromLines;
@@ -15,7 +15,6 @@ import static net.felix.features.information.farmzone.FarmzoneScoreboard.isInFar
 import static net.felix.features.information.farmzone.FarmzoneScoreboard.readScoreboardLines;
 import static net.felix.features.information.farmzone.FarmzoneScoreboard.stripScoreboardDisplayText;
 import static net.felix.features.information.util.NumeralConversion.decodeChineseNumber;
-
 
 /**
  * Verfolgt Collection-Fortschritt, Biom und Bossbar in der Farmworld.

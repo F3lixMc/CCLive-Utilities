@@ -1,14 +1,8 @@
 package net.felix.features.information.xp;
 
-import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.felix.utilities.Overall.SessionRateUtility;
+import net.minecraft.client.Minecraft;
 
 /**
  * Verfolgt XP, XP/Min und Sichtbarkeit fuer Bergbau und Holzfaeller.

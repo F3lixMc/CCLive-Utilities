@@ -8,7 +8,7 @@ import net.felix.features.itemviewer.inventory.HudStatsReader;
 import net.felix.features.npcalerts.parser.KomboKisteReader;
 import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import net.felix.utilities.Aincraft.kills.KillsUtility;
-import net.felix.utilities.Factory.WaveUtility;
+import net.felix.utilities.Factory.wave.WaveUtility;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;

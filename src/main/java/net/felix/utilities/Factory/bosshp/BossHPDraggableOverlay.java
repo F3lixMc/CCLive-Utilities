@@ -1,14 +1,13 @@
-package net.felix.utilities.DragOverlay.Factory;
+package net.felix.utilities.Factory.bosshp;
 
+import java.math.BigInteger;
+import java.util.Locale;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
-
-import java.math.BigInteger;
-import java.util.Locale;
 
 /**
  * Draggable Overlay für die Boss HP Anzeige
@@ -83,7 +82,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     BigInteger currentHP = null;
                     try {
                         currentHP = new BigInteger(rawHP);
-                        displayHP = net.felix.utilities.Factory.BossHPUtility.formatBigInteger(currentHP);
+                        displayHP = net.felix.utilities.Factory.bosshp.BossHPUtility.formatBigInteger(currentHP);
                     } catch (NumberFormatException e) {
                         displayHP = rawHP;
                     }
@@ -94,9 +93,9 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     
                     // Calculate percentage text (exactly like standard overlay)
                     String percentageText = null;
-                    BigInteger initialBossHP = net.felix.utilities.Factory.BossHPUtility.getInitialBossHP();
+                    BigInteger initialBossHP = net.felix.utilities.Factory.bosshp.BossHPUtility.getInitialBossHP();
                     if (!displayHP.isEmpty() && 
-                        net.felix.utilities.Factory.BossHPUtility.isBossActive() &&
+                        net.felix.utilities.Factory.bosshp.BossHPUtility.isBossActive() &&
                         CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowPercentage &&
                         initialBossHP != null && currentHP != null && 
                         initialBossHP.compareTo(BigInteger.ZERO) > 0) {
@@ -116,23 +115,23 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                     // Calculate DPM text (exactly like standard overlay)
                     String dpmText = null;
                     if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
-                        dpmText = net.felix.utilities.Factory.BossHPUtility.getFormattedDpmText();
+                        dpmText = net.felix.utilities.Factory.bosshp.BossHPUtility.getFormattedDpmText();
                     }
                     
                     int dpmWidth = dpmText != null ? client.font.width(dpmText) : 0;
                     
                     String etaLine = null;
                     if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta && currentHP != null) {
-                        etaLine = net.felix.utilities.Factory.BossHPUtility.getFormattedEtaText(currentHP);
+                        etaLine = net.felix.utilities.Factory.bosshp.BossHPUtility.getFormattedEtaText(currentHP);
                     }
                     int etaWidth = etaLine != null ? client.font.width(etaLine) : 0;
                     
                     String lastDmgLine = null;
                     String overallDmgLine = null;
                     if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg && initialBossHP != null && currentHP != null) {
-                        java.math.BigInteger ld = net.felix.utilities.Factory.BossHPUtility.getDisplayedLastDamage();
-                        String lastVal = ld == null ? "-" : net.felix.utilities.Factory.BossHPUtility.formatBigInteger(ld);
-                        int cd = net.felix.utilities.Factory.BossHPUtility.getLastDmgIntervalCountdown();
+                        java.math.BigInteger ld = net.felix.utilities.Factory.bosshp.BossHPUtility.getDisplayedLastDamage();
+                        String lastVal = ld == null ? "-" : net.felix.utilities.Factory.bosshp.BossHPUtility.formatBigInteger(ld);
+                        int cd = net.felix.utilities.Factory.bosshp.BossHPUtility.getLastDmgIntervalCountdown();
                         lastDmgLine = "Last Dmg: " + lastVal + " | " + cd + "s";
                     }
                     if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg && initialBossHP != null && currentHP != null
@@ -142,7 +141,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                             totalDealt = BigInteger.ZERO;
                         }
                         double removedPct = totalDealt.doubleValue() / initialBossHP.doubleValue() * 100.0;
-                        overallDmgLine = "Overall DMG: " + net.felix.utilities.Factory.BossHPUtility.formatBigInteger(totalDealt)
+                        overallDmgLine = "Overall DMG: " + net.felix.utilities.Factory.bosshp.BossHPUtility.formatBigInteger(totalDealt)
                             + " | " + String.format(Locale.US, "%.1f%%", removedPct);
                     }
                     int lastDmgWidth = lastDmgLine != null ? client.font.width(lastDmgLine) : 0;
@@ -414,8 +413,8 @@ return CCLiveUtilitiesConfig.HANDLER.instance().bossHPEnabled &&
     private BossData getCurrentBossData() {
         try {
             // Get real boss data using public methods
-            String bossName = net.felix.utilities.Factory.BossHPUtility.getCurrentBossName();
-            String bossText = net.felix.utilities.Factory.BossHPUtility.getCurrentBossText();
+            String bossName = net.felix.utilities.Factory.bosshp.BossHPUtility.getCurrentBossName();
+            String bossText = net.felix.utilities.Factory.bosshp.BossHPUtility.getCurrentBossText();
             
             // Only return real boss data, no test content
             if (bossName != null && bossText != null && !bossName.isEmpty() && !bossText.isEmpty()) {

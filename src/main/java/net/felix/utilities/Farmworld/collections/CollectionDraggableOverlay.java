@@ -1,12 +1,12 @@
-package net.felix.utilities.DragOverlay.Farmworld;
+package net.felix.utilities.Farmworld.collections;
 
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.information.collections.CollectionOverlay;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
-import net.felix.features.information.collections.CollectionOverlay;
 
 /**
  * Draggable Overlay für das Collection Overlay

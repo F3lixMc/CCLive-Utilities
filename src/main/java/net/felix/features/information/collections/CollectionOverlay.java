@@ -1,8 +1,8 @@
 package net.felix.features.information.collections;
 
-import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.ResourceTrackerDisplayMode;
+import net.felix.utilities.Farmworld.collections.ResourceTrackerDisplayMode;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -14,11 +14,10 @@ import static net.felix.features.information.collections.CollectionTracker.isTra
 import static net.felix.features.information.collections.CollectionTracker.sessionBlocks;
 import static net.felix.features.information.collections.CollectionTracker.sessionStartTime;
 import static net.felix.features.information.farmzone.FarmzoneScoreboard.isInFarmzone;
-import static net.felix.features.information.xp.MiningLumberjackTracker.showOverlays;
 import static net.felix.features.information.util.NumberFormatting.formatDoubleWithSeparator;
 import static net.felix.features.information.util.NumberFormatting.formatNumberWithSeparator;
 import static net.felix.features.information.util.NumberFormatting.formatTimeMinutes;
-
+import static net.felix.features.information.xp.MiningLumberjackTracker.showOverlays;
 
 /**
  * Zeichnet das Collection-Overlay und liefert dessen Abmessungen.

@@ -1,4 +1,4 @@
-package net.felix.utilities.Factory;
+package net.felix.utilities.Factory.factorylevel;
 
 import java.util.ArrayList;
 import java.util.List;

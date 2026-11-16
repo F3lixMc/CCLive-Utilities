@@ -1,8 +1,17 @@
-package net.felix.utilities.Factory;
+package net.felix.utilities.Factory.bosshp;
 
+import java.math.BigInteger;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
@@ -14,17 +23,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import org.joml.Matrix3x2fStack;
-
-
-import java.math.BigInteger;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class BossHPUtility {
 	
