@@ -57,10 +57,10 @@ public class CCLiveUtilities implements ModInitializer {
 		net.felix.utilities.Overall.glyphs.ZeichenUtility.initialize();
 
 		// Server-Gate: Features/Uploads nur auf PlayLegend (Dev + Bypass-Spieler ausgenommen)
-		net.felix.utilities.Overall.server.ServerConnectionGate.initialize();
+		net.felix.utilities.Other.server.ServerConnectionGate.initialize();
 		
 		// Initialisiere JSON-Config-Update-Utility (für automatische Updates vom Server)
-		net.felix.utilities.Overall.config.JsonConfigUpdateUtility.initialize();
+		net.felix.utilities.Other.config.JsonConfigUpdateUtility.initialize();
 
 		// Initialisiere alle Utility-Klassen
 		EquipmentDisplayUtility.initialize();
@@ -80,7 +80,7 @@ public class CCLiveUtilities implements ModInitializer {
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
-		net.felix.utilities.Overall.cointracker.CoinTrackerUtility.initialize();
+		net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility.initialize();
 		NpcAlertsFeature.initialize();
 		net.felix.utilities.Other.debug.DebugUtility.initializeItemLogger();
 		net.felix.utilities.Other.clipboard.ClipboardUtility.initialize();

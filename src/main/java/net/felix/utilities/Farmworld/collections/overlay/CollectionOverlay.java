@@ -15,9 +15,9 @@ import static net.felix.utilities.Farmworld.collections.tracker.CollectionTracke
 import static net.felix.utilities.Farmworld.collections.tracker.CollectionTracker.sessionStartTime;
 import static net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard.isInFarmzone;
 import static net.felix.utilities.Farmworld.miningxp.tracker.MiningLumberjackTracker.showOverlays;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatDoubleWithSeparator;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatNumberWithSeparator;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatTimeMinutes;
+import static net.felix.utilities.Other.util.NumberFormatting.formatDoubleWithSeparator;
+import static net.felix.utilities.Other.util.NumberFormatting.formatNumberWithSeparator;
+import static net.felix.utilities.Other.util.NumberFormatting.formatTimeMinutes;
 
 /**
  * Zeichnet das Collection-Overlay und liefert dessen Abmessungen.

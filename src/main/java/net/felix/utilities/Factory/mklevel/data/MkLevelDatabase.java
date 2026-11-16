@@ -7,8 +7,8 @@ import java.util.List;
 
 import static net.felix.utilities.Aincraft.information.essences.EssenceWaveNames.getWaveDisplayForMkLevelEssence;
 import static net.felix.utilities.Factory.mklevel.data.MkLevelState.mkLevelTotalEssencesCache;
-import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatNumberWithSeparator;
+import static net.felix.utilities.Other.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Other.util.NumberFormatting.formatNumberWithSeparator;
 
 /**
  * MK-Level-Daten (MKLevel.json) und Filter fuer die Anzeige.

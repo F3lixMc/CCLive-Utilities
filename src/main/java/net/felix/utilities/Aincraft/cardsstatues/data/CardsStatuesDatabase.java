@@ -9,7 +9,7 @@ import java.util.Map;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Other.util.JsonConfigFiles.getConfigFilePath;
 
 /**
  * Effekte und Ebenen von Karten und Statuen.

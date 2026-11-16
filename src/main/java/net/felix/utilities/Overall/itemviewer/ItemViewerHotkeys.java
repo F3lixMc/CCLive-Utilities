@@ -3,8 +3,8 @@ package net.felix.utilities.Overall.itemviewer;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.utilities.Other.clipboard.ClipboardUtility;
+import net.felix.utilities.Other.keybinding.KeyCategories;
 import net.felix.utilities.Overall.itemviewer.data.ItemData;
-import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
@@ -77,8 +77,8 @@ public final class ItemViewerHotkeys {
                 int keyCode = (Integer) getCodeMethod.invoke(boundKey);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                String letter = net.felix.utilities.Overall.keybinding.KeyBindingUtility.letterFromScancode(keyCode, true);
-                Character digit = net.felix.utilities.Overall.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
+                String letter = net.felix.utilities.Other.keybinding.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Other.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
                 if (letter != null) {
                     return letter;
                 } else if (digit != null) {
@@ -131,8 +131,8 @@ public final class ItemViewerHotkeys {
                 int keyCode = (Integer) getCodeMethod.invoke(boundKeyObj);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                String letter = net.felix.utilities.Overall.keybinding.KeyBindingUtility.letterFromScancode(keyCode, true);
-                Character digit = net.felix.utilities.Overall.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
+                String letter = net.felix.utilities.Other.keybinding.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Other.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
                 if (letter != null) {
                     return letter;
                 } else if (digit != null) {

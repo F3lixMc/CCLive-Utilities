@@ -13,9 +13,9 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayType;
+import net.felix.utilities.Other.keybinding.KeyBindingUtility;
+import net.felix.utilities.Other.keybinding.KeyCategories;
 import net.felix.utilities.Overall.glyphs.ZeichenUtility;
-import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
-import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.DeltaTracker;
@@ -1021,7 +1021,7 @@ public class CardsStatuesUtility {
 		if (!config.cardsStatuesEnabled) {
 			return;
 		}
-		if (!net.felix.utilities.Overall.hud.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+		if (!net.felix.utilities.Other.hud.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
 			return;
 		}
 		

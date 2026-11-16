@@ -6,8 +6,8 @@ import java.util.Map;
 import net.minecraft.network.chat.Component;
 
 import static net.felix.utilities.Aincraft.information.gadgets.GadgetDatabase.gadgetsDatabase;
-import static net.felix.utilities.Overall.util.NumeralConversion.convertToRomanNumeral;
-import static net.felix.utilities.Overall.util.NumeralConversion.romanToArabic;
+import static net.felix.utilities.Other.util.NumeralConversion.convertToRomanNumeral;
+import static net.felix.utilities.Other.util.NumeralConversion.romanToArabic;
 
 /**
  * Gadget-Informationen in Modul- und Ingenieur-Inventaren.

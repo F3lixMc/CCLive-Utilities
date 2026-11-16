@@ -8,7 +8,7 @@ import java.util.Map;
 import static net.felix.utilities.Aincraft.materials.data.PrismarinMaterials.getPrismarinMaterialFloorInfo;
 import static net.felix.utilities.Farmworld.fishing.ponds.FishingMaterials.getFishingMaterialFloorInfo;
 import static net.felix.utilities.Farmworld.fishing.ponds.PondDatabase.loadPondMaterialsFromFarmworld;
-import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Other.util.JsonConfigFiles.getConfigFilePath;
 
 /**
  * Material-Datenbank (Aincraft.json) und Ebenen-Abfrage.

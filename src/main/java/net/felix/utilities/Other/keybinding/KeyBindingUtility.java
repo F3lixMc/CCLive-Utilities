@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.keybinding;
+package net.felix.utilities.Other.keybinding;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;

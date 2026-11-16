@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.server;
+package net.felix.utilities.Other.server;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import java.net.UnknownHostException;

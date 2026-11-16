@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.hud;
+package net.felix.utilities.Other.hud;
 
 public final class SessionRateUtility {
 

@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.cointracker;
+package net.felix.utilities.Aincraft.cointracker;
 
 public enum CoinTrackerDisplayMode {
     OVERLAY,

@@ -3,7 +3,7 @@ package net.felix.mixin;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import net.felix.utilities.Overall.server.PlayLegendServerEntryWidget;
+import net.felix.utilities.Other.server.PlayLegendServerEntryWidget;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;

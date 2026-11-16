@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.server;
+package net.felix.utilities.Other.server;
 
 import java.util.Locale;
 import java.util.Set;

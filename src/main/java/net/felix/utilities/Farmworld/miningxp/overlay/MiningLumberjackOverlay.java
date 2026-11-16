@@ -7,9 +7,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import static net.felix.utilities.Farmworld.miningxp.tracker.MiningLumberjackTracker.calculateTimeToNextLevel;
 import static net.felix.utilities.Farmworld.miningxp.tracker.MiningLumberjackTracker.lumberjackXp;
 import static net.felix.utilities.Farmworld.miningxp.tracker.MiningLumberjackTracker.miningXp;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatDoubleWithSeparator;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatNumberWithSeparator;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatTime;
+import static net.felix.utilities.Other.util.NumberFormatting.formatDoubleWithSeparator;
+import static net.felix.utilities.Other.util.NumberFormatting.formatNumberWithSeparator;
+import static net.felix.utilities.Other.util.NumberFormatting.formatTime;
 
 /**
  * Zeichnet die Bergbau- und Holzfaeller-Overlays.

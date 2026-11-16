@@ -11,7 +11,7 @@ import java.util.Set;
 import net.felix.utilities.Aincraft.materials.data.MaterialInfo;
 
 import static net.felix.utilities.Aincraft.materials.data.MaterialDatabase.materialsDatabase;
-import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Other.util.JsonConfigFiles.getConfigFilePath;
 
 /**
  * Teich-Datenbank aus der Farmworld-Konfiguration.

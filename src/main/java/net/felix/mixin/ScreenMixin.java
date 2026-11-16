@@ -39,7 +39,7 @@ public class ScreenMixin {
      */
     @Inject(method = "extractTransparentBackground", at = @At("HEAD"))
     private void cclive$renderOverlaysBehindDim(GuiGraphicsExtractor context, CallbackInfo ci) {
-        net.felix.utilities.Overall.hud.HudOverlayVisibility.renderBehindInventoryDim(context);
+        net.felix.utilities.Other.hud.HudOverlayVisibility.renderBehindInventoryDim(context);
     }
     
     /**

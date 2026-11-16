@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import java.util.Set;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
-import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
+import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
@@ -640,7 +640,7 @@ public class NpcAlertsDetailScreen extends Screen {
         float scale = settingsScale();
         double mouseX = (event.x() - width / 2.0f) / scale + width / 2.0f;
         double mouseY = (event.y() - settingsCenterY(scale)) / scale + height / 2.0f;
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 0) {
             // Schließen-Kreuz (gleiche Position wie beim Rendering)
             SettingsLayout layout = computeLayout();

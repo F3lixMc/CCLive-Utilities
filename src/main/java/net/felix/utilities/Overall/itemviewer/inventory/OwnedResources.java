@@ -2,12 +2,12 @@ package net.felix.utilities.Overall.itemviewer.inventory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.cointracker.CoinTrackerUtility;
-import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
-import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
+import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Other.hud.HudNumberSuffixUtility;
 import net.felix.utilities.Overall.itemviewer.data.CostItem;
 import net.felix.utilities.Overall.itemviewer.data.PriceData;
 import net.felix.utilities.Overall.itemviewer.ui.ViewerState;

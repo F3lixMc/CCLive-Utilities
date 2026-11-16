@@ -3,7 +3,7 @@ package net.felix.utilities.DragOverlay;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.felix.utilities.Overall.keybinding.KeyCategories;
+import net.felix.utilities.Other.keybinding.KeyCategories;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 

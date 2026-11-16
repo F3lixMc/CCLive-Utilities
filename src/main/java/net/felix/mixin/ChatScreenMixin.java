@@ -86,7 +86,7 @@ public abstract class ChatScreenMixin {
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 1) {
             if (net.felix.utilities.Community.chat.ChatContextMenu.tryOpen(event.x(), event.y())) {
                 cir.setReturnValue(true);

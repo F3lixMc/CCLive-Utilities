@@ -23,7 +23,7 @@ import static net.felix.utilities.Factory.mklevel.data.MkLevelState.mkLevelSearc
 import static net.felix.utilities.Factory.mklevel.data.MkLevelState.mkLevelSearchFocused;
 import static net.felix.utilities.Factory.mklevel.data.MkLevelState.mkLevelSearchText;
 import static net.felix.utilities.Factory.mklevel.data.MkLevelState.setMkLevelScrollOffset;
-import static net.felix.utilities.Overall.util.NumberFormatting.formatNumberWithSeparator;
+import static net.felix.utilities.Other.util.NumberFormatting.formatNumberWithSeparator;
 
 /**
  * Zeichnet das MK-Level-Overlay.

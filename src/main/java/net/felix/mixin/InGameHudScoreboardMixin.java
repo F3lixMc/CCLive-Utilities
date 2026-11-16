@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.cointracker.CoinTrackerCustomSidebar;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerCustomSidebar;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

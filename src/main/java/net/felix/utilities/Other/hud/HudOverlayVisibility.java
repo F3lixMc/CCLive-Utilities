@@ -1,14 +1,14 @@
-package net.felix.utilities.Overall.hud;
+package net.felix.utilities.Other.hud;
 
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsStatuesUtility;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility;
 import net.felix.utilities.Aincraft.information.InformationFeature;
 import net.felix.utilities.Aincraft.kills.KillsUtility;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
-import net.felix.utilities.Overall.cointracker.CoinTrackerUtility;
 import net.felix.utilities.Overall.npcalerts.NpcAlertsFeature;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;

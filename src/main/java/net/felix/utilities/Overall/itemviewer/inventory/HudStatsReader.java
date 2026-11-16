@@ -2,8 +2,8 @@ package net.felix.utilities.Overall.itemviewer.inventory;
 
 import java.math.BigDecimal;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
-import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
+import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Other.hud.HudNumberSuffixUtility;
 import net.felix.utilities.Overall.itemviewer.ui.ViewerState;
 
 /**

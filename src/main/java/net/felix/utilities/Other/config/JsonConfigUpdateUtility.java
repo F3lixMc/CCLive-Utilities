@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.config;
+package net.felix.utilities.Other.config;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

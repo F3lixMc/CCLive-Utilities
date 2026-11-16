@@ -186,9 +186,9 @@ public class ProfileStatsManager {
         
         // Registriere Server-Join Event (Reset + Server-Prüfung)
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            net.felix.utilities.Overall.server.ServerConnectionGate.refresh();
+            net.felix.utilities.Other.server.ServerConnectionGate.refresh();
             isOnAllowedServerForPlaytime =
-                net.felix.utilities.Overall.server.ServerConnectionGate.isDataUploadAllowed();
+                net.felix.utilities.Other.server.ServerConnectionGate.isDataUploadAllowed();
             resetCounters();
         });
         

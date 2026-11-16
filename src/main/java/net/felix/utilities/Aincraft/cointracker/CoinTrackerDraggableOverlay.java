@@ -1,8 +1,8 @@
-package net.felix.utilities.Overall.cointracker;
+package net.felix.utilities.Aincraft.cointracker;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;

@@ -598,7 +598,7 @@ public class CustomKitEditorScreen extends Screen {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (showDeleteConfirmation) {
             return super.mouseClicked(event, doubled);
         }
@@ -694,7 +694,7 @@ public class CustomKitEditorScreen extends Screen {
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double deltaX, double deltaY) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.utilities.Overall.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (FilterOverlayControls.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 return true;
@@ -707,7 +707,7 @@ public class CustomKitEditorScreen extends Screen {
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (FilterOverlayControls.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             return true;
         }

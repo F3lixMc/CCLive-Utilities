@@ -21,7 +21,7 @@ public abstract class SearchBarInputMixin {
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         // Blockiere Mausklicks wenn der Hilfe-Screen offen ist
         if (SearchBarUtility.isHelpScreenOpen()) {
             cir.setReturnValue(true);

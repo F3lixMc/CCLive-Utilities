@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.util;
+package net.felix.utilities.Other.util;
 
 
 /**

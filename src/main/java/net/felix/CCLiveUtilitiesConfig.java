@@ -10,10 +10,10 @@ import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
-import net.felix.utilities.Overall.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Overall.searchbar.ItemDisplayMode;
 import net.felix.utilities.Town.schmied.SchmiedItemDisplayMode;
 import net.minecraft.client.gui.screens.Screen;
@@ -424,7 +424,7 @@ public class CCLiveUtilitiesConfig {
      */
     public static boolean isModRuntimeEnabled() {
         return HANDLER.instance().enableMod
-            && net.felix.utilities.Overall.server.ServerConnectionGate.areFeaturesAllowed();
+            && net.felix.utilities.Other.server.ServerConnectionGate.areFeaturesAllowed();
     }
 
     /**
@@ -433,7 +433,7 @@ public class CCLiveUtilitiesConfig {
      */
     public static boolean isDataTrackingEnabled() {
         return HANDLER.instance().dataTrackingEnabled
-            && net.felix.utilities.Overall.server.ServerConnectionGate.isDataUploadAllowed();
+            && net.felix.utilities.Other.server.ServerConnectionGate.isDataUploadAllowed();
     }
     
     // Debug Settings

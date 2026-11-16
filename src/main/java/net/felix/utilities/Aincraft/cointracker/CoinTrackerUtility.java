@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.cointracker;
+package net.felix.utilities.Aincraft.cointracker;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.math.BigDecimal;
@@ -9,12 +9,12 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
-import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
-import net.felix.utilities.Overall.hud.HudOverlayVisibility;
-import net.felix.utilities.Overall.hud.SessionRateUtility;
-import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
-import net.felix.utilities.Overall.keybinding.KeyCategories;
+import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Other.hud.HudNumberSuffixUtility;
+import net.felix.utilities.Other.hud.HudOverlayVisibility;
+import net.felix.utilities.Other.hud.SessionRateUtility;
+import net.felix.utilities.Other.keybinding.KeyBindingUtility;
+import net.felix.utilities.Other.keybinding.KeyCategories;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;

@@ -7,7 +7,7 @@ import java.util.Map;
 import net.minecraft.network.chat.Component;
 
 import static net.felix.utilities.Aincraft.blueprints.tooltip.BlueprintFloorTooltip.getDrachenzahnFloorFromColor;
-import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Other.util.JsonConfigFiles.getConfigFilePath;
 
 /**
  * Ebenen-Zuordnung der Blaupausen (blueprints.json).

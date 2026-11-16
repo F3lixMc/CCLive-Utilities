@@ -1,6 +1,6 @@
 package net.felix.utilities.Community.leaderboards;
 
-import net.felix.utilities.Overall.server.ServerConnectionGate.MatchState;
+import net.felix.utilities.Other.server.ServerConnectionGate.MatchState;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

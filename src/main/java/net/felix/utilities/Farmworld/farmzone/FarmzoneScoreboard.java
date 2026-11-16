@@ -2,7 +2,7 @@ package net.felix.utilities.Farmworld.farmzone;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.felix.utilities.Overall.hud.ScoreboardSidebarReader;
+import net.felix.utilities.Other.hud.ScoreboardSidebarReader;
 import net.minecraft.client.Minecraft;
 
 import static net.felix.utilities.Farmworld.collections.tracker.CollectionTracker.biomDetected;

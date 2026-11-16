@@ -5,7 +5,7 @@ import com.google.gson.JsonParser;
 import java.util.HashMap;
 import java.util.Map;
 
-import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Other.util.JsonConfigFiles.getConfigFilePath;
 
 /**
  * Aspekt-Datenbank (Aspekte.json) und Namensauflosung.

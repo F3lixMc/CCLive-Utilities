@@ -1,10 +1,10 @@
-package net.felix.utilities.Overall.hud;
+package net.felix.utilities.Other.hud;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import net.felix.utilities.Overall.cointracker.CoinTrackerCustomSidebar;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerCustomSidebar;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.Objective;

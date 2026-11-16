@@ -14,7 +14,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Community.leaderboards.http.HttpClient;
 import net.felix.utilities.Community.profile.ProfileStatsManager;
 import net.felix.utilities.Farmworld.fishing.found.LocalSeasonProgressReset;
-import net.felix.utilities.Overall.server.ServerConnectionGate;
+import net.felix.utilities.Other.server.ServerConnectionGate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 

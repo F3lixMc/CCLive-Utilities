@@ -1,4 +1,4 @@
-package net.felix.utilities.Overall.cointracker;
+package net.felix.utilities.Aincraft.cointracker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,8 +9,8 @@ import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerUtility;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
-import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
-import net.felix.utilities.Overall.hud.ScoreboardSidebarReader;
+import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Other.hud.ScoreboardSidebarReader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

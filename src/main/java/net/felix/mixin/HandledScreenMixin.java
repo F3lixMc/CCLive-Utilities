@@ -217,7 +217,7 @@ public abstract class HandledScreenMixin {
         double mouseX = event.x();
         double mouseY = event.y();
         int sdlButton = event.button();
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(sdlButton);
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(sdlButton);
         // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
         // Dies muss vor allen anderen Klicks geprüft werden
         if (net.felix.utilities.Overall.itemviewer.ui.HelpOverlay.isHelpOverlayOpen()) {
@@ -344,7 +344,7 @@ public abstract class HandledScreenMixin {
     private void onMouseDragged(MouseButtonEvent event, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.utilities.Overall.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
@@ -363,7 +363,7 @@ public abstract class HandledScreenMixin {
     private void onMouseReleased(MouseButtonEvent event, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
             return;

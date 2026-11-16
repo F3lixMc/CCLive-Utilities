@@ -159,9 +159,9 @@ public class OverlayEditorButtonUtility {
                 int keyCode = (Integer) getCodeMethod.invoke(boundKeyObj);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                String letter = net.felix.utilities.Overall.keybinding.KeyBindingUtility.letterFromScancode(keyCode, true);
-                Character digit = net.felix.utilities.Overall.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
-                String functionKey = net.felix.utilities.Overall.keybinding.KeyBindingUtility.functionKeyName(keyCode);
+                String letter = net.felix.utilities.Other.keybinding.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Other.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
+                String functionKey = net.felix.utilities.Other.keybinding.KeyBindingUtility.functionKeyName(keyCode);
                 if (letter != null) {
                     return letter;
                 } else if (digit != null) {

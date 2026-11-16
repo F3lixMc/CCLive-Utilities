@@ -1,7 +1,7 @@
 package net.felix.utilities.Farmworld.miningxp.tracker;
 
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
-import net.felix.utilities.Overall.hud.SessionRateUtility;
+import net.felix.utilities.Other.hud.SessionRateUtility;
 import net.minecraft.client.Minecraft;
 
 /**
@@ -31,7 +31,7 @@ public final class MiningLumberjackTracker {
 	 */
 	public static void checkTabKey() {
 		// Check if player list key is pressed (respects custom key bindings)
-		if (net.felix.utilities.Overall.keybinding.KeyBindingUtility.isPlayerListKeyPressed()) {
+		if (net.felix.utilities.Other.keybinding.KeyBindingUtility.isPlayerListKeyPressed()) {
 			showOverlays = false; // Hide overlays when player list key is pressed
 		} else {
 			showOverlays = true; // Show overlays when player list key is released

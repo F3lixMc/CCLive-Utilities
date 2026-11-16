@@ -5,7 +5,7 @@ import java.util.List;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
-import net.felix.utilities.Overall.keybinding.KeyCategories;
+import net.felix.utilities.Other.keybinding.KeyCategories;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
@@ -14,7 +14,7 @@ import static net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard.extractB
 import static net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard.isInFarmworldDimension;
 import static net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard.readScoreboardLines;
 import static net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard.stripScoreboardDisplayText;
-import static net.felix.utilities.Overall.util.NumeralConversion.decodeChineseNumber;
+import static net.felix.utilities.Other.util.NumeralConversion.decodeChineseNumber;
 
 /**
  * Verfolgt Collection-Fortschritt, Biom und Bossbar in der Farmworld.
