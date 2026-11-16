@@ -76,7 +76,7 @@ public final class NpcAlertsFeature {
 	/**
 	 * Prüft, ob der Spieler in der "general_lobby" Dimension ist
 	 */
-	private static boolean isInGeneralLobby() {
+	public static boolean isInGeneralLobby() {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.level == null) {
 			return false;

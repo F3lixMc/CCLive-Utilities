@@ -14,29 +14,39 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 
+import static net.felix.features.npcalerts.NpcAlertsFeature.isInGeneralLobby;
+
 /**
  * Draggable Overlay für das große NPC Alerts Overlay
  */
 public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
 
     private static final float MIN_SCALE = 0.05f;
-    
+
     // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler
     private static final Identifier FORSCHUNG_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
+
     private static final Identifier AMBOSS_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
+
     private static final Identifier SCHMELZOFEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
+
     private static final Identifier SEELEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
+
     private static final Identifier ESSENZEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
+
     private static final Identifier JAEGER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
+
     private static final Identifier KOMBO_KISTE_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
+
     private static final Identifier MACHTKRISTALL_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
+
     private static final Identifier RECYCLER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
-    
+
     @Override
     public String getOverlayName() {
         return "NPC Alerts (Haupt)";
     }
-    
+
     @Override
     public int getX() {
         // Calculate X position using the same logic as Mining/Holzfäller overlays
@@ -68,12 +78,12 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         // Ensure overlay stays within screen bounds
         return Math.max(0, Math.min(x, screenWidth - overlayWidth));
     }
-    
+
     @Override
     public int getY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY;
     }
-    
+
     /**
      * Berechnet die unskalierte Breite
      * Verwendet die tatsächlichen Werte aus dem originalen Overlay für genaue Breitenberechnung
@@ -127,7 +137,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
         return maxWidth + (PADDING * 2);
     }
-    
+
     /**
      * Berechnet die unskalierte Höhe
      */
@@ -149,7 +159,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         
         return (lines.size() * LINE_HEIGHT) + (PADDING * 2);
     }
-    
+
     @Override
     public int getWidth() {
         // Return scaled width
@@ -157,7 +167,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f; // Safety check
         return Math.round(calculateUnscaledWidth() * scale);
     }
-    
+
     @Override
     public int getHeight() {
         // Return scaled height
@@ -165,7 +175,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         if (scale <= 0) scale = 1.0f; // Safety check
         return Math.round(calculateUnscaledHeight() * scale);
     }
-    
+
     @Override
     public void setPosition(int x, int y) {
         // Calculate baseX using the same logic as Mining/Holzfäller overlays
@@ -197,7 +207,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX = baseX;
         CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY = y;
     }
-    
+
     @Override
     public void setSize(int width, int height) {
         // Get current unscaled dimensions
@@ -210,7 +220,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         float scale = Math.max(MIN_SCALE, Math.min(scaleX, scaleY));
         CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale = scale;
     }
-    
+
     @Override
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         Minecraft client = Minecraft.getInstance();
@@ -425,12 +435,12 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         
         matrices.popMatrix();
     }
-    
+
     @Override
     public void savePosition() {
         // Position is already saved in setPosition()
     }
-    
+
     @Override
     public boolean isEnabled() {
         
@@ -453,33 +463,21 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
         List<LineWithPercent> lines = MainOverlayLines.getMainOverlayLines();
         return !lines.isEmpty();
     }
-    
-    /**
-     * Prüft, ob der Spieler in der "general_lobby" Dimension ist
-     */
-    private boolean isInGeneralLobby() {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.level == null) {
-            return false;
-        }
-        
-        String dimensionPath = client.level.dimension().identifier().getPath();
-        return dimensionPath.equals("general_lobby");
-    }
-    
+
     @Override
     public Component getTooltip() {
         return Component.literal("NPC Alerts Haupt-Overlay - Zeigt alle NPC Alertsrmationen");
     }
-    
+
     @Override
     public void resetToDefault() {
         CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayX = 5;
         CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayY = 5;
     }
-    
+
     @Override
     public void resetSizeToDefault() {
         CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayScale = 1.0f;
     }
+
 }

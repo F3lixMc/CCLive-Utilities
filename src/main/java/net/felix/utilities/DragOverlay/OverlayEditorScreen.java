@@ -35,7 +35,6 @@ import net.felix.utilities.DragOverlay.Schmied.KitFilterButtonDraggableOverlay;
 import net.felix.features.npcalerts.overlay.draggable.AspectDraggableOverlay;
 import net.felix.features.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
 import net.felix.features.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
-import net.felix.features.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
 import org.joml.Matrix3x2fStack;
 
 
@@ -43,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.felix.features.information.collections.CollectionTracker;
 import net.felix.features.information.farmzone.FarmzoneScoreboard;
+import net.felix.features.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
 
 /**
  * Screen für das Drag-and-Drop-Positionieren von Overlays
