@@ -2,7 +2,6 @@ package net.felix;
 
 import net.fabricmc.api.ModInitializer;
 import net.felix.utilities.Aincraft.CardsStatuesUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Aincraft.KillsUtility;
 import net.felix.utilities.Aincraft.MaterialTrackerUtility;
@@ -26,6 +25,7 @@ import net.felix.profile.PlayerHoverStatsUtility;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import net.felix.features.information.InformationFeature;
 
 public class CCLiveUtilities implements ModInitializer {
 	public static final String MOD_ID = "cclive-utilities";
@@ -71,7 +71,7 @@ public class CCLiveUtilities implements ModInitializer {
 		FactoryLevelTracker.initialize();
 		CardsStatuesUtility.initialize();
 		KillsUtility.initialize();
-		InformationenUtility.initialize();
+		InformationFeature.initialize();
 		AnimationBlockerUtility.initialize();
 		KillAnimationUtility.initialize();
 		BPViewerUtility.initialize();

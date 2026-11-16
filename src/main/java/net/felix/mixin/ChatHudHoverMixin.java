@@ -1,7 +1,6 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -13,6 +12,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.felix.features.information.aspects.AspectChatMessages;
+import net.felix.features.information.blueprints.BlueprintChatParser;
 
 @SuppressWarnings("unused")
 @Mixin(Screen.class)
@@ -175,10 +176,10 @@ abstract class ChatHudHoverMixin {
 
         // 2) Server-Chat Bauplan-Namen (Farbe #FC7E00)
         if (hoveredMessage != null) {
-            String blueprintName = InformationenUtility.extractBlueprintNameFromChatMessage(hoveredMessage);
+            String blueprintName = BlueprintChatParser.extractBlueprintNameFromChatMessage(hoveredMessage);
             if (blueprintName != null && !blueprintName.isEmpty()) {
                 // Pass the text object to check for Epic colors
-                InformationenUtility.updateAspectOverlayFromBlueprintName(blueprintName, hoveredMessage);
+                AspectChatMessages.updateAspectOverlayFromBlueprintName(blueprintName, hoveredMessage);
                 AspectOverlay.renderForegroundForChat(context);
             } else {
                 // HoverEvent exists but no valid blueprint - hide overlay

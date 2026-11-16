@@ -170,13 +170,13 @@ public abstract class HandledScreenMixin {
             
             // Prüfe direkt auf dem Text-Objekt (bevor getPlainTextFromText Unicode-Zeichen entfernt)
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
-            String titlePlain = net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(titleText);
+            String titlePlain = net.felix.features.information.tooltip.TooltipText.getPlainTextFromText(titleText);
             
             // Prüfe sowohl "Machtkristalle Verbessern" als auch das Glyph "㮌" (Essence Harvester UI)
             // Verwende titleWithUnicode für die Glyph-Prüfung, da getPlainTextFromText Unicode entfernt
             if (ZeichenUtility.isMkLevelInventoryTitle(titlePlain, titleWithUnicode)) {
                 // Get actual inventory dimensions from the screen using shadow fields
-                net.felix.utilities.Overall.InformationenUtility.renderMKLevelOverlay(context, net.minecraft.client.Minecraft.getInstance(), leftPos, topPos, imageWidth, imageHeight);
+                net.felix.features.information.mklevel.MKLevelOverlayRenderer.renderMKLevelOverlay(context, net.minecraft.client.Minecraft.getInstance(), leftPos, topPos, imageWidth, imageHeight);
             }
         } catch (Exception e) {
             // Ignore rendering errors
@@ -304,7 +304,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Handle clicks on MKLevel search bar and scrollbar - pass screen position directly from mixin (@Shadow fields)
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
+        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelSearchClick(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
         
@@ -351,7 +351,7 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
+        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
     }
@@ -368,7 +368,7 @@ public abstract class HandledScreenMixin {
             cir.setReturnValue(true);
             return;
         }
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelScrollbarRelease(mouseX, mouseY, button)) {
+        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelScrollbarRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
     }
@@ -596,7 +596,7 @@ public abstract class HandledScreenMixin {
                 if (itemStack != null && !itemStack.isEmpty()) {
                     // Check if the item name contains Epic colors - if so, don't show overlay
                     net.minecraft.network.chat.Component itemNameText = itemStack.getHoverName();
-                    if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
+                    if (itemNameText != null && net.felix.features.information.blueprints.BlueprintChatParser.hasEpicColor(itemNameText)) {
                         net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
                         return;
                     }

@@ -146,8 +146,8 @@ public class JsonConfigUpdateUtility {
                                     versionSetter.accept(serverVersion);
                                     CCLiveUtilitiesConfig.HANDLER.save();
                                     
-                                    // Lade die neue Datei in InformationenUtility neu
-                                    reloadConfigInInformationenUtility(fileName);
+                                    // Lade die neue Datei in der zugehoerigen Datenbank neu
+                                    reloadInformationDatabase(fileName);
                                     
                                     System.out.println("✅ [JsonConfigUpdate] " + fileName + " aktualisiert (Version " + serverVersion + ")");
                                 }
@@ -176,45 +176,43 @@ public class JsonConfigUpdateUtility {
     }
     
     /**
-     * Lädt eine Config-Datei in InformationenUtility neu
+     * Lädt eine Config-Datei in der zugehörigen Datenbank des Informationen-Features neu
      */
-    private static void reloadConfigInInformationenUtility(String fileName) {
+    private static void reloadInformationDatabase(String fileName) {
         try {
-            // InformationenUtility hat verschiedene Load-Methoden für verschiedene Dateien
-            // Wir müssen die entsprechende Methode aufrufen
+            // Jede Datenbank im Paket net.felix.features.information hat eine eigene Reload-Methode
             switch (fileName) {
                 case "Aincraft.json":
-                    // InformationenUtility lädt Aincraft.json in loadMaterialsDatabase()
-                    // Wir müssen die Datenbank neu laden
-                    net.felix.utilities.Overall.InformationenUtility.reloadMaterialsDatabase();
+                    // Aincraft.json wird in MaterialDatabase.loadMaterialsDatabase() geladen
+                    net.felix.features.information.materials.MaterialDatabase.reloadMaterialsDatabase();
                     break;
                 case "Aspekte.json":
-                    net.felix.utilities.Overall.InformationenUtility.reloadAspectsDatabase();
+                    net.felix.features.information.aspects.AspectDatabase.reloadAspectsDatabase();
                     break;
                 case "blueprints.json":
-                    net.felix.utilities.Overall.InformationenUtility.reloadBlueprintsDatabase();
+                    net.felix.features.information.blueprints.BlueprintDatabase.reloadBlueprintsDatabase();
                     break;
                 case "CardsStatues.json":
-                    net.felix.utilities.Overall.InformationenUtility.reloadCardsStatuesDatabase();
+                    net.felix.features.information.cards.CardsStatuesDatabase.reloadCardsStatuesDatabase();
                     break;
                 case "Collections.json":
-                    net.felix.utilities.Overall.InformationenUtility.reloadCollectionsDatabase();
+                    net.felix.features.information.collections.CollectionDatabase.reloadCollectionsDatabase();
                     break;
                 case "Essenz.json":
-                    net.felix.utilities.Overall.InformationenUtility.reloadEssencesDatabase();
+                    net.felix.features.information.essences.EssenceDatabase.reloadEssencesDatabase();
                     break;
                 case "Farmworld.json":
-                    net.felix.utilities.Overall.InformationenUtility.reloadLicensesDatabase();
+                    net.felix.features.information.licenses.LicenseDatabase.reloadLicensesDatabase();
                     break;
                 case "Kits.json":
                     net.felix.utilities.Town.KitFilterUtility.reloadKitsDatabase();
                     break;
                 case "MKLevel.json":
-                    net.felix.utilities.Overall.InformationenUtility.reloadMKLevelDatabase();
+                    net.felix.features.information.mklevel.MKLevelDatabase.reloadMKLevelDatabase();
                     break;
             }
         } catch (Exception e) {
-            System.err.println("⚠️ [JsonConfigUpdate] Fehler beim Neuladen von " + fileName + " in InformationenUtility: " + e.getMessage());
+            System.err.println("⚠️ [JsonConfigUpdate] Fehler beim Neuladen von " + fileName + " in den Informationen-Datenbanken: " + e.getMessage());
         }
     }
 }

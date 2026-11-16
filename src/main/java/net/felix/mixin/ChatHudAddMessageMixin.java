@@ -2,6 +2,7 @@ package net.felix.mixin;
 
 import net.minecraft.client.gui.components.ChatComponent;
 import org.spongepowered.asm.mixin.Mixin;
+import net.felix.features.information.aspects.AspectChatMessages;
 
 /**
  * Mixin to modify chat messages before they are added to the chat.
@@ -29,7 +30,7 @@ public abstract class ChatHudAddMessageMixin {
     //     }
     //     
     //     // Modify the message to add aspect information
-    //     Text modified = InformationenUtility.modifyChatMessageForAspectInfo(message);
+    //     Text modified = AspectChatMessages.modifyChatMessageForAspectInfo(message);
     //     if (modified != message) {
     //         // If we need to replace the message, we'd need to use a different approach
     //         // For now, this is just a placeholder

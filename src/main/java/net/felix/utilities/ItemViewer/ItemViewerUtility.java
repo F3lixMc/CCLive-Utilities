@@ -958,22 +958,22 @@ public class ItemViewerUtility {
         java.util.List<MaterialPickerSortable> prismarinMaterials = new java.util.ArrayList<>();
         java.util.List<FishingMaterialPickerSortable> fishingMaterials = new java.util.ArrayList<>();
         for (String name : materials.values()) {
-            net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo info =
-                    net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(name);
+            net.felix.features.information.materials.MaterialFloorInfo info =
+                    net.felix.features.information.materials.MaterialDatabase.getMaterialFloorInfo(name);
             int color = info != null
-                    ? net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(info)
+                    ? net.felix.features.information.materials.MaterialRarityColors.getMaterialLocationRarityColorArgb(info)
                     : 0xFFFFFFFF;
-            if (net.felix.utilities.Overall.InformationenUtility.isFishingRarityMaterial(name)) {
-                String family = net.felix.utilities.Overall.InformationenUtility.getFishFamilyFromMaterial(name);
+            if (net.felix.features.information.ponds.FishingMaterials.isFishingRarityMaterial(name)) {
+                String family = net.felix.features.information.ponds.FishingMaterials.getFishFamilyFromMaterial(name);
                 String rarity = info != null && info.rarity != null
                         ? info.rarity
-                        : net.felix.utilities.Overall.InformationenUtility.getFishingMaterialRarityKey(name);
-                String part = net.felix.utilities.Overall.InformationenUtility.getFishPartSuffixFromMaterial(
+                        : net.felix.features.information.ponds.FishingMaterials.getFishingMaterialRarityKey(name);
+                String part = net.felix.features.information.ponds.FishingMaterials.getFishPartSuffixFromMaterial(
                         name, family);
-                int familyOrder = net.felix.utilities.Overall.InformationenUtility.getFishFamilyDisplayOrderIndex(
+                int familyOrder = net.felix.features.information.ponds.FishingMaterials.getFishFamilyDisplayOrderIndex(
                         family);
                 fishingMaterials.add(new FishingMaterialPickerSortable(name, familyOrder, rarity, part, color));
-            } else if (net.felix.utilities.Overall.InformationenUtility.isPrismarinMaterial(name)) {
+            } else if (net.felix.features.information.materials.PrismarinMaterials.isPrismarinMaterial(name)) {
                 String rarity = info != null && info.rarity != null ? info.rarity : "common";
                 prismarinMaterials.add(new MaterialPickerSortable(name, 0, rarity, color));
             } else {

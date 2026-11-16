@@ -1,6 +1,5 @@
 package net.felix.leaderboards.panel;
 
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Display;
@@ -13,6 +12,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import net.felix.features.information.collections.CollectionTracker;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Welche Rangliste beim Öffnen des Inventars vorn liegt, hängt vom Aufenthaltsort ab.
@@ -198,8 +199,8 @@ public final class LeaderboardPlaces {
             return new Place(Kind.CITY, 1, null);
         }
         if (client.level.dimension() == Level.OVERWORLD || "overworld".equals(path)) {
-            InformationenUtility.refreshFarmzoneScoreboardCache(client);
-            String zone = InformationenUtility.getDetectedFarmzoneName();
+            FarmzoneScoreboard.refreshFarmzoneScoreboardCache(client);
+            String zone = CollectionTracker.getDetectedFarmzoneName();
             if (zone != null && !zone.isBlank()) {
                 return new Place(Kind.FARM, 1, zone);
             }

@@ -17,6 +17,7 @@ import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
 import java.util.ArrayList;
 import java.util.List;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Ersetzt die Vanilla-Sidebar: Server-Zeilen auslesen, CPM einfügen, im Vanilla-Stil rendern.
@@ -158,7 +159,7 @@ public final class CoinTrackerCustomSidebar {
         return CCLiveUtilitiesConfig.isModRuntimeEnabled()
                 && config.resourceTrackerRateEnabled
                 && config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.SCOREBOARD
-                && InformationenUtility.isInFarmzone(client);
+                && FarmzoneScoreboard.isInFarmzone(client);
     }
 
     private static void appendResourceRates(List<ScoreboardSidebarReader.Row> rows) {

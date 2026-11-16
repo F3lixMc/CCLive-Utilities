@@ -12,6 +12,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.felix.features.information.InformationFeature;
 
 /**
  * In 26.1 können {@code HudElementRegistry.addLast}-Overlays über dem Inventar-Dim landen.
@@ -62,7 +63,7 @@ public final class HudOverlayVisibility {
             KillsUtility.onHudRender(context, tickCounter);
             MaterialTrackerUtility.onHudRender(context, tickCounter);
             CardsStatuesUtility.onHudRender(context, tickCounter);
-            InformationenUtility.onHudRender(context, tickCounter);
+            InformationFeature.onHudRender(context, tickCounter);
             NpcAlertsUtility.onHudRender(context, tickCounter);
             BossHPUtility.onHudRender(context, tickCounter);
             FactoryLevelTracker.onHudRender(context, tickCounter);

@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import net.fabricmc.loader.api.FabricLoader;
 import java.util.List;
+import net.felix.features.information.hover.HoverEventFactory;
 
 /**
  * Utility zum Anzeigen von Player-Stats in Chat-Nachrichten-Hover-Events
@@ -527,7 +528,7 @@ public class PlayerHoverStatsUtility {
     
     /**
      * Modifiziert einen Text mit einem neuen Hover-Event
-     * Kopiert von InformationenUtility.modifyTextWithHoverEvent
+     * Kopiert von HoverEventFactory.modifyTextWithHoverEvent
      */
     private static Component modifyTextWithHoverEvent(Component text, HoverEvent newHoverEvent) {
         if (text == null || newHoverEvent == null) {

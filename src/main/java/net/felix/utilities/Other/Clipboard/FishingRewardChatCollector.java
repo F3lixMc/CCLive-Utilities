@@ -2,12 +2,12 @@ package net.felix.utilities.Other.Clipboard;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.information.materials.MaterialDatabase;
 
 /**
  * Liest Fisch-Belohnungen aus Server-Chatnachrichten und addiert Materialien
@@ -70,7 +70,7 @@ public final class FishingRewardChatCollector {
     }
 
     private static boolean isClipboardMaterial(String name) {
-        return InformationenUtility.getMaterialFloorInfo(name) != null
+        return MaterialDatabase.getMaterialFloorInfo(name) != null
             || ItemInfoUtility.isFishingRarityMaterial(name);
     }
 

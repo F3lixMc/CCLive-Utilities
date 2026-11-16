@@ -2,7 +2,6 @@ package net.felix.utilities.Other.Clipboard;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -14,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.information.materials.MaterialDatabase;
 
 /**
  * Sammelt Ressourcen und Essenzen aus Inventaren mit dem Zeichen essence_bag_ui (Slots 10–43)
@@ -305,7 +305,7 @@ public class ClipboardAmbossRessourceCollector {
         if (itemName == null || itemName.isEmpty()) {
             return false;
         }
-        return InformationenUtility.getMaterialFloorInfo(itemName) != null;
+        return MaterialDatabase.getMaterialFloorInfo(itemName) != null;
     }
     
     private static boolean isCoinsName(String name) {

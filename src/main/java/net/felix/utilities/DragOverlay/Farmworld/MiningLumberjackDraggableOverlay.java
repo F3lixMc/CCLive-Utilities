@@ -2,10 +2,10 @@ package net.felix.utilities.DragOverlay.Farmworld;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.felix.features.information.xp.MiningLumberjackOverlay;
 
 /**
  * Draggable Overlay für Mining und Lumberjack Overlays
@@ -77,8 +77,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         boolean showLumberjack = config.lumberjackOverlayEnabled && config.showLumberjackOverlay;
         
         // Calculate width for mining overlay (same logic as renderMiningOverlay)
-        String miningHeader = InformationenUtility.getMiningOverlayHeader();
-        String[] miningTexts = InformationenUtility.getMiningOverlayTexts(client);
+        String miningHeader = MiningLumberjackOverlay.getMiningOverlayHeader();
+        String[] miningTexts = MiningLumberjackOverlay.getMiningOverlayTexts(client);
         int miningMaxWidth = client.font.width(miningHeader);
         for (String line : miningTexts) {
             if (!line.equals(miningHeader)) {
@@ -89,8 +89,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         int miningWidth = miningMaxWidth + padding * 2;
         
         // Calculate width for lumberjack overlay (same logic as renderLumberjackOverlay)
-        String lumberjackHeader = InformationenUtility.getLumberjackOverlayHeader();
-        String[] lumberjackTexts = InformationenUtility.getLumberjackOverlayTexts(client);
+        String lumberjackHeader = MiningLumberjackOverlay.getLumberjackOverlayHeader();
+        String[] lumberjackTexts = MiningLumberjackOverlay.getLumberjackOverlayTexts(client);
         int lumberjackMaxWidth = client.font.width(lumberjackHeader);
         for (String line : lumberjackTexts) {
             if (!line.equals(lumberjackHeader)) {
@@ -206,12 +206,12 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         Minecraft client = Minecraft.getInstance();
         if (client == null) return;
         
-        String[] miningTexts = InformationenUtility.getMiningOverlayTexts(client);
-        String[] lumberjackTexts = InformationenUtility.getLumberjackOverlayTexts(client);
+        String[] miningTexts = MiningLumberjackOverlay.getMiningOverlayTexts(client);
+        String[] lumberjackTexts = MiningLumberjackOverlay.getLumberjackOverlayTexts(client);
         
         // Use the texts from the overlay that has the maximum width (to match getWidth() logic)
-        int miningWidth = InformationenUtility.getMiningOverlayWidth(client);
-        int lumberjackWidth = InformationenUtility.getLumberjackOverlayWidth(client);
+        int miningWidth = MiningLumberjackOverlay.getMiningOverlayWidth(client);
+        int lumberjackWidth = MiningLumberjackOverlay.getLumberjackOverlayWidth(client);
         String[] texts = miningWidth >= lumberjackWidth ? miningTexts : lumberjackTexts;
         
         // Replace values with "-" for display in editor

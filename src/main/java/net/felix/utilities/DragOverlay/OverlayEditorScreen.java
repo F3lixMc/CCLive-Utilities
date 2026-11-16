@@ -36,12 +36,13 @@ import net.felix.utilities.DragOverlay.NpcAlerts.AspectOverlayDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.StarAspectOverlayDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsMainDraggableOverlay;
 import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsSeparateDraggableOverlay;
-import net.felix.utilities.Overall.InformationenUtility;
 import org.joml.Matrix3x2fStack;
 
 
 import java.util.ArrayList;
 import java.util.List;
+import net.felix.features.information.collections.CollectionTracker;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Screen für das Drag-and-Drop-Positionieren von Overlays
@@ -147,7 +148,7 @@ public class OverlayEditorScreen extends Screen {
     
     private void initializeOverlays() {
         // Biom-Erkennung aktualisieren, damit Collection/Mining-Overlays im F6-Menü erscheinen
-        InformationenUtility.refreshFarmzoneScoreboardCache(Minecraft.getInstance());
+        FarmzoneScoreboard.refreshFarmzoneScoreboardCache(Minecraft.getInstance());
 
         // Check if we're in a chat screen
         boolean isInChatScreen = isInChatScreen();
@@ -210,14 +211,14 @@ public class OverlayEditorScreen extends Screen {
                 // Mining/Lumberjack overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
                 // Only show if biome is detected in scoreboard
-                if (!isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
+                if (!isInPlayerNameDimension() && !isInventoryOpen() && CollectionTracker.isBiomDetected()) {
                     overlays.add(new MiningLumberjackDraggableOverlay());
                 }
                 
                 // Collection overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
                 // Only show if biome is detected in scoreboard
-                if (!isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
+                if (!isInPlayerNameDimension() && !isInventoryOpen() && CollectionTracker.isBiomDetected()) {
                     overlays.add(new CollectionDraggableOverlay());
                 }
                 
@@ -444,7 +445,7 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if the title contains "Machtkristalle Verbessern" or the Glyph "㮌" (Essence Harvester UI)
         return ZeichenUtility.isMkLevelInventoryTitle(
-                net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(handledScreen.getTitle()),
+                net.felix.features.information.tooltip.TooltipText.getPlainTextFromText(handledScreen.getTitle()),
                 title);
     }
     

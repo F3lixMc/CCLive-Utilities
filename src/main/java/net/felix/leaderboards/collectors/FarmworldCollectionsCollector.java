@@ -7,7 +7,6 @@ import com.google.gson.JsonParser;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilities;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import java.io.Reader;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Sammelt Collection-Daten aus der Farmworld-Dimension
@@ -456,7 +456,7 @@ public class FarmworldCollectionsCollector implements DataCollector {
      */
     private String getCurrentZone(Minecraft client) {
         try {
-            List<String> lines = InformationenUtility.readCleanSidebarLines(client);
+            List<String> lines = FarmzoneScoreboard.readCleanSidebarLines(client);
             if (lines == null || lines.isEmpty()) {
                 return null;
             }

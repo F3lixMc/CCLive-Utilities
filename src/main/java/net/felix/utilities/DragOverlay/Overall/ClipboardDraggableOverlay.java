@@ -13,7 +13,6 @@ import net.felix.utilities.Other.Clipboard.ClipboardPaperShredsCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardUtility;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -27,6 +26,9 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
+import net.felix.features.information.materials.MaterialDatabase;
+import net.felix.features.information.materials.MaterialFloorInfo;
+import net.felix.features.information.materials.MaterialRarityColors;
 
 /**
  * Draggable Overlay für das Clipboard (Bauplan-Kosten)
@@ -1674,11 +1676,11 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
 
         String floorText = "";
         int floorColor = 0xFFFFFFFF;
-        InformationenUtility.MaterialFloorInfo floorInfo =
-                InformationenUtility.getMaterialFloorInfo(multipliedItem.itemName);
+        MaterialFloorInfo floorInfo =
+                MaterialDatabase.getMaterialFloorInfo(multipliedItem.itemName);
         if (floorInfo != null) {
-            floorText = InformationenUtility.formatMaterialLocationSuffix(floorInfo);
-            floorColor = InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
+            floorText = MaterialRarityColors.formatMaterialLocationSuffix(floorInfo);
+            floorColor = MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
         }
 
         int mainWidth = client.font.width(materialLine);
@@ -1760,8 +1762,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (materialSortEnabled) {
             boolean ascending = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortAscending;
             materials.sort((item1, item2) -> {
-                InformationenUtility.MaterialFloorInfo info1 = InformationenUtility.getMaterialFloorInfo(item1.itemName);
-                InformationenUtility.MaterialFloorInfo info2 = InformationenUtility.getMaterialFloorInfo(item2.itemName);
+                MaterialFloorInfo info1 = MaterialDatabase.getMaterialFloorInfo(item1.itemName);
+                MaterialFloorInfo info2 = MaterialDatabase.getMaterialFloorInfo(item2.itemName);
 
                 int floor1 = (info1 != null) ? info1.floor : Integer.MAX_VALUE;
                 int floor2 = (info2 != null) ? info2.floor : Integer.MAX_VALUE;

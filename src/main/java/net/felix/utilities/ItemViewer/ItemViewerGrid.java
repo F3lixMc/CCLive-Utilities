@@ -272,8 +272,8 @@ public class ItemViewerGrid {
             return;
         }
 
-        net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo =
-            net.felix.utilities.Overall.InformationenUtility.getAspectInfoForBlueprintFull(hoveredItem.name);
+        net.felix.features.information.aspects.AspectInfo aspectInfo =
+            net.felix.features.information.aspects.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
         if (aspectInfo != null && aspectInfo.aspectName != null && !aspectInfo.aspectName.isEmpty()
             && !"-".equals(aspectInfo.aspectName)) {
             net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromItemViewer(hoveredItem.name, aspectInfo);
@@ -550,8 +550,8 @@ public class ItemViewerGrid {
                     // Aspekt (nur wenn aspect == true, kommt nach Level, vor Modifier)
                     if (hasAspect) {
                         // Hole Aspekt-Info für diesen Blueprint
-                        net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo = 
-                            net.felix.utilities.Overall.InformationenUtility.getAspectInfoForBlueprintFull(hoveredItem.name);
+                        net.felix.features.information.aspects.AspectInfo aspectInfo = 
+                            net.felix.features.information.aspects.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
                         
                         if (aspectInfo != null && aspectInfo.aspectName != null && !aspectInfo.aspectName.isEmpty()) {
                             // "Aspekt: AspektName" - "Aspekt:" in Gelb, AspektName in Orange/Gold (wie in AspectOverlay)
@@ -1072,15 +1072,15 @@ public class ItemViewerGrid {
         String materialLine = amountStr + " " + costItem.itemName;
         
         // Prüfe ob es ein Aincraft-Material ist und füge Ebene hinzu
-        net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo floorInfo = 
-            net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(costItem.itemName);
+        net.felix.features.information.materials.MaterialFloorInfo floorInfo = 
+            net.felix.features.information.materials.MaterialDatabase.getMaterialFloorInfo(costItem.itemName);
         
         if (floorInfo != null) {
             MutableComponent materialText = Component.literal(materialLine)
                 .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false));
             
-            String floorText = net.felix.utilities.Overall.InformationenUtility.formatMaterialLocationSuffix(floorInfo);
-            int rarityColor = net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
+            String floorText = net.felix.features.information.materials.MaterialRarityColors.formatMaterialLocationSuffix(floorInfo);
+            int rarityColor = net.felix.features.information.materials.MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
             Component floorTextObj = Component.literal(floorText)
                 .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false));
             
@@ -1107,13 +1107,13 @@ public class ItemViewerGrid {
         String neededStr = ItemViewerOwnedResources.formatNeededAmountForDisplay(costItem.itemName, costItem.amount);
         String materialLine = ownedStr + " / " + neededStr + " " + costItem.itemName;
 
-        net.felix.utilities.Overall.InformationenUtility.MaterialFloorInfo floorInfo =
-            net.felix.utilities.Overall.InformationenUtility.getMaterialFloorInfo(costItem.itemName);
+        net.felix.features.information.materials.MaterialFloorInfo floorInfo =
+            net.felix.features.information.materials.MaterialDatabase.getMaterialFloorInfo(costItem.itemName);
         if (floorInfo != null) {
             MutableComponent materialText = Component.literal(materialLine)
                 .setStyle(Style.EMPTY.withColor(lineColor).withItalic(false));
-            String floorText = net.felix.utilities.Overall.InformationenUtility.formatMaterialLocationSuffix(floorInfo);
-            int rarityColor = net.felix.utilities.Overall.InformationenUtility.getMaterialLocationRarityColorArgb(floorInfo);
+            String floorText = net.felix.features.information.materials.MaterialRarityColors.formatMaterialLocationSuffix(floorInfo);
+            int rarityColor = net.felix.features.information.materials.MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
             materialText.append(Component.literal(floorText)
                 .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false)));
             tooltipLines.add(materialText);

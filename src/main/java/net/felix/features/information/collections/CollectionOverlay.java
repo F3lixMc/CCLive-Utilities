@@ -1,0 +1,233 @@
+package net.felix.features.information.collections;
+
+import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.ResourceTrackerDisplayMode;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+
+import static net.felix.features.information.collections.CollectionTracker.biomDetected;
+import static net.felix.features.information.collections.CollectionTracker.blocksNeededForNextCollection;
+import static net.felix.features.information.collections.CollectionTracker.blocksPerMinute;
+import static net.felix.features.information.collections.CollectionTracker.calculateTimeUntilNextCollection;
+import static net.felix.features.information.collections.CollectionTracker.isTrackingCollections;
+import static net.felix.features.information.collections.CollectionTracker.sessionBlocks;
+import static net.felix.features.information.collections.CollectionTracker.sessionStartTime;
+import static net.felix.features.information.farmzone.FarmzoneScoreboard.isInFarmzone;
+import static net.felix.features.information.xp.MiningLumberjackTracker.showOverlays;
+import static net.felix.features.information.util.NumberFormatting.formatDoubleWithSeparator;
+import static net.felix.features.information.util.NumberFormatting.formatNumberWithSeparator;
+import static net.felix.features.information.util.NumberFormatting.formatTimeMinutes;
+
+
+/**
+ * Zeichnet das Collection-Overlay und liefert dessen Abmessungen.
+ */
+public final class CollectionOverlay {
+
+	private CollectionOverlay() {
+	}
+
+	public static String getCollectionResourceRateLine(Minecraft client) {
+		if (!usesOverlayResourceRateDisplay()) {
+			return null;
+		}
+		if (client == null || !isInFarmzone(client)) {
+			return "Ressource: -";
+		}
+		return FarmzoneResourceRateUtility.getOverlayText();
+	}
+
+	public static boolean usesOverlayResourceRateDisplay() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		return config.resourceTrackerRateEnabled
+				&& config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.OVERLAY;
+	}
+
+	/**
+	 * Renders the collection overlay
+	 */
+	public static void renderCollectionOverlay(GuiGraphicsExtractor context, Minecraft client) {
+		if (!isTrackingCollections || client.player == null) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.gui.hud.isHidden()) {
+			return;
+		}
+		
+		// Render only when overlays are visible
+		if (!showOverlays) {
+			return;
+		}
+		
+		// Check if overlay is enabled in config
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay) {
+			return;
+		}
+		
+		// Hide overlay if biom is not detected (scoreboard disappeared)
+		if (!biomDetected) {
+			return;
+		}
+		
+		// Get position and scale from config
+		int x = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayX;
+		int y = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayY;
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayScale;
+		if (scale <= 0) scale = 1.0f;
+		
+		int padding = 5;
+		
+		// Calculate elapsed time (format like Kill Tracker: XX:XX)
+		long elapsedTime = System.currentTimeMillis() - sessionStartTime;
+		long minutes = elapsedTime / 60000;
+		long seconds = (elapsedTime % 60000) / 1000;
+		String timeText = String.format("Zeit: %02d:%02d", minutes, seconds);
+		
+		// Build overlay text
+		String header = "Collection:";
+		String timeLine = timeText; // timeText already contains "Zeit: XX:XX"
+		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
+		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String resourceRateLine = getCollectionResourceRateLine(client);
+		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
+		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
+		boolean showBlocksNeeded = isCollectionBlocksNeededVisible();
+		boolean showTimeToNext = isCollectionTimeToNextVisible();
+		
+		// Calculate overlay width (unscaled)
+		int maxWidth = Math.max(client.font.width(header), client.font.width(timeLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksPerMinLine));
+		if (resourceRateLine != null) {
+			maxWidth = Math.max(maxWidth, client.font.width(resourceRateLine));
+		}
+		if (showBlocksNeeded) {
+			maxWidth = Math.max(maxWidth, client.font.width(blocksNeededLine));
+		}
+		if (showTimeToNext) {
+			maxWidth = Math.max(maxWidth, client.font.width(timeToNextLine));
+		}
+		maxWidth = Math.max(maxWidth, 100);
+		
+		int lineCount = getCollectionOverlayLineCount();
+		int unscaledWidth = maxWidth + padding * 2;
+		int unscaledHeight = lineCount * 11 + padding * 2;
+		
+		// Use Matrix transformations for scaling
+		org.joml.Matrix3x2fStack matrices = context.pose();
+		matrices.pushMatrix();
+		
+		// Translate to position and scale from there
+		matrices.translate(x, y);
+		matrices.scale(scale, scale);
+		
+		// Draw background (scaled, relative to matrix)
+		context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
+		
+		// Get colors from config
+		int headerColor = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayHeaderColor.getRGB();
+		int textColor = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayTextColor.getRGB();
+		
+		// Draw text (scaled, relative to matrix)
+		int textY = padding;
+		context.text(client.font, header, padding, textY, headerColor, true);
+		textY += 11;
+		context.text(client.font, timeLine, padding, textY, textColor, true);
+		textY += 11;
+		context.text(client.font, blocksLine, padding, textY, textColor, true);
+		textY += 11;
+		context.text(client.font, blocksPerMinLine, padding, textY, textColor, true);
+		textY += 11;
+		if (showBlocksNeeded) {
+			context.text(client.font, blocksNeededLine, padding, textY, textColor, true);
+			textY += 11;
+		}
+		if (showTimeToNext) {
+			context.text(client.font, timeToNextLine, padding, textY, textColor, true);
+			textY += 11;
+		}
+		if (resourceRateLine != null) {
+			context.text(client.font, resourceRateLine, padding, textY, textColor, true);
+		}
+		
+		matrices.popMatrix();
+	}
+
+	public static boolean isCollectionBlocksNeededVisible() {
+		return CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayShowBlocksNeeded;
+	}
+
+	public static boolean isCollectionTimeToNextVisible() {
+		return CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayShowTimeToNext;
+	}
+
+	public static int getCollectionOverlayLineCount() {
+		int lines = 4;
+		if (usesOverlayResourceRateDisplay()) {
+			lines++;
+		}
+		if (isCollectionBlocksNeededVisible()) {
+			lines++;
+		}
+		if (isCollectionTimeToNextVisible()) {
+			lines++;
+		}
+		return lines;
+	}
+
+	/**
+	 * Get current overlay width based on actual text content
+	 * Used by CollectionDraggableOverlay to match the actual overlay size
+	 */
+	public static int getCurrentCollectionOverlayWidth(Minecraft client) {
+		if (client == null || client.font == null) {
+			return 200; // Default fallback width
+		}
+		
+		int padding = 5;
+		
+		// Calculate elapsed time (format like Kill Tracker: XX:XX)
+		long elapsedTime = sessionStartTime > 0 ? System.currentTimeMillis() - sessionStartTime : 0;
+		long minutes = elapsedTime / 60000;
+		long seconds = (elapsedTime % 60000) / 1000;
+		String timeText = String.format("Zeit: %02d:%02d", minutes, seconds);
+		
+		// Build overlay text (same as in renderCollectionOverlay)
+		String header = "Collection:";
+		String timeLine = timeText;
+		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
+		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String resourceRateLine = getCollectionResourceRateLine(client);
+		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
+		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
+		boolean showBlocksNeeded = isCollectionBlocksNeededVisible();
+		boolean showTimeToNext = isCollectionTimeToNextVisible();
+		
+		int maxWidth = Math.max(client.font.width(header), client.font.width(timeLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksLine));
+		maxWidth = Math.max(maxWidth, client.font.width(blocksPerMinLine));
+		if (resourceRateLine != null) {
+			maxWidth = Math.max(maxWidth, client.font.width(resourceRateLine));
+		}
+		if (showBlocksNeeded) {
+			maxWidth = Math.max(maxWidth, client.font.width(blocksNeededLine));
+		}
+		if (showTimeToNext) {
+			maxWidth = Math.max(maxWidth, client.font.width(timeToNextLine));
+		}
+		maxWidth = Math.max(maxWidth, 100);
+		
+		return maxWidth + padding * 2;
+	}
+
+	/**
+	 * Get current overlay height based on actual content
+	 */
+	public static int getCurrentCollectionOverlayHeight() {
+		int padding = 5;
+		return getCollectionOverlayLineCount() * 11 + padding * 2;
+	}
+}

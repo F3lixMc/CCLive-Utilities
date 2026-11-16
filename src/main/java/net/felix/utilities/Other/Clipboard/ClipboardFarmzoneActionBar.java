@@ -2,11 +2,11 @@ package net.felix.utilities.Other.Clipboard;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Farmworld.FarmzoneResourceRateUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Liest Farmzone-Ressourcen aus der Actionbar ({@code +XXX NAME [GESAMT]}) und speichert
@@ -44,8 +44,8 @@ public final class ClipboardFarmzoneActionBar {
             return false;
         }
 
-        InformationenUtility.refreshFarmzoneScoreboardCache(client);
-        if (!InformationenUtility.isInFarmzone(client)) {
+        FarmzoneScoreboard.refreshFarmzoneScoreboardCache(client);
+        if (!FarmzoneScoreboard.isInFarmzone(client)) {
             FarmzoneResourceRateUtility.resetSession();
             return false;
         }

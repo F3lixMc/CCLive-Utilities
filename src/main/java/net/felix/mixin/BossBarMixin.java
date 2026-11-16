@@ -9,7 +9,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.felix.utilities.Overall.CoinTrackerUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.ItemViewer.ItemViewerHudStatsCollector;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
+import net.felix.features.information.collections.CollectionTracker;
 
 @SuppressWarnings("unused")
 @Mixin(BossHealthOverlay.class)
@@ -66,7 +66,7 @@ public class BossBarMixin {
                 // Collection-Bossbar (Farmwelt) – separat, nicht als else-if (gleiche Schrift-Glyphen)
                 if (!name.contains("Kills") && !name.contains("Kill") && hasAincraftFont) {
                     FarmworldCollectionsCollector.processBossBarCollection(name);
-                    InformationenUtility.processBossBarCollection(name);
+                    CollectionTracker.processBossBarCollection(name);
                 }
             }
         } catch (Exception e) {

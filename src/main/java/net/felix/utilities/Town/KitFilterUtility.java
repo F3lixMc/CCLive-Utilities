@@ -1694,12 +1694,12 @@ public class KitFilterUtility {
 				continue;
 			}
 			String clean = stripCardSuffix(cardName);
-			String effect = net.felix.utilities.Overall.InformationenUtility.getCardEffectByName(clean);
+			String effect = net.felix.features.information.cards.CardsStatuesDatabase.getCardEffectByName(clean);
 			if (effect == null || effect.isEmpty()) {
 				effect = "–";
 			}
 			String floors = formatCardFloors(
-				net.felix.utilities.Overall.InformationenUtility.getCardFloorsByName(clean));
+				net.felix.features.information.cards.CardsStatuesDatabase.getCardFloorsByName(clean));
 			result.add(new ItemInfo(clean, floors, null, 0xFFFFFFFF, null, "Karte", effect));
 		}
 		return result;

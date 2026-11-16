@@ -87,7 +87,7 @@ public class ItemFilter {
             if (!aspectMatches && item.info != null && Boolean.TRUE.equals(item.info.blueprint) && item.name != null) {
                 // Entferne Formatierungscodes für Vergleich
                 String cleanItemName = item.name.replaceAll("§[0-9a-fk-or]", "");
-                String aspectName = net.felix.utilities.Overall.InformationenUtility.getAspectInfoForBlueprint(cleanItemName);
+                String aspectName = net.felix.features.information.aspects.AspectDatabase.getAspectInfoForBlueprint(cleanItemName);
                 if (aspectName != null && !aspectName.isEmpty()) {
                     // Unterstütze Teilstring-Matching für Live-Suche
                     String aspectNameLower = aspectName.toLowerCase();
@@ -160,7 +160,7 @@ public class ItemFilter {
             if (!nameMatches && item.info != null && Boolean.TRUE.equals(item.info.blueprint) && item.name != null) {
                 // Entferne Formatierungscodes für Vergleich
                 String cleanItemName = item.name.replaceAll("§[0-9a-fk-or]", "");
-                String aspectName = net.felix.utilities.Overall.InformationenUtility.getAspectInfoForBlueprint(cleanItemName);
+                String aspectName = net.felix.features.information.aspects.AspectDatabase.getAspectInfoForBlueprint(cleanItemName);
                 if (aspectName != null && !aspectName.isEmpty()) {
                     String aspectLower = aspectName.toLowerCase();
                     // Prüfe ob Aspekt-Name den Suchtext enthält (wie im Blueprint Shop)

@@ -5,14 +5,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.felix.utilities.ItemViewer.ItemData;
 import net.felix.utilities.ItemViewer.ItemViewerUtility;
-import net.felix.utilities.Overall.InformationenUtility;
-import net.felix.utilities.Overall.InformationenUtility.AspectInfo;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import net.felix.features.information.aspects.AspectDatabase;
+import net.felix.features.information.aspects.AspectInfo;
 
 /**
  * Machtkristalle und Aspekte aus erfassten Ausrüstungs-Tooltips.
@@ -80,11 +80,11 @@ public final class BuildShareExtraParser {
                 if (plain == null || !plain.contains("⭐")) {
                     continue;
                 }
-                String tooltipName = InformationenUtility.extractBracketAspectNameFromStarLine(plain);
+                String tooltipName = AspectDatabase.extractBracketAspectNameFromStarLine(plain);
                 if (tooltipName == null || tooltipName.isEmpty()) {
                     continue;
                 }
-                AspectInfo info = InformationenUtility.getAspectInfoByTooltipDisplayName(tooltipName);
+                AspectInfo info = AspectDatabase.getAspectInfoByTooltipDisplayName(tooltipName);
                 if (info == null || info.aspectName == null || info.aspectName.isEmpty()
                         || "-".equals(info.aspectName)) {
                     continue;

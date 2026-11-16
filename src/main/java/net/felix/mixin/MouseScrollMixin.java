@@ -4,11 +4,11 @@ import net.felix.utilities.ItemViewer.ItemViewerUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
-import net.felix.utilities.Overall.InformationenUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.felix.features.information.mklevel.MKLevelInputHandler;
 
 @SuppressWarnings("unused")
 @Mixin(MouseHandler.class)
@@ -48,7 +48,7 @@ public class MouseScrollMixin {
         
         // Übergebe das Scroll-Event an die EquipmentDisplayUtility
         EquipmentDisplayUtility.onMouseScroll(vertical);
-        // Übergebe das Scroll-Event an die InformationenUtility für MKLevel Overlay
-        InformationenUtility.onMKLevelMouseScroll(vertical);
+        // Übergebe das Scroll-Event an den MKLevelInputHandler für das MKLevel Overlay
+        MKLevelInputHandler.onMKLevelMouseScroll(vertical);
     }
 } 

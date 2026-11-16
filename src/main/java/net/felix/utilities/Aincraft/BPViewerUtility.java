@@ -13,7 +13,6 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.KeyBindingUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.OverlayType;
@@ -49,6 +48,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import net.felix.CCLiveUtilities;
 import java.util.regex.Pattern;
+import net.felix.features.information.blueprints.BlueprintChatParser;
+import net.felix.features.information.blueprints.BlueprintNameAndColor;
 
 public class BPViewerUtility {
     
@@ -283,8 +284,8 @@ public class BPViewerUtility {
                 }
                 
                 // Try to extract blueprint name and color from styled Text (all rarities)
-                    InformationenUtility.BlueprintNameAndColor nameAndColor = 
-                        InformationenUtility.extractBlueprintNameAndColorFromItemName(line);
+                    BlueprintNameAndColor nameAndColor = 
+                        BlueprintChatParser.extractBlueprintNameAndColorFromItemName(line);
                     
                     String blueprintName;
                     String rarity = null;
@@ -801,10 +802,10 @@ public class BPViewerUtility {
                
                // First, try to extract blueprint name and color from the Text object
                // Use color extraction for "Drachenzahn" (to differentiate epic/legendary) and "Band der dunklen Herrschaft" (to verify legendary)
-               InformationenUtility.BlueprintNameAndColor nameAndColor = null;
+               BlueprintNameAndColor nameAndColor = null;
                if (message != null && messageText.contains("[Bauplan]")) {
                    // Try color extraction first
-                   nameAndColor = InformationenUtility.extractBlueprintNameAndColorFromChatMessage(message);
+                   nameAndColor = BlueprintChatParser.extractBlueprintNameAndColorFromChatMessage(message);
                    if (nameAndColor != null) {
                        // Only use color extraction for "Drachenzahn" and "Band der dunklen Herrschaft"
                        if (!nameAndColor.name.equals("Drachenzahn") && !nameAndColor.name.equals("Band der dunklen Herrschaft")) {
@@ -1072,8 +1073,8 @@ public class BPViewerUtility {
                            if (itemName.contains("[Bauplan]")) {
                                // Extract blueprint name and color from item name
                                Component itemNameText = itemStack.getHoverName();
-                               InformationenUtility.BlueprintNameAndColor nameAndColor = 
-                                   InformationenUtility.extractBlueprintNameAndColorFromItemName(itemNameText);
+                               BlueprintNameAndColor nameAndColor = 
+                                   BlueprintChatParser.extractBlueprintNameAndColorFromItemName(itemNameText);
                                
                                String blueprintName;
                                String rarity = null;

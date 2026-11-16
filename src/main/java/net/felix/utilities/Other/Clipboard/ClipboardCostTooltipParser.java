@@ -1,7 +1,6 @@
 package net.felix.utilities.Other.Clipboard;
 
 import net.felix.utilities.Aincraft.ItemInfoUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.information.materials.MaterialDatabase;
 
 /** Liest Kosten-Zeilen (AKTUELL / BENÖTIGT NAME) aus Inventar-Tooltips. */
 public final class ClipboardCostTooltipParser {
@@ -154,7 +154,7 @@ public final class ClipboardCostTooltipParser {
     }
 
     private static boolean isClipboardMaterial(String itemName) {
-        return InformationenUtility.getMaterialFloorInfo(itemName) != null
+        return MaterialDatabase.getMaterialFloorInfo(itemName) != null
                 || ItemInfoUtility.isFishingRarityMaterial(itemName);
     }
 

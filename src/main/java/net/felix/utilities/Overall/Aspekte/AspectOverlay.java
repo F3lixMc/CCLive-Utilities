@@ -47,7 +47,7 @@ public class AspectOverlay {
         
         // Check if the item name contains Epic colors - if so, don't show overlay
         net.minecraft.network.chat.Component itemNameText = itemStack.getHoverName();
-        if (itemNameText != null && net.felix.utilities.Overall.InformationenUtility.hasEpicColor(itemNameText)) {
+        if (itemNameText != null && net.felix.features.information.blueprints.BlueprintChatParser.hasEpicColor(itemNameText)) {
             isCurrentlyHovering = false;
             currentAspectName = "";
             currentAspectDescription = "";
@@ -116,7 +116,7 @@ public class AspectOverlay {
      * For chat: sets isChatHovering = true, lastTooltipUpdateTime = 0
      * For star items: sets isCurrentlyHovering = true, lastTooltipUpdateTime = currentTime
      */
-    public static void updateAspectInfoFromName(String cleanItemName, net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
+    public static void updateAspectInfoFromName(String cleanItemName, net.felix.features.information.aspects.AspectInfo aspectInfo) {
         if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
             isChatHovering = false;
             isCurrentlyHovering = false;
@@ -148,7 +148,7 @@ public class AspectOverlay {
      * Item Viewer: kein Tooltip-Timeout, Overlay bleibt solange aktiv wie gehovert wird.
      */
     public static void updateAspectInfoFromItemViewer(String cleanItemName,
-            net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
+            net.felix.features.information.aspects.AspectInfo aspectInfo) {
         if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
             isCurrentlyHovering = false;
             currentAspectName = "";
@@ -169,7 +169,7 @@ public class AspectOverlay {
     /**
      * Updates aspect info from blueprint name for chat messages only
      */
-    public static void updateAspectInfoFromNameForChat(String cleanItemName, net.felix.utilities.Overall.InformationenUtility.AspectInfo aspectInfo) {
+    public static void updateAspectInfoFromNameForChat(String cleanItemName, net.felix.features.information.aspects.AspectInfo aspectInfo) {
         if (cleanItemName == null || cleanItemName.isEmpty() || aspectInfo == null) {
             isChatHovering = false;
             currentAspectName = "";

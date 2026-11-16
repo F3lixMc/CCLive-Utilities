@@ -10,7 +10,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.loader.api.FabricLoader;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -26,6 +25,8 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import net.felix.features.information.blueprints.BlueprintChatParser;
+import net.felix.features.information.blueprints.BlueprintNameAndColor;
 
 public class ItemInfoUtility {
 
@@ -469,8 +470,8 @@ public class ItemInfoUtility {
 		if (stack == null || stack.isEmpty()) {
 			return "";
 		}
-		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
+		BlueprintNameAndColor nameAndColor =
+			BlueprintChatParser.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		String name = nameAndColor != null && nameAndColor.name != null ? nameAndColor.name : "";
 		if (name.isEmpty()) {
 			name = cleanBlueprintName(stack.getHoverName().getString());
@@ -483,8 +484,8 @@ public class ItemInfoUtility {
 		if (stack == null || stack.isEmpty()) {
 			return "";
 		}
-		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
+		BlueprintNameAndColor nameAndColor =
+			BlueprintChatParser.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		String name = nameAndColor != null && nameAndColor.name != null ? nameAndColor.name : "";
 		if (name.isEmpty()) {
 			name = stack.getHoverName().getString();
@@ -616,8 +617,8 @@ public class ItemInfoUtility {
 	
 	private static String extractFishingComponentName(ItemStack stack, List<String> lines) {
 		String nameFromTooltip = !lines.isEmpty() ? cleanBlueprintName(lines.get(0)) : "";
-		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
+		BlueprintNameAndColor nameAndColor =
+			BlueprintChatParser.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		String nameFromStack = nameAndColor != null && nameAndColor.name != null ? nameAndColor.name : "";
 		
 		String name = !nameFromTooltip.isEmpty() ? nameFromTooltip : nameFromStack;
@@ -912,8 +913,8 @@ public class ItemInfoUtility {
 		data.customModelData = extractCustomModelData(stack);
 		data.fishingComponent = true;
 		
-		InformationenUtility.BlueprintNameAndColor nameAndColor =
-			InformationenUtility.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
+		BlueprintNameAndColor nameAndColor =
+			BlueprintChatParser.extractBlueprintNameAndColorFromItemName(stack.getHoverName());
 		data.name = extractFishingComponentName(stack, lines);
 		if (nameAndColor != null) {
 			data.rarity = nameAndColor.rarity;

@@ -4,7 +4,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Overall.HudOverlayVisibility;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.PowerCrystalLevelUtility;
@@ -24,6 +23,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.ArrayList;
 import java.util.List;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Utility zum Auslesen von Informationen aus der Tab-Liste
@@ -220,7 +220,7 @@ public class NpcAlertsUtility {
 			return;
 		}
 		int fromBar = komboKisteBossBarScanBest;
-		List<String> sidebar = InformationenUtility.readCleanSidebarLines(client);
+		List<String> sidebar = FarmzoneScoreboard.readCleanSidebarLines(client);
 		int fromBoard = parseKomboScoreFromSidebarLines(sidebar);
 		if (fromBar >= 0 && fromBoard >= 0) {
 			int sum = fromBar + fromBoard;

@@ -5,7 +5,6 @@ import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.LeaderboardSnapshot;
 import net.felix.leaderboards.LeaderboardSync;
 import net.felix.leaderboards.LeaderboardSyncSchedule;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -14,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 import java.util.List;
+import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Rangliste links neben dem eigenen Inventar.
@@ -257,7 +257,7 @@ public final class LeaderboardInventoryOverlay {
             double dx = x - lastX;
             double dy = y - lastY;
             double dz = z - lastZ;
-            boolean inFarm = "farm".equals(placeKey) || InformationenUtility.isInFarmzone(client);
+            boolean inFarm = "farm".equals(placeKey) || FarmzoneScoreboard.isInFarmzone(client);
             if (isFarmZoneTeleport(dx * dx + dy * dy + dz * dz, tick - lastMoveTick == 1, inFarm)) {
                 manual = false;
                 manualKey = null;

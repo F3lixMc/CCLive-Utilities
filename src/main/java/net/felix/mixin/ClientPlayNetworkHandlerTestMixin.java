@@ -1,6 +1,5 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.InformationenUtility;
 import net.felix.utilities.Town.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -10,6 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.felix.features.information.aspects.AspectChatMessages;
 
 /**
  * Mixin to intercept GameMessageS2CPacket before it reaches the chat.
@@ -76,7 +76,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         }
         
         // Try to modify the message with aspect info
-        Component modified = InformationenUtility.modifyChatMessageForAspectInfo(originalMessage);
+        Component modified = AspectChatMessages.modifyChatMessageForAspectInfo(originalMessage);
         
         if (modified == null) {
             return;

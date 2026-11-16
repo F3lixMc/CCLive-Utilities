@@ -2,12 +2,13 @@ package net.felix.utilities.Other.Clipboard;
 
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
-import net.felix.utilities.Overall.InformationenUtility;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.information.materials.MaterialDatabase;
+import net.felix.features.information.materials.PrismarinMaterials;
 
 /**
  * Liest Schatz-Funde aus Server-Chatnachrichten und addiert Materialien
@@ -73,7 +74,7 @@ public final class TreasureFoundChatCollector {
      * Prismarin-Varianten auf kanonischen Namen mappen; sonst bereinigter Rohname.
      */
     private static String resolveMaterialName(String rawName) {
-        String prismarin = InformationenUtility.resolvePrismarinMaterialName(rawName);
+        String prismarin = PrismarinMaterials.resolvePrismarinMaterialName(rawName);
         if (prismarin != null) {
             return prismarin;
         }
@@ -81,8 +82,8 @@ public final class TreasureFoundChatCollector {
     }
 
     private static boolean isClipboardMaterial(String name) {
-        return InformationenUtility.isPrismarinMaterial(name)
-                || InformationenUtility.getMaterialFloorInfo(name) != null
+        return PrismarinMaterials.isPrismarinMaterial(name)
+                || MaterialDatabase.getMaterialFloorInfo(name) != null
                 || ItemInfoUtility.isFishingRarityMaterial(name);
     }
 

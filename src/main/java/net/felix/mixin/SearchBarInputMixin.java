@@ -67,7 +67,7 @@ public abstract class SearchBarInputMixin {
                 int inventoryX = xField.getInt(handledScreen);
                 int inventoryY = yField.getInt(handledScreen);
                 int inventoryHeight = bgHeightField.getInt(handledScreen);
-                if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
+                if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
                     cir.setReturnValue(true);
                 }
             } catch (Exception e) {
@@ -208,7 +208,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle key press for MKLevel search bar
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelKeyPressed(keyCode, scanCode, modifiers)) {
+        if (net.felix.features.information.mklevel.MKLevelInputHandler.handleMKLevelKeyPressed(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
         }
     }

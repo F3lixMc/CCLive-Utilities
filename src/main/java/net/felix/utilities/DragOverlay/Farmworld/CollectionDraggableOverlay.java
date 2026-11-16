@@ -2,11 +2,11 @@ package net.felix.utilities.DragOverlay.Farmworld;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.utilities.Overall.InformationenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
+import net.felix.features.information.collections.CollectionOverlay;
 
 /**
  * Draggable Overlay für das Collection Overlay
@@ -55,13 +55,13 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
     }
     
     private int getUnscaledWidth(Minecraft client) {
-        // Use the actual overlay width from InformationenUtility (same as KillsUtility pattern)
-        return client != null ? InformationenUtility.getCurrentCollectionOverlayWidth(client) : DEFAULT_WIDTH;
+        // Use the actual overlay width from CollectionOverlay (same as KillsUtility pattern)
+        return client != null ? CollectionOverlay.getCurrentCollectionOverlayWidth(client) : DEFAULT_WIDTH;
     }
     
     private int getUnscaledHeight() {
-        // Use the actual overlay height from InformationenUtility
-        return InformationenUtility.getCurrentCollectionOverlayHeight();
+        // Use the actual overlay height from CollectionOverlay
+        return CollectionOverlay.getCurrentCollectionOverlayHeight();
     }
     
     @Override
@@ -160,7 +160,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
             true
         );
 
-        if (InformationenUtility.isCollectionBlocksNeededVisible()) {
+        if (CollectionOverlay.isCollectionBlocksNeededVisible()) {
             currentY += LINE_HEIGHT;
             context.text(
                 client.font,
@@ -171,7 +171,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
             );
         }
 
-        if (InformationenUtility.isCollectionTimeToNextVisible()) {
+        if (CollectionOverlay.isCollectionTimeToNextVisible()) {
             currentY += LINE_HEIGHT;
             context.text(
                 client.font,
@@ -182,7 +182,7 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
             );
         }
 
-        if (InformationenUtility.usesOverlayResourceRateDisplay()) {
+        if (CollectionOverlay.usesOverlayResourceRateDisplay()) {
             currentY += LINE_HEIGHT;
             context.text(
                 client.font,
