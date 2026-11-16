@@ -1853,7 +1853,7 @@ public class CCLiveUtilitiesConfig {
                     chatIconOption.setAvailable(enabled);
                     nametagIconOption.setAvailable(enabled);
                     if (!enabled) {
-                        net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.clearPlayers();
+                        net.felix.utilities.Other.playericon.PlayerIconUtility.clearPlayers();
                     }
                 })
                 .build();

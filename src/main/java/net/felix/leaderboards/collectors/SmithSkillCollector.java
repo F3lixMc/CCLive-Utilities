@@ -1,18 +1,17 @@
 package net.felix.leaderboards.collectors;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.leaderboards.SmithSkillUpload;
 import net.felix.leaderboards.panel.SmithSkill;
-import net.felix.utilities.Other.DebugUtility;
+import net.felix.utilities.Other.debug.DebugUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Liest [Schmiede Skill] aus derselben Tab-Liste wie die NPC-Alerts.

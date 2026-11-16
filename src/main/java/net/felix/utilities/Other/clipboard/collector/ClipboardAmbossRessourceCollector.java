@@ -1,4 +1,4 @@
-package net.felix.utilities.Other.Clipboard;
+package net.felix.utilities.Other.clipboard.collector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +9,10 @@ import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.features.information.materials.MaterialDatabase;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
+import net.felix.utilities.Other.clipboard.ClipboardUtility;
+import net.felix.utilities.Other.clipboard.cost.ClipboardCostInventoryUtility;
+import net.felix.utilities.Other.clipboard.cost.ClipboardCostTooltipParser;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;

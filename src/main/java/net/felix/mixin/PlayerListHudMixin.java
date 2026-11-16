@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
+import java.util.UUID;
+import net.felix.utilities.Other.playericon.PlayerIconUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
@@ -12,8 +13,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.UUID;
 
 /**
  * Mixin to add the CCLive-Utilities icon next to player names in the tab list.

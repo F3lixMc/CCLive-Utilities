@@ -1,14 +1,15 @@
-package net.felix.utilities.Other.Clipboard;
+package net.felix.utilities.Other.clipboard.cost;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.utilities.Overall.ZeichenUtility;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Zieht Kosten nach Kauf in Kosten-Inventaren ab.

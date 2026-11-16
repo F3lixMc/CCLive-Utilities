@@ -1,14 +1,7 @@
-package net.felix.utilities.Other.PlayericonUtility;
+package net.felix.utilities.Other.playericon;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import net.felix.CCLiveUtilities;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.leaderboards.http.HttpClient;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -18,6 +11,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.felix.CCLiveUtilities;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.leaderboards.http.HttpClient;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
 
 /**
  * Utility class for managing and rendering the CCLive-Utilities icon next to player names.

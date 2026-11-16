@@ -2,26 +2,25 @@ package net.felix.leaderboards;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.felix.leaderboards.http.HttpClient;
-import net.felix.leaderboards.panel.LeaderboardPlaces;
-import net.felix.leaderboards.panel.SmithSkill;
-import net.felix.utilities.Other.DebugUtility;
-
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.RejectedExecutionException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import net.felix.leaderboards.http.HttpClient;
+import net.felix.leaderboards.panel.LeaderboardPlaces;
+import net.felix.leaderboards.panel.SmithSkill;
+import net.felix.utilities.Other.debug.DebugUtility;
 
 /**
  * Liest die erreichbaren Ranglisten im Servertakt.

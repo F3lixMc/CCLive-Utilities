@@ -3,7 +3,7 @@ package net.felix.features.itemviewer;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.utilities.Other.Clipboard.ClipboardUtility;
+import net.felix.utilities.Other.clipboard.ClipboardUtility;
 import net.felix.utilities.Overall.KeyCategories;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -233,8 +233,8 @@ public final class ItemViewerHotkeys {
                 // Hole gehoveres Item aus dem Grid
                 ItemData hoveredItem = getHoveredItemFromGrid();
                 
-                if (hoveredItem != null && net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
-                    net.felix.utilities.Other.Clipboard.ClipboardUtility.addBlueprint(hoveredItem);
+                if (hoveredItem != null && net.felix.utilities.Other.clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
+                    net.felix.utilities.Other.clipboard.ClipboardUtility.addBlueprint(hoveredItem);
                     return true;
                 }
             }

@@ -1,23 +1,22 @@
 package net.felix.chat;
 
 import com.google.gson.JsonObject;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
-import net.minecraft.client.Minecraft;
 import net.felix.profile.PlayerHoverStatsUtility;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
-
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manager für das CCLive Chat-System.
@@ -88,7 +87,7 @@ public class ChatManager {
             client.execute(() -> {
                 ensureSocketConnected();
                 ChatBlockedGlyphs.refreshFromServerAsync();
-                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.refreshModeratorNamesIfDue();
+                net.felix.utilities.Other.playericon.PlayerIconUtility.refreshModeratorNamesIfDue();
             });
         });
 
@@ -102,7 +101,7 @@ public class ChatManager {
             }
             if (client.player.tickCount > 0 && client.player.tickCount % 100 == 0) {
                 ensureSocketConnected();
-                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.refreshModeratorNamesIfDue();
+                net.felix.utilities.Other.playericon.PlayerIconUtility.refreshModeratorNamesIfDue();
             }
         });
 
@@ -388,7 +387,7 @@ public class ChatManager {
                 iconStyle = iconStyle.withHoverEvent(statsHover);
             }
             icon = Component.literal(String.valueOf(
-                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.chatIconMarker(player)
+                net.felix.utilities.Other.playericon.PlayerIconUtility.chatIconMarker(player)
             )).setStyle(iconStyle);
         }
         return ChatLineTarget.compose(player, messageId, nameColors, statsHover, icon, body);

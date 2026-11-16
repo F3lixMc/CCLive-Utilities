@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Other.PlayericonUtility.PlayerNametagIcons;
+import java.util.List;
+import net.felix.utilities.Other.playericon.PlayerNametagIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.DisplayRenderer;
 import net.minecraft.client.renderer.entity.state.TextDisplayEntityRenderState;
@@ -12,8 +13,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
 
 @Mixin(DisplayRenderer.TextDisplayRenderer.class)
 abstract class PlayerTextDisplayIconMixin {

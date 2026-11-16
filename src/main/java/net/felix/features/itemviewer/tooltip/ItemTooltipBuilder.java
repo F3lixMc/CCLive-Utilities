@@ -435,7 +435,7 @@ public final class ItemTooltipBuilder {
             }
         }
 
-        if (net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
+        if (net.felix.utilities.Other.clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
             String hotkeyText = net.felix.features.itemviewer.ItemViewerHotkeys.getClipboardPinHotkeyText();
             tooltipLines.add(Component.literal("An Pinnwand anheften mit Hotkey: " + hotkeyText)
                 .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false)));

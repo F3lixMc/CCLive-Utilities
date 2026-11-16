@@ -1,4 +1,4 @@
-package net.felix.utilities.Other.Clipboard;
+package net.felix.utilities.Other.clipboard.cost;
 
 import java.util.ArrayList;
 import java.util.HashMap;

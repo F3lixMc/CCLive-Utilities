@@ -1,17 +1,19 @@
-package net.felix.utilities.Other.Clipboard;
+package net.felix.utilities.Other.clipboard.collector;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
+import net.felix.utilities.Other.clipboard.ClipboardUtility;
+import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Sammelt Pergamentfetzen für die Pinnwand:

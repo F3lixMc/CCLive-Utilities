@@ -1,14 +1,13 @@
 package net.felix.leaderboards;
 
-import net.felix.CCLiveUtilities;
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.leaderboards.panel.SmithSkill;
-import net.felix.utilities.Other.DebugUtility;
-
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import net.felix.CCLiveUtilities;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.leaderboards.panel.SmithSkill;
+import net.felix.utilities.Other.debug.DebugUtility;
 
 /**
  * Prüft den Schmiede-Upload auf einem Hintergrundthread, unabhängig vom Widget-Lesen.

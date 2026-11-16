@@ -1,13 +1,12 @@
 package net.felix.leaderboards;
 
-import net.felix.CCLiveUtilities;
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Other.DebugUtility;
-
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import net.felix.CCLiveUtilities;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Other.debug.DebugUtility;
 
 /**
  * Prüft den Fabriklevel-Upload auf einem Hintergrundthread, unabhängig vom Lesen der Erfahrungsleiste.

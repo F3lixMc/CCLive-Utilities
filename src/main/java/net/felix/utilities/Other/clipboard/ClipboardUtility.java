@@ -1,22 +1,30 @@
-package net.felix.utilities.Other.Clipboard;
-
-import net.felix.utilities.Overall.KeyCategories;
-
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.data.PriceData;
-import net.minecraft.client.KeyMapping;
-import net.minecraft.resources.Identifier;
-import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
-import net.felix.features.itemviewer.data.BlueprintShopData;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+package net.felix.utilities.Other.clipboard;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.itemviewer.data.BlueprintShopData;
 import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.PriceData;
+import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector;
+import net.felix.utilities.Other.clipboard.collector.ClipboardFarmzoneActionBar;
+import net.felix.utilities.Other.clipboard.collector.ClipboardMaterialCollector;
+import net.felix.utilities.Other.clipboard.collector.ClipboardPaperShredsCollector;
+import net.felix.utilities.Other.clipboard.collector.FishingRewardChatCollector;
+import net.felix.utilities.Other.clipboard.collector.LegendPlusSammlerCollector;
+import net.felix.utilities.Other.clipboard.collector.TreasureFoundChatCollector;
+import net.felix.utilities.Other.clipboard.cost.ClipboardCostPurchaseTracker;
+import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Overall.KeyCategories;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 
 /**
  * Utility-Klasse für das Clipboard (Bauplan-Kosten)
@@ -115,10 +123,10 @@ public class ClipboardUtility {
                 int mouseX = (int) client.mouseHandler.xpos();
                 int mouseY = (int) client.mouseHandler.ypos();
                 float delta = 1.0f; // Delta wird nicht benötigt für statisches Rendering
-                net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderInGame(drawContext, mouseX, mouseY, delta);
+                net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderInGame(drawContext, mouseX, mouseY, delta);
                 
                 // Render Button Tooltips
-                net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderButtonTooltips(drawContext, mouseX, mouseY);
+                net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderButtonTooltips(drawContext, mouseX, mouseY);
             }
         });
         
@@ -133,7 +141,7 @@ public class ClipboardUtility {
             
             // Aktualisiere hideHover Flag jeden Tick (nicht nur beim Rendering)
             // Dies stellt sicher, dass F1/Tab sofort erkannt werden, auch wenn Rendering gedrosselt ist
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.updateHideHover();
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.updateHideHover();
             
             // Prüfe Clipboard-Toggle Hotkey (funktioniert sowohl im HUD als auch in Screens)
             // Im HUD: wasPressed() funktioniert direkt (wie bei KillsUtility und BPViewerUtility)

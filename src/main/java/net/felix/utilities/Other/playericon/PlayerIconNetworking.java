@@ -1,19 +1,19 @@
-package net.felix.utilities.Other.PlayericonUtility;
+package net.felix.utilities.Other.playericon;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.felix.CCLiveUtilities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Networking system to synchronize which players have the CCLive-Utilities mod installed.

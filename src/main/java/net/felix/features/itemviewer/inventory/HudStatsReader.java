@@ -2,7 +2,7 @@ package net.felix.features.itemviewer.inventory;
 
 import java.math.BigDecimal;
 import net.felix.features.itemviewer.ui.ViewerState;
-import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.BossBarHudValueDecoder;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;
 

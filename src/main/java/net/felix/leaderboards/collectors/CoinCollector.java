@@ -1,16 +1,16 @@
 package net.felix.leaderboards.collectors;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.Other.DebugUtility;
-import net.felix.utilities.Overall.DimensionUtility;
-import net.felix.utilities.Overall.ServerConnectionGate;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.utilities.Other.debug.DebugUtility;
+import net.felix.utilities.Overall.DimensionUtility;
+import net.felix.utilities.Overall.ServerConnectionGate;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * Sammelt Current Coins durch zufällige /cc coins Aufrufe

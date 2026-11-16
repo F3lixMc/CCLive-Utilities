@@ -2,20 +2,19 @@ package net.felix.profile;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.List;
+import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.leaderboards.panel.SmithSkill;
-import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
+import net.felix.utilities.Other.playericon.PlayerIconUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
-import net.fabricmc.loader.api.FabricLoader;
-import java.util.List;
-import net.felix.features.information.hover.HoverEventFactory;
 
 /**
  * Utility zum Anzeigen von Player-Stats in Chat-Nachrichten-Hover-Events
@@ -435,7 +434,7 @@ public class PlayerHoverStatsUtility {
         
         try {
             // Icon-Marker bereits vorhanden → nichts ändern
-            if (net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.containsChatIconMarker(message.getString())) {
+            if (net.felix.utilities.Other.playericon.PlayerIconUtility.containsChatIconMarker(message.getString())) {
                 return message;
             }
 
@@ -466,7 +465,7 @@ public class PlayerHoverStatsUtility {
                             // Bereits Icon zwischen Name und >>?
                             for (int k = i + 1; k < arrowIndex; k++) {
                                 String between = siblings.get(k).getString();
-                                if (net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.containsChatIconMarker(between)) {
+                                if (net.felix.utilities.Other.playericon.PlayerIconUtility.containsChatIconMarker(between)) {
                                     return message;
                                 }
                             }
@@ -485,7 +484,7 @@ public class PlayerHoverStatsUtility {
                                 .withFont(new net.minecraft.network.chat.FontDescription.Resource(CUSTOM_FONT))
                                 .withColor(0xFFFFFF);
                             MutableComponent iconMarker = Component.literal(String.valueOf(
-                                net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.chatIconMarker(playerName)
+                                net.felix.utilities.Other.playericon.PlayerIconUtility.chatIconMarker(playerName)
                             )).setStyle(iconStyle);
                             newMessage.append(space);
                             newMessage.append(iconMarker);

@@ -1,14 +1,13 @@
 package net.felix.chat;
 
-import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import net.felix.utilities.Other.playericon.PlayerIconUtility;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Eine CCLive-Zeile. Name und Präfix gehören zu derselben Komponente,

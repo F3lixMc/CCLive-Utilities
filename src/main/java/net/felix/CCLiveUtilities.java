@@ -19,7 +19,7 @@ import net.felix.utilities.Aincraft.materials.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
-import net.felix.utilities.Other.UpdateCheckerUtility;
+import net.felix.utilities.Other.update.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.felix.utilities.Town.kits.filter.KitFilterUtility;
@@ -82,8 +82,8 @@ public class CCLiveUtilities implements ModInitializer {
 		DamageTrackingUtility.initialize();
 		net.felix.utilities.Overall.CoinTrackerUtility.initialize();
 		NpcAlertsFeature.initialize();
-		net.felix.utilities.Other.DebugUtility.initializeItemLogger();
-		net.felix.utilities.Other.Clipboard.ClipboardUtility.initialize();
+		net.felix.utilities.Other.debug.DebugUtility.initializeItemLogger();
+		net.felix.utilities.Other.clipboard.ClipboardUtility.initialize();
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
 		
@@ -124,8 +124,8 @@ public class CCLiveUtilities implements ModInitializer {
 		
 		// Initialisiere Player Icon System
 		try {
-			net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.initialize();
-			net.felix.utilities.Other.PlayericonUtility.PlayerIconNetworking.initialize();
+			net.felix.utilities.Other.playericon.PlayerIconUtility.initialize();
+			net.felix.utilities.Other.playericon.PlayerIconNetworking.initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}

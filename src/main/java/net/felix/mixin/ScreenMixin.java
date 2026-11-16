@@ -81,7 +81,7 @@ public class ScreenMixin {
         }
         
         // Handle Clipboard toggle hotkey (works in screens)
-        if (net.felix.utilities.Other.Clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Other.clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }
@@ -101,14 +101,14 @@ public class ScreenMixin {
         // Handle keyboard input for Clipboard quantity text field (nur in AbstractContainerScreens)
         Screen screen = (Screen) (Object) this;
         if (screen instanceof AbstractContainerScreen) {
-            if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleQuantityTextFieldKeyPress(keyCode, scanCode, modifiers)) {
+            if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleQuantityTextFieldKeyPress(keyCode, scanCode, modifiers)) {
                 cir.setReturnValue(true);
             }
         }
         
         // Clipboard-Hover bei Tab oder F1 ausblenden
         if (keyCode == InputConstants.KEY_TAB || keyCode == InputConstants.KEY_F1) {
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.hideHover();
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.hideHover();
         }
         
     }
@@ -136,10 +136,10 @@ public class ScreenMixin {
             ViewerState.updateMousePosition(mouseX, mouseY);
             
             // Render Clipboard Overlay (wenn aktiviert)
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
             
             // Render Clipboard Button Tooltips (Anzahl, Seiten-Navigation)
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
             
             // Render Item Viewer (als AbstractContainerScreen behandeln)
             ViewerRenderer.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
@@ -189,7 +189,7 @@ public class ScreenMixin {
         FilterOverlayControls.closeFilterOverlay();
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocus();
         if (screen instanceof AbstractContainerScreen) {
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.finalizeQuantityTextField();
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.finalizeQuantityTextField();
         }
     }
 }

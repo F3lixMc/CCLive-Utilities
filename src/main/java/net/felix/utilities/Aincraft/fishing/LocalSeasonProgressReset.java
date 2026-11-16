@@ -2,9 +2,9 @@ package net.felix.utilities.Aincraft.fishing;
 
 import net.felix.profile.ProfileStatsManager;
 import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
-import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
-import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
-import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 
 /**
  * Rein lokaler Season-Progress-Reset der sechs Fortschrittsdateien.

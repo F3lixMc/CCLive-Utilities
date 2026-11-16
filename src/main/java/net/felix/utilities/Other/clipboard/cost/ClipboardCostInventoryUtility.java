@@ -1,4 +1,4 @@
-package net.felix.utilities.Other.Clipboard;
+package net.felix.utilities.Other.clipboard.cost;
 
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;

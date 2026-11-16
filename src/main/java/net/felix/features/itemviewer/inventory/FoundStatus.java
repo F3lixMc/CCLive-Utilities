@@ -27,7 +27,7 @@ public final class FoundStatus {
      */
     public static void onFoundStatusChanged() {
         Runnable refresh = () -> {
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.invalidateRenderSnapshot();
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.invalidateRenderSnapshot();
             if (currentSortMode.filtersNotFoundOnly()) {
                 applyFilters();
                 TooltipCache.invalidateTooltipCache();

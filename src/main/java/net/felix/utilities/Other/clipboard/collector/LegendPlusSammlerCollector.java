@@ -1,17 +1,18 @@
-package net.felix.utilities.Other.Clipboard;
+package net.felix.utilities.Other.clipboard.collector;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.utilities.Overall.ZeichenUtility;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Erkennt Ressourcen-Sammlungen im Legend+-Menü über das Item {@code [Sammler]}.

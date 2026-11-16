@@ -1,4 +1,4 @@
-package net.felix.utilities.Other.Clipboard;
+package net.felix.utilities.Other.clipboard.collector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.felix.features.information.materials.MaterialDatabase;
 import net.felix.features.information.materials.PrismarinMaterials;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 
 /**
  * Liest Schatz-Funde aus Server-Chatnachrichten und addiert Materialien

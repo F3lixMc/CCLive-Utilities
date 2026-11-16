@@ -4,14 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.felix.CCLiveUtilities;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
-import net.felix.utilities.Overall.ZeichenUtility;
-import net.minecraft.server.packs.resources.ResourceManager;
-
-import java.util.concurrent.CompletableFuture;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,7 +12,13 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import net.felix.CCLiveUtilities;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.utilities.Other.playericon.PlayerIconUtility;
+import net.felix.utilities.Overall.ZeichenUtility;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 /**
  * Sperrt Grafikglyphen im vom Spieler geschriebenen CCLive-Text.

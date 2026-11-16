@@ -119,13 +119,13 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Item Logger hotkey (works in inventories)
-        if (net.felix.utilities.Other.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
+        if (net.felix.utilities.Other.debug.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
             cir.setReturnValue(true);
             return;
         }
         
         // Handle Clipboard toggle hotkey (works in inventories)
-        if (net.felix.utilities.Other.Clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Other.clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }

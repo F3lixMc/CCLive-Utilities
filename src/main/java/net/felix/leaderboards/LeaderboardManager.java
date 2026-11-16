@@ -1,34 +1,33 @@
 package net.felix.leaderboards;
 
 import com.google.gson.JsonObject;
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.felix.leaderboards.collectors.DataCollector;
-import net.felix.leaderboards.collectors.StatsCollector;
-import net.felix.leaderboards.collectors.CollectionCollector;
-import net.felix.leaderboards.collectors.FloorProgressCollector;
-import net.felix.leaderboards.collectors.RareMobCollector;
-import net.felix.leaderboards.collectors.CoinCollector;
-import net.felix.leaderboards.collectors.MenuHoverCollector;
-import net.felix.leaderboards.collectors.FloorKillsCollector;
-import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
-import net.felix.leaderboards.collectors.SmithSkillCollector;
-import net.felix.leaderboards.panel.LeaderboardInventoryOverlay;
-import net.felix.leaderboards.panel.SmithSkill;
-import net.felix.utilities.Other.DebugUtility;
-import net.felix.identity.ModRegistrationTransport;
-import net.felix.identity.PlayerRegistrationService;
-import net.felix.leaderboards.http.HttpClient;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.felix.leaderboards.config.LeaderboardConfig;
-import net.felix.leaderboards.cooldown.LeaderboardCooldownManager;
-import net.felix.utilities.Overall.ServerConnectionGate;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.felix.identity.ModRegistrationTransport;
+import net.felix.identity.PlayerRegistrationService;
+import net.felix.leaderboards.collectors.CoinCollector;
+import net.felix.leaderboards.collectors.CollectionCollector;
+import net.felix.leaderboards.collectors.DataCollector;
+import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
+import net.felix.leaderboards.collectors.FloorKillsCollector;
+import net.felix.leaderboards.collectors.FloorProgressCollector;
+import net.felix.leaderboards.collectors.MenuHoverCollector;
+import net.felix.leaderboards.collectors.RareMobCollector;
+import net.felix.leaderboards.collectors.SmithSkillCollector;
+import net.felix.leaderboards.collectors.StatsCollector;
+import net.felix.leaderboards.config.LeaderboardConfig;
+import net.felix.leaderboards.cooldown.LeaderboardCooldownManager;
+import net.felix.leaderboards.http.HttpClient;
+import net.felix.leaderboards.panel.LeaderboardInventoryOverlay;
+import net.felix.leaderboards.panel.SmithSkill;
+import net.felix.utilities.Other.debug.DebugUtility;
+import net.felix.utilities.Overall.ServerConnectionGate;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * Zentraler Manager für alle Leaderboard-Funktionen

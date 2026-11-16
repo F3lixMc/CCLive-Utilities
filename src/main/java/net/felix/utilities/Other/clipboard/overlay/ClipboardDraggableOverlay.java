@@ -1,4 +1,4 @@
-package net.felix.utilities.DragOverlay.Overall;
+package net.felix.utilities.Other.clipboard.overlay;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.math.BigDecimal;
@@ -13,11 +13,12 @@ import net.felix.features.itemviewer.data.CostItem;
 import net.felix.features.itemviewer.data.ItemCatalog;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
-import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
-import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
-import net.felix.utilities.Other.Clipboard.ClipboardPaperShredsCollector;
-import net.felix.utilities.Other.Clipboard.ClipboardUtility;
-import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.Other.clipboard.ClipboardUtility;
+import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector;
+import net.felix.utilities.Other.clipboard.collector.ClipboardPaperShredsCollector;
+import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;
 import net.felix.utilities.Overall.KeyBindingUtility;
 import net.minecraft.client.Minecraft;

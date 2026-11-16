@@ -3,17 +3,16 @@ package net.felix.chat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextColor;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 /**
  * Namensfarben inkl. Gradient: eine RGB-Farbe pro Buchstaben.
@@ -185,7 +184,7 @@ public final class ChatNameColors {
         while (end > 0 && Character.isWhitespace(plain.charAt(end - 1))) {
             end--;
         }
-        if (end > 0 && net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.isChatIconMarker(plain.charAt(end - 1))) {
+        if (end > 0 && net.felix.utilities.Other.playericon.PlayerIconUtility.isChatIconMarker(plain.charAt(end - 1))) {
             end--;
             while (end > 0 && Character.isWhitespace(plain.charAt(end - 1))) {
                 end--;

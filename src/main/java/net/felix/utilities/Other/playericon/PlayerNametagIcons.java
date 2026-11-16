@@ -1,5 +1,6 @@
-package net.felix.utilities.Other.PlayericonUtility;
+package net.felix.utilities.Other.playericon;
 
+import java.util.regex.Pattern;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.Minecraft;
@@ -8,8 +9,6 @@ import net.minecraft.network.chat.FontDescription;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-
-import java.util.regex.Pattern;
 
 public final class PlayerNametagIcons {
     private static final FontDescription.Resource ICON_FONT = new FontDescription.Resource(

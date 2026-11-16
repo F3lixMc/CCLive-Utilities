@@ -1,8 +1,7 @@
-package net.felix.utilities.Other.PlayericonUtility;
-
-import org.junit.jupiter.api.Test;
+package net.felix.utilities.Other.playericon;
 
 import java.util.List;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

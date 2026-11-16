@@ -1,4 +1,4 @@
-package net.felix.utilities.Other;
+package net.felix.utilities.Other.debug;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;

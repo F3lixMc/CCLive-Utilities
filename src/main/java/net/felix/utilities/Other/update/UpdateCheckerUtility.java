@@ -1,18 +1,9 @@
-package net.felix.utilities.Other;
+package net.felix.utilities.Other.update;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.leaderboards.config.LeaderboardConfig;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.fabricmc.loader.api.FabricLoader;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -20,6 +11,14 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.loader.api.FabricLoader;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.leaderboards.config.LeaderboardConfig;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 public class UpdateCheckerUtility {
     private static final String MODRINTH_API_URL = "https://api.modrinth.com/v2/project/nBXDNiuw/version";

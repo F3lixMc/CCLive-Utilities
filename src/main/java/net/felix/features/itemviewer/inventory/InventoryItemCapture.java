@@ -66,8 +66,8 @@ public final class InventoryItemCapture {
             itemData = findItemByName(itemName);
         }
         
-        if (itemData != null && net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
-            return net.felix.utilities.Other.Clipboard.ClipboardUtility.addBlueprint(itemData);
+        if (itemData != null && net.felix.utilities.Other.clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
+            return net.felix.utilities.Other.clipboard.ClipboardUtility.addBlueprint(itemData);
         }
         return false;
     }
