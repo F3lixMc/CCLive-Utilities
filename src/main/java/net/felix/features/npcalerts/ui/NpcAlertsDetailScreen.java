@@ -1,9 +1,6 @@
 package net.felix.features.npcalerts.ui;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import dev.isxander.yacl3.api.*;
-import dev.isxander.yacl3.api.controller.*;
-import java.awt.Color;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Overall.KeyBindingUtility;
@@ -12,49 +9,90 @@ import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import static net.felix.features.npcalerts.config.AlertConfigStore.getMachtkristallSlotSeparate;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getMachtkristalleSlotEnabled;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getRecyclerSlotEnabled;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getRecyclerSlotSeparate;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getSeparateOverlay;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getShowBackground;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getShowIcon;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getShowMachtkristalleLevel;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getShowPercent;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getShowScreenMessage;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getShowScreenMessageWhenOverlayDisabled;
+import static net.felix.features.npcalerts.config.AlertConfigStore.getWarnPercent;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setMachtkristallSlotSeparate;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setMachtkristalleSlotEnabled;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setRecyclerSlotEnabled;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setRecyclerSlotSeparate;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setSeparateOverlay;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setShowBackground;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setShowIcon;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setShowMachtkristalleLevel;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setShowScreenMessage;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setShowScreenMessageWhenOverlayDisabled;
+import static net.felix.features.npcalerts.config.AlertConfigStore.setWarnPercent;
+import static net.felix.features.npcalerts.ui.AlertColorOptions.createColorConfigScreen;
+
 /**
  * Detail-Screen für einzelne NPC Alerts-Einstellungen
  */
 public class NpcAlertsDetailScreen extends Screen {
-    
+
     private final Screen parent;
+
     private final String infoName;
+
     private final String configKey;
+
     private StringWidget titleWidget;
+
     private String warnPercentInput = ""; // Warn-Prozentwert oder Kombo-Zielwert
+
     private boolean isEditingWarnPercent = false;
-    
+
     public NpcAlertsDetailScreen(Screen parent, String infoName, String configKey) {
         super(Component.literal("NPC Alerts Detail Settings"));
         this.parent = parent;
         this.infoName = infoName;
         this.configKey = configKey;
     }
-    
+
     private boolean isMachtkristalleKey() {
         return "machtkristalle".equals(configKey);
     }
-    
+
     private String getPercentCheckboxLabel() {
         return isMachtkristalleKey() ? "Prozentwert über 100%" : "Prozente anzeigen";
     }
-    
+
     private static final String SCREEN_MESSAGE_WHEN_DISABLED_LABEL =
         "Bildschirm-Nachricht bei deaktiviertem Alert Overlay";
+
     private static final int SETTINGS_ROW_SCREEN_MESSAGE = 60;
+
     private static final int SETTINGS_ROW_SCREEN_MESSAGE_WHEN_DISABLED = 75;
+
     private static final int SETTINGS_ROW_PERCENT = 100;
+
     private static final int SETTINGS_ROW_LEVEL = 125;
+
     private static final int SETTINGS_EXTRA_HEIGHT = 15;
+
     private static final int SETTINGS_BOX_WIDTH = 300;
+
     private static final int CRYSTAL_EXTRA_HEIGHT = 85;
+
     private static final int CRYSTAL_SEPARATE_EXTRA_HEIGHT = 60;
+
     private static final int CRYSTAL_BOTTOM_TRIM = 30;
+
     private static final int PANEL_TOP_MARGIN = 36;
+
     private static final int PANEL_EDGE_MARGIN = 12;
 
     private float settingsScale() {
-        if (!isMachtkristalleKey() || !getSeparateOverlay()) return 1.0f;
+        if (!isMachtkristalleKey() || !getSeparateOverlay(configKey)) return 1.0f;
         int panelHeight = 275 + SETTINGS_EXTRA_HEIGHT + CRYSTAL_EXTRA_HEIGHT
             + CRYSTAL_SEPARATE_EXTRA_HEIGHT - CRYSTAL_BOTTOM_TRIM;
         float fitWidth = Math.max(1, width - 2 * PANEL_EDGE_MARGIN) / (float) SETTINGS_BOX_WIDTH;
@@ -66,28 +104,28 @@ public class NpcAlertsDetailScreen extends Screen {
     private float settingsCenterY(float scale) {
         return scale == 1.0f ? height / 2.0f : (height + PANEL_TOP_MARGIN - PANEL_EDGE_MARGIN) / 2.0f;
     }
-    
+
     private int getScreenMessageCheckboxY(int boxY) {
         return boxY + SETTINGS_ROW_SCREEN_MESSAGE;
     }
-    
+
     private int getScreenMessageWhenDisabledCheckboxY(int boxY) {
         return boxY + SETTINGS_ROW_SCREEN_MESSAGE_WHEN_DISABLED;
     }
-    
+
     private int getPercentCheckboxY(int boxY) {
         return boxY + SETTINGS_ROW_PERCENT;
     }
-    
+
     private int getMachtkristalleLevelCheckboxY(int boxY) {
         return boxY + SETTINGS_ROW_LEVEL;
     }
-    
+
     private int getWarnInputY(int boxY) {
         if ("forschung".equals(configKey)) return getMachtkristalleLevelCheckboxY(boxY);
         return isMachtkristalleKey() ? boxY + 150 : boxY + 125;
     }
-    
+
     private int getSettingsBlockEndY(int boxY, boolean supportsPercent) {
         if (isMachtkristalleKey()) {
             return boxY + 200;
@@ -100,7 +138,7 @@ public class NpcAlertsDetailScreen extends Screen {
         }
         return boxY + 125;
     }
-    
+
     private void clampMachtkristallWarnPercentIfNeeded() {
         if (!isMachtkristalleKey()
             || CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100) {
@@ -112,12 +150,12 @@ public class NpcAlertsDetailScreen extends Screen {
             warnPercentInput = "100";
         }
     }
-    
+
     private boolean isMachtkristallWarnCappedAt100() {
         return isMachtkristalleKey()
             && !CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100;
     }
-    
+
     @Override
     protected void init() {
         super.init();
@@ -141,7 +179,7 @@ public class NpcAlertsDetailScreen extends Screen {
             warnPercentInput = warnValue >= 0 ? String.valueOf(warnValue) : "";
         } else {
             clampMachtkristallWarnPercentIfNeeded();
-            double currentWarnPercent = getWarnPercent();
+            double currentWarnPercent = getWarnPercent(configKey);
             if (currentWarnPercent >= 0) {
                 warnPercentInput = String.valueOf((int) Math.round(currentWarnPercent));
             } else {
@@ -149,7 +187,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
         }
     }
-    
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // Render the previous screen in the background if it exists
@@ -180,7 +218,7 @@ public class NpcAlertsDetailScreen extends Screen {
         // Render buttons
         super.extractRenderState(context, mouseX, mouseY, delta);
     }
-    
+
     private void renderSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         int boxWidth = SETTINGS_BOX_WIDTH;
         // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
@@ -194,7 +232,7 @@ public class NpcAlertsDetailScreen extends Screen {
         boolean isMachtkristalle = configKey.equals("machtkristalle");
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
+        boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay(configKey);
         int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
@@ -271,7 +309,7 @@ public class NpcAlertsDetailScreen extends Screen {
         int backgroundCheckboxSize = 10;
         int backgroundCheckboxYPos = backgroundCheckboxY;
         
-        boolean showBackground = getShowBackground();
+        boolean showBackground = getShowBackground(configKey);
         
         // Checkbox-Hintergrund
         context.fill(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxX + backgroundCheckboxSize, backgroundCheckboxYPos + backgroundCheckboxSize, 0xFF808080);
@@ -311,7 +349,7 @@ public class NpcAlertsDetailScreen extends Screen {
         int screenMessageCheckboxY = getScreenMessageCheckboxY(boxY);
         int screenMessageCheckboxX = boxX + 10;
         int screenMessageCheckboxSize = 10;
-        boolean showScreenMessage = getShowScreenMessage();
+        boolean showScreenMessage = getShowScreenMessage(configKey);
         
         context.fill(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageCheckboxY + screenMessageCheckboxSize, 0xFF808080);
         context.outline(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
@@ -342,7 +380,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Bildschirm-Nachricht bei deaktiviertem Alert Overlay
         int screenMessageWhenDisabledCheckboxY = getScreenMessageWhenDisabledCheckboxY(boxY);
-        boolean showScreenMessageWhenDisabled = getShowScreenMessageWhenOverlayDisabled();
+        boolean showScreenMessageWhenDisabled = getShowScreenMessageWhenOverlayDisabled(configKey);
         
         context.fill(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
             screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize, 0xFF808080);
@@ -384,7 +422,7 @@ public class NpcAlertsDetailScreen extends Screen {
         if (supportsPercent) {
             // Prozente Checkbox
             
-            boolean showPercent = getShowPercent();
+            boolean showPercent = getShowPercent(configKey);
             
             // Checkbox-Hintergrund
             context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
@@ -421,7 +459,7 @@ public class NpcAlertsDetailScreen extends Screen {
             
             if (isMachtkristalleKey()) {
                 int levelCheckboxY = getMachtkristalleLevelCheckboxY(boxY);
-                boolean showLevel = getShowMachtkristalleLevel();
+                boolean showLevel = getShowMachtkristalleLevel(configKey);
                 
                 context.fill(checkboxX, levelCheckboxY, checkboxX + checkboxSize, levelCheckboxY + checkboxSize, 0xFF808080);
                 context.outline(checkboxX, levelCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
@@ -536,7 +574,7 @@ public class NpcAlertsDetailScreen extends Screen {
         // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
         if (hasIconOption) {
             
-            boolean showIcon = getShowIcon();
+            boolean showIcon = getShowIcon(configKey);
             String iconButtonText = showIcon ? "Icon anzeigen: AN" : "Icon anzeigen: AUS";
             int iconButtonColor = showIcon ? 0xFF00FF00 : 0xFFFF0000;
             
@@ -572,7 +610,7 @@ public class NpcAlertsDetailScreen extends Screen {
         int buttonWidth = 280;
         int buttonHeight = 20;
         
-        boolean hasSeparateOverlayButton = getSeparateOverlay();
+        boolean hasSeparateOverlayButton = getSeparateOverlay(configKey);
         String buttonText = hasSeparateOverlayButton ? "Separates Overlay: AN" : "Separates Overlay: AUS";
         int buttonColor = hasSeparateOverlayButton ? 0xFF00FF00 : 0xFFFF0000;
         
@@ -587,7 +625,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Machtkristall Slot-Checkboxen
         if (configKey.equals("machtkristalle")) {
-            boolean hasSeparateOverlayForMk = getSeparateOverlay();
+            boolean hasSeparateOverlayForMk = getSeparateOverlay(configKey);
             
             // Machtkristall Slot-Checkboxen (immer angezeigt für Machtkristalle)
             int mkCheckboxStartY = buttonY + buttonHeight + 10;
@@ -598,7 +636,7 @@ public class NpcAlertsDetailScreen extends Screen {
             // MK Slot-Checkboxen (MK 1, MK 2, MK 3) - immer angezeigt
             for (int i = 0; i < 3; i++) {
                 int mkSlotY = mkCheckboxStartY + (i * mkCheckboxSpacing);
-                boolean mkSlotEnabled = getMachtkristalleSlotEnabled(i);
+                boolean mkSlotEnabled = getMachtkristalleSlotEnabled(configKey, i);
                 
                 // Checkbox-Hintergrund
                 context.fill(mkCheckboxX, mkSlotY, mkCheckboxX + mkCheckboxSize, mkSlotY + mkCheckboxSize, 0xFF808080);
@@ -640,7 +678,7 @@ public class NpcAlertsDetailScreen extends Screen {
             if (hasSeparateOverlayForMk) {
                 for (int i = 0; i < 3; i++) {
                     int mkCheckboxY = mkCheckboxStartY + (3 * mkCheckboxSpacing) + (i * mkCheckboxSpacing); // +60 für 3 Slots
-                    boolean mkSlotSeparate = getMachtkristallSlotSeparate(i);
+                    boolean mkSlotSeparate = getMachtkristallSlotSeparate(configKey, i);
                 
                     // Checkbox-Hintergrund
                     context.fill(mkCheckboxX, mkCheckboxY, mkCheckboxX + mkCheckboxSize, mkCheckboxY + mkCheckboxSize, 0xFF808080);
@@ -682,7 +720,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Recycler Slot-Checkboxen
         if (configKey.equals("recycler") || configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3")) {
-            boolean hasSeparateOverlayForRecycler = getSeparateOverlay();
+            boolean hasSeparateOverlayForRecycler = getSeparateOverlay(configKey);
             
             // Recycler Slot-Checkboxen (immer angezeigt für Recycler)
             int recyclerCheckboxStartY = buttonY + buttonHeight + 10;
@@ -693,7 +731,7 @@ public class NpcAlertsDetailScreen extends Screen {
             // Recycler Slot-Checkboxen (Recycler Slot 1, 2, 3 ein/aus) - immer angezeigt
             for (int i = 0; i < 3; i++) {
                 int recyclerSlotY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
-                boolean recyclerSlotEnabled = getRecyclerSlotEnabled(i);
+                boolean recyclerSlotEnabled = getRecyclerSlotEnabled(configKey, i);
                 
                 // Checkbox-Hintergrund
                 context.fill(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxX + recyclerCheckboxSize, recyclerSlotY + recyclerCheckboxSize, 0xFF808080);
@@ -735,7 +773,7 @@ public class NpcAlertsDetailScreen extends Screen {
             if (hasSeparateOverlayForRecycler) {
                 for (int i = 0; i < 3; i++) {
                     int recyclerCheckboxY = recyclerCheckboxStartY + (3 * recyclerCheckboxSpacing) + (i * recyclerCheckboxSpacing); // +60 für 3 Slots
-                    boolean recyclerSlotSeparate = getRecyclerSlotSeparate(i);
+                    boolean recyclerSlotSeparate = getRecyclerSlotSeparate(configKey, i);
                 
                     // Checkbox-Hintergrund
                     context.fill(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxX + recyclerCheckboxSize, recyclerCheckboxY + recyclerCheckboxSize, 0xFF808080);
@@ -903,7 +941,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             // Slot-Checkboxen "Einzeln" Hover (nur wenn "Separates Overlay" aktiviert ist)
-            if (getSeparateOverlay()) {
+            if (getSeparateOverlay(configKey)) {
                 for (int i = 0; i < 3; i++) {
                     int mkCheckboxY = mkHoverCheckboxStartY + (3 * mkHoverCheckboxSpacing) + (i * mkHoverCheckboxSpacing);
                     String mkSlotCheckboxText = "MK " + (i + 1) + " Einzeln";
@@ -953,7 +991,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
             
             // Slot-Checkboxen "Einzeln" Hover (nur wenn "Separates Overlay" aktiviert ist)
-            if (getSeparateOverlay()) {
+            if (getSeparateOverlay(configKey)) {
                 for (int i = 0; i < 3; i++) {
                     int recyclerCheckboxY = recyclerHoverCheckboxStartY + (3 * recyclerHoverCheckboxSpacing) + (i * recyclerHoverCheckboxSpacing);
                     String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
@@ -975,33 +1013,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
         }
     }
-    
-    private boolean getShowPercent() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentOver100;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent;
-            default:
-                return false;
-        }
-    }
-    
+
     private void setShowPercent(boolean value) {
         switch (configKey) {
             case "forschung":
@@ -1036,15 +1048,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 break;
         }
     }
-    
-    private boolean getShowMachtkristalleLevel() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleLevel;
-    }
-    
-    private void setShowMachtkristalleLevel(boolean value) {
-        CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleLevel = value;
-    }
-    
+
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
         float scale = settingsScale();
@@ -1065,7 +1069,7 @@ public class NpcAlertsDetailScreen extends Screen {
             boolean isMachtkristalleClose = configKey.equals("machtkristalle");
             boolean isRecyclerClose = configKey.equals("recycler");
             boolean isRecyclerSlotClose = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-            boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay();
+            boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay(configKey);
             int baseBoxHeightClose = (hasIconOptionClose ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
             if (isMachtkristalleClose) {
                 baseBoxHeightClose += CRYSTAL_EXTRA_HEIGHT;
@@ -1114,7 +1118,7 @@ public class NpcAlertsDetailScreen extends Screen {
         }
         return super.mouseClicked(event, doubled);
     }
-    
+
     private boolean handleSettingsClick(double mouseX, double mouseY, int button) {
         if (button != 0) {
             return false;
@@ -1132,7 +1136,7 @@ public class NpcAlertsDetailScreen extends Screen {
         boolean isMachtkristalle = configKey.equals("machtkristalle");
         boolean isRecycler = configKey.equals("recycler");
         boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay();
+        boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay(configKey);
             int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
         // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
         if (isMachtkristalle) {
@@ -1201,8 +1205,8 @@ public class NpcAlertsDetailScreen extends Screen {
         
         if (clickedOnBackgroundCheckbox || clickedOnBackgroundText) {
             // Toggle Hintergrund
-            boolean newValue = !getShowBackground();
-            setShowBackground(newValue);
+            boolean newValue = !getShowBackground(configKey);
+            setShowBackground(configKey, newValue);
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
@@ -1220,8 +1224,8 @@ public class NpcAlertsDetailScreen extends Screen {
                                               mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageTextHeight);
         
         if (clickedOnScreenMessageCheckbox || clickedOnScreenMessageText) {
-            boolean newValue = !getShowScreenMessage();
-            setShowScreenMessage(newValue);
+            boolean newValue = !getShowScreenMessage(configKey);
+            setShowScreenMessage(configKey, newValue);
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
@@ -1241,8 +1245,8 @@ public class NpcAlertsDetailScreen extends Screen {
             && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageWhenDisabledTextHeight;
         
         if (clickedOnScreenMessageWhenDisabledCheckbox || clickedOnScreenMessageWhenDisabledText) {
-            boolean newValue = !getShowScreenMessageWhenOverlayDisabled();
-            setShowScreenMessageWhenOverlayDisabled(newValue);
+            boolean newValue = !getShowScreenMessageWhenOverlayDisabled(configKey);
+            setShowScreenMessageWhenOverlayDisabled(configKey, newValue);
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
@@ -1266,7 +1270,7 @@ public class NpcAlertsDetailScreen extends Screen {
             
             if (clickedOnCheckbox || clickedOnText) {
                 // Toggle Prozente
-                boolean newValue = !getShowPercent();
+                boolean newValue = !getShowPercent(configKey);
                 setShowPercent(newValue);
                 CCLiveUtilitiesConfig.HANDLER.save();
                 return true;
@@ -1282,7 +1286,7 @@ public class NpcAlertsDetailScreen extends Screen {
                 boolean clickedOnLevelText = mouseX >= levelTextX && mouseX <= levelTextX + levelTextWidth &&
                     mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + levelTextHeight;
                 if (clickedOnLevelCheckbox || clickedOnLevelText) {
-                    setShowMachtkristalleLevel(!getShowMachtkristalleLevel());
+                    setShowMachtkristalleLevel(configKey, !getShowMachtkristalleLevel(configKey));
                     CCLiveUtilitiesConfig.HANDLER.save();
                     return true;
                 }
@@ -1336,8 +1340,8 @@ public class NpcAlertsDetailScreen extends Screen {
             
             if (clickedOnIconButton) {
                 // Toggle Icon/Text
-                boolean newValue = !getShowIcon();
-                setShowIcon(newValue);
+                boolean newValue = !getShowIcon(configKey);
+                setShowIcon(configKey, newValue);
                 CCLiveUtilitiesConfig.HANDLER.save();
                 return true;
             }
@@ -1373,8 +1377,8 @@ public class NpcAlertsDetailScreen extends Screen {
         
         if (clickedOnButton) {
             // Toggle Separate Overlay
-            boolean newValue = !getSeparateOverlay();
-            setSeparateOverlay(newValue);
+            boolean newValue = !getSeparateOverlay(configKey);
+            setSeparateOverlay(configKey, parent, newValue);
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
@@ -1401,15 +1405,15 @@ public class NpcAlertsDetailScreen extends Screen {
                 
                 if (clickedOnMkSlotCheckbox || clickedOnMkSlotText) {
                     // Toggle MK Slot Enabled
-                    boolean newValue = !getMachtkristalleSlotEnabled(i);
-                    setMachtkristalleSlotEnabled(i, newValue);
+                    boolean newValue = !getMachtkristalleSlotEnabled(configKey, i);
+                    setMachtkristalleSlotEnabled(configKey, parent, i, newValue);
                     CCLiveUtilitiesConfig.HANDLER.save();
                     return true;
                 }
             }
             
             // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
-            if (getSeparateOverlay()) {
+            if (getSeparateOverlay(configKey)) {
                 for (int i = 0; i < 3; i++) {
                     int mkCheckboxY = mkCheckboxStartY + (3 * mkCheckboxSpacing) + (i * mkCheckboxSpacing);
                     String mkSlotCheckboxText = "MK " + (i + 1) + " Einzeln";
@@ -1424,8 +1428,8 @@ public class NpcAlertsDetailScreen extends Screen {
                     
                     if (clickedOnMkSlotCheckbox || clickedOnMkSlotText) {
                         // Toggle MK Slot Separate
-                        boolean newValue = !getMachtkristallSlotSeparate(i);
-                        setMachtkristallSlotSeparate(i, newValue);
+                        boolean newValue = !getMachtkristallSlotSeparate(configKey, i);
+                        setMachtkristallSlotSeparate(configKey, i, newValue);
                         CCLiveUtilitiesConfig.HANDLER.save();
                         return true;
                     }
@@ -1455,15 +1459,15 @@ public class NpcAlertsDetailScreen extends Screen {
                 
                 if (clickedOnRecyclerSlotCheckbox || clickedOnRecyclerSlotText) {
                     // Toggle Recycler Slot Enabled
-                    boolean newValue = !getRecyclerSlotEnabled(i);
-                    setRecyclerSlotEnabled(i, newValue);
+                    boolean newValue = !getRecyclerSlotEnabled(configKey, i);
+                    setRecyclerSlotEnabled(configKey, parent, i, newValue);
                     CCLiveUtilitiesConfig.HANDLER.save();
                     return true;
                 }
             }
             
             // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
-            if (getSeparateOverlay()) {
+            if (getSeparateOverlay(configKey)) {
                 for (int i = 0; i < 3; i++) {
                     int recyclerCheckboxY = recyclerCheckboxStartY + (3 * recyclerCheckboxSpacing) + (i * recyclerCheckboxSpacing);
                     String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
@@ -1479,8 +1483,8 @@ public class NpcAlertsDetailScreen extends Screen {
                     
                     if (clickedOnRecyclerCheckbox || clickedOnRecyclerText) {
                         // Toggle Recycler Slot Separate
-                        boolean newValue = !getRecyclerSlotSeparate(i);
-                        setRecyclerSlotSeparate(i, newValue);
+                        boolean newValue = !getRecyclerSlotSeparate(configKey, i);
+                        setRecyclerSlotSeparate(configKey, i, newValue);
                         CCLiveUtilitiesConfig.HANDLER.save();
                         return true;
                     }
@@ -1490,7 +1494,7 @@ public class NpcAlertsDetailScreen extends Screen {
         
         return false;
     }
-    
+
     /**
      * Zeichnet eine diagonale Linie
      */
@@ -1510,220 +1514,7 @@ public class NpcAlertsDetailScreen extends Screen {
             }
         }
     }
-    
-    private boolean getSeparateOverlay() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay;
-            case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay;
-            case "recycler":
-                // Für "recycler" prüfe ob mindestens ein Slot "Separates Overlay" hat
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
-            case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay;
-            case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay;
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay;
-            default:
-                return false;
-        }
-    }
-    
-    private void setSeparateOverlay(boolean value) {
-        switch (configKey) {
-            case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungSeparateOverlay = value;
-                break;
-            case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossSeparateOverlay = value;
-                break;
-            case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenSeparateOverlay = value;
-                break;
-            case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerSeparateOverlay = value;
-                break;
-            case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteSeparateOverlay = value;
-                break;
-            case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenSeparateOverlay = value;
-                break;
-            case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenSeparateOverlay = value;
-                break;
-            case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSeparateOverlay = value;
-                break;
-            case "recycler":
-                // Für "recycler" setze alle 3 Slots
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay = value;
-                break;
-            case "recyclerSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1SeparateOverlay = value;
-                break;
-            case "recyclerSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2SeparateOverlay = value;
-                break;
-            case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3SeparateOverlay = value;
-                break;
-        }
-        
-        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
-        if (parent instanceof OverlayEditorScreen) {
-            ((OverlayEditorScreen) parent).refreshOverlays();
-        }
-    }
-    
-    /**
-     * Gibt zurück, ob ein bestimmter Machtkristall-Slot einzeln gerendert werden soll
-     */
-    private boolean getMachtkristallSlotSeparate(int slotIndex) {
-        if (!configKey.equals("machtkristalle")) {
-            return false;
-        }
-        switch (slotIndex) {
-            case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate;
-            case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate;
-            case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate;
-            default:
-                return false;
-        }
-    }
-    
-    /**
-     * Setzt, ob ein bestimmter Machtkristall-Slot einzeln gerendert werden soll
-     */
-    private void setMachtkristallSlotSeparate(int slotIndex, boolean value) {
-        if (!configKey.equals("machtkristalle")) {
-            return;
-        }
-        switch (slotIndex) {
-            case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot1Separate = value;
-                break;
-            case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot2Separate = value;
-                break;
-            case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleSlot3Separate = value;
-                break;
-        }
-    }
-    
-    /**
-     * Gibt zurück, ob ein bestimmter Recycler-Slot aktiviert ist
-     */
-    private boolean getRecyclerSlotEnabled(int slotIndex) {
-        boolean isRecycler = configKey.equals("recycler");
-        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        if (!isRecycler && !isRecyclerSlot) {
-            return false;
-        }
-        switch (slotIndex) {
-            case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1;
-            case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2;
-            case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3;
-            default:
-                return false;
-        }
-    }
-    
-    /**
-     * Setzt, ob ein bestimmter Recycler-Slot aktiviert ist
-     */
-    private void setRecyclerSlotEnabled(int slotIndex, boolean value) {
-        boolean isRecycler = configKey.equals("recycler");
-        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        if (!isRecycler && !isRecyclerSlot) {
-            return;
-        }
-        switch (slotIndex) {
-            case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot1 = value;
-                break;
-            case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot2 = value;
-                break;
-            case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerSlot3 = value;
-                break;
-        }
-        
-        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
-        if (parent instanceof OverlayEditorScreen) {
-            ((OverlayEditorScreen) parent).refreshOverlays();
-        }
-    }
-    
-    /**
-     * Gibt zurück, ob ein bestimmter Recycler-Slot einzeln gerendert werden soll
-     */
-    private boolean getRecyclerSlotSeparate(int slotIndex) {
-        boolean isRecycler = configKey.equals("recycler");
-        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        if (!isRecycler && !isRecyclerSlot) {
-            return false;
-        }
-        switch (slotIndex) {
-            case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate;
-            case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate;
-            case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate;
-            default:
-                return false;
-        }
-    }
-    
-    /**
-     * Setzt, ob ein bestimmter Recycler-Slot einzeln gerendert werden soll
-     */
-    private void setRecyclerSlotSeparate(int slotIndex, boolean value) {
-        boolean isRecycler = configKey.equals("recycler");
-        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        if (!isRecycler && !isRecyclerSlot) {
-            return;
-        }
-        switch (slotIndex) {
-            case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1Separate = value;
-                break;
-            case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2Separate = value;
-                break;
-            case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3Separate = value;
-                break;
-        }
-    }
-    
+
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         if (isEditingWarnPercent) {
@@ -1805,546 +1596,18 @@ public class NpcAlertsDetailScreen extends Screen {
                     }
                 }
             }
-            setWarnPercent(value);
+            setWarnPercent(configKey, value);
             if (isMachtkristallWarnCappedAt100() && value == 100.0) {
                 warnPercentInput = "100";
             }
             CCLiveUtilitiesConfig.HANDLER.save();
         } catch (NumberFormatException e) {
             // Ungültige Eingabe - setze auf -1 (deaktiviert)
-            setWarnPercent(-1.0);
+            setWarnPercent(configKey, -1.0);
             CCLiveUtilitiesConfig.HANDLER.save();
         }
     }
-    
-    private double getWarnPercent() {
-        switch (configKey) {
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent;
-            default:
-                return -1.0;
-        }
-    }
-    
-    private void setWarnPercent(double value) {
-        switch (configKey) {
-            case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent = value;
-                break;
-            case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent = value;
-                break;
-            case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent = value;
-                break;
-            case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent = value;
-                break;
-            case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent = value;
-                break;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent = value;
-                break;
-            case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleWarnPercent = value;
-                break;
-        }
-    }
-    
-    private boolean getShowIcon() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon;
-            case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon;
-            case "recycler":
-                // Für "recycler" prüfe ob mindestens ein Slot Icon aktiviert hat
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon ||
-                       CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
-            case "recyclerSlot1":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon;
-            case "recyclerSlot2":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon;
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon;
-            default:
-                return false;
-        }
-    }
-    
-    private void setShowIcon(boolean value) {
-        switch (configKey) {
-            case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowIcon = value;
-                break;
-            case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowIcon = value;
-                break;
-            case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowIcon = value;
-                break;
-            case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowIcon = value;
-                break;
-            case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowIcon = value;
-                break;
-            case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowIcon = value;
-                break;
-            case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowIcon = value;
-                break;
-            case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowIcon = value;
-                break;
-            case "recycler":
-                // Für "recycler" setze alle 3 Slots
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon = value;
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon = value;
-                break;
-            case "recyclerSlot1":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1ShowIcon = value;
-                break;
-            case "recyclerSlot2":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2ShowIcon = value;
-                break;
-            case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3ShowIcon = value;
-                break;
-        }
-    }
-    
-    private boolean getShowBackground() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground;
-            case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground;
-            default:
-                return true;
-        }
-    }
-    
-    private void setShowBackground(boolean value) {
-        switch (configKey) {
-            case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungShowBackground = value;
-                break;
-            case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossShowBackground = value;
-                break;
-            case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenShowBackground = value;
-                break;
-            case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerShowBackground = value;
-                break;
-            case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteShowBackground = value;
-                break;
-            case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenShowBackground = value;
-                break;
-            case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenShowBackground = value;
-                break;
-            case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleShowBackground = value;
-                break;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerShowBackground = value;
-                break;
-        }
-    }
-    
-    private boolean getShowScreenMessage() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessage;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessage;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessage;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessage;
-            case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessage;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessage;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessage;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessage;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessage;
-            default:
-                return false;
-        }
-    }
-    
-    private void setShowScreenMessage(boolean value) {
-        switch (configKey) {
-            case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessage = value;
-                break;
-            case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessage = value;
-                break;
-            case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessage = value;
-                break;
-            case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessage = value;
-                break;
-            case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessage = value;
-                break;
-            case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessage = value;
-                break;
-            case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessage = value;
-                break;
-            case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessage = value;
-                break;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessage = value;
-                break;
-        }
-    }
-    
-    private boolean getShowScreenMessageWhenOverlayDisabled() {
-        switch (configKey) {
-            case "forschung":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessageWhenOverlayDisabled;
-            case "amboss":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessageWhenOverlayDisabled;
-            case "schmelzofen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessageWhenOverlayDisabled;
-            case "jaeger":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessageWhenOverlayDisabled;
-            case "komboKiste":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessageWhenOverlayDisabled;
-            case "seelen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessageWhenOverlayDisabled;
-            case "essenzen":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessageWhenOverlayDisabled;
-            case "machtkristalle":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessageWhenOverlayDisabled;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                return CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessageWhenOverlayDisabled;
-            default:
-                return false;
-        }
-    }
-    
-    private void setShowScreenMessageWhenOverlayDisabled(boolean value) {
-        switch (configKey) {
-            case "forschung":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "amboss":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "schmelzofen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "jaeger":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "komboKiste":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "seelen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "essenzen":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "machtkristalle":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleScreenMessageWhenOverlayDisabled = value;
-                break;
-            case "recycler":
-            case "recyclerSlot1":
-            case "recyclerSlot2":
-            case "recyclerSlot3":
-                CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerScreenMessageWhenOverlayDisabled = value;
-                break;
-        }
-    }
-    
-    /**
-     * Gibt zurück, ob ein bestimmter Machtkristall-Slot aktiviert ist
-     */
-    private boolean getMachtkristalleSlotEnabled(int slotIndex) {
-        if (!configKey.equals("machtkristalle")) {
-            return false;
-        }
-        switch (slotIndex) {
-            case 0:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1;
-            case 1:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2;
-            case 2:
-                return CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3;
-            default:
-                return false;
-        }
-    }
-    
-    /**
-     * Setzt, ob ein bestimmter Machtkristall-Slot aktiviert ist
-     */
-    private void setMachtkristalleSlotEnabled(int slotIndex, boolean value) {
-        if (!configKey.equals("machtkristalle")) {
-            return;
-        }
-        switch (slotIndex) {
-            case 0:
-                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot1 = value;
-                break;
-            case 1:
-                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot2 = value;
-                break;
-            case 2:
-                CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsMachtkristalleSlot3 = value;
-                break;
-        }
-        
-        // Aktualisiere das Overlay-Editor-Screen, wenn es geöffnet ist
-        if (parent instanceof OverlayEditorScreen) {
-            ((OverlayEditorScreen) parent).refreshOverlays();
-        }
-    }
-    
-    /**
-     * Erstellt einen YACL-Screen für die Farboptionen eines NPC Alerts-Eintrags
-     * Enthält sowohl Textfarbe als auch Prozentfarbe
-     */
-    private static OptionGroup buildColorOptionGroup(String configKey) {
-        var b = OptionGroup.createBuilder()
-                .name(Component.literal("Farben"))
-                .option(createColorOption(configKey, true, "Textfarbe", "Farbe für den Text"));
-        if (!"komboKiste".equals(configKey)) {
-            b.option(createColorOption(configKey, false, "Prozentfarbe", "Farbe für die Prozentwerte"));
-        }
-        return b.build();
-    }
-    
-    private static Screen createColorConfigScreen(Screen parent, String configKey) {
-        return YetAnotherConfigLib.createBuilder()
-                .title(Component.literal("NPC Alerts Farben"))
-                .category(ConfigCategory.createBuilder()
-                        .name(Component.literal("Farben"))
-                        .group(buildColorOptionGroup(configKey))
-                        .build())
-                .save(() -> {
-                    CCLiveUtilitiesConfig.HANDLER.save();
-                })
-                .build()
-                .generateScreen(parent);
-    }
-    
-    /**
-     * Erstellt eine Color-Option für einen NPC Alerts-Eintrag
-     */
-    private static Option<Color> createColorOption(String configKey, boolean isTextColor, String name, String description) {
-        Color defaultValue = isTextColor ? new Color(0xFFFFFFFF) : new Color(0xFFFFFF00);
-        
-        // Getter und Setter basierend auf configKey
-        java.util.function.Supplier<Color> getter;
-        java.util.function.Consumer<Color> setter;
-        
-        if (isTextColor) {
-            switch (configKey) {
-                case "forschung":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungTextColor = val;
-                    break;
-                case "amboss":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossTextColor = val;
-                    break;
-                case "schmelzofen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenTextColor = val;
-                    break;
-                case "jaeger":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerTextColor = val;
-                    break;
-                case "komboKiste":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteTextColor = val;
-                    break;
-                case "seelen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenTextColor = val;
-                    break;
-                case "essenzen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenTextColor = val;
-                    break;
-                case "machtkristalle":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleTextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristalleTextColor = val;
-                    break;
-                case "recycler":
-                    // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
-                    setter = (val) -> {
-                        // Setze alle drei Slots gleichzeitig
-                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor = val;
-                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor = val;
-                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor = val;
-                    };
-                    break;
-                case "recyclerSlot1":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1TextColor = val;
-                    break;
-                case "recyclerSlot2":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2TextColor = val;
-                    break;
-                case "recyclerSlot3":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3TextColor = val;
-                    break;
-                default:
-                    getter = () -> defaultValue;
-                    setter = (val) -> {};
-            }
-        } else {
-            switch (configKey) {
-                case "forschung":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungPercentColor = val;
-                    break;
-                case "amboss":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossPercentColor = val;
-                    break;
-                case "schmelzofen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenPercentColor = val;
-                    break;
-                case "jaeger":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerPercentColor = val;
-                    break;
-                case "seelen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenPercentColor = val;
-                    break;
-                case "essenzen":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenPercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenPercentColor = val;
-                    break;
-                case "machtkristalle":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMachtkristallePercentColor = val;
-                    break;
-                case "recycler":
-                    // Für "recycler" verwende Slot 1 als Standard (für Multi-Line-Overlay)
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
-                    setter = (val) -> {
-                        // Setze alle drei Slots gleichzeitig
-                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor = val;
-                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor = val;
-                        CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor = val;
-                    };
-                    break;
-                case "recyclerSlot1":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot1PercentColor = val;
-                    break;
-                case "recyclerSlot2":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot2PercentColor = val;
-                    break;
-                case "recyclerSlot3":
-                    getter = () -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor;
-                    setter = (val) -> CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerSlot3PercentColor = val;
-                    break;
-                default:
-                    getter = () -> defaultValue;
-                    setter = (val) -> {};
-            }
-        }
-        
-        return Option.<Color>createBuilder()
-                .name(Component.literal(name))
-                .description(OptionDescription.of(Component.literal(description)))
-                .binding(defaultValue, getter, setter)
-                .controller(ColorControllerBuilder::create)
-                .build();
-    }
-    
+
     @Override
     public void onClose() {
         saveWarnPercent();
@@ -2377,5 +1640,5 @@ public class NpcAlertsDetailScreen extends Screen {
             minecraft.gui.setScreen(parent);
         }
     }
-}
 
+}
