@@ -1,4 +1,4 @@
-package net.felix.utilities.Town;
+package net.felix.utilities.Town.schmied;
 
 public enum SchmiedItemDisplayMode {
     BORDER,     // Rahmen um Items

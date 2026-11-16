@@ -1,13 +1,13 @@
-package net.felix.utilities.DragOverlay.Overall;
+package net.felix.utilities.Town.equipment;
 
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Town.EquipmentDisplayUtility;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.network.chat.Component;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 
 /**
  * Draggable Overlay für die Equipment Display

@@ -1,7 +1,14 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
+import net.felix.features.itemviewer.ItemViewerHotkeys;
+import net.felix.features.itemviewer.kit.KitEditorMode;
+import net.felix.features.itemviewer.search.SearchFieldInput;
+import net.felix.features.itemviewer.search.SearchFieldState;
+import net.felix.features.itemviewer.ui.FilterOverlayControls;
+import net.felix.features.itemviewer.ui.HelpOverlay;
+import net.felix.features.itemviewer.ui.ViewerRenderer;
+import net.felix.features.itemviewer.ui.ViewerState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -12,14 +19,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import net.felix.features.itemviewer.ItemViewerHotkeys;
-import net.felix.features.itemviewer.kit.KitEditorMode;
-import net.felix.features.itemviewer.search.SearchFieldInput;
-import net.felix.features.itemviewer.search.SearchFieldState;
-import net.felix.features.itemviewer.ui.FilterOverlayControls;
-import net.felix.features.itemviewer.ui.HelpOverlay;
-import net.felix.features.itemviewer.ui.ViewerRenderer;
-import net.felix.features.itemviewer.ui.ViewerState;
 
 /**
  * Mixin für Screen, um Keybind-Handling und Text-Input auch in geöffneten Screens zu ermöglichen
@@ -165,7 +164,7 @@ public class ScreenMixin {
         }
         
         // Kit-Editor: Aspekt-Overlay über dem zentrierten Editor-Panel
-        if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
+        if (screen instanceof net.felix.utilities.Town.kits.editor.CustomKitEditorScreen) {
             if (ViewerState.isVisible()) {
                 net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
             }
@@ -182,7 +181,7 @@ public class ScreenMixin {
     @Inject(method = "removed", at = @At("HEAD"))
     private void onRemoved(CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
-        if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
+        if (screen instanceof net.felix.utilities.Town.kits.editor.CustomKitEditorScreen) {
             KitEditorMode.stopKitEditorMode();
         }
         SearchFieldState.blurSearchFieldFocus();

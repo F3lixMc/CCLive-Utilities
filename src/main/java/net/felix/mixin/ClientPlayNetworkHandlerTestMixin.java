@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
 import net.felix.features.information.aspects.AspectChatMessages;
-import net.felix.utilities.Town.StarForgedSoundUtility;
+import net.felix.utilities.Town.sound.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;

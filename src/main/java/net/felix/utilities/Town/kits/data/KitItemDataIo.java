@@ -1,13 +1,12 @@
-package net.felix.utilities.Town;
+package net.felix.utilities.Town.kits.data;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.felix.chat.ChatTooltipLine;
-import net.felix.features.itemviewer.data.ItemData;
-
 import java.util.ArrayList;
 import java.util.List;
+import net.felix.chat.ChatTooltipLine;
+import net.felix.features.itemviewer.data.ItemData;
 
 /**
  * Kompakte Persistenz für Original-Share-Items (Modell, CMD, Tooltip).

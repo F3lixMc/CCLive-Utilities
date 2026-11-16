@@ -1,10 +1,12 @@
-package net.felix.utilities.Town;
+package net.felix.utilities.Town.kits.ui;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import net.felix.utilities.Town.kits.data.CustomKit;
+import net.felix.utilities.Town.kits.filter.KitFilterUtility;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;

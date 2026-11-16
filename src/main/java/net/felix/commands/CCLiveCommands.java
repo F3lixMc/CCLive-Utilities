@@ -28,7 +28,7 @@ import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.ZeichenUtility;
-import net.felix.utilities.Town.StarForgedSoundUtility;
+import net.felix.utilities.Town.sound.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;

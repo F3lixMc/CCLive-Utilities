@@ -2,17 +2,28 @@ package net.felix.chat;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.inventory.InventoryItemCapture;
+import net.felix.features.itemviewer.ui.ViewerState;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
-import net.felix.features.itemviewer.data.ItemData;
 import net.felix.utilities.Overall.ZeichenUtility;
-import net.felix.utilities.Town.BuildSlotMapping;
-import net.felix.utilities.Town.BuildSlotMapping.EquipmentCategory;
-import net.felix.utilities.Town.BuildSlotMapping.SlotState;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping.EquipmentCategory;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping.SlotState;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -25,18 +36,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import net.felix.features.itemviewer.inventory.InventoryItemCapture;
-import net.felix.features.itemviewer.ui.ViewerState;
 
 /**
  * Build-Share: Inventar-Erkennung, Session-Zustand, Übersicht, Snapshot, Upload, Chat-Hover.
@@ -1725,7 +1724,7 @@ public final class BuildShareManager {
             ? null : new ArrayList<>(capturedAspectNames);
         snapshot.powerCrystalOverview =
             (snapshot.powerCrystalNames != null && !snapshot.powerCrystalNames.isEmpty())
-                ? net.felix.utilities.Town.KitItemDataIo.copyShareItem(powerCrystalOverview)
+                ? net.felix.utilities.Town.kits.data.KitItemDataIo.copyShareItem(powerCrystalOverview)
                 : null;
         normalizeSnapshot(snapshot);
         return snapshot;

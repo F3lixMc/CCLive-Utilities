@@ -1,10 +1,14 @@
-package net.felix.utilities.Town;
+package net.felix.utilities.Town.schmied;
 
-import net.felix.utilities.Overall.KeyCategories;
-
+import com.mojang.blaze3d.platform.InputConstants;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.KeyCategories;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -18,13 +22,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.joml.Matrix3x2fStack;
-
-
-import java.util.List;
-import com.mojang.blaze3d.platform.InputConstants;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class SchmiedTrackerUtility {
 	
@@ -816,7 +813,7 @@ public class SchmiedTrackerUtility {
 			return;
 		}
 
-		net.felix.utilities.Town.SchmiedItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerItemDisplayMode;
+		net.felix.utilities.Town.schmied.SchmiedItemDisplayMode displayMode = CCLiveUtilitiesConfig.HANDLER.instance().schmiedTrackerItemDisplayMode;
 
 		// Zeichne farbige Rahmen oder Hintergrund um die Items
 		for (Map.Entry<Integer, Integer> entry : slotColors.entrySet()) {
@@ -834,7 +831,7 @@ public class SchmiedTrackerUtility {
 				int slotX = screenX + slot.x;
 				int slotY = screenY + slot.y;
 				
-				if (displayMode == net.felix.utilities.Town.SchmiedItemDisplayMode.BACKGROUND) {
+				if (displayMode == net.felix.utilities.Town.schmied.SchmiedItemDisplayMode.BACKGROUND) {
 					// Zeichne halbtransparenten Hintergrund
 					// Verwende die Rahmenfarbe, aber mit reduzierter Transparenz
 					int backgroundColor = (color & 0x00FFFFFF) | 0x80000000; // 50% Transparenz für bessere Sichtbarkeit

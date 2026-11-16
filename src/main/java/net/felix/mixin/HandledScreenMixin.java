@@ -273,7 +273,7 @@ public abstract class HandledScreenMixin {
         
         if (isItemViewerMinimized) {
             // Item Viewer ist eingeklappt: Buttons haben Priorität
-            if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
+            if (net.felix.utilities.Town.kits.filter.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
             }
@@ -288,7 +288,7 @@ public abstract class HandledScreenMixin {
                 return;
             }
             // Handle clicks on Kit Filter buttons (nur wenn Item Viewer den Klick nicht verarbeitet hat)
-            if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
+            if (net.felix.utilities.Town.kits.filter.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
             }
         }
@@ -383,7 +383,7 @@ public abstract class HandledScreenMixin {
             
             // Call the SchmiedTrackerUtility to render colored frames
             // This will handle all the logic for determining which slots need frames and what colors to use
-            net.felix.utilities.Town.SchmiedTrackerUtility.renderColoredFrames(context, screen, leftPos, topPos);
+            net.felix.utilities.Town.schmied.SchmiedTrackerUtility.renderColoredFrames(context, screen, leftPos, topPos);
             
         } catch (Exception e) {
             // Ignore rendering errors
@@ -398,7 +398,7 @@ public abstract class HandledScreenMixin {
             AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Call the SchmiedTrackerUtility to render the Hide Uncraftable button
-            net.felix.utilities.Town.SchmiedTrackerUtility.renderHideUncraftableButton(context, screen);
+            net.felix.utilities.Town.schmied.SchmiedTrackerUtility.renderHideUncraftableButton(context, screen);
             
         } catch (Exception e) {
             // Ignore rendering errors
@@ -411,7 +411,7 @@ public abstract class HandledScreenMixin {
     private boolean handleHideUncraftableButtonClick(double mouseX, double mouseY, int button) {
         try {
             // Call the SchmiedTrackerUtility to handle the button click
-            return net.felix.utilities.Town.SchmiedTrackerUtility.handleButtonClick(mouseX, mouseY, button);
+            return net.felix.utilities.Town.schmied.SchmiedTrackerUtility.handleButtonClick(mouseX, mouseY, button);
             
         } catch (Exception e) {
             return false;
@@ -426,7 +426,7 @@ public abstract class HandledScreenMixin {
             AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Call the SchmiedTrackerUtility to render the Hide Wrong Class button
-            net.felix.utilities.Town.SchmiedTrackerUtility.renderHideWrongClassButton(context, screen);
+            net.felix.utilities.Town.schmied.SchmiedTrackerUtility.renderHideWrongClassButton(context, screen);
             
         } catch (Exception e) {
             // Ignore rendering errors
@@ -439,7 +439,7 @@ public abstract class HandledScreenMixin {
     private boolean handleHideWrongClassButtonClick(double mouseX, double mouseY, int button) {
         try {
             // Call the SchmiedTrackerUtility to handle the button click
-            return net.felix.utilities.Town.SchmiedTrackerUtility.handleWrongClassButtonClick(mouseX, mouseY, button);
+            return net.felix.utilities.Town.schmied.SchmiedTrackerUtility.handleWrongClassButtonClick(mouseX, mouseY, button);
             
         } catch (Exception e) {
             return false;
@@ -664,7 +664,7 @@ public abstract class HandledScreenMixin {
             AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
             
             // Call the KitFilterUtility to render the buttons
-            net.felix.utilities.Town.KitFilterUtility.renderKitFilterButtons(context, screen, mouseX, mouseY);
+            net.felix.utilities.Town.kits.filter.KitFilterUtility.renderKitFilterButtons(context, screen, mouseX, mouseY);
             
         } catch (Exception e) {
             // Ignore rendering errors
@@ -695,7 +695,7 @@ public abstract class HandledScreenMixin {
     private boolean isSmithingInventory() {
         try {
             AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
-            return net.felix.utilities.Town.SchmiedTrackerUtility.isSmithingRelatedInventoryTitle(
+            return net.felix.utilities.Town.schmied.SchmiedTrackerUtility.isSmithingRelatedInventoryTitle(
                     screen.getTitle().getString());
         } catch (Exception e) {
             return false;

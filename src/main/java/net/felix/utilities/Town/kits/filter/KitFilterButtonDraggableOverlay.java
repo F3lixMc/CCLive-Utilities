@@ -1,4 +1,4 @@
-package net.felix.utilities.DragOverlay.Schmied;
+package net.felix.utilities.Town.kits.filter;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;

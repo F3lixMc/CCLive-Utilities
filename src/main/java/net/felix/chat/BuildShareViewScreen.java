@@ -1,10 +1,19 @@
 package net.felix.chat;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.felix.CCLiveUtilities;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.utilities.Town.BuildSlotMapping;
-import net.felix.utilities.Town.BuildSlotMapping.EquipmentCategory;
-import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.felix.features.itemviewer.tooltip.ItemTooltipBuilder;
+import net.felix.features.itemviewer.ui.ItemStackCache;
+import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping.EquipmentCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,16 +22,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
-import com.mojang.blaze3d.platform.InputConstants;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import net.felix.features.itemviewer.tooltip.ItemTooltipBuilder;
-import net.felix.features.itemviewer.ui.ItemStackCache;
 
 /**
  * Lokale Build-Share-Vorschau mit equipmentinventory_open_both.png.

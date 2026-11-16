@@ -1,17 +1,16 @@
 package net.felix.utilities.Overall;
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.felix.CCLiveUtilitiesConfig;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.leaderboards.config.LeaderboardConfig;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.leaderboards.config.LeaderboardConfig;
 
 /**
  * Utility-Klasse zum automatischen Update von JSON-Config-Dateien vom Server
@@ -205,7 +204,7 @@ public class JsonConfigUpdateUtility {
                     net.felix.features.information.licenses.LicenseDatabase.reloadLicensesDatabase();
                     break;
                 case "Kits.json":
-                    net.felix.utilities.Town.KitFilterUtility.reloadKitsDatabase();
+                    net.felix.utilities.Town.kits.filter.KitFilterUtility.reloadKitsDatabase();
                     break;
                 case "MKLevel.json":
                     net.felix.features.information.mklevel.MkLevelDatabase.reloadMkLevelDatabase();

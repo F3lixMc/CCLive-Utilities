@@ -1,4 +1,4 @@
-package net.felix.utilities.DragOverlay.Schmied;
+package net.felix.utilities.Town.schmied;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
@@ -8,9 +8,9 @@ import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 /**
- * Draggable Overlay für den Hide Wrong Class Button
+ * Draggable Overlay für den Hide Uncraftable Button
  */
-public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
+public class HideUncraftableButtonDraggableOverlay implements DraggableOverlay {
     
     private static final int DEFAULT_WIDTH = 120;
     private static final int DEFAULT_HEIGHT = 20;
@@ -25,7 +25,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String getOverlayName() {
-        return "Hide wrong class Button";
+        return "Hide Uncraftable Button";
     }
     
     @Override
@@ -34,7 +34,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         if (client.getWindow() == null) return 0;
         
         int screenWidth = client.getWindow().getGuiScaledWidth();
-        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX;
+        int xOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonX;
         
         // Calculate position based on right edge (same as SchmiedTrackerUtility)
         int baseX = screenWidth - DEFAULT_WIDTH - 20; // Right edge minus button width minus margin
@@ -46,7 +46,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
-        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY;
+        int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonY;
         
         // Calculate position based on top edge (same as SchmiedTrackerUtility)
         int baseY = 20; // Top edge with margin
@@ -56,7 +56,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     @Override
     public int getWidth() {
         int unscaledWidth = getUnscaledWidth();
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
         if (scale <= 0) scale = 1.0f;
         return (int) (unscaledWidth * scale);
     }
@@ -64,7 +64,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
     @Override
     public int getHeight() {
         int unscaledHeight = getUnscaledHeight();
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
         if (scale <= 0) scale = 1.0f;
         return (int) (unscaledHeight * scale);
     }
@@ -83,8 +83,8 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         int xOffset = x - baseX;
         int yOffset = y - baseY;
         
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX = xOffset;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY = yOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonX = xOffset;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonY = yOffset;
     }
     
     @Override
@@ -100,7 +100,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         // Clamp scale to reasonable values (0.1 to 5.0)
         scale = Math.max(0.1f, Math.min(5.0f, scale));
         
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = scale;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale = scale;
         // Position stays the same - overlay grows from top-left corner
     }
     
@@ -114,7 +114,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         int x = getX();
         int y = getY();
         
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale;
         if (scale <= 0) scale = 1.0f;
         
         int scaledWidth = (int) (unscaledWidth * scale);
@@ -132,7 +132,7 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         context.fill(0, 0, unscaledWidth, unscaledHeight, 0xFF4B6A69);
         
         // Render button text (scaled, relative to matrix)
-        String buttonText = "Hide wrong class";
+        String buttonText = "Hide Uncraftable";
         int textWidth = client.font.width(buttonText);
         int textX = (unscaledWidth - textWidth) / 2;
         int textY = (unscaledHeight - 8) / 2;
@@ -162,25 +162,24 @@ public class HideWrongClassButtonDraggableOverlay implements DraggableOverlay {
         if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
             return false;
         }
-return CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassEnabled &&
-               CCLiveUtilitiesConfig.HANDLER.instance().showHideWrongClassButton;
+return CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableEnabled;
     }
     
     @Override
     public Component getTooltip() {
-        return Component.literal("Hide wrong class Button - Toggles visibility of items not suitable for your class");
+        return Component.literal("Hide Uncraftable Button - Toggles visibility of uncraftable items");
     }
     
     @Override
     public void resetToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonX = -195;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonY = 126;
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = 1.0f;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonX = -195;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonY = 103;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale = 1.0f;
     }
     
     @Override
     public void resetSizeToDefault() {
-        CCLiveUtilitiesConfig.HANDLER.instance().hideWrongClassButtonScale = 1.0f;
+        CCLiveUtilitiesConfig.HANDLER.instance().hideUncraftableButtonScale = 1.0f;
     }
     
     @Override

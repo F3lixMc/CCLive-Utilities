@@ -459,19 +459,19 @@ public final class ViewerInputHandler {
             return false;
         }
         if (button == 0) {
-            net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection =
-                    net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
+            net.felix.utilities.Town.kits.filter.KitFilterUtility.KitSelection kitSelection =
+                    net.felix.utilities.Town.kits.filter.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
             if (kitSelection != null) {
                 kitFilterActive = !kitFilterActive;
                 applyFilters(); // Aktualisiere Filter
             } else {
                 // Kein Kit ausgewählt - öffne Kit-Auswahlmenü
-                net.felix.utilities.Town.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
+                net.felix.utilities.Town.kits.filter.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
             }
             return true;
         }
         if (button == 1) {
-            net.felix.utilities.Town.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
+            net.felix.utilities.Town.kits.filter.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
             return true;
         }
         return false;

@@ -40,10 +40,10 @@ public final class KitEditorMode {
     // Kit-Editor-Modus (eigenes Kit zusammenstellen)
     public static AbstractContainerScreen<?> kitEditorBackgroundScreen = null;
 
-    public static java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.CustomKitEditorScreen.PickTarget> kitEditorPickHandler = null;
+    public static java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget> kitEditorPickHandler = null;
 
-    public static net.felix.utilities.Town.CustomKitEditorScreen.PickTarget kitEditorPickTarget =
-            net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+    public static net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget kitEditorPickTarget =
+            net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget.ADD_ITEM;
 
     // Anwenden-Button (Item-Viewer-Filterung ins Schmiede-Inventar übernehmen)
     private static final String APPLY_BUTTON_LABEL = "Anwenden";
@@ -59,8 +59,8 @@ public final class KitEditorMode {
                            lastMouseY >= y && lastMouseY < y + KIT_BUTTON_SIZE;
         
         // Hole aktuelle Kit-Auswahl
-        net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection = 
-            net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
+        net.felix.utilities.Town.kits.filter.KitFilterUtility.KitSelection kitSelection = 
+            net.felix.utilities.Town.kits.filter.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
         boolean hasKitSelected = kitSelection != null;
         
         // Bestimme Kit-Farbe (basierend auf Kit-Typ)
@@ -158,17 +158,17 @@ public final class KitEditorMode {
      * Gibt die Farbe für ein Kit zurück (basierend auf Kit-Typ)
      */
     public static void startKitEditorMode(AbstractContainerScreen<?> backgroundScreen,
-            java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.CustomKitEditorScreen.PickTarget> pickHandler) {
+            java.util.function.BiConsumer<ItemData, net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget> pickHandler) {
         kitEditorBackgroundScreen = backgroundScreen;
         kitEditorPickHandler = pickHandler;
-        kitEditorPickTarget = net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+        kitEditorPickTarget = net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget.ADD_ITEM;
         isMinimized = false;
     }
 
     public static void stopKitEditorMode() {
         kitEditorBackgroundScreen = null;
         kitEditorPickHandler = null;
-        kitEditorPickTarget = net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+        kitEditorPickTarget = net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget.ADD_ITEM;
     }
 
     public static boolean isKitEditorMode() {
@@ -179,10 +179,10 @@ public final class KitEditorMode {
         return kitEditorBackgroundScreen;
     }
 
-    public static void setKitEditorPickTarget(net.felix.utilities.Town.CustomKitEditorScreen.PickTarget target) {
+    public static void setKitEditorPickTarget(net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget target) {
         kitEditorPickTarget = target != null
                 ? target
-                : net.felix.utilities.Town.CustomKitEditorScreen.PickTarget.ADD_ITEM;
+                : net.felix.utilities.Town.kits.editor.CustomKitEditorScreen.PickTarget.ADD_ITEM;
     }
 
     public static int[] getKitEditorViewerBounds() {
@@ -230,7 +230,7 @@ public final class KitEditorMode {
         }
     }
 
-    private static int getKitColor(net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection) {
+    private static int getKitColor(net.felix.utilities.Town.kits.filter.KitFilterUtility.KitSelection kitSelection) {
         if (kitSelection == null) {
             return 0xFF808080; // Grau als Standard
         }

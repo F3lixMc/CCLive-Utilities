@@ -1,17 +1,18 @@
-package net.felix.utilities.Town;
+package net.felix.utilities.Town.kits.data;
 
-import net.felix.features.itemviewer.data.ItemData;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.utilities.Town.kits.editor.CustomKitSlotAssigner;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * Benutzerdefiniertes Kit (Name, Icon, Ausrüstungseinträge, Karten, Angel, Kristalle).

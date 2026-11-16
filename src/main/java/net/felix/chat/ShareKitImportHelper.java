@@ -1,13 +1,5 @@
 package net.felix.chat;
 
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.utilities.Town.BuildSlotMapping;
-import net.felix.utilities.Town.CustomKit;
-import net.felix.utilities.Town.CustomKitManager;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -16,7 +8,14 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.tooltip.ForgingTooltipText;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping;
+import net.felix.utilities.Town.kits.data.CustomKit;
+import net.felix.utilities.Town.kits.data.CustomKitManager;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 
 /**
  * Speichert einen Build-Share-Snapshot als eigenes CustomKit
@@ -259,7 +258,7 @@ public final class ShareKitImportHelper {
                         ? BuildSlotMapping.pieceTypeForSlot(slot)
                         : BuildSlotMapping.resolvePieceType(db);
                     entry.slotType = type != null ? type.getLabel() : null;
-                    entry.originalItem = net.felix.utilities.Town.KitItemDataIo.copyShareItem(shareItem);
+                    entry.originalItem = net.felix.utilities.Town.kits.data.KitItemDataIo.copyShareItem(shareItem);
                     List<String> aspects = BuildShareExtraParser.parseAspectNames(List.of(shareItem));
                     entry.capturedAspectNames = aspects.isEmpty() ? List.of() : new ArrayList<>(aspects);
                     kit.equipmentEntries.add(entry);
@@ -290,7 +289,7 @@ public final class ShareKitImportHelper {
                 String cardLabel = cardDisplayName(card);
                 if (!cardLabel.isEmpty()) {
                     kit.cardNames.add(cardLabel);
-                    kit.originalCards.add(net.felix.utilities.Town.KitItemDataIo.copyShareItem(card));
+                    kit.originalCards.add(net.felix.utilities.Town.kits.data.KitItemDataIo.copyShareItem(card));
                 }
             }
         }
@@ -299,7 +298,7 @@ public final class ShareKitImportHelper {
             ? null
             : new ArrayList<>(snapshot.powerCrystalNames);
         kit.originalPowerCrystalOverview =
-            net.felix.utilities.Town.KitItemDataIo.copyShareItem(snapshot.powerCrystalOverview);
+            net.felix.utilities.Town.kits.data.KitItemDataIo.copyShareItem(snapshot.powerCrystalOverview);
         kit.powerCrystalOverviewEdited = false;
 
         boolean persisted = CustomKitManager.addKit(kit);
@@ -322,7 +321,7 @@ public final class ShareKitImportHelper {
 
     private static void importFishingRod(
             ItemData rod, CustomKit kit, List<String> unresolved) {
-        kit.originalFishingRod = net.felix.utilities.Town.KitItemDataIo.copyShareItem(rod);
+        kit.originalFishingRod = net.felix.utilities.Town.kits.data.KitItemDataIo.copyShareItem(rod);
         kit.fishingRodComponentsEdited = false;
         List<ParsedFishingComponent> parsed = parseFishingComponentsFromTooltip(rod.chatTooltip);
         if (parsed.isEmpty()) {

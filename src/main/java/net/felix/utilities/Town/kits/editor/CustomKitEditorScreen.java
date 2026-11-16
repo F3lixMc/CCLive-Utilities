@@ -1,8 +1,21 @@
-package net.felix.utilities.Town;
+package net.felix.utilities.Town.kits.editor;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
+import java.util.Collections;
+import net.felix.features.itemviewer.data.ItemCatalog;
 import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.kit.KitEditorMode;
+import net.felix.features.itemviewer.search.SearchFieldState;
+import net.felix.features.itemviewer.tooltip.ItemTooltipBuilder;
+import net.felix.features.itemviewer.ui.FilterOverlayControls;
+import net.felix.features.itemviewer.ui.ViewerInputHandler;
+import net.felix.features.itemviewer.ui.ViewerState;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping;
+import net.felix.utilities.Town.kits.data.CustomKit;
+import net.felix.utilities.Town.kits.data.CustomKitManager;
+import net.felix.utilities.Town.kits.filter.KitFilterUtility;
+import net.felix.utilities.Town.kits.ui.KitSelectionScreen;
+import net.felix.utilities.Town.kits.ui.KitViewScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -16,16 +29,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-
-
-import java.util.Collections;
-import net.felix.features.itemviewer.data.ItemCatalog;
-import net.felix.features.itemviewer.kit.KitEditorMode;
-import net.felix.features.itemviewer.search.SearchFieldState;
-import net.felix.features.itemviewer.ui.FilterOverlayControls;
-import net.felix.features.itemviewer.ui.ViewerInputHandler;
-import net.felix.features.itemviewer.ui.ViewerState;
-import net.felix.features.itemviewer.tooltip.ItemTooltipBuilder;
 
 /**
  * Editor zum Erstellen/Bearbeiten eines eigenen Kits.

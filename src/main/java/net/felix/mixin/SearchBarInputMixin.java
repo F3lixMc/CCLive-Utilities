@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
 import net.felix.utilities.Overall.SearchBarUtility;
-import net.felix.utilities.Town.SchmiedTrackerUtility;
+import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -43,7 +43,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Kit Filter Button clicks
-        if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
+        if (net.felix.utilities.Town.kits.filter.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
         

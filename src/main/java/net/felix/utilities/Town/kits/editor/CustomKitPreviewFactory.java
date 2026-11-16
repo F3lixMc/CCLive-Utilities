@@ -1,19 +1,21 @@
-package net.felix.utilities.Town;
-
-import net.felix.chat.BuildShareExtraParser;
-import net.felix.chat.BuildShareManager;
-import net.felix.chat.BuildShareManager.CategoryBucket;
-import net.felix.chat.ChatTooltipLine;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.utilities.Town.BuildSlotMapping.EquipmentCategory;
-import net.felix.utilities.Town.BuildSlotMapping.PieceType;
-import net.felix.utilities.Town.CustomKit.EquipmentEntry;
-import net.felix.utilities.Town.CustomKit.FishingComponent;
+package net.felix.utilities.Town.kits.editor;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import net.felix.chat.BuildShareExtraParser;
+import net.felix.chat.BuildShareManager;
+import net.felix.chat.BuildShareManager.CategoryBucket;
+import net.felix.chat.ChatTooltipLine;
 import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping.EquipmentCategory;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping.PieceType;
+import net.felix.utilities.Town.kits.data.CustomKit;
+import net.felix.utilities.Town.kits.data.CustomKit.EquipmentEntry;
+import net.felix.utilities.Town.kits.data.CustomKit.FishingComponent;
+import net.felix.utilities.Town.kits.data.KitItemDataIo;
 
 /**
  * Baut eine Build-Share-Vorschau aus einem lokalen CustomKit.

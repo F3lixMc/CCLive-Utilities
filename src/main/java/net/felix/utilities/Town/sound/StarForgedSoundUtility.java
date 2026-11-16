@@ -1,4 +1,4 @@
-package net.felix.utilities.Town;
+package net.felix.utilities.Town.sound;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.Minecraft;

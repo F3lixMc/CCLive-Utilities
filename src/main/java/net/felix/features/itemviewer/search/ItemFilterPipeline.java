@@ -159,10 +159,10 @@ public final class ItemFilterPipeline {
         }
 
         if (kitFilterActive) {
-            net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection =
-                net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
+            net.felix.utilities.Town.kits.filter.KitFilterUtility.KitSelection kitSelection =
+                net.felix.utilities.Town.kits.filter.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
             if (kitSelection != null) {
-                java.util.Set<String> kitItemNames = net.felix.utilities.Town.KitFilterUtility.getKitItemNamesForSelection(
+                java.util.Set<String> kitItemNames = net.felix.utilities.Town.kits.filter.KitFilterUtility.getKitItemNamesForSelection(
                     kitSelection);
 
                 if (!kitItemNames.isEmpty()) {

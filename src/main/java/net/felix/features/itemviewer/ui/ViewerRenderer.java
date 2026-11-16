@@ -344,8 +344,8 @@ public final class ViewerRenderer {
         if (kitHovered) {
             List<Component> tooltip = new ArrayList<>();
             // Hole aktuelle Kit-Auswahl
-            net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection = 
-                net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
+            net.felix.utilities.Town.kits.filter.KitFilterUtility.KitSelection kitSelection = 
+                net.felix.utilities.Town.kits.filter.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
             
             if (kitSelection != null) {
                 tooltip.add(Component.literal("Linksklick: Nach Kit Suchen"));

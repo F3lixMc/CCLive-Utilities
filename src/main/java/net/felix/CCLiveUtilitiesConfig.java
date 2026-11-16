@@ -14,7 +14,7 @@ import net.felix.utilities.Aincraft.materials.MaterialTrackerDisplayMode;
 import net.felix.utilities.Farmworld.collections.ResourceTrackerDisplayMode;
 import net.felix.utilities.Town.ItemDisplayMode;
 import net.felix.utilities.Town.OverlayType;
-import net.felix.utilities.Town.SchmiedItemDisplayMode;
+import net.felix.utilities.Town.schmied.SchmiedItemDisplayMode;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -738,7 +738,7 @@ public class CCLiveUtilitiesConfig {
     public boolean schmiedTrackerShowBackground = true; // Schwarzer Hintergrund für Schmied Tracker
     
     @SerialEntry
-    public net.felix.utilities.Town.SchmiedItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.utilities.Town.SchmiedItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
+    public net.felix.utilities.Town.schmied.SchmiedItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.utilities.Town.schmied.SchmiedItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
     
     @SerialEntry
     public boolean hideUncraftableEnabled = true; // Hide Uncraftable Button aktiviert

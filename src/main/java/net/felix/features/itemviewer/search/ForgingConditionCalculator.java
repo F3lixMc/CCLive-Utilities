@@ -1,7 +1,7 @@
 package net.felix.features.itemviewer.search;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Town.SchmiedTrackerUtility;
+import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
 
 /**
  * Ermittelt den maximalen Schmiedezustand anhand des ItemScores.

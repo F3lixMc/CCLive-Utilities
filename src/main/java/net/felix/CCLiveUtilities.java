@@ -21,10 +21,10 @@ import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
 import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
-import net.felix.utilities.Town.EquipmentDisplayUtility;
-import net.felix.utilities.Town.KitFilterUtility;
-import net.felix.utilities.Town.ModSounds;
-import net.felix.utilities.Town.SchmiedTrackerUtility;
+import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
+import net.felix.utilities.Town.kits.filter.KitFilterUtility;
+import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
+import net.felix.utilities.Town.sound.ModSounds;
 
 public class CCLiveUtilities implements ModInitializer {
 	public static final String MOD_ID = "cclive-utilities";

@@ -1,13 +1,16 @@
 package net.felix.utilities.Overall;
 
-import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
-
+import com.mojang.blaze3d.platform.InputConstants;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Locale;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.CoinTrackerDisplayMode;
-import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -15,11 +18,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-
-import com.mojang.blaze3d.platform.InputConstants;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Locale;
 
 /**
  * Liest Seelen, Coins und Kaktus aus der HUD-Bossbar per Pixel-Font-Dekodierung

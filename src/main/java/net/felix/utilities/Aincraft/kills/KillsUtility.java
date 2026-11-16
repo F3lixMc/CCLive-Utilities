@@ -10,7 +10,7 @@ import net.felix.utilities.Overall.KeyBindingUtility;
 import net.felix.utilities.Overall.KeyCategories;
 import net.felix.utilities.Overall.SessionRateUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
-import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
