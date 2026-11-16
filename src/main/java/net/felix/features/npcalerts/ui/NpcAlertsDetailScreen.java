@@ -1,6 +1,7 @@
 package net.felix.features.npcalerts.ui;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import java.util.Set;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Overall.KeyBindingUtility;
@@ -219,801 +220,386 @@ public class NpcAlertsDetailScreen extends Screen {
         super.extractRenderState(context, mouseX, mouseY, delta);
     }
 
-    private void renderSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
-        int boxWidth = SETTINGS_BOX_WIDTH;
-        // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
-        boolean hasIconOption = configKey.equals("forschung") || configKey.equals("amboss") || 
-                               configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                               configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
-                               configKey.equals("machtkristalle") ||
-                               configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
-                               configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        // Für Machtkristalle und Recycler: zusätzliche Höhe wenn "Separates Overlay" aktiviert ist (für 3 Checkboxen)
-        boolean isMachtkristalle = configKey.equals("machtkristalle");
-        boolean isRecycler = configKey.equals("recycler");
-        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay(configKey);
-        int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
-        // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
-        if (isMachtkristalle) {
-            baseBoxHeight += CRYSTAL_EXTRA_HEIGHT; // 3 Slot-Checkboxen + Level-Checkbox
+    private static final Set<String> ICON_OPTION_KEYS = Set.of(
+        "forschung", "amboss", "schmelzofen", "seelen", "essenzen", "jaeger", "komboKiste", "machtkristalle",
+        "recycler", "recyclerSlot1", "recyclerSlot2", "recyclerSlot3");
+
+    private static final Set<String> PERCENT_KEYS = Set.of(
+        "forschung", "amboss", "schmelzofen", "jaeger", "seelen", "essenzen",
+        "recycler", "recyclerSlot1", "recyclerSlot2", "recyclerSlot3", "machtkristalle");
+
+    private static final Set<String> RECYCLER_KEYS = Set.of("recycler", "recyclerSlot1", "recyclerSlot2", "recyclerSlot3");
+
+    private static final String BACKGROUND_LABEL = "Hintergrund anzeigen";
+
+    private static final String SCREEN_MESSAGE_LABEL = "Bildschirm-Nachricht";
+
+    private static final String LEVEL_LABEL = "Level anzeigen";
+
+    private static final int SETTINGS_ROW_BACKGROUND = 35;
+
+    private static final int CONTENT_PADDING = 10;
+
+    private static final int CHECKBOX_SIZE = 10;
+
+    private static final int CHECKBOX_TEXT_GAP = 5;
+
+    private static final int SLOT_ROW_SPACING = 20;
+
+    private static final int SLOT_COUNT = 3;
+
+    private static final int BUTTON_WIDTH = 280;
+
+    private static final int BUTTON_HEIGHT = 20;
+
+    private static final int BUTTON_GAP = 10;
+
+    private static final int INPUT_WIDTH = 100;
+
+    private static final int INPUT_HEIGHT = 16;
+
+    private static final int CLOSE_BUTTON_SIZE = 12;
+
+    private static final int COLOR_ENABLED_TEXT = 0xFFFFFFFF;
+
+    private static final int COLOR_DISABLED_TEXT = 0xFF808080;
+
+    private static final int COLOR_HOVER_HIGHLIGHT = 0x40FFFFFF;
+
+    /** Position und Größe der Einstellungs-Box samt den davon abhängigen Zeilen (gemeinsam für Zeichnen und Klicks). */
+    private record SettingsLayout(int boxX, int boxY, int boxHeight, boolean hasIconOption, boolean supportsPercent,
+            int iconButtonY, int colorButtonY, int separateButtonY) {
+
+        int contentX() {
+            return boxX + CONTENT_PADDING;
         }
-        // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
-        if (isRecycler || isRecyclerSlot) {
-            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
+
+        /** Y der ersten Slot-Checkbox (Machtkristalle/Recycler), direkt unter dem "Separates Overlay"-Button. */
+        int slotStartY() {
+            return separateButtonY + BUTTON_HEIGHT + BUTTON_GAP;
         }
-        int boxHeight = baseBoxHeight;
-        int heightIncrease = 0;
-        if (hasSeparateOverlay) {
-            if (isMachtkristalle) {
-                heightIncrease = CRYSTAL_SEPARATE_EXTRA_HEIGHT; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
-                boxHeight += heightIncrease;
-                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
-                boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
-            } else if (isRecycler || isRecyclerSlot) {
-                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
-                boxHeight += heightIncrease;
-                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
-                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
-            } else {
-                heightIncrease = 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
-                boxHeight += heightIncrease;
+
+        int closeButtonX() {
+            return boxX + SETTINGS_BOX_WIDTH - CLOSE_BUTTON_SIZE - 5;
+        }
+
+        int closeButtonY() {
+            return boxY + 5;
+        }
+    }
+
+    private boolean isRecyclerFamilyKey() {
+        return RECYCLER_KEYS.contains(configKey);
+    }
+
+    private boolean hasSlotCheckboxes() {
+        return isMachtkristalleKey() || isRecyclerFamilyKey();
+    }
+
+    private SettingsLayout computeLayout() {
+        boolean hasIconOption = ICON_OPTION_KEYS.contains(configKey);
+        boolean supportsPercent = PERCENT_KEYS.contains(configKey);
+
+        // Basis-Höhe; mit Icon-Option (und Hintergrund-Checkbox) höher
+        int boxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
+        // Für Machtkristalle und Recycler: 3 Slot-Checkboxen (immer), 3 "Einzeln"-Checkboxen bei Separates Overlay;
+        // unten bleibt leerer Platz, der abgezogen wird
+        boolean hasSeparateOverlay = hasSlotCheckboxes() && getSeparateOverlay(configKey);
+        if (isMachtkristalleKey()) {
+            boxHeight += CRYSTAL_EXTRA_HEIGHT - CRYSTAL_BOTTOM_TRIM;
+            if (hasSeparateOverlay) {
+                boxHeight += CRYSTAL_SEPARATE_EXTRA_HEIGHT;
             }
-        } else if (isMachtkristalle) {
-            // Reduziere die Höhe für Machtkristalle, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
-            boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
-        } else if (isRecycler || isRecyclerSlot) {
-            // Reduziere die Höhe für Recycler, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
-            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
+        } else if (isRecyclerFamilyKey()) {
+            boxHeight += 60 - 30;
+            if (hasSeparateOverlay) {
+                boxHeight += 60;
+            }
         }
-        int boxX = width / 2 - boxWidth / 2;
-        // Zentriere das Overlay vertikal (gleicher Abstand oben und unten)
+
+        int boxX = width / 2 - SETTINGS_BOX_WIDTH / 2;
+        // Vertikal zentriert (gleicher Abstand oben und unten)
         int boxY = (height - boxHeight) / 2;
-        
-        // Hintergrund
-        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
-        
-        // Rahmen
-        context.outline(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
-        
-        // Titel
+
+        int blockEndY = getSettingsBlockEndY(boxY, supportsPercent);
+        int colorButtonY = hasIconOption ? (blockEndY + BUTTON_HEIGHT + BUTTON_GAP) : blockEndY;
+        int separateButtonY = colorButtonY + BUTTON_HEIGHT + BUTTON_GAP;
+        return new SettingsLayout(boxX, boxY, boxHeight, hasIconOption, supportsPercent, blockEndY, colorButtonY, separateButtonY);
+    }
+
+    private static boolean isInsideInclusive(double mouseX, double mouseY, int x, int y, int w, int h) {
+        return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+    }
+
+    /** Maus liegt auf der Checkbox oder auf ihrem Label. */
+    private boolean isOverCheckbox(double mouseX, double mouseY, int x, int y, String label) {
+        int textX = x + CHECKBOX_SIZE + CHECKBOX_TEXT_GAP;
+        return isInsideInclusive(mouseX, mouseY, x, y, CHECKBOX_SIZE, CHECKBOX_SIZE)
+            || isInsideInclusive(mouseX, mouseY, textX, y, font.width(label), font.lineHeight);
+    }
+
+    private void renderSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        SettingsLayout layout = computeLayout();
+        drawBoxFrame(context, layout, mouseX, mouseY);
+        drawBaseCheckboxes(context, layout);
+        drawPercentSection(context, layout);
+        drawButtons(context, layout);
+        drawSlotCheckboxes(context, layout);
+        drawHoverHighlights(context, layout, mouseX, mouseY);
+    }
+
+    /** Hintergrund, Rahmen, Titel und rotes Schließen-Kreuz oben rechts. */
+    private void drawBoxFrame(GuiGraphicsExtractor context, SettingsLayout layout, int mouseX, int mouseY) {
+        int boxX = layout.boxX();
+        int boxY = layout.boxY();
+        context.fill(boxX, boxY, boxX + SETTINGS_BOX_WIDTH, boxY + layout.boxHeight(), 0xFF000000);
+        context.outline(boxX, boxY, SETTINGS_BOX_WIDTH, layout.boxHeight(), 0xFFFFFFFF);
         context.text(font, infoName + " - Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
-        
-        // Rotes Kreuz oben rechts zum Schließen
-        int closeButtonSize = 12;
-        int closeButtonX = boxX + boxWidth - closeButtonSize - 5;
-        int closeButtonY = boxY + 5;
-        
-        // Prüfe ob Maus über dem Kreuz ist
-        boolean isHovering = mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonSize &&
-                             mouseY >= closeButtonY && mouseY <= closeButtonY + closeButtonSize;
+
+        int closeX = layout.closeButtonX();
+        int closeY = layout.closeButtonY();
+        boolean isHovering = isInsideInclusive(mouseX, mouseY, closeX, closeY, CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE);
         int crossColor = isHovering ? 0xFFFF6666 : 0xFFFF0000; // Helleres Rot beim Hover
-        
-        // Zeichne das Kreuz (X) - zwei diagonale Linien
-        drawDiagonalLine(context, closeButtonX + 2, closeButtonY + 2, 
-                        closeButtonX + closeButtonSize - 2, closeButtonY + closeButtonSize - 2, crossColor, 2);
-        drawDiagonalLine(context, closeButtonX + closeButtonSize - 2, closeButtonY + 2, 
-                        closeButtonX + 2, closeButtonY + closeButtonSize - 2, crossColor, 2);
-        
-        // Prüfe ob diese Information Prozente unterstützt
-        boolean supportsPercent = configKey.equals("forschung") || configKey.equals("amboss") || 
-                                 configKey.equals("schmelzofen") || configKey.equals("jaeger") || 
-                                 configKey.equals("seelen") || configKey.equals("essenzen") || 
-                                 configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
-                                 configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3") || 
-                                 configKey.equals("machtkristalle");
-        
-        // Hintergrund Checkbox (für alle Informationen) - als oberstes Element
-        int backgroundCheckboxY = boxY + 35;
-        int backgroundCheckboxX = boxX + 10;
-        int backgroundCheckboxSize = 10;
-        int backgroundCheckboxYPos = backgroundCheckboxY;
-        
-        boolean showBackground = getShowBackground(configKey);
-        
-        // Checkbox-Hintergrund
-        context.fill(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxX + backgroundCheckboxSize, backgroundCheckboxYPos + backgroundCheckboxSize, 0xFF808080);
-        context.outline(backgroundCheckboxX, backgroundCheckboxYPos, backgroundCheckboxSize, backgroundCheckboxSize, 0xFFFFFFFF);
-        
-        // Checkmark wenn aktiviert
-        if (showBackground) {
-            // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
-            int checkX = backgroundCheckboxX + 2;
-            int checkY = backgroundCheckboxYPos + 2;
-            int checkSize = backgroundCheckboxSize - 4;
-            // Zeichne Häkchen als zwei Linien
-            // Linke Linie (von oben-links nach mitte)
-            for (int i = 0; i < checkSize / 2; i++) {
-                int px = checkX + i;
-                int py = checkY + checkSize / 2 + i;
-                if (px < backgroundCheckboxX + backgroundCheckboxSize - 2 && py < backgroundCheckboxYPos + backgroundCheckboxSize - 2) {
-                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                }
-            }
-            // Rechte Linie (von mitte nach unten-rechts)
-            for (int i = 0; i < checkSize / 2; i++) {
-                int px = checkX + checkSize / 2 + i;
-                int py = checkY + checkSize - 2 - i;
-                if (px < backgroundCheckboxX + backgroundCheckboxSize - 2 && py >= backgroundCheckboxYPos + 2) {
-                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                }
+        drawDiagonalLine(context, closeX + 2, closeY + 2,
+            closeX + CLOSE_BUTTON_SIZE - 2, closeY + CLOSE_BUTTON_SIZE - 2, crossColor, 2);
+        drawDiagonalLine(context, closeX + CLOSE_BUTTON_SIZE - 2, closeY + 2,
+            closeX + 2, closeY + CLOSE_BUTTON_SIZE - 2, crossColor, 2);
+    }
+
+    /** Checkbox mit Label; aktivierte Checkboxen bekommen ein Häkchen und weißen Text. */
+    private void drawCheckbox(GuiGraphicsExtractor context, int x, int y, boolean checked, String label) {
+        context.fill(x, y, x + CHECKBOX_SIZE, y + CHECKBOX_SIZE, 0xFF808080);
+        context.outline(x, y, CHECKBOX_SIZE, CHECKBOX_SIZE, 0xFFFFFFFF);
+        if (checked) {
+            drawCheckmark(context, x, y);
+        }
+        context.text(font, label, x + CHECKBOX_SIZE + CHECKBOX_TEXT_GAP, y + 1,
+            checked ? COLOR_ENABLED_TEXT : COLOR_DISABLED_TEXT, false);
+    }
+
+    /** Häkchen (✓) als zwei Linien: von links oben zur Mitte und von der Mitte nach rechts unten. */
+    private void drawCheckmark(GuiGraphicsExtractor context, int x, int y) {
+        int checkX = x + 2;
+        int checkY = y + 2;
+        int checkSize = CHECKBOX_SIZE - 4;
+        for (int i = 0; i < checkSize / 2; i++) {
+            int px = checkX + i;
+            int py = checkY + checkSize / 2 + i;
+            if (px < x + CHECKBOX_SIZE - 2 && py < y + CHECKBOX_SIZE - 2) {
+                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
             }
         }
-        
-        // Text
-        int backgroundTextX = backgroundCheckboxX + backgroundCheckboxSize + 5;
-        context.text(font, "Hintergrund anzeigen", backgroundTextX, backgroundCheckboxYPos + 1, 
-            showBackground ? 0xFFFFFFFF : 0xFF808080, false);
-        
-        // Bildschirm-Nachricht Checkbox (für alle Informationen)
-        int screenMessageCheckboxY = getScreenMessageCheckboxY(boxY);
-        int screenMessageCheckboxX = boxX + 10;
-        int screenMessageCheckboxSize = 10;
-        boolean showScreenMessage = getShowScreenMessage(configKey);
-        
-        context.fill(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageCheckboxY + screenMessageCheckboxSize, 0xFF808080);
-        context.outline(screenMessageCheckboxX, screenMessageCheckboxY, screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
-        
-        if (showScreenMessage) {
-            int checkX = screenMessageCheckboxX + 2;
-            int checkY = screenMessageCheckboxY + 2;
-            int checkSize = screenMessageCheckboxSize - 4;
-            for (int i = 0; i < checkSize / 2; i++) {
-                int px = checkX + i;
-                int py = checkY + checkSize / 2 + i;
-                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2 && py < screenMessageCheckboxY + screenMessageCheckboxSize - 2) {
-                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                }
-            }
-            for (int i = 0; i < checkSize / 2; i++) {
-                int px = checkX + checkSize / 2 + i;
-                int py = checkY + checkSize - 2 - i;
-                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2 && py >= screenMessageCheckboxY + 2) {
-                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                }
+        for (int i = 0; i < checkSize / 2; i++) {
+            int px = checkX + checkSize / 2 + i;
+            int py = checkY + checkSize - 2 - i;
+            if (px < x + CHECKBOX_SIZE - 2 && py >= y + 2) {
+                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
             }
         }
-        
-        int screenMessageTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
-        context.text(font, "Bildschirm-Nachricht", screenMessageTextX, screenMessageCheckboxY + 1,
-            showScreenMessage ? 0xFFFFFFFF : 0xFF808080, false);
-        
-        // Bildschirm-Nachricht bei deaktiviertem Alert Overlay
-        int screenMessageWhenDisabledCheckboxY = getScreenMessageWhenDisabledCheckboxY(boxY);
-        boolean showScreenMessageWhenDisabled = getShowScreenMessageWhenOverlayDisabled(configKey);
-        
-        context.fill(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
-            screenMessageCheckboxX + screenMessageCheckboxSize, screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize, 0xFF808080);
-        context.outline(screenMessageCheckboxX, screenMessageWhenDisabledCheckboxY,
-            screenMessageCheckboxSize, screenMessageCheckboxSize, 0xFFFFFFFF);
-        
-        if (showScreenMessageWhenDisabled) {
-            int checkX = screenMessageCheckboxX + 2;
-            int checkY = screenMessageWhenDisabledCheckboxY + 2;
-            int checkSize = screenMessageCheckboxSize - 4;
-            for (int i = 0; i < checkSize / 2; i++) {
-                int px = checkX + i;
-                int py = checkY + checkSize / 2 + i;
-                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2
-                    && py < screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize - 2) {
-                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                }
-            }
-            for (int i = 0; i < checkSize / 2; i++) {
-                int px = checkX + checkSize / 2 + i;
-                int py = checkY + checkSize - 2 - i;
-                if (px < screenMessageCheckboxX + screenMessageCheckboxSize - 2
-                    && py >= screenMessageWhenDisabledCheckboxY + 2) {
-                    context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                }
-            }
-        }
-        
-        int screenMessageWhenDisabledTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
-        context.text(font, SCREEN_MESSAGE_WHEN_DISABLED_LABEL, screenMessageWhenDisabledTextX,
-            screenMessageWhenDisabledCheckboxY + 1,
-            showScreenMessageWhenDisabled ? 0xFFFFFFFF : 0xFF808080, false);
-        
-        // Variablen für Prozente Checkbox (außerhalb if-Block für Hover-Feedback)
-        int checkboxSize = 10;
-        int checkboxX = boxX + 10;
-        int checkboxY = getPercentCheckboxY(boxY);
-        
-        if (supportsPercent) {
-            // Prozente Checkbox
-            
-            boolean showPercent = getShowPercent(configKey);
-            
-            // Checkbox-Hintergrund
-            context.fill(checkboxX, checkboxY, checkboxX + checkboxSize, checkboxY + checkboxSize, 0xFF808080);
-            context.outline(checkboxX, checkboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
-            
-            // Checkmark wenn aktiviert
-            if (showPercent) {
-                // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
-                int checkX = checkboxX + 2;
-                int checkY = checkboxY + 2;
-                int checkSize = checkboxSize - 4;
-                // Zeichne Häkchen als zwei Linien
-                // Linke Linie (von oben-links nach mitte)
-                for (int i = 0; i < checkSize / 2; i++) {
-                    int px = checkX + i;
-                    int py = checkY + checkSize / 2 + i;
-                    if (px < checkboxX + checkboxSize - 2 && py < checkboxY + checkboxSize - 2) {
-                        context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                    }
-                }
-                // Rechte Linie (von mitte nach unten-rechts)
-                for (int i = 0; i < checkSize / 2; i++) {
-                    int px = checkX + checkSize / 2 + i;
-                    int py = checkY + checkSize - 2 - i;
-                    if (px < checkboxX + checkboxSize - 2 && py >= checkboxY + 2) {
-                        context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                    }
-                }
-            }
-            
-            // Text
-            context.text(font, getPercentCheckboxLabel(), checkboxX + checkboxSize + 5, checkboxY + 1, 
-                showPercent ? 0xFFFFFFFF : 0xFF808080, false);
-            
+    }
+
+    /** Hintergrund- und Bildschirm-Nachricht-Checkboxen (für alle Informationen). */
+    private void drawBaseCheckboxes(GuiGraphicsExtractor context, SettingsLayout layout) {
+        int x = layout.contentX();
+        drawCheckbox(context, x, layout.boxY() + SETTINGS_ROW_BACKGROUND, getShowBackground(configKey), BACKGROUND_LABEL);
+        drawCheckbox(context, x, getScreenMessageCheckboxY(layout.boxY()), getShowScreenMessage(configKey), SCREEN_MESSAGE_LABEL);
+        drawCheckbox(context, x, getScreenMessageWhenDisabledCheckboxY(layout.boxY()),
+            getShowScreenMessageWhenOverlayDisabled(configKey), SCREEN_MESSAGE_WHEN_DISABLED_LABEL);
+    }
+
+    /** Prozent-Checkbox samt Warn-Eingabe, Kombo-Kiste-Zielwert oder Hinweis, dass es keine Zusatzeinstellungen gibt. */
+    private void drawPercentSection(GuiGraphicsExtractor context, SettingsLayout layout) {
+        int boxY = layout.boxY();
+        int x = layout.contentX();
+        if (layout.supportsPercent()) {
+            drawCheckbox(context, x, getPercentCheckboxY(boxY), getShowPercent(configKey), getPercentCheckboxLabel());
             if (isMachtkristalleKey()) {
-                int levelCheckboxY = getMachtkristalleLevelCheckboxY(boxY);
-                boolean showLevel = getShowMachtkristalleLevel(configKey);
-                
-                context.fill(checkboxX, levelCheckboxY, checkboxX + checkboxSize, levelCheckboxY + checkboxSize, 0xFF808080);
-                context.outline(checkboxX, levelCheckboxY, checkboxSize, checkboxSize, 0xFFFFFFFF);
-                
-                if (showLevel) {
-                    int checkX = checkboxX + 2;
-                    int checkY = levelCheckboxY + 2;
-                    int checkSize = checkboxSize - 4;
-                    for (int i = 0; i < checkSize / 2; i++) {
-                        int px = checkX + i;
-                        int py = checkY + checkSize / 2 + i;
-                        if (px < checkboxX + checkboxSize - 2 && py < levelCheckboxY + checkboxSize - 2) {
-                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                        }
-                    }
-                    for (int i = 0; i < checkSize / 2; i++) {
-                        int px = checkX + checkSize / 2 + i;
-                        int py = checkY + checkSize - 2 - i;
-                        if (px < checkboxX + checkboxSize - 2 && py >= levelCheckboxY + 2) {
-                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                        }
-                    }
-                }
-                
-                context.text(font, "Level anzeigen", checkboxX + checkboxSize + 5, levelCheckboxY + 1,
-                    showLevel ? 0xFFFFFFFF : 0xFF808080, false);
+                drawCheckbox(context, x, getMachtkristalleLevelCheckboxY(boxY),
+                    getShowMachtkristalleLevel(configKey), LEVEL_LABEL);
             }
-            
-            if ("forschung".equals(configKey)) {
-                int inputY = getWarnInputY(boxY);
-                int inputX = boxX + 10;
-                int inputWidth = 100;
-                int inputHeight = 16;
-                context.text(font, "Warnen ab:", inputX, inputY + 3, 0xFFFFFFFF, false);
-                int fieldX = inputX + 80;
-                context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
-                    isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
-                context.outline(fieldX, inputY, inputWidth, inputHeight,
-                    isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
-                String displayText = warnPercentInput;
-                int textX = fieldX + 3;
-                if (!displayText.isEmpty()) {
-                    context.text(font, displayText, textX, inputY + 4, 0xFFFFFFFF, false);
-                    textX += font.width(displayText);
-                }
-                if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
-                    context.text(font, "_", textX, inputY + 4, 0xFFFFFFFF, false);
-                }
-                context.text(font, "(Leer = deaktiviert, 0-23)",
-                    inputX, inputY + inputHeight + 5, 0xFF808080, false);
-            } else {
-            // Warn-Eingabe (Prozent)
             int inputY = getWarnInputY(boxY);
-            int inputX = boxX + 10;
-            int inputWidth = 100;
-            int inputHeight = 16;
-            context.text(font, "Warnen ab %:", inputX, inputY + 3, 0xFFFFFFFF, false);
-            int fieldX = inputX + 80;
-            context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight, 
-                isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
-            context.outline(fieldX, inputY, inputWidth, inputHeight, 
-                isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
-            String displayText = warnPercentInput;
-            boolean showCursor = isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500;
-            int textX = fieldX + 3;
-            if (!displayText.isEmpty()) {
-                context.text(font, displayText, textX, inputY + 4, 0xFFFFFFFF, false);
-                textX += font.width(displayText);
-            }
-            if (!displayText.isEmpty()) {
-                context.text(font, "%", textX, inputY + 4, 0xFFFFFFFF, false);
-                textX += font.width("%");
-            }
-            if (showCursor) {
-                context.text(font, "_", textX, inputY + 4, 0xFFFFFFFF, false);
-            }
-            context.text(font, "(Leer lassen oder -1 = deaktiviert)",
-                inputX, inputY + inputHeight + 5, 0xFF808080, false);
+            if ("forschung".equals(configKey)) {
+                drawNumberInput(context, x, inputY, 80, "Warnen ab:", warnPercentInput, "",
+                    "(Leer = deaktiviert, 0-23)");
+            } else {
+                drawNumberInput(context, x, inputY, 80, "Warnen ab %:", warnPercentInput, "%",
+                    "(Leer lassen oder -1 = deaktiviert)");
             }
         } else if ("komboKiste".equals(configKey)) {
-            int inputY = getPercentCheckboxY(boxY);
-            int inputX = boxX + 10;
-            int inputWidth = 100;
-            int inputHeight = 16;
-            int fieldX = inputX + 125;
-            context.text(font, "Zielwert (rechts):", inputX, inputY + 3, 0xFFFFFFFF, false);
-            context.fill(fieldX, inputY, fieldX + inputWidth, inputY + inputHeight,
-                isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
-            context.outline(fieldX, inputY, inputWidth, inputHeight,
-                isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
-            String zText = warnPercentInput.isEmpty() ? "1" : warnPercentInput;
-            int zx = fieldX + 3;
-            context.text(font, zText, zx, inputY + 4, 0xFFFFFFFF, false);
-            zx += font.width(zText);
-            if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
-                context.text(font, "_", zx, inputY + 4, 0xFFFFFFFF, false);
-            }
-            context.text(font, "Warnung bei Erreichen oder darüber (min. 1)",
-                inputX, inputY + inputHeight + 5, 0xFF808080, false);
+            String targetText = warnPercentInput.isEmpty() ? "1" : warnPercentInput;
+            drawNumberInput(context, x, getPercentCheckboxY(boxY), 125, "Zielwert (rechts):", targetText, "",
+                "Warnung bei Erreichen oder darüber (min. 1)");
         } else {
-            // Diese Information unterstützt keine Prozente
-            context.text(font, "Keine zusätzlichen Einstellungen verfügbar", 
-                boxX + 10, getPercentCheckboxY(boxY), 0xFF808080, false);
+            context.text(font, "Keine zusätzlichen Einstellungen verfügbar",
+                x, getPercentCheckboxY(boxY), COLOR_DISABLED_TEXT, false);
         }
-        
-        // Variablen für Icon Button (außerhalb if-Block für Hover-Feedback)
-        int iconButtonY = getSettingsBlockEndY(boxY, supportsPercent);
-        int iconButtonX = boxX + 10;
-        int iconButtonWidth = 280;
-        int iconButtonHeight = 20;
-        
-        // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
-        if (hasIconOption) {
-            
+    }
+
+    /**
+     * Label, Eingabefeld (mit Cursor-Blinken beim Bearbeiten), optionalem Suffix hinter dem Wert
+     * (nur wenn ein Wert eingegeben ist) und grauem Hinweis darunter.
+     */
+    private void drawNumberInput(GuiGraphicsExtractor context, int x, int y, int fieldOffset, String label,
+            String valueText, String suffix, String hint) {
+        context.text(font, label, x, y + 3, 0xFFFFFFFF, false);
+        int fieldX = x + fieldOffset;
+        context.fill(fieldX, y, fieldX + INPUT_WIDTH, y + INPUT_HEIGHT, isEditingWarnPercent ? 0xFF404040 : 0xFF202020);
+        context.outline(fieldX, y, INPUT_WIDTH, INPUT_HEIGHT, isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
+
+        int textX = fieldX + 3;
+        if (!valueText.isEmpty()) {
+            context.text(font, valueText, textX, y + 4, 0xFFFFFFFF, false);
+            textX += font.width(valueText);
+            if (!suffix.isEmpty()) {
+                context.text(font, suffix, textX, y + 4, 0xFFFFFFFF, false);
+                textX += font.width(suffix);
+            }
+        }
+        if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
+            context.text(font, "_", textX, y + 4, 0xFFFFFFFF, false);
+        }
+        context.text(font, hint, x, y + INPUT_HEIGHT + 5, COLOR_DISABLED_TEXT, false);
+    }
+
+    /** Icon-Umschalter (falls unterstützt), Farben- und "Separates Overlay"-Button. */
+    private void drawButtons(GuiGraphicsExtractor context, SettingsLayout layout) {
+        int x = layout.contentX();
+        if (layout.hasIconOption()) {
             boolean showIcon = getShowIcon(configKey);
-            String iconButtonText = showIcon ? "Icon anzeigen: AN" : "Icon anzeigen: AUS";
-            int iconButtonColor = showIcon ? 0xFF00FF00 : 0xFFFF0000;
-            
-            // Button Hintergrund
-            context.fill(iconButtonX, iconButtonY, iconButtonX + iconButtonWidth, iconButtonY + iconButtonHeight, 0xFF404040);
-            context.outline(iconButtonX, iconButtonY, iconButtonWidth, iconButtonHeight, iconButtonColor);
-            
-            // Button Text
-            int iconTextX = iconButtonX + (iconButtonWidth - font.width(iconButtonText)) / 2;
-            int iconTextY = iconButtonY + (iconButtonHeight - font.lineHeight) / 2 + 1;
-            context.text(font, iconButtonText, iconTextX, iconTextY, 0xFFFFFFFF, false);
+            drawButton(context, x, layout.iconButtonY(), showIcon ? "Icon anzeigen: AN" : "Icon anzeigen: AUS",
+                showIcon ? 0xFF00FF00 : 0xFFFF0000);
         }
-        
-        // Farben Button (für alle Informationen)
-        int colorButtonY = hasIconOption ? (iconButtonY + iconButtonHeight + 10) : getSettingsBlockEndY(boxY, supportsPercent);
-        int colorButtonX = boxX + 10;
-        int colorButtonWidth = 280;
-        int colorButtonHeight = 20;
-        
-        // Button Hintergrund
-        context.fill(colorButtonX, colorButtonY, colorButtonX + colorButtonWidth, colorButtonY + colorButtonHeight, 0xFF404040);
-        context.outline(colorButtonX, colorButtonY, colorButtonWidth, colorButtonHeight, 0xFFFFFFFF);
-        
-        // Button Text
-        String colorButtonText = "Farben";
-        int colorTextX = colorButtonX + (colorButtonWidth - font.width(colorButtonText)) / 2;
-        int colorTextY = colorButtonY + (colorButtonHeight - font.lineHeight) / 2 + 1;
-        context.text(font, colorButtonText, colorTextX, colorTextY, 0xFFFFFFFF, false);
-        
-        // Separate Overlay Button (für alle Informationen)
-        int buttonY = colorButtonY + colorButtonHeight + 10;
-        int buttonX = boxX + 10;
-        int buttonWidth = 280;
-        int buttonHeight = 20;
-        
-        boolean hasSeparateOverlayButton = getSeparateOverlay(configKey);
-        String buttonText = hasSeparateOverlayButton ? "Separates Overlay: AN" : "Separates Overlay: AUS";
-        int buttonColor = hasSeparateOverlayButton ? 0xFF00FF00 : 0xFFFF0000;
-        
-        // Button Hintergrund
-        context.fill(buttonX, buttonY, buttonX + buttonWidth, buttonY + buttonHeight, 0xFF404040);
-        context.outline(buttonX, buttonY, buttonWidth, buttonHeight, buttonColor);
-        
-        // Button Text
-        int textX = buttonX + (buttonWidth - font.width(buttonText)) / 2;
-        int textY = buttonY + (buttonHeight - font.lineHeight) / 2 + 1;
-        context.text(font, buttonText, textX, textY, 0xFFFFFFFF, false);
-        
-        // Machtkristall Slot-Checkboxen
-        if (configKey.equals("machtkristalle")) {
-            boolean hasSeparateOverlayForMk = getSeparateOverlay(configKey);
-            
-            // Machtkristall Slot-Checkboxen (immer angezeigt für Machtkristalle)
-            int mkCheckboxStartY = buttonY + buttonHeight + 10;
-            int mkCheckboxSize = 10;
-            int mkCheckboxX = boxX + 10;
-            int mkCheckboxSpacing = 20;
-            
-            // MK Slot-Checkboxen (MK 1, MK 2, MK 3) - immer angezeigt
-            for (int i = 0; i < 3; i++) {
-                int mkSlotY = mkCheckboxStartY + (i * mkCheckboxSpacing);
-                boolean mkSlotEnabled = getMachtkristalleSlotEnabled(configKey, i);
-                
-                // Checkbox-Hintergrund
-                context.fill(mkCheckboxX, mkSlotY, mkCheckboxX + mkCheckboxSize, mkSlotY + mkCheckboxSize, 0xFF808080);
-                context.outline(mkCheckboxX, mkSlotY, mkCheckboxSize, mkCheckboxSize, 0xFFFFFFFF);
-                
-                // Checkmark wenn aktiviert
-                if (mkSlotEnabled) {
-                    // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
-                    int checkX = mkCheckboxX + 2;
-                    int checkY = mkSlotY + 2;
-                    int checkSize = mkCheckboxSize - 4;
-                    // Zeichne Häkchen als zwei Linien
-                    // Linke Linie (von oben-links nach mitte)
-                    for (int j = 0; j < checkSize / 2; j++) {
-                        int px = checkX + j;
-                        int py = checkY + checkSize / 2 + j;
-                        if (px < mkCheckboxX + mkCheckboxSize - 2 && py < mkSlotY + mkCheckboxSize - 2) {
-                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                        }
-                    }
-                    // Rechte Linie (von mitte nach unten-rechts)
-                    for (int j = 0; j < checkSize / 2; j++) {
-                        int px = checkX + checkSize / 2 + j;
-                        int py = checkY + checkSize - 2 - j;
-                        if (px < mkCheckboxX + mkCheckboxSize - 2 && py >= mkSlotY + 2) {
-                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                        }
-                    }
-                }
-                
-                // Text
-                String mkSlotText = "MK Slot " + (i + 1) + " ein/aus";
-                int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
-                context.text(font, mkSlotText, mkSlotTextX, mkSlotY + 1, 
-                    mkSlotEnabled ? 0xFFFFFFFF : 0xFF808080, false);
-            }
-            
-            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
-            if (hasSeparateOverlayForMk) {
-                for (int i = 0; i < 3; i++) {
-                    int mkCheckboxY = mkCheckboxStartY + (3 * mkCheckboxSpacing) + (i * mkCheckboxSpacing); // +60 für 3 Slots
-                    boolean mkSlotSeparate = getMachtkristallSlotSeparate(configKey, i);
-                
-                    // Checkbox-Hintergrund
-                    context.fill(mkCheckboxX, mkCheckboxY, mkCheckboxX + mkCheckboxSize, mkCheckboxY + mkCheckboxSize, 0xFF808080);
-                    context.outline(mkCheckboxX, mkCheckboxY, mkCheckboxSize, mkCheckboxSize, 0xFFFFFFFF);
-                    
-                    // Checkmark wenn aktiviert
-                    if (mkSlotSeparate) {
-                        // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
-                        int checkX = mkCheckboxX + 2;
-                        int checkY = mkCheckboxY + 2;
-                        int checkSize = mkCheckboxSize - 4;
-                        // Zeichne Häkchen als zwei Linien
-                        // Linke Linie (von oben-links nach mitte)
-                        for (int j = 0; j < checkSize / 2; j++) {
-                            int px = checkX + j;
-                            int py = checkY + checkSize / 2 + j;
-                            if (px < mkCheckboxX + mkCheckboxSize - 2 && py < mkCheckboxY + mkCheckboxSize - 2) {
-                                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                            }
-                        }
-                        // Rechte Linie (von mitte nach unten-rechts)
-                        for (int j = 0; j < checkSize / 2; j++) {
-                            int px = checkX + checkSize / 2 + j;
-                            int py = checkY + checkSize - 2 - j;
-                            if (px < mkCheckboxX + mkCheckboxSize - 2 && py >= mkCheckboxY + 2) {
-                                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                            }
-                        }
-                    }
-                    
-                    // Text
-                    String mkCheckboxText = "MK " + (i + 1) + " Einzeln";
-                    int mkTextX = mkCheckboxX + mkCheckboxSize + 5;
-                    context.text(font, mkCheckboxText, mkTextX, mkCheckboxY + 1, 
-                        mkSlotSeparate ? 0xFFFFFFFF : 0xFF808080, false);
-                }
+        drawButton(context, x, layout.colorButtonY(), "Farben", 0xFFFFFFFF);
+        boolean separate = getSeparateOverlay(configKey);
+        drawButton(context, x, layout.separateButtonY(), separate ? "Separates Overlay: AN" : "Separates Overlay: AUS",
+            separate ? 0xFF00FF00 : 0xFFFF0000);
+    }
+
+    private void drawButton(GuiGraphicsExtractor context, int x, int y, String text, int borderColor) {
+        context.fill(x, y, x + BUTTON_WIDTH, y + BUTTON_HEIGHT, 0xFF404040);
+        context.outline(x, y, BUTTON_WIDTH, BUTTON_HEIGHT, borderColor);
+        int textX = x + (BUTTON_WIDTH - font.width(text)) / 2;
+        int textY = y + (BUTTON_HEIGHT - font.lineHeight) / 2 + 1;
+        context.text(font, text, textX, textY, 0xFFFFFFFF, false);
+    }
+
+    private String slotEnabledLabel(int slot) {
+        return (isMachtkristalleKey() ? "MK Slot " : "Recycler Slot ") + (slot + 1) + " ein/aus";
+    }
+
+    private String slotSeparateLabel(int slot) {
+        return (isMachtkristalleKey() ? "MK " : "Recycler ") + (slot + 1) + " Einzeln";
+    }
+
+    private boolean isSlotEnabled(int slot) {
+        return isMachtkristalleKey()
+            ? getMachtkristalleSlotEnabled(configKey, slot)
+            : getRecyclerSlotEnabled(configKey, slot);
+    }
+
+    private boolean isSlotSeparate(int slot) {
+        return isMachtkristalleKey()
+            ? getMachtkristallSlotSeparate(configKey, slot)
+            : getRecyclerSlotSeparate(configKey, slot);
+    }
+
+    private void toggleSlotEnabled(int slot) {
+        boolean newValue = !isSlotEnabled(slot);
+        if (isMachtkristalleKey()) {
+            setMachtkristalleSlotEnabled(configKey, parent, slot, newValue);
+        } else {
+            setRecyclerSlotEnabled(configKey, parent, slot, newValue);
+        }
+    }
+
+    private void toggleSlotSeparate(int slot) {
+        boolean newValue = !isSlotSeparate(slot);
+        if (isMachtkristalleKey()) {
+            setMachtkristallSlotSeparate(configKey, slot, newValue);
+        } else {
+            setRecyclerSlotSeparate(configKey, slot, newValue);
+        }
+    }
+
+    /** Y-Position der Slot-Checkbox: erst die "ein/aus"-Zeilen, darunter die "Einzeln"-Zeilen. */
+    private static int slotRowY(SettingsLayout layout, int slot, boolean separateRow) {
+        int rowOffset = (separateRow ? SLOT_COUNT : 0) + slot;
+        return layout.slotStartY() + rowOffset * SLOT_ROW_SPACING;
+    }
+
+    /** Slot-Checkboxen für Machtkristalle/Recycler; "Einzeln" nur bei aktivem "Separates Overlay". */
+    private void drawSlotCheckboxes(GuiGraphicsExtractor context, SettingsLayout layout) {
+        if (!hasSlotCheckboxes()) {
+            return;
+        }
+        int x = layout.contentX();
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            drawCheckbox(context, x, slotRowY(layout, slot, false), isSlotEnabled(slot), slotEnabledLabel(slot));
+        }
+        if (getSeparateOverlay(configKey)) {
+            for (int slot = 0; slot < SLOT_COUNT; slot++) {
+                drawCheckbox(context, x, slotRowY(layout, slot, true), isSlotSeparate(slot), slotSeparateLabel(slot));
             }
         }
-        
-        // Recycler Slot-Checkboxen
-        if (configKey.equals("recycler") || configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3")) {
-            boolean hasSeparateOverlayForRecycler = getSeparateOverlay(configKey);
-            
-            // Recycler Slot-Checkboxen (immer angezeigt für Recycler)
-            int recyclerCheckboxStartY = buttonY + buttonHeight + 10;
-            int recyclerCheckboxSize = 10;
-            int recyclerCheckboxX = boxX + 10;
-            int recyclerCheckboxSpacing = 20;
-            
-            // Recycler Slot-Checkboxen (Recycler Slot 1, 2, 3 ein/aus) - immer angezeigt
-            for (int i = 0; i < 3; i++) {
-                int recyclerSlotY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
-                boolean recyclerSlotEnabled = getRecyclerSlotEnabled(configKey, i);
-                
-                // Checkbox-Hintergrund
-                context.fill(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxX + recyclerCheckboxSize, recyclerSlotY + recyclerCheckboxSize, 0xFF808080);
-                context.outline(recyclerCheckboxX, recyclerSlotY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
-                
-                // Checkmark wenn aktiviert
-                if (recyclerSlotEnabled) {
-                    // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
-                    int checkX = recyclerCheckboxX + 2;
-                    int checkY = recyclerSlotY + 2;
-                    int checkSize = recyclerCheckboxSize - 4;
-                    // Zeichne Häkchen als zwei Linien
-                    // Linke Linie (von oben-links nach mitte)
-                    for (int j = 0; j < checkSize / 2; j++) {
-                        int px = checkX + j;
-                        int py = checkY + checkSize / 2 + j;
-                        if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py < recyclerSlotY + recyclerCheckboxSize - 2) {
-                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                        }
-                    }
-                    // Rechte Linie (von mitte nach unten-rechts)
-                    for (int j = 0; j < checkSize / 2; j++) {
-                        int px = checkX + checkSize / 2 + j;
-                        int py = checkY + checkSize - 2 - j;
-                        if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py >= recyclerSlotY + 2) {
-                            context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                        }
-                    }
-                }
-                
-                // Text
-                String recyclerSlotText = "Recycler Slot " + (i + 1) + " ein/aus";
-                int recyclerSlotTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
-                context.text(font, recyclerSlotText, recyclerSlotTextX, recyclerSlotY + 1, 
-                    recyclerSlotEnabled ? 0xFFFFFFFF : 0xFF808080, false);
-            }
-            
-            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
-            if (hasSeparateOverlayForRecycler) {
-                for (int i = 0; i < 3; i++) {
-                    int recyclerCheckboxY = recyclerCheckboxStartY + (3 * recyclerCheckboxSpacing) + (i * recyclerCheckboxSpacing); // +60 für 3 Slots
-                    boolean recyclerSlotSeparate = getRecyclerSlotSeparate(configKey, i);
-                
-                    // Checkbox-Hintergrund
-                    context.fill(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxX + recyclerCheckboxSize, recyclerCheckboxY + recyclerCheckboxSize, 0xFF808080);
-                    context.outline(recyclerCheckboxX, recyclerCheckboxY, recyclerCheckboxSize, recyclerCheckboxSize, 0xFFFFFFFF);
-                    
-                    // Checkmark wenn aktiviert
-                    if (recyclerSlotSeparate) {
-                        // Zeichne Häkchen (✓) - gleiche Logik wie in NpcAlertsSettingsScreen
-                        int checkX = recyclerCheckboxX + 2;
-                        int checkY = recyclerCheckboxY + 2;
-                        int checkSize = recyclerCheckboxSize - 4;
-                        // Zeichne Häkchen als zwei Linien
-                        // Linke Linie (von oben-links nach mitte)
-                        for (int j = 0; j < checkSize / 2; j++) {
-                            int px = checkX + j;
-                            int py = checkY + checkSize / 2 + j;
-                            if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py < recyclerCheckboxY + recyclerCheckboxSize - 2) {
-                                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                            }
-                        }
-                        // Rechte Linie (von mitte nach unten-rechts)
-                        for (int j = 0; j < checkSize / 2; j++) {
-                            int px = checkX + checkSize / 2 + j;
-                            int py = checkY + checkSize - 2 - j;
-                            if (px < recyclerCheckboxX + recyclerCheckboxSize - 2 && py >= recyclerCheckboxY + 2) {
-                                context.fill(px, py, px + 1, py + 1, 0xFFFFFFFF);
-                            }
-                        }
-                    }
-                    
-                    // Text
-                    String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
-                    int recyclerTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
-                    context.text(font, recyclerCheckboxText, recyclerTextX, recyclerCheckboxY + 1, 
-                        recyclerSlotSeparate ? 0xFFFFFFFF : 0xFF808080, false);
-                }
-            }
-        }
-        
-        // Hover-Feedback für alle interaktiven Elemente (NACH allen Elementen, damit es darüber liegt)
-        
-        // Hintergrund Checkbox Hover
-        int backgroundTextWidth = font.width("Hintergrund anzeigen");
-        int backgroundTextHeight = font.lineHeight;
-        boolean isHoveringBackgroundCheckbox = mouseX >= backgroundCheckboxX && mouseX <= backgroundCheckboxX + backgroundCheckboxSize &&
-                                              mouseY >= backgroundCheckboxYPos && mouseY <= backgroundCheckboxYPos + backgroundCheckboxSize;
-        boolean isHoveringBackgroundText = mouseX >= backgroundTextX && mouseX <= backgroundTextX + backgroundTextWidth &&
-                                          mouseY >= backgroundCheckboxYPos && mouseY <= backgroundCheckboxYPos + backgroundTextHeight;
-        if (isHoveringBackgroundCheckbox || isHoveringBackgroundText) {
-            int hoverStartX = backgroundCheckboxX - 2;
-            int hoverEndX = backgroundTextX + backgroundTextWidth + 2;
-            context.fill(hoverStartX, backgroundCheckboxYPos - 1, hoverEndX, backgroundCheckboxYPos + backgroundCheckboxSize + 1, 0x40FFFFFF);
-        }
-        
-        int screenMessageTextWidth = font.width("Bildschirm-Nachricht");
-        int screenMessageTextHeight = font.lineHeight;
-        boolean isHoveringScreenMessageCheckbox = mouseX >= screenMessageCheckboxX && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize &&
-                                                 mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageCheckboxSize;
-        boolean isHoveringScreenMessageText = mouseX >= screenMessageTextX && mouseX <= screenMessageTextX + screenMessageTextWidth &&
-                                             mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageTextHeight;
-        if (isHoveringScreenMessageCheckbox || isHoveringScreenMessageText) {
-            int hoverStartX = screenMessageCheckboxX - 2;
-            int hoverEndX = screenMessageTextX + screenMessageTextWidth + 2;
-            context.fill(hoverStartX, screenMessageCheckboxY - 1, hoverEndX, screenMessageCheckboxY + screenMessageCheckboxSize + 1, 0x40FFFFFF);
-        }
-        
-        int screenMessageWhenDisabledTextWidth = font.width(SCREEN_MESSAGE_WHEN_DISABLED_LABEL);
-        int screenMessageWhenDisabledTextHeight = font.lineHeight;
-        boolean isHoveringScreenMessageWhenDisabledCheckbox = mouseX >= screenMessageCheckboxX
-            && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize
-            && mouseY >= screenMessageWhenDisabledCheckboxY
-            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize;
-        boolean isHoveringScreenMessageWhenDisabledText = mouseX >= screenMessageWhenDisabledTextX
-            && mouseX <= screenMessageWhenDisabledTextX + screenMessageWhenDisabledTextWidth
-            && mouseY >= screenMessageWhenDisabledCheckboxY
-            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageWhenDisabledTextHeight;
-        if (isHoveringScreenMessageWhenDisabledCheckbox || isHoveringScreenMessageWhenDisabledText) {
-            int hoverStartX = screenMessageCheckboxX - 2;
-            int hoverEndX = screenMessageWhenDisabledTextX + screenMessageWhenDisabledTextWidth + 2;
-            context.fill(hoverStartX, screenMessageWhenDisabledCheckboxY - 1, hoverEndX,
-                screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize + 1, 0x40FFFFFF);
-        }
-        
-        if (supportsPercent) {
-            // Prozente Checkbox Hover
-            int percentTextX = checkboxX + checkboxSize + 5;
-            int percentTextWidth = font.width(getPercentCheckboxLabel());
-            int percentTextHeight = font.lineHeight;
-            boolean isHoveringPercentCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
-                                              mouseY >= checkboxY && mouseY <= checkboxY + checkboxSize;
-            boolean isHoveringPercentText = mouseX >= percentTextX && mouseX <= percentTextX + percentTextWidth &&
-                                           mouseY >= checkboxY && mouseY <= checkboxY + percentTextHeight;
-            if (isHoveringPercentCheckbox || isHoveringPercentText) {
-                int hoverStartX = checkboxX - 2;
-                int hoverEndX = percentTextX + percentTextWidth + 2;
-                context.fill(hoverStartX, checkboxY - 1, hoverEndX, checkboxY + checkboxSize + 1, 0x40FFFFFF);
-            }
-            
+    }
+
+    /** Hover-Feedback für alle interaktiven Elemente (nach allen Elementen, damit es darüber liegt). */
+    private void drawHoverHighlights(GuiGraphicsExtractor context, SettingsLayout layout, int mouseX, int mouseY) {
+        int boxY = layout.boxY();
+        int x = layout.contentX();
+
+        drawCheckboxHover(context, mouseX, mouseY, x, boxY + SETTINGS_ROW_BACKGROUND, BACKGROUND_LABEL, true);
+        drawCheckboxHover(context, mouseX, mouseY, x, getScreenMessageCheckboxY(boxY), SCREEN_MESSAGE_LABEL, true);
+        drawCheckboxHover(context, mouseX, mouseY, x, getScreenMessageWhenDisabledCheckboxY(boxY),
+            SCREEN_MESSAGE_WHEN_DISABLED_LABEL, true);
+
+        if (layout.supportsPercent()) {
+            drawCheckboxHover(context, mouseX, mouseY, x, getPercentCheckboxY(boxY), getPercentCheckboxLabel(), true);
             if (isMachtkristalleKey()) {
-                int levelCheckboxY = getMachtkristalleLevelCheckboxY(boxY);
-                int levelTextX = checkboxX + checkboxSize + 5;
-                int levelTextWidth = font.width("Level anzeigen");
-                int levelTextHeight = font.lineHeight;
-                boolean isHoveringLevelCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
-                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + checkboxSize;
-                boolean isHoveringLevelText = mouseX >= levelTextX && mouseX <= levelTextX + levelTextWidth &&
-                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + levelTextHeight;
-                if (isHoveringLevelCheckbox || isHoveringLevelText) {
-                    int hoverStartX = checkboxX - 2;
-                    int hoverEndX = levelTextX + levelTextWidth + 2;
-                    context.fill(hoverStartX, levelCheckboxY - 1, hoverEndX, levelCheckboxY + checkboxSize + 1, 0x40FFFFFF);
-                }
+                drawCheckboxHover(context, mouseX, mouseY, x, getMachtkristalleLevelCheckboxY(boxY), LEVEL_LABEL, true);
             }
         }
-        
-        // Icon Toggle Button Hover
-        if (hasIconOption) {
-            boolean isHoveringIconButton = mouseX >= iconButtonX && mouseX <= iconButtonX + iconButtonWidth &&
-                                         mouseY >= iconButtonY && mouseY <= iconButtonY + iconButtonHeight;
-            if (isHoveringIconButton) {
-                context.fill(iconButtonX - 1, iconButtonY - 1, iconButtonX + iconButtonWidth + 1, iconButtonY + iconButtonHeight + 1, 0x40FFFFFF);
+
+        if (layout.hasIconOption()) {
+            drawButtonHover(context, mouseX, mouseY, x, layout.iconButtonY());
+        }
+        drawButtonHover(context, mouseX, mouseY, x, layout.colorButtonY());
+        drawButtonHover(context, mouseX, mouseY, x, layout.separateButtonY());
+
+        if (hasSlotCheckboxes()) {
+            // Beim Recycler ist bei den "ein/aus"-Zeilen nur die Checkbox selbst hervorgehoben, nicht das Label
+            boolean highlightLabelOfEnabledRows = isMachtkristalleKey();
+            for (int slot = 0; slot < SLOT_COUNT; slot++) {
+                drawCheckboxHover(context, mouseX, mouseY, x, slotRowY(layout, slot, false),
+                    slotEnabledLabel(slot), highlightLabelOfEnabledRows);
             }
-        }
-        
-        // Farben Button Hover
-        boolean isHoveringColorButton = mouseX >= colorButtonX && mouseX <= colorButtonX + colorButtonWidth &&
-                                       mouseY >= colorButtonY && mouseY <= colorButtonY + colorButtonHeight;
-        if (isHoveringColorButton) {
-            context.fill(colorButtonX - 1, colorButtonY - 1, colorButtonX + colorButtonWidth + 1, colorButtonY + colorButtonHeight + 1, 0x40FFFFFF);
-        }
-        
-        // Separate Overlay Button Hover
-        boolean isHoveringSeparateButton = mouseX >= buttonX && mouseX <= buttonX + buttonWidth &&
-                                         mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
-        if (isHoveringSeparateButton) {
-            context.fill(buttonX - 1, buttonY - 1, buttonX + buttonWidth + 1, buttonY + buttonHeight + 1, 0x40FFFFFF);
-        }
-        
-        // Machtkristall Slot-Checkboxen Hover
-        if (configKey.equals("machtkristalle")) {
-            // Calculate positions (same as rendering section)
-            int mkHoverCheckboxStartY = buttonY + buttonHeight + 10;
-            int mkHoverCheckboxSize = 10;
-            int mkHoverCheckboxX = boxX + 10;
-            int mkHoverCheckboxSpacing = 20;
-            
-            // MK Slot-Checkboxen Hover (MK Slot 1, 2, 3 ein/aus) - immer angezeigt
-            for (int i = 0; i < 3; i++) {
-                int mkSlotY = mkHoverCheckboxStartY + (i * mkHoverCheckboxSpacing);
-                String mkSlotText = "MK Slot " + (i + 1) + " ein/aus";
-                int mkSlotTextX = mkHoverCheckboxX + mkHoverCheckboxSize + 5;
-                int mkSlotTextWidth = font.width(mkSlotText);
-                int mkSlotTextHeight = font.lineHeight;
-                
-                boolean isHoveringMkSlotCheckbox = mouseX >= mkHoverCheckboxX && mouseX <= mkHoverCheckboxX + mkHoverCheckboxSize &&
-                                                  mouseY >= mkSlotY && mouseY <= mkSlotY + mkHoverCheckboxSize;
-                boolean isHoveringMkSlotText = mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
-                                             mouseY >= mkSlotY && mouseY <= mkSlotY + mkSlotTextHeight;
-                
-                if (isHoveringMkSlotCheckbox || isHoveringMkSlotText) {
-                    int hoverStartX = mkHoverCheckboxX - 2;
-                    int hoverEndX = mkSlotTextX + mkSlotTextWidth + 2;
-                    context.fill(hoverStartX, mkSlotY - 1, hoverEndX, mkSlotY + mkHoverCheckboxSize + 1, 0x40FFFFFF);
-                }
-            }
-            
-            // Slot-Checkboxen "Einzeln" Hover (nur wenn "Separates Overlay" aktiviert ist)
             if (getSeparateOverlay(configKey)) {
-                for (int i = 0; i < 3; i++) {
-                    int mkCheckboxY = mkHoverCheckboxStartY + (3 * mkHoverCheckboxSpacing) + (i * mkHoverCheckboxSpacing);
-                    String mkSlotCheckboxText = "MK " + (i + 1) + " Einzeln";
-                    int mkSlotTextX = mkHoverCheckboxX + mkHoverCheckboxSize + 5;
-                    int mkSlotTextWidth = font.width(mkSlotCheckboxText);
-                    int mkSlotTextHeight = font.lineHeight;
-                    
-                    boolean isHoveringMkSlotCheckbox = mouseX >= mkHoverCheckboxX && mouseX <= mkHoverCheckboxX + mkHoverCheckboxSize &&
-                                                      mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkHoverCheckboxSize;
-                    boolean isHoveringMkSlotText = mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
-                                                 mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkSlotTextHeight;
-                    
-                    if (isHoveringMkSlotCheckbox || isHoveringMkSlotText) {
-                        int hoverStartX = mkHoverCheckboxX - 2;
-                        int hoverEndX = mkSlotTextX + mkSlotTextWidth + 2;
-                        context.fill(hoverStartX, mkCheckboxY - 1, hoverEndX, mkCheckboxY + mkHoverCheckboxSize + 1, 0x40FFFFFF);
-                    }
-                }
-            }
-        }
-        
-        // Recycler Slot-Checkboxen Hover
-        boolean isRecyclerHover = configKey.equals("recycler");
-        boolean isRecyclerSlotHover = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        if (isRecyclerHover || isRecyclerSlotHover) {
-            int recyclerHoverCheckboxStartY = buttonY + buttonHeight + 10;
-            int recyclerHoverCheckboxSize = 10;
-            int recyclerHoverCheckboxX = boxX + 10;
-            int recyclerHoverCheckboxSpacing = 20;
-            
-            // Recycler Slot-Checkboxen Hover (Recycler Slot 1, 2, 3 ein/aus) - immer angezeigt
-            for (int i = 0; i < 3; i++) {
-                int recyclerSlotY = recyclerHoverCheckboxStartY + (i * recyclerHoverCheckboxSpacing);
-                String recyclerSlotText = "Recycler Slot " + (i + 1) + " ein/aus";
-                int recyclerSlotTextX = recyclerHoverCheckboxX + recyclerHoverCheckboxSize + 5;
-                int recyclerSlotTextWidth = font.width(recyclerSlotText);
-                int recyclerSlotTextHeight = font.lineHeight;
-                
-                boolean hoverOnRecyclerSlotCheckbox = (mouseX >= recyclerHoverCheckboxX && mouseX <= recyclerHoverCheckboxX + recyclerHoverCheckboxSize &&
-                                                      mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerHoverCheckboxSize);
-                boolean hoverOnRecyclerSlotText = (mouseX >= recyclerSlotTextX && mouseX <= recyclerSlotTextX + recyclerSlotTextWidth &&
-                                                 mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerSlotTextHeight);
-                
-                if (hoverOnRecyclerSlotCheckbox || hoverOnRecyclerSlotText) {
-                    context.fill(recyclerHoverCheckboxX - 1, recyclerSlotY - 1, recyclerHoverCheckboxX + recyclerHoverCheckboxSize + 1, recyclerSlotY + recyclerHoverCheckboxSize + 1, 0x40FFFFFF);
-                }
-            }
-            
-            // Slot-Checkboxen "Einzeln" Hover (nur wenn "Separates Overlay" aktiviert ist)
-            if (getSeparateOverlay(configKey)) {
-                for (int i = 0; i < 3; i++) {
-                    int recyclerCheckboxY = recyclerHoverCheckboxStartY + (3 * recyclerHoverCheckboxSpacing) + (i * recyclerHoverCheckboxSpacing);
-                    String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
-                    int recyclerTextX = recyclerHoverCheckboxX + recyclerHoverCheckboxSize + 5;
-                    int recyclerTextWidth = font.width(recyclerCheckboxText);
-                    int recyclerTextHeight = font.lineHeight;
-                    
-                    boolean isHoveringRecyclerCheckbox = mouseX >= recyclerHoverCheckboxX && mouseX <= recyclerHoverCheckboxX + recyclerHoverCheckboxSize &&
-                                                        mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerHoverCheckboxSize;
-                    boolean isHoveringRecyclerText = mouseX >= recyclerTextX && mouseX <= recyclerTextX + recyclerTextWidth &&
-                                                    mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerTextHeight;
-                    
-                    if (isHoveringRecyclerCheckbox || isHoveringRecyclerText) {
-                        int hoverStartX = recyclerHoverCheckboxX - 2;
-                        int hoverEndX = recyclerTextX + recyclerTextWidth + 2;
-                        context.fill(hoverStartX, recyclerCheckboxY - 1, hoverEndX, recyclerCheckboxY + recyclerHoverCheckboxSize + 1, 0x40FFFFFF);
-                    }
+                for (int slot = 0; slot < SLOT_COUNT; slot++) {
+                    drawCheckboxHover(context, mouseX, mouseY, x, slotRowY(layout, slot, true),
+                        slotSeparateLabel(slot), true);
                 }
             }
         }
     }
 
+    private void drawCheckboxHover(GuiGraphicsExtractor context, int mouseX, int mouseY, int x, int y, String label,
+            boolean highlightLabel) {
+        if (!isOverCheckbox(mouseX, mouseY, x, y, label)) {
+            return;
+        }
+        if (highlightLabel) {
+            int textEndX = x + CHECKBOX_SIZE + CHECKBOX_TEXT_GAP + font.width(label);
+            context.fill(x - 2, y - 1, textEndX + 2, y + CHECKBOX_SIZE + 1, COLOR_HOVER_HIGHLIGHT);
+        } else {
+            context.fill(x - 1, y - 1, x + CHECKBOX_SIZE + 1, y + CHECKBOX_SIZE + 1, COLOR_HOVER_HIGHLIGHT);
+        }
+    }
+
+    private void drawButtonHover(GuiGraphicsExtractor context, int mouseX, int mouseY, int x, int y) {
+        if (isInsideInclusive(mouseX, mouseY, x, y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
+            context.fill(x - 1, y - 1, x + BUTTON_WIDTH + 1, y + BUTTON_HEIGHT + 1, COLOR_HOVER_HIGHLIGHT);
+        }
+    }
     private void setShowPercent(boolean value) {
         switch (configKey) {
             case "forschung":
@@ -1056,57 +642,10 @@ public class NpcAlertsDetailScreen extends Screen {
         double mouseY = (event.y() - settingsCenterY(scale)) / scale + height / 2.0f;
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 0) {
-            // Prüfe ob auf das Schließen-Kreuz geklickt wurde
-            // Verwende exakt die gleiche Berechnung wie im Rendering
-            int boxWidth = SETTINGS_BOX_WIDTH;
-            // Berechne Höhe und Y-Position wie im Rendering
-            boolean hasIconOptionClose = configKey.equals("forschung") || configKey.equals("amboss") || 
-                                       configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                                       configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
-                                       configKey.equals("machtkristalle") ||
-                                       configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
-                                       configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-            boolean isMachtkristalleClose = configKey.equals("machtkristalle");
-            boolean isRecyclerClose = configKey.equals("recycler");
-            boolean isRecyclerSlotClose = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-            boolean hasSeparateOverlayClose = (isMachtkristalleClose || isRecyclerClose || isRecyclerSlotClose) && getSeparateOverlay(configKey);
-            int baseBoxHeightClose = (hasIconOptionClose ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
-            if (isMachtkristalleClose) {
-                baseBoxHeightClose += CRYSTAL_EXTRA_HEIGHT;
-            }
-            if (isRecyclerClose || isRecyclerSlotClose) {
-                baseBoxHeightClose += 60;
-            }
-            int boxHeightClose = baseBoxHeightClose;
-            int heightIncreaseClose = 0;
-            if (hasSeparateOverlayClose) {
-                if (isMachtkristalleClose) {
-                    heightIncreaseClose = CRYSTAL_SEPARATE_EXTRA_HEIGHT;
-                    boxHeightClose += heightIncreaseClose;
-                    boxHeightClose -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
-                } else if (isRecyclerClose || isRecyclerSlotClose) {
-                    heightIncreaseClose = 60;
-                    boxHeightClose += heightIncreaseClose;
-                    boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
-                } else {
-                    heightIncreaseClose = 60;
-                    boxHeightClose += heightIncreaseClose;
-                }
-            } else if (isMachtkristalleClose) {
-                boxHeightClose -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
-            } else if (isRecyclerClose || isRecyclerSlotClose) {
-                boxHeightClose -= 30; // Reduziere um 30px, da unten leerer Bereich ist
-            }
-            int boxX = width / 2 - boxWidth / 2;
-            // Zentriere das Overlay vertikal (gleicher Abstand oben und unten)
-            int boxY = (height - boxHeightClose) / 2;
-            
-            int closeButtonSize = 12;
-            int closeButtonX = boxX + boxWidth - closeButtonSize - 5;
-            int closeButtonY = boxY + 5;
-            
-            if (mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonSize &&
-                mouseY >= closeButtonY && mouseY <= closeButtonY + closeButtonSize) {
+            // Schließen-Kreuz (gleiche Position wie beim Rendering)
+            SettingsLayout layout = computeLayout();
+            if (isInsideInclusive(mouseX, mouseY, layout.closeButtonX(), layout.closeButtonY(),
+                    CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE)) {
                 // Speichere Eingaben beim Schließen
                 saveWarnPercent();
                 onClose();
@@ -1119,382 +658,145 @@ public class NpcAlertsDetailScreen extends Screen {
         return super.mouseClicked(event, doubled);
     }
 
+    private void saveConfig() {
+        CCLiveUtilitiesConfig.HANDLER.save();
+    }
+
+    /**
+     * Linksklick in der Einstellungs-Box. Die Reihenfolge entspricht der Darstellung von oben nach unten;
+     * Klicks auf Checkboxen vor dem Eingabefeld lassen den Bearbeiten-Zustand unverändert.
+     */
     private boolean handleSettingsClick(double mouseX, double mouseY, int button) {
         if (button != 0) {
             return false;
         }
-        
-        int boxWidth = SETTINGS_BOX_WIDTH;
-        // Höher für Amboss, Schmelzofen und Recycler (Icon-Option) und Hintergrund-Checkbox
-        boolean hasIconOption = configKey.equals("forschung") || configKey.equals("amboss") || 
-                               configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                               configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
-                               configKey.equals("machtkristalle") ||
-                               configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
-                               configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        // Für Machtkristalle und Recycler: zusätzliche Höhe wenn "Separates Overlay" aktiviert ist (für 3 Checkboxen)
-        boolean isMachtkristalle = configKey.equals("machtkristalle");
-        boolean isRecycler = configKey.equals("recycler");
-        boolean isRecyclerSlot = configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        boolean hasSeparateOverlay = (isMachtkristalle || isRecycler || isRecyclerSlot) && getSeparateOverlay(configKey);
-            int baseBoxHeight = (hasIconOption ? 275 : 235) + SETTINGS_EXTRA_HEIGHT;
-        // Zusätzliche Höhe für Machtkristall-Checkboxen (immer angezeigt: 3 Slots)
-        if (isMachtkristalle) {
-            baseBoxHeight += CRYSTAL_EXTRA_HEIGHT; // 3 Slot-Checkboxen + Level-Checkbox
-        }
-        // Zusätzliche Höhe für Recycler-Checkboxen (immer angezeigt: 3 Slots)
-        if (isRecycler || isRecyclerSlot) {
-            baseBoxHeight += 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
-        }
-        int boxHeight = baseBoxHeight;
-        int heightIncrease = 0;
-        if (hasSeparateOverlay) {
-            if (isMachtkristalle) {
-                heightIncrease = CRYSTAL_SEPARATE_EXTRA_HEIGHT; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
-                boxHeight += heightIncrease;
-                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
-                boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
-            } else if (isRecycler || isRecyclerSlot) {
-                heightIncrease = 60; // Zusätzliche Höhe für 3 "Einzeln" Checkboxen (20px pro Checkbox)
-                boxHeight += heightIncrease;
-                // Reduziere die Höhe, da unten noch überflüssiger Platz ist (als wäre dort ein Button)
-                boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
-            } else {
-                heightIncrease = 60; // Zusätzliche Höhe für 3 Checkboxen (20px pro Checkbox)
-                boxHeight += heightIncrease;
-            }
-        } else if (isMachtkristalle) {
-            // Reduziere die Höhe für Machtkristalle, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
-            boxHeight -= CRYSTAL_BOTTOM_TRIM; // Reduziere um 30px, da unten leerer Bereich ist
-        } else if (isRecycler || isRecyclerSlot) {
-            // Reduziere die Höhe für Recycler, wenn "Separates Overlay" nicht aktiviert ist (leerer Bereich unten)
-            boxHeight -= 30; // Reduziere um 30px, da unten leerer Bereich ist
-        }
-        int boxX = width / 2 - boxWidth / 2;
-        // Zentriere das Overlay vertikal (gleicher Abstand oben und unten)
-        int boxY = (height - boxHeight) / 2;
-        
-        // Prüfe ob Klick innerhalb des Overlays ist
-        if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
+
+        SettingsLayout layout = computeLayout();
+        int boxX = layout.boxX();
+        int boxY = layout.boxY();
+        if (mouseX < boxX || mouseX > boxX + SETTINGS_BOX_WIDTH || mouseY < boxY || mouseY > boxY + layout.boxHeight()) {
             isEditingWarnPercent = false;
             return false;
         }
-        
-        // Prüfe ob diese Information Prozente unterstützt
-        boolean supportsPercent = configKey.equals("forschung") || configKey.equals("amboss") || 
-                                 configKey.equals("schmelzofen") || configKey.equals("jaeger") || 
-                                 configKey.equals("seelen") || configKey.equals("essenzen") || 
-                                 configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
-                                 configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3") || 
-                                 configKey.equals("machtkristalle");
-        
-        // Hintergrund Checkbox (für alle Informationen) - als oberstes Element
-        int backgroundCheckboxY = boxY + 35;
-        int backgroundCheckboxX = boxX + 10;
-        int backgroundCheckboxSize = 10;
-        int backgroundTextX = backgroundCheckboxX + backgroundCheckboxSize + 5;
-        // Verwende die tatsächliche Text-Breite für korrekte Click-Erkennung
-        int backgroundTextWidth = font.width("Hintergrund anzeigen");
-        int backgroundTextHeight = font.lineHeight;
-        
-        // Prüfe ob Klick auf Checkbox oder Text
-        boolean clickedOnBackgroundCheckbox = (mouseX >= backgroundCheckboxX && mouseX <= backgroundCheckboxX + backgroundCheckboxSize &&
-                                             mouseY >= backgroundCheckboxY && mouseY <= backgroundCheckboxY + backgroundCheckboxSize);
-        boolean clickedOnBackgroundText = (mouseX >= backgroundTextX && mouseX <= backgroundTextX + backgroundTextWidth &&
-                                          mouseY >= backgroundCheckboxY && mouseY <= backgroundCheckboxY + backgroundTextHeight);
-        
-        if (clickedOnBackgroundCheckbox || clickedOnBackgroundText) {
-            // Toggle Hintergrund
-            boolean newValue = !getShowBackground(configKey);
-            setShowBackground(configKey, newValue);
-            CCLiveUtilitiesConfig.HANDLER.save();
+
+        if (handleBaseCheckboxClick(layout, mouseX, mouseY)) {
             return true;
         }
-        
-        int screenMessageCheckboxY = getScreenMessageCheckboxY(boxY);
-        int screenMessageCheckboxX = boxX + 10;
-        int screenMessageCheckboxSize = 10;
-        int screenMessageTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
-        int screenMessageTextWidth = font.width("Bildschirm-Nachricht");
-        int screenMessageTextHeight = font.lineHeight;
-        
-        boolean clickedOnScreenMessageCheckbox = (mouseX >= screenMessageCheckboxX && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize &&
-                                                  mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageCheckboxSize);
-        boolean clickedOnScreenMessageText = (mouseX >= screenMessageTextX && mouseX <= screenMessageTextX + screenMessageTextWidth &&
-                                              mouseY >= screenMessageCheckboxY && mouseY <= screenMessageCheckboxY + screenMessageTextHeight);
-        
-        if (clickedOnScreenMessageCheckbox || clickedOnScreenMessageText) {
-            boolean newValue = !getShowScreenMessage(configKey);
-            setShowScreenMessage(configKey, newValue);
-            CCLiveUtilitiesConfig.HANDLER.save();
-            return true;
-        }
-        
-        int screenMessageWhenDisabledCheckboxY = getScreenMessageWhenDisabledCheckboxY(boxY);
-        int screenMessageWhenDisabledTextX = screenMessageCheckboxX + screenMessageCheckboxSize + 5;
-        int screenMessageWhenDisabledTextWidth = font.width(SCREEN_MESSAGE_WHEN_DISABLED_LABEL);
-        int screenMessageWhenDisabledTextHeight = font.lineHeight;
-        
-        boolean clickedOnScreenMessageWhenDisabledCheckbox = mouseX >= screenMessageCheckboxX
-            && mouseX <= screenMessageCheckboxX + screenMessageCheckboxSize
-            && mouseY >= screenMessageWhenDisabledCheckboxY
-            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageCheckboxSize;
-        boolean clickedOnScreenMessageWhenDisabledText = mouseX >= screenMessageWhenDisabledTextX
-            && mouseX <= screenMessageWhenDisabledTextX + screenMessageWhenDisabledTextWidth
-            && mouseY >= screenMessageWhenDisabledCheckboxY
-            && mouseY <= screenMessageWhenDisabledCheckboxY + screenMessageWhenDisabledTextHeight;
-        
-        if (clickedOnScreenMessageWhenDisabledCheckbox || clickedOnScreenMessageWhenDisabledText) {
-            boolean newValue = !getShowScreenMessageWhenOverlayDisabled(configKey);
-            setShowScreenMessageWhenOverlayDisabled(configKey, newValue);
-            CCLiveUtilitiesConfig.HANDLER.save();
-            return true;
-        }
-        
-        if (supportsPercent) {
-            // Prozente Checkbox
-            int y = getPercentCheckboxY(boxY);
-            int checkboxSize = 10;
-            int checkboxX = boxX + 10;
-            int checkboxY = y;
-            int textX = checkboxX + checkboxSize + 5;
-            // Verwende die tatsächliche Text-Breite für korrekte Click-Erkennung
-            int textWidth = font.width(getPercentCheckboxLabel());
-            int textHeight = font.lineHeight;
-            
-            // Prüfe ob Klick auf Checkbox oder Text
-            boolean clickedOnCheckbox = (mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
-                                       mouseY >= checkboxY && mouseY <= checkboxY + checkboxSize);
-            boolean clickedOnText = (mouseX >= textX && mouseX <= textX + textWidth &&
-                                   mouseY >= checkboxY && mouseY <= checkboxY + textHeight);
-            
-            if (clickedOnCheckbox || clickedOnText) {
-                // Toggle Prozente
-                boolean newValue = !getShowPercent(configKey);
-                setShowPercent(newValue);
-                CCLiveUtilitiesConfig.HANDLER.save();
+        if (layout.supportsPercent()) {
+            if (handlePercentCheckboxClick(layout, mouseX, mouseY)) {
                 return true;
             }
-            
-            if (isMachtkristalleKey()) {
-                int levelCheckboxY = getMachtkristalleLevelCheckboxY(boxY);
-                int levelTextX = checkboxX + checkboxSize + 5;
-                int levelTextWidth = font.width("Level anzeigen");
-                int levelTextHeight = font.lineHeight;
-                boolean clickedOnLevelCheckbox = mouseX >= checkboxX && mouseX <= checkboxX + checkboxSize &&
-                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + checkboxSize;
-                boolean clickedOnLevelText = mouseX >= levelTextX && mouseX <= levelTextX + levelTextWidth &&
-                    mouseY >= levelCheckboxY && mouseY <= levelCheckboxY + levelTextHeight;
-                if (clickedOnLevelCheckbox || clickedOnLevelText) {
-                    setShowMachtkristalleLevel(configKey, !getShowMachtkristalleLevel(configKey));
-                    CCLiveUtilitiesConfig.HANDLER.save();
-                    return true;
-                }
-            }
-            
             // Warn-Eingabefeld
-            int inputY = getWarnInputY(boxY);
             int fieldX = boxX + 90;
-            int inputWidth = 100;
-            int inputHeight = 16;
-            
-            boolean clickedOnInput = (mouseX >= fieldX && mouseX <= fieldX + inputWidth &&
-                                    mouseY >= inputY && mouseY <= inputY + inputHeight);
-            
-            if (clickedOnInput) {
+            if (isInsideInclusive(mouseX, mouseY, fieldX, getWarnInputY(boxY), INPUT_WIDTH, INPUT_HEIGHT)) {
                 isEditingWarnPercent = true;
                 return true;
             }
             isEditingWarnPercent = false;
         } else if ("komboKiste".equals(configKey)) {
-            int inputY = getPercentCheckboxY(boxY);
             int fieldX = boxX + 135;
-            int inputWidth = 100;
-            int inputHeight = 16;
-            boolean clickedZiel = (mouseX >= fieldX && mouseX <= fieldX + inputWidth &&
-                mouseY >= inputY && mouseY <= inputY + inputHeight);
-            if (clickedZiel) {
+            if (isInsideInclusive(mouseX, mouseY, fieldX, getPercentCheckboxY(boxY), INPUT_WIDTH, INPUT_HEIGHT)) {
                 isEditingWarnPercent = true;
                 return true;
             }
             isEditingWarnPercent = false;
         }
-        
-        // Berechne hasIconOption für Click-Handler (gleiche Logik wie in renderSettingsBox)
-        boolean hasIconOptionClick = configKey.equals("forschung") || configKey.equals("amboss") || 
-                                    configKey.equals("schmelzofen") || configKey.equals("seelen") || 
-                                    configKey.equals("essenzen") || configKey.equals("jaeger") || configKey.equals("komboKiste") || 
-                                    configKey.equals("machtkristalle") ||
-                                    configKey.equals("recycler") || configKey.equals("recyclerSlot1") || 
-                                    configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3");
-        
-        // Icon/Text Toggle Button (für Amboss, Schmelzofen und Recycler)
-        if (hasIconOptionClick) {
-            int iconButtonY = getSettingsBlockEndY(boxY, supportsPercent);
-            int iconButtonX = boxX + 10;
-            int iconButtonWidth = 280;
-            int iconButtonHeight = 20;
-            
-            boolean clickedOnIconButton = (mouseX >= iconButtonX && mouseX <= iconButtonX + iconButtonWidth &&
-                                          mouseY >= iconButtonY && mouseY <= iconButtonY + iconButtonHeight);
-            
-            if (clickedOnIconButton) {
-                // Toggle Icon/Text
-                boolean newValue = !getShowIcon(configKey);
-                setShowIcon(configKey, newValue);
-                CCLiveUtilitiesConfig.HANDLER.save();
-                return true;
-            }
+
+        if (handleButtonClick(layout, mouseX, mouseY)) {
+            return true;
         }
-        
-        // Farben Button (für alle Informationen)
-        // Variablen für Icon Button (außerhalb if-Block für Click-Handler)
-        int iconButtonYClick = getSettingsBlockEndY(boxY, supportsPercent);
-        int iconButtonHeightClick = 20;
-        int colorButtonY = hasIconOptionClick ? (iconButtonYClick + iconButtonHeightClick + 10) : getSettingsBlockEndY(boxY, supportsPercent);
-        int colorButtonX = boxX + 10;
-        int colorButtonWidth = 280;
-        int colorButtonHeight = 20;
-        
-        boolean clickedOnColorButton = (mouseX >= colorButtonX && mouseX <= colorButtonX + colorButtonWidth &&
-                                        mouseY >= colorButtonY && mouseY <= colorButtonY + colorButtonHeight);
-        
-        if (clickedOnColorButton) {
+        return handleSlotCheckboxClick(layout, mouseX, mouseY);
+    }
+
+    /** Hintergrund-, Bildschirm-Nachricht- und "bei deaktiviertem Overlay"-Checkbox. */
+    private boolean handleBaseCheckboxClick(SettingsLayout layout, double mouseX, double mouseY) {
+        int x = layout.contentX();
+        int boxY = layout.boxY();
+
+        if (isOverCheckbox(mouseX, mouseY, x, boxY + SETTINGS_ROW_BACKGROUND, BACKGROUND_LABEL)) {
+            setShowBackground(configKey, !getShowBackground(configKey));
+            saveConfig();
+            return true;
+        }
+        if (isOverCheckbox(mouseX, mouseY, x, getScreenMessageCheckboxY(boxY), SCREEN_MESSAGE_LABEL)) {
+            setShowScreenMessage(configKey, !getShowScreenMessage(configKey));
+            saveConfig();
+            return true;
+        }
+        if (isOverCheckbox(mouseX, mouseY, x, getScreenMessageWhenDisabledCheckboxY(boxY), SCREEN_MESSAGE_WHEN_DISABLED_LABEL)) {
+            setShowScreenMessageWhenOverlayDisabled(configKey, !getShowScreenMessageWhenOverlayDisabled(configKey));
+            saveConfig();
+            return true;
+        }
+        return false;
+    }
+
+    /** Prozent-Checkbox und (bei Machtkristallen) Level-Checkbox. */
+    private boolean handlePercentCheckboxClick(SettingsLayout layout, double mouseX, double mouseY) {
+        int x = layout.contentX();
+        int boxY = layout.boxY();
+
+        if (isOverCheckbox(mouseX, mouseY, x, getPercentCheckboxY(boxY), getPercentCheckboxLabel())) {
+            setShowPercent(!getShowPercent(configKey));
+            saveConfig();
+            return true;
+        }
+        if (isMachtkristalleKey()
+                && isOverCheckbox(mouseX, mouseY, x, getMachtkristalleLevelCheckboxY(boxY), LEVEL_LABEL)) {
+            setShowMachtkristalleLevel(configKey, !getShowMachtkristalleLevel(configKey));
+            saveConfig();
+            return true;
+        }
+        return false;
+    }
+
+    /** Icon-Umschalter, Farben-Button (öffnet den Farben-Screen) und "Separates Overlay"-Button. */
+    private boolean handleButtonClick(SettingsLayout layout, double mouseX, double mouseY) {
+        int x = layout.contentX();
+
+        if (layout.hasIconOption() && isInsideInclusive(mouseX, mouseY, x, layout.iconButtonY(), BUTTON_WIDTH, BUTTON_HEIGHT)) {
+            setShowIcon(configKey, !getShowIcon(configKey));
+            saveConfig();
+            return true;
+        }
+        if (isInsideInclusive(mouseX, mouseY, x, layout.colorButtonY(), BUTTON_WIDTH, BUTTON_HEIGHT)) {
             // Öffne YACL-Screen für beide Farben
             Screen colorScreen = createColorConfigScreen(this, configKey);
             minecraft.gui.setScreen(colorScreen);
             return true;
         }
-        
-        // Separate Overlay Button
-        int buttonY = colorButtonY + colorButtonHeight + 10;
-        int buttonX = boxX + 10;
-        int buttonWidth = 280;
-        int buttonHeight = 20;
-        
-        boolean clickedOnButton = (mouseX >= buttonX && mouseX <= buttonX + buttonWidth &&
-                                  mouseY >= buttonY && mouseY <= buttonY + buttonHeight);
-        
-        if (clickedOnButton) {
-            // Toggle Separate Overlay
-            boolean newValue = !getSeparateOverlay(configKey);
-            setSeparateOverlay(configKey, parent, newValue);
-            CCLiveUtilitiesConfig.HANDLER.save();
+        if (isInsideInclusive(mouseX, mouseY, x, layout.separateButtonY(), BUTTON_WIDTH, BUTTON_HEIGHT)) {
+            setSeparateOverlay(configKey, parent, !getSeparateOverlay(configKey));
+            saveConfig();
             return true;
         }
-        
-        // Machtkristall Slot-Checkboxen
-        if (configKey.equals("machtkristalle")) {
-            int mkCheckboxStartY = buttonY + buttonHeight + 10;
-            int mkCheckboxSize = 10;
-            int mkCheckboxX = boxX + 10;
-            int mkCheckboxSpacing = 20;
-            
-            // MK Slot-Checkboxen (MK Slot 1, 2, 3 ein/aus) - immer angezeigt
-            for (int i = 0; i < 3; i++) {
-                int mkSlotY = mkCheckboxStartY + (i * mkCheckboxSpacing);
-                String mkSlotText = "MK Slot " + (i + 1) + " ein/aus";
-                int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
-                int mkSlotTextWidth = font.width(mkSlotText);
-                int mkSlotTextHeight = font.lineHeight;
-                
-                boolean clickedOnMkSlotCheckbox = (mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
-                                                  mouseY >= mkSlotY && mouseY <= mkSlotY + mkCheckboxSize);
-                boolean clickedOnMkSlotText = (mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
-                                             mouseY >= mkSlotY && mouseY <= mkSlotY + mkSlotTextHeight);
-                
-                if (clickedOnMkSlotCheckbox || clickedOnMkSlotText) {
-                    // Toggle MK Slot Enabled
-                    boolean newValue = !getMachtkristalleSlotEnabled(configKey, i);
-                    setMachtkristalleSlotEnabled(configKey, parent, i, newValue);
-                    CCLiveUtilitiesConfig.HANDLER.save();
-                    return true;
-                }
-            }
-            
-            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
-            if (getSeparateOverlay(configKey)) {
-                for (int i = 0; i < 3; i++) {
-                    int mkCheckboxY = mkCheckboxStartY + (3 * mkCheckboxSpacing) + (i * mkCheckboxSpacing);
-                    String mkSlotCheckboxText = "MK " + (i + 1) + " Einzeln";
-                    int mkSlotTextX = mkCheckboxX + mkCheckboxSize + 5;
-                    int mkSlotTextWidth = font.width(mkSlotCheckboxText);
-                    int mkSlotTextHeight = font.lineHeight;
-                    
-                    boolean clickedOnMkSlotCheckbox = (mouseX >= mkCheckboxX && mouseX <= mkCheckboxX + mkCheckboxSize &&
-                                                      mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkCheckboxSize);
-                    boolean clickedOnMkSlotText = (mouseX >= mkSlotTextX && mouseX <= mkSlotTextX + mkSlotTextWidth &&
-                                                 mouseY >= mkCheckboxY && mouseY <= mkCheckboxY + mkSlotTextHeight);
-                    
-                    if (clickedOnMkSlotCheckbox || clickedOnMkSlotText) {
-                        // Toggle MK Slot Separate
-                        boolean newValue = !getMachtkristallSlotSeparate(configKey, i);
-                        setMachtkristallSlotSeparate(configKey, i, newValue);
-                        CCLiveUtilitiesConfig.HANDLER.save();
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        // Recycler Slot-Checkboxen
-        if (configKey.equals("recycler") || configKey.equals("recyclerSlot1") || configKey.equals("recyclerSlot2") || configKey.equals("recyclerSlot3")) {
-            int recyclerCheckboxStartY = buttonY + buttonHeight + 10;
-            int recyclerCheckboxSize = 10;
-            int recyclerCheckboxX = boxX + 10;
-            int recyclerCheckboxSpacing = 20;
-            
-            // Recycler Slot-Checkboxen (Recycler Slot 1, 2, 3 ein/aus) - immer angezeigt
-            for (int i = 0; i < 3; i++) {
-                int recyclerSlotY = recyclerCheckboxStartY + (i * recyclerCheckboxSpacing);
-                String recyclerSlotText = "Recycler Slot " + (i + 1) + " ein/aus";
-                int recyclerSlotTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
-                int recyclerSlotTextWidth = font.width(recyclerSlotText);
-                int recyclerSlotTextHeight = font.lineHeight;
-                
-                boolean clickedOnRecyclerSlotCheckbox = (mouseX >= recyclerCheckboxX && mouseX <= recyclerCheckboxX + recyclerCheckboxSize &&
-                                                      mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerCheckboxSize);
-                boolean clickedOnRecyclerSlotText = (mouseX >= recyclerSlotTextX && mouseX <= recyclerSlotTextX + recyclerSlotTextWidth &&
-                                                   mouseY >= recyclerSlotY && mouseY <= recyclerSlotY + recyclerSlotTextHeight);
-                
-                if (clickedOnRecyclerSlotCheckbox || clickedOnRecyclerSlotText) {
-                    // Toggle Recycler Slot Enabled
-                    boolean newValue = !getRecyclerSlotEnabled(configKey, i);
-                    setRecyclerSlotEnabled(configKey, parent, i, newValue);
-                    CCLiveUtilitiesConfig.HANDLER.save();
-                    return true;
-                }
-            }
-            
-            // Slot-Checkboxen "Einzeln" (nur wenn "Separates Overlay" aktiviert ist)
-            if (getSeparateOverlay(configKey)) {
-                for (int i = 0; i < 3; i++) {
-                    int recyclerCheckboxY = recyclerCheckboxStartY + (3 * recyclerCheckboxSpacing) + (i * recyclerCheckboxSpacing);
-                    String recyclerCheckboxText = "Recycler " + (i + 1) + " Einzeln";
-                    int recyclerTextX = recyclerCheckboxX + recyclerCheckboxSize + 5;
-                    int recyclerTextWidth = font.width(recyclerCheckboxText);
-                    int recyclerTextHeight = font.lineHeight;
-                    
-                    // Verwende exakt die gleichen Berechnungen wie beim Rendering
-                    boolean clickedOnRecyclerCheckbox = (mouseX >= recyclerCheckboxX && mouseX <= recyclerCheckboxX + recyclerCheckboxSize &&
-                                                        mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerCheckboxSize);
-                    boolean clickedOnRecyclerText = (mouseX >= recyclerTextX && mouseX <= recyclerTextX + recyclerTextWidth &&
-                                                    mouseY >= recyclerCheckboxY && mouseY <= recyclerCheckboxY + recyclerTextHeight);
-                    
-                    if (clickedOnRecyclerCheckbox || clickedOnRecyclerText) {
-                        // Toggle Recycler Slot Separate
-                        boolean newValue = !getRecyclerSlotSeparate(configKey, i);
-                        setRecyclerSlotSeparate(configKey, i, newValue);
-                        CCLiveUtilitiesConfig.HANDLER.save();
-                        return true;
-                    }
-                }
-            }
-        }
-        
         return false;
     }
 
+    /** Slot-Checkboxen für Machtkristalle/Recycler; "Einzeln" nur bei aktivem "Separates Overlay". */
+    private boolean handleSlotCheckboxClick(SettingsLayout layout, double mouseX, double mouseY) {
+        if (!hasSlotCheckboxes()) {
+            return false;
+        }
+        int x = layout.contentX();
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (isOverCheckbox(mouseX, mouseY, x, slotRowY(layout, slot, false), slotEnabledLabel(slot))) {
+                toggleSlotEnabled(slot);
+                saveConfig();
+                return true;
+            }
+        }
+        if (getSeparateOverlay(configKey)) {
+            for (int slot = 0; slot < SLOT_COUNT; slot++) {
+                if (isOverCheckbox(mouseX, mouseY, x, slotRowY(layout, slot, true), slotSeparateLabel(slot))) {
+                    toggleSlotSeparate(slot);
+                    saveConfig();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     /**
      * Zeichnet eine diagonale Linie
      */
