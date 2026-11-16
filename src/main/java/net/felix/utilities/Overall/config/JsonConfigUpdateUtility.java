@@ -183,31 +183,31 @@ public class JsonConfigUpdateUtility {
             switch (fileName) {
                 case "Aincraft.json":
                     // Aincraft.json wird in MaterialDatabase.loadMaterialsDatabase() geladen
-                    net.felix.features.information.materials.MaterialDatabase.reloadMaterialsDatabase();
+                    net.felix.utilities.Aincraft.information.materials.MaterialDatabase.reloadMaterialsDatabase();
                     break;
                 case "Aspekte.json":
-                    net.felix.features.information.aspects.AspectDatabase.reloadAspectsDatabase();
+                    net.felix.utilities.Aincraft.information.aspects.AspectDatabase.reloadAspectsDatabase();
                     break;
                 case "blueprints.json":
-                    net.felix.features.information.blueprints.BlueprintDatabase.reloadBlueprintsDatabase();
+                    net.felix.utilities.Aincraft.information.blueprints.BlueprintDatabase.reloadBlueprintsDatabase();
                     break;
                 case "CardsStatues.json":
-                    net.felix.features.information.cards.CardsStatuesDatabase.reloadCardsStatuesDatabase();
+                    net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.reloadCardsStatuesDatabase();
                     break;
                 case "Collections.json":
-                    net.felix.features.information.collections.CollectionDatabase.reloadCollectionsDatabase();
+                    net.felix.utilities.Aincraft.information.collections.CollectionDatabase.reloadCollectionsDatabase();
                     break;
                 case "Essenz.json":
-                    net.felix.features.information.essences.EssenceDatabase.reloadEssencesDatabase();
+                    net.felix.utilities.Aincraft.information.essences.EssenceDatabase.reloadEssencesDatabase();
                     break;
                 case "Farmworld.json":
-                    net.felix.features.information.licenses.LicenseDatabase.reloadLicensesDatabase();
+                    net.felix.utilities.Aincraft.information.licenses.LicenseDatabase.reloadLicensesDatabase();
                     break;
                 case "Kits.json":
                     net.felix.utilities.Town.kits.filter.KitFilterUtility.reloadKitsDatabase();
                     break;
                 case "MKLevel.json":
-                    net.felix.features.information.mklevel.MkLevelDatabase.reloadMkLevelDatabase();
+                    net.felix.utilities.Aincraft.information.mklevel.MkLevelDatabase.reloadMkLevelDatabase();
                     break;
             }
         } catch (Exception e) {

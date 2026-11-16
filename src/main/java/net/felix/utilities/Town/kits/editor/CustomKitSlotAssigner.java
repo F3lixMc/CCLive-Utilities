@@ -2,7 +2,7 @@ package net.felix.utilities.Town.kits.editor;
 
 import java.util.HashSet;
 import java.util.Set;
-import net.felix.features.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping.PieceType;
 import net.felix.utilities.Town.kits.data.CustomKit;

@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilities;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
 import net.felix.leaderboards.LeaderboardManager;
+import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 

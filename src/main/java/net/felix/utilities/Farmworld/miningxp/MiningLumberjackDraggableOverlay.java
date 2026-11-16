@@ -1,7 +1,7 @@
 package net.felix.utilities.Farmworld.miningxp;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.information.xp.MiningLumberjackOverlay;
+import net.felix.utilities.Aincraft.information.xp.MiningLumberjackOverlay;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

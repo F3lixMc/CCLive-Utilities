@@ -13,14 +13,14 @@ import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.data.ItemInfo;
-import net.felix.features.itemviewer.inventory.InventoryItemCapture;
-import net.felix.features.itemviewer.search.SearchFieldState;
-import net.felix.features.itemviewer.tooltip.ForgingTooltipText;
-import net.felix.features.itemviewer.tooltip.TooltipColors;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemInfo;
+import net.felix.utilities.Aincraft.itemviewer.inventory.InventoryItemCapture;
+import net.felix.utilities.Aincraft.itemviewer.search.SearchFieldState;
+import net.felix.utilities.Aincraft.itemviewer.tooltip.ForgingTooltipText;
+import net.felix.utilities.Aincraft.itemviewer.tooltip.TooltipColors;
 import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -478,7 +478,7 @@ public final class ItemShareManager {
             return false;
         }
 
-        net.felix.features.information.aspects.AspectChatMessages.updateAspectOverlayFromBlueprintName(lookupName);
+        net.felix.utilities.Aincraft.information.aspects.AspectChatMessages.updateAspectOverlayFromBlueprintName(lookupName);
         return true;
     }
 

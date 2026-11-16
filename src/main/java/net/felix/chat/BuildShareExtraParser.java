@@ -3,16 +3,15 @@ package net.felix.chat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.felix.features.itemviewer.data.ItemData;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import net.felix.features.information.aspects.AspectDatabase;
-import net.felix.features.information.aspects.AspectInfo;
-import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.utilities.Aincraft.information.aspects.AspectDatabase;
+import net.felix.utilities.Aincraft.information.aspects.AspectInfo;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemCatalog;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
 
 /**
  * Machtkristalle und Aspekte aus erfassten Ausrüstungs-Tooltips.

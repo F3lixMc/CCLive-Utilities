@@ -1,6 +1,8 @@
 package net.felix.devtools;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import java.util.HashSet;
+import java.util.Set;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
@@ -10,9 +12,6 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Versteckte Hotkeys ohne KeyMapping-Registrierung.
@@ -291,7 +290,7 @@ public final class DevToolsHotkeyDispatcher {
             } catch (Exception ignored) {
             }
         }
-        if (net.felix.features.itemviewer.search.SearchFieldState.isTextFieldFocusedPublic(client)) {
+        if (net.felix.utilities.Aincraft.itemviewer.search.SearchFieldState.isTextFieldFocusedPublic(client)) {
             return true;
         }
         return false;

@@ -4,17 +4,17 @@ import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.information.collections.CollectionTracker;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
-import net.felix.features.npcalerts.overlay.draggable.AspectDraggableOverlay;
-import net.felix.features.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
-import net.felix.features.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
-import net.felix.features.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
 import net.felix.utilities.Aincraft.blueprints.BlueprintViewerDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.CardsDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.StatuesDraggableOverlay;
+import net.felix.utilities.Aincraft.information.collections.CollectionTracker;
+import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
 import net.felix.utilities.Aincraft.materials.MaterialTrackerDraggableOverlay;
+import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.AspectDraggableOverlay;
+import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
+import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
+import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
 import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
@@ -441,7 +441,7 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if the title contains "Machtkristalle Verbessern" or the Glyph "㮌" (Essence Harvester UI)
         return ZeichenUtility.isMkLevelInventoryTitle(
-                net.felix.features.information.tooltip.TooltipTextCleaner.getPlainTextFromText(handledScreen.getTitle()),
+                net.felix.utilities.Aincraft.information.tooltip.TooltipTextCleaner.getPlainTextFromText(handledScreen.getTitle()),
                 title);
     }
     
@@ -477,7 +477,7 @@ public class OverlayEditorScreen extends Screen {
             button -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client != null) {
-                    client.gui.setScreen(new net.felix.features.npcalerts.ui.NpcAlertsSettingsScreen(this));
+                    client.gui.setScreen(new net.felix.utilities.Aincraft.npcalerts.ui.NpcAlertsSettingsScreen(this));
                 }
             }
         ).bounds(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();

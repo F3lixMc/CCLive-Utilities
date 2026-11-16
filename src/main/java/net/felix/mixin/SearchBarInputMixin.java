@@ -66,7 +66,7 @@ public abstract class SearchBarInputMixin {
                 int inventoryX = xField.getInt(handledScreen);
                 int inventoryY = yField.getInt(handledScreen);
                 int inventoryHeight = bgHeightField.getInt(handledScreen);
-                if (net.felix.features.information.mklevel.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
+                if (net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
                     cir.setReturnValue(true);
                 }
             } catch (Exception e) {
@@ -82,20 +82,20 @@ public abstract class SearchBarInputMixin {
         int modifiers = event.modifiers();
 
         // Container screens override keyPressed and may never reach Screen.keyPressed.
-        if (net.felix.features.itemviewer.search.SearchFieldInput.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Aincraft.itemviewer.search.SearchFieldInput.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
 
 
         if (keyCode == InputConstants.KEY_ESCAPE) {
-            if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayEscape()) {
+            if (net.felix.utilities.Aincraft.itemviewer.ui.FilterOverlayControls.handleFilterOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
             }
         }
 
-        if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Aincraft.itemviewer.ui.FilterOverlayControls.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
@@ -207,7 +207,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle key press for MkLevel search bar
-        if (net.felix.features.information.mklevel.MkLevelInputHandler.handleMkLevelKeyPressed(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler.handleMkLevelKeyPressed(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
         }
     }

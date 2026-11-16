@@ -1,11 +1,11 @@
 package net.felix.utilities.Overall.hud;
 
-import net.felix.features.information.InformationFeature;
-import net.felix.features.npcalerts.NpcAlertsFeature;
 import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
 import net.felix.utilities.Aincraft.cardsstatues.CardsStatuesUtility;
+import net.felix.utilities.Aincraft.information.InformationFeature;
 import net.felix.utilities.Aincraft.kills.KillsUtility;
 import net.felix.utilities.Aincraft.materials.MaterialTrackerUtility;
+import net.felix.utilities.Aincraft.npcalerts.NpcAlertsFeature;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;

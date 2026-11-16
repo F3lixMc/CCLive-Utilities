@@ -5,8 +5,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.data.ItemInfo;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemInfo;
 
 /**
  * Zentrale Slot-Zuordnung für Build-Share, Kit-Editor und Vorschau.

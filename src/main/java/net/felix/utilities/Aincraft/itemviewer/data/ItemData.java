@@ -1,0 +1,32 @@
+package net.felix.utilities.Aincraft.itemviewer.data;
+
+import com.google.gson.JsonObject;
+import java.util.List;
+
+/**
+ * Datenstruktur für ein Item im Item-Viewer
+ */
+public class ItemData {
+    public String id;                    // Item-ID für Rendering (z.B. "minecraft:diamond")
+    public Integer customModelData;      // CustomModelData floats[0] für Rendering (null oder Zahl)
+    /** Weitere CustomModelData-Listen (1.21+), nötig für Resource-Pack-Platzhalter. */
+    public java.util.List<String> customModelStrings;
+    public java.util.List<Boolean> customModelFlags;
+    public java.util.List<Integer> customModelColors;
+    public String name;                  // Anzeigename des Items
+    public String itemScore;             // Item-Score für Baupläne (optional, z. B. "74.5" oder "NaN")
+    public String forgingCondition;      // Maximaler Schmiedezustand (optional, z. B. "Drachengeschmiedet")
+    public List<LocationData> foundAt;  // Fundorte
+    public PriceData price;             // Kosten
+    public BlueprintShopData blueprint_shop; // Blueprint-Shop Preise (optional)
+    public TimeData time;                // Forschungs-Zeit (für Power Crystal Slots)
+    public ItemInfo info;               // Zusatzinfos (Aspekt, Rarity, etc.)
+    public List<String> tags;           // Tags für Suche/Kategorisierung
+    public String category;              // Kategorie aus JSON (z.B. "blueprints", "abilities", "modules", etc.)
+    public String texture;               // Optional: Pfad zur benutzerdefinierten Textur (z.B. "icons/my_texture.png")
+    public JsonObject jsonObject;        // Vollständiges JSON-Objekt (für Favoriten)
+    public Integer clipboard_id;         // Optional: Interne ID für Clipboard (nur für Baupläne mit doppelten Namen)
+    /** Inventar-Tooltip für Chat-Shares (konkretes Item inkl. Farbe/Stil, nicht Template). */
+    public java.util.List<net.felix.chat.ChatTooltipLine> chatTooltip;
+}
+

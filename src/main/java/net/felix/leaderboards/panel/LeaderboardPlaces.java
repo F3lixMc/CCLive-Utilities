@@ -1,19 +1,18 @@
 package net.felix.leaderboards.panel;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import net.felix.utilities.Aincraft.information.collections.CollectionTracker;
+import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import net.felix.features.information.collections.CollectionTracker;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Welche Rangliste beim Öffnen des Inventars vorn liegt, hängt vom Aufenthaltsort ab.

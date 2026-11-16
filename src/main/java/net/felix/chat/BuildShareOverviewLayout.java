@@ -1,15 +1,14 @@
 package net.felix.chat;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.ChatFormatting;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Spalten-Übersicht für Build-Share-Chat-Hover.

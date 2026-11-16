@@ -3,7 +3,7 @@ package net.felix.utilities.Overall.cointracker;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
+import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Aincraft.materials.MaterialRateUtility;
 import net.felix.utilities.Aincraft.materials.MaterialTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.MaterialTrackerUtility;

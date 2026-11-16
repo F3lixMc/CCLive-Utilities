@@ -131,7 +131,7 @@ public class FishTrapFoundUtility {
 
             if (foundFishTraps.add(fishTrapName)) {
                 saveFoundFishTraps();
-                net.felix.features.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
+                net.felix.utilities.Aincraft.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
             }
         }
     }

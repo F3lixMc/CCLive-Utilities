@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.features.information.mklevel.MkLevelInputHandler;
-import net.felix.features.itemviewer.ui.ViewerInputHandler;
+import net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler;
+import net.felix.utilities.Aincraft.itemviewer.ui.ViewerInputHandler;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;

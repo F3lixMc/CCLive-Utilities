@@ -1,19 +1,18 @@
 package net.felix.leaderboards.panel;
 
+import java.util.List;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.LeaderboardSnapshot;
 import net.felix.leaderboards.LeaderboardSync;
 import net.felix.leaderboards.LeaderboardSyncSchedule;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
-
-import java.util.List;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
 
 /**
  * Rangliste links neben dem eigenen Inventar.

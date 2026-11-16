@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.features.information.materials.MaterialDatabase;
+import net.felix.utilities.Aincraft.information.materials.MaterialDatabase;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.felix.utilities.Other.clipboard.ClipboardUtility;
 import net.felix.utilities.Other.clipboard.cost.ClipboardCostInventoryUtility;

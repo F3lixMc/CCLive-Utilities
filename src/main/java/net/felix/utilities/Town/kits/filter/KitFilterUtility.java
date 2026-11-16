@@ -16,9 +16,9 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.itemviewer.data.ItemCatalog;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.search.FloorNumberExtractor;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemCatalog;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.itemviewer.search.FloorNumberExtractor;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping;
 import net.felix.utilities.Town.kits.data.CustomKit;
 import net.felix.utilities.Town.kits.data.CustomKitManager;
@@ -1559,7 +1559,7 @@ public class KitFilterUtility {
 		int nameColor = 0xFFFFFFFF;
 
 		if (item.info != null) {
-			net.felix.features.itemviewer.data.ItemInfo ivInfo = item.info;
+			net.felix.utilities.Aincraft.itemviewer.data.ItemInfo ivInfo = item.info;
 			if (isModule) {
 				itemType = "Modul";
 			} else if (ivInfo.piece != null && !ivInfo.piece.isEmpty()) {
@@ -1617,7 +1617,7 @@ public class KitFilterUtility {
 			return null;
 		}
 		List<String> parts = new ArrayList<>();
-		for (net.felix.features.itemviewer.data.LocationData loc : item.foundAt) {
+		for (net.felix.utilities.Aincraft.itemviewer.data.LocationData loc : item.foundAt) {
 			if (loc == null) {
 				continue;
 			}
@@ -1699,12 +1699,12 @@ public class KitFilterUtility {
 				continue;
 			}
 			String clean = stripCardSuffix(cardName);
-			String effect = net.felix.features.information.cards.CardsStatuesDatabase.getCardEffectByName(clean);
+			String effect = net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.getCardEffectByName(clean);
 			if (effect == null || effect.isEmpty()) {
 				effect = "–";
 			}
 			String floors = formatCardFloors(
-				net.felix.features.information.cards.CardsStatuesDatabase.getCardFloorsByName(clean));
+				net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.getCardFloorsByName(clean));
 			result.add(new ItemInfo(clean, floors, null, 0xFFFFFFFF, null, "Karte", effect));
 		}
 		return result;

@@ -135,7 +135,7 @@ public class FishingComponentFoundUtility {
 
             if (foundComponents.add(componentName)) {
                 saveFoundComponents();
-                net.felix.features.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
+                net.felix.utilities.Aincraft.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
             }
         }
     }

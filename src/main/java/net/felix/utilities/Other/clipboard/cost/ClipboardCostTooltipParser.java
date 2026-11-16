@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.features.information.materials.MaterialDatabase;
+import net.felix.utilities.Aincraft.information.materials.MaterialDatabase;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;

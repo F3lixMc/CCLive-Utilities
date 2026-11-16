@@ -1,7 +1,7 @@
 package net.felix.utilities.Farmworld.collections;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.information.collections.CollectionOverlay;
+import net.felix.utilities.Aincraft.information.collections.CollectionOverlay;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

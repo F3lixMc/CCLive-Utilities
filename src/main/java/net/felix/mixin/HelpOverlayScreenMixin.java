@@ -1,5 +1,7 @@
 package net.felix.mixin;
 
+import net.felix.utilities.Aincraft.itemviewer.ui.FilterOverlayControls;
+import net.felix.utilities.Aincraft.itemviewer.ui.HelpOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -7,8 +9,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.features.itemviewer.ui.FilterOverlayControls;
-import net.felix.features.itemviewer.ui.HelpOverlay;
 
 /**
  * Separater Mixin für das Hilfe-Overlay in Screen, damit es wirklich über allem liegt

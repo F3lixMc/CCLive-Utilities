@@ -3,7 +3,7 @@ package net.felix.utilities.Other.clipboard.collector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.features.information.farmzone.FarmzoneScoreboard;
+import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.minecraft.client.Minecraft;

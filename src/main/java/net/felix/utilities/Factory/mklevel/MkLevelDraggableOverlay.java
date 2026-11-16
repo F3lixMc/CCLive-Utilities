@@ -78,7 +78,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.gui.screen() == null) {
             // Use cached height if available (from last render)
-            int cachedHeight = net.felix.features.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
+            int cachedHeight = net.felix.utilities.Aincraft.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
             if (cachedHeight > 0) {
                 return cachedHeight;
             }
@@ -88,7 +88,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
         // Wenn wir im F6-Editor sind, verwende die gecachte Höhe (aus dem letzten Render)
         // Das vermeidet Reflection-Probleme auf dem Server
         if (client.gui.screen() instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen) {
-            int cachedHeight = net.felix.features.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
+            int cachedHeight = net.felix.utilities.Aincraft.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
             if (cachedHeight > 0) {
                 return cachedHeight;
             }
@@ -107,7 +107,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
                     // Prüfe ob es das MkLevel Inventar ist
                     net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) previousScreen;
                     net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
-                    String title = net.felix.features.information.tooltip.TooltipTextCleaner.getPlainTextFromText(titleText);
+                    String title = net.felix.utilities.Aincraft.information.tooltip.TooltipTextCleaner.getPlainTextFromText(titleText);
                     String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen für Essence Harvester UI
                     
                     // Prüfe sowohl "Machtkristalle Verbessern" als auch Essence Harvester UI
@@ -115,7 +115,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
                         screenToCheck = previousScreen;
                     } else {
                         // Not MkLevel inventory, use cached height
-                        int cachedHeight = net.felix.features.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
+                        int cachedHeight = net.felix.utilities.Aincraft.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
                         if (cachedHeight > 0) {
                             return cachedHeight;
                         }
@@ -123,7 +123,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
                     }
                 } else {
                     // Not a AbstractContainerScreen, use cached height
-                    int cachedHeight = net.felix.features.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
+                    int cachedHeight = net.felix.utilities.Aincraft.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
                     if (cachedHeight > 0) {
                         return cachedHeight;
                     }
@@ -131,7 +131,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
                 }
             } catch (Exception e) {
                 // Use cached height as fallback
-                int cachedHeight = net.felix.features.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
+                int cachedHeight = net.felix.utilities.Aincraft.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
                 if (cachedHeight > 0) {
                     return cachedHeight;
                 }
@@ -148,7 +148,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
                 return height;
             } catch (Exception e) {
                 // Use cached height as fallback
-                int cachedHeight = net.felix.features.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
+                int cachedHeight = net.felix.utilities.Aincraft.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
                 if (cachedHeight > 0) {
                     return cachedHeight;
                 }
@@ -156,7 +156,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
         }
         
         // Final fallback: use cached height or default
-        int cachedHeight = net.felix.features.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
+        int cachedHeight = net.felix.utilities.Aincraft.information.mklevel.MkLevelState.getMkLevelLastKnownHeight();
         if (cachedHeight > 0) {
             return cachedHeight;
         }

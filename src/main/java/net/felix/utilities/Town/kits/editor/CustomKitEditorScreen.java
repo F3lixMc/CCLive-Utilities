@@ -2,14 +2,14 @@ package net.felix.utilities.Town.kits.editor;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import java.util.Collections;
-import net.felix.features.itemviewer.data.ItemCatalog;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.kit.KitEditorMode;
-import net.felix.features.itemviewer.search.SearchFieldState;
-import net.felix.features.itemviewer.tooltip.ItemTooltipBuilder;
-import net.felix.features.itemviewer.ui.FilterOverlayControls;
-import net.felix.features.itemviewer.ui.ViewerInputHandler;
-import net.felix.features.itemviewer.ui.ViewerState;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemCatalog;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.itemviewer.kit.KitEditorMode;
+import net.felix.utilities.Aincraft.itemviewer.search.SearchFieldState;
+import net.felix.utilities.Aincraft.itemviewer.tooltip.ItemTooltipBuilder;
+import net.felix.utilities.Aincraft.itemviewer.ui.FilterOverlayControls;
+import net.felix.utilities.Aincraft.itemviewer.ui.ViewerInputHandler;
+import net.felix.utilities.Aincraft.itemviewer.ui.ViewerState;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping;
 import net.felix.utilities.Town.kits.data.CustomKit;
 import net.felix.utilities.Town.kits.data.CustomKitManager;
@@ -603,7 +603,7 @@ public class CustomKitEditorScreen extends Screen {
             return super.mouseClicked(event, doubled);
         }
 
-        if (net.felix.features.itemviewer.filtermenu.FilterMenu.isOpen()) {
+        if (net.felix.utilities.Aincraft.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (FilterOverlayControls.handleFilterOverlayClick(mouseX, mouseY, button)) {
                 return true;
             }
@@ -695,7 +695,7 @@ public class CustomKitEditorScreen extends Screen {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
-        if (net.felix.features.itemviewer.filtermenu.FilterMenu.isOpen()) {
+        if (net.felix.utilities.Aincraft.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (FilterOverlayControls.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 return true;
             }

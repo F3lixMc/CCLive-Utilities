@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.chat.ChatTooltipLine;
-import net.felix.features.itemviewer.data.ItemData;
+import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
 
 /**
  * Kompakte Persistenz für Original-Share-Items (Modell, CMD, Tooltip).

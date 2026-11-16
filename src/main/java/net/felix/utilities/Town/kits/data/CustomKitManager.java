@@ -449,8 +449,8 @@ public final class CustomKitManager {
         obj.add("equipmentEntries", arr);
     }
 
-    private static List<net.felix.features.itemviewer.data.ItemData> readItemDataList(JsonObject obj, String key) {
-        List<net.felix.features.itemviewer.data.ItemData> out = new ArrayList<>();
+    private static List<net.felix.utilities.Aincraft.itemviewer.data.ItemData> readItemDataList(JsonObject obj, String key) {
+        List<net.felix.utilities.Aincraft.itemviewer.data.ItemData> out = new ArrayList<>();
         if (obj == null || !obj.has(key) || !obj.get(key).isJsonArray()) {
             return out;
         }
@@ -462,12 +462,12 @@ public final class CustomKitManager {
         return out;
     }
 
-    private static void writeItemDataList(JsonObject obj, String key, List<net.felix.features.itemviewer.data.ItemData> items) {
+    private static void writeItemDataList(JsonObject obj, String key, List<net.felix.utilities.Aincraft.itemviewer.data.ItemData> items) {
         if (items == null || items.isEmpty()) {
             return;
         }
         JsonArray arr = new JsonArray();
-        for (net.felix.features.itemviewer.data.ItemData item : items) {
+        for (net.felix.utilities.Aincraft.itemviewer.data.ItemData item : items) {
             JsonObject json = KitItemDataIo.toJson(item);
             if (json != null) {
                 arr.add(json);
