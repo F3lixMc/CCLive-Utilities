@@ -1,5 +1,6 @@
 package net.felix.features.itemviewer.tooltip;
 
+import java.util.ArrayList;
 import java.util.List;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.data.ItemInfo;
@@ -60,350 +61,347 @@ public final class ItemTooltipBuilder {
 
     public static List<Component> buildTooltipLines(ItemData hoveredItem, ItemStack itemStack, Minecraft client,
             boolean includeInteractionHints, boolean includeCosts) {
-                java.util.List<Component> tooltipLines = new java.util.ArrayList<>();
-                try {
-                    tooltipLines.add(itemStack.getHoverName());
-                    
-                    // Wenn Advanced Tooltips aktiv sind, füge Item-ID hinzu
-                    if (client.options.advancedItemTooltips) {
-                        tooltipLines.add(Component.literal(itemStack.getItem().toString())
-                            .setStyle(Style.EMPTY.withColor(0xFF808080)));
-                    }
-                } catch (Exception e) {
-                    // Fallback: Nur Item-Name
-                    tooltipLines.add(itemStack.getHoverName());
-                }
-                
-                // Leere Zeile zwischen Name und Tooltip
-                tooltipLines.add(Component.empty());
+        List<Component> tooltipLines = new ArrayList<>();
+        appendNameLines(tooltipLines, itemStack, client);
 
-                if ("fishing_components".equals(hoveredItem.category)) {
-                    appendFoundAtLocationLines(tooltipLines, hoveredItem);
-                }
-                
-                // Zusätzliche Informationen aus ItemInfo und anderen Daten
-                if (hoveredItem.info != null) {
-                    ItemInfo info = hoveredItem.info;
+        // Leere Zeile zwischen Name und Tooltip
+        tooltipLines.add(Component.empty());
 
-                    if ("fish_traps".equals(hoveredItem.category) || Boolean.TRUE.equals(info.fish_trap)) {
-                        appendFishTrapTooltipLines(tooltipLines, hoveredItem, info, includeInteractionHints, includeCosts);
-                        return tooltipLines;
-                    }
-                    
-                    // Power Crystals haben ein spezielles Format
-                    if (info.power_crystal != null && info.power_crystal) {
-                        // Power Crystal Format:
-                        // 1. Description (weiß)
-                        // 2. Leere Zeile
-                        // 3. level_info Zeilen (aqua)
-                        // 4. first_upgrade (dark_aqua)
-                        
-                        // Description (weiß, nicht kursiv) - mit Zeilenumbruch bei "Spieler," oder "Owyn," und \n Unterstützung
-                        if (info.description != null && !info.description.isEmpty()) {
-                            String description = info.description;
-                            
-                            // Unterstütze \n Zeilenumbrüche
-                            if (description.contains("\n")) {
-                                // Teile bei \n und rendere jede Zeile separat
-                                String[] lines = description.split("\n");
-                                for (String line : lines) {
-                                    // Auch leere Zeilen rendern (für Absätze)
-                                    tooltipLines.add(Component.literal(line)
-                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                }
-                            } else {
-                                // Kein \n vorhanden - prüfe ob "Spieler," oder "Owyn," vorhanden ist und teile dort
-                                String splitMarker = null;
-                                if (description.contains("Spieler,")) {
-                                    splitMarker = "Spieler,";
-                                } else if (description.contains("Owyn,")) {
-                                    splitMarker = "Owyn,";
-                                }
-                                
-                                if (splitMarker != null) {
-                                    String[] parts = description.split(splitMarker, 2);
-                                    if (parts.length == 2) {
-                                        // Erste Zeile: Teil vor Split-Marker + Split-Marker
-                                        tooltipLines.add(Component.literal(parts[0] + splitMarker)
-                                            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                        // Zweite Zeile: Teil nach Split-Marker (trim, um führende Leerzeichen zu entfernen)
-                                        String secondPart = parts[1].trim();
-                                        if (!secondPart.isEmpty()) {
-                                            tooltipLines.add(Component.literal(secondPart)
-                                                .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                        }
-                                    } else {
-                                        // Fallback: normale Anzeige
-                                        tooltipLines.add(Component.literal(description)
-                                            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                    }
-                                } else {
-                                    // Kein Split-Marker gefunden - normale Anzeige
-                                    tooltipLines.add(Component.literal(description)
-                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                }
-                            }
-                        }
-                        
-                        // Leere Zeile nach Description
-                        tooltipLines.add(Component.empty());
-                        
-                        // level_info (aqua, nicht kursiv)
-                        if (info.level_info != null && !info.level_info.isEmpty()) {
-                            for (String levelLine : info.level_info) {
-                                if (levelLine != null && !levelLine.isEmpty()) {
-                                    tooltipLines.add(Component.literal(levelLine)
-                                        .setStyle(Style.EMPTY.withColor(0xFF00FFFF).withItalic(false))); // aqua
-                                }
-                            }
-                        }
-                        
-                        // first_upgrade (dark_aqua, nicht kursiv)
-                        if (info.first_upgrade != null && !info.first_upgrade.isEmpty()) {
-                            tooltipLines.add(Component.literal(info.first_upgrade)
-                                .setStyle(Style.EMPTY.withColor(0xFF00AAAA).withItalic(false))); // dark_aqua
-                        }
-                        
-                        // Kosten für Power Crystal Slots (nach first_upgrade)
-                        appendPriceSection(tooltipLines, hoveredItem, true, includeCosts);
-                        
-                        // Forschungs Zeit separat anzeigen (gelb Header, dann grün)
-                        if (hoveredItem.time != null && hoveredItem.time.hours != null) {
-                            // Leere Zeile zwischen Kosten und Forschungs Zeit
-                            tooltipLines.add(Component.empty());
-                            tooltipLines.add(Component.literal("Forschungs Zeit:")
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false))); // yellow
-                            
-                            // Formatiere Zeit: hoursh
-                            String timeAmount = formatAmount(hoveredItem.time.hours);
-                            String timeText = timeAmount + "h";
-                            tooltipLines.add(Component.literal(timeText)
-                                .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false))); // green
-                        }
-                        
-                        // Leere Zeilen am Ende
-                        tooltipLines.add(Component.empty());
-                        tooltipLines.add(Component.empty());
-                    } else {
-                        // Normales Format für Blueprints/Module/etc.
-                        
-                        // Description (weiß, nicht kursiv) - mit Zeilenumbrüchen unterstützen
-                        // Wird für Module/Modulbags/Abilities angezeigt, nicht für Power Crystals (die haben ihr eigenes Format)
-                        boolean hasDescOrUpdateInfo = false;
-                        if (info.description != null && !info.description.isEmpty()) {
-                            String description = info.description;
-                            // Unterstütze Zeilenumbrüche (\n)
-                            String[] lines = description.split("\n");
-                            for (String line : lines) {
-                                // Auch leere Zeilen rendern (für Absätze bei \n\n)
-                                tooltipLines.add(Component.literal(line)
-                                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                            }
-                            hasDescOrUpdateInfo = true;
-                        }
-                        
-                        // Leere Zeile zwischen Description und Update-Info
-                        if (info.description != null && !info.description.isEmpty() && 
-                            info.update_info != null) {
-                            // Prüfe ob update_info nicht leer ist
-                            boolean hasUpdateInfo = false;
-                            if (info.update_info instanceof String) {
-                                hasUpdateInfo = !((String) info.update_info).isEmpty();
-                            } else if (info.update_info instanceof List) {
-                                hasUpdateInfo = !((List<?>) info.update_info).isEmpty();
-                            }
-                            if (hasUpdateInfo) {
-                                tooltipLines.add(Component.empty());
-                            }
-                        }
-                        
-                        // Update-Info (z.B. für Autoschmelzer) direkt unter der Description, Farbe #55FFFF
-                        if (info.update_info != null) {
-                            List<String> updateLines = new java.util.ArrayList<>();
-                            
-                            // Unterstütze sowohl String (mit \n getrennt) als auch List<String>
-                            if (info.update_info instanceof String) {
-                                String updateInfoStr = (String) info.update_info;
-                                if (!updateInfoStr.isEmpty()) {
-                                    String[] lines = updateInfoStr.split("\n");
-                                    for (String line : lines) {
-                                        if (!line.isEmpty()) {
-                                            updateLines.add(line);
-                                        }
-                                    }
-                                }
-                            } else if (info.update_info instanceof List) {
-                                @SuppressWarnings("unchecked")
-                                List<String> updateInfoList = (List<String>) info.update_info;
-                                for (String line : updateInfoList) {
-                                    if (line != null && !line.isEmpty()) {
-                                        updateLines.add(line);
-                                    }
-                                }
-                            }
-                            
-                            // Rendere alle Zeilen in Aqua-Farbe
-                            if (!updateLines.isEmpty()) {
-                                for (String line : updateLines) {
-                                    tooltipLines.add(Component.literal(line)
-                                        .setStyle(Style.EMPTY.withColor(0xFF55FFFF).withItalic(false)));
-                                }
-                                hasDescOrUpdateInfo = true;
-                            }
-                        }
-                        
-                        // Leere Zeile nach Description/Update-Info Block
-                        if (hasDescOrUpdateInfo) {
-                            tooltipLines.add(Component.empty());
-                        }
-                        
-                        // Typ und Piece (weiß, nicht kursiv)
-                        // Format: "type - piece" wenn beide vorhanden, sonst nur das vorhandene
-                        boolean hasType = info.type != null && !info.type.isEmpty();
-                        boolean hasPiece = info.piece != null && !info.piece.isEmpty();
-                        
-                        if (hasType || hasPiece) {
-                            String typePieceText;
-                            if (hasType && hasPiece) {
-                                typePieceText = info.type + " - " + info.piece;
-                            } else if (hasType) {
-                                typePieceText = info.type;
-                            } else {
-                                typePieceText = info.piece;
-                            }
-                            tooltipLines.add(Component.literal(typePieceText)
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                        }
-                    
-                    // Stats (weiß, nicht kursiv)
-                    // Unterstützt sowohl String als auch Array von Strings
-                    if (info.stats != null) {
-                        if (info.stats instanceof String) {
-                            String statsStr = (String) info.stats;
-                            if (!statsStr.isEmpty()) {
-                                tooltipLines.add(Component.literal(statsStr)
-                                    .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                            }
-                        } else if (info.stats instanceof List) {
-                            @SuppressWarnings("unchecked")
-                            List<Object> statsList = (List<Object>) info.stats;
-                            for (Object statObj : statsList) {
-                                if (statObj != null) {
-                                    String statLine = statObj.toString();
-                                    if (!statLine.isEmpty()) {
-                                        tooltipLines.add(Component.literal(statLine)
-                                            .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Level/Collection (aus foundAt) – bei Angel-Komponenten bereits oben nach dem Namen
-                    if (!"fishing_components".equals(hoveredItem.category)) {
-                        appendFoundAtLocationLines(tooltipLines, hoveredItem, false);
-                    }
-                    
-                    // Leere Zeile als Trenner (vor Aspekt)
-                    tooltipLines.add(Component.empty());
-                    
-                    // Aspekt (nur wenn aspect == true oder nicht leer)
-                    // Der Benutzer möchte "aspect": true/false in der JSON verwenden
-                    // Für Rückwärtskompatibilität prüfen wir auch, ob aspect nicht leer ist
-                    boolean hasAspect = false;
-                    if (info.aspect != null && !info.aspect.isEmpty()) {
-                        // Wenn aspect "true" ist oder nicht "false", dann hat es einen Aspekt
-                        if (!"false".equalsIgnoreCase(info.aspect)) {
-                            hasAspect = true;
-                        }
-                    }
-                    
-                    // Aspekt (nur wenn aspect == true, kommt nach Level, vor Modifier)
-                    if (hasAspect) {
-                        // Hole Aspekt-Info für diesen Blueprint
-                        net.felix.features.information.aspects.AspectInfo aspectInfo = 
-                            net.felix.features.information.aspects.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
-                        
-                        if (aspectInfo != null && aspectInfo.aspectName != null && !aspectInfo.aspectName.isEmpty()) {
-                            // "Aspekt: AspektName" - "Aspekt:" in Gelb, AspektName in Orange/Gold (wie in AspectOverlay)
-                            MutableComponent aspectText = Component.literal("Aspekt: ")
-                                .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)); // yellow
-                            aspectText.append(Component.literal(aspectInfo.aspectName)
-                                .setStyle(Style.EMPTY.withColor(0xFFFCA800).withItalic(false))); // orange/gold (aggressiver, wie in AspectOverlay)
-                            tooltipLines.add(aspectText);
-                            
-                            // "(Shift für mehr Info)" - ohne Einrückung, hellgrau
-                            tooltipLines.add(Component.literal("(Shift für mehr Info)")
-                                .setStyle(Style.EMPTY.withColor(0xFFCCCCCC).withItalic(false)));
-                            
-                            // Leere Zeile nach Aspekt (vor Modifier)
-                            tooltipLines.add(Component.empty());
-                        }
-                    }
-                    
-                    // Modifier (jeder Modifier-Typ hat seine eigene Farbe, jeder auf eigener Zeile)
-                    // Format: ⦁ [ModifierX] - nur ModifierX hat die Farbe, Rest ist weiß
-                    // Kommt nach Aspekt, vor Status
-                    if (info.modifier != null && !info.modifier.isEmpty()) {
-                        boolean fishingComponent = "fishing_components".equals(hoveredItem.category);
-                        for (String modifier : info.modifier) {
-                            if (modifier != null && !modifier.isEmpty()) {
-                                if (fishingComponent) {
-                                    tooltipLines.add(buildFishingComponentModifierText(modifier));
-                                } else {
-                                    int modifierColor = getModifierColor(modifier);
-                                    
-                                    // Erstelle Text im Format: ⦁ [ModifierX]
-                                    MutableComponent modifierText = Component.literal("⦁")
-                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false)); // weiß
-                                    modifierText.append(Component.literal(" [")
-                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false))); // weiß
-                                    modifierText.append(Component.literal(modifier)
-                                        .setStyle(Style.EMPTY.withColor(modifierColor).withItalic(false))); // Modifier-Farbe
-                                    modifierText.append(Component.literal("]")
-                                        .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false))); // weiß
-                                    
-                                    tooltipLines.add(modifierText);
-                                }
-                            }
-                        }
-                        // Leere Zeile nach Modifier (vor Status)
-                        tooltipLines.add(Component.empty());
-                    }
-                    
-                    // Status (gelb Header, dann grün/rot für gefunden/nicht gefunden)
-                    // Nur für Blueprints anzeigen, nicht für Module/Modulbags
-                    if (info.blueprint != null && info.blueprint) {
-                        boolean isFound = isItemFound(hoveredItem);
-                        MutableComponent statusText = Component.literal("Status:")
-                            .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)); // yellow
-                        statusText.append(Component.literal(" ")
-                            .setStyle(Style.EMPTY.withItalic(false)));
-                        if (isFound) {
-                            statusText.append(Component.literal("[Gefunden]")
-                                .setStyle(Style.EMPTY.withColor(0xFF00FF00).withItalic(false))); // green
-                        } else {
-                            statusText.append(Component.literal("[Nicht Gefunden]")
-                                .setStyle(Style.EMPTY.withColor(0xFFFF5555).withItalic(false))); // red (less aggressive)
-                        }
-                        tooltipLines.add(statusText);
-                        
-                        if (includeCosts && ViewerState.isShowCosts()) {
-                            tooltipLines.add(Component.empty());
-                        }
-                    }
-                    
-                    appendPriceSection(tooltipLines, hoveredItem, false, includeCosts);
-                    appendBlueprintShopSection(tooltipLines, hoveredItem, includeCosts);
-                    
-                    if (includeInteractionHints) {
-                        appendInteractionHints(tooltipLines, hoveredItem, info);
-                    }
-                    }
-                }
-                return tooltipLines;
+        if ("fishing_components".equals(hoveredItem.category)) {
+            appendFoundAtLocationLines(tooltipLines, hoveredItem);
+        }
+
+        // Zusätzliche Informationen aus ItemInfo und anderen Daten
+        if (hoveredItem.info == null) {
+            return tooltipLines;
+        }
+        ItemInfo info = hoveredItem.info;
+
+        if ("fish_traps".equals(hoveredItem.category) || Boolean.TRUE.equals(info.fish_trap)) {
+            appendFishTrapTooltipLines(tooltipLines, hoveredItem, info, includeInteractionHints, includeCosts);
+            return tooltipLines;
+        }
+
+        if (info.power_crystal != null && info.power_crystal) {
+            appendPowerCrystalLines(tooltipLines, hoveredItem, info, includeCosts);
+        } else {
+            appendStandardLines(tooltipLines, hoveredItem, info, includeInteractionHints, includeCosts);
+        }
+        return tooltipLines;
     }
 
+    /** Textzeile in der angegebenen Farbe, nicht kursiv. */
+    private static MutableComponent styledLine(String text, int color) {
+        return Component.literal(text).setStyle(Style.EMPTY.withColor(color).withItalic(false));
+    }
+
+    /** Item-Name; bei aktiven Advanced Tooltips zusätzlich die Item-ID in Grau. */
+    private static void appendNameLines(List<Component> tooltipLines, ItemStack itemStack, Minecraft client) {
+        try {
+            tooltipLines.add(itemStack.getHoverName());
+
+            if (client.options.advancedItemTooltips) {
+                tooltipLines.add(Component.literal(itemStack.getItem().toString())
+                        .setStyle(Style.EMPTY.withColor(0xFF808080)));
+            }
+        } catch (Exception e) {
+            // Fallback: Nur Item-Name
+            tooltipLines.add(itemStack.getHoverName());
+        }
+    }
+
+    /**
+     * Power Crystals haben ein spezielles Format: Beschreibung (weiß), Leerzeile, level_info (aqua),
+     * first_upgrade (dark_aqua), Kosten und Forschungszeit.
+     */
+    private static void appendPowerCrystalLines(List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info,
+            boolean includeCosts) {
+        if (info.description != null && !info.description.isEmpty()) {
+            appendPowerCrystalDescription(tooltipLines, info.description);
+        }
+
+        // Leere Zeile nach Description
+        tooltipLines.add(Component.empty());
+
+        if (info.level_info != null && !info.level_info.isEmpty()) {
+            for (String levelLine : info.level_info) {
+                if (levelLine != null && !levelLine.isEmpty()) {
+                    tooltipLines.add(styledLine(levelLine, 0xFF00FFFF)); // aqua
+                }
+            }
+        }
+
+        if (info.first_upgrade != null && !info.first_upgrade.isEmpty()) {
+            tooltipLines.add(styledLine(info.first_upgrade, 0xFF00AAAA)); // dark_aqua
+        }
+
+        // Kosten für Power Crystal Slots (nach first_upgrade)
+        appendPriceSection(tooltipLines, hoveredItem, true, includeCosts);
+
+        // Forschungs Zeit separat anzeigen (gelb Header, dann grün)
+        if (hoveredItem.time != null && hoveredItem.time.hours != null) {
+            // Leere Zeile zwischen Kosten und Forschungs Zeit
+            tooltipLines.add(Component.empty());
+            tooltipLines.add(styledLine("Forschungs Zeit:", 0xFFFFFF00)); // yellow
+            tooltipLines.add(styledLine(formatAmount(hoveredItem.time.hours) + "h", 0xFF55FF55)); // green
+        }
+
+        // Leere Zeilen am Ende
+        tooltipLines.add(Component.empty());
+        tooltipLines.add(Component.empty());
+    }
+
+    /**
+     * Beschreibung eines Power Crystals (weiß): Zeilenumbrüche bei "\n", sonst Umbruch nach
+     * "Spieler," oder "Owyn,", falls vorhanden.
+     */
+    private static void appendPowerCrystalDescription(List<Component> tooltipLines, String description) {
+        if (description.contains("\n")) {
+            // Jede Zeile separat, auch leere (für Absätze)
+            for (String line : description.split("\n")) {
+                tooltipLines.add(styledLine(line, 0xFFFFFFFF));
+            }
+            return;
+        }
+
+        String splitMarker = null;
+        if (description.contains("Spieler,")) {
+            splitMarker = "Spieler,";
+        } else if (description.contains("Owyn,")) {
+            splitMarker = "Owyn,";
+        }
+
+        String[] parts = splitMarker != null ? description.split(splitMarker, 2) : null;
+        if (parts == null || parts.length != 2) {
+            // Kein (passender) Split-Marker: normale Anzeige
+            tooltipLines.add(styledLine(description, 0xFFFFFFFF));
+            return;
+        }
+
+        // Erste Zeile: Teil vor Split-Marker + Split-Marker
+        tooltipLines.add(styledLine(parts[0] + splitMarker, 0xFFFFFFFF));
+        // Zweite Zeile: Teil nach Split-Marker (trim, um führende Leerzeichen zu entfernen)
+        String secondPart = parts[1].trim();
+        if (!secondPart.isEmpty()) {
+            tooltipLines.add(styledLine(secondPart, 0xFFFFFFFF));
+        }
+    }
+
+    /** Normales Format für Blueprints, Module usw. */
+    private static void appendStandardLines(List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info,
+            boolean includeInteractionHints, boolean includeCosts) {
+        boolean hasDescOrUpdateInfo = appendDescriptionAndUpdateInfo(tooltipLines, info);
+
+        // Leere Zeile nach Description/Update-Info Block
+        if (hasDescOrUpdateInfo) {
+            tooltipLines.add(Component.empty());
+        }
+
+        appendTypeAndPiece(tooltipLines, info);
+        appendStats(tooltipLines, info);
+
+        // Level/Collection (aus foundAt) – bei Angel-Komponenten bereits oben nach dem Namen
+        if (!"fishing_components".equals(hoveredItem.category)) {
+            appendFoundAtLocationLines(tooltipLines, hoveredItem, false);
+        }
+
+        // Leere Zeile als Trenner (vor Aspekt)
+        tooltipLines.add(Component.empty());
+
+        appendAspectLines(tooltipLines, hoveredItem, info);
+        appendModifierLines(tooltipLines, hoveredItem, info);
+        appendStatusLines(tooltipLines, hoveredItem, info, includeCosts);
+
+        appendPriceSection(tooltipLines, hoveredItem, false, includeCosts);
+        appendBlueprintShopSection(tooltipLines, hoveredItem, includeCosts);
+
+        if (includeInteractionHints) {
+            appendInteractionHints(tooltipLines, hoveredItem, info);
+        }
+    }
+
+    /**
+     * Description (weiß, mit Zeilenumbrüchen), danach Update-Info (z.B. für Autoschmelzer, Farbe #55FFFF).
+     * Description wird für Module/Modulbags/Abilities angezeigt.
+     *
+     * @return true, wenn mindestens eine Description- oder Update-Info-Zeile ausgegeben wurde
+     */
+    private static boolean appendDescriptionAndUpdateInfo(List<Component> tooltipLines, ItemInfo info) {
+        boolean hasDescOrUpdateInfo = false;
+        boolean hasDescription = info.description != null && !info.description.isEmpty();
+        if (hasDescription) {
+            // Auch leere Zeilen rendern (für Absätze bei \n\n)
+            for (String line : info.description.split("\n")) {
+                tooltipLines.add(styledLine(line, 0xFFFFFFFF));
+            }
+            hasDescOrUpdateInfo = true;
+        }
+
+        if (info.update_info == null) {
+            return hasDescOrUpdateInfo;
+        }
+        List<String> updateLines = collectUpdateInfoLines(info.update_info);
+
+        // Leere Zeile zwischen Description und Update-Info
+        if (hasDescription && isUpdateInfoNotEmpty(info.update_info)) {
+            tooltipLines.add(Component.empty());
+        }
+
+        if (!updateLines.isEmpty()) {
+            for (String line : updateLines) {
+                tooltipLines.add(styledLine(line, 0xFF55FFFF));
+            }
+            hasDescOrUpdateInfo = true;
+        }
+        return hasDescOrUpdateInfo;
+    }
+
+    private static boolean isUpdateInfoNotEmpty(Object updateInfo) {
+        if (updateInfo instanceof String) {
+            return !((String) updateInfo).isEmpty();
+        }
+        if (updateInfo instanceof List) {
+            return !((List<?>) updateInfo).isEmpty();
+        }
+        return false;
+    }
+
+    /** Update-Info kann ein String (mit \n getrennt) oder eine Liste von Strings sein; leere Zeilen entfallen. */
+    private static List<String> collectUpdateInfoLines(Object updateInfo) {
+        List<String> updateLines = new ArrayList<>();
+        if (updateInfo instanceof String) {
+            String updateInfoStr = (String) updateInfo;
+            if (!updateInfoStr.isEmpty()) {
+                for (String line : updateInfoStr.split("\n")) {
+                    if (!line.isEmpty()) {
+                        updateLines.add(line);
+                    }
+                }
+            }
+        } else if (updateInfo instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> updateInfoList = (List<String>) updateInfo;
+            for (String line : updateInfoList) {
+                if (line != null && !line.isEmpty()) {
+                    updateLines.add(line);
+                }
+            }
+        }
+        return updateLines;
+    }
+
+    /** Typ und Piece (weiß): "type - piece" wenn beide vorhanden, sonst nur das vorhandene. */
+    private static void appendTypeAndPiece(List<Component> tooltipLines, ItemInfo info) {
+        boolean hasType = info.type != null && !info.type.isEmpty();
+        boolean hasPiece = info.piece != null && !info.piece.isEmpty();
+        if (!hasType && !hasPiece) {
+            return;
+        }
+        String typePieceText;
+        if (hasType && hasPiece) {
+            typePieceText = info.type + " - " + info.piece;
+        } else if (hasType) {
+            typePieceText = info.type;
+        } else {
+            typePieceText = info.piece;
+        }
+        tooltipLines.add(styledLine(typePieceText, 0xFFFFFFFF));
+    }
+
+    /** Stats (weiß); unterstützt sowohl einen String als auch eine Liste. */
+    private static void appendStats(List<Component> tooltipLines, ItemInfo info) {
+        if (info.stats instanceof String) {
+            String statsStr = (String) info.stats;
+            if (!statsStr.isEmpty()) {
+                tooltipLines.add(styledLine(statsStr, 0xFFFFFFFF));
+            }
+        } else if (info.stats instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Object> statsList = (List<Object>) info.stats;
+            for (Object statObj : statsList) {
+                if (statObj != null) {
+                    String statLine = statObj.toString();
+                    if (!statLine.isEmpty()) {
+                        tooltipLines.add(styledLine(statLine, 0xFFFFFFFF));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Aspekt (nach Level, vor Modifier). Ein Item hat einen Aspekt, wenn "aspect" nicht leer und nicht "false" ist
+     * (rückwärtskompatibel zu "aspect": true/false in der JSON).
+     */
+    private static void appendAspectLines(List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info) {
+        boolean hasAspect = info.aspect != null && !info.aspect.isEmpty() && !"false".equalsIgnoreCase(info.aspect);
+        if (!hasAspect) {
+            return;
+        }
+        net.felix.features.information.aspects.AspectInfo aspectInfo =
+                net.felix.features.information.aspects.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
+        if (aspectInfo == null || aspectInfo.aspectName == null || aspectInfo.aspectName.isEmpty()) {
+            return;
+        }
+
+        // "Aspekt: AspektName" - "Aspekt:" in Gelb, AspektName in Orange/Gold (wie in AspectOverlay)
+        MutableComponent aspectText = styledLine("Aspekt: ", 0xFFFFFF00); // yellow
+        aspectText.append(styledLine(aspectInfo.aspectName, 0xFFFCA800)); // orange/gold
+        tooltipLines.add(aspectText);
+
+        // "(Shift für mehr Info)" - ohne Einrückung, hellgrau
+        tooltipLines.add(styledLine("(Shift für mehr Info)", 0xFFCCCCCC));
+
+        // Leere Zeile nach Aspekt (vor Modifier)
+        tooltipLines.add(Component.empty());
+    }
+
+    /**
+     * Modifier, jeder auf eigener Zeile im Format "⦁ [ModifierX]": nur ModifierX hat die
+     * Modifier-Farbe, der Rest ist weiß. Kommt nach Aspekt, vor Status.
+     */
+    private static void appendModifierLines(List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info) {
+        if (info.modifier == null || info.modifier.isEmpty()) {
+            return;
+        }
+        boolean fishingComponent = "fishing_components".equals(hoveredItem.category);
+        for (String modifier : info.modifier) {
+            if (modifier == null || modifier.isEmpty()) {
+                continue;
+            }
+            if (fishingComponent) {
+                tooltipLines.add(buildFishingComponentModifierText(modifier));
+                continue;
+            }
+            MutableComponent modifierText = styledLine("⦁", 0xFFFFFFFF);
+            modifierText.append(styledLine(" [", 0xFFFFFFFF));
+            modifierText.append(styledLine(modifier, getModifierColor(modifier)));
+            modifierText.append(styledLine("]", 0xFFFFFFFF));
+            tooltipLines.add(modifierText);
+        }
+        // Leere Zeile nach Modifier (vor Status)
+        tooltipLines.add(Component.empty());
+    }
+
+    /** Status (gelb Header, dann grün/rot für gefunden/nicht gefunden); nur für Blueprints, nicht für Module/Modulbags. */
+    private static void appendStatusLines(List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info,
+            boolean includeCosts) {
+        if (info.blueprint == null || !info.blueprint) {
+            return;
+        }
+        MutableComponent statusText = styledLine("Status:", 0xFFFFFF00); // yellow
+        statusText.append(Component.literal(" ").setStyle(Style.EMPTY.withItalic(false)));
+        if (isItemFound(hoveredItem)) {
+            statusText.append(styledLine("[Gefunden]", 0xFF00FF00)); // green
+        } else {
+            statusText.append(styledLine("[Nicht Gefunden]", 0xFFFF5555)); // red (less aggressive)
+        }
+        tooltipLines.add(statusText);
+
+        if (includeCosts && ViewerState.isShowCosts()) {
+            tooltipLines.add(Component.empty());
+        }
+    }
     public static java.util.List<Component> buildTooltipLinesForItem(ItemData itemData) {
         return buildTooltipLinesForItem(itemData, true);
     }
