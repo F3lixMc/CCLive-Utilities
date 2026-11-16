@@ -4,6 +4,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -101,66 +107,68 @@ public final class HoverEventReader {
 		if (hoverEvent == null) {
 			return null;
 		}
-		
-		HoverEvent.Action action = hoverEvent.action();
-		
 		// Only handle SHOW_TEXT for now
-		if (action != HoverEvent.Action.SHOW_TEXT) {
+		if (hoverEvent.action() != HoverEvent.Action.SHOW_TEXT) {
 			return null;
 		}
-		
-		// Try HoverEvent#getValue(Action) - the official API method
-		try {
-			java.lang.reflect.Method getValueMethod = HoverEvent.class.getDeclaredMethod("getValue", HoverEvent.Action.class);
-			getValueMethod.setAccessible(true);
-			Object value = getValueMethod.invoke(hoverEvent, HoverEvent.Action.SHOW_TEXT);
-			if (value instanceof Component) {
-				return (Component) value;
+
+		Component direct = readTextFromHoverEvent(hoverEvent);
+		if (direct != null) {
+			return direct;
+		}
+
+		// ShowText-Objekt ermitteln und den Text daraus lesen
+		Object showTextValue = getShowTextValue(hoverEvent);
+		if (showTextValue == null) {
+			return null;
+		}
+		// Ist der Wert das HoverEvent selbst, wird er direkt als ShowText ausgelesen
+		if (showTextValue != hoverEvent && showTextValue instanceof HoverEvent nestedEvent) {
+			Component recursiveResult = extractHoverTextFromEvent(nestedEvent);
+			if (recursiveResult != null) {
+				return recursiveResult;
 			}
+		}
+		try {
+			return readTextFromShowText(showTextValue);
 		} catch (Exception e) {
 			// Ignore
+			return null;
 		}
-		
-		// Try method getValue() without parameters (might exist in some versions)
-		try {
-			java.lang.reflect.Method getValueMethod = HoverEvent.class.getDeclaredMethod("getValue");
-			getValueMethod.setAccessible(true);
-			Object value = getValueMethod.invoke(hoverEvent);
-			if (value instanceof Component) {
-				return (Component) value;
-			}
-		} catch (Exception e) {
-			// Ignore
+	}
+
+	// ------------------------------------------------------------------ Text direkt aus dem HoverEvent
+
+	/** Versucht getValue(Action), getValue(), value() und danach alle Instanzfelder des HoverEvents. */
+	private static Component readTextFromHoverEvent(HoverEvent hoverEvent) {
+		Component result = invokeDeclaredForComponent(HoverEvent.class, "getValue", hoverEvent,
+			new Class<?>[] {HoverEvent.Action.class}, HoverEvent.Action.SHOW_TEXT);
+		if (result == null) {
+			result = invokeDeclaredForComponent(HoverEvent.class, "getValue", hoverEvent, new Class<?>[0]);
 		}
-		
-		// Try method value() (for records)
-		try {
-			java.lang.reflect.Method valueMethod = HoverEvent.class.getDeclaredMethod("value");
-			valueMethod.setAccessible(true);
-			Object value = valueMethod.invoke(hoverEvent);
-			if (value instanceof Component) {
-				return (Component) value;
-			}
-		} catch (Exception e) {
-			// Ignore
+		if (result == null) {
+			result = invokeDeclaredForComponent(HoverEvent.class, "value", hoverEvent, new Class<?>[0]);
 		}
-		
-		// Try reading all fields in HoverEvent
+		if (result == null) {
+			result = readComponentFromHoverEventFields(hoverEvent);
+		}
+		return result;
+	}
+
+	/** Erster Component-Wert der Instanzfelder vom Typ Component oder Object. */
+	private static Component readComponentFromHoverEventFields(HoverEvent hoverEvent) {
 		try {
-			java.lang.reflect.Field[] fields = HoverEvent.class.getDeclaredFields();
-			for (java.lang.reflect.Field field : fields) {
-				// Skip static fields
-				if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+			for (Field field : HoverEvent.class.getDeclaredFields()) {
+				if (Modifier.isStatic(field.getModifiers())) {
 					continue;
 				}
-				
 				Class<?> fieldType = field.getType();
 				if (fieldType == Component.class || fieldType == Object.class) {
 					try {
 						field.setAccessible(true);
 						Object value = field.get(hoverEvent);
-						if (value instanceof Component) {
-							return (Component) value;
+						if (value instanceof Component component) {
+							return component;
 						}
 					} catch (Exception e) {
 						// Ignore
@@ -170,367 +178,313 @@ public final class HoverEventReader {
 		} catch (Exception e) {
 			// Ignore
 		}
-		
-		// Try ShowText inner class - FIRST get the ShowText value
-		Object showTextValue = getShowTextValue(hoverEvent);
-		if (showTextValue != null) {
-			// CRITICAL: If showTextValue IS the hoverEvent itself, we need to extract from it directly
-			// Don't recurse, just process it as ShowText
-			if (showTextValue == hoverEvent) {
-				// Continue with extraction below
-			} else if (showTextValue instanceof HoverEvent) {
-				Component recursiveResult = extractHoverTextFromEvent((HoverEvent) showTextValue);
-				if (recursiveResult != null) {
-					return recursiveResult;
+		return null;
+	}
+
+	/** Ruft eine deklarierte Methode auf; liefert das Ergebnis nur, wenn es ein Component ist. */
+	private static Component invokeDeclaredForComponent(Class<?> type, String methodName, Object target,
+														Class<?>[] parameterTypes, Object... args) {
+		try {
+			Method method = type.getDeclaredMethod(methodName, parameterTypes);
+			method.setAccessible(true);
+			Object value = method.invoke(target, args);
+			if (value instanceof Component component) {
+				return component;
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		return null;
+	}
+
+	private static Object invokeDeclared(Class<?> type, String methodName, Object target) throws Exception {
+		Method method = type.getDeclaredMethod(methodName);
+		method.setAccessible(true);
+		return method.invoke(target);
+	}
+
+	// ------------------------------------------------------------------ Text aus dem ShowText-Objekt
+
+	/**
+	 * Liest den Text aus dem ShowText-Objekt. Die Versuche laufen in fester Reihenfolge, der erste Treffer gewinnt:
+	 * Record-Komponenten, Text-Felder, bekannte Accessoren, alle Felder, alle parameterlosen Methoden.
+	 */
+	private static Component readTextFromShowText(Object showTextValue) {
+		Class<?> showTextClass = showTextValue.getClass();
+
+		Component result = readTextFromRecordComponents(showTextClass, showTextValue);
+		if (result == null) {
+			result = readTextFromTextLikeFields(showTextClass, showTextValue);
+		}
+		if (result == null) {
+			result = invokeDeclaredForComponent(showTextClass, "method_10893", showTextValue, new Class<?>[0]);
+		}
+		if (result == null) {
+			result = invokeDeclaredForComponent(showTextClass, "value", showTextValue, new Class<?>[0]);
+		}
+		if (result == null) {
+			result = readTextViaTextAccessors(showTextClass, showTextValue);
+		}
+
+		Field[] fields = showTextClass.getDeclaredFields();
+		if (result == null) {
+			result = readComponentFromAnyField(fields, showTextValue);
+		}
+		if (result == null) {
+			result = readTextFromOtherFields(fields, showTextValue);
+		}
+
+		Method[] declaredMethods = showTextClass.getDeclaredMethods();
+		if (result == null) {
+			result = readTextFromMethods(declaredMethods, showTextValue);
+		}
+		if (result == null) {
+			result = readTextFromInheritedMethods(showTextClass, declaredMethods, showTextValue);
+		}
+		return result;
+	}
+
+	/** Frisch kopierter Text; schlägt das Kopieren fehl, wird das Original zurückgegeben. */
+	private static Component copyOrOriginal(Component text) {
+		try {
+			return text.copy();
+		} catch (Exception e) {
+			return text;
+		}
+	}
+
+	private static Component readTextFromRecordComponents(Class<?> showTextClass, Object showTextValue) {
+		if (!showTextClass.isRecord()) {
+			return null;
+		}
+		try {
+			for (RecordComponent component : showTextClass.getRecordComponents()) {
+				try {
+					Object value = component.getAccessor().invoke(showTextValue);
+					if (value instanceof Component text) {
+						return copyOrOriginal(text);
+					}
+				} catch (Exception e) {
+					// Ignore
 				}
 			}
-			
-			try {
-				Class<?> showTextClass = showTextValue.getClass();
-				
-				// CRITICAL: Check if ShowText is a Record and extract via Record components
-				if (showTextClass.isRecord()) {
-					try {
-						java.lang.reflect.RecordComponent[] components = showTextClass.getRecordComponents();
-						for (java.lang.reflect.RecordComponent component : components) {
-							try {
-								Object value = component.getAccessor().invoke(showTextValue);
-								if (value instanceof Component) {
-									// Found a Text object! Copy it to create a fresh instance
-									try {
-										Component textValue = (Component) value;
-										Component copiedText = textValue.copy();
-										return copiedText;
-									} catch (Exception e) {
-										// If copy fails, return the original
-										return (Component) value;
-									}
-								}
-							} catch (Exception e) {
-								// Ignore
-							}
-						}
-					} catch (Exception e) {
-						// Ignore
-					}
+		} catch (Exception e) {
+			// Ignore
+		}
+		return null;
+	}
+
+	/** Felder vom Typ Component, Object oder "...Text..." (außer String). */
+	private static Component readTextFromTextLikeFields(Class<?> showTextClass, Object showTextValue) {
+		try {
+			for (Field field : showTextClass.getDeclaredFields()) {
+				if (Modifier.isStatic(field.getModifiers())) {
+					continue;
 				}
-				
-				// CRITICAL: Try to find the Component object and serialize/deserialize it
-				// This is the key approach: Component → JSON → Text (to get a fresh Text instance)
-				// We need to find the actual Text/Component object first, then serialize/deserialize it
-				try {
-					// Try to find any Text object in the ShowText instance
-					java.lang.reflect.Field[] showTextFields = showTextClass.getDeclaredFields();
-					for (java.lang.reflect.Field field : showTextFields) {
-						if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-							continue;
-						}
-						
-						Class<?> fieldType = field.getType();
-						// Look for fields that might contain a Component (Text or Object that could be Text)
-						if (fieldType == Component.class || fieldType == Object.class || 
-						    (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
-							try {
-								field.setAccessible(true);
-								Object value = field.get(showTextValue);
-								
-								if (value instanceof Component) {
-									// Found a Text object! Copy it to create a fresh instance
-									try {
-										Component textValue = (Component) value;
-										Component copiedText = textValue.copy();
-										return copiedText;
-									} catch (Exception e) {
-										// If copy fails, return the original
-										return (Component) value;
-									}
-								}
-							} catch (Exception e) {
-								// Continue to next field
-							}
-						}
-					}
-				} catch (Exception e) {
-					// Ignore
-				}
-				
-				// CRITICAL: Try method_10893() first - this is the obfuscated method that returns the Text!
-				try {
-					java.lang.reflect.Method method10893 = showTextClass.getDeclaredMethod("method_10893");
-					method10893.setAccessible(true);
-					Object textValue = method10893.invoke(showTextValue);
-					if (textValue instanceof Component) {
-						return (Component) textValue;
-					}
-				} catch (Exception e) {
-					// Ignore
-				}
-				
-				// Try method value() on ShowText (for records)
-				try {
-					java.lang.reflect.Method valueMethod = showTextClass.getDeclaredMethod("value");
-					valueMethod.setAccessible(true);
-					Object textValue = valueMethod.invoke(showTextValue);
-					if (textValue instanceof Component) {
-						return (Component) textValue;
-					}
-				} catch (Exception e) {
-					// Ignore
-				}
-				
-				// Try method text() or getText() on ShowText
-				try {
-					java.lang.reflect.Method textMethod = showTextClass.getDeclaredMethod("text");
-					textMethod.setAccessible(true);
-					Object textValue = textMethod.invoke(showTextValue);
-					if (textValue instanceof Component) {
-						return (Component) textValue;
-					}
-				} catch (Exception e) {
-					// Try getText()
-					try {
-						java.lang.reflect.Method getTextMethod = showTextClass.getDeclaredMethod("getText");
-						getTextMethod.setAccessible(true);
-						Object textValue = getTextMethod.invoke(showTextValue);
-						if (textValue instanceof Component) {
-							return (Component) textValue;
-						}
-					} catch (Exception e2) {
-						// Ignore
-					}
-				}
-				
-				// Try all fields in ShowText (excluding static)
-				java.lang.reflect.Field[] showTextFields = showTextClass.getDeclaredFields();
-				
-				// CRITICAL: Check ALL fields first, including ALL types, to find the Text object
-				for (java.lang.reflect.Field field : showTextFields) {
-					if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-						continue;
-					}
-					
+				Class<?> fieldType = field.getType();
+				if (fieldType == Component.class || fieldType == Object.class || isTextNamedType(fieldType)) {
 					try {
 						field.setAccessible(true);
 						Object value = field.get(showTextValue);
-						
-						// Check if it's Text directly
-						if (value instanceof Component) {
-							Component textValue = (Component) value;
-							try {
-								Component copiedText = textValue.copy();
-								return copiedText;
-							} catch (Exception e) {
-								return textValue;
-							}
+						if (value instanceof Component text) {
+							return copyOrOriginal(text);
 						}
 					} catch (Exception e) {
-						// Ignore
+						// Continue to next field
 					}
 				}
-				
-				// First pass: Check fields with Text type (highest priority)
-				for (java.lang.reflect.Field field : showTextFields) {
-					if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-						continue;
-					}
-					
-					Class<?> fieldType = field.getType();
-					if (fieldType == Component.class || (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
-						try {
-							field.setAccessible(true);
-							Object value = field.get(showTextValue);
-							if (value instanceof Component) {
-								return (Component) value;
-							}
-						} catch (Exception e) {
-							// Ignore
-						}
-					}
+			}
+		} catch (Exception e) {
+			// Ignore
+		}
+		return null;
+	}
+
+	private static boolean isTextNamedType(Class<?> fieldType) {
+		return fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class;
+	}
+
+	/** text(), sonst getText() (getText() nur, wenn text() eine Exception wirft). */
+	private static Component readTextViaTextAccessors(Class<?> showTextClass, Object showTextValue) {
+		try {
+			Object textValue = invokeDeclared(showTextClass, "text", showTextValue);
+			if (textValue instanceof Component text) {
+				return text;
+			}
+		} catch (Exception e) {
+			try {
+				Object textValue = invokeDeclared(showTextClass, "getText", showTextValue);
+				if (textValue instanceof Component text) {
+					return text;
 				}
-				
-				// Second pass: Check ALL fields (including primitives for debugging, but only process non-primitives)
-				// IMPORTANT: We need to check ALL 9 fields to find the Text!
-				for (java.lang.reflect.Field field : showTextFields) {
-					if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-						continue;
-					}
-					
-					Class<?> fieldType = field.getType();
-					
-					// Skip if already checked in first pass
-					if (fieldType == Component.class || (fieldType.getName().contains("Text") && !fieldType.isPrimitive() && fieldType != String.class)) {
-						continue;
-					}
-					
-					// Check all non-primitive fields for Text
-					if (!fieldType.isPrimitive()) {
-						try {
-							field.setAccessible(true);
-							Object value = field.get(showTextValue);
-							
-							// Check if it's Text directly
-							if (value instanceof Component) {
-								return (Component) value;
-							}
-							
-							// Check if it's a String (but skip action names)
-							if (value instanceof String) {
-								String stringValue = (String) value;
-								if (!stringValue.equals("show_text") && !stringValue.equals("<action show_text>") && 
-								    !stringValue.equals("SHOW_TEXT") && !stringValue.isEmpty()) {
-									// Use as literal text
-									return Component.literal(stringValue);
-								}
-							}
-							
-							// Check if it's a List of Text components
-							if (value instanceof java.util.List) {
-								java.util.List<?> list = (java.util.List<?>) value;
-								if (!list.isEmpty() && list.get(0) instanceof Component) {
-									// Combine all Text components into one
-									net.minecraft.network.chat.MutableComponent combined = Component.empty();
-									for (Object item : list) {
-										if (item instanceof Component) {
-											combined.append((Component) item);
-										}
-									}
-									return combined;
-								}
-							}
-							
-							// Check if it's an object that might contain Text (recursive search)
-							if (value != null && !(value instanceof String) && !(value instanceof java.util.List) && 
-							    !value.getClass().isPrimitive() && !value.getClass().getName().startsWith("java.")) {
-								// Try to find Text in nested object
-								try {
-									java.lang.reflect.Field[] nestedFields = value.getClass().getDeclaredFields();
-									for (java.lang.reflect.Field nestedField : nestedFields) {
-										if (java.lang.reflect.Modifier.isStatic(nestedField.getModifiers())) {
-											continue;
-										}
-										if (nestedField.getType() == Component.class) {
-											try {
-												nestedField.setAccessible(true);
-												Object nestedValue = nestedField.get(value);
-												if (nestedValue instanceof Component) {
-													return (Component) nestedValue;
-												}
-											} catch (Exception e) {
-												// Continue
-											}
-										}
-									}
-								} catch (Exception e) {
-									// Continue
-								}
-							}
-						} catch (Exception e) {
-							// Ignore
-						}
-					}
-				}
-				
-				// Try all methods that might return Text (including inherited methods)
-				java.lang.reflect.Method[] showTextMethods = showTextClass.getDeclaredMethods();
-				java.lang.reflect.Method[] allMethods = showTextClass.getMethods();
-				
-				// Try declared methods first
-				for (java.lang.reflect.Method method : showTextMethods) {
-					if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
-						continue;
-					}
-					// Check ALL methods that take no parameters and return non-primitive (including String)
-					if (method.getParameterCount() == 0 && !method.getReturnType().isPrimitive() && method.getReturnType() != Void.TYPE) {
-						try {
-							method.setAccessible(true);
-							Object textValue = method.invoke(showTextValue);
-							if (textValue instanceof Component) {
-								return (Component) textValue;
-							} else if (textValue instanceof String) {
-								// Maybe the text is stored as a String? Use it as literal (but skip action names)
-								String stringValue = (String) textValue;
-								if (!stringValue.equals("show_text") && !stringValue.equals("<action show_text>") && 
-								    !stringValue.equals("SHOW_TEXT") && !stringValue.isEmpty()) {
-									// Use as literal text
-									return Component.literal(stringValue);
-								}
-							} else if (textValue instanceof java.util.List) {
-								// Maybe it's a list of Text components?
-								java.util.List<?> list = (java.util.List<?>) textValue;
-								if (!list.isEmpty() && list.get(0) instanceof Component) {
-									// Combine all Text components into one
-									net.minecraft.network.chat.MutableComponent combined = Component.empty();
-									for (Object item : list) {
-										if (item instanceof Component) {
-											combined.append((Component) item);
-										}
-									}
-									return combined;
-								}
-							}
-						} catch (Exception e) {
-							// Ignore
-						}
-					}
-				}
-				
-				// Also try inherited methods
-				for (java.lang.reflect.Method method : allMethods) {
-					if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
-						continue;
-					}
-					// Skip if already checked in declared methods
-					boolean alreadyChecked = false;
-					for (java.lang.reflect.Method declaredMethod : showTextMethods) {
-						if (declaredMethod.getName().equals(method.getName()) && 
-						    java.util.Arrays.equals(declaredMethod.getParameterTypes(), method.getParameterTypes())) {
-							alreadyChecked = true;
-							break;
-						}
-					}
-					if (alreadyChecked) continue;
-					
-					// Check ALL methods that take no parameters and return non-primitive (including String)
-					if (method.getParameterCount() == 0 && !method.getReturnType().isPrimitive() && method.getReturnType() != Void.TYPE) {
-						try {
-							method.setAccessible(true);
-							Object textValue = method.invoke(showTextValue);
-							if (textValue instanceof Component) {
-								return (Component) textValue;
-							} else if (textValue instanceof String) {
-								// Maybe the text is stored as a String? Use it as literal (but skip action names)
-								String stringValue = (String) textValue;
-								if (!stringValue.equals("show_text") && !stringValue.equals("<action show_text>") && 
-								    !stringValue.equals("SHOW_TEXT") && !stringValue.isEmpty()) {
-									// Use as literal text
-									return Component.literal(stringValue);
-								}
-							} else if (textValue instanceof java.util.List) {
-								// Maybe it's a list of Text components?
-								java.util.List<?> list = (java.util.List<?>) textValue;
-								if (!list.isEmpty() && list.get(0) instanceof Component) {
-									// Combine all Text components into one
-									net.minecraft.network.chat.MutableComponent combined = Component.empty();
-									for (Object item : list) {
-										if (item instanceof Component) {
-											combined.append((Component) item);
-										}
-									}
-									return combined;
-								}
-							}
-						} catch (Exception e) {
-							// Ignore
-						}
-					}
+			} catch (Exception e2) {
+				// Ignore
+			}
+		}
+		return null;
+	}
+
+	/** Alle Instanzfelder: erster Component-Wert (kopiert). */
+	private static Component readComponentFromAnyField(Field[] fields, Object showTextValue) {
+		for (Field field : fields) {
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+			try {
+				field.setAccessible(true);
+				Object value = field.get(showTextValue);
+				if (value instanceof Component text) {
+					return copyOrOriginal(text);
 				}
 			} catch (Exception e) {
 				// Ignore
 			}
 		}
-		
 		return null;
 	}
+
+	/** Übrige Referenzfelder: Component, String, Liste von Components oder ein verschachteltes Objekt mit Component-Feld. */
+	private static Component readTextFromOtherFields(Field[] fields, Object showTextValue) {
+		for (Field field : fields) {
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+			Class<?> fieldType = field.getType();
+			// Component- und Text-Felder wurden bereits geprüft
+			if (fieldType == Component.class || isTextNamedType(fieldType)) {
+				continue;
+			}
+			if (fieldType.isPrimitive()) {
+				continue;
+			}
+			try {
+				field.setAccessible(true);
+				Object value = field.get(showTextValue);
+				Component text = componentFromValue(value);
+				if (text != null) {
+					return text;
+				}
+				text = readComponentFromNestedObject(value);
+				if (text != null) {
+					return text;
+				}
+			} catch (Exception e) {
+				// Ignore
+			}
+		}
+		return null;
+	}
+
+	/** Sucht in einem verschachtelten (nicht-java.*) Objekt nach einem Feld vom Typ Component. */
+	private static Component readComponentFromNestedObject(Object value) {
+		if (value == null || value instanceof String || value instanceof List
+			|| value.getClass().isPrimitive() || value.getClass().getName().startsWith("java.")) {
+			return null;
+		}
+		try {
+			for (Field nestedField : value.getClass().getDeclaredFields()) {
+				if (Modifier.isStatic(nestedField.getModifiers())) {
+					continue;
+				}
+				if (nestedField.getType() == Component.class) {
+					try {
+						nestedField.setAccessible(true);
+						Object nestedValue = nestedField.get(value);
+						if (nestedValue instanceof Component text) {
+							return text;
+						}
+					} catch (Exception e) {
+						// Continue
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Continue
+		}
+		return null;
+	}
+
+	/** Alle parameterlosen, nicht-statischen Methoden der Klasse selbst. */
+	private static Component readTextFromMethods(Method[] methods, Object showTextValue) {
+		for (Method method : methods) {
+			Component text = invokeForComponentValue(method, showTextValue);
+			if (text != null) {
+				return text;
+			}
+		}
+		return null;
+	}
+
+	/** Geerbte Methoden, die nicht schon in den deklarierten Methoden geprüft wurden. */
+	private static Component readTextFromInheritedMethods(Class<?> showTextClass, Method[] declaredMethods,
+														  Object showTextValue) {
+		for (Method method : showTextClass.getMethods()) {
+			if (isDeclaredIn(declaredMethods, method)) {
+				continue;
+			}
+			Component text = invokeForComponentValue(method, showTextValue);
+			if (text != null) {
+				return text;
+			}
+		}
+		return null;
+	}
+
+	private static boolean isDeclaredIn(Method[] declaredMethods, Method method) {
+		for (Method declaredMethod : declaredMethods) {
+			if (declaredMethod.getName().equals(method.getName())
+				&& Arrays.equals(declaredMethod.getParameterTypes(), method.getParameterTypes())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Ruft eine parameterlose, nicht-statische Methode mit Referenz-Rückgabetyp auf und wandelt das Ergebnis in Text um. */
+	private static Component invokeForComponentValue(Method method, Object target) {
+		if (Modifier.isStatic(method.getModifiers())) {
+			return null;
+		}
+		if (method.getParameterCount() != 0 || method.getReturnType().isPrimitive() || method.getReturnType() == Void.TYPE) {
+			return null;
+		}
+		try {
+			method.setAccessible(true);
+			return componentFromValue(method.invoke(target));
+		} catch (Exception e) {
+			// Ignore
+			return null;
+		}
+	}
+
+	/**
+	 * Wandelt einen Wert in Text um: Component direkt, String als Literal (Aktionsnamen und Leerstrings
+	 * ausgenommen), Liste von Components zusammengefügt.
+	 */
+	private static Component componentFromValue(Object value) {
+		if (value instanceof Component text) {
+			return text;
+		}
+		if (value instanceof String stringValue) {
+			if (!stringValue.equals("show_text") && !stringValue.equals("<action show_text>")
+				&& !stringValue.equals("SHOW_TEXT") && !stringValue.isEmpty()) {
+				return Component.literal(stringValue);
+			}
+			return null;
+		}
+		if (value instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Component) {
+			MutableComponent combined = Component.empty();
+			for (Object item : list) {
+				if (item instanceof Component component) {
+					combined.append(component);
+				}
+			}
+			return combined;
+		}
+		return null;
+	}
+
+	// ------------------------------------------------------------------ ShowText-Objekt finden
 
 	/**
 	 * Gets the ShowText value from a HoverEvent
@@ -538,204 +492,140 @@ public final class HoverEventReader {
 	 */
 	private static Object getShowTextValue(HoverEvent hoverEvent) {
 		try {
-			// CRITICAL: In Minecraft 1.21.7, HoverEvent is a sealed interface/class
-			// If the action is SHOW_TEXT, the HoverEvent itself IS the ShowText object!
-			HoverEvent.Action action = hoverEvent.action();
-			if (action == HoverEvent.Action.SHOW_TEXT) {
-				// Check if the HoverEvent itself is a ShowText instance
-				String className = hoverEvent.getClass().getName();
-				if (className.contains("ShowText")) {
-					return hoverEvent;
-				}
-				
-				// Check if it's an inner class of HoverEvent and has a Text constructor (ShowText has this)
-				Class<?> hoverEventClass = hoverEvent.getClass();
-				Class<?> enclosingClass = hoverEventClass.getEnclosingClass();
-				if (enclosingClass == HoverEvent.class || (enclosingClass != null && enclosingClass.getName().contains("HoverEvent"))) {
-					// It's an inner class of HoverEvent - check if it has a constructor that takes Text
-					try {
-						java.lang.reflect.Constructor<?>[] constructors = hoverEventClass.getDeclaredConstructors();
-						for (java.lang.reflect.Constructor<?> constructor : constructors) {
-							Class<?>[] paramTypes = constructor.getParameterTypes();
-							if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
-								return hoverEvent;
-							}
-						}
-					} catch (Exception e) {
-						// Ignore
-					}
-				}
-				
-				// Try to cast it to ShowText by class name
+			// In Minecraft 1.21.7 ist HoverEvent ein sealed interface: bei SHOW_TEXT ist das HoverEvent selbst das ShowText-Objekt
+			if (hoverEvent.action() == HoverEvent.Action.SHOW_TEXT && isShowTextEvent(hoverEvent)) {
+				return hoverEvent;
+			}
+
+			Object value = readValueMethod(hoverEvent);
+			if (value != null) {
+				return value;
+			}
+
+			value = findShowTextInFields(hoverEvent);
+			if (value != null) {
+				return value;
+			}
+			return findShowTextViaMethods(hoverEvent);
+		} catch (Exception e) {
+			// Ignore
+		}
+		return null;
+	}
+
+	/** Das HoverEvent selbst ist ein ShowText (nach Klassenname, innerer Klasse mit Text-Konstruktor oder Klasse aus net.minecraft.text). */
+	private static boolean isShowTextEvent(HoverEvent hoverEvent) {
+		if (isShowTextLike(hoverEvent)) {
+			return true;
+		}
+		try {
+			Class<?> showTextClass = Class.forName("net.minecraft.text.HoverEvent$ShowText");
+			return showTextClass.isInstance(hoverEvent);
+		} catch (Exception e) {
+			// Ignore
+			return false;
+		}
+	}
+
+	/** value() des HoverEvents (für Records), falls vorhanden und nicht null. */
+	private static Object readValueMethod(HoverEvent hoverEvent) {
+		try {
+			return invokeDeclared(HoverEvent.class, "value", hoverEvent);
+		} catch (Exception e) {
+			// Ignore
+			return null;
+		}
+	}
+
+	/** Instanzfelder, deren Wert wie ein ShowText aussieht. */
+	private static Object findShowTextInFields(HoverEvent hoverEvent) {
+		for (Field field : HoverEvent.class.getDeclaredFields()) {
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+			Class<?> fieldType = field.getType();
+			if (fieldType.getName().contains("ShowText") || fieldType == Object.class || !fieldType.isPrimitive()) {
 				try {
-					Class<?> showTextClass = Class.forName("net.minecraft.text.HoverEvent$ShowText");
-					if (showTextClass.isInstance(hoverEvent)) {
-						return hoverEvent;
+					field.setAccessible(true);
+					Object value = field.get(hoverEvent);
+					if (value != null && isShowTextLike(value)) {
+						return value;
 					}
 				} catch (Exception e) {
 					// Ignore
 				}
 			}
-			
-			// Try method value() first (for records)
-			try {
-				java.lang.reflect.Method valueMethod = HoverEvent.class.getDeclaredMethod("value");
-				valueMethod.setAccessible(true);
-				Object value = valueMethod.invoke(hoverEvent);
-				if (value != null) {
-					return value;
-				}
-			} catch (Exception e) {
-				// Ignore
+		}
+		return null;
+	}
+
+	/** Erst Methoden mit ShowText-Rückgabetyp, dann alle parameterlosen Methoden mit ShowText-ähnlichem Ergebnis. */
+	private static Object findShowTextViaMethods(HoverEvent hoverEvent) {
+		Method[] methods = HoverEvent.class.getDeclaredMethods();
+
+		for (Method method : methods) {
+			if (Modifier.isStatic(method.getModifiers()) || method.getName().equals("getAction")) {
+				continue;
 			}
-			
-			// Try all declared fields (excluding static)
-			java.lang.reflect.Field[] fields = HoverEvent.class.getDeclaredFields();
-			for (java.lang.reflect.Field field : fields) {
-				// Skip static fields
-				if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-					continue;
-				}
-				
-				Class<?> fieldType = field.getType();
-				String fieldTypeName = fieldType.getName();
-				
-				if (fieldTypeName.contains("ShowText") || fieldType == Object.class || !fieldType.isPrimitive()) {
-					try {
-						field.setAccessible(true);
-						Object value = field.get(hoverEvent);
-						if (value != null) {
-							// Check if it's a ShowText-like object
-							String className = value.getClass().getName();
-							
-							boolean isShowText = false;
-							if (className.contains("ShowText")) {
-								isShowText = true;
-							} else {
-								// Check if it's an inner class of HoverEvent and assignable to HoverEvent with Text constructor
-								Class<?> valueClass = value.getClass();
-								Class<?> enclosingClass = valueClass.getEnclosingClass();
-								if (enclosingClass == HoverEvent.class || (enclosingClass != null && enclosingClass.getName().contains("HoverEvent"))) {
-									if (HoverEvent.class.isAssignableFrom(valueClass)) {
-										try {
-											java.lang.reflect.Constructor<?>[] constructors = valueClass.getDeclaredConstructors();
-											for (java.lang.reflect.Constructor<?> constructor : constructors) {
-												Class<?>[] paramTypes = constructor.getParameterTypes();
-												if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
-													isShowText = true;
-													break;
-												}
-											}
-										} catch (Exception e) {
-											// Continue
-										}
-									}
-								}
-							}
-							
-							if (isShowText) {
-								return value;
-							}
-						}
-					} catch (Exception e) {
-						// Ignore
+			if (method.getReturnType().getName().contains("ShowText")) {
+				try {
+					method.setAccessible(true);
+					Object value = method.invoke(hoverEvent);
+					if (value != null && value.getClass().getName().contains("ShowText")) {
+						return value;
 					}
+				} catch (Exception e) {
+					// Ignore
 				}
 			}
-			
-			// Try all methods that might return the value
-			java.lang.reflect.Method[] methods = HoverEvent.class.getDeclaredMethods();
-			
-			// First, try methods that return ShowText directly (by return type name)
-			for (java.lang.reflect.Method method : methods) {
-				// Skip static methods
-				if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
-					continue;
-				}
-				// Skip getAction() - that returns Action, not ShowText!
-				if (method.getName().equals("getAction")) {
-					continue;
-				}
-				// Check if return type contains ShowText
-				String returnTypeName = method.getReturnType().getName();
-				if (returnTypeName.contains("ShowText")) {
-					try {
-						method.setAccessible(true);
-						Object value = method.invoke(hoverEvent);
-						if (value != null) {
-							if (value.getClass().getName().contains("ShowText")) {
-								return value;
-							}
-						}
-					} catch (Exception e) {
-						// Ignore
+		}
+
+		for (Method method : methods) {
+			if (Modifier.isStatic(method.getModifiers()) || method.getName().equals("getAction")) {
+				continue;
+			}
+			if (method.getParameterCount() == 0 && !method.getReturnType().isPrimitive() && method.getReturnType() != Void.TYPE) {
+				try {
+					method.setAccessible(true);
+					Object value = method.invoke(hoverEvent);
+					if (value != null && isShowTextLike(value)) {
+						return value;
 					}
+				} catch (Exception e) {
+					// Ignore
 				}
 			}
-			
-			// Then try all other methods that might return ShowText
-			for (java.lang.reflect.Method method : methods) {
-				// Skip static methods
-				if (java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
-					continue;
-				}
-				// Skip getAction() - that returns Action, not ShowText!
-				if (method.getName().equals("getAction")) {
-					continue;
-				}
-				// Look for methods that take no parameters and return non-primitive
-				if (method.getParameterCount() == 0 && !method.getReturnType().isPrimitive() && method.getReturnType() != Void.TYPE) {
-					try {
-						method.setAccessible(true);
-						Object value = method.invoke(hoverEvent);
-						if (value != null) {
-							// Check if it's a ShowText-like object
-							String className = value.getClass().getName();
-							
-							// CRITICAL: Check if it contains "ShowText" OR if it's an inner class of HoverEvent that is assignable to HoverEvent
-							// (ShowText is assignable to HoverEvent, but Action is NOT)
-							boolean isShowText = false;
-							
-							if (className.contains("ShowText")) {
-								isShowText = true;
-							} else {
-								// Check if it's an inner class of HoverEvent and assignable to HoverEvent
-								// This handles obfuscated ShowText classes
-								Class<?> valueClass = value.getClass();
-								Class<?> enclosingClass = valueClass.getEnclosingClass();
-								if (enclosingClass == HoverEvent.class || (enclosingClass != null && enclosingClass.getName().contains("HoverEvent"))) {
-									// It's an inner class of HoverEvent
-									// Check if it's assignable to HoverEvent (ShowText is, Action is NOT)
-									if (HoverEvent.class.isAssignableFrom(valueClass)) {
-										// Check if it has a constructor that takes Text (ShowText has this, Action doesn't)
-										try {
-											java.lang.reflect.Constructor<?>[] constructors = valueClass.getDeclaredConstructors();
-											for (java.lang.reflect.Constructor<?> constructor : constructors) {
-												Class<?>[] paramTypes = constructor.getParameterTypes();
-												if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
-													isShowText = true;
-													break;
-												}
-											}
-										} catch (Exception e) {
-											// Continue
-										}
-									}
-								}
-							}
-							
-							if (isShowText) {
-								return value;
-							}
-						}
-					} catch (Exception e) {
-						// Ignore
-					}
+		}
+		return null;
+	}
+
+	/**
+	 * Ein ShowText-Objekt hat "ShowText" im Klassennamen, oder (bei obfuskierten Klassen) ist eine innere
+	 * HoverEvent-Klasse, die ein HoverEvent ist und einen Konstruktor mit einem Component-Parameter hat
+	 * (Action hat das nicht).
+	 */
+	private static boolean isShowTextLike(Object value) {
+		Class<?> valueClass = value.getClass();
+		if (valueClass.getName().contains("ShowText")) {
+			return true;
+		}
+		Class<?> enclosingClass = valueClass.getEnclosingClass();
+		boolean innerOfHoverEvent = enclosingClass == HoverEvent.class
+			|| (enclosingClass != null && enclosingClass.getName().contains("HoverEvent"));
+		return innerOfHoverEvent && HoverEvent.class.isAssignableFrom(valueClass) && hasComponentConstructor(valueClass);
+	}
+
+	private static boolean hasComponentConstructor(Class<?> type) {
+		try {
+			for (Constructor<?> constructor : type.getDeclaredConstructors()) {
+				Class<?>[] paramTypes = constructor.getParameterTypes();
+				if (paramTypes.length == 1 && paramTypes[0] == Component.class) {
+					return true;
 				}
 			}
 		} catch (Exception e) {
-			// Ignore
+			// Continue
 		}
-		return null;
+		return false;
 	}
 }
