@@ -9,10 +9,6 @@ import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.overlay.StatuesDraggableOverlay;
 import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDraggableOverlay;
-import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.AspectDraggableOverlay;
-import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
-import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
-import net.felix.utilities.Aincraft.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
 import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
@@ -27,6 +23,10 @@ import net.felix.utilities.Overall.buildshare.BuildShareDraggableOverlay;
 import net.felix.utilities.Overall.cointracker.CoinTrackerDraggableOverlay;
 import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.felix.utilities.Overall.leaderboard.LeaderboardDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.AspectDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
 import net.felix.utilities.Town.kits.filter.KitFilterButtonDraggableOverlay;
 import net.felix.utilities.Town.schmied.HideUncraftableButtonDraggableOverlay;
 import net.felix.utilities.Town.schmied.HideWrongClassButtonDraggableOverlay;
@@ -477,7 +477,7 @@ public class OverlayEditorScreen extends Screen {
             button -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client != null) {
-                    client.gui.setScreen(new net.felix.utilities.Aincraft.npcalerts.ui.NpcAlertsSettingsScreen(this));
+                    client.gui.setScreen(new net.felix.utilities.Overall.npcalerts.ui.NpcAlertsSettingsScreen(this));
                 }
             }
         ).bounds(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
