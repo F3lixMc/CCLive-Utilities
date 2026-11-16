@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.utilities.Other.clipboard.collector.ClipboardPaperShredsCollector;
-import net.felix.utilities.Overall.BossBarHudValueDecoder;
-import net.felix.utilities.Overall.HudNumberSuffixUtility;
+import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
 
 public class CollectedMaterialsResourcesStorage {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();

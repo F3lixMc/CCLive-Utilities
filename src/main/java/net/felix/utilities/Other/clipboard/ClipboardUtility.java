@@ -22,7 +22,7 @@ import net.felix.utilities.Other.clipboard.collector.TreasureFoundChatCollector;
 import net.felix.utilities.Other.clipboard.cost.ClipboardCostPurchaseTracker;
 import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.KeyCategories;
+import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 

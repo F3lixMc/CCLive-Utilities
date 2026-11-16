@@ -250,7 +250,7 @@ public class NpcAlertsSettingsScreen extends Screen {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 0) {
             // Zuerst das Schließen-Kreuz prüfen
             if (isOverCloseButton(mouseX, mouseY)) {

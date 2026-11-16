@@ -1,18 +1,15 @@
 package net.felix.features.information.aspects;
 
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.Aspekte.AspectOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
-import java.util.List;
 
 import static net.felix.features.information.aspects.AspectDatabase.aspectsDatabase;
 import static net.felix.features.information.aspects.AspectDatabase.extractBracketAspectNameFromStarLine;
 import static net.felix.features.information.aspects.AspectDatabase.getAspectInfoByTooltipDisplayName;
 import static net.felix.features.information.blueprints.BlueprintChatParser.hasEpicColor;
-
 
 /**
  * Zeigt Aspektnamen in Bauplan-Tooltips.
@@ -74,7 +71,7 @@ public final class AspectTooltip {
 				Component modifiedLine = modifyStarLineWithShiftInfo(line, aspectInfo, itemName);
 				if (modifiedLine != null) {
 					lines.set(i, modifiedLine);
-					net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfoFromName(itemName, aspectInfo);
+					net.felix.utilities.Overall.aspekte.AspectOverlay.updateAspectInfoFromName(itemName, aspectInfo);
 				}
 			}
 		}

@@ -2,11 +2,11 @@ package net.felix;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
+import net.felix.features.itemviewer.ItemViewerFeature;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.felix.features.itemviewer.ItemViewerFeature;
 
 public class HudRenderingEntrypoint implements ClientModInitializer {
     private static final Identifier FONT_IDENTIFIER = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
@@ -14,7 +14,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         // Zeichen aus Resourcepack (minecraft:font/default.json) – erster Versuch beim Client-Start
-        net.felix.utilities.Overall.ZeichenUtility.reloadFromActiveResourcePack("client-init");
+        net.felix.utilities.Overall.glyphs.ZeichenUtility.reloadFromActiveResourcePack("client-init");
 
         // Verifiziere, dass die Font-Definition geladen wird
         // Die Font wird automatisch aus assets/cclive-utilities/font/default.json geladen

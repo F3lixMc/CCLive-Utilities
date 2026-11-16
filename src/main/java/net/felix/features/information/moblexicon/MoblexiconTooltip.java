@@ -1,19 +1,16 @@
 package net.felix.features.information.moblexicon;
 
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-import net.felix.utilities.Overall.MobFloorHpData;
-import net.felix.utilities.Overall.OpferungMkDamageData;
 import net.felix.features.information.materials.MaterialInfo;
+import net.felix.utilities.Overall.moblexicon.MobFloorHpData;
+import net.felix.utilities.Overall.moblexicon.OpferungMkDamageData;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 
 import static net.felix.features.information.materials.MaterialDatabase.materialsDatabase;
 import static net.felix.features.information.tooltip.TooltipTextCleaner.cleanTooltipText;
-
 
 /**
  * Zeigt Mob-HP und Ebene im Moblexikon an.

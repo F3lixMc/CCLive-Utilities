@@ -1,6 +1,6 @@
 package net.felix.utilities.Other.clipboard.cost;
 
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 

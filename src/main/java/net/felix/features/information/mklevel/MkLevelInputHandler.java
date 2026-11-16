@@ -1,13 +1,11 @@
 package net.felix.features.information.mklevel;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import com.mojang.blaze3d.platform.InputConstants;
-import java.util.Set;
-import net.felix.utilities.Overall.KeyBindingUtility;
-import net.felix.utilities.Overall.SearchBarUtility;
-import net.felix.utilities.Overall.ZeichenUtility;
 
 import static net.felix.features.information.mklevel.MkLevelOverlayRenderer.calculateMkLevelContentHeights;
 import static net.felix.features.information.mklevel.MkLevelOverlayRenderer.calculateMkLevelTotalLineHeight;
@@ -23,7 +21,6 @@ import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchF
 import static net.felix.features.information.mklevel.MkLevelState.mkLevelSearchText;
 import static net.felix.features.information.mklevel.MkLevelState.setMkLevelScrollOffset;
 import static net.felix.features.information.tooltip.TooltipTextCleaner.getPlainTextFromText;
-
 
 /**
  * Maus- und Tastatureingaben des MK-Level-Overlays (Scrollen, Suche).

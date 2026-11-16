@@ -25,7 +25,7 @@ import net.felix.leaderboards.http.HttpClient;
 import net.felix.leaderboards.panel.LeaderboardInventoryOverlay;
 import net.felix.leaderboards.panel.SmithSkill;
 import net.felix.utilities.Other.debug.DebugUtility;
-import net.felix.utilities.Overall.ServerConnectionGate;
+import net.felix.utilities.Overall.server.ServerConnectionGate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 

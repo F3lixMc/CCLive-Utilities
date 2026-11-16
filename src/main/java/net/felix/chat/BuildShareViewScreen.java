@@ -481,7 +481,7 @@ public class BuildShareViewScreen extends Screen {
         }
         double mx = event.x();
         double my = event.y();
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (!kitPreviewMode && button == 0 && isOverSaveKit(mx, my)) {
             ShareKitImportHelper.SaveResult result = ShareKitImportHelper.saveSnapshotAsCustomKit(snapshot);
             ShareKitImportHelper.sendFeedback(result);

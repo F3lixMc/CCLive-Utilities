@@ -2,7 +2,7 @@ package net.felix.utilities.Aincraft.materials;
 
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -147,7 +147,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
         int unscaledHeight = (int) (height / scale);
         
         // Render background (scaled)
-        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerOverlayType;
+        net.felix.utilities.DragOverlay.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerOverlayType;
         
         switch (overlayType) {
             case CUSTOM:

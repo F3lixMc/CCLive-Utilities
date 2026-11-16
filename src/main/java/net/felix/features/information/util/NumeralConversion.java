@@ -1,8 +1,7 @@
 package net.felix.features.information.util;
 
-import java.util.HashMap;
 import java.util.Map;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 
 /**
  * Umwandlung von roemischen und chinesischen Zahlen.

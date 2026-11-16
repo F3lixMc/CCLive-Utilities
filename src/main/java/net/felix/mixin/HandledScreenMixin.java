@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -72,7 +72,7 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
         
         // Build-Share Overlay (Ausrüstung / Karten / Wardrobe)
-        net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+        net.felix.utilities.Overall.buildshare.BuildShareDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
         
         // Capture tooltip position for collision detection
         captureTooltipPosition(mouseX, mouseY);
@@ -104,7 +104,7 @@ public abstract class HandledScreenMixin {
             // 1. We're in a blueprint inventory (for blueprint items), OR
             // 2. We're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
             // This allows aspect overlay to work in ALL inventories for items with "⭐"
-            boolean shouldRender = isBlueprintInventory() || net.felix.utilities.Overall.Aspekte.AspectOverlay.isCurrentlyHovering();
+            boolean shouldRender = isBlueprintInventory() || net.felix.utilities.Overall.aspekte.AspectOverlay.isCurrentlyHovering();
             
             if (shouldRender) {
                 // Render our aspect overlay AFTER everything else (including buttons and tooltips)
@@ -113,7 +113,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Clear tooltip bounds after rendering
-        net.felix.utilities.Overall.Aspekte.AspectOverlay.clearTooltipBounds();
+        net.felix.utilities.Overall.aspekte.AspectOverlay.clearTooltipBounds();
         
         // Item-Info-Overlay (nicht registrierte Baupläne / Angel-Komponenten markieren)
         if (net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility.isSupportedInventory(screen)) {
@@ -129,7 +129,7 @@ public abstract class HandledScreenMixin {
         // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
         // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
         if (net.felix.features.itemviewer.ui.ViewerState.isVisible()) {
-            net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+            net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
         }
         
         // Rendere Help-Overlay ganz am Ende, damit es über allem liegt (wie im Blueprint Shop)
@@ -217,7 +217,7 @@ public abstract class HandledScreenMixin {
         double mouseX = event.x();
         double mouseY = event.y();
         int sdlButton = event.button();
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(sdlButton);
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(sdlButton);
         // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
         // Dies muss vor allen anderen Klicks geprüft werden
         if (net.felix.features.itemviewer.ui.HelpOverlay.isHelpOverlayOpen()) {
@@ -240,10 +240,10 @@ public abstract class HandledScreenMixin {
         }
 
         net.felix.features.itemviewer.search.SearchFieldState.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
-        net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
+        net.felix.utilities.Overall.searchbar.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
 
         // Build-Share vor Clipboard: gleiches Eck-Gebiet, sonst schluckt Clipboard Delete/Pfeile die Klicks
-        if (net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY, button)) {
+        if (net.felix.utilities.Overall.buildshare.BuildShareDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY, button)) {
             cir.setReturnValue(true);
             return;
         }
@@ -344,7 +344,7 @@ public abstract class HandledScreenMixin {
     private void onMouseDragged(MouseButtonEvent event, double deltaX, double deltaY, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.features.itemviewer.filtermenu.FilterMenu.isOpen()) {
             if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
@@ -363,7 +363,7 @@ public abstract class HandledScreenMixin {
     private void onMouseReleased(MouseButtonEvent event, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
             return;
@@ -507,7 +507,7 @@ public abstract class HandledScreenMixin {
                                 }
                                 
                                 // Store tooltip information in AspectOverlay
-                                net.felix.utilities.Overall.Aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                                net.felix.utilities.Overall.aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
                             }
                         } catch (Exception e) {
                             // If reflection fails, try alternative approach
@@ -520,7 +520,7 @@ public abstract class HandledScreenMixin {
                                 int tooltipX = mouseX + 12;
                                 int tooltipY = mouseY - 12;
                                 
-                                net.felix.utilities.Overall.Aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                                net.felix.utilities.Overall.aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
                             }
                         }
                     }
@@ -576,9 +576,9 @@ public abstract class HandledScreenMixin {
             }
             
             // Star items (⭐) only — not Item Viewer / blueprint hover (lastTooltipUpdateTime == -1)
-            if (net.felix.utilities.Overall.Aspekte.AspectOverlay.isStarItemHovering()) {
+            if (net.felix.utilities.Overall.aspekte.AspectOverlay.isStarItemHovering()) {
                 if (hoveredSlot == null || !hoveredSlot.hasItem()) {
-                    net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+                    net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
                 }
                 return;
             }
@@ -597,21 +597,21 @@ public abstract class HandledScreenMixin {
                     // Check if the item name contains Epic colors - if so, don't show overlay
                     net.minecraft.network.chat.Component itemNameText = itemStack.getHoverName();
                     if (itemNameText != null && net.felix.features.information.blueprints.BlueprintChatParser.hasEpicColor(itemNameText)) {
-                        net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+                        net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
                         return;
                     }
                     
                     // Update the aspect overlay with this item (for blueprint items only)
                     // Items with "⭐" are handled by addAspectNameToTooltip
                     if (isBlueprintInventory()) {
-                        net.felix.utilities.Overall.Aspekte.AspectOverlay.updateAspectInfo(itemStack);
+                        net.felix.utilities.Overall.aspekte.AspectOverlay.updateAspectInfo(itemStack);
                     }
                     return;
                 }
             }
             
             // If no valid item is hovered, hide the overlay immediately
-            net.felix.utilities.Overall.Aspekte.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
             
         } catch (Exception e) {
             // Ignore errors
@@ -623,7 +623,7 @@ public abstract class HandledScreenMixin {
      */
     private void renderAspectOverlay(GuiGraphicsExtractor context) {
         try {
-            net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+            net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
         } catch (Exception e) {
             // Ignore rendering errors
         }

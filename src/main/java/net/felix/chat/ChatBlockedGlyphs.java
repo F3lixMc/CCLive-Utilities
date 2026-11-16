@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.felix.CCLiveUtilities;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.Other.playericon.PlayerIconUtility;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 /**

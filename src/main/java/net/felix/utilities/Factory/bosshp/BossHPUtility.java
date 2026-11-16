@@ -13,7 +13,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -638,7 +638,7 @@ public class BossHPUtility {
 		if (client == null) {
 			return;
 		}
-		if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+		if (!net.felix.utilities.Overall.hud.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
 			return;
 		}
 		

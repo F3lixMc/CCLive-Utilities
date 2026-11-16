@@ -4,7 +4,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -160,8 +160,8 @@ return CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayEnabled &&
         
         // The overlay is already positioned correctly, so just draw the text at the overlay position
         // Draw background if overlay type is not NONE (same as EquipmentDisplayUtility)
-        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
-        if (overlayType != net.felix.utilities.Town.OverlayType.NONE) {
+        net.felix.utilities.DragOverlay.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().equipmentDisplayOverlayType;
+        if (overlayType != net.felix.utilities.DragOverlay.OverlayType.NONE) {
             // The overlay already has the correct size, so just fill it
             context.fill(x, y, x + getWidth(), y + getHeight(), 0x80000000);
         }

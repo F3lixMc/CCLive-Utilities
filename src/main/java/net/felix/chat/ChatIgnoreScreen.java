@@ -1,7 +1,10 @@
 package net.felix.chat;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.felix.utilities.Overall.KeyBindingUtility;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -10,10 +13,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Liste der ignorierten Spieler für das lokale Konto. Dieselbe Liste wie das Rechtsklick-Menü.

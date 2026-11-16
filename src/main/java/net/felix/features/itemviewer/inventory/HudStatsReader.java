@@ -3,8 +3,8 @@ package net.felix.features.itemviewer.inventory;
 import java.math.BigDecimal;
 import net.felix.features.itemviewer.ui.ViewerState;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.BossBarHudValueDecoder;
-import net.felix.utilities.Overall.HudNumberSuffixUtility;
+import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
 
 /**
  * Liest Coins, Kaktus und Seelen aus der HUD-Bossbar, wenn die Besitz-Anzeige im Item Viewer aktiv ist.

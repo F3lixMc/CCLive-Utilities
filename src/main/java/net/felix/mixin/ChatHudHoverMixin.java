@@ -1,19 +1,19 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import net.felix.features.information.aspects.AspectChatMessages;
+import net.felix.features.information.blueprints.BlueprintChatParser;
+import net.felix.utilities.Overall.aspekte.AspectOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.felix.utilities.Overall.Aspekte.AspectOverlay;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.features.information.aspects.AspectChatMessages;
-import net.felix.features.information.blueprints.BlueprintChatParser;
 
 @SuppressWarnings("unused")
 @Mixin(Screen.class)

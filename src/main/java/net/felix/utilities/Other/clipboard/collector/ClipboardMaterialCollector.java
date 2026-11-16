@@ -12,7 +12,7 @@ import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.felix.utilities.Other.clipboard.cost.ClipboardCostInventoryUtility;
 import net.felix.utilities.Other.clipboard.cost.ClipboardCostTooltipParser;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;

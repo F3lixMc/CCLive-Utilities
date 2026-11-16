@@ -224,7 +224,7 @@ public final class InputFieldEditor {
     }
 
     static Character resolveDigitKey(int keyCode) {
-        return net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+        return net.felix.utilities.Overall.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
     }
 
     static String resolveItemTextKey(int keyCode, int modifiers) {
@@ -235,11 +235,11 @@ public final class InputFieldEditor {
         if (keyCode == InputConstants.KEY_MINUS || keyCode == org.lwjgl.sdl.SDLScancode.SDL_SCANCODE_KP_MINUS) {
             return shift ? "_" : "-";
         }
-        String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, shift);
+        String letter = net.felix.utilities.Overall.keybinding.KeyBindingUtility.letterFromScancode(keyCode, shift);
         if (letter != null) {
             return letter;
         }
-        Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+        Character digit = net.felix.utilities.Overall.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
         if (digit != null) {
             return String.valueOf(digit);
         }

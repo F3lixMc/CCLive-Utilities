@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.features.information.materials.MaterialFloorInfo;
 import net.felix.features.information.materials.MaterialInfo;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;

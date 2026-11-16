@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.features.information.farmzone.FarmzoneScoreboard;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 
 import static net.felix.features.npcalerts.data.NpcAlertState.komboKiste;

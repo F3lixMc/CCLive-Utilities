@@ -4,11 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.felix.CCLiveUtilities;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.Overall.ZeichenUtility;
-import net.minecraft.client.Minecraft;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +12,12 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.felix.CCLiveUtilities;
 import net.felix.features.information.farmzone.FarmzoneScoreboard;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.minecraft.client.Minecraft;
 
 /**
  * Sammelt Collection-Daten aus der Farmworld-Dimension

@@ -33,10 +33,10 @@ import net.felix.features.information.blueprints.BlueprintChatParser;
 import net.felix.features.information.blueprints.BlueprintNameAndColor;
 import net.felix.utilities.Aincraft.fishing.FishTrapFoundUtility;
 import net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility;
-import net.felix.utilities.Overall.KeyBindingUtility;
-import net.felix.utilities.Overall.KeyCategories;
-import net.felix.utilities.Overall.ZeichenUtility;
-import net.felix.utilities.Town.OverlayType;
+import net.felix.utilities.DragOverlay.OverlayType;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
+import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
@@ -527,7 +527,7 @@ public class BPViewerUtility {
         try {
             Minecraft client = Minecraft.getInstance();
             if (client == null) return;
-            if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+            if (!net.felix.utilities.Overall.hud.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
                 return;
             }
             

@@ -2,14 +2,26 @@ package net.felix.chat;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.mojang.blaze3d.platform.InputConstants;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.leaderboards.http.HttpClient;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.data.ItemInfo;
-import net.felix.utilities.Overall.KeyCategories;
+import net.felix.features.itemviewer.inventory.InventoryItemCapture;
+import net.felix.features.itemviewer.search.SearchFieldState;
+import net.felix.features.itemviewer.tooltip.ForgingTooltipText;
+import net.felix.features.itemviewer.tooltip.TooltipColors;
+import net.felix.leaderboards.LeaderboardManager;
+import net.felix.leaderboards.http.HttpClient;
+import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -18,19 +30,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import com.mojang.blaze3d.platform.InputConstants;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.felix.features.itemviewer.inventory.InventoryItemCapture;
-import net.felix.features.itemviewer.search.SearchFieldState;
-import net.felix.features.itemviewer.tooltip.ForgingTooltipText;
-import net.felix.features.itemviewer.tooltip.TooltipColors;
 
 /**
  * Session-Cache + Server-Shares für CCLive-Chat Item-Links (!item / #ITEM:…).

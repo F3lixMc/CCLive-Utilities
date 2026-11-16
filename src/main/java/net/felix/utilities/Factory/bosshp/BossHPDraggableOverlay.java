@@ -3,7 +3,7 @@ package net.felix.utilities.Factory.bosshp;
 import java.math.BigInteger;
 import java.util.Locale;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;

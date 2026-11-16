@@ -7,8 +7,8 @@ import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.utilities.Other.debug.DebugUtility;
-import net.felix.utilities.Overall.DimensionUtility;
-import net.felix.utilities.Overall.ServerConnectionGate;
+import net.felix.utilities.Overall.server.DimensionUtility;
+import net.felix.utilities.Overall.server.ServerConnectionGate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 

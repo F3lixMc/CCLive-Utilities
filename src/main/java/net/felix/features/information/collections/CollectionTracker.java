@@ -5,7 +5,7 @@ import java.util.List;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
-import net.felix.utilities.Overall.KeyCategories;
+import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 

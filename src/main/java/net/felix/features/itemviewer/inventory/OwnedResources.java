@@ -8,9 +8,9 @@ import net.felix.features.itemviewer.ui.ViewerState;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.BossBarHudValueDecoder;
-import net.felix.utilities.Overall.CoinTrackerUtility;
-import net.felix.utilities.Overall.HudNumberSuffixUtility;
+import net.felix.utilities.Overall.cointracker.CoinTrackerUtility;
+import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
 
 /**
  * Liefert aktuelle Besitzmengen für die Kosten-Anzeige im Item Viewer.

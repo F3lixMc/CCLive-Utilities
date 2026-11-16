@@ -1,7 +1,7 @@
 package net.felix.utilities.Aincraft.cardsstatues;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -118,9 +118,9 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         matrices.scale(scale, scale);
         
         // Render background based on overlay type (scaled, relative to matrix)
-        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
+        net.felix.utilities.DragOverlay.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayType;
         
-        if (overlayType == net.felix.utilities.Town.OverlayType.CUSTOM) {
+        if (overlayType == net.felix.utilities.DragOverlay.OverlayType.CUSTOM) {
             try {
                 context.blit(
                     RenderPipelines.GUI_TEXTURED,
@@ -133,7 +133,7 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
             } catch (Exception e) {
                 context.fill(-11, -11, -11 + DEFAULT_WIDTH, -11 + DEFAULT_HEIGHT, 0x80000000);
             }
-        } else if (overlayType == net.felix.utilities.Town.OverlayType.BLACK) {
+        } else if (overlayType == net.felix.utilities.DragOverlay.OverlayType.BLACK) {
             context.fill(-11, -11, -11 + DEFAULT_WIDTH, -11 + DEFAULT_HEIGHT, 0x80000000);
         }
         

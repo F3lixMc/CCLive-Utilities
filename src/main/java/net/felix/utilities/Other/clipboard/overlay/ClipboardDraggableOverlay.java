@@ -13,14 +13,14 @@ import net.felix.features.itemviewer.data.CostItem;
 import net.felix.features.itemviewer.data.ItemCatalog;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.felix.utilities.Other.clipboard.ClipboardUtility;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardPaperShredsCollector;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
-import net.felix.utilities.Overall.HudNumberSuffixUtility;
-import net.felix.utilities.Overall.KeyBindingUtility;
+import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
+import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -2789,7 +2789,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             
             // Für Zeicheneingaben: Konvertiere KeyCode zu Zeichen (Zahlen 0-9 und Nummernfeld)
             char digit = 0;
-            Character typedDigit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
+            Character typedDigit = net.felix.utilities.Overall.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
             if (typedDigit != null) {
                 digit = typedDigit;
             }

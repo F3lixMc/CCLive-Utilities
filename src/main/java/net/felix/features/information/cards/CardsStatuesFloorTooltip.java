@@ -1,15 +1,14 @@
 package net.felix.features.information.cards;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import java.util.List;
 import java.util.Map;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 import static net.felix.features.information.blueprints.BlueprintFloorTooltip.appendFloorNumberToText;
 import static net.felix.features.information.cards.CardsStatuesDatabase.cardsFloors;
 import static net.felix.features.information.cards.CardsStatuesDatabase.statuesFloors;
-
 
 /**
  * Haengt Ebenen-Nummern an Karten- und Statuen-Namen an.

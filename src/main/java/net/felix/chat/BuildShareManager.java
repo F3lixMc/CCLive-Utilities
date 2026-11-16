@@ -20,7 +20,7 @@ import net.felix.features.itemviewer.inventory.InventoryItemCapture;
 import net.felix.features.itemviewer.ui.ViewerState;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping.EquipmentCategory;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping.SlotState;

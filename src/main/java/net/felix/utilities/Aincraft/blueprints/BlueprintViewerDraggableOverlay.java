@@ -1,7 +1,7 @@
 package net.felix.utilities.Aincraft.blueprints;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -86,15 +86,15 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
         int y = getY();
         int width = getWidth();
         int height = getHeight();
-        net.felix.utilities.Town.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerOverlayType;
-        if (overlayType == net.felix.utilities.Town.OverlayType.CUSTOM) {
+        net.felix.utilities.DragOverlay.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerOverlayType;
+        if (overlayType == net.felix.utilities.DragOverlay.OverlayType.CUSTOM) {
             try {
                 context.blit(RenderPipelines.GUI_TEXTURED, BLUEPRINT_BACKGROUND_TEXTURE,
                     x, y, 0.0f, 0.0f, width, height, width, height);
             } catch (Exception e) {
                 context.fill(x, y, x + width, y + height, 0x80000000);
             }
-        } else if (overlayType == net.felix.utilities.Town.OverlayType.BLACK) {
+        } else if (overlayType == net.felix.utilities.DragOverlay.OverlayType.BLACK) {
             context.fill(x, y, x + width, y + height, 0x80000000);
         }
         context.outline(x, y, width, height, 0xFFFF0000);

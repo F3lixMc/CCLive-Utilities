@@ -194,10 +194,10 @@ public final class ViewerState {
         if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
             net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
-            if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+            if (net.felix.utilities.Overall.glyphs.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return false; // KEINE Buttons in diesen speziellen Menüs
             }
-            if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(titleWithUnicode)) {
+            if (net.felix.utilities.Overall.glyphs.ZeichenUtility.shouldHideItemViewerForInventoryTitle(titleWithUnicode)) {
                 return false;
             }
         }

@@ -1,14 +1,9 @@
 package net.felix.features.information.aspects;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.Aspekte.AspectOverlay;
-import net.minecraft.client.Minecraft;
+import net.felix.utilities.Overall.aspekte.AspectOverlay;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import java.util.List;
-import java.util.ArrayList;
 
 import static net.felix.features.information.aspects.AspectDatabase.getAspectInfoForBlueprintFull;
 import static net.felix.features.information.blueprints.BlueprintChatParser.extractBlueprintNameFromChatMessage;
@@ -17,7 +12,6 @@ import static net.felix.features.information.hover.HoverEventFactory.createHover
 import static net.felix.features.information.hover.HoverEventFactory.modifyTextWithHoverEvent;
 import static net.felix.features.information.hover.HoverEventReader.extractHoverTextFromEvent;
 import static net.felix.features.information.hover.HoverEventReader.findHoverEventInText;
-
 
 /**
  * Aspekt-Informationen fuer Chatnachrichten und das Aspekt-Overlay.

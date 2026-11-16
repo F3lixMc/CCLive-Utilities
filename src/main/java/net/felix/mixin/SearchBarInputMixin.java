@@ -3,7 +3,7 @@ package net.felix.mixin;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
-import net.felix.utilities.Overall.SearchBarUtility;
+import net.felix.utilities.Overall.searchbar.SearchBarUtility;
 import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
@@ -21,7 +21,7 @@ public abstract class SearchBarInputMixin {
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         // Blockiere Mausklicks wenn der Hilfe-Screen offen ist
         if (SearchBarUtility.isHelpScreenOpen()) {
             cir.setReturnValue(true);

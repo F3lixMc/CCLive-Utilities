@@ -1,14 +1,13 @@
 package net.felix.features.information.farmzone;
 
-import net.minecraft.client.Minecraft;
-import java.util.List;
 import java.util.ArrayList;
-import net.felix.utilities.Overall.ScoreboardSidebarReader;
+import java.util.List;
+import net.felix.utilities.Overall.hud.ScoreboardSidebarReader;
+import net.minecraft.client.Minecraft;
 
 import static net.felix.features.information.collections.CollectionTracker.biomDetected;
 import static net.felix.features.information.collections.CollectionTracker.checkCollectionBiomChange;
 import static net.felix.features.information.collections.CollectionTracker.lastScoreboardCheck;
-
 
 /**
  * Erkennt Farmzone und Biom ueber die Scoreboard-Seitenleiste.

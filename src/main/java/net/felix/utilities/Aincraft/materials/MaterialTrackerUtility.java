@@ -10,9 +10,9 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.KeyBindingUtility;
-import net.felix.utilities.Overall.KeyCategories;
-import net.felix.utilities.Town.OverlayType;
+import net.felix.utilities.DragOverlay.OverlayType;
+import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
+import net.felix.utilities.Overall.keybinding.KeyCategories;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
@@ -255,7 +255,7 @@ public class MaterialTrackerUtility {
 			!CCLiveUtilitiesConfig.HANDLER.instance().showMaterialTracker) {
 			return;
 		}
-		if (!net.felix.utilities.Overall.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+		if (!net.felix.utilities.Overall.hud.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
 			return;
 		}
 

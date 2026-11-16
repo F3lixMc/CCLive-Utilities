@@ -1,17 +1,13 @@
 package net.felix.features.information.blueprints;
 
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import java.util.List;
-import java.util.ArrayList;
-import net.felix.utilities.Overall.ZeichenUtility;
 
 import static net.felix.features.information.blueprints.BlueprintChatParser.extractBlueprintNameAndColorFromItemName;
 import static net.felix.features.information.blueprints.BlueprintDatabase.blueprintFloorMap;
-
 
 /**
  * Haengt Ebenen-Nummern an Bauplan-Namen in Inventaren an.

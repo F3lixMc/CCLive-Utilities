@@ -1,20 +1,20 @@
 package net.felix.mixin;
 
-import net.felix.utilities.DragOverlay.OverlayEditorUtility;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.felix.chat.BuildShareManager;
 import net.felix.chat.BuildShareViewScreen;
 import net.felix.chat.ChatManager;
 import net.felix.chat.ItemShareManager;
-import net.felix.staff.StaffClientAccess;
 import net.felix.profile.ProfileStatsManager;
+import net.felix.staff.StaffClientAccess;
+import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import net.minecraft.client.input.KeyEvent;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -86,7 +86,7 @@ public abstract class ChatScreenMixin {
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 1) {
             if (net.felix.chat.ChatContextMenu.tryOpen(event.x(), event.y())) {
                 cir.setReturnValue(true);

@@ -28,7 +28,7 @@ import net.felix.leaderboards.collectors.FloorProgressCollector;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
 import net.felix.utilities.Aincraft.cardsstatues.CardsStatuesUtility;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;
@@ -186,9 +186,9 @@ public class ProfileStatsManager {
         
         // Registriere Server-Join Event (Reset + Server-Prüfung)
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            net.felix.utilities.Overall.ServerConnectionGate.refresh();
+            net.felix.utilities.Overall.server.ServerConnectionGate.refresh();
             isOnAllowedServerForPlaytime =
-                net.felix.utilities.Overall.ServerConnectionGate.isDataUploadAllowed();
+                net.felix.utilities.Overall.server.ServerConnectionGate.isDataUploadAllowed();
             resetCounters();
         });
         

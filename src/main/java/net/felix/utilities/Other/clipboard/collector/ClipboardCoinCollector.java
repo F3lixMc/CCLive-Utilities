@@ -3,7 +3,7 @@ package net.felix.utilities.Other.clipboard.collector;
 import java.math.BigDecimal;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.BossBarHudValueDecoder;
+import net.felix.utilities.Overall.hud.BossBarHudValueDecoder;
 import net.minecraft.client.Minecraft;
 
 /**

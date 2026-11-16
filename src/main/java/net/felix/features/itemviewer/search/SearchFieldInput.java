@@ -73,9 +73,9 @@ public final class SearchFieldInput {
             return true;
         }
 
-        boolean ctrl = net.felix.utilities.Overall.KeyBindingUtility.isCtrlDown(modifiers)
-                && !net.felix.utilities.Overall.KeyBindingUtility.isAltGrDown(modifiers);
-        boolean shift = net.felix.utilities.Overall.KeyBindingUtility.isShiftDown(modifiers);
+        boolean ctrl = net.felix.utilities.Overall.keybinding.KeyBindingUtility.isCtrlDown(modifiers)
+                && !net.felix.utilities.Overall.keybinding.KeyBindingUtility.isAltGrDown(modifiers);
+        boolean shift = net.felix.utilities.Overall.keybinding.KeyBindingUtility.isShiftDown(modifiers);
 
         if (ctrl && handleCtrlShortcut(client, keyCode)) {
             return true;

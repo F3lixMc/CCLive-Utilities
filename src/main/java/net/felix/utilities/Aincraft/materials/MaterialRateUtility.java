@@ -7,7 +7,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.utilities.Overall.HudNumberSuffixUtility;
+import net.felix.utilities.Overall.hud.HudNumberSuffixUtility;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;

@@ -6,7 +6,7 @@ import net.felix.features.npcalerts.overlay.AlertIcons;
 import net.felix.features.npcalerts.overlay.AlertSettings;
 import net.felix.features.npcalerts.overlay.LineWithPercent;
 import net.felix.features.npcalerts.overlay.MainOverlayLines;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
+import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;

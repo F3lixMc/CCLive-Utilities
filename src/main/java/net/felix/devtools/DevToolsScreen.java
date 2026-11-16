@@ -1,5 +1,8 @@
 package net.felix.devtools;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -8,10 +11,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import com.mojang.blaze3d.platform.InputConstants;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Zentrale DevTools-GUI.
@@ -294,7 +293,7 @@ public class DevToolsScreen extends Screen {
     public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
         recomputeLayout();
         // 26.3/SDL: Linksklick = MOUSE_BUTTON_LEFT (1), nicht GLFW 0
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Overall.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (button != 0) {
             return super.mouseClicked(event, doubled);
         }

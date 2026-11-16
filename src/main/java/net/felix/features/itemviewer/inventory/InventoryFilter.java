@@ -10,7 +10,7 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.features.itemviewer.data.ItemCatalog;
 import net.felix.features.itemviewer.search.ItemFilterPipeline;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.component.DataComponents;

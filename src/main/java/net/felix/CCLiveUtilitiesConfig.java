@@ -11,9 +11,10 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.utilities.Aincraft.materials.MaterialTrackerDisplayMode;
+import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.collections.ResourceTrackerDisplayMode;
-import net.felix.utilities.Town.ItemDisplayMode;
-import net.felix.utilities.Town.OverlayType;
+import net.felix.utilities.Overall.cointracker.CoinTrackerDisplayMode;
+import net.felix.utilities.Overall.searchbar.ItemDisplayMode;
 import net.felix.utilities.Town.schmied.SchmiedItemDisplayMode;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -423,7 +424,7 @@ public class CCLiveUtilitiesConfig {
      */
     public static boolean isModRuntimeEnabled() {
         return HANDLER.instance().enableMod
-            && net.felix.utilities.Overall.ServerConnectionGate.areFeaturesAllowed();
+            && net.felix.utilities.Overall.server.ServerConnectionGate.areFeaturesAllowed();
     }
 
     /**
@@ -432,7 +433,7 @@ public class CCLiveUtilitiesConfig {
      */
     public static boolean isDataTrackingEnabled() {
         return HANDLER.instance().dataTrackingEnabled
-            && net.felix.utilities.Overall.ServerConnectionGate.isDataUploadAllowed();
+            && net.felix.utilities.Overall.server.ServerConnectionGate.isDataUploadAllowed();
     }
     
     // Debug Settings

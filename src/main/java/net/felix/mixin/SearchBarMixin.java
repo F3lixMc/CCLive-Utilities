@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.SearchBarUtility;
+import net.felix.utilities.Overall.searchbar.SearchBarUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;

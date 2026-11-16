@@ -206,7 +206,7 @@ public final class ViewerLayout {
             return null;
         }
         String currentTitle = handledScreen.getTitle().getString();
-        if (net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
+        if (net.felix.utilities.Overall.glyphs.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
                 && !helpScreenOpen) {
             return null;
         }

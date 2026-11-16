@@ -39,7 +39,7 @@ public class ScreenMixin {
      */
     @Inject(method = "extractTransparentBackground", at = @At("HEAD"))
     private void cclive$renderOverlaysBehindDim(GuiGraphicsExtractor context, CallbackInfo ci) {
-        net.felix.utilities.Overall.HudOverlayVisibility.renderBehindInventoryDim(context);
+        net.felix.utilities.Overall.hud.HudOverlayVisibility.renderBehindInventoryDim(context);
     }
     
     /**
@@ -127,7 +127,7 @@ public class ScreenMixin {
             AbstractContainerScreen<?> handledScreen = (AbstractContainerScreen<?>) screen;
             net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
-            if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+            if (net.felix.utilities.Overall.glyphs.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
             
@@ -147,7 +147,7 @@ public class ScreenMixin {
             // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
             // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
             if (ViewerState.isVisible()) {
-                net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+                net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
             }
             
             // Hilfe folgt erst am Ende von InventoryScreen.extractRenderState.
@@ -166,7 +166,7 @@ public class ScreenMixin {
         // Kit-Editor: Aspekt-Overlay über dem zentrierten Editor-Panel
         if (screen instanceof net.felix.utilities.Town.kits.editor.CustomKitEditorScreen) {
             if (ViewerState.isVisible()) {
-                net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+                net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
             }
             return;
         }
@@ -187,7 +187,7 @@ public class ScreenMixin {
         SearchFieldState.blurSearchFieldFocus();
         HelpOverlay.closeHelpOverlay();
         FilterOverlayControls.closeFilterOverlay();
-        net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocus();
+        net.felix.utilities.Overall.searchbar.SearchBarUtility.blurSearchBarFocus();
         if (screen instanceof AbstractContainerScreen) {
             net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.finalizeQuantityTextField();
         }

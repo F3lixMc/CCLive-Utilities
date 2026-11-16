@@ -15,11 +15,6 @@ import net.felix.utilities.Aincraft.cardsstatues.CardsDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.StatuesDraggableOverlay;
 import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
 import net.felix.utilities.Aincraft.materials.MaterialTrackerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.LeaderboardDraggableOverlay;
 import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
@@ -27,7 +22,11 @@ import net.felix.utilities.Factory.mklevel.MkLevelDraggableOverlay;
 import net.felix.utilities.Farmworld.collections.CollectionDraggableOverlay;
 import net.felix.utilities.Farmworld.miningxp.MiningLumberjackDraggableOverlay;
 import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.aspekte.ChatAspectOverlayDraggableOverlay;
+import net.felix.utilities.Overall.buildshare.BuildShareDraggableOverlay;
+import net.felix.utilities.Overall.cointracker.CoinTrackerDraggableOverlay;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.leaderboard.LeaderboardDraggableOverlay;
 import net.felix.utilities.Town.kits.filter.KitFilterButtonDraggableOverlay;
 import net.felix.utilities.Town.schmied.HideUncraftableButtonDraggableOverlay;
 import net.felix.utilities.Town.schmied.HideWrongClassButtonDraggableOverlay;
@@ -1275,7 +1274,7 @@ public class OverlayEditorScreen extends Screen {
             config.showCoinTracker = newValue;
             if (newValue) {
                 // Overlay-Picker steuert das Overlay selbst → Anzeige auf Overlay setzen
-                config.coinTrackerDisplayMode = net.felix.CoinTrackerDisplayMode.OVERLAY;
+                config.coinTrackerDisplayMode = net.felix.utilities.Overall.cointracker.CoinTrackerDisplayMode.OVERLAY;
             }
         } else if (overlay instanceof LeaderboardDraggableOverlay) {
             config.leaderboardVisible = !config.leaderboardVisible;

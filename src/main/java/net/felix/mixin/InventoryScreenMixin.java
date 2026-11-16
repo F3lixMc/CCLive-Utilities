@@ -1,13 +1,13 @@
 package net.felix.mixin;
 
+import net.felix.features.itemviewer.ui.FilterOverlayControls;
+import net.felix.features.itemviewer.ui.HelpOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.felix.features.itemviewer.ui.FilterOverlayControls;
-import net.felix.features.itemviewer.ui.HelpOverlay;
 
 /**
  * Mixin for InventoryScreen to render aspect overlay in player inventory (survival mode)
@@ -28,12 +28,12 @@ public abstract class InventoryScreenMixin {
         if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
             // Render aspect overlay if we're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
             // This allows aspect overlay to work in the player inventory
-            boolean shouldRender = net.felix.utilities.Overall.Aspekte.AspectOverlay.isCurrentlyHovering();
+            boolean shouldRender = net.felix.utilities.Overall.aspekte.AspectOverlay.isCurrentlyHovering();
             
             if (shouldRender) {
                 // Render our aspect overlay AFTER everything else (including buttons and tooltips)
                 try {
-                    net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+                    net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
                 } catch (Exception e) {
                     // Ignore rendering errors
                 }

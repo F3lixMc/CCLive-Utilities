@@ -1,14 +1,13 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.AnimationBlockerUtility;
+import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
+import net.felix.utilities.Overall.animationblocker.AnimationBlockerUtility;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.network.chat.Component;
-import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 
 @SuppressWarnings("unused")
 @Mixin(Hud.class)

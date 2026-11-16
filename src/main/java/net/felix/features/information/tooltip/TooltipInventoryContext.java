@@ -1,6 +1,6 @@
 package net.felix.features.information.tooltip;
 
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 
 /**

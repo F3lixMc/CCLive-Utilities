@@ -1,8 +1,9 @@
 package net.felix.mixin;
 
+import java.util.List;
 import net.felix.chat.BuildShareManager;
 import net.felix.chat.BuildShareOverviewLayout;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -13,8 +14,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
 
 /**
  * Mixin for GuiGraphicsExtractor to disable the dark inventory overlay for Equipment Display screens.
