@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.ui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
@@ -15,6 +15,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import net.felix.features.itemviewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.search.CostFilter;
+import net.felix.features.itemviewer.search.FloorFilter;
+import net.felix.features.itemviewer.search.ItemSearchParser;
+import net.felix.features.itemviewer.search.ModifierFilter;
+import net.felix.features.itemviewer.search.SearchQuery;
+import net.felix.features.itemviewer.search.StatFilter;
 
 /**
  * Checkbox-Filter-Menü für den Item Viewer.

@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.data;
 
 import com.google.gson.JsonObject;
 import java.util.List;

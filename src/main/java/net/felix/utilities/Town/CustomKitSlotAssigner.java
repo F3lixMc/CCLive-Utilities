@@ -1,6 +1,6 @@
 package net.felix.utilities.Town;
 
-import net.felix.utilities.ItemViewer.ItemData;
+import net.felix.features.itemviewer.data.ItemData;
 import net.felix.utilities.Town.BuildSlotMapping.PieceType;
 import net.felix.utilities.Town.CustomKit.EquipmentEntry;
 

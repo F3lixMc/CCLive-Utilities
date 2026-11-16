@@ -2,9 +2,9 @@ package net.felix.utilities.Town;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
-import net.felix.utilities.ItemViewer.ItemData;
-import net.felix.utilities.ItemViewer.ItemViewerGrid;
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.ui.ItemViewerGrid;
+import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -595,7 +595,7 @@ public class CustomKitEditorScreen extends Screen {
             return super.mouseClicked(event, doubled);
         }
 
-        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
+        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
             if (ItemViewerUtility.handleFilterOverlayClick(mouseX, mouseY, button)) {
                 return true;
             }
@@ -687,7 +687,7 @@ public class CustomKitEditorScreen extends Screen {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
-        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
+        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
             if (ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 return true;
             }

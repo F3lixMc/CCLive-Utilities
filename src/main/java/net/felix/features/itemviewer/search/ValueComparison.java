@@ -1,11 +1,11 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.search;
 
 /**
  * Gemeinsame Vergleichslogik für Stat- und Ebenen-Filter
  */
-public final class ComparisonUtils {
+public final class ValueComparison {
     
-    private ComparisonUtils() {
+    private ValueComparison() {
     }
     
     public static String normalizeOperator(String operator) {

@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.search;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -7,6 +7,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.itemviewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.PriceData;
 
 /**
  * Filter-Logik für Items
@@ -348,7 +352,7 @@ public class ItemFilter {
                 return false;
             }
             String operator = filter.amountOperator != null ? filter.amountOperator : "=";
-            if (!ComparisonUtils.compareInt(itemAmount, filter.amount, operator)) {
+            if (!ValueComparison.compareInt(itemAmount, filter.amount, operator)) {
                 return false;
             }
         }
@@ -574,7 +578,7 @@ public class ItemFilter {
         if (itemValue == null || filterValue == null) {
             return false;
         }
-        return ComparisonUtils.compareDouble(itemValue, filterValue, operator);
+        return ValueComparison.compareDouble(itemValue, filterValue, operator);
     }
     
     /**
@@ -594,7 +598,7 @@ public class ItemFilter {
         }
         
         for (int floorNum : itemFloors) {
-            if (ComparisonUtils.compareInt(floorNum, filter.value, filter.operator)) {
+            if (ValueComparison.compareInt(floorNum, filter.value, filter.operator)) {
                 return true;
             }
         }

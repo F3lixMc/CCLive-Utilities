@@ -1,8 +1,9 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.search;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.itemviewer.ItemViewerUtility;
 
 /**
  * Parser für Suchanfragen
@@ -150,7 +151,7 @@ public class ItemSearchParser {
                 
                 StatFilter filter = new StatFilter();
                 filter.statName = statName;
-                filter.operator = ComparisonUtils.normalizeOperator(operator);
+                filter.operator = ValueComparison.normalizeOperator(operator);
                 filter.value = value;
                 
                 query.statFilters.add(filter);
@@ -253,7 +254,7 @@ public class ItemSearchParser {
                 
                 StatFilter filter = new StatFilter();
                 filter.statName = statName;
-                filter.operator = ComparisonUtils.normalizeOperator(operator);
+                filter.operator = ValueComparison.normalizeOperator(operator);
                 filter.value = value;
                 
                 query.statFilters.add(filter);
@@ -374,7 +375,7 @@ public class ItemSearchParser {
         }
         Matcher opMatcher = Pattern.compile("^(>=|<=|>|<|=)\\s*(\\d+(?:[.,]\\d+)?)$").matcher(value);
         if (opMatcher.matches()) {
-            filter.amountOperator = ComparisonUtils.normalizeOperator(opMatcher.group(1));
+            filter.amountOperator = ValueComparison.normalizeOperator(opMatcher.group(1));
             filter.amount = parseCostFilterAmount(opMatcher.group(2));
             return;
         }
@@ -450,7 +451,7 @@ public class ItemSearchParser {
     private static void addFloorFilter(SearchQuery query, String operator, String valueStr) {
         try {
             FloorFilter filter = new FloorFilter();
-            filter.operator = ComparisonUtils.normalizeOperator(operator);
+            filter.operator = ValueComparison.normalizeOperator(operator);
             filter.value = Integer.parseInt(valueStr.trim());
             query.floorFilters.add(filter);
         } catch (NumberFormatException e) {

@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.inventory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,7 +20,7 @@ import java.util.Set;
 /**
  * Verwaltet die Favoriten-Blueprints in favorite_blueprints.json
  */
-public class FavoriteBlueprintsManager {
+public class FavoriteBlueprintsStore {
     
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private static final String FAVORITES_FILE_NAME = "favorite_blueprints.json";

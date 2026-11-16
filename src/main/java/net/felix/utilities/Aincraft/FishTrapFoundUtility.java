@@ -130,7 +130,7 @@ public class FishTrapFoundUtility {
 
             if (foundFishTraps.add(fishTrapName)) {
                 saveFoundFishTraps();
-                net.felix.utilities.ItemViewer.ItemViewerUtility.onFoundStatusChanged();
+                net.felix.features.itemviewer.ItemViewerUtility.onFoundStatusChanged();
             }
         }
     }

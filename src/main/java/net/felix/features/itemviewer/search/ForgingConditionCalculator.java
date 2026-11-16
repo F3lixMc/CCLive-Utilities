@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.search;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Town.SchmiedTrackerUtility;
@@ -6,7 +6,7 @@ import net.felix.utilities.Town.SchmiedTrackerUtility;
 /**
  * Ermittelt den maximalen Schmiedezustand anhand des ItemScores.
  */
-public final class ForgingConditionUtility {
+public final class ForgingConditionCalculator {
 
     private record Tier(String name, double minScore) {}
 
@@ -20,7 +20,7 @@ public final class ForgingConditionUtility {
         new Tier("Frostgeschmiedet", 20),
     };
 
-    private ForgingConditionUtility() {
+    private ForgingConditionCalculator() {
     }
 
     public static String resolveMaxForgingCondition(String itemScore) {

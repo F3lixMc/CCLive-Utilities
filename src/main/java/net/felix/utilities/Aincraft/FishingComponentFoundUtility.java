@@ -134,7 +134,7 @@ public class FishingComponentFoundUtility {
 
             if (foundComponents.add(componentName)) {
                 saveFoundComponents();
-                net.felix.utilities.ItemViewer.ItemViewerUtility.onFoundStatusChanged();
+                net.felix.features.itemviewer.ItemViewerUtility.onFoundStatusChanged();
             }
         }
     }

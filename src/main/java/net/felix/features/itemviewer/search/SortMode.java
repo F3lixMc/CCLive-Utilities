@@ -1,7 +1,9 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.search;
 
 import java.util.Comparator;
 import java.util.List;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.LocationData;
 
 /**
  * Sortier-Modi für Items

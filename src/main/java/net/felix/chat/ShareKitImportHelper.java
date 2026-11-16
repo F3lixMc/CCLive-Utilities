@@ -1,8 +1,8 @@
 package net.felix.chat;
 
-import net.felix.utilities.ItemViewer.ItemData;
-import net.felix.utilities.ItemViewer.ItemViewerGrid;
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.ui.ItemViewerGrid;
+import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Town.BuildSlotMapping;
 import net.felix.utilities.Town.CustomKit;
 import net.felix.utilities.Town.CustomKitManager;

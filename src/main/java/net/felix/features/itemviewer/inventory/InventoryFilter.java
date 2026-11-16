@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.inventory;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilitiesConfig;
@@ -16,12 +16,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
+import net.felix.features.itemviewer.ItemViewerUtility;
 
 /**
  * Wendet die aktuelle Item-Viewer-Filterung auf geöffnete Schmiede-/Angel-Inventare an
  * (nicht passende Items werden als schwarzer Beton ausgeblendet).
  */
-public class ItemViewerInventoryFilterUtility {
+public class InventoryFilter {
 
     private static final int[] DEFAULT_BLUEPRINT_SLOTS = {
         10, 11, 12, 13, 14, 15, 16,
@@ -51,7 +52,7 @@ public class ItemViewerInventoryFilterUtility {
         if (initialized) {
             return;
         }
-        ClientTickEvents.END_CLIENT_TICK.register(ItemViewerInventoryFilterUtility::onClientTick);
+        ClientTickEvents.END_CLIENT_TICK.register(InventoryFilter::onClientTick);
         initialized = true;
     }
 

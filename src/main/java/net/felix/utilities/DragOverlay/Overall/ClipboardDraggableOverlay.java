@@ -4,9 +4,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.ItemViewer.CostItem;
-import net.felix.utilities.ItemViewer.ItemData;
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardPaperShredsCollector;
@@ -48,21 +48,21 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
     }
     
-    private static CostItem resolveAmboss(net.felix.utilities.ItemViewer.PriceData price) {
+    private static CostItem resolveAmboss(net.felix.features.itemviewer.data.PriceData price) {
         if (price == null) {
             return null;
         }
         return price.Amboss != null ? price.Amboss : price.amboss;
     }
     
-    private static CostItem resolveRessource(net.felix.utilities.ItemViewer.PriceData price) {
+    private static CostItem resolveRessource(net.felix.features.itemviewer.data.PriceData price) {
         if (price == null) {
             return null;
         }
         return price.Ressource != null ? price.Ressource : price.ressource;
     }
     
-    private static void addPriceCostItemsToDisplayList(List<CostItemWithCategory> list, net.felix.utilities.ItemViewer.PriceData price) {
+    private static void addPriceCostItemsToDisplayList(List<CostItemWithCategory> list, net.felix.features.itemviewer.data.PriceData price) {
         if (price == null || list == null) {
             return;
         }
@@ -123,7 +123,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
     }
     
-    private static void addPriceCostItemsToTotal(Map<String, CostItem> totalCostsMap, net.felix.utilities.ItemViewer.PriceData price, int quantity) {
+    private static void addPriceCostItemsToTotal(Map<String, CostItem> totalCostsMap, net.felix.features.itemviewer.data.PriceData price, int quantity) {
         if (price == null || totalCostsMap == null) {
             return;
         }
@@ -137,7 +137,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         addCostItemToTotal(totalCostsMap, multiplyCostItem(resolveRessource(price), quantity));
     }
     
-    private static void collectRequiredMaterialsFromPrice(net.felix.utilities.ItemViewer.PriceData price, Set<String> requiredMaterials) {
+    private static void collectRequiredMaterialsFromPrice(net.felix.features.itemviewer.data.PriceData price, Set<String> requiredMaterials) {
         if (price == null || requiredMaterials == null) {
             return;
         }

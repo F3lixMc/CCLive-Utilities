@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.search;
 
 /**
  * Filter für einen spezifischen Modifier

@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.felix.utilities.Overall.CoinTrackerUtility;
-import net.felix.utilities.ItemViewer.ItemViewerHudStatsCollector;
+import net.felix.features.itemviewer.inventory.HudStatsReader;
 import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -51,7 +51,7 @@ public class BossBarMixin {
                 }
 
                 CoinTrackerUtility.processBossBar(name);
-                ItemViewerHudStatsCollector.processBossBar(name);
+                HudStatsReader.processBossBar(name);
                 net.felix.utilities.Other.Clipboard.ClipboardCoinCollector.processBossBar(name);
                 WaveUtility.processBossBarWave(name, index);
 

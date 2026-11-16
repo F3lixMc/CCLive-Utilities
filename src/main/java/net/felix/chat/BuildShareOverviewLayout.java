@@ -1,7 +1,7 @@
 package net.felix.chat;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.ItemViewer.ItemData;
+import net.felix.features.itemviewer.data.ItemData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

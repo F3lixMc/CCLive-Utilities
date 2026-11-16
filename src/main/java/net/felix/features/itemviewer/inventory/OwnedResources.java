@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.inventory;
 
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
@@ -9,13 +9,16 @@ import net.felix.utilities.Overall.HudNumberSuffixUtility;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import net.felix.features.itemviewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.PriceData;
 
 /**
  * Liefert aktuelle Besitzmengen für die Kosten-Anzeige im Item Viewer.
  */
-public final class ItemViewerOwnedResources {
+public final class OwnedResources {
 
-    private ItemViewerOwnedResources() {
+    private OwnedResources() {
     }
 
     private static boolean usesAbbreviatedUnit(String itemName) {
@@ -86,8 +89,8 @@ public final class ItemViewerOwnedResources {
         }
         String trimmed = itemName.trim();
         if ("Coins".equalsIgnoreCase(trimmed)) {
-            if (ItemViewerUtility.isShowOwnedResources() && ItemViewerHudStatsCollector.hasCoinsData()) {
-                return ItemViewerHudStatsCollector.getCoinsAmount();
+            if (ItemViewerUtility.isShowOwnedResources() && HudStatsReader.hasCoinsData()) {
+                return HudStatsReader.getCoinsAmount();
             }
             BigDecimal coins = ClipboardCoinCollector.getCurrentCoins();
             if (coins != null && coins.signum() > 0) {
@@ -97,15 +100,15 @@ public final class ItemViewerOwnedResources {
         }
         if ("Kaktus".equalsIgnoreCase(trimmed)) {
             return resolveAbbreviatedOwnedAmount(
-                    ItemViewerUtility.isShowOwnedResources() && ItemViewerHudStatsCollector.hasCactusData(),
-                    ItemViewerHudStatsCollector::getCactusAmount,
+                    ItemViewerUtility.isShowOwnedResources() && HudStatsReader.hasCactusData(),
+                    HudStatsReader::getCactusAmount,
                     CollectedMaterialsResourcesStorage.OTHER_KAKTUS,
                     CoinTrackerUtility::getCurrentCactusDisplay);
         }
         if ("Seelen".equalsIgnoreCase(trimmed)) {
             return resolveAbbreviatedOwnedAmount(
-                    ItemViewerUtility.isShowOwnedResources() && ItemViewerHudStatsCollector.hasSoulsData(),
-                    ItemViewerHudStatsCollector::getSoulsAmount,
+                    ItemViewerUtility.isShowOwnedResources() && HudStatsReader.hasSoulsData(),
+                    HudStatsReader::getSoulsAmount,
                     CollectedMaterialsResourcesStorage.OTHER_SEELEN,
                     CoinTrackerUtility::getCurrentSoulsDisplay);
         }
@@ -179,7 +182,7 @@ public final class ItemViewerOwnedResources {
 
     private static String getCactusDisplay() {
         if (ItemViewerUtility.isShowOwnedResources()) {
-            String display = ItemViewerHudStatsCollector.getCurrentCactusDisplay();
+            String display = HudStatsReader.getCurrentCactusDisplay();
             if (display != null && !display.isBlank()) {
                 return normalizeAbbreviatedDisplay(display);
             }
@@ -194,7 +197,7 @@ public final class ItemViewerOwnedResources {
 
     private static String getSoulsDisplay() {
         if (ItemViewerUtility.isShowOwnedResources()) {
-            String display = ItemViewerHudStatsCollector.getCurrentSoulsDisplay();
+            String display = HudStatsReader.getCurrentSoulsDisplay();
             if (display != null && !display.isBlank()) {
                 return normalizeAbbreviatedDisplay(display);
             }

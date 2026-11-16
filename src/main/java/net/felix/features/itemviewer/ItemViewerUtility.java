@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer;
 
 import net.felix.utilities.Overall.KeyCategories;
 
@@ -38,6 +38,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.ItemListData;
+import net.felix.features.itemviewer.data.LocationData;
+import net.felix.features.itemviewer.data.PriceData;
+import net.felix.features.itemviewer.inventory.FavoriteBlueprintsStore;
+import net.felix.features.itemviewer.inventory.FoundItemChecker;
+import net.felix.features.itemviewer.inventory.HudStatsReader;
+import net.felix.features.itemviewer.inventory.InventoryFilter;
+import net.felix.features.itemviewer.search.ItemFilter;
+import net.felix.features.itemviewer.search.ItemSearchParser;
+import net.felix.features.itemviewer.search.SearchQuery;
+import net.felix.features.itemviewer.search.SortMode;
+import net.felix.features.itemviewer.ui.ItemViewerFilterMenu;
+import net.felix.features.itemviewer.ui.ItemViewerGrid;
 
 /**
  * Utility für den Item-Viewer (ähnlich NEI/JEI)
@@ -130,7 +145,7 @@ public class ItemViewerUtility {
         
         try {
             // Initialisiere Favoriten-Manager
-            FavoriteBlueprintsManager.initialize();
+            FavoriteBlueprintsStore.initialize();
             
             // Registriere Server-Join-Event für Version-Check (nur einmal)
             if (!serverCheckRegistered) {
@@ -152,7 +167,7 @@ public class ItemViewerUtility {
             // Registriere Keybind
             registerKeybind();
             
-            ItemViewerInventoryFilterUtility.initialize();
+            InventoryFilter.initialize();
             
             // Registriere Client Tick Events
             ClientTickEvents.END_CLIENT_TICK.register(ItemViewerUtility::onClientTick);
@@ -4083,7 +4098,7 @@ public class ItemViewerUtility {
         Minecraft client = Minecraft.getInstance();
         boolean isHovered = lastMouseX >= x && lastMouseX < x + width &&
                            lastMouseY >= y && lastMouseY < y + SORT_DROPDOWN_HEIGHT;
-        boolean isActive = ItemViewerInventoryFilterUtility.isFilterActive();
+        boolean isActive = InventoryFilter.isFilterActive();
         
         int bgColor;
         if (isActive) {
@@ -4999,7 +5014,7 @@ public class ItemViewerUtility {
                         && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
                     showOwnedResources = !showOwnedResources;
                     if (!showOwnedResources) {
-                        ItemViewerHudStatsCollector.clear();
+                        HudStatsReader.clear();
                     }
                     ItemViewerGrid.invalidateTooltipCache();
                     return true;
@@ -5116,10 +5131,10 @@ public class ItemViewerUtility {
                     hoveredItemForClick.name != null && !hoveredItemForClick.name.isEmpty()) {
                     
                     // Toggle Favoriten-Status
-                    boolean isFavorite = FavoriteBlueprintsManager.isFavorite(hoveredItemForClick.name);
+                    boolean isFavorite = FavoriteBlueprintsStore.isFavorite(hoveredItemForClick.name);
                     if (isFavorite) {
                         // Entferne aus Favoriten
-                        FavoriteBlueprintsManager.removeFavorite(hoveredItemForClick.name);
+                        FavoriteBlueprintsStore.removeFavorite(hoveredItemForClick.name);
                     } else {
                         // Füge zu Favoriten hinzu
                         JsonObject jsonObj = hoveredItemForClick.jsonObject;
@@ -5128,7 +5143,7 @@ public class ItemViewerUtility {
                             jsonObj = blueprintJsonMap.get(hoveredItemForClick.name);
                         }
                         if (jsonObj != null) {
-                            FavoriteBlueprintsManager.addFavorite(jsonObj);
+                            FavoriteBlueprintsStore.addFavorite(jsonObj);
                         }
                     }
 
@@ -5205,7 +5220,7 @@ public class ItemViewerUtility {
         
         if (button == 0 && mouseX >= pos.applyButtonX && mouseX < pos.applyButtonX + pos.applyButtonWidth &&
             mouseY >= pos.applyButtonY && mouseY < pos.applyButtonY + SORT_DROPDOWN_HEIGHT) {
-            ItemViewerInventoryFilterUtility.toggleFilter();
+            InventoryFilter.toggleFilter();
             return true;
         }
         
@@ -5398,7 +5413,7 @@ public class ItemViewerUtility {
         applySorting();
         currentPage = 0;
         invalidatePageItemsCache();
-        ItemViewerInventoryFilterUtility.onFilteredItemsChanged();
+        InventoryFilter.onFilteredItemsChanged();
     }
 
     /**
@@ -5413,7 +5428,7 @@ public class ItemViewerUtility {
         List<ItemData> itemsToFilter = allItems;
 
         if (favoritesMode) {
-            Set<String> favoriteNames = FavoriteBlueprintsManager.getFavoriteNames();
+            Set<String> favoriteNames = FavoriteBlueprintsStore.getFavoriteNames();
             itemsToFilter = allItems.stream()
                 .filter(item -> item.info != null &&
                                Boolean.TRUE.equals(item.info.blueprint) &&
@@ -5465,7 +5480,7 @@ public class ItemViewerUtility {
 
         if (currentSortMode.filtersNotFoundOnly()) {
             result = result.stream()
-                .filter(item -> !ItemViewerFoundUtility.isFound(item))
+                .filter(item -> !FoundItemChecker.isFound(item))
                 .collect(Collectors.toList());
         }
 
@@ -5479,7 +5494,7 @@ public class ItemViewerUtility {
     public static java.util.Set<String> getFilteredItemNamesForInventory(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen) {
         java.util.Set<String> names = new java.util.HashSet<>();
         String categoryFilter = screen != null
-            ? ItemViewerInventoryFilterUtility.resolveItemCategoryForInventory(screen)
+            ? InventoryFilter.resolveItemCategoryForInventory(screen)
             : null;
 
         for (ItemData item : buildFilteredItemList()) {

@@ -1,4 +1,4 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.ui;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.Minecraft;
@@ -19,6 +19,16 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.itemviewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.CatchChance;
+import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.ItemInfo;
+import net.felix.features.itemviewer.data.LocationData;
+import net.felix.features.itemviewer.data.PriceData;
+import net.felix.features.itemviewer.inventory.FoundItemChecker;
+import net.felix.features.itemviewer.inventory.OwnedResources;
+import net.felix.features.itemviewer.search.ForgingConditionCalculator;
 
 /**
  * Rendert Items in einem Grid-Layout (ähnlich JEI)
@@ -231,7 +241,7 @@ public class ItemViewerGrid {
             Minecraft client = Minecraft.getInstance();
             ItemStack itemStack = getCachedItemStack(hoveredItem);
             if (!itemStack.isEmpty()) {
-                boolean animatedForgingRainbow = ForgingConditionUtility.usesAnimatedRainbow(
+                boolean animatedForgingRainbow = ForgingConditionCalculator.usesAnimatedRainbow(
                         resolveForgingCondition(hoveredItem));
                 boolean itemChanged = hoveredItem != lastTooltipItem;
                 if (animatedForgingRainbow || itemChanged) {
@@ -664,7 +674,7 @@ public class ItemViewerGrid {
 
     private void appendInteractionHints(java.util.List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info) {
         if (info.blueprint != null && info.blueprint) {
-            boolean isFavorite = net.felix.utilities.ItemViewer.FavoriteBlueprintsManager.isFavorite(hoveredItem.name);
+            boolean isFavorite = net.felix.features.itemviewer.inventory.FavoriteBlueprintsStore.isFavorite(hoveredItem.name);
             tooltipLines.add(Component.empty());
             if (isFavorite) {
                 tooltipLines.add(Component.literal("Aus Favoriten entfernen:")
@@ -680,7 +690,7 @@ public class ItemViewerGrid {
         }
 
         if (net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
-            String hotkeyText = net.felix.utilities.ItemViewer.ItemViewerUtility.getClipboardPinHotkeyText();
+            String hotkeyText = net.felix.features.itemviewer.ItemViewerUtility.getClipboardPinHotkeyText();
             tooltipLines.add(Component.literal("An Pinnwand anheften mit Hotkey: " + hotkeyText)
                 .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false)));
         }
@@ -834,7 +844,7 @@ public class ItemViewerGrid {
             forging = itemData.forgingCondition;
         }
         if (forging != null && !forging.isBlank()) {
-            return ForgingConditionUtility.getDisplayColorArgb(forging);
+            return ForgingConditionCalculator.getDisplayColorArgb(forging);
         }
 
         if (itemData.info != null) {
@@ -1024,7 +1034,7 @@ public class ItemViewerGrid {
                     .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
             return;
         }
-        int craftable = ItemViewerOwnedResources.calculateCraftableCount(price);
+        int craftable = OwnedResources.calculateCraftableCount(price);
         if (craftable < 0) {
             tooltipLines.add(Component.literal(label)
                     .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
@@ -1092,8 +1102,8 @@ public class ItemViewerGrid {
     }
 
     private void addCostItemWithOwned(java.util.List<Component> tooltipLines, CostItem costItem) {
-        java.math.BigDecimal owned = ItemViewerOwnedResources.getOwnedAmount(costItem.itemName);
-        java.math.BigDecimal needed = ItemViewerOwnedResources.parseNeededAmount(costItem.amount);
+        java.math.BigDecimal owned = OwnedResources.getOwnedAmount(costItem.itemName);
+        java.math.BigDecimal needed = OwnedResources.parseNeededAmount(costItem.amount);
         int lineColor;
         if (needed.signum() == 0) {
             lineColor = 0xFF00FF00;
@@ -1103,8 +1113,8 @@ public class ItemViewerGrid {
             lineColor = 0xFFFF5555;
         }
 
-        String ownedStr = ItemViewerOwnedResources.formatOwnedAmountForDisplay(costItem.itemName);
-        String neededStr = ItemViewerOwnedResources.formatNeededAmountForDisplay(costItem.itemName, costItem.amount);
+        String ownedStr = OwnedResources.formatOwnedAmountForDisplay(costItem.itemName);
+        String neededStr = OwnedResources.formatNeededAmountForDisplay(costItem.itemName, costItem.amount);
         String materialLine = ownedStr + " / " + neededStr + " " + costItem.itemName;
 
         net.felix.features.information.materials.MaterialFloorInfo floorInfo =
@@ -1231,7 +1241,7 @@ public class ItemViewerGrid {
         if (item.forgingCondition != null && !item.forgingCondition.isBlank()) {
             return item.forgingCondition;
         }
-        return ForgingConditionUtility.resolveMaxForgingCondition(item.itemScore);
+        return ForgingConditionCalculator.resolveMaxForgingCondition(item.itemScore);
     }
 
     private static Component buildForgingConditionText(String forgingCondition) {
@@ -1239,7 +1249,7 @@ public class ItemViewerGrid {
             return null;
         }
 
-        int conditionColor = ForgingConditionUtility.getDisplayColorArgb(forgingCondition);
+        int conditionColor = ForgingConditionCalculator.getDisplayColorArgb(forgingCondition);
         MutableComponent text = Component.literal("[")
             .setStyle(Style.EMPTY.withColor(0xFFFFFFFF).withItalic(false));
         text.append(Component.literal(forgingCondition)
@@ -1407,7 +1417,7 @@ public class ItemViewerGrid {
     }
 
     private boolean isItemFound(ItemData item) {
-        return ItemViewerFoundUtility.isFound(item);
+        return FoundItemChecker.isFound(item);
     }
     
     /**

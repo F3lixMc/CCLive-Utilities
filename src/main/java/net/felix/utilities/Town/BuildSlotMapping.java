@@ -1,7 +1,7 @@
 package net.felix.utilities.Town;
 
-import net.felix.utilities.ItemViewer.ItemData;
-import net.felix.utilities.ItemViewer.ItemInfo;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.ItemInfo;
 
 import java.util.Arrays;
 import java.util.Collections;

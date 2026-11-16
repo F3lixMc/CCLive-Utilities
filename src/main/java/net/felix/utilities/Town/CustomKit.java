@@ -1,7 +1,7 @@
 package net.felix.utilities.Town;
 
-import net.felix.utilities.ItemViewer.ItemData;
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;

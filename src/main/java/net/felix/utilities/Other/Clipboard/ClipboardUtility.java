@@ -3,13 +3,13 @@ package net.felix.utilities.Other.Clipboard;
 import net.felix.utilities.Overall.KeyCategories;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.ItemViewer.ItemData;
-import net.felix.utilities.ItemViewer.PriceData;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.PriceData;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
-import net.felix.utilities.ItemViewer.BlueprintShopData;
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.BlueprintShopData;
+import net.felix.features.itemviewer.ItemViewerUtility;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 

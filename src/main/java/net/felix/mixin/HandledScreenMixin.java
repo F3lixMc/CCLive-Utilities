@@ -57,7 +57,7 @@ public abstract class HandledScreenMixin {
         net.felix.chat.ContainerScreenBounds.update(leftPos, topPos, imageWidth, imageHeight);
 
         // Update mouse position for Item Viewer
-        net.felix.utilities.ItemViewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+        net.felix.features.itemviewer.ItemViewerUtility.updateMousePosition(mouseX, mouseY);
         
         // Update hovered slot for Item Viewer (für Clipboard-Pin-Funktion)
         updateHoveredSlotForItemViewer(screen, mouseX, mouseY);
@@ -128,21 +128,21 @@ public abstract class HandledScreenMixin {
         
         // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
         // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isVisible()) {
+        if (net.felix.features.itemviewer.ItemViewerUtility.isVisible()) {
             net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
         }
         
         // Rendere Help-Overlay ganz am Ende, damit es über allem liegt (wie im Blueprint Shop)
         // Wird sowohl hier als auch in GuiHelpOverlayMixin gerendert, um sicherzustellen, dass es überall funktioniert
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
-            net.felix.utilities.ItemViewer.ItemViewerUtility.renderHelpOverlay(context);
+        if (net.felix.features.itemviewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            net.felix.features.itemviewer.ItemViewerUtility.renderHelpOverlay(context);
         }
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
-            net.felix.utilities.ItemViewer.ItemViewerUtility.renderFilterOverlay(context);
+        if (net.felix.features.itemviewer.ItemViewerUtility.isOverlayOpen()) {
+            net.felix.features.itemviewer.ItemViewerUtility.renderFilterOverlay(context);
         }
         
         // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
-        net.felix.utilities.ItemViewer.ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
+        net.felix.features.itemviewer.ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
     }
     
     /**
@@ -154,7 +154,7 @@ public abstract class HandledScreenMixin {
             net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
             
             // Rendere Item-Viewer (wird nur gerendert wenn sichtbar)
-            net.felix.utilities.ItemViewer.ItemViewerUtility.renderItemViewerInScreen(context, client, screen, mouseX, mouseY);
+            net.felix.features.itemviewer.ItemViewerUtility.renderItemViewerInScreen(context, client, screen, mouseX, mouseY);
         } catch (Exception e) {
             // Ignore rendering errors
         }
@@ -189,7 +189,7 @@ public abstract class HandledScreenMixin {
     @Inject(method = "getTooltipFromContainerItem", at = @At("HEAD"), cancellable = true)
     private void blockTooltipsFromItem(net.minecraft.world.item.ItemStack stack, CallbackInfoReturnable<java.util.List<net.minecraft.network.chat.Component>> cir) {
         // Blockiere Tooltips wenn das Hilfe-Overlay offen ist
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
+        if (net.felix.features.itemviewer.ItemViewerUtility.isOverlayOpen()) {
             cir.setReturnValue(java.util.Collections.emptyList());
         }
     }
@@ -203,7 +203,7 @@ public abstract class HandledScreenMixin {
         AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
         // Blockiere das Rendern der Items nur für InventoryScreen, wenn das Hilfe-Overlay offen ist
         if (screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen && 
-            net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
+            net.felix.features.itemviewer.ItemViewerUtility.isOverlayOpen()) {
             ci.cancel();
         }
     }
@@ -220,14 +220,14 @@ public abstract class HandledScreenMixin {
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(sdlButton);
         // Handle clicks on Help Overlay FIRST (höchste Priorität wenn geöffnet)
         // Dies muss vor allen anderen Klicks geprüft werden
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isHelpOverlayOpen()) {
-            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleHelpOverlayClick(mouseX, mouseY, button)) {
+        if (net.felix.features.itemviewer.ItemViewerUtility.isHelpOverlayOpen()) {
+            if (net.felix.features.itemviewer.ItemViewerUtility.handleHelpOverlayClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
             }
         }
-        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
-            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayClick(mouseX, mouseY, button)) {
+        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
+            if (net.felix.features.itemviewer.ItemViewerUtility.handleFilterOverlayClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
             }
@@ -239,7 +239,7 @@ public abstract class HandledScreenMixin {
             return;
         }
 
-        net.felix.utilities.ItemViewer.ItemViewerUtility.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
+        net.felix.features.itemviewer.ItemViewerUtility.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocusUnlessClickOnBar(mouseX, mouseY, button);
 
         // Build-Share vor Clipboard: gleiches Eck-Gebiet, sonst schluckt Clipboard Delete/Pfeile die Klicks
@@ -269,7 +269,7 @@ public abstract class HandledScreenMixin {
         // Priorität basierend auf Item Viewer Status:
         // - Wenn ausgeklappt (nicht minimiert): Item Viewer hat Priorität
         // - Wenn eingeklappt (minimiert): Buttons haben Priorität
-        boolean isItemViewerMinimized = net.felix.utilities.ItemViewer.ItemViewerUtility.isMinimized();
+        boolean isItemViewerMinimized = net.felix.features.itemviewer.ItemViewerUtility.isMinimized();
         
         if (isItemViewerMinimized) {
             // Item Viewer ist eingeklappt: Buttons haben Priorität
@@ -278,12 +278,12 @@ public abstract class HandledScreenMixin {
                 return;
             }
             // Handle clicks on Item Viewer buttons (nur Minimize-Button wenn minimiert)
-            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
+            if (net.felix.features.itemviewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
             }
         } else {
             // Item Viewer ist ausgeklappt: Item Viewer hat Priorität
-            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
+            if (net.felix.features.itemviewer.ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
             }
@@ -345,8 +345,8 @@ public abstract class HandledScreenMixin {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
-        if (net.felix.utilities.ItemViewer.ItemViewerFilterMenu.isOpen()) {
-            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
+        if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
+            if (net.felix.features.itemviewer.ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
                 return;
             }
@@ -364,7 +364,7 @@ public abstract class HandledScreenMixin {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
+        if (net.felix.features.itemviewer.ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
             return;
         }
@@ -552,7 +552,7 @@ public abstract class HandledScreenMixin {
             }
             
             // Update hovered slot in ItemViewerUtility
-            net.felix.utilities.ItemViewer.ItemViewerUtility.updateHoveredSlot(screen, hoveredSlot);
+            net.felix.features.itemviewer.ItemViewerUtility.updateHoveredSlot(screen, hoveredSlot);
         } catch (Exception e) {
             // Ignore errors
         }
@@ -586,7 +586,7 @@ public abstract class HandledScreenMixin {
             // Item Viewer owns aspect state while hovering a viewer item (refreshed later this frame).
             // Clearing here caused a one-frame flicker and then a dead overlay when tooltip caching
             // skipped re-applying the same hovered ItemData.
-            if (net.felix.utilities.ItemViewer.ItemViewerUtility.hasItemViewerHover()) {
+            if (net.felix.features.itemviewer.ItemViewerUtility.hasItemViewerHover()) {
                 return;
             }
             

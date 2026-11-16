@@ -3,8 +3,8 @@ package net.felix.chat;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.felix.utilities.ItemViewer.ItemData;
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.ItemViewerUtility;
 
 import java.util.ArrayList;
 import java.util.HashSet;

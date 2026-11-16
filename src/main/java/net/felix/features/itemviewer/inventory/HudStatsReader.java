@@ -1,16 +1,17 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.inventory;
 
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.BossBarHudValueDecoder;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;
 
 import java.math.BigDecimal;
+import net.felix.features.itemviewer.ItemViewerUtility;
 
 /**
  * Liest Coins, Kaktus und Seelen aus der HUD-Bossbar, wenn die Besitz-Anzeige im Item Viewer aktiv ist.
  * Unabhängig vom Coin-Tracker (Dimension, Einstellungen).
  */
-public final class ItemViewerHudStatsCollector {
+public final class HudStatsReader {
 
     private static BigDecimal currentCoinsAmount = null;
     private static BigDecimal currentSoulsAmount = null;
@@ -22,7 +23,7 @@ public final class ItemViewerHudStatsCollector {
     private static String currentSoulsDisplay = "";
     private static String currentCactusDisplay = "";
 
-    private ItemViewerHudStatsCollector() {
+    private HudStatsReader() {
     }
 
     public static void processBossBar(String bossBarText) {

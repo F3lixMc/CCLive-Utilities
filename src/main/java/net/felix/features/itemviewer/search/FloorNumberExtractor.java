@@ -1,9 +1,11 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.search;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.LocationData;
 
 /**
  * Extrahiert Ebenen-Nummern aus Item-Daten (foundAt, Name mit [eX])

@@ -1,15 +1,16 @@
-package net.felix.utilities.ItemViewer;
+package net.felix.features.itemviewer.inventory;
 
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Aincraft.FishTrapFoundUtility;
 import net.felix.utilities.Aincraft.FishingComponentFoundUtility;
+import net.felix.features.itemviewer.data.ItemData;
 
 /**
  * Prüft, ob ein Item-Viewer-Eintrag bereits gefunden wurde.
  */
-public final class ItemViewerFoundUtility {
+public final class FoundItemChecker {
 
-    private ItemViewerFoundUtility() {
+    private FoundItemChecker() {
     }
 
     public static boolean isFound(ItemData item) {

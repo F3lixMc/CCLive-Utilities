@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;

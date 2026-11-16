@@ -2,7 +2,7 @@ package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
