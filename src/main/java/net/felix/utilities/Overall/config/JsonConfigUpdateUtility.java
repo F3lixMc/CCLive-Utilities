@@ -179,7 +179,7 @@ public class JsonConfigUpdateUtility {
      */
     private static void reloadInformationDatabase(String fileName) {
         try {
-            // Jede Datenbank im Paket net.felix.features.information hat eine eigene Reload-Methode
+            // Jede Datenbank im Paket net.felix.utilities.Aincraft.information hat eine eigene Reload-Methode
             switch (fileName) {
                 case "Aincraft.json":
                     // Aincraft.json wird in MaterialDatabase.loadMaterialsDatabase() geladen
