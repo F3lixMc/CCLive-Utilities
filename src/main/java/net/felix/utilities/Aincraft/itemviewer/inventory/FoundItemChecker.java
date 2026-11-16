@@ -1,8 +1,8 @@
 package net.felix.utilities.Aincraft.itemviewer.inventory;
 
-import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
-import net.felix.utilities.Aincraft.fishing.FishTrapFoundUtility;
-import net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
+import net.felix.utilities.Aincraft.fishing.found.FishTrapFoundUtility;
+import net.felix.utilities.Aincraft.fishing.found.FishingComponentFoundUtility;
 import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
 
 /**

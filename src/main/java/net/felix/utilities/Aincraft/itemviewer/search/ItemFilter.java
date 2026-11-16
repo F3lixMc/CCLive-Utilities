@@ -135,7 +135,7 @@ public class ItemFilter {
             return null;
         }
         String cleanItemName = item.name.replaceAll("§[0-9a-fk-or]", "");
-        String aspectName = net.felix.utilities.Aincraft.information.aspects.AspectDatabase.getAspectInfoForBlueprint(cleanItemName);
+        String aspectName = net.felix.utilities.Overall.aspekte.data.AspectDatabase.getAspectInfoForBlueprint(cleanItemName);
         return aspectName != null && !aspectName.isEmpty() ? aspectName : null;
     }
 

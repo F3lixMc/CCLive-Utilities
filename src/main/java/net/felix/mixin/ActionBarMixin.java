@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
-import net.felix.utilities.Aincraft.materials.ActionBarData;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
+import net.felix.utilities.Aincraft.materials.tracker.ActionBarData;
 import net.felix.utilities.Factory.bosshp.BossHPUtility;
 import net.felix.utilities.Other.clipboard.collector.ClipboardFarmzoneActionBar;
 import net.minecraft.client.gui.Hud;

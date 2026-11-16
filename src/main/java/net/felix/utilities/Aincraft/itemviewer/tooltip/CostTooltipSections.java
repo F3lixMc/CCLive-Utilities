@@ -132,15 +132,15 @@ public final class CostTooltipSections {
         String materialLine = amountStr + " " + costItem.itemName;
         
         // Prüfe ob es ein Aincraft-Material ist und füge Ebene hinzu
-        net.felix.utilities.Aincraft.information.materials.MaterialFloorInfo floorInfo = 
-            net.felix.utilities.Aincraft.information.materials.MaterialDatabase.getMaterialFloorInfo(costItem.itemName);
+        net.felix.utilities.Aincraft.materials.data.MaterialFloorInfo floorInfo = 
+            net.felix.utilities.Aincraft.materials.data.MaterialDatabase.getMaterialFloorInfo(costItem.itemName);
         
         if (floorInfo != null) {
             MutableComponent materialText = Component.literal(materialLine)
                 .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false));
             
-            String floorText = net.felix.utilities.Aincraft.information.materials.MaterialRarityColors.formatMaterialLocationSuffix(floorInfo);
-            int rarityColor = net.felix.utilities.Aincraft.information.materials.MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
+            String floorText = net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.formatMaterialLocationSuffix(floorInfo);
+            int rarityColor = net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
             Component floorTextObj = Component.literal(floorText)
                 .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false));
             
@@ -167,13 +167,13 @@ public final class CostTooltipSections {
         String neededStr = OwnedResources.formatNeededAmountForDisplay(costItem.itemName, costItem.amount);
         String materialLine = ownedStr + " / " + neededStr + " " + costItem.itemName;
 
-        net.felix.utilities.Aincraft.information.materials.MaterialFloorInfo floorInfo =
-            net.felix.utilities.Aincraft.information.materials.MaterialDatabase.getMaterialFloorInfo(costItem.itemName);
+        net.felix.utilities.Aincraft.materials.data.MaterialFloorInfo floorInfo =
+            net.felix.utilities.Aincraft.materials.data.MaterialDatabase.getMaterialFloorInfo(costItem.itemName);
         if (floorInfo != null) {
             MutableComponent materialText = Component.literal(materialLine)
                 .setStyle(Style.EMPTY.withColor(lineColor).withItalic(false));
-            String floorText = net.felix.utilities.Aincraft.information.materials.MaterialRarityColors.formatMaterialLocationSuffix(floorInfo);
-            int rarityColor = net.felix.utilities.Aincraft.information.materials.MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
+            String floorText = net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.formatMaterialLocationSuffix(floorInfo);
+            int rarityColor = net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
             materialText.append(Component.literal(floorText)
                 .setStyle(Style.EMPTY.withColor(rarityColor).withItalic(false)));
             tooltipLines.add(materialText);

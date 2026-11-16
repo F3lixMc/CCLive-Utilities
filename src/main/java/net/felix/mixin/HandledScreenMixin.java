@@ -104,7 +104,7 @@ public abstract class HandledScreenMixin {
             // 1. We're in a blueprint inventory (for blueprint items), OR
             // 2. We're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
             // This allows aspect overlay to work in ALL inventories for items with "⭐"
-            boolean shouldRender = isBlueprintInventory() || net.felix.utilities.Overall.aspekte.AspectOverlay.isCurrentlyHovering();
+            boolean shouldRender = isBlueprintInventory() || net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.isCurrentlyHovering();
             
             if (shouldRender) {
                 // Render our aspect overlay AFTER everything else (including buttons and tooltips)
@@ -113,7 +113,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Clear tooltip bounds after rendering
-        net.felix.utilities.Overall.aspekte.AspectOverlay.clearTooltipBounds();
+        net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.clearTooltipBounds();
         
         // Item-Info-Overlay (nicht registrierte Baupläne / Angel-Komponenten markieren)
         if (net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility.isSupportedInventory(screen)) {
@@ -129,7 +129,7 @@ public abstract class HandledScreenMixin {
         // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
         // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
         if (net.felix.utilities.Aincraft.itemviewer.ui.ViewerState.isVisible()) {
-            net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
         }
         
         // Rendere Help-Overlay ganz am Ende, damit es über allem liegt (wie im Blueprint Shop)
@@ -176,7 +176,7 @@ public abstract class HandledScreenMixin {
             // Verwende titleWithUnicode für die Glyph-Prüfung, da getPlainTextFromText Unicode entfernt
             if (ZeichenUtility.isMkLevelInventoryTitle(titlePlain, titleWithUnicode)) {
                 // Get actual inventory dimensions from the screen using shadow fields
-                net.felix.utilities.Aincraft.information.mklevel.MkLevelOverlayRenderer.renderMkLevelOverlay(context, net.minecraft.client.Minecraft.getInstance(), leftPos, topPos, imageWidth, imageHeight);
+                net.felix.utilities.Factory.mklevel.overlay.MkLevelOverlayRenderer.renderMkLevelOverlay(context, net.minecraft.client.Minecraft.getInstance(), leftPos, topPos, imageWidth, imageHeight);
             }
         } catch (Exception e) {
             // Ignore rendering errors
@@ -304,7 +304,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Handle clicks on MkLevel search bar and scrollbar - pass screen position directly from mixin (@Shadow fields)
-        if (net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
+        if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
         
@@ -351,7 +351,7 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
-        if (net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler.handleMkLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
+        if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
     }
@@ -368,7 +368,7 @@ public abstract class HandledScreenMixin {
             cir.setReturnValue(true);
             return;
         }
-        if (net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler.handleMkLevelScrollbarRelease(mouseX, mouseY, button)) {
+        if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelScrollbarRelease(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
     }
@@ -507,7 +507,7 @@ public abstract class HandledScreenMixin {
                                 }
                                 
                                 // Store tooltip information in AspectOverlay
-                                net.felix.utilities.Overall.aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                                net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
                             }
                         } catch (Exception e) {
                             // If reflection fails, try alternative approach
@@ -520,7 +520,7 @@ public abstract class HandledScreenMixin {
                                 int tooltipX = mouseX + 12;
                                 int tooltipY = mouseY - 12;
                                 
-                                net.felix.utilities.Overall.aspekte.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+                                net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.setTooltipBounds(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
                             }
                         }
                     }
@@ -576,9 +576,9 @@ public abstract class HandledScreenMixin {
             }
             
             // Star items (⭐) only — not Item Viewer / blueprint hover (lastTooltipUpdateTime == -1)
-            if (net.felix.utilities.Overall.aspekte.AspectOverlay.isStarItemHovering()) {
+            if (net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.isStarItemHovering()) {
                 if (hoveredSlot == null || !hoveredSlot.hasItem()) {
-                    net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+                    net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
                 }
                 return;
             }
@@ -596,22 +596,22 @@ public abstract class HandledScreenMixin {
                 if (itemStack != null && !itemStack.isEmpty()) {
                     // Check if the item name contains Epic colors - if so, don't show overlay
                     net.minecraft.network.chat.Component itemNameText = itemStack.getHoverName();
-                    if (itemNameText != null && net.felix.utilities.Aincraft.information.blueprints.BlueprintChatParser.hasEpicColor(itemNameText)) {
-                        net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+                    if (itemNameText != null && net.felix.utilities.Aincraft.blueprints.chat.BlueprintChatParser.hasEpicColor(itemNameText)) {
+                        net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
                         return;
                     }
                     
                     // Update the aspect overlay with this item (for blueprint items only)
                     // Items with "⭐" are handled by addAspectNameToTooltip
                     if (isBlueprintInventory()) {
-                        net.felix.utilities.Overall.aspekte.AspectOverlay.updateAspectInfo(itemStack);
+                        net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.updateAspectInfo(itemStack);
                     }
                     return;
                 }
             }
             
             // If no valid item is hovered, hide the overlay immediately
-            net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
             
         } catch (Exception e) {
             // Ignore errors
@@ -623,7 +623,7 @@ public abstract class HandledScreenMixin {
      */
     private void renderAspectOverlay(GuiGraphicsExtractor context) {
         try {
-            net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
         } catch (Exception e) {
             // Ignore rendering errors
         }

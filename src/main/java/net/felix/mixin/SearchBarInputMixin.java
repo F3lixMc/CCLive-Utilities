@@ -66,7 +66,7 @@ public abstract class SearchBarInputMixin {
                 int inventoryX = xField.getInt(handledScreen);
                 int inventoryY = yField.getInt(handledScreen);
                 int inventoryHeight = bgHeightField.getInt(handledScreen);
-                if (net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
+                if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
                     cir.setReturnValue(true);
                 }
             } catch (Exception e) {
@@ -207,7 +207,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle key press for MkLevel search bar
-        if (net.felix.utilities.Aincraft.information.mklevel.MkLevelInputHandler.handleMkLevelKeyPressed(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelKeyPressed(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
         }
     }

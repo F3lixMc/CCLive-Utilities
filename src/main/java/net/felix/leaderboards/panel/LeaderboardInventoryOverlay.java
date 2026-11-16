@@ -7,7 +7,7 @@ import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.LeaderboardSnapshot;
 import net.felix.leaderboards.LeaderboardSync;
 import net.felix.leaderboards.LeaderboardSyncSchedule;
-import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;

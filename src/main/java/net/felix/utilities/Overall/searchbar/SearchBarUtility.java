@@ -619,7 +619,7 @@ public class SearchBarUtility {
 		}
 		
 		if (floors.isEmpty() && isCardsStatuesMenu(screen)) {
-			java.util.List<Integer> cardStatueFloors = net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.getFloorsForCardOrStatue(itemStack);
+			java.util.List<Integer> cardStatueFloors = net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.getFloorsForCardOrStatue(itemStack);
 			if (cardStatueFloors != null) {
 				for (Integer floor : cardStatueFloors) {
 					addFloorIfAbsent(floors, floor);
@@ -638,7 +638,7 @@ public class SearchBarUtility {
 			String cleanBlueprintName = blueprintName.replaceAll("§[0-9a-fk-or]", "")
 				.replaceAll("[\\u3400-\\u4DBF]", "")
 				.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
-			Integer floorNumber = net.felix.utilities.Aincraft.information.blueprints.BlueprintDatabase.getFloorNumberForBlueprint(
+			Integer floorNumber = net.felix.utilities.Aincraft.blueprints.data.BlueprintDatabase.getFloorNumberForBlueprint(
 				cleanBlueprintName, itemStack.getHoverName());
 			if (floorNumber != null) {
 				addFloorIfAbsent(floors, floorNumber);
@@ -780,7 +780,7 @@ public class SearchBarUtility {
 								}
 								
 								if (!matches) {
-									Integer floorNumber = net.felix.utilities.Aincraft.information.blueprints.BlueprintDatabase.getFloorNumberForBlueprint(
+									Integer floorNumber = net.felix.utilities.Aincraft.blueprints.data.BlueprintDatabase.getFloorNumberForBlueprint(
 										cleanBlueprintName, itemStack.getHoverName());
 									if (floorNumber != null) {
 										String floorStr = floorNumber.toString();
@@ -1186,7 +1186,7 @@ public class SearchBarUtility {
 														.replaceAll("[^a-zA-ZäöüßÄÖÜ\\s-]", "").trim();
 				
 				// Suche nach Aspekt
-				String aspectName = net.felix.utilities.Aincraft.information.aspects.AspectDatabase.getAspectInfoForBlueprint(cleanBlueprintName);
+				String aspectName = net.felix.utilities.Overall.aspekte.data.AspectDatabase.getAspectInfoForBlueprint(cleanBlueprintName);
 				if (aspectName != null && !aspectName.isEmpty()) {
 					String aspectLower = aspectName.toLowerCase();
 					if (aspectName.contains(searchExact) || aspectLower.contains(searchLower)) {
@@ -1208,7 +1208,7 @@ public class SearchBarUtility {
 					}
 				}
 				
-				Integer floorNumber = net.felix.utilities.Aincraft.information.blueprints.BlueprintDatabase.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getHoverName());
+				Integer floorNumber = net.felix.utilities.Aincraft.blueprints.data.BlueprintDatabase.getFloorNumberForBlueprint(cleanBlueprintName, itemStack.getHoverName());
 				if (floorNumber != null) {
 					String floorStr = String.valueOf(floorNumber);
 					String ebeneText1 = "e" + floorStr;

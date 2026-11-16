@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.leaderboards.LeaderboardManager;
-import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Aincraft.kills.KillsUtility;
 import net.minecraft.client.Minecraft;
 

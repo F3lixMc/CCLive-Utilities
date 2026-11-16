@@ -130,22 +130,22 @@ public final class SearchSuggestions {
         java.util.List<MaterialPickerSortable> prismarinMaterials = new java.util.ArrayList<>();
         java.util.List<FishingMaterialPickerSortable> fishingMaterials = new java.util.ArrayList<>();
         for (String name : materials.values()) {
-            net.felix.utilities.Aincraft.information.materials.MaterialFloorInfo info =
-                    net.felix.utilities.Aincraft.information.materials.MaterialDatabase.getMaterialFloorInfo(name);
+            net.felix.utilities.Aincraft.materials.data.MaterialFloorInfo info =
+                    net.felix.utilities.Aincraft.materials.data.MaterialDatabase.getMaterialFloorInfo(name);
             int color = info != null
-                    ? net.felix.utilities.Aincraft.information.materials.MaterialRarityColors.getMaterialLocationRarityColorArgb(info)
+                    ? net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.getMaterialLocationRarityColorArgb(info)
                     : 0xFFFFFFFF;
-            if (net.felix.utilities.Aincraft.information.ponds.FishingMaterials.isFishingRarityMaterial(name)) {
-                String family = net.felix.utilities.Aincraft.information.ponds.FishingMaterials.getFishFamilyFromMaterial(name);
+            if (net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.isFishingRarityMaterial(name)) {
+                String family = net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.getFishFamilyFromMaterial(name);
                 String rarity = info != null && info.rarity != null
                         ? info.rarity
-                        : net.felix.utilities.Aincraft.information.ponds.FishingMaterials.getFishingMaterialRarityKey(name);
-                String part = net.felix.utilities.Aincraft.information.ponds.FishingMaterials.getFishPartSuffixFromMaterial(
+                        : net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.getFishingMaterialRarityKey(name);
+                String part = net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.getFishPartSuffixFromMaterial(
                         name, family);
-                int familyOrder = net.felix.utilities.Aincraft.information.ponds.FishingMaterials.getFishFamilyDisplayOrderIndex(
+                int familyOrder = net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.getFishFamilyDisplayOrderIndex(
                         family);
                 fishingMaterials.add(new FishingMaterialPickerSortable(name, familyOrder, rarity, part, color));
-            } else if (net.felix.utilities.Aincraft.information.materials.PrismarinMaterials.isPrismarinMaterial(name)) {
+            } else if (net.felix.utilities.Aincraft.materials.data.PrismarinMaterials.isPrismarinMaterial(name)) {
                 String rarity = info != null && info.rarity != null ? info.rarity : "common";
                 prismarinMaterials.add(new MaterialPickerSortable(name, 0, rarity, color));
             } else {

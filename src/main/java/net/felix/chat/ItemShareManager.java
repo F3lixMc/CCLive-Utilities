@@ -478,7 +478,7 @@ public final class ItemShareManager {
             return false;
         }
 
-        net.felix.utilities.Aincraft.information.aspects.AspectChatMessages.updateAspectOverlayFromBlueprintName(lookupName);
+        net.felix.utilities.Overall.aspekte.chat.AspectChatMessages.updateAspectOverlayFromBlueprintName(lookupName);
         return true;
     }
 

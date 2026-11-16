@@ -1,7 +1,7 @@
 package net.felix.utilities.Aincraft.itemviewer.inventory;
 
 import com.google.gson.JsonObject;
-import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
 import net.felix.utilities.Aincraft.itemviewer.tooltip.TooltipCache;
 import net.minecraft.client.Minecraft;
@@ -106,10 +106,10 @@ public final class FoundStatus {
             return false;
         }
         if ("fishing_components".equals(item.category)) {
-            return net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility.isFound(item.name);
+            return net.felix.utilities.Aincraft.fishing.found.FishingComponentFoundUtility.isFound(item.name);
         }
         if ("fish_traps".equals(item.category)) {
-            return net.felix.utilities.Aincraft.fishing.FishTrapFoundUtility.isFound(item.name);
+            return net.felix.utilities.Aincraft.fishing.found.FishTrapFoundUtility.isFound(item.name);
         }
         return isBlueprintFound(item.name);
     }

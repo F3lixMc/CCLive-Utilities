@@ -28,12 +28,12 @@ public abstract class InventoryScreenMixin {
         if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
             // Render aspect overlay if we're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
             // This allows aspect overlay to work in the player inventory
-            boolean shouldRender = net.felix.utilities.Overall.aspekte.AspectOverlay.isCurrentlyHovering();
+            boolean shouldRender = net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.isCurrentlyHovering();
             
             if (shouldRender) {
                 // Render our aspect overlay AFTER everything else (including buttons and tooltips)
                 try {
-                    net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
+                    net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
                 } catch (Exception e) {
                     // Ignore rendering errors
                 }

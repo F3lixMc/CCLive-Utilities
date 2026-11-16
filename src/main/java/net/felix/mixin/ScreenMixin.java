@@ -147,7 +147,7 @@ public class ScreenMixin {
             // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
             // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
             if (ViewerState.isVisible()) {
-                net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
+                net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
             }
             
             // Hilfe folgt erst am Ende von InventoryScreen.extractRenderState.
@@ -166,7 +166,7 @@ public class ScreenMixin {
         // Kit-Editor: Aspekt-Overlay über dem zentrierten Editor-Panel
         if (screen instanceof net.felix.utilities.Town.kits.editor.CustomKitEditorScreen) {
             if (ViewerState.isVisible()) {
-                net.felix.utilities.Overall.aspekte.AspectOverlay.renderForeground(context);
+                net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
             }
             return;
         }

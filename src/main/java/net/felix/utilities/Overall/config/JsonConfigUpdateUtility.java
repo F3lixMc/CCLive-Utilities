@@ -183,19 +183,19 @@ public class JsonConfigUpdateUtility {
             switch (fileName) {
                 case "Aincraft.json":
                     // Aincraft.json wird in MaterialDatabase.loadMaterialsDatabase() geladen
-                    net.felix.utilities.Aincraft.information.materials.MaterialDatabase.reloadMaterialsDatabase();
+                    net.felix.utilities.Aincraft.materials.data.MaterialDatabase.reloadMaterialsDatabase();
                     break;
                 case "Aspekte.json":
-                    net.felix.utilities.Aincraft.information.aspects.AspectDatabase.reloadAspectsDatabase();
+                    net.felix.utilities.Overall.aspekte.data.AspectDatabase.reloadAspectsDatabase();
                     break;
                 case "blueprints.json":
-                    net.felix.utilities.Aincraft.information.blueprints.BlueprintDatabase.reloadBlueprintsDatabase();
+                    net.felix.utilities.Aincraft.blueprints.data.BlueprintDatabase.reloadBlueprintsDatabase();
                     break;
                 case "CardsStatues.json":
-                    net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.reloadCardsStatuesDatabase();
+                    net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.reloadCardsStatuesDatabase();
                     break;
                 case "Collections.json":
-                    net.felix.utilities.Aincraft.information.collections.CollectionDatabase.reloadCollectionsDatabase();
+                    net.felix.utilities.Farmworld.collections.data.CollectionDatabase.reloadCollectionsDatabase();
                     break;
                 case "Essenz.json":
                     net.felix.utilities.Aincraft.information.essences.EssenceDatabase.reloadEssencesDatabase();
@@ -207,7 +207,7 @@ public class JsonConfigUpdateUtility {
                     net.felix.utilities.Town.kits.filter.KitFilterUtility.reloadKitsDatabase();
                     break;
                 case "MKLevel.json":
-                    net.felix.utilities.Aincraft.information.mklevel.MkLevelDatabase.reloadMkLevelDatabase();
+                    net.felix.utilities.Factory.mklevel.data.MkLevelDatabase.reloadMkLevelDatabase();
                     break;
             }
         } catch (Exception e) {

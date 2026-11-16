@@ -238,12 +238,12 @@ public class ItemViewerGrid {
             } else {
                 lastTooltipItem = null;
                 cachedTooltipLines = null;
-                net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+                net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
             }
         } else {
             lastTooltipItem = null;
             cachedTooltipLines = null;
-            net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
         }
     }
 

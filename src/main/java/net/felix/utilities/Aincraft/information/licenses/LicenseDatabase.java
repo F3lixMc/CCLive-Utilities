@@ -4,12 +4,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.HashMap;
 import java.util.Map;
-import net.felix.utilities.Aincraft.information.ponds.PondInfo;
+import net.felix.utilities.Aincraft.fishing.ponds.PondInfo;
 
-import static net.felix.utilities.Aincraft.information.ponds.PondDatabase.clearPondMaterialsFromDatabase;
-import static net.felix.utilities.Aincraft.information.ponds.PondDatabase.loadPondMaterialsFromJson;
-import static net.felix.utilities.Aincraft.information.ponds.PondDatabase.pondsDatabase;
-import static net.felix.utilities.Aincraft.information.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Aincraft.fishing.ponds.PondDatabase.clearPondMaterialsFromDatabase;
+import static net.felix.utilities.Aincraft.fishing.ponds.PondDatabase.loadPondMaterialsFromJson;
+import static net.felix.utilities.Aincraft.fishing.ponds.PondDatabase.pondsDatabase;
+import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
 
 /**
  * Lizenz-Datenbank aus der Farmworld-Konfiguration.

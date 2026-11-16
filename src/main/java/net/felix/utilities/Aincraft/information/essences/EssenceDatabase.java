@@ -5,7 +5,7 @@ import com.google.gson.JsonParser;
 import java.util.HashMap;
 import java.util.Map;
 
-import static net.felix.utilities.Aincraft.information.util.JsonConfigFiles.getConfigFilePath;
+import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
 
 /**
  * Essenz-Datenbank (Essenz.json).

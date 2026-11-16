@@ -5,30 +5,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.information.materials.MaterialFloorInfo;
-import net.felix.utilities.Aincraft.information.materials.MaterialInfo;
+import net.felix.utilities.Aincraft.materials.data.MaterialFloorInfo;
+import net.felix.utilities.Aincraft.materials.data.MaterialInfo;
 import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
-import static net.felix.utilities.Aincraft.information.aspects.AspectTooltip.addAspectNameToTooltip;
-import static net.felix.utilities.Aincraft.information.blueprints.BlueprintFloorTooltip.addFloorNumberToBlueprintNames;
-import static net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.cardsEffects;
-import static net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.statuesEffects;
-import static net.felix.utilities.Aincraft.information.cards.CardsStatuesFloorTooltip.addFloorNumberToCardsStatuesNames;
+import static net.felix.utilities.Aincraft.blueprints.tooltip.BlueprintFloorTooltip.addFloorNumberToBlueprintNames;
+import static net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.cardsEffects;
+import static net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.statuesEffects;
+import static net.felix.utilities.Aincraft.cardsstatues.tooltip.CardsStatuesFloorTooltip.addFloorNumberToCardsStatuesNames;
+import static net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.appendFishingMaterialLocationToLine;
+import static net.felix.utilities.Aincraft.fishing.ponds.PondTooltip.checkForPondInformation;
 import static net.felix.utilities.Aincraft.information.essences.EssenceBagTooltip.addEssenceBagWaveDisplayToTooltip;
 import static net.felix.utilities.Aincraft.information.essences.EssenceWaveNames.getWaveDisplayForEssenceName;
 import static net.felix.utilities.Aincraft.information.gadgets.GadgetTooltip.checkForGadgetInformation;
 import static net.felix.utilities.Aincraft.information.licenses.LicenseTooltip.checkForLicenseInformation;
 import static net.felix.utilities.Aincraft.information.licenses.LicenseTooltip.isItemInLicenseSlot;
-import static net.felix.utilities.Aincraft.information.materials.MaterialDatabase.materialsDatabase;
-import static net.felix.utilities.Aincraft.information.materials.MaterialRarityColors.formatMaterialLocationSuffix;
-import static net.felix.utilities.Aincraft.information.materials.MaterialRarityColors.getMaterialLocationRarityColor;
-import static net.felix.utilities.Aincraft.information.moblexicon.MoblexiconTooltip.addMoblexiconHpToTooltip;
-import static net.felix.utilities.Aincraft.information.ponds.FishingMaterials.appendFishingMaterialLocationToLine;
-import static net.felix.utilities.Aincraft.information.ponds.PondTooltip.checkForPondInformation;
-import static net.felix.utilities.Aincraft.information.tooltip.ClipboardPinTooltip.addClipboardPinTextToTooltip;
+import static net.felix.utilities.Aincraft.materials.data.MaterialDatabase.materialsDatabase;
+import static net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.formatMaterialLocationSuffix;
+import static net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.getMaterialLocationRarityColor;
+import static net.felix.utilities.Other.clipboard.tooltip.ClipboardPinTooltip.addClipboardPinTextToTooltip;
+import static net.felix.utilities.Overall.aspekte.tooltip.AspectTooltip.addAspectNameToTooltip;
+import static net.felix.utilities.Overall.moblexicon.MoblexiconTooltip.addMoblexiconHpToTooltip;
 
 /**
  * Tooltip-Callback: ergaenzt Item-Tooltips um Aspekt-, Ebenen-, Material-, Lizenz-, Gadget- und Moblexikon-Informationen.

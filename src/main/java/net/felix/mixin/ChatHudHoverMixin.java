@@ -1,9 +1,9 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.felix.utilities.Aincraft.information.aspects.AspectChatMessages;
-import net.felix.utilities.Aincraft.information.blueprints.BlueprintChatParser;
-import net.felix.utilities.Overall.aspekte.AspectOverlay;
+import net.felix.utilities.Aincraft.blueprints.chat.BlueprintChatParser;
+import net.felix.utilities.Overall.aspekte.chat.AspectChatMessages;
+import net.felix.utilities.Overall.aspekte.overlay.AspectOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ChatScreen;

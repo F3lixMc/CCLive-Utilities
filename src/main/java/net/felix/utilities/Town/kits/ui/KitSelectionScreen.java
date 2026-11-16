@@ -2,7 +2,7 @@ package net.felix.utilities.Town.kits.ui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Town.kits.data.CustomKit;
 import net.felix.utilities.Town.kits.data.CustomKitManager;
 import net.felix.utilities.Town.kits.editor.CustomKitEditorScreen;
@@ -376,7 +376,7 @@ public class KitSelectionScreen extends Screen {
 				true,
 				showBpStatus,
 				this::isBlueprintFound,
-				net.felix.utilities.Aincraft.fishing.FishingComponentFoundUtility::isFound,
+				net.felix.utilities.Aincraft.fishing.found.FishingComponentFoundUtility::isFound,
 				net.felix.profile.ProfileStatsManager::isCardUnlockedLocally
 		);
 		KitTooltipHelper.ExtraPanel extra = KitTooltipHelper.buildExtraPanel(this.font, hoveredCustomKit);

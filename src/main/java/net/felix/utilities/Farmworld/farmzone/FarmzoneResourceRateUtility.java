@@ -3,7 +3,7 @@ package net.felix.utilities.Farmworld.farmzone;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.utilities.Aincraft.materials.MaterialRateUtility;
+import net.felix.utilities.Aincraft.materials.tracker.MaterialRateUtility;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;

@@ -32,7 +32,7 @@ public final class ItemTooltipBuilder {
 
     public static void updateItemViewerAspectOverlay(ItemData hoveredItem) {
         if (hoveredItem == null || hoveredItem.info == null || hoveredItem.name == null || hoveredItem.name.isEmpty()) {
-            net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
             return;
         }
 
@@ -40,17 +40,17 @@ public final class ItemTooltipBuilder {
         boolean hasAspect = info.aspect != null && !info.aspect.isEmpty()
             && !"false".equalsIgnoreCase(info.aspect);
         if (!hasAspect) {
-            net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
             return;
         }
 
-        net.felix.utilities.Aincraft.information.aspects.AspectInfo aspectInfo =
-            net.felix.utilities.Aincraft.information.aspects.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
+        net.felix.utilities.Overall.aspekte.data.AspectInfo aspectInfo =
+            net.felix.utilities.Overall.aspekte.data.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
         if (aspectInfo != null && aspectInfo.aspectName != null && !aspectInfo.aspectName.isEmpty()
             && !"-".equals(aspectInfo.aspectName)) {
-            net.felix.utilities.Overall.aspekte.AspectOverlay.updateAspectInfoFromItemViewer(hoveredItem.name, aspectInfo);
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.updateAspectInfoFromItemViewer(hoveredItem.name, aspectInfo);
         } else {
-            net.felix.utilities.Overall.aspekte.AspectOverlay.onHoverStopped();
+            net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.onHoverStopped();
         }
     }
 
@@ -338,8 +338,8 @@ public final class ItemTooltipBuilder {
         if (!hasAspect) {
             return;
         }
-        net.felix.utilities.Aincraft.information.aspects.AspectInfo aspectInfo =
-                net.felix.utilities.Aincraft.information.aspects.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
+        net.felix.utilities.Overall.aspekte.data.AspectInfo aspectInfo =
+                net.felix.utilities.Overall.aspekte.data.AspectDatabase.getAspectInfoForBlueprintFull(hoveredItem.name);
         if (aspectInfo == null || aspectInfo.aspectName == null || aspectInfo.aspectName.isEmpty()) {
             return;
         }

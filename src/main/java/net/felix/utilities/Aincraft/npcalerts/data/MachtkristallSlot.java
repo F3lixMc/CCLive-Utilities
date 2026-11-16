@@ -1,6 +1,6 @@
 package net.felix.utilities.Aincraft.npcalerts.data;
 
-import net.felix.utilities.Factory.mklevel.PowerCrystalLevelUtility;
+import net.felix.utilities.Factory.mklevel.data.PowerCrystalLevelUtility;
 
 // Machtkristalle (3 Slots, in Reihenfolge)
 public class MachtkristallSlot {

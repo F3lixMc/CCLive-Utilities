@@ -1699,12 +1699,12 @@ public class KitFilterUtility {
 				continue;
 			}
 			String clean = stripCardSuffix(cardName);
-			String effect = net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.getCardEffectByName(clean);
+			String effect = net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.getCardEffectByName(clean);
 			if (effect == null || effect.isEmpty()) {
 				effect = "–";
 			}
 			String floors = formatCardFloors(
-				net.felix.utilities.Aincraft.information.cards.CardsStatuesDatabase.getCardFloorsByName(clean));
+				net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.getCardFloorsByName(clean));
 			result.add(new ItemInfo(clean, floors, null, 0xFFFFFFFF, null, "Karte", effect));
 		}
 		return result;

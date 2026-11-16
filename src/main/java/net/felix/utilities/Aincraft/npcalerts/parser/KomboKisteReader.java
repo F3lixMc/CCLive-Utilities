@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.information.farmzone.FarmzoneScoreboard;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 

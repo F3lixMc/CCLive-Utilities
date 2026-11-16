@@ -13,7 +13,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.profile.ProfileStatsManager;
-import net.felix.utilities.Aincraft.fishing.LocalSeasonProgressReset;
+import net.felix.utilities.Aincraft.fishing.found.LocalSeasonProgressReset;
 import net.felix.utilities.Overall.server.ServerConnectionGate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;

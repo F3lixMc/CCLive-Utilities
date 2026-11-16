@@ -23,7 +23,7 @@ import net.felix.staff.StaffClientAccess;
 import net.felix.staff.StaffModerationCommands;
 import net.felix.staff.StaffNameSuggestions;
 import net.felix.staff.StaffPermsCommands;
-import net.felix.utilities.Aincraft.blueprints.BPViewerUtility;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
