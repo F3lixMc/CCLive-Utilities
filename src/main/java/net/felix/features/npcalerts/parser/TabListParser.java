@@ -40,170 +40,114 @@ public final class TabListParser {
 		data.maxFormatted = null;
 	}
 
+	/** Tab-Widget-Überschriften der Kapazitäten; Reihenfolge wie {@link #capacityTargets()} und {@link #CAPACITY_LABELS}. */
+	private static final String[] CAPACITY_MARKERS = {
+		"[Forschung]",
+		"[Amboss Kapazität]",
+		"[Schmelzofen Kapazität]",
+		"[Jäger Kapazität]",
+		"[Seelen Kapazität]",
+		"[Essenzen Kapazität]",
+		"[Recycler Slot 1]",
+		"[Recycler Slot 2]",
+		"[Recycler Slot 3]"
+	};
+
+	private static final String[] CAPACITY_LABELS = {
+		"Forschung", "Amboss", "Schmelzofen", "Jäger", "Seelen", "Essenzen",
+		"Recycler Slot 1", "Recycler Slot 2", "Recycler Slot 3"
+	};
+
+	private static CapacityData[] capacityTargets() {
+		return new CapacityData[] {
+			forschung, ambossCapacity, schmelzofenCapacity, jaegerCapacity, seelenCapacity, essenzenCapacity,
+			recyclerSlot1, recyclerSlot2, recyclerSlot3
+		};
+	}
+
 	/**
 	 * Aktualisiert alle Informationen aus der Tab-Liste
 	 */
 	public static void updateNpcAlerts(Minecraft client) {
 		// Nur alle 1 Sekunde prüfen, um Performance-Probleme zu vermeiden
 		long currentTime = System.currentTimeMillis();
-		long timeSinceLastCheck = currentTime - lastTabListCheck;
-		
-		if (timeSinceLastCheck < 1000) {
+		if (currentTime - lastTabListCheck < 1000) {
 			return;
 		}
 		lastTabListCheck = currentTime;
-		
+
 		if (client == null || client.getConnection() == null) {
 			return;
 		}
-		
+
 		var playerList = client.getConnection().getOnlinePlayers();
 		if (playerList == null) {
 			return;
 		}
-		
+
 		// Konvertiere zu Liste für Index-Iteration
-		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries = 
+		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries =
 			new java.util.ArrayList<>(playerList);
-		
-		// Helper-Methode zum Entfernen von Minecraft-Formatierungscodes (§ codes)
-		java.util.function.Function<String, String> removeFormatting = (text) -> {
-			if (text == null) return "";
-			// Entferne alle § Codes (Formatierungscodes)
-			return text.replaceAll("§[0-9a-fk-or]", "").trim();
-		};
-		
-		// Helper-Methode zum Abrufen des Textes von einem Eintrag
-		java.util.function.Function<Integer, String> getEntryText = (entryIndex) -> {
-			if (entryIndex < 0 || entryIndex >= entries.size()) {
-				return null;
-			}
-			var entry = entries.get(entryIndex);
-			if (entry == null) {
-				return null;
-			}
-			
-			net.minecraft.network.chat.Component displayName = entry.getTabListDisplayName();
-			if (displayName != null) {
-				return displayName.getString();
-			} else if (entry.getProfile() != null) {
-				return entry.getProfile().name();
-			}
-			return null;
-		};
-		
+		java.util.function.Function<String, String> removeFormatting = TabListParser::removeFormattingCodes;
+		java.util.function.Function<Integer, String> getEntryText = entryIndex -> getEntryDisplayText(entries, entryIndex);
+
+		CapacityData[] targets = capacityTargets();
 		// Track welche Werte im Tab-Widget gefunden wurden
-		boolean foundForschung = false;
-		boolean foundAmboss = false;
-		boolean foundSchmelzofen = false;
-		boolean foundJaeger = false;
-		boolean foundSeelen = false;
-		boolean foundEssenzen = false;
-		boolean foundRecyclerSlot1 = false;
-		boolean foundRecyclerSlot2 = false;
-		boolean foundRecyclerSlot3 = false;
-		
+		boolean[] found = new boolean[targets.length];
+
 		// Durchsuche alle Einträge
 		for (int i = 0; i < entries.size(); i++) {
 			String entryText = getEntryText.apply(i);
 			if (entryText == null) {
 				continue;
 			}
-			
 			String cleanEntryText = removeFormatting.apply(entryText);
-			
-			// [Forschung]
-			if (cleanEntryText.contains("[Forschung]")) {
-				foundForschung = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, forschung, "Forschung");
-			}
-			
-			// [Amboss Kapazität]
-			if (cleanEntryText.contains("[Amboss Kapazität]")) {
-				foundAmboss = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, ambossCapacity, "Amboss");
-			}
-			
-			// [Schmelzofen Kapazität]
-			if (cleanEntryText.contains("[Schmelzofen Kapazität]")) {
-				foundSchmelzofen = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, schmelzofenCapacity, "Schmelzofen");
-			}
-			
-			// [Jäger Kapazität]
-			if (cleanEntryText.contains("[Jäger Kapazität]")) {
-				foundJaeger = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, jaegerCapacity, "Jäger");
-			}
-			
-			// [Seelen Kapazität]
-			if (cleanEntryText.contains("[Seelen Kapazität]")) {
-				foundSeelen = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, seelenCapacity, "Seelen");
-			}
-			
-			// [Essenzen Kapazität]
-			if (cleanEntryText.contains("[Essenzen Kapazität]")) {
-				foundEssenzen = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, essenzenCapacity, "Essenzen");
-			}
-			
+
 			// Machtkristall-Einträge werden separat verarbeitet (siehe unten)
-			
-			// [Recycler Slot 1]
-			if (cleanEntryText.contains("[Recycler Slot 1]")) {
-				foundRecyclerSlot1 = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot1, "Recycler Slot 1");
-			}
-			
-			// [Recycler Slot 2]
-			if (cleanEntryText.contains("[Recycler Slot 2]")) {
-				foundRecyclerSlot2 = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot2, "Recycler Slot 2");
-			}
-			
-			// [Recycler Slot 3]
-			if (cleanEntryText.contains("[Recycler Slot 3]")) {
-				foundRecyclerSlot3 = true;
-				parseCapacityData(entries, i, getEntryText, removeFormatting, recyclerSlot3, "Recycler Slot 3");
+			for (int target = 0; target < targets.length; target++) {
+				if (cleanEntryText.contains(CAPACITY_MARKERS[target])) {
+					found[target] = true;
+					parseCapacityData(entries, i, getEntryText, removeFormatting, targets[target], CAPACITY_LABELS[target]);
+				}
 			}
 		}
-		
+
 		// Setze nur die Werte zurück, die nicht im Tab-Widget gefunden wurden
-		if (!foundForschung) {
-			resetCapacityData(forschung);
+		for (int target = 0; target < targets.length; target++) {
+			if (!found[target]) {
+				resetCapacityData(targets[target]);
+			}
 		}
-		if (!foundAmboss) {
-			resetCapacityData(ambossCapacity);
-		}
-		if (!foundSchmelzofen) {
-			resetCapacityData(schmelzofenCapacity);
-		}
-		if (!foundJaeger) {
-			resetCapacityData(jaegerCapacity);
-		}
-		if (!foundSeelen) {
-			resetCapacityData(seelenCapacity);
-		}
-		if (!foundEssenzen) {
-			resetCapacityData(essenzenCapacity);
-		}
-		if (!foundRecyclerSlot1) {
-			resetCapacityData(recyclerSlot1);
-		}
-		if (!foundRecyclerSlot2) {
-			resetCapacityData(recyclerSlot2);
-		}
-		if (!foundRecyclerSlot3) {
-			resetCapacityData(recyclerSlot3);
-		}
-		
+
 		// Verarbeite Machtkristalle separat (müssen in Reihenfolge geparst werden)
 		parseMachtkristalle(entries, getEntryText, removeFormatting);
-		
+
 		refreshKomboKisteFromBossbarAndScoreboard(client);
 	}
 
+	/** Entfernt alle § Codes (Formatierungscodes) und trimmt den Text. */
+	private static String removeFormattingCodes(String text) {
+		if (text == null) return "";
+		return text.replaceAll("§[0-9a-fk-or]", "").trim();
+	}
+
+	/** Anzeigename des Tab-Listen-Eintrags (oder Profilname); null bei ungültigem Index oder leerem Eintrag. */
+	private static String getEntryDisplayText(java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries, int entryIndex) {
+		if (entryIndex < 0 || entryIndex >= entries.size()) {
+			return null;
+		}
+		var entry = entries.get(entryIndex);
+		if (entry == null) {
+			return null;
+		}
+		net.minecraft.network.chat.Component displayName = entry.getTabListDisplayName();
+		if (displayName != null) {
+			return displayName.getString();
+		} else if (entry.getProfile() != null) {
+			return entry.getProfile().name();
+		}
+		return null;
+	}
 	/**
 	 * Parst Machtkristalle aus der Tab-Liste
 	 * Erkennt sowohl "[Machtkristall der XXX]" als auch "[Kein Machtkristall ausgewählt]"
