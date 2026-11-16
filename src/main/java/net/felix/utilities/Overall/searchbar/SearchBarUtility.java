@@ -284,8 +284,8 @@ public class SearchBarUtility {
 		}
 
 		// Prüfe ob Item Viewer ausgeklappt ist
-		boolean isItemViewerExpanded = net.felix.utilities.Aincraft.itemviewer.ui.ViewerState.isVisible() && 
-		                               !net.felix.utilities.Aincraft.itemviewer.ui.ViewerState.isMinimized();
+		boolean isItemViewerExpanded = net.felix.utilities.Overall.itemviewer.ui.ViewerState.isVisible() && 
+		                               !net.felix.utilities.Overall.itemviewer.ui.ViewerState.isMinimized();
 		
 		// Berechne Standard-Position der Suchleiste (mit Standard-Breite)
 		int standardSearchBarX = screenX + (176 - DEFAULT_SEARCH_BAR_WIDTH) / 2;

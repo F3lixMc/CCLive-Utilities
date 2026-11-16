@@ -16,9 +16,9 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Aincraft.itemviewer.data.ItemCatalog;
-import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
-import net.felix.utilities.Aincraft.itemviewer.search.FloorNumberExtractor;
+import net.felix.utilities.Overall.itemviewer.data.ItemCatalog;
+import net.felix.utilities.Overall.itemviewer.data.ItemData;
+import net.felix.utilities.Overall.itemviewer.search.FloorNumberExtractor;
 import net.felix.utilities.Town.kits.data.BuildSlotMapping;
 import net.felix.utilities.Town.kits.data.CustomKit;
 import net.felix.utilities.Town.kits.data.CustomKitManager;
@@ -1559,7 +1559,7 @@ public class KitFilterUtility {
 		int nameColor = 0xFFFFFFFF;
 
 		if (item.info != null) {
-			net.felix.utilities.Aincraft.itemviewer.data.ItemInfo ivInfo = item.info;
+			net.felix.utilities.Overall.itemviewer.data.ItemInfo ivInfo = item.info;
 			if (isModule) {
 				itemType = "Modul";
 			} else if (ivInfo.piece != null && !ivInfo.piece.isEmpty()) {
@@ -1617,7 +1617,7 @@ public class KitFilterUtility {
 			return null;
 		}
 		List<String> parts = new ArrayList<>();
-		for (net.felix.utilities.Aincraft.itemviewer.data.LocationData loc : item.foundAt) {
+		for (net.felix.utilities.Overall.itemviewer.data.LocationData loc : item.foundAt) {
 			if (loc == null) {
 				continue;
 			}

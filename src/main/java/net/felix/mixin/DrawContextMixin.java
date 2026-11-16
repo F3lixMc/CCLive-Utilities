@@ -67,7 +67,7 @@ public class DrawContextMixin {
     @Inject(method = "setComponentTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;II)V", at = @At("HEAD"), cancellable = true)
     private void blockItemTooltipsWhenHelpOverlayOpen(Font textRenderer, List<Component> lines, int x, int y, CallbackInfo ci) {
         // Blockiere nur wenn Hilfe-Overlay offen ist
-        if (net.felix.utilities.Aincraft.itemviewer.ui.FilterOverlayControls.isOverlayOpen()) {
+        if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.isOverlayOpen()) {
             if (lines == null || lines.isEmpty()) {
                 return;
             }

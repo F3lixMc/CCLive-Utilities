@@ -5,9 +5,9 @@ import com.google.gson.JsonParser;
 import java.util.HashMap;
 import java.util.Map;
 
-import static net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.getFishingMaterialFloorInfo;
-import static net.felix.utilities.Aincraft.fishing.ponds.PondDatabase.loadPondMaterialsFromFarmworld;
 import static net.felix.utilities.Aincraft.materials.data.PrismarinMaterials.getPrismarinMaterialFloorInfo;
+import static net.felix.utilities.Farmworld.fishing.ponds.FishingMaterials.getFishingMaterialFloorInfo;
+import static net.felix.utilities.Farmworld.fishing.ponds.PondDatabase.loadPondMaterialsFromFarmworld;
 import static net.felix.utilities.Overall.util.JsonConfigFiles.getConfigFilePath;
 
 /**

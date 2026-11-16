@@ -31,9 +31,9 @@ import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.blueprints.chat.BlueprintChatParser;
 import net.felix.utilities.Aincraft.blueprints.data.BlueprintNameAndColor;
-import net.felix.utilities.Aincraft.fishing.found.FishTrapFoundUtility;
-import net.felix.utilities.Aincraft.fishing.found.FishingComponentFoundUtility;
 import net.felix.utilities.DragOverlay.OverlayType;
+import net.felix.utilities.Farmworld.fishing.found.FishTrapFoundUtility;
+import net.felix.utilities.Farmworld.fishing.found.FishingComponentFoundUtility;
 import net.felix.utilities.Overall.glyphs.ZeichenUtility;
 import net.felix.utilities.Overall.keybinding.KeyBindingUtility;
 import net.felix.utilities.Overall.keybinding.KeyCategories;
@@ -1185,7 +1185,7 @@ public class BPViewerUtility {
                 markBlueprintFound(floorToUse, blueprintKey);
             }
             saveFoundBlueprints();
-            net.felix.utilities.Aincraft.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
+            net.felix.utilities.Overall.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
         }
     }
     
@@ -1497,7 +1497,7 @@ public class BPViewerUtility {
             // Ignoriere Fehler wenn ProfileStatsManager nicht verfügbar ist
         }
 
-        net.felix.utilities.Aincraft.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
+        net.felix.utilities.Overall.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
     }
 
     /**
@@ -1509,7 +1509,7 @@ public class BPViewerUtility {
         foundBlueprints.clear();
         floorProgress.clear();
         boolean ok = saveFoundBlueprintsReturningSuccess() && saveProgressReturningSuccess();
-        net.felix.utilities.Aincraft.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
+        net.felix.utilities.Overall.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
         return ok;
     }
     

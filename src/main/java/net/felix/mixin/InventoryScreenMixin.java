@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Aincraft.itemviewer.ui.FilterOverlayControls;
-import net.felix.utilities.Aincraft.itemviewer.ui.HelpOverlay;
+import net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls;
+import net.felix.utilities.Overall.itemviewer.ui.HelpOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;

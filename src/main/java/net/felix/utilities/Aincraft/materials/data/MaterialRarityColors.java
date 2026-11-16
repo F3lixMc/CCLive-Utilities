@@ -1,6 +1,6 @@
 package net.felix.utilities.Aincraft.materials.data;
 
-import static net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.hasPondLocation;
+import static net.felix.utilities.Farmworld.fishing.ponds.FishingMaterials.hasPondLocation;
 
 /**
  * Farben und Textformat fuer Material-Fundorte.

@@ -8,10 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import net.felix.utilities.Aincraft.itemviewer.data.ItemCatalog;
-import net.felix.utilities.Aincraft.itemviewer.data.ItemData;
 import net.felix.utilities.Overall.aspekte.data.AspectDatabase;
 import net.felix.utilities.Overall.aspekte.data.AspectInfo;
+import net.felix.utilities.Overall.itemviewer.data.ItemCatalog;
+import net.felix.utilities.Overall.itemviewer.data.ItemData;
 
 /**
  * Machtkristalle und Aspekte aus erfassten Ausrüstungs-Tooltips.

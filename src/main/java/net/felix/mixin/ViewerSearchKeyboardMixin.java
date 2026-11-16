@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Aincraft.itemviewer.search.SearchFieldInput;
+import net.felix.utilities.Overall.itemviewer.search.SearchFieldInput;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.CharacterEvent;

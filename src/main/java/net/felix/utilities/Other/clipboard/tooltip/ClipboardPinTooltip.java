@@ -53,7 +53,7 @@ public final class ClipboardPinTooltip {
 		}
 		
 		// Hole den Hotkey-Text vom ItemViewer (gleicher Text wie im ItemViewer-Tooltip)
-        String hotkeyText = net.felix.utilities.Aincraft.itemviewer.ItemViewerHotkeys.getClipboardPinHotkeyText();
+        String hotkeyText = net.felix.utilities.Overall.itemviewer.ItemViewerHotkeys.getClipboardPinHotkeyText();
         String clipboardText = "An Pinnwand anheften mit Hotkey: " + hotkeyText;
 		
 		// Durchsuche Tooltip-Zeilen nach "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen"

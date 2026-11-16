@@ -376,7 +376,7 @@ public class KitSelectionScreen extends Screen {
 				true,
 				showBpStatus,
 				this::isBlueprintFound,
-				net.felix.utilities.Aincraft.fishing.found.FishingComponentFoundUtility::isFound,
+				net.felix.utilities.Farmworld.fishing.found.FishingComponentFoundUtility::isFound,
 				net.felix.profile.ProfileStatsManager::isCardUnlockedLocally
 		);
 		KitTooltipHelper.ExtraPanel extra = KitTooltipHelper.buildExtraPanel(this.font, hoveredCustomKit);

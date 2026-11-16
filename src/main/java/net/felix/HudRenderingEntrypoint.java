@@ -2,7 +2,7 @@ package net.felix;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
-import net.felix.utilities.Aincraft.itemviewer.ItemViewerFeature;
+import net.felix.utilities.Overall.itemviewer.ItemViewerFeature;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;

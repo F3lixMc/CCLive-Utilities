@@ -290,7 +290,7 @@ public final class DevToolsHotkeyDispatcher {
             } catch (Exception ignored) {
             }
         }
-        if (net.felix.utilities.Aincraft.itemviewer.search.SearchFieldState.isTextFieldFocusedPublic(client)) {
+        if (net.felix.utilities.Overall.itemviewer.search.SearchFieldState.isTextFieldFocusedPublic(client)) {
             return true;
         }
         return false;

@@ -16,8 +16,6 @@ import static net.felix.utilities.Aincraft.blueprints.tooltip.BlueprintFloorTool
 import static net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.cardsEffects;
 import static net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.statuesEffects;
 import static net.felix.utilities.Aincraft.cardsstatues.tooltip.CardsStatuesFloorTooltip.addFloorNumberToCardsStatuesNames;
-import static net.felix.utilities.Aincraft.fishing.ponds.FishingMaterials.appendFishingMaterialLocationToLine;
-import static net.felix.utilities.Aincraft.fishing.ponds.PondTooltip.checkForPondInformation;
 import static net.felix.utilities.Aincraft.information.essences.EssenceBagTooltip.addEssenceBagWaveDisplayToTooltip;
 import static net.felix.utilities.Aincraft.information.essences.EssenceWaveNames.getWaveDisplayForEssenceName;
 import static net.felix.utilities.Aincraft.information.gadgets.GadgetTooltip.checkForGadgetInformation;
@@ -26,6 +24,8 @@ import static net.felix.utilities.Aincraft.information.licenses.LicenseTooltip.i
 import static net.felix.utilities.Aincraft.materials.data.MaterialDatabase.materialsDatabase;
 import static net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.formatMaterialLocationSuffix;
 import static net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.getMaterialLocationRarityColor;
+import static net.felix.utilities.Farmworld.fishing.ponds.FishingMaterials.appendFishingMaterialLocationToLine;
+import static net.felix.utilities.Farmworld.fishing.ponds.PondTooltip.checkForPondInformation;
 import static net.felix.utilities.Other.clipboard.tooltip.ClipboardPinTooltip.addClipboardPinTextToTooltip;
 import static net.felix.utilities.Overall.aspekte.tooltip.AspectTooltip.addAspectNameToTooltip;
 import static net.felix.utilities.Overall.moblexicon.MoblexiconTooltip.addMoblexiconHpToTooltip;
