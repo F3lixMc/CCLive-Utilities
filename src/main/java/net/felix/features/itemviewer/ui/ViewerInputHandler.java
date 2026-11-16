@@ -73,6 +73,21 @@ public final class ViewerInputHandler {
     private ViewerInputHandler() {
     }
 
+    /** Prüft, ob die Maus im Rechteck (x, y, width, height) liegt; rechte und untere Kante zählen nicht dazu. */
+    private static boolean isInside(double mouseX, double mouseY, int x, int y, int width, int height) {
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+    }
+
+    /** Anzahl der Seiten für die aktuell gefilterten Items bei der aktuellen Viewer-Größe (mindestens 1). */
+    private static int computeTotalPages(ViewerPosition pos) {
+        int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
+        int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
+        int gridAvailableHeight = paginationY - (pos.viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5);
+        int itemsPerPage = ItemViewerGrid.computeItemsPerPage(gridAvailableWidth, gridAvailableHeight);
+        int totalPages = (int) Math.ceil((double) filteredItems.size() / (double) itemsPerPage);
+        return totalPages == 0 ? 1 : totalPages;
+    }
+
     /**
      * Behandelt Mausrad-Scrolling (wird vom Mixin aufgerufen)
      * @param mouseX Maus X-Position
@@ -91,293 +106,308 @@ public final class ViewerInputHandler {
             helpScreenScrollOffset = Math.max(0, helpScreenScrollOffset);
             return true;
         }
-        
+
         if (!isVisible()) {
             return false;
         }
-        
+
         Minecraft client = Minecraft.getInstance();
         ViewerPosition pos = resolveViewerPositionForMouseInput(client);
         if (pos == null) {
             return false;
         }
-        
-        if (mouseX >= pos.viewerX && mouseX < pos.viewerX + pos.viewerWidth &&
-            mouseY >= pos.viewerY && mouseY < pos.viewerY + pos.viewerHeight) {
-            
-            int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
-            int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
-            int gridAvailableHeight = paginationY - (pos.viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5);
-            int itemsPerPage = ItemViewerGrid.computeItemsPerPage(gridAvailableWidth, gridAvailableHeight);
-            int totalPages = (int) Math.ceil((double) filteredItems.size() / (double) itemsPerPage);
-            if (totalPages == 0) totalPages = 1;
-            
-            // Scrolle durch Seiten
-            if (vertical > 0) {
-                // Hoch scrollen = vorherige Seite
-                if (currentPage > 0) {
-                    currentPage--;
-                    return true;
-                }
-            } else if (vertical < 0) {
-                // Runter scrollen = nächste Seite
-                if (currentPage < totalPages - 1) {
-                    currentPage++;
-                    return true;
-                }
+
+        if (!isInside(mouseX, mouseY, pos.viewerX, pos.viewerY, pos.viewerWidth, pos.viewerHeight)) {
+            return false;
+        }
+
+        int totalPages = computeTotalPages(pos);
+        if (vertical > 0) {
+            // Hoch scrollen = vorherige Seite
+            if (currentPage > 0) {
+                currentPage--;
+                return true;
+            }
+        } else if (vertical < 0) {
+            // Runter scrollen = nächste Seite
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                return true;
             }
         }
-        
         return false;
     }
 
     /**
-     * Behandelt Maus-Klicks (wird vom Mixin aufgerufen)
+     * Behandelt Maus-Klicks (wird vom Mixin aufgerufen).
+     * Die Reihenfolge der Handler entspricht der Klick-Priorität: das zuerst zuständige Element verbraucht den Klick.
      */
     public static boolean handleMouseClick(double mouseX, double mouseY, int button) {
         Minecraft client = Minecraft.getInstance();
-        
-        // Prüfe Klick auf minimierten Button (rechts unten, wenn minimiert) - auch ohne Screen
-        if (isMinimized && isVisible && button == 0) {
-            int screenWidth = client.getWindow().getGuiScaledWidth();
-            int screenHeight = client.getWindow().getGuiScaledHeight();
-            int buttonX = screenWidth - MINIMIZE_BUTTON_SIZE - 10;
-            int buttonY = screenHeight - MINIMIZE_BUTTON_SIZE - 10;
-            
-            if (mouseX >= buttonX && mouseX < buttonX + MINIMIZE_BUTTON_SIZE &&
-                mouseY >= buttonY && mouseY < buttonY + MINIMIZE_BUTTON_SIZE) {
-                // Maximieren
-                isMinimized = false;
-                return true;
-            }
+
+        // Minimierter Button (rechts unten) funktioniert auch ohne Screen
+        if (handleMinimizedButtonClick(client, mouseX, mouseY, button)) {
+            return true;
         }
-        
-        // Wenn minimiert, keine weiteren Klicks abfangen (außer Minimize-Button oben)
-        // Dies ermöglicht es den Buttons darunter, Klicks zu verarbeiten
+
+        // Wenn minimiert, keine weiteren Klicks abfangen, damit die Buttons darunter sie verarbeiten können
         if (isMinimized && isVisible) {
             return false;
         }
-        
+
+        if (!isClickTargetScreenAvailable(client)) {
+            return false;
+        }
+
+        // Hilfe-Overlay hat höchste Priorität und verbraucht alle Klicks, solange es geöffnet ist
+        if (helpScreenOpen) {
+            handleHelpOverlayClick(client, mouseX, mouseY, button);
+            return true;
+        }
+
+        ViewerPosition pos = resolveViewerPositionForMouseInput(client);
+        if (pos == null) {
+            return false;
+        }
+
+        if (handleSideButtonsClick(pos, mouseX, mouseY, button)) {
+            return true;
+        }
+        // Symbol-Menü vor der Suchleiste, damit Klicks auf Menü-Buttons funktionieren
+        if (handleSymbolMenuClick(pos, mouseX, mouseY, button)) {
+            return true;
+        }
+        if (handleSearchFieldClick(client, pos, mouseX, mouseY, button)) {
+            return true;
+        }
+        if (handleFavoriteBlueprintClick(pos, mouseX, mouseY, button)) {
+            return true;
+        }
+        if (handleToolbarButtonClick(pos, mouseX, mouseY, button)) {
+            return true;
+        }
+        if (handleSortDropdownListClick(pos, mouseX, mouseY, button)) {
+            return true;
+        }
+        if (handlePaginationClick(client, pos, mouseX, mouseY, button)) {
+            return true;
+        }
+        return handleKitEditorPickClick(pos, mouseX, mouseY, button);
+    }
+
+    /** Klick auf den Maximieren-Button, solange der Viewer minimiert ist. */
+    private static boolean handleMinimizedButtonClick(Minecraft client, double mouseX, double mouseY, int button) {
+        if (!(isMinimized && isVisible && button == 0)) {
+            return false;
+        }
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+        int buttonX = screenWidth - MINIMIZE_BUTTON_SIZE - 10;
+        int buttonY = screenHeight - MINIMIZE_BUTTON_SIZE - 10;
+        if (isInside(mouseX, mouseY, buttonX, buttonY, MINIMIZE_BUTTON_SIZE, MINIMIZE_BUTTON_SIZE)) {
+            isMinimized = false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Prüft, ob es einen Screen gibt, auf dem der Viewer Klicks verarbeiten darf.
+     * Im Kit-Editor ohne Hintergrund-Screen genügt irgendein offener Screen.
+     */
+    private static boolean isClickTargetScreenAvailable(Minecraft client) {
         if (!isKitEditorMode() || kitEditorBackgroundScreen != null) {
             AbstractContainerScreen<?> handledScreen = resolveAbstractContainerScreenForInput(client);
             if (handledScreen == null) {
                 return false;
             }
             String currentTitle = handledScreen.getTitle().getString();
-            if (!isKitEditorMode()
-                    && net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
-                    && !helpScreenOpen) {
-                return false;
-            }
-        } else if (client.gui.screen() == null) {
+            return isKitEditorMode()
+                    || !net.felix.utilities.Overall.ZeichenUtility.shouldHideItemViewerForInventoryTitle(currentTitle)
+                    || helpScreenOpen;
+        }
+        return client.gui.screen() != null;
+    }
+
+    /** Klick bei geöffnetem Hilfe-Overlay: Schließen-Button oder Klick außerhalb schließt es (nur Linksklick). */
+    private static void handleHelpOverlayClick(Minecraft client, double mouseX, double mouseY, int button) {
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+        int boxWidth = Math.min(400, screenWidth - 40);
+        int boxHeight = Math.min(450, screenHeight - 40);
+        int boxX = (screenWidth - boxWidth) / 2;
+        int boxY = (screenHeight - boxHeight) / 2;
+        int closeButtonX = boxX + boxWidth - 20;
+        int closeButtonY = boxY + 5;
+        int closeButtonSize = 15;
+
+        if (button != 0) {
+            return;
+        }
+        boolean onCloseButton = isInside(mouseX, mouseY, closeButtonX, closeButtonY, closeButtonSize, closeButtonSize);
+        boolean outsideBox = !isInside(mouseX, mouseY, boxX, boxY, boxWidth, boxHeight);
+        if (onCloseButton || outsideBox) {
+            helpScreenOpen = false;
+        }
+    }
+
+    /** Viewer-Einstellungen-Menü (Kosten/Besitz-Schalter) und Einklappen-Button neben dem Viewer. */
+    private static boolean handleSideButtonsClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (isMinimized || button != 0) {
             return false;
         }
-        
-        // Prüfe ZUERST Klick auf Hilfe-Overlay Schließen-Button (höchste Priorität wenn geöffnet)
-        if (helpScreenOpen) {
-            int screenWidth = client.getWindow().getGuiScaledWidth();
-            int screenHeight = client.getWindow().getGuiScaledHeight();
-            int boxWidth = Math.min(400, screenWidth - 40);
-            int boxHeight = Math.min(450, screenHeight - 40);
-            int boxX = (screenWidth - boxWidth) / 2;
-            int boxY = (screenHeight - boxHeight) / 2;
-            int closeButtonX = boxX + boxWidth - 20;
-            int closeButtonY = boxY + 5;
-            int closeButtonSize = 15;
-            
-            if (mouseX >= closeButtonX && mouseX < closeButtonX + closeButtonSize &&
-                mouseY >= closeButtonY && mouseY < closeButtonY + closeButtonSize) {
-                if (button == 0) {
-                    helpScreenOpen = false;
-                    return true;
-                }
+        int sideButtonX = getSideButtonX(pos);
+        int settingsButtonY = getViewerSettingsButtonY(pos);
+        int menuWidth = getViewerSettingsMenuWidth();
+        int menuX = sideButtonX - menuWidth;
+        int costsButtonX = getViewerSettingsCostsButtonX(menuX);
+        int ownedButtonX = getViewerSettingsOwnedButtonX(menuX);
+
+        if (isViewerSettingsMenuOpen) {
+            if (isInside(mouseX, mouseY, costsButtonX, settingsButtonY, MINIMIZE_BUTTON_SIZE, MINIMIZE_BUTTON_SIZE)) {
+                showCosts = !showCosts;
+                TooltipCache.invalidateTooltipCache();
+                return true;
             }
-            
-            // Klick außerhalb des Hilfe-Overlays schließt es
-            if (mouseX < boxX || mouseX >= boxX + boxWidth ||
-                mouseY < boxY || mouseY >= boxY + boxHeight) {
-                if (button == 0) {
-                    helpScreenOpen = false;
-                    return true;
+            if (isInside(mouseX, mouseY, ownedButtonX, settingsButtonY, MINIMIZE_BUTTON_SIZE, MINIMIZE_BUTTON_SIZE)) {
+                showOwnedResources = !showOwnedResources;
+                if (!showOwnedResources) {
+                    HudStatsReader.clear();
                 }
+                TooltipCache.invalidateTooltipCache();
+                return true;
             }
-            // Wenn Hilfe-Overlay geöffnet ist, verhindere alle anderen Klicks
+            // Klick irgendwo im Menü verbraucht den Klick
+            int menuAreaWidth = sideButtonX + MINIMIZE_BUTTON_SIZE - menuX;
+            if (isInside(mouseX, mouseY, menuX, settingsButtonY, menuAreaWidth, MINIMIZE_BUTTON_SIZE)) {
+                return true;
+            }
+        }
+
+        int minimizeButtonY = getMinimizeButtonY(pos);
+        if (isInside(mouseX, mouseY, sideButtonX, minimizeButtonY, MINIMIZE_BUTTON_SIZE, MINIMIZE_BUTTON_SIZE)) {
+            isMinimized = true;
             return true;
         }
-        
-        ViewerPosition pos = resolveViewerPositionForMouseInput(client);
-        if (pos == null) {
+        return false;
+    }
+
+    /**
+     * Symbol-Menü (@, &lt;, &gt;) links vom Symbol-Button (nur Linksklick, nur wenn geöffnet).
+     * Ein Klick außerhalb schließt das Menü, wird aber nicht verbraucht.
+     */
+    private static boolean handleSymbolMenuClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (!(button == 0 && isSymbolMenuOpen)) {
             return false;
         }
-        
-        // Prüfe Klick auf Viewer-Einstellungen-Menü (vor Einklappen-Button)
-        if (!isMinimized && button == 0) {
-            int sideButtonX = getSideButtonX(pos);
-            int settingsButtonY = getViewerSettingsButtonY(pos);
-            int menuWidth = getViewerSettingsMenuWidth();
-            int menuX = sideButtonX - menuWidth;
-            int menuButtonWidth = MINIMIZE_BUTTON_SIZE;
-            int costsButtonX = getViewerSettingsCostsButtonX(menuX);
-            int ownedButtonX = getViewerSettingsOwnedButtonX(menuX);
+        char[] symbols = {'@', '<', '>'};
+        int menuButtonWidth = 20;
+        int menuButtonHeight = SYMBOL_BUTTON_SIZE; // Gleiche Höhe wie Stern-Button
+        int menuWidth = menuButtonWidth * symbols.length + 2;
+        int menuX = pos.symbolButtonX - menuWidth; // Links vom Button
+        int menuY = pos.symbolButtonY;
 
-            if (isViewerSettingsMenuOpen) {
-                if (mouseX >= costsButtonX && mouseX < costsButtonX + menuButtonWidth
-                        && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
-                    showCosts = !showCosts;
-                    TooltipCache.invalidateTooltipCache();
-                    return true;
-                }
-                if (mouseX >= ownedButtonX && mouseX < ownedButtonX + menuButtonWidth
-                        && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
-                    showOwnedResources = !showOwnedResources;
-                    if (!showOwnedResources) {
-                        HudStatsReader.clear();
-                    }
-                    TooltipCache.invalidateTooltipCache();
-                    return true;
-                }
-
-                if (mouseX >= menuX && mouseX < sideButtonX + MINIMIZE_BUTTON_SIZE
-                        && mouseY >= settingsButtonY && mouseY < settingsButtonY + MINIMIZE_BUTTON_SIZE) {
-                    return true;
-                }
-            }
-
-            int minimizeButtonY = getMinimizeButtonY(pos);
-            if (mouseX >= sideButtonX && mouseX < sideButtonX + MINIMIZE_BUTTON_SIZE
-                    && mouseY >= minimizeButtonY && mouseY < minimizeButtonY + MINIMIZE_BUTTON_SIZE) {
-                isMinimized = true;
+        boolean withinMenuRows = mouseY >= menuY && mouseY <= menuY + menuButtonHeight;
+        for (int i = 0; i < symbols.length; i++) {
+            int buttonLeft = menuX + (menuButtonWidth + 1) * i;
+            if (mouseX >= buttonLeft && mouseX <= buttonLeft + menuButtonWidth && withinMenuRows) {
+                insertCharacter(symbols[i]);
+                isSymbolMenuOpen = false;
                 return true;
             }
         }
-        
-        // Prüfe Klick auf Symbol-Menü (wenn geöffnet, VOR Suchleiste, nur Linksklick)
-        // Priorisiere Symbol-Menü vor Suchleiste, damit Klicks auf Menü-Buttons funktionieren
-        if (button == 0 && isSymbolMenuOpen) {
-            int menuButtonWidth = 20;
-            int menuButtonHeight = SYMBOL_BUTTON_SIZE; // Gleiche Höhe wie Stern-Button
-            int menuWidth = menuButtonWidth * 3 + 2;
-            int menuX = pos.symbolButtonX - menuWidth; // Links vom Button
-            int menuY = pos.symbolButtonY;
-            
-            // @-Button im Menü (links)
-            if (mouseX >= menuX && mouseX <= menuX + menuButtonWidth &&
-                mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
-                insertCharacter('@');
-                isSymbolMenuOpen = false;
-                return true;
-            }
-            
-            // <-Button im Menü (mitte)
-            if (mouseX >= menuX + menuButtonWidth + 1 && mouseX <= menuX + menuButtonWidth * 2 + 1 &&
-                mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
-                insertCharacter('<');
-                isSymbolMenuOpen = false;
-                return true;
-            }
-            
-            // >-Button im Menü (rechts)
-            if (mouseX >= menuX + (menuButtonWidth + 1) * 2 && mouseX <= menuX + menuButtonWidth * 3 + 2 &&
-                mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
-                insertCharacter('>');
-                isSymbolMenuOpen = false;
-                return true;
-            }
-            
-            // Wenn Klick im Menü-Bereich ist (auch wenn nicht genau auf einem Button), verhindere andere Klicks
-            if (mouseX >= menuX && mouseX <= pos.symbolButtonX + SYMBOL_BUTTON_SIZE &&
-                mouseY >= menuY && mouseY <= menuY + menuButtonHeight) {
-                // Klick im Menü-Bereich, aber nicht auf einem Button - verhindere andere Klicks
-                return true;
-            }
-            
-            // Wenn außerhalb des Menüs geklickt wird, schließe es
-            if (mouseX < menuX || mouseX >= pos.symbolButtonX + SYMBOL_BUTTON_SIZE ||
-                mouseY < menuY || mouseY >= menuY + menuButtonHeight) {
-                isSymbolMenuOpen = false;
-            }
+
+        // Klick im Menü-Bereich, aber nicht auf einem Button - verhindere andere Klicks
+        if (mouseX >= menuX && mouseX <= pos.symbolButtonX + SYMBOL_BUTTON_SIZE && withinMenuRows) {
+            return true;
         }
-        
-        // Berechne Suchfeld-Position (wird mehrfach verwendet)
+
+        // Wenn außerhalb des Menüs geklickt wird, schließe es
+        if (mouseX < menuX || mouseX >= pos.symbolButtonX + SYMBOL_BUTTON_SIZE
+                || mouseY < menuY || mouseY >= menuY + menuButtonHeight) {
+            isSymbolMenuOpen = false;
+        }
+        return false;
+    }
+
+    /** Linksklick setzt Fokus und Cursor im Suchfeld, Rechtsklick leert es. */
+    private static boolean handleSearchFieldClick(Minecraft client, ViewerPosition pos, double mouseX, double mouseY, int button) {
         int searchX = getSearchFieldX(pos);
         int searchY = pos.viewerY + VIEWER_PADDING;
-        
-        // Prüfe Klick auf Suchfeld (setzt Fokus)
-        if (mouseX >= searchX && mouseX < searchX + pos.searchWidth &&
-            mouseY >= searchY && mouseY < searchY + SEARCH_HEIGHT) {
-            if (button == 0) {
-                // Linksklick: Fokus setzen und Cursor-Position berechnen
-                setSearchFieldFocused(true);
-                searchCursorVisible = true;
-                searchCursorBlinkTime = System.currentTimeMillis();
-                // Berechne Cursor-Position basierend auf Mausklick-Position
-                int clickX = (int) (mouseX - searchX - 3); // 3px Padding links
-                cursorPosition = calculateCursorPosition(clickX, currentSearch, client.font);
-                clearSelection(); // Auswahl löschen beim Klick
-                return true;
-            } else if (button == 1) {
-                // Rechtsklick: Text löschen
-                currentSearch = "";
-                cursorPosition = 0;
-                clearSelection();
-                applyFilters();
-                return true;
-            }
+        if (!isInside(mouseX, mouseY, searchX, searchY, pos.searchWidth, SEARCH_HEIGHT)) {
+            return false;
         }
-        
-        // Prüfe Rechtsklick auf gehoverten Blueprint (vor anderen Klicks)
-        if (button == 1 && hoveredItemForClick != null) {
-            // Prüfe ob Klick im Grid-Bereich ist
-            int gridX = pos.viewerX + VIEWER_PADDING;
-            int gridY = pos.dropdownY + SORT_DROPDOWN_HEIGHT + 5;
-            int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
-            int gridAvailableHeight = paginationY - gridY;
-            int slotSize = ItemViewerGrid.getSlotSize();
-            int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
-            int gridColumns = Math.max(1, gridAvailableWidth / slotSize);
-            int gridRows = Math.max(1, gridAvailableHeight / slotSize);
-            int gridWidth = gridColumns * slotSize;
-            int gridHeight = gridRows * slotSize;
-            
-            if (mouseX >= gridX && mouseX < gridX + gridWidth &&
-                mouseY >= gridY && mouseY < gridY + gridHeight) {
-                
-                // Prüfe ob es ein Blueprint ist
-                if (hoveredItemForClick.info != null && 
-                    Boolean.TRUE.equals(hoveredItemForClick.info.blueprint) &&
-                    hoveredItemForClick.name != null && !hoveredItemForClick.name.isEmpty()) {
-                    
-                    // Toggle Favoriten-Status
-                    boolean isFavorite = FavoriteBlueprintsStore.isFavorite(hoveredItemForClick.name);
-                    if (isFavorite) {
-                        // Entferne aus Favoriten
-                        FavoriteBlueprintsStore.removeFavorite(hoveredItemForClick.name);
-                    } else {
-                        // Füge zu Favoriten hinzu
-                        JsonObject jsonObj = hoveredItemForClick.jsonObject;
-                        if (jsonObj == null) {
-                            // Fallback: Hole aus Map
-                            jsonObj = blueprintJsonMap.get(hoveredItemForClick.name);
-                        }
-                        if (jsonObj != null) {
-                            FavoriteBlueprintsStore.addFavorite(jsonObj);
-                        }
-                    }
-
-                    TooltipCache.invalidateTooltipCache();
-
-                    if (favoritesMode) {
-                        applyFilters();
-                    }
-                    
-                    return true;
-                }
-            }
+        if (button == 0) {
+            setSearchFieldFocused(true);
+            searchCursorVisible = true;
+            searchCursorBlinkTime = System.currentTimeMillis();
+            // Cursor-Position aus der Klick-Position berechnen
+            int clickX = (int) (mouseX - searchX - 3); // 3px Padding links
+            cursorPosition = calculateCursorPosition(clickX, currentSearch, client.font);
+            clearSelection(); // Auswahl löschen beim Klick
+            return true;
         }
-        
-        // Prüfe Klick auf Hilfe-Button (nur Linksklick)
-        if (button == 0 && mouseX >= pos.helpButtonX && mouseX < pos.helpButtonX + HELP_BUTTON_SIZE &&
-            mouseY >= pos.helpButtonY && mouseY < pos.helpButtonY + HELP_BUTTON_SIZE) {
+        if (button == 1) {
+            currentSearch = "";
+            cursorPosition = 0;
+            clearSelection();
+            applyFilters();
+            return true;
+        }
+        return false;
+    }
+
+    /** Rechtsklick auf einen Blueprint im Grid schaltet seinen Favoriten-Status um. */
+    private static boolean handleFavoriteBlueprintClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (!(button == 1 && hoveredItemForClick != null)) {
+            return false;
+        }
+        int gridX = pos.viewerX + VIEWER_PADDING;
+        int gridY = pos.dropdownY + SORT_DROPDOWN_HEIGHT + 5;
+        int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
+        int gridAvailableHeight = paginationY - gridY;
+        int slotSize = ItemViewerGrid.getSlotSize();
+        int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
+        int gridColumns = Math.max(1, gridAvailableWidth / slotSize);
+        int gridRows = Math.max(1, gridAvailableHeight / slotSize);
+        if (!isInside(mouseX, mouseY, gridX, gridY, gridColumns * slotSize, gridRows * slotSize)) {
+            return false;
+        }
+
+        boolean isBlueprint = hoveredItemForClick.info != null
+                && Boolean.TRUE.equals(hoveredItemForClick.info.blueprint)
+                && hoveredItemForClick.name != null && !hoveredItemForClick.name.isEmpty();
+        if (!isBlueprint) {
+            return false;
+        }
+
+        toggleFavorite();
+        TooltipCache.invalidateTooltipCache();
+        if (favoritesMode) {
+            applyFilters();
+        }
+        return true;
+    }
+
+    /** Schaltet den Favoriten-Status des aktuell gehoverten Blueprints um. */
+    private static void toggleFavorite() {
+        if (FavoriteBlueprintsStore.isFavorite(hoveredItemForClick.name)) {
+            FavoriteBlueprintsStore.removeFavorite(hoveredItemForClick.name);
+            return;
+        }
+        JsonObject jsonObj = hoveredItemForClick.jsonObject;
+        if (jsonObj == null) {
+            // Fallback: Hole aus Map
+            jsonObj = blueprintJsonMap.get(hoveredItemForClick.name);
+        }
+        if (jsonObj != null) {
+            FavoriteBlueprintsStore.addFavorite(jsonObj);
+        }
+    }
+
+    /** Hilfe-, Filter-, Symbol-, Favoriten-, Kit-, Anwenden- und Sortier-Dropdown-Button. */
+    private static boolean handleToolbarButtonClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (button == 0 && isInside(mouseX, mouseY, pos.helpButtonX, pos.helpButtonY, HELP_BUTTON_SIZE, HELP_BUTTON_SIZE)) {
             helpScreenOpen = !helpScreenOpen;
             blurSearchFieldFocus();
             if (helpScreenOpen) {
@@ -385,9 +415,8 @@ public final class ViewerInputHandler {
             }
             return true;
         }
-        
-        if (button == 0 && mouseX >= pos.filterButtonX && mouseX < pos.filterButtonX + FILTER_BUTTON_SIZE &&
-            mouseY >= pos.filterButtonY && mouseY < pos.filterButtonY + FILTER_BUTTON_SIZE) {
+
+        if (button == 0 && isInside(mouseX, mouseY, pos.filterButtonX, pos.filterButtonY, FILTER_BUTTON_SIZE, FILTER_BUTTON_SIZE)) {
             FilterMenu.toggle(allItems, currentSearch);
             blurSearchFieldFocus();
             if (FilterMenu.isOpen()) {
@@ -396,133 +425,128 @@ public final class ViewerInputHandler {
             }
             return true;
         }
-        
-        // Prüfe Klick auf Symbol-Button (nur Linksklick)
-        if (button == 0 && mouseX >= pos.symbolButtonX && mouseX < pos.symbolButtonX + SYMBOL_BUTTON_SIZE &&
-            mouseY >= pos.symbolButtonY && mouseY < pos.symbolButtonY + SYMBOL_BUTTON_SIZE) {
-            // Toggle Menü
+
+        if (button == 0 && isInside(mouseX, mouseY, pos.symbolButtonX, pos.symbolButtonY, SYMBOL_BUTTON_SIZE, SYMBOL_BUTTON_SIZE)) {
             isSymbolMenuOpen = !isSymbolMenuOpen;
             return true;
         }
-        
-        // Prüfe Klick auf Favoriten-Button (nur Linksklick)
-        if (button == 0 && mouseX >= pos.favoritesButtonX && mouseX < pos.favoritesButtonX + SORT_DROPDOWN_HEIGHT &&
-            mouseY >= pos.favoritesButtonY && mouseY < pos.favoritesButtonY + SORT_DROPDOWN_HEIGHT) {
+
+        if (button == 0 && isInside(mouseX, mouseY, pos.favoritesButtonX, pos.favoritesButtonY, SORT_DROPDOWN_HEIGHT, SORT_DROPDOWN_HEIGHT)) {
             favoritesMode = !favoritesMode;
             applyFilters(); // Aktualisiere Filter
             return true;
         }
-        
-        // Prüfe Klick auf Kit-Button
-        if (mouseX >= pos.kitButtonX && mouseX < pos.kitButtonX + KIT_BUTTON_SIZE &&
-            mouseY >= pos.kitButtonY && mouseY < pos.kitButtonY + KIT_BUTTON_SIZE) {
-            if (button == 0) {
-                // Linksklick: Toggle Kit-Filter (Hintergrund-Filterung)
-                net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection = 
-                    net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
-                if (kitSelection != null) {
-                    kitFilterActive = !kitFilterActive;
-                    applyFilters(); // Aktualisiere Filter
-                } else {
-                    // Kein Kit ausgewählt - öffne Kit-Auswahlmenü
-                    net.felix.utilities.Town.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
-                }
-                return true;
-            } else if (button == 1) {
-                // Rechtsklick: Öffne Kit-Auswahlmenü
-                net.felix.utilities.Town.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
-                return true;
-            }
+
+        if (handleKitButtonClick(pos, mouseX, mouseY, button)) {
+            return true;
         }
-        
-        if (button == 0 && mouseX >= pos.applyButtonX && mouseX < pos.applyButtonX + pos.applyButtonWidth &&
-            mouseY >= pos.applyButtonY && mouseY < pos.applyButtonY + SORT_DROPDOWN_HEIGHT) {
+
+        if (button == 0 && isInside(mouseX, mouseY, pos.applyButtonX, pos.applyButtonY, pos.applyButtonWidth, SORT_DROPDOWN_HEIGHT)) {
             InventoryFilter.toggleFilter();
             return true;
         }
-        
-        // Prüfe Klick auf Dropdown-Button (nur Linksklick)
-        if (button == 0 && mouseX >= pos.dropdownX && mouseX < pos.dropdownX + pos.dropdownWidth &&
-            mouseY >= pos.dropdownY && mouseY < pos.dropdownY + SORT_DROPDOWN_HEIGHT) {
+
+        if (button == 0 && isInside(mouseX, mouseY, pos.dropdownX, pos.dropdownY, pos.dropdownWidth, SORT_DROPDOWN_HEIGHT)) {
             sortDropdownOpen = !sortDropdownOpen;
             return true;
         }
-        
-        // Prüfe Klick auf Dropdown-Optionen (wenn geöffnet, nur Linksklick)
-        if (button == 0 && sortDropdownOpen) {
-            int dropdownListY = pos.dropdownY + SORT_DROPDOWN_HEIGHT;
-            int optionIndex = 0;
-            for (SortMode mode : SortMode.values()) {
-                int optionY = dropdownListY + optionIndex * SORT_OPTION_HEIGHT;
-                if (mouseX >= pos.dropdownX && mouseX < pos.dropdownX + pos.dropdownWidth &&
-                    mouseY >= optionY && mouseY < optionY + SORT_OPTION_HEIGHT) {
-                    setSortMode(mode);
-                    sortDropdownOpen = false;
-                    return true;
-                }
-                optionIndex++;
-            }
-            
-            // Klick außerhalb des Dropdowns schließt es
-            if (mouseX < pos.dropdownX || mouseX >= pos.dropdownX + pos.dropdownWidth ||
-                mouseY < pos.dropdownY || mouseY >= dropdownListY + SortMode.values().length * SORT_OPTION_HEIGHT) {
-                sortDropdownOpen = false;
-            }
+        return false;
+    }
+
+    /** Linksklick schaltet den Kit-Filter um (oder öffnet die Kit-Auswahl), Rechtsklick öffnet die Kit-Auswahl. */
+    private static boolean handleKitButtonClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (!isInside(mouseX, mouseY, pos.kitButtonX, pos.kitButtonY, KIT_BUTTON_SIZE, KIT_BUTTON_SIZE)) {
+            return false;
         }
-        
-        // Prüfe Klick auf Pagination-Buttons (nur Linksklick)
         if (button == 0) {
-            int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
-            int paginationX = pos.viewerX + VIEWER_PADDING;
-            int paginationWidth = pos.viewerWidth - VIEWER_PADDING * 2;
-            
-            // Berechne Items pro Seite basierend auf aktueller Grid-Breite und -Höhe
-            int gridAvailableWidth = pos.viewerWidth - VIEWER_PADDING * 2;
-            int gridAvailableHeight = paginationY - (pos.viewerY + VIEWER_PADDING + SEARCH_HEIGHT + 5 + SORT_DROPDOWN_HEIGHT + 5);
-            int itemsPerPage = ItemViewerGrid.computeItemsPerPage(gridAvailableWidth, gridAvailableHeight);
-            int totalPages = (int) Math.ceil((double) filteredItems.size() / (double) itemsPerPage);
-            if (totalPages == 0) totalPages = 1;
-            
-            // Berechne Button-Breite dynamisch (gleiche Logik wie beim Rendering)
-            int prevTextWidth = client.font.width("< Zurück");
-            int nextTextWidth = client.font.width("Weiter >");
-            int buttonWidth = Math.max(prevTextWidth, nextTextWidth) + 10; // 10px Padding
-            
-            // Previous-Button
-            int prevX = paginationX;
-            if (mouseX >= prevX && mouseX < prevX + buttonWidth &&
-                mouseY >= paginationY && mouseY < paginationY + PAGINATION_HEIGHT) {
-                if (currentPage > 0) {
-                    currentPage--;
-                    return true;
-                }
+            net.felix.utilities.Town.KitFilterUtility.KitSelection kitSelection =
+                    net.felix.utilities.Town.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
+            if (kitSelection != null) {
+                kitFilterActive = !kitFilterActive;
+                applyFilters(); // Aktualisiere Filter
+            } else {
+                // Kein Kit ausgewählt - öffne Kit-Auswahlmenü
+                net.felix.utilities.Town.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
             }
-            
-            // Next-Button
-            int nextX = paginationX + paginationWidth - buttonWidth;
-            if (mouseX >= nextX && mouseX < nextX + buttonWidth &&
-                mouseY >= paginationY && mouseY < paginationY + PAGINATION_HEIGHT) {
-                if (currentPage < totalPages - 1) {
-                    currentPage++;
-                    return true;
-                }
-            }
+            return true;
         }
-        
-        // Kit-Editor: Linksklick auf Item im Grid übernimmt Item/Icon
-        if (isKitEditorMode() && button == 0 && hoveredItemForClick != null && kitEditorPickHandler != null) {
-            int gridX = pos.viewerX + VIEWER_PADDING;
-            int gridY = pos.dropdownY + SORT_DROPDOWN_HEIGHT + 5;
-            int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
-            int gridWidth = pos.viewerWidth - VIEWER_PADDING * 2;
-            int gridHeight = paginationY - gridY;
-            if (mouseX >= gridX && mouseX < gridX + gridWidth
-                    && mouseY >= gridY && mouseY < gridY + gridHeight) {
-                kitEditorPickHandler.accept(hoveredItemForClick, kitEditorPickTarget);
+        if (button == 1) {
+            net.felix.utilities.Town.KitFilterUtility.openKitSelectionScreen(KIT_BUTTON_INDEX);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Optionen der geöffneten Sortier-Liste (nur Linksklick).
+     * Ein Klick außerhalb der Liste schließt sie, wird aber nicht verbraucht.
+     */
+    private static boolean handleSortDropdownListClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (!(button == 0 && sortDropdownOpen)) {
+            return false;
+        }
+        int dropdownListY = pos.dropdownY + SORT_DROPDOWN_HEIGHT;
+        int optionIndex = 0;
+        for (SortMode mode : SortMode.values()) {
+            int optionY = dropdownListY + optionIndex * SORT_OPTION_HEIGHT;
+            if (isInside(mouseX, mouseY, pos.dropdownX, optionY, pos.dropdownWidth, SORT_OPTION_HEIGHT)) {
+                setSortMode(mode);
+                sortDropdownOpen = false;
                 return true;
             }
+            optionIndex++;
         }
-        
+
+        if (mouseX < pos.dropdownX || mouseX >= pos.dropdownX + pos.dropdownWidth
+                || mouseY < pos.dropdownY || mouseY >= dropdownListY + SortMode.values().length * SORT_OPTION_HEIGHT) {
+            sortDropdownOpen = false;
+        }
+        return false;
+    }
+
+    /** "Zurück"- und "Weiter"-Button der Seitenleiste (nur Linksklick, nur wenn die Seite wechseln kann). */
+    private static boolean handlePaginationClick(Minecraft client, ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (button != 0) {
+            return false;
+        }
+        int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
+        int paginationX = pos.viewerX + VIEWER_PADDING;
+        int paginationWidth = pos.viewerWidth - VIEWER_PADDING * 2;
+        int totalPages = computeTotalPages(pos);
+
+        // Button-Breite dynamisch (gleiche Logik wie beim Rendering)
+        int prevTextWidth = client.font.width("< Zurück");
+        int nextTextWidth = client.font.width("Weiter >");
+        int buttonWidth = Math.max(prevTextWidth, nextTextWidth) + 10; // 10px Padding
+
+        int prevX = paginationX;
+        if (isInside(mouseX, mouseY, prevX, paginationY, buttonWidth, PAGINATION_HEIGHT) && currentPage > 0) {
+            currentPage--;
+            return true;
+        }
+
+        int nextX = paginationX + paginationWidth - buttonWidth;
+        if (isInside(mouseX, mouseY, nextX, paginationY, buttonWidth, PAGINATION_HEIGHT) && currentPage < totalPages - 1) {
+            currentPage++;
+            return true;
+        }
+        return false;
+    }
+
+    /** Kit-Editor: Linksklick auf ein Item im Grid übernimmt Item/Icon. */
+    private static boolean handleKitEditorPickClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (!(isKitEditorMode() && button == 0 && hoveredItemForClick != null && kitEditorPickHandler != null)) {
+            return false;
+        }
+        int gridX = pos.viewerX + VIEWER_PADDING;
+        int gridY = pos.dropdownY + SORT_DROPDOWN_HEIGHT + 5;
+        int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
+        int gridWidth = pos.viewerWidth - VIEWER_PADDING * 2;
+        int gridHeight = paginationY - gridY;
+        if (isInside(mouseX, mouseY, gridX, gridY, gridWidth, gridHeight)) {
+            kitEditorPickHandler.accept(hoveredItemForClick, kitEditorPickTarget);
+            return true;
+        }
         return false;
     }
 }
