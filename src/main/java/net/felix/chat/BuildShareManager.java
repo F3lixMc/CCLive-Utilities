@@ -9,7 +9,6 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.leaderboards.LeaderboardManager;
 import net.felix.leaderboards.http.HttpClient;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.features.itemviewer.ui.ItemViewerGrid;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.felix.utilities.Town.BuildSlotMapping;
@@ -37,6 +36,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import net.felix.features.itemviewer.inventory.InventoryItemCapture;
+import net.felix.features.itemviewer.ui.ViewerState;
 
 /**
  * Build-Share: Inventar-Erkennung, Session-Zustand, Übersicht, Snapshot, Upload, Chat-Hover.
@@ -396,7 +397,7 @@ public final class BuildShareManager {
 
         if (category.usesPlaceholders()) {
             if (isLockedSlot(stack)) {
-                ItemData placeholder = ItemViewerUtility.captureInventoryStackForShare(client, screen, stack);
+                ItemData placeholder = InventoryItemCapture.captureInventoryStackForShare(client, screen, stack);
                 if (placeholder != null && placeholder.name != null) {
                     placeholder.name = ShareTextCleaner.cleanDisplayName(placeholder.name);
                 }
@@ -414,7 +415,7 @@ public final class BuildShareManager {
             if (ShareTextCleaner.isLayoutOnlyName(rawName)) {
                 return SlotClassification.empty();
             }
-            ItemData data = ItemViewerUtility.captureInventoryStackForShare(client, screen, stack);
+            ItemData data = InventoryItemCapture.captureInventoryStackForShare(client, screen, stack);
             if (data == null) {
                 return SlotClassification.empty();
             }
@@ -430,7 +431,7 @@ public final class BuildShareManager {
         if (ShareTextCleaner.isLayoutOnlyName(rawName)) {
             return SlotClassification.empty();
         }
-        ItemData data = ItemViewerUtility.captureInventoryStackForShare(client, screen, stack);
+        ItemData data = InventoryItemCapture.captureInventoryStackForShare(client, screen, stack);
         if (data == null) {
             return SlotClassification.empty();
         }
@@ -494,7 +495,7 @@ public final class BuildShareManager {
             lastCardSignatures.put(slotIndex, signature);
 
             if (isUsableCardItem(stack)) {
-                ItemData data = ItemViewerUtility.captureInventoryStackForShare(client, screen, stack);
+                ItemData data = InventoryItemCapture.captureInventoryStackForShare(client, screen, stack);
                 if (data != null) {
                     if (data.name != null) {
                         data.name = ShareTextCleaner.cleanDisplayName(data.name);
@@ -554,7 +555,7 @@ public final class BuildShareManager {
             return;
         }
 
-        Slot hoveredSlot = ItemViewerUtility.getLastHoveredSlot();
+        Slot hoveredSlot = ViewerState.getLastHoveredSlot();
         if (hoveredSlot == null || !hoveredSlot.hasItem()) {
             return;
         }
@@ -576,7 +577,7 @@ public final class BuildShareManager {
             return;
         }
 
-        String name = ItemViewerUtility.extractInventoryItemDisplayName(client, screen, stack);
+        String name = InventoryItemCapture.extractInventoryItemDisplayName(client, screen, stack);
         if (name == null || name.isEmpty()) {
             return;
         }
@@ -1756,7 +1757,7 @@ public final class BuildShareManager {
             capturedPowerCrystalNames = new ArrayList<>();
             return;
         }
-        ItemData data = ItemViewerUtility.captureInventoryStackForShare(client, screen, stack);
+        ItemData data = InventoryItemCapture.captureInventoryStackForShare(client, screen, stack);
         if (data != null && data.name != null) {
             data.name = ShareTextCleaner.cleanDisplayName(data.name);
         }

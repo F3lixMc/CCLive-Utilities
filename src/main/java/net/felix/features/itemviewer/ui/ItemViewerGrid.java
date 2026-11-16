@@ -1,6 +1,21 @@
 package net.felix.features.itemviewer.ui;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.itemviewer.data.CatchChance;
+import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.data.ItemInfo;
+import net.felix.features.itemviewer.data.LocationData;
+import net.felix.features.itemviewer.data.PriceData;
+import net.felix.features.itemviewer.inventory.FoundItemChecker;
+import net.felix.features.itemviewer.inventory.OwnedResources;
+import net.felix.features.itemviewer.search.ForgingConditionCalculator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -13,22 +28,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomModelData;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.felix.features.itemviewer.ItemViewerUtility;
-import net.felix.features.itemviewer.data.CatchChance;
-import net.felix.features.itemviewer.data.CostItem;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.data.ItemInfo;
-import net.felix.features.itemviewer.data.LocationData;
-import net.felix.features.itemviewer.data.PriceData;
-import net.felix.features.itemviewer.inventory.FoundItemChecker;
-import net.felix.features.itemviewer.inventory.OwnedResources;
-import net.felix.features.itemviewer.search.ForgingConditionCalculator;
 
 /**
  * Rendert Items in einem Grid-Layout (ähnlich JEI)
@@ -627,7 +626,7 @@ public class ItemViewerGrid {
                         }
                         tooltipLines.add(statusText);
                         
-                        if (includeCosts && ItemViewerUtility.isShowCosts()) {
+                        if (includeCosts && ViewerState.isShowCosts()) {
                             tooltipLines.add(Component.empty());
                         }
                     }
@@ -690,7 +689,7 @@ public class ItemViewerGrid {
         }
 
         if (net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(hoveredItem)) {
-            String hotkeyText = net.felix.features.itemviewer.ItemViewerUtility.getClipboardPinHotkeyText();
+            String hotkeyText = net.felix.features.itemviewer.ItemViewerHotkeys.getClipboardPinHotkeyText();
             tooltipLines.add(Component.literal("An Pinnwand anheften mit Hotkey: " + hotkeyText)
                 .setStyle(Style.EMPTY.withColor(0xFF808080).withItalic(false)));
         }
@@ -981,7 +980,7 @@ public class ItemViewerGrid {
 
     private void appendPriceSection(java.util.List<Component> tooltipLines, ItemData hoveredItem,
             boolean leadingEmptyLine, boolean includeCosts) {
-        if (!includeCosts || !ItemViewerUtility.isShowCosts() || hoveredItem == null || hoveredItem.price == null) {
+        if (!includeCosts || !ViewerState.isShowCosts() || hoveredItem == null || hoveredItem.price == null) {
             return;
         }
         if (leadingEmptyLine) {
@@ -1007,7 +1006,7 @@ public class ItemViewerGrid {
 
     private void appendBlueprintShopSection(java.util.List<Component> tooltipLines, ItemData hoveredItem,
             boolean includeCosts) {
-        if (!includeCosts || !ItemViewerUtility.isShowCosts() || hoveredItem == null
+        if (!includeCosts || !ViewerState.isShowCosts() || hoveredItem == null
                 || hoveredItem.blueprint_shop == null || hoveredItem.blueprint_shop.price == null) {
             return;
         }
@@ -1029,7 +1028,7 @@ public class ItemViewerGrid {
     }
 
     private void addCostSectionHeader(java.util.List<Component> tooltipLines, String label, PriceData price, ItemData item) {
-        if (!ItemViewerUtility.isShowOwnedResources() || !shouldShowCraftableCount(item)) {
+        if (!ViewerState.isShowOwnedResources() || !shouldShowCraftableCount(item)) {
             tooltipLines.add(Component.literal(label)
                     .setStyle(Style.EMPTY.withColor(0xFFFFFF00).withItalic(false)));
             return;
@@ -1073,7 +1072,7 @@ public class ItemViewerGrid {
             return;
         }
 
-        if (ItemViewerUtility.isShowOwnedResources()) {
+        if (ViewerState.isShowOwnedResources()) {
             addCostItemWithOwned(tooltipLines, costItem);
             return;
         }

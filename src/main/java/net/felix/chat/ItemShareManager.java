@@ -10,7 +10,6 @@ import net.felix.leaderboards.http.HttpClient;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.data.ItemInfo;
 import net.felix.features.itemviewer.ui.ItemViewerGrid;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Overall.KeyCategories;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -29,6 +28,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.itemviewer.inventory.InventoryItemCapture;
+import net.felix.features.itemviewer.search.SearchFieldState;
 
 /**
  * Session-Cache + Server-Shares für CCLive-Chat Item-Links (!item / #ITEM:…).
@@ -90,7 +91,7 @@ public final class ItemShareManager {
         if (!copyItemKeyMapping.matches(new KeyEvent(keyCode, scanCode, 0))) {
             return false;
         }
-        if (ItemViewerUtility.isTextFieldFocusedPublic(client)) {
+        if (SearchFieldState.isTextFieldFocusedPublic(client)) {
             return false;
         }
         tryCopyHoveredItem();
@@ -174,7 +175,7 @@ public final class ItemShareManager {
 
     private void tryCopyHoveredItem() {
         Minecraft client = Minecraft.getInstance();
-        ItemData snapshot = ItemViewerUtility.captureHoveredInventoryItemForShare(client);
+        ItemData snapshot = InventoryItemCapture.captureHoveredInventoryItemForShare(client);
         if (snapshot == null) {
             debugChat("✗ Kein Item unter dem Cursor (nur Inventar/Chests).");
             sendPlayerFeedback("§cKein Item unter dem Cursor.");

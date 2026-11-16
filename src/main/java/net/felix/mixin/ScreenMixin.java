@@ -2,7 +2,6 @@ package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,6 +12,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.felix.features.itemviewer.ItemViewerHotkeys;
+import net.felix.features.itemviewer.kit.KitEditorMode;
+import net.felix.features.itemviewer.search.SearchFieldInput;
+import net.felix.features.itemviewer.search.SearchFieldState;
+import net.felix.features.itemviewer.ui.FilterOverlayControls;
+import net.felix.features.itemviewer.ui.HelpOverlay;
+import net.felix.features.itemviewer.ui.ViewerRenderer;
+import net.felix.features.itemviewer.ui.ViewerState;
 
 /**
  * Mixin für Screen, um Keybind-Handling und Text-Input auch in geöffneten Screens zu ermöglichen
@@ -23,7 +30,7 @@ public class ScreenMixin {
 
     @Inject(method = "isInputCaptured", at = @At("HEAD"), cancellable = true)
     private void cclive$captureViewerSearchInput(CallbackInfoReturnable<Boolean> cir) {
-        if (ItemViewerUtility.isSearchFieldFocused() && ItemViewerUtility.isVisible()) {
+        if (SearchFieldState.isSearchFieldFocused() && ViewerState.isVisible()) {
             cir.setReturnValue(true);
         }
     }
@@ -47,28 +54,28 @@ public class ScreenMixin {
 
         // Prüfe zuerst ESC für Hilfe-Overlay (höchste Priorität)
         if (keyCode == InputConstants.KEY_ESCAPE) {
-            if (ItemViewerUtility.handleHelpOverlayEscape()) {
+            if (HelpOverlay.handleHelpOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
             }
-            if (ItemViewerUtility.handleFilterOverlayEscape()) {
+            if (FilterOverlayControls.handleFilterOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
             }
         }
 
-        if (ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+        if (FilterOverlayControls.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
         
         // Prüfe dann ob Text-Input für Suchfeld behandelt werden soll (höhere Priorität)
-        if (ItemViewerUtility.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
+        if (SearchFieldInput.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
         // Prüfe dann ob unser Keybind gedrückt wurde
-        if (ItemViewerUtility.handleKeyPress(keyCode, scanCode, modifiers)) {
+        if (ItemViewerHotkeys.handleKeyPress(keyCode, scanCode, modifiers)) {
             // Keybind wurde behandelt, verhindere weitere Verarbeitung
             cir.setReturnValue(true);
             return;
@@ -127,7 +134,7 @@ public class ScreenMixin {
             
             Minecraft client = Minecraft.getInstance();
             // Update mouse position
-            ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+            ViewerState.updateMousePosition(mouseX, mouseY);
             
             // Render Clipboard Overlay (wenn aktiviert)
             net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
@@ -136,18 +143,18 @@ public class ScreenMixin {
             net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
             
             // Render Item Viewer (als AbstractContainerScreen behandeln)
-            ItemViewerUtility.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
+            ViewerRenderer.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
             
             // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
             // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
-            if (ItemViewerUtility.isVisible()) {
+            if (ViewerState.isVisible()) {
                 net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
             }
             
             // Hilfe folgt erst am Ende von InventoryScreen.extractRenderState.
             
             // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
-            ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
+            ViewerRenderer.renderMinimizedButtonIfNeeded(context);
             
             // Render F6 button (bottom left corner)
             if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.shouldShowButton(handledScreen)) {
@@ -159,7 +166,7 @@ public class ScreenMixin {
         
         // Kit-Editor: Aspekt-Overlay über dem zentrierten Editor-Panel
         if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
-            if (ItemViewerUtility.isVisible()) {
+            if (ViewerState.isVisible()) {
                 net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
             }
             return;
@@ -176,11 +183,11 @@ public class ScreenMixin {
     private void onRemoved(CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
         if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
-            ItemViewerUtility.stopKitEditorMode();
+            KitEditorMode.stopKitEditorMode();
         }
-        ItemViewerUtility.blurSearchFieldFocus();
-        ItemViewerUtility.closeHelpOverlay();
-        ItemViewerUtility.closeFilterOverlay();
+        SearchFieldState.blurSearchFieldFocus();
+        HelpOverlay.closeHelpOverlay();
+        FilterOverlayControls.closeFilterOverlay();
         net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocus();
         if (screen instanceof AbstractContainerScreen) {
             net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.finalizeQuantityTextField();

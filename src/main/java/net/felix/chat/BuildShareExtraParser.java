@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ItemViewerUtility;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,6 +12,7 @@ import java.util.Locale;
 import java.util.Set;
 import net.felix.features.information.aspects.AspectDatabase;
 import net.felix.features.information.aspects.AspectInfo;
+import net.felix.features.itemviewer.data.ItemCatalog;
 
 /**
  * Machtkristalle und Aspekte aus erfassten Ausrüstungs-Tooltips.
@@ -49,7 +49,7 @@ public final class BuildShareExtraParser {
             if (candidate == null || candidate.isEmpty()) {
                 continue;
             }
-            ItemData db = ItemViewerUtility.findItemByName(candidate);
+            ItemData db = ItemCatalog.findItemByName(candidate);
             if (!isPowerCrystal(db) || db.name == null || db.name.isEmpty()) {
                 continue;
             }
@@ -148,7 +148,7 @@ public final class BuildShareExtraParser {
         if (confirmed.contains(normalizeCrystalName(candidate))) {
             return true;
         }
-        ItemData db = ItemViewerUtility.findItemByName(candidate);
+        ItemData db = ItemCatalog.findItemByName(candidate);
         return db != null && db.name != null && confirmed.contains(normalizeCrystalName(db.name));
     }
 

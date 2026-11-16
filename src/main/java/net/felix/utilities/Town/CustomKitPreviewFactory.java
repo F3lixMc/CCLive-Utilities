@@ -5,7 +5,6 @@ import net.felix.chat.BuildShareManager;
 import net.felix.chat.BuildShareManager.CategoryBucket;
 import net.felix.chat.ChatTooltipLine;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Town.BuildSlotMapping.EquipmentCategory;
 import net.felix.utilities.Town.BuildSlotMapping.PieceType;
 import net.felix.utilities.Town.CustomKit.EquipmentEntry;
@@ -14,6 +13,7 @@ import net.felix.utilities.Town.CustomKit.FishingComponent;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import net.felix.features.itemviewer.data.ItemCatalog;
 
 /**
  * Baut eine Build-Share-Vorschau aus einem lokalen CustomKit.
@@ -141,9 +141,9 @@ public final class CustomKitPreviewFactory {
         if (name == null || name.isEmpty()) {
             return null;
         }
-        ItemData db = ItemViewerUtility.findItemByName(name);
+        ItemData db = ItemCatalog.findItemByName(name);
         if (db == null) {
-            db = ItemViewerUtility.findItemByNameFuzzy(name);
+            db = ItemCatalog.findItemByNameFuzzy(name);
         }
         if (db == null) {
             ItemData fallback = new ItemData();

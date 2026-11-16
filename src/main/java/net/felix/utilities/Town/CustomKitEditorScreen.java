@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.ui.ItemViewerGrid;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -21,6 +20,12 @@ import net.minecraft.world.item.Items;
 
 
 import java.util.Collections;
+import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.features.itemviewer.kit.KitEditorMode;
+import net.felix.features.itemviewer.search.SearchFieldState;
+import net.felix.features.itemviewer.ui.FilterOverlayControls;
+import net.felix.features.itemviewer.ui.ViewerInputHandler;
+import net.felix.features.itemviewer.ui.ViewerState;
 
 /**
  * Editor zum Erstellen/Bearbeiten eines eigenen Kits.
@@ -197,8 +202,8 @@ public class CustomKitEditorScreen extends Screen {
             this.addRenderableWidget(cancelButton);
         }
 
-        ItemViewerUtility.startKitEditorMode(itemViewerScreen, this::onItemPickedFromViewer);
-        ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
+        KitEditorMode.startKitEditorMode(itemViewerScreen, this::onItemPickedFromViewer);
+        KitEditorMode.setKitEditorPickTarget(PickTarget.ADD_ITEM);
 
         if (showDeleteConfirmation) {
             initDeleteConfirmationButtons();
@@ -316,7 +321,7 @@ public class CustomKitEditorScreen extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         Minecraft client = Minecraft.getInstance();
-        ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+        ViewerState.updateMousePosition(mouseX, mouseY);
 
         renderDimBackground(context);
 
@@ -364,7 +369,7 @@ public class CustomKitEditorScreen extends Screen {
         super.extractRenderState(context, mouseX, mouseY, delta);
 
         if (!showDeleteConfirmation) {
-            ItemViewerUtility.renderKitEditorItemViewer(context, client, mouseX, mouseY);
+            KitEditorMode.renderKitEditorItemViewer(context, client, mouseX, mouseY);
         }
 
         if (!showDeleteConfirmation && hoveredSlotItem != null) {
@@ -441,7 +446,7 @@ public class CustomKitEditorScreen extends Screen {
     private void clearIconFocus() {
         if (pickTarget == PickTarget.ICON) {
             pickTarget = PickTarget.ADD_ITEM;
-            ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
+            KitEditorMode.setKitEditorPickTarget(PickTarget.ADD_ITEM);
         }
     }
 
@@ -467,7 +472,7 @@ public class CustomKitEditorScreen extends Screen {
         if (itemName == null || itemName.isEmpty()) {
             return null;
         }
-        return ItemViewerUtility.findItemByNameFuzzy(itemName);
+        return ItemCatalog.findItemByNameFuzzy(itemName);
     }
 
     private void renderItemList(GuiGraphicsExtractor context, int mouseX, int mouseY) {
@@ -596,12 +601,12 @@ public class CustomKitEditorScreen extends Screen {
         }
 
         if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
-            if (ItemViewerUtility.handleFilterOverlayClick(mouseX, mouseY, button)) {
+            if (FilterOverlayControls.handleFilterOverlayClick(mouseX, mouseY, button)) {
                 return true;
             }
         }
 
-        ItemViewerUtility.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
+        SearchFieldState.blurSearchFieldFocusUnlessClickOnField(mouseX, mouseY, button);
 
         if (nameField != null && !isMouseOverNameField(mouseX, mouseY)) {
             nameField.setFocused(false);
@@ -611,8 +616,8 @@ public class CustomKitEditorScreen extends Screen {
             return true;
         }
 
-        if (ItemViewerUtility.isMouseOverKitEditorItemViewer(mouseX, mouseY)) {
-            if (ItemViewerUtility.handleMouseClick(mouseX, mouseY, button)) {
+        if (KitEditorMode.isMouseOverKitEditorItemViewer(mouseX, mouseY)) {
+            if (ViewerInputHandler.handleMouseClick(mouseX, mouseY, button)) {
                 if (button == 0) {
                     clearIconFocus();
                 }
@@ -627,13 +632,13 @@ public class CustomKitEditorScreen extends Screen {
             if (mouseX >= iconSlotX && mouseX < iconSlotX + SLOT_SIZE
                     && mouseY >= iconSlotY && mouseY < iconSlotY + SLOT_SIZE) {
                 pickTarget = PickTarget.ICON;
-                ItemViewerUtility.setKitEditorPickTarget(PickTarget.ICON);
+                KitEditorMode.setKitEditorPickTarget(PickTarget.ICON);
                 return true;
             }
 
             if (handleExtraSlotClick(mouseX, mouseY, false)) {
                 pickTarget = PickTarget.ADD_ITEM;
-                ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
+                KitEditorMode.setKitEditorPickTarget(PickTarget.ADD_ITEM);
                 return true;
             }
 
@@ -645,7 +650,7 @@ public class CustomKitEditorScreen extends Screen {
                         && mouseY >= pos[1] && mouseY < pos[1] + SLOT_SIZE) {
                     selectedEquipmentIndex = i;
                     pickTarget = PickTarget.ADD_ITEM;
-                    ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
+                    KitEditorMode.setKitEditorPickTarget(PickTarget.ADD_ITEM);
                     return true;
                 }
             }
@@ -656,7 +661,7 @@ public class CustomKitEditorScreen extends Screen {
                 if (mouseX >= pos[0] && mouseX < pos[0] + SLOT_SIZE
                         && mouseY >= pos[1] && mouseY < pos[1] + SLOT_SIZE) {
                     pickTarget = PickTarget.ADD_ITEM;
-                    ItemViewerUtility.setKitEditorPickTarget(PickTarget.ADD_ITEM);
+                    KitEditorMode.setKitEditorPickTarget(PickTarget.ADD_ITEM);
                     return true;
                 }
             }
@@ -688,7 +693,7 @@ public class CustomKitEditorScreen extends Screen {
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.features.itemviewer.ui.ItemViewerFilterMenu.isOpen()) {
-            if (ItemViewerUtility.handleFilterOverlayDrag(mouseX, mouseY, button)) {
+            if (FilterOverlayControls.handleFilterOverlayDrag(mouseX, mouseY, button)) {
                 return true;
             }
         }
@@ -700,7 +705,7 @@ public class CustomKitEditorScreen extends Screen {
         double mouseX = event.x();
         double mouseY = event.y();
         int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
-        if (ItemViewerUtility.handleFilterOverlayRelease(mouseX, mouseY, button)) {
+        if (FilterOverlayControls.handleFilterOverlayRelease(mouseX, mouseY, button)) {
             return true;
         }
         return super.mouseReleased(event);
@@ -879,7 +884,7 @@ public class CustomKitEditorScreen extends Screen {
     }
 
     private void closeToReturnScreen() {
-        ItemViewerUtility.stopKitEditorMode();
+        KitEditorMode.stopKitEditorMode();
         Minecraft client = Minecraft.getInstance();
         if (client != null && returnScreen != null) {
             if (returnScreen instanceof KitSelectionScreen kitScreen) {
@@ -906,7 +911,7 @@ public class CustomKitEditorScreen extends Screen {
             onCancel();
             return true;
         }
-        if (ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+        if (FilterOverlayControls.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             return true;
         }
         return super.keyPressed(event);
@@ -914,7 +919,7 @@ public class CustomKitEditorScreen extends Screen {
 
     @Override
     public void onClose() {
-        ItemViewerUtility.stopKitEditorMode();
+        KitEditorMode.stopKitEditorMode();
         super.onClose();
     }
 

@@ -2,7 +2,6 @@ package net.felix.chat;
 
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.ui.ItemViewerGrid;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Town.BuildSlotMapping;
 import net.felix.utilities.Town.CustomKit;
 import net.felix.utilities.Town.CustomKitManager;
@@ -17,6 +16,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.features.itemviewer.data.ItemCatalog;
 
 /**
  * Speichert einen Build-Share-Snapshot als eigenes CustomKit
@@ -94,7 +94,7 @@ public final class ShareKitImportHelper {
         if (base.isEmpty()) {
             return null;
         }
-        return ItemViewerUtility.findItemByName(base);
+        return ItemCatalog.findItemByName(base);
     }
 
     public static ItemData findExactItemsJsonEntry(String rawShareName) {
@@ -333,7 +333,7 @@ public final class ShareKitImportHelper {
             if (pc == null || pc.type == null || !seenTypes.add(pc.type)) {
                 continue;
             }
-            ItemData db = ItemViewerUtility.findItemByName(pc.baseName);
+            ItemData db = ItemCatalog.findItemByName(pc.baseName);
             String storeName;
             if (db != null && db.name != null && !db.name.isEmpty()) {
                 storeName = db.name;

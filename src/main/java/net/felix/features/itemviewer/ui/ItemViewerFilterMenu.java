@@ -1,9 +1,6 @@
 package net.felix.features.itemviewer.ui;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
-
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -11,18 +8,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import net.felix.features.itemviewer.data.ItemData;
+import net.felix.features.itemviewer.search.CostFilter;
+import net.felix.features.itemviewer.search.CostNamePickerEntry;
+import net.felix.features.itemviewer.search.FloorFilter;
+import net.felix.features.itemviewer.search.ItemFilterPipeline;
+import net.felix.features.itemviewer.search.ItemSearchParser;
+import net.felix.features.itemviewer.search.ModifierFilter;
+import net.felix.features.itemviewer.search.SearchFieldState;
+import net.felix.features.itemviewer.search.SearchQuery;
+import net.felix.features.itemviewer.search.SearchSuggestions;
+import net.felix.features.itemviewer.search.StatFilter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.felix.features.itemviewer.ItemViewerUtility;
-import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.search.CostFilter;
-import net.felix.features.itemviewer.search.FloorFilter;
-import net.felix.features.itemviewer.search.ItemSearchParser;
-import net.felix.features.itemviewer.search.ModifierFilter;
-import net.felix.features.itemviewer.search.SearchQuery;
-import net.felix.features.itemviewer.search.StatFilter;
 
 /**
  * Checkbox-Filter-Menü für den Item Viewer.
@@ -194,7 +194,7 @@ public final class ItemViewerFilterMenu {
     private static int pickerDropdownY;
     private static int pickerDropdownW;
     private static int pickerDropdownH;
-    private static List<ItemViewerUtility.CostNamePickerEntry> pickerDropdownEntries = List.of();
+    private static List<CostNamePickerEntry> pickerDropdownEntries = List.of();
     private static long inputCursorBlinkTime = 0;
     private static boolean inputCursorVisible = true;
 
@@ -306,8 +306,8 @@ public final class ItemViewerFilterMenu {
         context.fill(0, 0, layout.screenWidth, layout.screenHeight, 0x80000000);
         drawPanel(context, layout.boxX, layout.boxY, layout.boxWidth, layout.boxHeight);
 
-        boolean closeHovered = ItemViewerUtility.getLastMouseX() >= layout.closeX && ItemViewerUtility.getLastMouseX() < layout.closeX + CLOSE_BUTTON_SIZE
-                && ItemViewerUtility.getLastMouseY() >= layout.closeY && ItemViewerUtility.getLastMouseY() < layout.closeY + CLOSE_BUTTON_SIZE;
+        boolean closeHovered = ViewerState.getLastMouseX() >= layout.closeX && ViewerState.getLastMouseX() < layout.closeX + CLOSE_BUTTON_SIZE
+                && ViewerState.getLastMouseY() >= layout.closeY && ViewerState.getLastMouseY() < layout.closeY + CLOSE_BUTTON_SIZE;
         drawCloseButton(context, layout.closeX, layout.closeY, closeHovered);
 
         String title = "Filter";
@@ -315,8 +315,8 @@ public final class ItemViewerFilterMenu {
         int titleY = layout.boxY + TITLE_Y;
         context.text(tr, title, layout.boxX + (layout.boxWidth - titleWidth) / 2, titleY, 0xFFFFFF00, true);
 
-        hovered = ItemViewerUtility.getLastMouseX() >= layout.boxX && ItemViewerUtility.getLastMouseX() < layout.boxX + layout.boxWidth
-                && ItemViewerUtility.getLastMouseY() >= layout.boxY && ItemViewerUtility.getLastMouseY() < layout.boxY + layout.boxHeight;
+        hovered = ViewerState.getLastMouseX() >= layout.boxX && ViewerState.getLastMouseX() < layout.boxX + layout.boxWidth
+                && ViewerState.getLastMouseY() >= layout.boxY && ViewerState.getLastMouseY() < layout.boxY + layout.boxHeight;
 
         finalizeScrollLayout(layout, tr);
         scrollOffset = clampScrollOffset(scrollOffset);
@@ -357,8 +357,8 @@ public final class ItemViewerFilterMenu {
             renderScrollbar(context, layout);
         }
 
-        boolean clearHovered = ItemViewerUtility.getLastMouseX() >= layout.clearX && ItemViewerUtility.getLastMouseX() < layout.clearX + layout.clearW
-                && ItemViewerUtility.getLastMouseY() >= layout.clearY && ItemViewerUtility.getLastMouseY() < layout.clearY + 16;
+        boolean clearHovered = ViewerState.getLastMouseX() >= layout.clearX && ViewerState.getLastMouseX() < layout.clearX + layout.clearW
+                && ViewerState.getLastMouseY() >= layout.clearY && ViewerState.getLastMouseY() < layout.clearY + 16;
         drawSmallButton(context, layout.clearX, layout.clearY, layout.clearW, 16, clearHovered);
         drawCenteredButtonLabel(context, tr, "Alle löschen", layout.clearX, layout.clearY, layout.clearW, 16);
         renderOpenItemPicker(context, tr, layout);
@@ -366,8 +366,8 @@ public final class ItemViewerFilterMenu {
     }
 
     private static void renderHoverTooltips(GuiGraphicsExtractor context, Font tr) {
-        double mouseX = ItemViewerUtility.getLastMouseX();
-        double mouseY = ItemViewerUtility.getLastMouseY();
+        double mouseX = ViewerState.getLastMouseX();
+        double mouseY = ViewerState.getLastMouseY();
 
         for (FilterGroup group : groups) {
             if (!"Item".equals(group.title)) {
@@ -451,7 +451,7 @@ public final class ItemViewerFilterMenu {
         if (inputKey != null) {
             focusedInputKey = inputKey;
             focusInputFieldAtMouse(tr, inputKey, mouseX);
-            ItemViewerUtility.blurSearchFieldFocus();
+            SearchFieldState.blurSearchFieldFocus();
             updateInputCursorBlink();
             return true;
         }
@@ -990,10 +990,10 @@ public final class ItemViewerFilterMenu {
 
         int thumbY = computeThumbY(layout);
         int thumbHeight = computeThumbHeight(trackHeight);
-        boolean thumbHovered = !scrollbarDragging && ItemViewerUtility.getLastMouseX() >= barX
-                && ItemViewerUtility.getLastMouseX() < barX + SCROLLBAR_WIDTH
-                && ItemViewerUtility.getLastMouseY() >= thumbY
-                && ItemViewerUtility.getLastMouseY() < thumbY + thumbHeight;
+        boolean thumbHovered = !scrollbarDragging && ViewerState.getLastMouseX() >= barX
+                && ViewerState.getLastMouseX() < barX + SCROLLBAR_WIDTH
+                && ViewerState.getLastMouseY() >= thumbY
+                && ViewerState.getLastMouseY() < thumbY + thumbHeight;
         int thumbColor = scrollbarDragging ? 0xFFB0B0B0 : (thumbHovered ? 0xFFA0A0A0 : 0xFF888888);
         context.fill(barX + 1, thumbY, barX + SCROLLBAR_WIDTH - 1, thumbY + thumbHeight, thumbColor);
         context.fill(barX + 1, thumbY, barX + SCROLLBAR_WIDTH - 1, thumbY + SCROLLBAR_END_CAP, 0xFFC8C8C8);
@@ -1190,7 +1190,7 @@ public final class ItemViewerFilterMenu {
 
     private static void applySelections() {
         String search = buildSearchFromSelectedOptions();
-        ItemViewerUtility.setSearchFromFilterMenu(search);
+        ItemFilterPipeline.setSearchFromFilterMenu(search);
     }
 
     private static String buildSearchFromSelectedOptions() {
@@ -1802,10 +1802,10 @@ public final class ItemViewerFilterMenu {
 
             if (option.pickerButtonX >= 0) {
                 int pickerY = rowY + (ROW_HEIGHT - PICKER_BUTTON_SIZE) / 2;
-                boolean pickerHovered = ItemViewerUtility.getLastMouseX() >= option.pickerButtonX
-                        && ItemViewerUtility.getLastMouseX() < option.pickerButtonX + PICKER_BUTTON_SIZE
-                        && ItemViewerUtility.getLastMouseY() >= pickerY
-                        && ItemViewerUtility.getLastMouseY() < pickerY + PICKER_BUTTON_SIZE;
+                boolean pickerHovered = ViewerState.getLastMouseX() >= option.pickerButtonX
+                        && ViewerState.getLastMouseX() < option.pickerButtonX + PICKER_BUTTON_SIZE
+                        && ViewerState.getLastMouseY() >= pickerY
+                        && ViewerState.getLastMouseY() < pickerY + PICKER_BUTTON_SIZE;
                 boolean pickerOpen = fieldKey.equals(openPickerKey);
                 drawSmallButton(context, option.pickerButtonX, pickerY, PICKER_BUTTON_SIZE, pickerHovered || pickerOpen);
                 int arrowX = option.pickerButtonX + (PICKER_BUTTON_SIZE - tr.width("v")) / 2;
@@ -2117,20 +2117,20 @@ public final class ItemViewerFilterMenu {
         openPickerKey = fieldKey;
         resetPickerScrollbarState();
         focusedInputKey = fieldKey;
-        ItemViewerUtility.blurSearchFieldFocus();
+        SearchFieldState.blurSearchFieldFocus();
     }
 
-    private static List<ItemViewerUtility.CostNamePickerEntry> getPickerEntries(String fieldKey) {
+    private static List<CostNamePickerEntry> getPickerEntries(String fieldKey) {
         int separator = fieldKey.indexOf('\0');
         if (separator < 0) {
             return List.of();
         }
         String label = fieldKey.substring(separator + 1);
         return switch (label) {
-            case "Material" -> ItemViewerUtility.getKnownMaterialPickerEntries();
-            case "Ressource" -> ItemViewerUtility.getKnownResourcePickerEntries();
-            case "Amboss" -> ItemViewerUtility.getKnownAmbossPickerEntries();
-            case "Ofen" -> ItemViewerUtility.getKnownOfenPickerEntries();
+            case "Material" -> SearchSuggestions.getKnownMaterialPickerEntries();
+            case "Ressource" -> SearchSuggestions.getKnownResourcePickerEntries();
+            case "Amboss" -> SearchSuggestions.getKnownAmbossPickerEntries();
+            case "Ofen" -> SearchSuggestions.getKnownOfenPickerEntries();
             default -> List.of();
         };
     }
@@ -2167,7 +2167,7 @@ public final class ItemViewerFilterMenu {
             return;
         }
 
-        List<ItemViewerUtility.CostNamePickerEntry> entries = getPickerEntries(openPickerKey);
+        List<CostNamePickerEntry> entries = getPickerEntries(openPickerKey);
         pickerDropdownEntries = entries;
         if (entries.isEmpty()) {
             int rowY = option.y - scrollOffset;
@@ -2191,7 +2191,7 @@ public final class ItemViewerFilterMenu {
         pickerScrollOffset = clampPickerScrollOffset(pickerScrollOffset);
         boolean scrollable = entries.size() > PICKER_MAX_VISIBLE;
         int maxRowWidth = 0;
-        for (ItemViewerUtility.CostNamePickerEntry entry : entries) {
+        for (CostNamePickerEntry entry : entries) {
             int rowWidth = tr.width(entry.name());
             String floorLabel = entry.floorLabel();
             if (!floorLabel.isEmpty()) {
@@ -2231,12 +2231,12 @@ public final class ItemViewerFilterMenu {
             if (entryIndex >= entries.size()) {
                 break;
             }
-            ItemViewerUtility.CostNamePickerEntry entry = entries.get(entryIndex);
+            CostNamePickerEntry entry = entries.get(entryIndex);
             int optionY = listY + i * PICKER_OPTION_HEIGHT;
-            boolean hovered = ItemViewerUtility.getLastMouseX() >= listX
-                    && ItemViewerUtility.getLastMouseX() < contentRight
-                    && ItemViewerUtility.getLastMouseY() >= optionY
-                    && ItemViewerUtility.getLastMouseY() < optionY + PICKER_OPTION_HEIGHT;
+            boolean hovered = ViewerState.getLastMouseX() >= listX
+                    && ViewerState.getLastMouseX() < contentRight
+                    && ViewerState.getLastMouseY() >= optionY
+                    && ViewerState.getLastMouseY() < optionY + PICKER_OPTION_HEIGHT;
             if (hovered) {
                 context.fill(listX + 1, optionY, contentRight - 1, optionY + PICKER_OPTION_HEIGHT, 0xFF335588);
             }
@@ -2270,10 +2270,10 @@ public final class ItemViewerFilterMenu {
             context.fill(trackX, trackTop, trackX + PICKER_SCROLLBAR_WIDTH, trackTop + 1, 0xFF606060);
             context.fill(trackX, trackBottom - 1, trackX + PICKER_SCROLLBAR_WIDTH, trackBottom, 0xFF606060);
             boolean thumbHovered = !pickerScrollbarDragging
-                    && ItemViewerUtility.getLastMouseX() >= trackX
-                    && ItemViewerUtility.getLastMouseX() < trackX + PICKER_SCROLLBAR_WIDTH
-                    && ItemViewerUtility.getLastMouseY() >= thumbTop
-                    && ItemViewerUtility.getLastMouseY() < thumbTop + thumbHeight;
+                    && ViewerState.getLastMouseX() >= trackX
+                    && ViewerState.getLastMouseX() < trackX + PICKER_SCROLLBAR_WIDTH
+                    && ViewerState.getLastMouseY() >= thumbTop
+                    && ViewerState.getLastMouseY() < thumbTop + thumbHeight;
             int thumbColor = pickerScrollbarDragging ? 0xFFB0B0B0 : (thumbHovered ? 0xFFA0A0A0 : 0xFF909090);
             context.fill(trackX + 1, thumbTop, trackX + PICKER_SCROLLBAR_WIDTH - 1, thumbTop + thumbHeight, thumbColor);
         }

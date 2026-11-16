@@ -1186,7 +1186,7 @@ public class BPViewerUtility {
                 markBlueprintFound(floorToUse, blueprintKey);
             }
             saveFoundBlueprints();
-            net.felix.features.itemviewer.ItemViewerUtility.onFoundStatusChanged();
+            net.felix.features.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
         }
     }
     
@@ -1498,7 +1498,7 @@ public class BPViewerUtility {
             // Ignoriere Fehler wenn ProfileStatsManager nicht verfügbar ist
         }
 
-        net.felix.features.itemviewer.ItemViewerUtility.onFoundStatusChanged();
+        net.felix.features.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
     }
 
     /**
@@ -1510,7 +1510,7 @@ public class BPViewerUtility {
         foundBlueprints.clear();
         floorProgress.clear();
         boolean ok = saveFoundBlueprintsReturningSuccess() && saveProgressReturningSuccess();
-        net.felix.features.itemviewer.ItemViewerUtility.onFoundStatusChanged();
+        net.felix.features.itemviewer.inventory.FoundStatus.onFoundStatusChanged();
         return ok;
     }
     

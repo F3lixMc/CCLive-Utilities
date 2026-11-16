@@ -6,7 +6,6 @@ import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.features.itemviewer.data.CostItem;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardPaperShredsCollector;
@@ -29,6 +28,7 @@ import java.util.*;
 import net.felix.features.information.materials.MaterialDatabase;
 import net.felix.features.information.materials.MaterialFloorInfo;
 import net.felix.features.information.materials.MaterialRarityColors;
+import net.felix.features.itemviewer.data.ItemCatalog;
 
 /**
  * Draggable Overlay für das Clipboard (Bauplan-Kosten)
@@ -2560,10 +2560,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         ItemData item = null;
         try {
             if (entry.clipboardId != null) {
-                item = ItemViewerUtility.findItemByNameAndClipboardId(entry.blueprintName, entry.clipboardId);
+                item = ItemCatalog.findItemByNameAndClipboardId(entry.blueprintName, entry.clipboardId);
             }
             if (item == null) {
-                item = ItemViewerUtility.findItemByName(entry.blueprintName);
+                item = ItemCatalog.findItemByName(entry.blueprintName);
             }
         } catch (Exception ignored) {
         }

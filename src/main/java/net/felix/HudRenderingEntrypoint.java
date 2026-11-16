@@ -2,11 +2,11 @@ package net.felix;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.felix.features.itemviewer.ItemViewerFeature;
 
 public class HudRenderingEntrypoint implements ClientModInitializer {
     private static final Identifier FONT_IDENTIFIER = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
@@ -69,7 +69,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
         // });
         
         // Initialisiere Item-Viewer
-        ItemViewerUtility.initialize();
+        ItemViewerFeature.initialize();
         
         // Item-Info-Extraktion derzeit deaktiviert (ItemInfoUtility.ENABLED = false)
         // ItemInfoUtility.initialize();

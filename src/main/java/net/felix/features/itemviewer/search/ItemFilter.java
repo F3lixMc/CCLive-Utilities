@@ -7,7 +7,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.features.itemviewer.data.CostItem;
 import net.felix.features.itemviewer.data.ItemData;
 import net.felix.features.itemviewer.data.PriceData;
@@ -61,7 +60,7 @@ public class ItemFilter {
             for (String searchTag : query.tags) {
                 boolean tagMatches = false;
                 for (String itemTag : allItemTags) {
-                    if (ItemViewerUtility.matchesSearchTag(itemTag, searchTag)) {
+                    if (SearchSuggestions.matchesSearchTag(itemTag, searchTag)) {
                         tagMatches = true;
                         break;
                     }
@@ -361,7 +360,7 @@ public class ItemFilter {
             if (costItem == null || costItem.itemName == null) {
                 return false;
             }
-            if (!ItemViewerUtility.matchesCostItemName(costItem.itemName, filter.itemName)) {
+            if (!SearchSuggestions.matchesCostItemName(costItem.itemName, filter.itemName)) {
                 return false;
             }
         }

@@ -1,9 +1,9 @@
 package net.felix.features.itemviewer.inventory;
 
+import net.felix.features.itemviewer.data.ItemData;
 import net.felix.utilities.Aincraft.BPViewerUtility;
 import net.felix.utilities.Aincraft.FishTrapFoundUtility;
 import net.felix.utilities.Aincraft.FishingComponentFoundUtility;
-import net.felix.features.itemviewer.data.ItemData;
 
 /**
  * Prüft, ob ein Item-Viewer-Eintrag bereits gefunden wurde.
@@ -26,7 +26,7 @@ public final class FoundItemChecker {
         return isBlueprintFound(item.name);
     }
 
-    private static boolean isBlueprintFound(String blueprintName) {
+    public static boolean isBlueprintFound(String blueprintName) {
         try {
             BPViewerUtility bpViewer = BPViewerUtility.getInstance();
             if (blueprintName.equals("Drachenzahn")) {

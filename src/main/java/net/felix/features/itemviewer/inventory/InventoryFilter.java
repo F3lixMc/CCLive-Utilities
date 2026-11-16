@@ -1,7 +1,14 @@
 package net.felix.features.itemviewer.inventory;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.itemviewer.data.ItemCatalog;
+import net.felix.features.itemviewer.search.ItemFilterPipeline;
 import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.felix.utilities.Overall.ZeichenUtility;
 import net.minecraft.client.Minecraft;
@@ -11,12 +18,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.IntStream;
-import net.felix.features.itemviewer.ItemViewerUtility;
 
 /**
  * Wendet die aktuelle Item-Viewer-Filterung auf geöffnete Schmiede-/Angel-Inventare an
@@ -232,7 +233,7 @@ public class InventoryFilter {
             return;
         }
 
-        Set<String> allowedNames = ItemViewerUtility.getFilteredItemNamesForInventory(screen);
+        Set<String> allowedNames = ItemFilterPipeline.getFilteredItemNamesForInventory(screen);
         int[] slots = getSlotsForMenu(screen);
 
         for (int slotIndex : slots) {
@@ -281,7 +282,7 @@ public class InventoryFilter {
 
     private static boolean isItemAllowed(ItemStack itemStack, Set<String> allowedNames) {
         if (allowedNames.isEmpty()) {
-            if (!ItemViewerUtility.areItemsLoaded()) {
+            if (!ItemCatalog.areItemsLoaded()) {
                 return true;
             }
             return false;

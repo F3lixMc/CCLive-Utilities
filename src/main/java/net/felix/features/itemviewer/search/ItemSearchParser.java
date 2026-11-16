@@ -3,7 +3,6 @@ package net.felix.features.itemviewer.search;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.features.itemviewer.ItemViewerUtility;
 
 /**
  * Parser für Suchanfragen
@@ -168,7 +167,7 @@ public class ItemSearchParser {
             String tag = tagMatcher.group(1).toLowerCase();
             // Nur hinzufügen wenn nicht leer (sonst würde @ alleine auch matchen)
             if (!tag.isEmpty()) {
-                query.tags.add(ItemViewerUtility.normalizeSearchTag(tag));
+                query.tags.add(SearchSuggestions.normalizeSearchTag(tag));
                 remaining = remaining.replace(tagMatcher.group(0), "").trim();
             }
         }
@@ -310,7 +309,7 @@ public class ItemSearchParser {
         while (tagMatcher.find()) {
             String tag = tagMatcher.group(1).toLowerCase();
             if (!tag.isEmpty()) {
-                query.tags.add(ItemViewerUtility.normalizeSearchTag(tag));
+                query.tags.add(SearchSuggestions.normalizeSearchTag(tag));
                 remaining = remaining.replace(tagMatcher.group(0), "").trim();
             }
         }

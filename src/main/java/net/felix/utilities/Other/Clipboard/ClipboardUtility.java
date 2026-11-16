@@ -9,7 +9,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
 import net.felix.features.itemviewer.data.BlueprintShopData;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 
@@ -17,6 +16,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.felix.features.itemviewer.data.ItemCatalog;
 
 /**
  * Utility-Klasse für das Clipboard (Bauplan-Kosten)
@@ -417,7 +417,7 @@ public class ClipboardUtility {
      */
     public static boolean addBlueprint(String blueprintName) {
         // Suche den Bauplan in items.json
-        ItemData itemData = ItemViewerUtility.findItemByName(blueprintName);
+        ItemData itemData = ItemCatalog.findItemByName(blueprintName);
         
         if (itemData == null) {
             return false; // Bauplan nicht gefunden
@@ -530,7 +530,7 @@ public class ClipboardUtility {
             // Warte bis items.json geladen ist
             int maxWait = 100; // Maximal 1 Sekunde warten (10 Checks à 100ms)
             int waited = 0;
-            while (!ItemViewerUtility.areItemsLoaded() && waited < maxWait) {
+            while (!ItemCatalog.areItemsLoaded() && waited < maxWait) {
                 try {
                     Thread.sleep(100);
                     waited++;
@@ -543,9 +543,9 @@ public class ClipboardUtility {
             // Suche den Bauplan in items.json (mit clipboard_id falls vorhanden)
             ItemData itemData;
             if (savedEntry.clipboardId != null) {
-                itemData = ItemViewerUtility.findItemByNameAndClipboardId(savedEntry.blueprintName, savedEntry.clipboardId);
+                itemData = ItemCatalog.findItemByNameAndClipboardId(savedEntry.blueprintName, savedEntry.clipboardId);
             } else {
-                itemData = ItemViewerUtility.findItemByName(savedEntry.blueprintName);
+                itemData = ItemCatalog.findItemByName(savedEntry.blueprintName);
             }
             
             if (itemData == null) {

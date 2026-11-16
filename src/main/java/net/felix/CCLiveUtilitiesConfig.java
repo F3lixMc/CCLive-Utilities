@@ -1934,7 +1934,7 @@ public class CCLiveUtilitiesConfig {
                                                 () -> HANDLER.instance().itemViewerMaxSlots,
                                                 newVal -> {
                                                     HANDLER.instance().itemViewerMaxSlots = newVal;
-                                                    net.felix.features.itemviewer.ItemViewerUtility.onMaxSlotsConfigChanged();
+                                                    net.felix.features.itemviewer.ui.ViewerLayout.onMaxSlotsConfigChanged();
                                                 })
                                         .controller(StringControllerBuilder::create)
                                         .build())

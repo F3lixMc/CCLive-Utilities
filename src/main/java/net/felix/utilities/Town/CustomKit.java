@@ -1,7 +1,6 @@
 package net.felix.utilities.Town;
 
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
@@ -12,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.felix.features.itemviewer.data.ItemCatalog;
 
 /**
  * Benutzerdefiniertes Kit (Name, Icon, Ausrüstungseinträge, Karten, Angel, Kristalle).
@@ -158,9 +158,9 @@ public class CustomKit {
             if (itemName == null || itemName.isEmpty()) {
                 continue;
             }
-            ItemData db = ItemViewerUtility.findItemByName(itemName);
+            ItemData db = ItemCatalog.findItemByName(itemName);
             if (db == null) {
-                db = ItemViewerUtility.findItemByNameFuzzy(itemName);
+                db = ItemCatalog.findItemByNameFuzzy(itemName);
             }
             BuildSlotMapping.PieceType type = BuildSlotMapping.resolvePieceType(db);
             if (type == null && itemCategories != null) {
@@ -223,7 +223,7 @@ public class CustomKit {
 
     public ItemStack createIconStack() {
         if (iconItemName != null && !iconItemName.isEmpty()) {
-            ItemStack fromViewer = ItemViewerUtility.createDisplayStackForItemName(iconItemName);
+            ItemStack fromViewer = ItemCatalog.createDisplayStackForItemName(iconItemName);
             if (!fromViewer.isEmpty()) {
                 return fromViewer;
             }
@@ -240,7 +240,7 @@ public class CustomKit {
     }
 
     public ItemStack createItemDisplayStack(String itemName) {
-        return ItemViewerUtility.createDisplayStackForItemName(itemName);
+        return ItemCatalog.createDisplayStackForItemName(itemName);
     }
 
     public CustomKit copy() {

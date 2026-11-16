@@ -291,7 +291,7 @@ public final class DevToolsHotkeyDispatcher {
             } catch (Exception ignored) {
             }
         }
-        if (net.felix.features.itemviewer.ItemViewerUtility.isTextFieldFocusedPublic(client)) {
+        if (net.felix.features.itemviewer.search.SearchFieldState.isTextFieldFocusedPublic(client)) {
             return true;
         }
         return false;

@@ -83,20 +83,20 @@ public abstract class SearchBarInputMixin {
         int modifiers = event.modifiers();
 
         // Container screens override keyPressed and may never reach Screen.keyPressed.
-        if (net.felix.features.itemviewer.ItemViewerUtility.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.features.itemviewer.search.SearchFieldInput.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
 
 
         if (keyCode == InputConstants.KEY_ESCAPE) {
-            if (net.felix.features.itemviewer.ItemViewerUtility.handleFilterOverlayEscape()) {
+            if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
             }
         }
 
-        if (net.felix.features.itemviewer.ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.features.itemviewer.ui.FilterOverlayControls.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }

@@ -1,6 +1,5 @@
 package net.felix.mixin;
 
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
@@ -9,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import net.felix.features.information.mklevel.MkLevelInputHandler;
+import net.felix.features.itemviewer.ui.ViewerInputHandler;
 
 @SuppressWarnings("unused")
 @Mixin(MouseHandler.class)
@@ -29,7 +29,7 @@ public class MouseScrollMixin {
                     && net.felix.leaderboards.panel.LeaderboardInventoryOverlay.coversScroll(mouseX, mouseY)) {
                 return;
             }
-            if (ItemViewerUtility.handleMouseScroll(mouseX, mouseY, vertical)) {
+            if (ViewerInputHandler.handleMouseScroll(mouseX, mouseY, vertical)) {
                 // ItemViewer hat das Event behandelt
                 // Hinweis: onMouseScroll ist nicht cancellable, daher können wir das Event nicht verhindern
                 // Das ist aber in Ordnung, da wir nur die Pagination ändern

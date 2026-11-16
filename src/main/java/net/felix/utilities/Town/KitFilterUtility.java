@@ -7,7 +7,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.features.itemviewer.search.FloorNumberExtractor;
 import net.felix.features.itemviewer.data.ItemData;
-import net.felix.features.itemviewer.ItemViewerUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -28,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import net.felix.features.itemviewer.data.ItemCatalog;
 
 public class KitFilterUtility {
 	
@@ -1535,7 +1535,7 @@ public class KitFilterUtility {
 	}
 
 	private static ItemInfo itemInfoFromItemViewer(String itemName) {
-		ItemData item = ItemViewerUtility.findItemByNameFuzzy(itemName);
+		ItemData item = ItemCatalog.findItemByNameFuzzy(itemName);
 		if (item == null) {
 			return null;
 		}
@@ -1862,9 +1862,9 @@ public class KitFilterUtility {
 				return stored.toLowerCase(Locale.ROOT);
 			}
 		}
-		ItemData data = ItemViewerUtility.findItemByName(itemName);
+		ItemData data = ItemCatalog.findItemByName(itemName);
 		if (data == null) {
-			data = ItemViewerUtility.findItemByNameFuzzy(itemName);
+			data = ItemCatalog.findItemByNameFuzzy(itemName);
 		}
 		return classifyEquipmentCategory(data);
 	}

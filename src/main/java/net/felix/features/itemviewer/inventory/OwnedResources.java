@@ -1,17 +1,16 @@
 package net.felix.features.itemviewer.inventory;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import net.felix.features.itemviewer.data.CostItem;
+import net.felix.features.itemviewer.data.PriceData;
+import net.felix.features.itemviewer.ui.ViewerState;
 import net.felix.utilities.Other.Clipboard.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.Clipboard.ClipboardCoinCollector;
 import net.felix.utilities.Other.Clipboard.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.BossBarHudValueDecoder;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.utilities.Overall.HudNumberSuffixUtility;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import net.felix.features.itemviewer.ItemViewerUtility;
-import net.felix.features.itemviewer.data.CostItem;
-import net.felix.features.itemviewer.data.PriceData;
 
 /**
  * Liefert aktuelle Besitzmengen für die Kosten-Anzeige im Item Viewer.
@@ -89,7 +88,7 @@ public final class OwnedResources {
         }
         String trimmed = itemName.trim();
         if ("Coins".equalsIgnoreCase(trimmed)) {
-            if (ItemViewerUtility.isShowOwnedResources() && HudStatsReader.hasCoinsData()) {
+            if (ViewerState.isShowOwnedResources() && HudStatsReader.hasCoinsData()) {
                 return HudStatsReader.getCoinsAmount();
             }
             BigDecimal coins = ClipboardCoinCollector.getCurrentCoins();
@@ -100,14 +99,14 @@ public final class OwnedResources {
         }
         if ("Kaktus".equalsIgnoreCase(trimmed)) {
             return resolveAbbreviatedOwnedAmount(
-                    ItemViewerUtility.isShowOwnedResources() && HudStatsReader.hasCactusData(),
+                    ViewerState.isShowOwnedResources() && HudStatsReader.hasCactusData(),
                     HudStatsReader::getCactusAmount,
                     CollectedMaterialsResourcesStorage.OTHER_KAKTUS,
                     CoinTrackerUtility::getCurrentCactusDisplay);
         }
         if ("Seelen".equalsIgnoreCase(trimmed)) {
             return resolveAbbreviatedOwnedAmount(
-                    ItemViewerUtility.isShowOwnedResources() && HudStatsReader.hasSoulsData(),
+                    ViewerState.isShowOwnedResources() && HudStatsReader.hasSoulsData(),
                     HudStatsReader::getSoulsAmount,
                     CollectedMaterialsResourcesStorage.OTHER_SEELEN,
                     CoinTrackerUtility::getCurrentSoulsDisplay);
@@ -181,7 +180,7 @@ public final class OwnedResources {
     }
 
     private static String getCactusDisplay() {
-        if (ItemViewerUtility.isShowOwnedResources()) {
+        if (ViewerState.isShowOwnedResources()) {
             String display = HudStatsReader.getCurrentCactusDisplay();
             if (display != null && !display.isBlank()) {
                 return normalizeAbbreviatedDisplay(display);
@@ -196,7 +195,7 @@ public final class OwnedResources {
     }
 
     private static String getSoulsDisplay() {
-        if (ItemViewerUtility.isShowOwnedResources()) {
+        if (ViewerState.isShowOwnedResources()) {
             String display = HudStatsReader.getCurrentSoulsDisplay();
             if (display != null && !display.isBlank()) {
                 return normalizeAbbreviatedDisplay(display);
