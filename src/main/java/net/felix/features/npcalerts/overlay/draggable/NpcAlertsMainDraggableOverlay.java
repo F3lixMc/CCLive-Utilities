@@ -1,8 +1,8 @@
 package net.felix.features.npcalerts.overlay.draggable;
 
 import java.util.List;
-import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.npcalerts.overlay.AlertIcons;
 import net.felix.features.npcalerts.overlay.AlertSettings;
 import net.felix.features.npcalerts.overlay.LineWithPercent;
 import net.felix.features.npcalerts.overlay.MainOverlayLines;
@@ -23,24 +23,9 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
 
     private static final float MIN_SCALE = 0.05f;
 
-    // Icon Identifier für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler
-    private static final Identifier FORSCHUNG_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_forschung.png");
-
-    private static final Identifier AMBOSS_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_anvil.png");
-
-    private static final Identifier SCHMELZOFEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_ofen.png");
-
-    private static final Identifier SEELEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_seelen.png");
-
-    private static final Identifier ESSENZEN_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_essences.png");
-
-    private static final Identifier JAEGER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_bogen.png");
-
-    private static final Identifier KOMBO_KISTE_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_kombo_kiste.png");
-
-    private static final Identifier MACHTKRISTALL_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_machtkristall.png");
-
-    private static final Identifier RECYCLER_ICON = Identifier.fromNamespaceAndPath(CCLiveUtilities.MOD_ID, "textures/alert_icons/alert_icons_recycler.png");
+    private static final int OVERLAY_PADDING = 5;
+    private static final int WARNING_COLOR = 0xFFFF0000;
+    private static final long WARNING_BLINK_MILLIS = 300;
 
     @Override
     public String getOverlayName() {
@@ -109,35 +94,29 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         
         int maxWidth = 0;
         for (LineWithPercent line : lines) {
-            int width = 0;
-            // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
-            if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
-                                                               "schmelzofen".equals(line.configKey) || "seelen".equals(line.configKey) || 
-                                                               "essenzen".equals(line.configKey) || "jaeger".equals(line.configKey) || 
-                                                               "komboKiste".equals(line.configKey) ||
-                                                               "machtkristalle".equals(line.configKey) ||
-                                                               "recyclerSlot1".equals(line.configKey) || "recyclerSlot2".equals(line.configKey) || 
-                                                               "recyclerSlot3".equals(line.configKey)))) {
-                int iconSize = (int)(client.font.lineHeight * 1.5);
-                width += iconSize + 2; // Icon + Abstand
-                width += client.font.width(": "); // Doppelpunkt nach Icon
-            }
-            width += client.font.width(line.text);
-            // Berücksichtige Prozente in der Breitenberechnung (wie im originalen Overlay)
-            // aber rendere sie nicht im F6-Overlay
-            if (line.showPercent && line.percentText != null) {
-                width += client.font.width(" " + line.percentText); // Abstand + Prozente
-            }
-            if (width > maxWidth) {
-                maxWidth = width;
-            }
+            maxWidth = Math.max(maxWidth, measureLineWidth(client, line));
         }
-        
-        final int PADDING = 5;
         // Berechne Breite komplett dynamisch basierend auf Inhalt (wie BossHP-Overlay)
-        return maxWidth + (PADDING * 2);
+        return maxWidth + (OVERLAY_PADDING * 2);
     }
 
+    /**
+     * Breite einer Zeile inkl. Icon und Prozentwert (der Prozentwert wird im F6-Overlay
+     * nicht gerendert, aber berücksichtigt, damit die Größe mit dem echten Overlay übereinstimmt).
+     */
+    private static int measureLineWidth(Minecraft client, LineWithPercent line) {
+        int width = 0;
+        if (line.showIcon && AlertIcons.iconForKey(line.configKey) != null) {
+            int iconSize = (int) (client.font.lineHeight * 1.5);
+            width += iconSize + 2; // Icon + Abstand
+            width += client.font.width(": "); // Doppelpunkt nach Icon
+        }
+        width += client.font.width(line.text);
+        if (line.showPercent && line.percentText != null) {
+            width += client.font.width(" " + line.percentText); // Abstand + Prozente
+        }
+        return width;
+    }
     /**
      * Berechnet die unskalierte Höhe
      */
@@ -255,187 +234,98 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
-        
-        // Wenn keine Zeilen vorhanden sind, rendere nur Hintergrund (wird bereits oben gerendert)
-        if (lines.isEmpty()) {
-            matrices.popMatrix();
-            return;
+
+        // Ohne Zeilen wird nur der Hintergrund gezeichnet (bereits oben)
+        if (!lines.isEmpty()) {
+            drawLines(context, client, lines);
         }
-        
-        final int PADDING = 5;
-        final int LINE_HEIGHT = client.font.lineHeight + 2;
-        
-        int totalTextHeight = lines.size() * LINE_HEIGHT;
-        
-        // Berechne unskalierte Höhe für Zentrierung
-        int unscaledHeight = calculateUnscaledHeight();
-        
-        // Zentriere: Overlay-Mitte, dann verschiebe nach oben um die Hälfte der Text-Höhe
-        int overlayCenterY = unscaledHeight / 2;
+
+        matrices.popMatrix();
+    }
+
+    /** Zeichnet alle Zeilen untereinander, vertikal zentriert im Overlay (gleiche Logik wie im Original). */
+    private void drawLines(GuiGraphicsExtractor context, Minecraft client, List<LineWithPercent> lines) {
+        int lineHeight = client.font.lineHeight + 2;
+        int totalTextHeight = lines.size() * lineHeight;
+        int overlayCenterY = calculateUnscaledHeight() / 2;
         int currentY = overlayCenterY - totalTextHeight / 2;
-        int warningColor = 0xFFFF0000; // Rot für Warnungen
-        
-        int xPosition = 0; // Relativ zu (x, y) nach Matrix-Transformation
-        
-        // Rendere alle Zeilen (gleiche Logik wie im Original)
+
         for (LineWithPercent line : lines) {
             if (line.text == null || line.text.trim().isEmpty()) {
-                currentY += LINE_HEIGHT;
+                currentY += lineHeight;
                 continue;
             }
-            
-            // Hole konfigurierte Farben für diese Zeile
+
             int textColor = AlertSettings.getTextColorForConfigKey(line.configKey);
             try {
-                int currentX = xPosition + PADDING;
-                
-                // Bestimme Textfarbe: rot und blinkend wenn Warnung aktiv ist
-                int currentTextColor = textColor;
-                if (line.showWarning) {
-                    // Blink-Animation: alle 300ms wechseln
-                    boolean isVisible = (System.currentTimeMillis() / 300) % 2 == 0;
-                    if (isVisible) {
-                        currentTextColor = warningColor;
-                    } else {
-                        currentTextColor = textColor;
-                    }
-                }
-                
-                // Zeichne Icon statt Text, wenn aktiviert (für Forschung, Amboss, Schmelzofen, Seelen, Essenzen, Jäger, Machtkristalle und Recycler)
-                if (line.showIcon && (line.configKey != null)) {
-                    int iconSize = LINE_HEIGHT;
-                    int lineCenterY = currentY + LINE_HEIGHT / 2;
-                    int iconY = lineCenterY - iconSize / 2;
-                    Identifier iconToUse = null;
-                    String fallbackText = null;
-                    
-                    if ("forschung".equals(line.configKey)) {
-                        iconToUse = FORSCHUNG_ICON;
-                        fallbackText = "Forschung: ";
-                    } else if ("amboss".equals(line.configKey)) {
-                        iconToUse = AMBOSS_ICON;
-                        fallbackText = "Amboss: ";
-                    } else if ("schmelzofen".equals(line.configKey)) {
-                        iconToUse = SCHMELZOFEN_ICON;
-                        fallbackText = "Schmelzofen: ";
-                    } else if ("seelen".equals(line.configKey)) {
-                        iconToUse = SEELEN_ICON;
-                        fallbackText = "Seelen: ";
-                    } else if ("essenzen".equals(line.configKey)) {
-                        iconToUse = ESSENZEN_ICON;
-                        fallbackText = "Essenzen: ";
-                    } else if ("jaeger".equals(line.configKey)) {
-                        iconToUse = JAEGER_ICON;
-                        fallbackText = "Jäger: ";
-                    } else if ("komboKiste".equals(line.configKey)) {
-                        iconToUse = KOMBO_KISTE_ICON;
-                        fallbackText = "Kombo Kiste: ";
-                    } else if ("machtkristalle".equals(line.configKey)) {
-                        iconToUse = MACHTKRISTALL_ICON;
-                        fallbackText = "MK: ";
-                    } else if ("recyclerSlot1".equals(line.configKey)) {
-                        iconToUse = RECYCLER_ICON;
-                        fallbackText = "Recycler Slot 1: ";
-                    } else if ("recyclerSlot2".equals(line.configKey)) {
-                        iconToUse = RECYCLER_ICON;
-                        fallbackText = "Recycler Slot 2: ";
-                    } else if ("recyclerSlot3".equals(line.configKey)) {
-                        iconToUse = RECYCLER_ICON;
-                        fallbackText = "Recycler Slot 3: ";
-                    }
-                    
-                    if (iconToUse != null) {
-                        boolean iconDrawn = false;
-                        int textYForIcon = currentY;
-                        try {
-                            context.blit(
-                                RenderPipelines.GUI_TEXTURED,
-                                iconToUse,
-                                currentX, iconY,
-                                0.0f, 0.0f,
-                                iconSize, iconSize,
-                                iconSize, iconSize
-                            );
-                            currentX += iconSize + 2;
-                            iconDrawn = true;
-                            textYForIcon = lineCenterY - client.font.lineHeight / 2;
-                        } catch (Exception e) {
-                            // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
-                            if (fallbackText != null) {
-                                context.text(
-                                    client.font,
-                                    Component.literal(fallbackText),
-                                    currentX,
-                                    currentY,
-                                    currentTextColor,
-                                    true
-                                );
-                                currentX += client.font.width(fallbackText);
-                            }
-                        }
-                        // Zeichne Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
-                        if (iconDrawn) {
-                            context.text(
-                                client.font,
-                                Component.literal(": "),
-                                currentX,
-                                textYForIcon,
-                                currentTextColor,
-                                true
-                            );
-                            currentX += client.font.width(": ");
-                        }
-                        // Zeichne die Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
-                        context.text(
-                            client.font,
-                            Component.literal(line.text),
-                            currentX,
-                            textYForIcon,
-                            currentTextColor,
-                            true
-                        );
-                        currentX += client.font.width(line.text);
-                    } else {
-                        // Fallback: Zeichne normalen Text
-                        context.text(
-                            client.font,
-                            Component.literal(line.text),
-                            currentX,
-                            currentY,
-                            currentTextColor,
-                            true
-                        );
-                        currentX += client.font.width(line.text);
-                    }
-                } else {
-                    // Zeichne Haupttext (inkl. "Amboss:" wenn kein Icon)
-                    context.text(
-                        client.font,
-                        Component.literal(line.text),
-                        currentX,
-                        currentY,
-                        currentTextColor,
-                        true
-                    );
-                    currentX += client.font.width(line.text);
-                }
-                
-                // Prozente werden im F6-Overlay nicht gerendert (nur im originalen Overlay)
-                // Die Breite wird aber trotzdem berücksichtigt, damit die Größe übereinstimmt
+                drawLine(context, client, line, currentY, lineHeight, textColor);
             } catch (Exception e) {
                 // Ignoriere Fehler
             }
-            
-            int lineSpacing = LINE_HEIGHT;
+
+            int lineSpacing = lineHeight;
             if (line.showIcon && line.configKey != null) {
                 lineSpacing += 2; // Zusätzlicher Abstand für Icon-Zeilen
             }
             currentY += lineSpacing;
         }
-        
-        matrices.popMatrix();
     }
 
+    /**
+     * Zeichnet eine Zeile: Icon + ": " + Wert oder (ohne Icon) der komplette Text.
+     * Prozente werden im F6-Overlay nicht gerendert, nur in der Breite berücksichtigt.
+     */
+    private static void drawLine(GuiGraphicsExtractor context, Minecraft client, LineWithPercent line,
+                                 int currentY, int lineHeight, int textColor) {
+        int currentX = OVERLAY_PADDING;
+        // Rot und blinkend, wenn eine Warnung aktiv ist
+        int currentTextColor = line.showWarning ? blinkingWarningColor(textColor) : textColor;
+
+        Identifier icon = line.showIcon ? AlertIcons.iconForKey(line.configKey) : null;
+        if (icon == null) {
+            // Haupttext (inkl. "Amboss:" wenn kein Icon)
+            context.text(client.font, Component.literal(line.text), currentX, currentY, currentTextColor, true);
+            return;
+        }
+
+        int iconSize = lineHeight;
+        int lineCenterY = currentY + lineHeight / 2;
+        boolean iconDrawn = false;
+        int textY = currentY;
+        try {
+            context.blit(
+                RenderPipelines.GUI_TEXTURED,
+                icon,
+                currentX, lineCenterY - iconSize / 2,
+                0.0f, 0.0f,
+                iconSize, iconSize,
+                iconSize, iconSize
+            );
+            currentX += iconSize + 2;
+            iconDrawn = true;
+            textY = lineCenterY - client.font.lineHeight / 2;
+        } catch (Exception e) {
+            // Fallback: Zeichne Text wenn Icon nicht geladen werden kann
+            String fallbackText = AlertIcons.fallbackLabelForKey(line.configKey);
+            if (fallbackText != null) {
+                context.text(client.font, Component.literal(fallbackText), currentX, currentY, currentTextColor, true);
+                currentX += client.font.width(fallbackText);
+            }
+        }
+        // Doppelpunkt nach dem Icon (vertikal zentriert zum Icon)
+        if (iconDrawn) {
+            context.text(client.font, Component.literal(": "), currentX, textY, currentTextColor, true);
+            currentX += client.font.width(": ");
+        }
+        // Werte nach dem Doppelpunkt (vertikal zentriert zum Icon)
+        context.text(client.font, Component.literal(line.text), currentX, textY, currentTextColor, true);
+    }
+
+    /** Wechselt alle 300 ms zwischen Warnfarbe (Rot) und der normalen Textfarbe. */
+    private static int blinkingWarningColor(int normalColor) {
+        boolean isVisible = (System.currentTimeMillis() / WARNING_BLINK_MILLIS) % 2 == 0;
+        return isVisible ? WARNING_COLOR : normalColor;
+    }
     @Override
     public void savePosition() {
         // Position is already saved in setPosition()
