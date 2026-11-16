@@ -1,5 +1,7 @@
 package net.felix.features.npcalerts.ui;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
@@ -9,8 +11,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Screen für NPC Alerts-Einstellungen

@@ -7,12 +7,12 @@ import net.felix.utilities.Aincraft.MaterialTrackerUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
 import net.felix.utilities.Factory.BossHPUtility;
 import net.felix.utilities.Factory.FactoryLevelTracker;
-import net.felix.features.npcalerts.NpcAlertsUtility;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.felix.features.information.InformationFeature;
+import net.felix.features.npcalerts.NpcAlertsFeature;
 
 /**
  * In 26.1 können {@code HudElementRegistry.addLast}-Overlays über dem Inventar-Dim landen.
@@ -64,7 +64,7 @@ public final class HudOverlayVisibility {
             MaterialTrackerUtility.onHudRender(context, tickCounter);
             CardsStatuesUtility.onHudRender(context, tickCounter);
             InformationFeature.onHudRender(context, tickCounter);
-            NpcAlertsUtility.onHudRender(context, tickCounter);
+            NpcAlertsFeature.onHudRender(context, tickCounter);
             BossHPUtility.onHudRender(context, tickCounter);
             FactoryLevelTracker.onHudRender(context, tickCounter);
             BPViewerUtility bp = BPViewerUtility.getInstance();

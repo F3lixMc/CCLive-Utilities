@@ -1,16 +1,16 @@
 package net.felix.features.npcalerts.ui;
 
-import net.felix.utilities.Overall.KeyBindingUtility;
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.isxander.yacl3.api.*;
+import dev.isxander.yacl3.api.controller.*;
+import java.awt.Color;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
+import net.felix.utilities.Overall.KeyBindingUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import dev.isxander.yacl3.api.*;
-import dev.isxander.yacl3.api.controller.*;
-import java.awt.Color;
 
 /**
  * Detail-Screen für einzelne NPC Alerts-Einstellungen

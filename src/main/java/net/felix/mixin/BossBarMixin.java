@@ -10,7 +10,6 @@ import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.felix.utilities.Overall.CoinTrackerUtility;
 import net.felix.features.itemviewer.inventory.HudStatsReader;
-import net.felix.features.npcalerts.NpcAlertsUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,6 +19,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
 import net.felix.features.information.collections.CollectionTracker;
+import net.felix.features.npcalerts.parser.KomboKisteReader;
 
 @SuppressWarnings("unused")
 @Mixin(BossHealthOverlay.class)
@@ -37,9 +37,9 @@ public class BossBarMixin {
                 return;
             }
 
-            NpcAlertsUtility.beginKomboKisteBossBarScan();
+            KomboKisteReader.beginKomboKisteBossBarScan();
             Minecraft mc = Minecraft.getInstance();
-            boolean komboKisteDim = NpcAlertsUtility.isKomboKisteReadingDimension(mc);
+            boolean komboKisteDim = KomboKisteReader.isKomboKisteReadingDimension(mc);
             String aincraftBottomFont = ZeichenUtility.getAincraftBottomFont();
 
             int index = 0;
@@ -47,7 +47,7 @@ public class BossBarMixin {
                 index++;
                 String name = bossBar.getName().getString();
                 if (komboKisteDim) {
-                    NpcAlertsUtility.observeKomboKisteBossBarTitle(name, index);
+                    KomboKisteReader.observeKomboKisteBossBarTitle(name, index);
                 }
 
                 CoinTrackerUtility.processBossBar(name);

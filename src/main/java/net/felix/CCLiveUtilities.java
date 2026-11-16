@@ -12,7 +12,6 @@ import net.felix.utilities.Other.UpdateCheckerUtility;
 import net.felix.utilities.Overall.AnimationBlockerUtility;
 import net.felix.utilities.Overall.KillAnimationUtility;
 import net.felix.utilities.Overall.DamageTrackingUtility;
-import net.felix.features.npcalerts.NpcAlertsUtility;
 import net.felix.utilities.Town.EquipmentDisplayUtility;
 import net.felix.utilities.Town.KitFilterUtility;
 import net.felix.utilities.Town.ModSounds;
@@ -26,6 +25,7 @@ import net.felix.profile.PlayerHoverStatsUtility;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import net.felix.features.information.InformationFeature;
+import net.felix.features.npcalerts.NpcAlertsFeature;
 
 public class CCLiveUtilities implements ModInitializer {
 	public static final String MOD_ID = "cclive-utilities";
@@ -82,7 +82,7 @@ public class CCLiveUtilities implements ModInitializer {
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
 		net.felix.utilities.Overall.CoinTrackerUtility.initialize();
-		NpcAlertsUtility.initialize();
+		NpcAlertsFeature.initialize();
 		net.felix.utilities.Other.DebugUtility.initializeItemLogger();
 		net.felix.utilities.Other.Clipboard.ClipboardUtility.initialize();
 		// Initialisiere Leaderboard-System

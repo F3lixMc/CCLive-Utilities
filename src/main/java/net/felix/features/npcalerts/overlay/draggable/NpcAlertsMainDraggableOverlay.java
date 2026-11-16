@@ -1,16 +1,18 @@
 package net.felix.features.npcalerts.overlay.draggable;
 
+import java.util.List;
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.npcalerts.overlay.AlertSettings;
+import net.felix.features.npcalerts.overlay.LineWithPercent;
+import net.felix.features.npcalerts.overlay.MainOverlayLines;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.features.npcalerts.NpcAlertsUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
-import java.util.List;
 
 /**
  * Draggable Overlay für das große NPC Alerts Overlay
@@ -82,10 +84,10 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         if (client == null) return 200; // Fallback width
         
         // Verwende die tatsächlichen Zeilen aus dem originalen Overlay für genaue Breitenberechnung
-        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLines();
+        List<LineWithPercent> lines = MainOverlayLines.getMainOverlayLines();
         if (lines.isEmpty()) {
             // Fallback: Verwende Edit-Mode Zeilen wenn keine echten Daten verfügbar
-            lines = NpcAlertsUtility.getMainOverlayLinesForEditMode();
+            lines = MainOverlayLines.getMainOverlayLinesForEditMode();
         }
         // Wenn leer, verwende minimale Breite (aber nur wenn Hintergrund aktiviert ist)
         if (lines.isEmpty()) {
@@ -96,7 +98,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         }
         
         int maxWidth = 0;
-        for (NpcAlertsUtility.LineWithPercent line : lines) {
+        for (LineWithPercent line : lines) {
             int width = 0;
             // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
             if (line.showIcon && (line.configKey != null && ("forschung".equals(line.configKey) || "amboss".equals(line.configKey) || 
@@ -133,7 +135,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         Minecraft client = Minecraft.getInstance();
         if (client == null) return 100;
         
-        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLinesForEditMode();
+        List<LineWithPercent> lines = MainOverlayLines.getMainOverlayLinesForEditMode();
         // Wenn leer, verwende minimale Höhe (aber nur wenn Hintergrund aktiviert ist)
         if (lines.isEmpty()) {
             if (CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
@@ -232,7 +234,7 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         }
         
         // Hole die Zeilen für das Overlay
-        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLinesForEditMode();
+        List<LineWithPercent> lines = MainOverlayLines.getMainOverlayLinesForEditMode();
         // Rendere auch wenn leer, wenn Hintergrund aktiviert ist
         if (lines.isEmpty() && !CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsMainOverlayShowBackground) {
             return;
@@ -266,14 +268,14 @@ public class NpcAlertsMainDraggableOverlay implements DraggableOverlay {
         int xPosition = 0; // Relativ zu (x, y) nach Matrix-Transformation
         
         // Rendere alle Zeilen (gleiche Logik wie im Original)
-        for (NpcAlertsUtility.LineWithPercent line : lines) {
+        for (LineWithPercent line : lines) {
             if (line.text == null || line.text.trim().isEmpty()) {
                 currentY += LINE_HEIGHT;
                 continue;
             }
             
             // Hole konfigurierte Farben für diese Zeile
-            int textColor = NpcAlertsUtility.getTextColorForConfigKey(line.configKey);
+            int textColor = AlertSettings.getTextColorForConfigKey(line.configKey);
             try {
                 int currentX = xPosition + PADDING;
                 
@@ -448,7 +450,7 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
         }
         
         // Prüfe ob es Zeilen gibt, die im Haupt-Overlay angezeigt werden sollen
-        List<NpcAlertsUtility.LineWithPercent> lines = NpcAlertsUtility.getMainOverlayLines();
+        List<LineWithPercent> lines = MainOverlayLines.getMainOverlayLines();
         return !lines.isEmpty();
     }
     

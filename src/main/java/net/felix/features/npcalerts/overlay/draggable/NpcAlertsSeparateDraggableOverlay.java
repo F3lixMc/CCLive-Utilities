@@ -2,8 +2,13 @@ package net.felix.features.npcalerts.overlay.draggable;
 
 import net.felix.CCLiveUtilities;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.features.npcalerts.data.CapacityData;
+import net.felix.features.npcalerts.data.MachtkristallSlot;
+import net.felix.features.npcalerts.data.NpcAlertState;
+import net.felix.features.npcalerts.message.ScreenMessages;
+import net.felix.features.npcalerts.overlay.PercentFormatter;
+import net.felix.features.npcalerts.parser.KomboKisteReader;
 import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.features.npcalerts.NpcAlertsUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -196,7 +201,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[i];
+                MachtkristallSlot slot = NpcAlertState.machtkristallSlots[i];
                 int width = 0;
                 
                 // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
@@ -218,7 +223,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
                     } else if (showIcon) {
                         // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                        displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
+                        displayText = MachtkristallSlot.stripIconPrefix(displayText);
                     }
                 }
                 width += client.font.width(displayText);
@@ -284,9 +289,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                NpcAlertsUtility.CapacityData recyclerSlot = (i == 0) ? NpcAlertsUtility.recyclerSlot1 : 
-                                                          (i == 1) ? NpcAlertsUtility.recyclerSlot2 : 
-                                                          NpcAlertsUtility.recyclerSlot3;
+                CapacityData recyclerSlot = (i == 0) ? NpcAlertState.recyclerSlot1 : 
+                                                          (i == 1) ? NpcAlertState.recyclerSlot2 : 
+                                                          NpcAlertState.recyclerSlot3;
                 int width = 0;
                 
                 // Wenn Icon aktiviert ist, füge Icon-Breite hinzu
@@ -307,7 +312,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 
                 // Prozent-Breite
                 if (showPercent && recyclerSlot.isValid()) {
-                    String percentText = NpcAlertsUtility.calculatePercent(recyclerSlot.current, recyclerSlot.max);
+                    String percentText = PercentFormatter.formatPercent(recyclerSlot.current, recyclerSlot.max);
                     width += client.font.width(" " + percentText);
                 }
                 
@@ -346,7 +351,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 return 0;
             }
             
-            NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[slotIndex];
+            MachtkristallSlot slot = NpcAlertState.machtkristallSlots[slotIndex];
             boolean showIcon = getShowIcon();
             String percentText = slot.getPercentText();
             boolean showPercent = percentText != null;
@@ -371,7 +376,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     displayText = showIcon ? "?" : "MK " + (slotIndex + 1) + ": ?";
                 } else if (showIcon) {
                     // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                    displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
+                    displayText = MachtkristallSlot.stripIconPrefix(displayText);
                 }
             }
             width += client.font.width(displayText);
@@ -802,7 +807,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[i];
+                MachtkristallSlot slot = NpcAlertState.machtkristallSlots[i];
                 int lineX = currentX;
                 int lineCenterY = lineY + lineHeight / 2;
                 
@@ -820,11 +825,11 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                         displayText = showIcon ? "?" : "MK " + (i + 1) + ": ?";
                     } else if (showIcon) {
                         // Entferne "MK [Name]: " Präfix wenn Icon angezeigt wird
-                        displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
+                        displayText = MachtkristallSlot.stripIconPrefix(displayText);
                     }
                 }
                 
-                boolean lineShowWarning = NpcAlertsUtility.shouldShowMachtkristallWarning(slot);
+                boolean lineShowWarning = ScreenMessages.shouldShowMachtkristallWarning(slot);
                 int lineTextColor = textColor;
                 int linePercentColor = mkPercentColor;
                 if (lineShowWarning) {
@@ -959,9 +964,9 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                     continue;
                 }
                 
-                NpcAlertsUtility.CapacityData recyclerSlot = (i == 0) ? NpcAlertsUtility.recyclerSlot1 : 
-                                                          (i == 1) ? NpcAlertsUtility.recyclerSlot2 : 
-                                                          NpcAlertsUtility.recyclerSlot3;
+                CapacityData recyclerSlot = (i == 0) ? NpcAlertState.recyclerSlot1 : 
+                                                          (i == 1) ? NpcAlertState.recyclerSlot2 : 
+                                                          NpcAlertState.recyclerSlot3;
                 int lineX = currentX;
                 int lineCenterY = lineY + lineHeight / 2;
                 
@@ -973,7 +978,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                 } else {
                     displayText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
                     if (showPercent && recyclerSlot.isValid()) {
-                        slotPercentText = NpcAlertsUtility.calculatePercent(recyclerSlot.current, recyclerSlot.max);
+                        slotPercentText = PercentFormatter.formatPercent(recyclerSlot.current, recyclerSlot.max);
                     }
                 }
                 
@@ -1040,7 +1045,7 @@ public class NpcAlertsSeparateDraggableOverlay implements DraggableOverlay {
                                                     "machtkristalleSlot2".equals(configKey) || 
                                                     "machtkristalleSlot3".equals(configKey)))) {
                 // Entferne "MK [Name]: " oder "MK X: " Präfix wenn Icon angezeigt wird
-                displayText = NpcAlertsUtility.MachtkristallSlot.stripIconPrefix(displayText);
+                displayText = MachtkristallSlot.stripIconPrefix(displayText);
             }
             context.text(
                 client.font,
@@ -1455,27 +1460,27 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
         boolean showIcon = getShowIcon();
         switch (configKey) {
             case "forschung":
-                return showIcon ? NpcAlertsUtility.forschung.getDisplayString() : "Forschung: " + NpcAlertsUtility.forschung.getDisplayString();
+                return showIcon ? NpcAlertState.forschung.getDisplayString() : "Forschung: " + NpcAlertState.forschung.getDisplayString();
             case "amboss":
-                return showIcon ? NpcAlertsUtility.ambossKapazitaet.getDisplayString() : "Amboss: " + NpcAlertsUtility.ambossKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertState.ambossCapacity.getDisplayString() : "Amboss: " + NpcAlertState.ambossCapacity.getDisplayString();
             case "schmelzofen":
-                return showIcon ? NpcAlertsUtility.schmelzofenKapazitaet.getDisplayString() : "Schmelzofen: " + NpcAlertsUtility.schmelzofenKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertState.schmelzofenCapacity.getDisplayString() : "Schmelzofen: " + NpcAlertState.schmelzofenCapacity.getDisplayString();
             case "jaeger":
-                return showIcon ? NpcAlertsUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + NpcAlertsUtility.jaegerKapazitaet.getDisplayStringWithoutCurrentSuffix();
+                return showIcon ? NpcAlertState.jaegerCapacity.getDisplayStringWithoutCurrentSuffix() : "Jäger: " + NpcAlertState.jaegerCapacity.getDisplayStringWithoutCurrentSuffix();
             case "komboKiste": {
-                String fraction = NpcAlertsUtility.getKomboKisteFractionDisplay();
+                String fraction = KomboKisteReader.getKomboKisteFractionDisplay();
                 return showIcon ? fraction : "Kombo Kiste: " + fraction;
             }
             case "seelen":
-                return showIcon ? NpcAlertsUtility.seelenKapazitaet.getDisplayString() : "Seelen: " + NpcAlertsUtility.seelenKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertState.seelenCapacity.getDisplayString() : "Seelen: " + NpcAlertState.seelenCapacity.getDisplayString();
             case "essenzen":
-                return showIcon ? NpcAlertsUtility.essenzenKapazitaet.getDisplayString() : "Essenzen: " + NpcAlertsUtility.essenzenKapazitaet.getDisplayString();
+                return showIcon ? NpcAlertState.essenzenCapacity.getDisplayString() : "Essenzen: " + NpcAlertState.essenzenCapacity.getDisplayString();
             case "machtkristalle":
                 // Für Machtkristalle: zeige alle 3 Slots
                 // Hinweis: Prozentwerte werden separat gerendert (in gelb)
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < 3; i++) {
-                    NpcAlertsUtility.MachtkristallSlot slot = NpcAlertsUtility.machtkristallSlots[i];
+                    MachtkristallSlot slot = NpcAlertState.machtkristallSlots[i];
                     if (i > 0) sb.append("\n");
                     if (slot.isEmpty()) {
                         sb.append(slot.getDisplayTextForEmptySlot(i + 1));
@@ -1489,7 +1494,7 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
                 return sb.toString();
             case "machtkristalleSlot1":
                 // Für einzelnen MK-Slot 1
-                NpcAlertsUtility.MachtkristallSlot slot1 = NpcAlertsUtility.machtkristallSlots[0];
+                MachtkristallSlot slot1 = NpcAlertState.machtkristallSlots[0];
                 if (slot1.isNotFound()) {
                     return "MK 1: Nicht im Widget";
                 } else if (slot1.isEmpty()) {
@@ -1500,7 +1505,7 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
                 }
             case "machtkristalleSlot2":
                 // Für einzelnen MK-Slot 2
-                NpcAlertsUtility.MachtkristallSlot slot2 = NpcAlertsUtility.machtkristallSlots[1];
+                MachtkristallSlot slot2 = NpcAlertState.machtkristallSlots[1];
                 if (slot2.isNotFound()) {
                     return "MK 2: Nicht im Widget";
                 } else if (slot2.isEmpty()) {
@@ -1511,7 +1516,7 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
                 }
             case "machtkristalleSlot3":
                 // Für einzelnen MK-Slot 3
-                NpcAlertsUtility.MachtkristallSlot slot3 = NpcAlertsUtility.machtkristallSlots[2];
+                MachtkristallSlot slot3 = NpcAlertState.machtkristallSlots[2];
                 if (slot3.isNotFound()) {
                     return "MK 3: Nicht im Widget";
                 } else if (slot3.isEmpty()) {
@@ -1542,20 +1547,20 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
                         continue;
                     }
                     
-                    NpcAlertsUtility.CapacityData recyclerSlot = (i == 0) ? NpcAlertsUtility.recyclerSlot1 : 
-                                                              (i == 1) ? NpcAlertsUtility.recyclerSlot2 : 
-                                                              NpcAlertsUtility.recyclerSlot3;
+                    CapacityData recyclerSlot = (i == 0) ? NpcAlertState.recyclerSlot1 : 
+                                                              (i == 1) ? NpcAlertState.recyclerSlot2 : 
+                                                              NpcAlertState.recyclerSlot3;
                     if (recyclerSb.length() > 0) recyclerSb.append("\n");
                     String slotText = showIcon ? recyclerSlot.getDisplayString() : "Recycler Slot " + (i + 1) + ": " + recyclerSlot.getDisplayString();
                     recyclerSb.append(slotText);
                 }
                 return recyclerSb.toString();
             case "recyclerSlot1":
-                return showIcon ? NpcAlertsUtility.recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + NpcAlertsUtility.recyclerSlot1.getDisplayString();
+                return showIcon ? NpcAlertState.recyclerSlot1.getDisplayString() : "Recycler Slot 1: " + NpcAlertState.recyclerSlot1.getDisplayString();
             case "recyclerSlot2":
-                return showIcon ? NpcAlertsUtility.recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + NpcAlertsUtility.recyclerSlot2.getDisplayString();
+                return showIcon ? NpcAlertState.recyclerSlot2.getDisplayString() : "Recycler Slot 2: " + NpcAlertState.recyclerSlot2.getDisplayString();
             case "recyclerSlot3":
-                return showIcon ? NpcAlertsUtility.recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + NpcAlertsUtility.recyclerSlot3.getDisplayString();
+                return showIcon ? NpcAlertState.recyclerSlot3.getDisplayString() : "Recycler Slot 3: " + NpcAlertState.recyclerSlot3.getDisplayString();
             default:
                 return displayName + ": X / Y";
         }
@@ -1602,11 +1607,11 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
         switch (configKey) {
             case "forschung":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsForschungPercent) {
-                    if (NpcAlertsUtility.forschung.isValid()) {
+                    if (NpcAlertState.forschung.isValid()) {
                         // Forschung zählt runter: wenn current näher an max ist, ist der Prozent höher
-                        return NpcAlertsUtility.calculatePercent(
-                            NpcAlertsUtility.forschung.current, 
-                            NpcAlertsUtility.forschung.max
+                        return PercentFormatter.formatPercent(
+                            NpcAlertState.forschung.current, 
+                            NpcAlertState.forschung.max
                         );
                     } else {
                         // Kein Prozent, solange keine gültigen Werte (Anzeige: "Nicht im Tab-Widget")
@@ -1616,66 +1621,66 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
                 break;
             case "amboss":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsAmbossPercent && 
-                    NpcAlertsUtility.ambossKapazitaet.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.ambossKapazitaet.current, 
-                        NpcAlertsUtility.ambossKapazitaet.max
+                    NpcAlertState.ambossCapacity.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.ambossCapacity.current, 
+                        NpcAlertState.ambossCapacity.max
                     );
                 }
                 break;
             case "schmelzofen":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSchmelzofenPercent && 
-                    NpcAlertsUtility.schmelzofenKapazitaet.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.schmelzofenKapazitaet.current, 
-                        NpcAlertsUtility.schmelzofenKapazitaet.max
+                    NpcAlertState.schmelzofenCapacity.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.schmelzofenCapacity.current, 
+                        NpcAlertState.schmelzofenCapacity.max
                     );
                 }
                 break;
             case "jaeger":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsJaegerPercent && 
-                    NpcAlertsUtility.jaegerKapazitaet.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.jaegerKapazitaet.current, 
-                        NpcAlertsUtility.jaegerKapazitaet.max
+                    NpcAlertState.jaegerCapacity.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.jaegerCapacity.current, 
+                        NpcAlertState.jaegerCapacity.max
                     );
                 }
                 break;
             case "seelen":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsSeelenPercent && 
-                    NpcAlertsUtility.seelenKapazitaet.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.seelenKapazitaet.current, 
-                        NpcAlertsUtility.seelenKapazitaet.max
+                    NpcAlertState.seelenCapacity.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.seelenCapacity.current, 
+                        NpcAlertState.seelenCapacity.max
                     );
                 }
                 break;
             case "essenzen":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsEssenzenPercent && 
-                    NpcAlertsUtility.essenzenKapazitaet.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.essenzenKapazitaet.current, 
-                        NpcAlertsUtility.essenzenKapazitaet.max
+                    NpcAlertState.essenzenCapacity.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.essenzenCapacity.current, 
+                        NpcAlertState.essenzenCapacity.max
                     );
                 }
                 break;
             case "machtkristalleSlot1":
                 // Für einzelnen MK-Slot 1
-                NpcAlertsUtility.MachtkristallSlot slot1 = NpcAlertsUtility.machtkristallSlots[0];
+                MachtkristallSlot slot1 = NpcAlertState.machtkristallSlots[0];
                 if (!slot1.isEmpty() && !slot1.isNotFound()) {
                     return slot1.getPercentText();
                 }
                 break;
             case "machtkristalleSlot2":
                 // Für einzelnen MK-Slot 2
-                NpcAlertsUtility.MachtkristallSlot slot2 = NpcAlertsUtility.machtkristallSlots[1];
+                MachtkristallSlot slot2 = NpcAlertState.machtkristallSlots[1];
                 if (!slot2.isEmpty() && !slot2.isNotFound()) {
                     return slot2.getPercentText();
                 }
                 break;
             case "machtkristalleSlot3":
                 // Für einzelnen MK-Slot 3
-                NpcAlertsUtility.MachtkristallSlot slot3 = NpcAlertsUtility.machtkristallSlots[2];
+                MachtkristallSlot slot3 = NpcAlertState.machtkristallSlots[2];
                 if (!slot3.isEmpty() && !slot3.isNotFound()) {
                     return slot3.getPercentText();
                 }
@@ -1685,28 +1690,28 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
                 return null;
             case "recyclerSlot1":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent && 
-                    NpcAlertsUtility.recyclerSlot1.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.recyclerSlot1.current, 
-                        NpcAlertsUtility.recyclerSlot1.max
+                    NpcAlertState.recyclerSlot1.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.recyclerSlot1.current, 
+                        NpcAlertState.recyclerSlot1.max
                     );
                 }
                 break;
             case "recyclerSlot2":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent && 
-                    NpcAlertsUtility.recyclerSlot2.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.recyclerSlot2.current, 
-                        NpcAlertsUtility.recyclerSlot2.max
+                    NpcAlertState.recyclerSlot2.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.recyclerSlot2.current, 
+                        NpcAlertState.recyclerSlot2.max
                     );
                 }
                 break;
             case "recyclerSlot3":
                 if (CCLiveUtilitiesConfig.HANDLER.instance().showNpcAlertsRecyclerPercent && 
-                    NpcAlertsUtility.recyclerSlot3.isValid()) {
-                    return NpcAlertsUtility.calculatePercent(
-                        NpcAlertsUtility.recyclerSlot3.current, 
-                        NpcAlertsUtility.recyclerSlot3.max
+                    NpcAlertState.recyclerSlot3.isValid()) {
+                    return PercentFormatter.formatPercent(
+                        NpcAlertState.recyclerSlot3.current, 
+                        NpcAlertState.recyclerSlot3.max
                     );
                 }
                 break;
@@ -1743,96 +1748,96 @@ if (!CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsUtilityEnabled) {
     private boolean getShowWarning() {
         switch (configKey) {
             case "forschung":
-                if (NpcAlertsUtility.forschung.isValid()) {
+                if (NpcAlertState.forschung.isValid()) {
                     int warnValue = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsForschungWarnValue;
-                    return warnValue >= 0 && NpcAlertsUtility.forschung.current <= warnValue;
+                    return warnValue >= 0 && NpcAlertState.forschung.current <= warnValue;
                 }
                 break;
             case "amboss":
-                if (NpcAlertsUtility.ambossKapazitaet.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.ambossKapazitaet.current / 
-                        (double)NpcAlertsUtility.ambossKapazitaet.max) * 100.0;
+                if (NpcAlertState.ambossCapacity.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.ambossCapacity.current / 
+                        (double)NpcAlertState.ambossCapacity.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsAmbossWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "schmelzofen":
-                if (NpcAlertsUtility.schmelzofenKapazitaet.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.schmelzofenKapazitaet.current / 
-                        (double)NpcAlertsUtility.schmelzofenKapazitaet.max) * 100.0;
+                if (NpcAlertState.schmelzofenCapacity.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.schmelzofenCapacity.current / 
+                        (double)NpcAlertState.schmelzofenCapacity.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSchmelzofenWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "jaeger":
-                if (NpcAlertsUtility.jaegerKapazitaet.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.jaegerKapazitaet.current / 
-                        (double)NpcAlertsUtility.jaegerKapazitaet.max) * 100.0;
+                if (NpcAlertState.jaegerCapacity.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.jaegerCapacity.current / 
+                        (double)NpcAlertState.jaegerCapacity.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsJaegerWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "komboKiste":
-                if (NpcAlertsUtility.komboKiste.isValid()) {
-                    return NpcAlertsUtility.komboKiste.current >= NpcAlertsUtility.komboKiste.max;
+                if (NpcAlertState.komboKiste.isValid()) {
+                    return NpcAlertState.komboKiste.current >= NpcAlertState.komboKiste.max;
                 }
                 break;
             case "seelen":
-                if (NpcAlertsUtility.seelenKapazitaet.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.seelenKapazitaet.current / 
-                        (double)NpcAlertsUtility.seelenKapazitaet.max) * 100.0;
+                if (NpcAlertState.seelenCapacity.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.seelenCapacity.current / 
+                        (double)NpcAlertState.seelenCapacity.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsSeelenWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "essenzen":
-                if (NpcAlertsUtility.essenzenKapazitaet.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.essenzenKapazitaet.current / 
-                        (double)NpcAlertsUtility.essenzenKapazitaet.max) * 100.0;
+                if (NpcAlertState.essenzenCapacity.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.essenzenCapacity.current / 
+                        (double)NpcAlertState.essenzenCapacity.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsEssenzenWarnPercent;
                     return warnPercent >= 0 && currentPercent >= warnPercent;
                 }
                 break;
             case "machtkristalle":
                 for (int i = 0; i < 3; i++) {
-                    if (NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[i])) {
+                    if (ScreenMessages.shouldShowMachtkristallWarning(NpcAlertState.machtkristallSlots[i])) {
                         return true;
                     }
                 }
                 break;
             case "recyclerSlot1":
-                if (NpcAlertsUtility.recyclerSlot1.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.recyclerSlot1.current / 
-                        (double)NpcAlertsUtility.recyclerSlot1.max) * 100.0;
+                if (NpcAlertState.recyclerSlot1.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.recyclerSlot1.current / 
+                        (double)NpcAlertState.recyclerSlot1.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
                     // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
                     return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "recyclerSlot2":
-                if (NpcAlertsUtility.recyclerSlot2.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.recyclerSlot2.current / 
-                        (double)NpcAlertsUtility.recyclerSlot2.max) * 100.0;
+                if (NpcAlertState.recyclerSlot2.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.recyclerSlot2.current / 
+                        (double)NpcAlertState.recyclerSlot2.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
                     // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
                     return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "recyclerSlot3":
-                if (NpcAlertsUtility.recyclerSlot3.isValid()) {
-                    double currentPercent = ((double)NpcAlertsUtility.recyclerSlot3.current / 
-                        (double)NpcAlertsUtility.recyclerSlot3.max) * 100.0;
+                if (NpcAlertState.recyclerSlot3.isValid()) {
+                    double currentPercent = ((double)NpcAlertState.recyclerSlot3.current / 
+                        (double)NpcAlertState.recyclerSlot3.max) * 100.0;
                     double warnPercent = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsRecyclerWarnPercent;
                     // Recycler zählt runter, daher warnen wenn currentPercent <= warnPercent
                     return warnPercent >= 0 && currentPercent <= warnPercent;
                 }
                 break;
             case "machtkristalleSlot1":
-                return NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[0]);
+                return ScreenMessages.shouldShowMachtkristallWarning(NpcAlertState.machtkristallSlots[0]);
             case "machtkristalleSlot2":
-                return NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[1]);
+                return ScreenMessages.shouldShowMachtkristallWarning(NpcAlertState.machtkristallSlots[1]);
             case "machtkristalleSlot3":
-                return NpcAlertsUtility.shouldShowMachtkristallWarning(NpcAlertsUtility.machtkristallSlots[2]);
+                return ScreenMessages.shouldShowMachtkristallWarning(NpcAlertState.machtkristallSlots[2]);
         }
         return false;
     }
