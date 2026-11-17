@@ -250,14 +250,7 @@ public final class SeasonChangeGate {
         } catch (Exception e) {
             return null;
         }
-        String name = "";
-        if (response.has("name") && !response.get("name").isJsonNull()) {
-            try {
-                name = response.get("name").getAsString();
-            } catch (Exception ignored) {
-            }
-        }
-        return new SeasonInfo(seasonId, isPreseason, name);
+        return new SeasonInfo(seasonId, isPreseason);
     }
 
     private static void notifyPlayer(SeasonInfo info) {
@@ -288,12 +281,10 @@ public final class SeasonChangeGate {
     private static final class SeasonInfo {
         final int seasonId;
         final boolean isPreseason;
-        final String name;
 
-        SeasonInfo(int seasonId, boolean isPreseason, String name) {
+        SeasonInfo(int seasonId, boolean isPreseason) {
             this.seasonId = seasonId;
             this.isPreseason = isPreseason;
-            this.name = name;
         }
     }
 }

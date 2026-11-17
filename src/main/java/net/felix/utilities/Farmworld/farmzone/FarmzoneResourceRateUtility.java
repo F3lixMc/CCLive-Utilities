@@ -25,6 +25,7 @@ public final class FarmzoneResourceRateUtility {
     private static long currentCount;
     private static long sessionStartMs;
     private static double perMinute;
+    private static long lastRateUpdateMs;
 
     private FarmzoneResourceRateUtility() {
     }
@@ -35,16 +36,23 @@ public final class FarmzoneResourceRateUtility {
         currentCount = 0;
         sessionStartMs = 0;
         perMinute = 0.0;
+        lastRateUpdateMs = 0L;
     }
 
     /**
-     * Aktualisiert die Rate laufend (wie XP/Min), auch ohne neue Actionbar-Nachricht.
+     * Aktualisiert die Rate höchstens einmal pro Sekunde, auch ohne neue Actionbar-Nachricht.
      */
     public static void tick() {
         if (currentResourceName == null || sessionStartMs <= 0) {
             return;
         }
-        updateRate(System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        if (lastRateUpdateMs > 0L
+                && now - lastRateUpdateMs < net.felix.utilities.Other.hud.SessionRateUtility.UPDATE_INTERVAL_MS) {
+            return;
+        }
+        lastRateUpdateMs = now;
+        updateRate(now);
     }
 
     public static void update(String resourceName, long count) {
@@ -72,6 +80,7 @@ public final class FarmzoneResourceRateUtility {
             if (sessionStartMs <= 0 && currentCount > initialCount) {
                 sessionStartMs = now;
             }
+            lastRateUpdateMs = now;
             updateRate(now);
         }
     }

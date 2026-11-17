@@ -26,7 +26,6 @@ public class ChatManager {
     private static ChatManager instance;
 
     /** Gleiche Glyphe wie im normalen Chat → Custom-Font rendert das Icon mit Text-Opacity. */
-    private static final char ICON_MARKER = 'ѳ';
     private static final Identifier ICON_FONT = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
 
     private final ChatWebSocket webSocket = new ChatWebSocket();

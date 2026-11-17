@@ -175,10 +175,14 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         final int floorColor;
         final int mainWidth;
         final int abbrevWidth;
+        final int floorWidth;
+        /** Ungefähre Restzeit (" ≈ 3.5 min" bzw. " ≈ /"), leer wenn nicht angezeigt. */
+        final String timeText;
         final int totalWidth;
 
         PreparedCostLine(String mainText, int mainColor, String abbrevText, String floorText,
-                         int floorColor, int mainWidth, int abbrevWidth, int totalWidth) {
+                         int floorColor, int mainWidth, int abbrevWidth, int floorWidth,
+                         String timeText, int totalWidth) {
             this.mainText = mainText;
             this.mainColor = mainColor;
             this.abbrevText = abbrevText != null ? abbrevText : "";
@@ -186,6 +190,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             this.floorColor = floorColor;
             this.mainWidth = mainWidth;
             this.abbrevWidth = abbrevWidth;
+            this.floorWidth = floorWidth;
+            this.timeText = timeText != null ? timeText : "";
             this.totalWidth = totalWidth;
         }
     }
@@ -242,7 +248,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     // TextField für [Anzahl] Eingabe
     private static EditBox quantityTextField = null;
     private static int quantityTextFieldPage = -1; // Seite, für die das Textfeld aktiv ist
-    private static int page1Quantity = 1; // Gespeicherte Anzahl für Seite 1 (Gesamtliste)
+    /** Cache für Seite-1-Anzahl; negativ = noch nicht aus der Config geladen. */
+    private static int page1Quantity = -1;
     
     // Bestätigungs-Overlay für "Alle Baupläne entfernen"
     private static boolean showDeleteConfirmation = false;
@@ -394,6 +401,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     public static void resetCollectedMaterials() {
         clipboardMaterials.clear();
+        ClipboardTimeEstimate.reset();
         invalidateMaterialsSyncCache();
         invalidateRenderSnapshot();
     }
@@ -431,6 +439,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             String normalizedName = normalizeMaterialName(entry.getKey());
             return !requiredMaterials.contains(normalizedName);
         });
+        // Timer-Sessions für entfernte Bauplan-Kosten stoppen
+        ClipboardTimeEstimate.retainOnly(requiredMaterials);
+        invalidateRenderSnapshot();
     }
     
     private static void setCurrentPage(int page) {
@@ -1685,10 +1696,16 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int mainWidth = client.font.width(materialLine);
         int abbrevWidth = abbreviatedText.isEmpty() ? 0 : client.font.width(abbreviatedText);
         int floorWidth = floorText.isEmpty() ? 0 : client.font.width(floorText);
-        int totalWidth = mainWidth + abbrevWidth + floorWidth;
+        String timeText = "";
+        if (!isCoins && CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled) {
+            BigDecimal remaining = neededAmount.subtract(ownedAmount);
+            timeText = ClipboardTimeEstimate.buildTimeText(costItem.itemName, remaining);
+        }
+        int timeWidth = timeText.isEmpty() ? 0 : client.font.width(timeText);
+        int totalWidth = mainWidth + abbrevWidth + floorWidth + timeWidth;
 
         return new PreparedCostLine(materialLine, textColor, abbreviatedText, floorText,
-                floorColor, mainWidth, abbrevWidth, totalWidth);
+                floorColor, mainWidth, abbrevWidth, floorWidth, timeText, totalWidth);
     }
 
     private static List<PreparedCostLine> prepareCostLines(Minecraft client, List<CostItem> items, int quantity) {
@@ -1714,6 +1731,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             context.text(client.font, line.floorText,
                     5 + line.mainWidth + line.abbrevWidth, y, line.floorColor, true);
         }
+        if (!line.timeText.isEmpty()) {
+            context.text(client.font, line.timeText,
+                    5 + line.mainWidth + line.abbrevWidth + line.floorWidth, y, 0xFFAAAAAA, true);
+        }
     }
 
     private static int readDisplayQuantity(int page, ClipboardUtility.ClipboardEntry entry) {
@@ -1730,7 +1751,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             }
         }
         if (page == 1) {
-            return page1Quantity;
+            return getPage1Quantity();
         }
         if (entry == null) {
             return 1;
@@ -2443,11 +2464,26 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         invalidateRenderSnapshot();
     }
     
-    private static void applyQuantityForPage(int page, int quantity) {
-        if (page == 1) {
-            page1Quantity = quantity;
+    private static int getPage1Quantity() {
+        if (page1Quantity < 1) {
+            page1Quantity = Math.max(1, CCLiveUtilitiesConfig.HANDLER.instance().clipboardPage1Quantity);
         }
-        
+        return page1Quantity;
+    }
+
+    private static void setPage1Quantity(int quantity) {
+        page1Quantity = Math.max(1, quantity);
+        CCLiveUtilitiesConfig.HANDLER.instance().clipboardPage1Quantity = page1Quantity;
+        CCLiveUtilitiesConfig.HANDLER.save();
+    }
+
+    private static void applyQuantityForPage(int page, int quantity) {
+        quantity = Math.max(1, quantity);
+        if (page == 1) {
+            setPage1Quantity(quantity);
+            return;
+        }
+
         ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(page);
         if (entry != null) {
             entry.quantity = quantity;
@@ -2619,19 +2655,16 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                         int value = Integer.parseInt(text.trim());
                         if (value <= 0) {
                             quantityTextField.setValue("1");
-                            // Aktualisiere gespeicherte Anzahl für Seite 1
                             if (quantityTextFieldPage == 1) {
                                 page1Quantity = 1;
                             }
+                        } else if (quantityTextFieldPage == 1) {
+                            page1Quantity = value;
                         } else {
-                            if (quantityTextFieldPage == 1) {
-                                page1Quantity = value;
-                            } else {
-                                ClipboardUtility.ClipboardEntry pageEntry =
-                                        ClipboardUtility.getEntryForPage(quantityTextFieldPage);
-                                if (pageEntry != null) {
-                                    pageEntry.quantity = value;
-                                }
+                            ClipboardUtility.ClipboardEntry pageEntry =
+                                    ClipboardUtility.getEntryForPage(quantityTextFieldPage);
+                            if (pageEntry != null) {
+                                pageEntry.quantity = value;
                             }
                         }
                     } catch (NumberFormatException e) {
@@ -2650,8 +2683,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             if (entry != null) {
                 quantityTextField.setValue(String.valueOf(entry.quantity > 0 ? entry.quantity : 1));
             } else if (page == 1) {
-                // Für Seite 1: Verwende gespeicherte Anzahl
-                quantityTextField.setValue(String.valueOf(page1Quantity));
+                quantityTextField.setValue(String.valueOf(getPage1Quantity()));
             } else {
                 quantityTextField.setValue("1");
             }

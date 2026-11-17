@@ -10,6 +10,9 @@ import net.minecraft.network.chat.Style;
  */
 public final class ClipboardPinTooltip {
 
+	private static final java.util.regex.Pattern ACTION_LINE_PATTERN = java.util.regex.Pattern.compile(
+			"\\[Linksklick\\]\\s*:?\\s*(Herstellen|Kaufen)", java.util.regex.Pattern.CASE_INSENSITIVE);
+
 	private ClipboardPinTooltip() {
 	}
 
@@ -66,13 +69,12 @@ public final class ClipboardPinTooltip {
 			}
 			
 			// Entferne Formatierungs-Codes für Vergleich
-			String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "");
+			String cleanLineText = lineText.replaceAll("§[0-9a-fk-or]", "")
+					.replaceAll("[\\u3400-\\u4DBF\\uE000-\\uF8FF]", "");
 			
 			// Prüfe ob die Zeile "[Linksklick]: Herstellen" oder "[Linksklick] Kaufen" enthält
-			boolean hasHerstellen = cleanLineText.contains("[Linksklick]: Herstellen");
-			boolean hasKaufen = cleanLineText.contains("[Linksklick] Kaufen");
-			
-			if (hasHerstellen || hasKaufen) {
+			// (Doppelpunkt und Leerzeichen tolerant)
+			if (ACTION_LINE_PATTERN.matcher(cleanLineText).find()) {
 				// Füge leere Zeile und "Bauplan Anpinnen mit Hotkey: [Hotkey]" in grau hinzu, direkt vor dieser Zeile
 				lines.add(i, Component.empty()); // Leere Zeile
 				lines.add(i + 1, Component.literal(clipboardText)
