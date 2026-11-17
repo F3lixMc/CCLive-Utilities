@@ -301,9 +301,7 @@ public class ItemViewerUtility {
                         allItems.addAll(data.fähigkeiten);
                     }
                     if (data.module != null && !data.module.isEmpty()) {
-                        for (ItemData item : data.module) {
-                            item.category = "modules"; // Normalisiere zu englisch
-                        }
+                        attachSourceJson(rootJson, "module", data.module, "modules");
                         allItems.addAll(data.module);
                     }
                     
@@ -341,9 +339,7 @@ public class ItemViewerUtility {
                         allItems.addAll(data.abilities);
                     }
                     if (data.modules != null && !data.modules.isEmpty()) {
-                        for (ItemData item : data.modules) {
-                            item.category = "modules";
-                        }
+                        attachSourceJson(rootJson, "modules", data.modules, "modules");
                         allItems.addAll(data.modules);
                     }
                     if (data.runes != null && !data.runes.isEmpty()) {
@@ -353,9 +349,7 @@ public class ItemViewerUtility {
                         allItems.addAll(data.runes);
                     }
                     if (data.power_crystals != null && !data.power_crystals.isEmpty()) {
-                        for (ItemData item : data.power_crystals) {
-                            item.category = "power_crystals";
-                        }
+                        attachSourceJson(rootJson, "power_crystals", data.power_crystals, "power_crystals");
                         allItems.addAll(data.power_crystals);
                     }
                     if (data.power_crystal_slots != null && !data.power_crystal_slots.isEmpty()) {
@@ -799,6 +793,37 @@ public class ItemViewerUtility {
      * @param itemName Name des Items
      * @return ItemData oder null wenn nicht gefunden
      */
+    /** Rechtsklick-Favorit: Baupläne, Module und Machtkristalle. */
+    public static boolean isFavoritable(ItemData item) {
+        if (item == null || item.name == null || item.name.isEmpty()) {
+            return false;
+        }
+        if (item.info != null && Boolean.TRUE.equals(item.info.blueprint)) {
+            return true;
+        }
+        String category = item.category;
+        return "blueprints".equals(category)
+                || "modules".equals(category)
+                || "power_crystals".equals(category);
+    }
+
+    private static void attachSourceJson(JsonObject root, String key, java.util.List<ItemData> items, String category) {
+        if (root != null && root.has(key) && root.get(key).isJsonArray()) {
+            var array = root.getAsJsonArray(key);
+            for (int i = 0; i < items.size(); i++) {
+                ItemData item = items.get(i);
+                item.category = category;
+                if (i < array.size() && array.get(i).isJsonObject()) {
+                    item.jsonObject = array.get(i).getAsJsonObject();
+                }
+            }
+            return;
+        }
+        for (ItemData item : items) {
+            item.category = category;
+        }
+    }
+
     public static ItemData findItemByName(String itemName) {
         ensureItemsLoaded();
         if (itemName == null || itemName.isEmpty()) {
@@ -1400,6 +1425,9 @@ public class ItemViewerUtility {
         if (itemData == null) {
             itemData = findItemByName(itemName);
         }
+        if (itemData == null) {
+            itemData = findItemByNameFuzzy(itemName);
+        }
         
         if (itemData != null && net.felix.utilities.Other.Clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
             return net.felix.utilities.Other.Clipboard.ClipboardUtility.addBlueprint(itemData);
@@ -1678,46 +1706,7 @@ public class ItemViewerUtility {
      */
     private static String extractItemNameFromTooltip(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen, Minecraft client, net.minecraft.world.item.ItemStack stack) {
         try {
-            // Hole Tooltip über Reflection (ähnlich wie ClipboardPaperShredsCollector)
-            java.util.List<net.minecraft.network.chat.Component> tooltip = null;
-            
-            try {
-                java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
-                for (java.lang.reflect.Method method : methods) {
-                    if (!"getTooltipFromItem".equals(method.getName())) {
-                        continue;
-                    }
-                    
-                    Class<?>[] params = method.getParameterTypes();
-                    method.setAccessible(true);
-                    
-                    try {
-                        // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
-                        if (params.length == 2 &&
-                            net.minecraft.client.Minecraft.class.isAssignableFrom(params[0]) &&
-                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[1])) {
-                            @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, client, stack);
-                            tooltip = result;
-                            break;
-                        }
-                        
-                        // Signatur: getTooltipFromItem(ItemStack)
-                        if (params.length == 1 &&
-                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[0])) {
-                            @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, stack);
-                            tooltip = result;
-                            break;
-                        }
-                    } catch (Exception e) {
-                        // Versuche nächste Signatur
-                        continue;
-                    }
-                }
-            } catch (Exception e) {
-                // Ignoriere Fehler
-            }
+            java.util.List<net.minecraft.network.chat.Component> tooltip = tooltipFromScreen(screen, client, stack);
             
             if (tooltip != null && !tooltip.isEmpty()) {
                 // Nimm erste Zeile
@@ -1739,56 +1728,48 @@ public class ItemViewerUtility {
         return null;
     }
     
+    private static java.util.List<net.minecraft.network.chat.Component> tooltipFromScreen(
+            net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen,
+            Minecraft client,
+            net.minecraft.world.item.ItemStack stack) {
+        Class<?> clazz = screen.getClass();
+        while (clazz != null) {
+            for (java.lang.reflect.Method method : clazz.getDeclaredMethods()) {
+                if (!"getTooltipFromItem".equals(method.getName())) {
+                    continue;
+                }
+                Class<?>[] params = method.getParameterTypes();
+                method.setAccessible(true);
+                try {
+                    if (params.length == 2
+                            && net.minecraft.client.Minecraft.class.isAssignableFrom(params[0])
+                            && net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[1])) {
+                        @SuppressWarnings("unchecked")
+                        java.util.List<net.minecraft.network.chat.Component> result =
+                                (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, client, stack);
+                        return result;
+                    }
+                    if (params.length == 1 && net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[0])) {
+                        @SuppressWarnings("unchecked")
+                        java.util.List<net.minecraft.network.chat.Component> result =
+                                (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, stack);
+                        return result;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return null;
+    }
+
     /**
-     * Extrahiert "found at" (Floor) Information aus Tooltip
-     * Sucht nach purple/magenta Zeilen, die Floor-Informationen enthalten
-     * @param screen Der Screen
-     * @param client Der Minecraft Client
-     * @param stack Der ItemStack
-     * @return Floor-Information oder null wenn nicht gefunden
+     * Extrahiert "found at" (Floor) Information aus Tooltip.
+     * Sucht nach purple/magenta Zeilen, die Floor-Informationen enthalten.
      */
     private static String extractFoundAtFromTooltip(net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen, Minecraft client, net.minecraft.world.item.ItemStack stack) {
         try {
-            // Hole Tooltip über Reflection (ähnlich wie extractItemNameFromTooltip)
-            java.util.List<net.minecraft.network.chat.Component> tooltip = null;
-            
-            try {
-                java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
-                for (java.lang.reflect.Method method : methods) {
-                    if (!"getTooltipFromItem".equals(method.getName())) {
-                        continue;
-                    }
-                    
-                    Class<?>[] params = method.getParameterTypes();
-                    method.setAccessible(true);
-                    
-                    try {
-                        // Signatur: getTooltipFromItem(MinecraftClient, ItemStack)
-                        if (params.length == 2 &&
-                            net.minecraft.client.Minecraft.class.isAssignableFrom(params[0]) &&
-                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[1])) {
-                            @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, client, stack);
-                            tooltip = result;
-                            break;
-                        }
-                        
-                        // Signatur: getTooltipFromItem(ItemStack)
-                        if (params.length == 1 &&
-                            net.minecraft.world.item.ItemStack.class.isAssignableFrom(params[0])) {
-                            @SuppressWarnings("unchecked")
-                            java.util.List<net.minecraft.network.chat.Component> result = (java.util.List<net.minecraft.network.chat.Component>) method.invoke(screen, stack);
-                            tooltip = result;
-                            break;
-                        }
-                    } catch (Exception e) {
-                        // Versuche nächste Signatur
-                        continue;
-                    }
-                }
-            } catch (Exception e) {
-                // Ignoriere Fehler
-            }
+            java.util.List<net.minecraft.network.chat.Component> tooltip = tooltipFromScreen(screen, client, stack);
             
             if (tooltip != null && !tooltip.isEmpty()) {
                 // Durchsuche alle Tooltip-Zeilen nach Floor-Information
@@ -1825,7 +1806,7 @@ public class ItemViewerUtility {
      * Bereinigt einen Item-Namen für die Suche in items.json
      * Entfernt Formatierungszeichen, chinesische Zeichen und "- [Bauplan]" Suffixe
      */
-    private static String cleanItemNameForLookup(String itemName) {
+    static String cleanItemNameForLookup(String itemName) {
         if (itemName == null || itemName.isEmpty()) {
             return itemName;
         }
@@ -1833,17 +1814,15 @@ public class ItemViewerUtility {
         // 1. Entferne alle Minecraft-Formatierungscodes (§[0-9a-fk-or])
         itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
 
-        // 1b. Schmiedegrad / Suffix in eckigen Klammern: "Name [Drachengeschmiedet]" → "Name"
+        // 2. "Name - [Bauplan] [e1]" vor dem Klammer-Schnitt, sonst bleibt "Name -" übrig
+        itemName = itemName.replaceAll("\\s*-\\s*\\[.*$", "");
+
+        // 3. Schmiedegrad / Suffix in eckigen Klammern: "Name [Drachengeschmiedet]" → "Name"
         int bracketIdx = itemName.indexOf('[');
         if (bracketIdx >= 0) {
             itemName = itemName.substring(0, bracketIdx).trim();
         }
-        
-        // 2. Entferne " - [Bauplan]" oder ähnliche Suffixe komplett (inkl. Bindestrich)
-        // Pattern: "name - [Bauplan]" -> "name"
-        // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
-        // Entferne zuerst alles ab " - [" bis zum Ende (inkl. mehrerer eckiger Klammern)
-        itemName = itemName.replaceAll("\\s*-\\s*\\[.*$", "");
+        itemName = itemName.replaceAll("\\s+-\\s*$", "");
         
         // 3. Entferne chinesische Formatierungszeichen (㔚㔘 etc.) am Anfang und Ende
         // Diese Zeichen sind typischerweise am Anfang und Ende des Namens
@@ -5110,10 +5089,7 @@ public class ItemViewerUtility {
             if (mouseX >= gridX && mouseX < gridX + gridWidth &&
                 mouseY >= gridY && mouseY < gridY + gridHeight) {
                 
-                // Prüfe ob es ein Blueprint ist
-                if (hoveredItemForClick.info != null && 
-                    Boolean.TRUE.equals(hoveredItemForClick.info.blueprint) &&
-                    hoveredItemForClick.name != null && !hoveredItemForClick.name.isEmpty()) {
+                if (isFavoritable(hoveredItemForClick)) {
                     
                     // Toggle Favoriten-Status
                     boolean isFavorite = FavoriteBlueprintsManager.isFavorite(hoveredItemForClick.name);
@@ -5415,10 +5391,7 @@ public class ItemViewerUtility {
         if (favoritesMode) {
             Set<String> favoriteNames = FavoriteBlueprintsManager.getFavoriteNames();
             itemsToFilter = allItems.stream()
-                .filter(item -> item.info != null &&
-                               Boolean.TRUE.equals(item.info.blueprint) &&
-                               item.name != null &&
-                               favoriteNames.contains(item.name))
+                .filter(item -> isFavoritable(item) && favoriteNames.contains(item.name))
                 .collect(Collectors.toList());
         }
 

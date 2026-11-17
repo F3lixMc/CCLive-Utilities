@@ -110,7 +110,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
         
         // Rahmen
-        context.outline(boxX, boxY, boxWidth, boxHeight, 0xFFFFFFFF);
+        context.outline(boxX, boxY, boxWidth, boxHeight, 0xFF55FFFF);
         
         // Titel
         context.text(font, "NPC Alerts Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);

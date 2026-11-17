@@ -178,5 +178,9 @@
   "ui_wardrobe_full": {
     "group": "wardrobe",
     "name": "wardrobe_ui_background"
+  },
+  "ui_settings_notifications_background": {
+    "group": "cactus_clicker_settings",
+    "name": "ui_notifications"
   }
 }

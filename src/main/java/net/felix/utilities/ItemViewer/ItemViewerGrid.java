@@ -393,6 +393,9 @@ public class ItemViewerGrid {
                                 .setStyle(Style.EMPTY.withColor(0xFF00AAAA).withItalic(false))); // dark_aqua
                         }
                         
+                        // Fabriklevel wie bei den Modul-Taschen, ohne Collection
+                        appendFoundAtLocationLines(tooltipLines, hoveredItem, false);
+
                         // Kosten für Power Crystal Slots (nach first_upgrade)
                         appendPriceSection(tooltipLines, hoveredItem, true, includeCosts);
                         
@@ -410,6 +413,10 @@ public class ItemViewerGrid {
                                 .setStyle(Style.EMPTY.withColor(0xFF55FF55).withItalic(false))); // green
                         }
                         
+                        if (includeInteractionHints) {
+                            appendInteractionHints(tooltipLines, hoveredItem, info);
+                        }
+
                         // Leere Zeilen am Ende
                         tooltipLines.add(Component.empty());
                         tooltipLines.add(Component.empty());
@@ -663,7 +670,7 @@ public class ItemViewerGrid {
     }
 
     private void appendInteractionHints(java.util.List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info) {
-        if (info.blueprint != null && info.blueprint) {
+        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isFavoritable(hoveredItem)) {
             boolean isFavorite = net.felix.utilities.ItemViewer.FavoriteBlueprintsManager.isFavorite(hoveredItem.name);
             tooltipLines.add(Component.empty());
             if (isFavorite) {
@@ -1194,6 +1201,7 @@ public class ItemViewerGrid {
                 ? buildForgingConditionText(resolveForgingCondition(hoveredItem)) : null;
         boolean hasLocation = hoveredItem.foundAt != null && !hoveredItem.foundAt.isEmpty();
         String locationLine = null;
+        String factoryLevelLine = null;
 
         if (hasLocation) {
             LocationData firstLocation = hoveredItem.foundAt.get(0);
@@ -1202,9 +1210,12 @@ public class ItemViewerGrid {
             } else if (firstLocation.collection != null && !firstLocation.collection.isEmpty()) {
                 locationLine = firstLocation.collection;
             }
+            if (firstLocation.factory_level != null && !firstLocation.factory_level.isBlank()) {
+                factoryLevelLine = firstLocation.factory_level.trim();
+            }
         }
 
-        if (itemScoreText == null && forgingConditionText == null && locationLine == null) {
+        if (itemScoreText == null && forgingConditionText == null && locationLine == null && factoryLevelLine == null) {
             return;
         }
 
@@ -1214,6 +1225,10 @@ public class ItemViewerGrid {
         }
         if (forgingConditionText != null) {
             tooltipLines.add(forgingConditionText);
+        }
+        if (factoryLevelLine != null) {
+            tooltipLines.add(Component.literal(factoryLevelLine)
+                .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false)));
         }
         if (locationLine != null) {
             tooltipLines.add(Component.literal(locationLine)

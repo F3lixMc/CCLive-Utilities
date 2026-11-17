@@ -976,6 +976,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean clipboardShowBlueprintShopCosts = false; // Zeige Blueprint Shop Kosten an
+
+    @SerialEntry
+    public boolean clipboardShowTargetTime = false; // Gelbe Restzeit an offenen normalen Kosten
+
+    @SerialEntry
+    public int clipboardMaxCostLines = 0; // 0 = alle Kostenzeilen, sonst positive Obergrenze inkl. Shop
     
     @SerialEntry
     public int clipboardCurrentPage = 1; // Aktuelle Seite im Clipboard (1-basiert)
@@ -2325,55 +2331,6 @@ public class CCLiveUtilitiesConfig {
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Aincraft"))
                         .tooltip(Component.literal("Einstellungen für Aincraft-bezogene Utilities"))
-                        .group(OptionGroup.createBuilder()
-                                .name(Component.literal("Material Tracker"))
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Component.literal("Material Tracker aktivieren"))
-                                        .description(OptionDescription.of(Component.literal("Material Tracker aktivieren oder deaktivieren")))
-                                        .binding(true, () -> HANDLER.instance().materialTrackerEnabled && HANDLER.instance().showMaterialTracker, newVal -> {
-                                            HANDLER.instance().materialTrackerEnabled = newVal;
-                                            HANDLER.instance().showMaterialTracker = newVal;
-                                        })
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<OverlayType>createBuilder()
-                                        .name(Component.literal("Overlay-Typ"))
-                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für den Material Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
-                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().materialTrackerOverlayType, newVal -> HANDLER.instance().materialTrackerOverlayType = newVal)
-                                        .controller(opt -> EnumControllerBuilder.create(opt)
-                                            .enumClass(OverlayType.class)
-                                            .formatValue(v -> switch (v) {
-                                                case CUSTOM -> Component.literal("Bild-Overlay");
-                                                case BLACK -> Component.literal("Schwarzes Overlay");
-                                                case NONE -> Component.literal("Kein Hintergrund");
-                                            }))
-                                        .build())
-                                .option(Option.<Boolean>createBuilder()
-                                        .name(Component.literal("Materialien/min aktivieren"))
-                                        .description(OptionDescription.of(Component.literal(
-                                                "Materialien pro Minute berechnen und anzeigen (Overlay oder Scoreboard)")))
-                                        .binding(false,
-                                                () -> HANDLER.instance().materialTrackerRateEnabled,
-                                                newVal -> HANDLER.instance().materialTrackerRateEnabled = newVal)
-                                        .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .option(Option.<MaterialTrackerDisplayMode>createBuilder()
-                                        .name(Component.literal("Materialien/min-Anzeige Position"))
-                                        .description(OptionDescription.of(Component.literal(
-                                                "Wo Materialien pro Minute angezeigt werden:\n"
-                                                        + "• Overlay – hinter der Anzahl im Material Tracker\n"
-                                                        + "• Scoreboard – hinter der Anzahl im Scoreboard")))
-                                        .binding(MaterialTrackerDisplayMode.OVERLAY,
-                                                () -> HANDLER.instance().materialTrackerDisplayMode,
-                                                newVal -> HANDLER.instance().materialTrackerDisplayMode = newVal)
-                                        .controller(opt -> EnumControllerBuilder.create(opt)
-                                                .enumClass(MaterialTrackerDisplayMode.class)
-                                                .formatValue(mode -> switch (mode) {
-                                                    case OVERLAY -> Component.literal("Overlay");
-                                                    case SCOREBOARD -> Component.literal("Scoreboard");
-                                                }))
-                                        .build())
-                                .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Kill Tracker"))
                                 .option(Option.<Boolean>createBuilder()

@@ -24,8 +24,13 @@ public final class MaterialRateUtility {
     private static final Pattern SCOREBOARD_MATERIAL_COUNT =
             Pattern.compile("➥\\s*(\\d+)");
     private static final int RATE_SUFFIX_COLOR = 0xAAAAAA;
+    private static final int SCOREBOARD_RATE_SUFFIX_COLOR = 0x555555;
     /** Rate wird nur einmal pro Sekunde neu berechnet. */
     private static final long UPDATE_INTERVAL_MS = 1000L;
+    /** Clipboard-Zielzeit erst nach echtem Zuwachs über diese Spanne. */
+    static final long MIN_ELIGIBLE_MS = 8000L;
+    /** Clipboard-Zielzeit blendet aus, wenn so lange kein weiterer Zuwachs kam. */
+    static final long STALL_MS = 30000L;
 
     private static final Map<String, MaterialSession> sessions = new HashMap<>();
     private static long lastUpdateMs = 0L;
@@ -60,22 +65,27 @@ public final class MaterialRateUtility {
                     nameColorRgb = extractLegacyColorRgb(original.getString());
                 }
             }
-            String sessionKey = normalizeMaterialName(cleanName);
-
-            MaterialSession session = sessions.get(sessionKey);
-            if (session == null) {
-                session = new MaterialSession(cleanName, nameColorRgb, count, now);
-                sessions.put(sessionKey, session);
-                session.updateRate(now);
-            } else if (count < session.initialCount) {
-                session.reset(count, now, nameColorRgb);
-                session.updateRate(now);
-            } else {
-                session.currentCount = count;
-                session.nameColorRgb = nameColorRgb;
-                session.updateRate(now);
-            }
+            observeCount(cleanName, count, now, nameColorRgb);
         }
+    }
+
+    static void observeCount(String cleanName, int count, long now) {
+        observeCount(cleanName, count, now, null);
+    }
+
+    private static void observeCount(String cleanName, int count, long now, Integer nameColorRgb) {
+        if (cleanName == null || cleanName.isEmpty()) {
+            return;
+        }
+        String sessionKey = normalizeMaterialName(cleanName);
+        MaterialSession session = sessions.get(sessionKey);
+        if (session == null) {
+            session = new MaterialSession(cleanName, nameColorRgb, count, now);
+            sessions.put(sessionKey, session);
+            session.updateRate(now);
+            return;
+        }
+        session.applyCount(count, now, nameColorRgb);
     }
 
     public static Component appendRateForMaterial(String materialName, Component baseText) {
@@ -85,7 +95,7 @@ public final class MaterialRateUtility {
 
         MaterialSession session = findSessionByNormalizedName(materialName);
         double rate = session != null ? session.perMinute : 0.0;
-        return appendRateSuffix(baseText, rate);
+        return appendRateSuffix(baseText, " -> " + formatRate(rate), RATE_SUFFIX_COLOR);
     }
 
     public static Component appendRateToScoreboardLine(Component lineText, int sortedMaterialIndex) {
@@ -95,7 +105,7 @@ public final class MaterialRateUtility {
 
         MaterialSession session = findSessionForScoreboardLine(lineText, sortedMaterialIndex);
         double rate = session != null ? session.perMinute : 0.0;
-        return appendRateSuffix(lineText, rate);
+        return appendRateSuffix(lineText, " (" + formatRate(rate) + ")", SCOREBOARD_RATE_SUFFIX_COLOR);
     }
 
     public static boolean isScoreboardMaterialLine(String cleanLine) {
@@ -124,14 +134,40 @@ public final class MaterialRateUtility {
                 .toPlainString() + "/min";
     }
 
-    private static MutableComponent appendRateSuffix(Component baseText, double rate) {
+    private static MutableComponent appendRateSuffix(Component baseText, String suffix, int color) {
         MutableComponent result = baseText.copy();
-        result.append(Component.literal(" -> " + formatRate(rate))
-                .setStyle(Style.EMPTY.withColor(RATE_SUFFIX_COLOR)));
+        result.append(Component.literal(suffix)
+                .setStyle(Style.EMPTY.withColor(color)));
         return result;
     }
 
     public static double getRateForMaterial(String materialName) {
+        return getRateForMaterial(materialName, System.currentTimeMillis());
+    }
+
+    static double getRateForMaterial(String materialName, long now) {
+        MaterialSession session = findSessionByNormalizedName(materialName);
+        if (session == null) {
+            return 0.0;
+        }
+        return eligibleRate(session.perMinute, session.gainStartMs, session.lastGainMs, now);
+    }
+
+    static double eligibleRate(double perMinute, long gainStartMs, long lastGainMs, long now) {
+        if (perMinute <= 0.0 || gainStartMs <= 0L || lastGainMs <= 0L) {
+            return 0.0;
+        }
+        if (now - gainStartMs < MIN_ELIGIBLE_MS) {
+            return 0.0;
+        }
+        if (now - lastGainMs > STALL_MS) {
+            return 0.0;
+        }
+        return perMinute;
+    }
+
+    /** Sofortige Rate für Scoreboard und Materialtracker, ohne Mindestzeit und Stillstand. */
+    static double immediateRate(String materialName) {
         MaterialSession session = findSessionByNormalizedName(materialName);
         return session != null ? session.perMinute : 0.0;
     }
@@ -323,6 +359,8 @@ public final class MaterialRateUtility {
         int initialCount;
         int currentCount;
         long sessionStartMs;
+        long gainStartMs;
+        long lastGainMs;
         double perMinute;
 
         MaterialSession(String cleanName, Integer nameColorRgb, int initialCount, long sessionStartMs) {
@@ -334,10 +372,30 @@ public final class MaterialRateUtility {
             this.perMinute = 0.0;
         }
 
+        void applyCount(int count, long now, Integer nameColorRgb) {
+            if (count < initialCount) {
+                reset(count, now, nameColorRgb);
+                updateRate(now);
+                return;
+            }
+            boolean increased = count > currentCount;
+            currentCount = count;
+            this.nameColorRgb = nameColorRgb;
+            if (increased) {
+                if (gainStartMs <= 0L) {
+                    gainStartMs = now;
+                }
+                lastGainMs = now;
+            }
+            updateRate(now);
+        }
+
         void reset(int newInitial, long now, Integer nameColorRgb) {
             this.initialCount = newInitial;
             this.currentCount = newInitial;
             this.sessionStartMs = now;
+            this.gainStartMs = 0L;
+            this.lastGainMs = 0L;
             this.nameColorRgb = nameColorRgb;
             this.perMinute = 0.0;
         }
