@@ -20,7 +20,6 @@ import net.minecraft.network.chat.TextColor;
 public final class ChatNameColors {
     public static final int WHITE = 0xFFFFFF;
     private static final int MAX_NAME_LEN = 16;
-    private static final char ICON_MARKER = 'ѳ';
 
     private ChatNameColors() {
     }

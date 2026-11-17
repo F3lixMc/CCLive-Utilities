@@ -413,7 +413,6 @@ public class PlayerHoverStatsUtility {
     }
     
     // Glyphe als Marker für das Icon (Cyrillic letter fita - ѳ)
-    private static final char ICON_MARKER = 'ѳ';
     // Font-Identifier für die Custom-Font
     private static final Identifier CUSTOM_FONT = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
     

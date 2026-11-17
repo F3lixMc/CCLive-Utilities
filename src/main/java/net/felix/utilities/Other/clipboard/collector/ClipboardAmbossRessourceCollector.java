@@ -30,13 +30,14 @@ public class ClipboardAmbossRessourceCollector {
     
     // Pattern für die Anzahl-Zeile im Tooltip: "Anzahl" + Leerzeichen + Zahl (z.B. "Anzahl 10000", "Anzahl 1,000")
     // Format: "Anzahl" (gold) + " " + Zahl (white)
-    // Matcht: eine oder mehrere Ziffern, gefolgt von optionalen Komma-Gruppen (jeweils 3 Ziffern)
+    // Matcht: eine oder mehrere Ziffern, gefolgt von optionalen Tausendergruppen (jeweils 3 Ziffern).
+    // Wichtig: \d+ statt \d{1,3}|\d+, sonst wuerde "1000000" nach den ersten 3 Ziffern abgeschnitten.
     private static final Pattern AMOUNT_PATTERN = Pattern.compile(
-            "Anzahl\\s+(\\d{1,3}(?:[.,]\\d{3})*|\\d+)", Pattern.CASE_INSENSITIVE);
+            "Anzahl\\s+(\\d+(?:[.,]\\d{3})*)", Pattern.CASE_INSENSITIVE);
     private static final Pattern ESSENCE_TIER_PATTERN = Pattern.compile(
-            "Tier\\s+(\\d+)\\s*-\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)", Pattern.CASE_INSENSITIVE);
+            "Tier\\s+(\\d+)\\s*-\\s*(\\d+(?:[.,]\\d{3})*)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SCHMIED_PATTERN =
-        Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s*/\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s+(.+)", Pattern.CASE_INSENSITIVE);
+        Pattern.compile("(\\d+(?:[.,]\\d{3})*)\\s*/\\s*(\\d+(?:[.,]\\d{3})*)\\s+(.+)", Pattern.CASE_INSENSITIVE);
     
     // Cache für den letzten Screen-Titel, um zu erkennen wenn sich das Inventar ändert
     private static String lastScreenTitle = "";
