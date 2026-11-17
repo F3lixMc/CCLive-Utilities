@@ -13,6 +13,7 @@ import net.felix.utilities.Aincraft.blueprints.viewer.BlueprintViewerDraggableOv
 import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.overlay.StatuesDraggableOverlay;
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDraggableOverlay;
+import net.felix.utilities.Aincraft.kills.KillTrackerColors;
 import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDraggableOverlay;
 import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
@@ -83,6 +84,8 @@ public class OverlayEditorScreen extends Screen {
     private static final int DETAIL_BORDER_COLOR = 0xFF55FFFF;
     private boolean clipboardSettingsOpen = false;
     private boolean materialTrackerSettingsOpen = false;
+    private boolean killTrackerSettingsOpen = false;
+    private DraggableOverlay openTrackerDetail = null;
     private boolean clipboardMaxLinesFocused = false;
     private final NumericFieldInput.State clipboardMaxLinesField = new NumericFieldInput.State();
     
@@ -552,6 +555,12 @@ public class OverlayEditorScreen extends Screen {
         if (materialTrackerSettingsOpen) {
             renderMaterialTrackerSettings(context, mouseX, mouseY);
         }
+        if (killTrackerSettingsOpen) {
+            renderKillTrackerSettings(context, mouseX, mouseY);
+        }
+        if (openTrackerDetail != null) {
+            renderTrackerDetail(context, mouseX, mouseY);
+        }
         
         // Render buttons
         super.extractRenderState(context, mouseX, mouseY, delta);
@@ -676,6 +685,12 @@ public class OverlayEditorScreen extends Screen {
             return true;
         }
         if (handleMaterialTrackerSettingsClick(mouseX, mouseY, button)) {
+            return true;
+        }
+        if (handleKillTrackerSettingsClick(mouseX, mouseY, button)) {
+            return true;
+        }
+        if (handleTrackerDetailClick(mouseX, mouseY, button)) {
             return true;
         }
         
@@ -1087,8 +1102,7 @@ public class OverlayEditorScreen extends Screen {
             context.text(font, overlayName, textX, checkboxY + 1, isEnabled ? 0xFFFFFFFF : 0xFF808080, false);
             
             // Settings-Button rechts in der Zeile, wie npcAlerts
-            if (entry.overlay instanceof ClipboardDraggableOverlay
-                    || entry.overlay instanceof MaterialTrackerDraggableOverlay) {
+            if (hasDetailSettings(entry.overlay)) {
                 int gearSize = 12;
                 int gearX = boxX + boxWidth - gearSize - 10;
                 int gearY = checkboxY - 1;
@@ -1224,8 +1238,7 @@ public class OverlayEditorScreen extends Screen {
             
             // Prüfe ob Klick auf Settings-Button für Clipboard
             boolean clickedOnSettings = false;
-            if (entry.overlay instanceof ClipboardDraggableOverlay
-                    || entry.overlay instanceof MaterialTrackerDraggableOverlay) {
+            if (hasDetailSettings(entry.overlay)) {
                 int gearSize = 12;
                 int gearX = boxX + boxWidth - gearSize - 10;
                 int gearY = checkboxY - 1;
@@ -1238,12 +1251,30 @@ public class OverlayEditorScreen extends Screen {
                     materialTrackerSettingsOpen = !materialTrackerSettingsOpen;
                     if (materialTrackerSettingsOpen) {
                         clipboardSettingsOpen = false;
+                        killTrackerSettingsOpen = false;
+                        openTrackerDetail = null;
                     }
-                } else {
+                } else if (entry.overlay instanceof KillsUtilityDraggableOverlay) {
+                    killTrackerSettingsOpen = !killTrackerSettingsOpen;
+                    if (killTrackerSettingsOpen) {
+                        clipboardSettingsOpen = false;
+                        materialTrackerSettingsOpen = false;
+                        openTrackerDetail = null;
+                    }
+                } else if (entry.overlay instanceof ClipboardDraggableOverlay) {
                     clipboardSettingsOpen = !clipboardSettingsOpen;
                     if (clipboardSettingsOpen) {
                         materialTrackerSettingsOpen = false;
+                        killTrackerSettingsOpen = false;
+                        openTrackerDetail = null;
                     }
+                } else if (openTrackerDetail == entry.overlay) {
+                    openTrackerDetail = null;
+                } else {
+                    openTrackerDetail = entry.overlay;
+                    clipboardSettingsOpen = false;
+                    materialTrackerSettingsOpen = false;
+                    killTrackerSettingsOpen = false;
                 }
                 return true;
             }
@@ -1768,12 +1799,7 @@ public class OverlayEditorScreen extends Screen {
     }
 
     private float materialTrackerSettingsCenterY(float scale) {
-        float scaledHeight = materialTrackerSettingsBoxHeight() * scale;
-        float top = height - CLIPBOARD_SETTINGS_BOTTOM_MARGIN - scaledHeight;
-        if (top < CLIPBOARD_SETTINGS_TOP_MARGIN) {
-            top = CLIPBOARD_SETTINGS_TOP_MARGIN;
-        }
-        return top + scaledHeight / 2.0f;
+        return height / 2.0f;
     }
 
     private int materialTrackerSettingsMouseX(double mouseX, float scale) {
@@ -1902,6 +1928,248 @@ public class OverlayEditorScreen extends Screen {
                     : MaterialTrackerDisplayMode.SCOREBOARD;
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
+        }
+        return true;
+    }
+
+    private static boolean hasDetailSettings(DraggableOverlay overlay) {
+        return overlay instanceof ClipboardDraggableOverlay
+                || overlay instanceof MaterialTrackerDraggableOverlay
+                || overlay instanceof KillsUtilityDraggableOverlay
+                || TrackerDetailSettings.supports(overlay);
+    }
+
+    private int killTrackerSettingsBoxHeight() {
+        return 36 + CLIPBOARD_BUTTON_SPACING * 3 + CLIPBOARD_BUTTON_HEIGHT + 12;
+    }
+
+    private float killTrackerSettingsScale() {
+        float fitWidth = Math.max(1, width - 24) / (float) CLIPBOARD_SETTINGS_WIDTH;
+        float fitHeight = Math.max(1, height - CLIPBOARD_SETTINGS_TOP_MARGIN - CLIPBOARD_SETTINGS_BOTTOM_MARGIN)
+                / (float) killTrackerSettingsBoxHeight();
+        return Math.min(0.85f, Math.min(fitWidth, fitHeight));
+    }
+
+    private int killTrackerSettingsMouseX(double mouseX, float scale) {
+        return (int) Math.floor((mouseX - width / 2.0) / scale + width / 2.0);
+    }
+
+    private int killTrackerSettingsMouseY(double mouseY, float scale) {
+        return (int) Math.floor((mouseY - height / 2.0) / scale + height / 2.0);
+    }
+
+    private void renderKillTrackerSettings(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        float scale = killTrackerSettingsScale();
+        float offsetX = width / 2.0f * (1.0f - scale);
+        float offsetY = height / 2.0f * (1.0f - scale);
+        int localMouseX = killTrackerSettingsMouseX(mouseX, scale);
+        int localMouseY = killTrackerSettingsMouseY(mouseY, scale);
+        context.pose().pushMatrix();
+        try {
+            context.pose().translate(offsetX, offsetY);
+            context.pose().scale(scale, scale);
+            renderKillTrackerSettingsBox(context, localMouseX, localMouseY);
+        } finally {
+            context.pose().popMatrix();
+        }
+    }
+
+    private void renderKillTrackerSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
+        int boxHeight = killTrackerSettingsBoxHeight();
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
+        context.outline(boxX, boxY, boxWidth, boxHeight, DETAIL_BORDER_COLOR);
+        context.text(font, "Kill Tracker", boxX + 10, boxY + 10, 0xFFFFFF00, false);
+
+        int closeSize = 12;
+        int closeX = boxX + boxWidth - closeSize - 5;
+        int closeY = boxY + 5;
+        boolean closeHovered = mouseX >= closeX && mouseX <= closeX + closeSize
+                && mouseY >= closeY && mouseY <= closeY + closeSize;
+        drawSettingsCloseCross(context, closeX, closeY, closeSize, closeHovered ? 0xFFFF6666 : 0xFFFF0000);
+
+        int buttonWidth = boxWidth - 20;
+        int button1Y = boxY + 36;
+        drawDetailButton(context, mouseX, mouseY, boxX + 10, button1Y, buttonWidth,
+                "Hintergrund: " + (config.killsUtilityShowBackground ? "An" : "Aus"), true);
+        int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
+        drawDetailButton(context, mouseX, mouseY, boxX + 10, button2Y, buttonWidth,
+                "Benötigte Kills: " + (config.killsUtilityShowRequiredKills ? "An" : "Aus"), true);
+        int button3Y = button2Y + CLIPBOARD_BUTTON_SPACING;
+        drawDetailButton(context, mouseX, mouseY, boxX + 10, button3Y, buttonWidth,
+                "Nächste Ebene: " + (config.killsUtilityShowNextLevel ? "An" : "Aus"), true);
+        int button4Y = button3Y + CLIPBOARD_BUTTON_SPACING;
+        drawDetailButton(context, mouseX, mouseY, boxX + 10, button4Y, buttonWidth, "Farben", true);
+    }
+
+    private boolean handleKillTrackerSettingsClick(double mouseX, double mouseY, int button) {
+        if (!killTrackerSettingsOpen || button != InputConstants.MOUSE_BUTTON_LEFT) {
+            return false;
+        }
+        float scale = killTrackerSettingsScale();
+        mouseX = killTrackerSettingsMouseX(mouseX, scale);
+        mouseY = killTrackerSettingsMouseY(mouseY, scale);
+        int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
+        int boxHeight = killTrackerSettingsBoxHeight();
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
+            killTrackerSettingsOpen = false;
+            return false;
+        }
+
+        int closeSize = 12;
+        int closeX = boxX + boxWidth - closeSize - 5;
+        int closeY = boxY + 5;
+        if (mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize) {
+            killTrackerSettingsOpen = false;
+            return true;
+        }
+
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        int buttonWidth = boxWidth - 20;
+        int button1Y = boxY + 36;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                && mouseY >= button1Y && mouseY <= button1Y + CLIPBOARD_BUTTON_HEIGHT) {
+            config.killsUtilityShowBackground = !config.killsUtilityShowBackground;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                && mouseY >= button2Y && mouseY <= button2Y + CLIPBOARD_BUTTON_HEIGHT) {
+            config.killsUtilityShowRequiredKills = !config.killsUtilityShowRequiredKills;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        int button3Y = button2Y + CLIPBOARD_BUTTON_SPACING;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                && mouseY >= button3Y && mouseY <= button3Y + CLIPBOARD_BUTTON_HEIGHT) {
+            config.killsUtilityShowNextLevel = !config.killsUtilityShowNextLevel;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        int button4Y = button3Y + CLIPBOARD_BUTTON_SPACING;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                && mouseY >= button4Y && mouseY <= button4Y + CLIPBOARD_BUTTON_HEIGHT) {
+            Minecraft client = Minecraft.getInstance();
+            if (client != null) {
+                client.gui.setScreen(KillTrackerColors.createScreen(this));
+            }
+            return true;
+        }
+        return true;
+    }
+
+    private int trackerDetailBoxHeight() {
+        int count = Math.max(1, TrackerDetailSettings.buttons(openTrackerDetail, this).size());
+        return 36 + CLIPBOARD_BUTTON_SPACING * (count - 1) + CLIPBOARD_BUTTON_HEIGHT + 12;
+    }
+
+    private float trackerDetailScale() {
+        float fitWidth = Math.max(1, width - 24) / (float) CLIPBOARD_SETTINGS_WIDTH;
+        float fitHeight = Math.max(1, height - CLIPBOARD_SETTINGS_TOP_MARGIN - CLIPBOARD_SETTINGS_BOTTOM_MARGIN)
+                / (float) trackerDetailBoxHeight();
+        return Math.min(0.85f, Math.min(fitWidth, fitHeight));
+    }
+
+    private int trackerDetailMouseX(double mouseX, float scale) {
+        return (int) Math.floor((mouseX - width / 2.0) / scale + width / 2.0);
+    }
+
+    private int trackerDetailMouseY(double mouseY, float scale) {
+        return (int) Math.floor((mouseY - height / 2.0) / scale + height / 2.0);
+    }
+
+    private void renderTrackerDetail(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        float scale = trackerDetailScale();
+        float offsetX = width / 2.0f * (1.0f - scale);
+        float offsetY = height / 2.0f * (1.0f - scale);
+        int localMouseX = trackerDetailMouseX(mouseX, scale);
+        int localMouseY = trackerDetailMouseY(mouseY, scale);
+        context.pose().pushMatrix();
+        try {
+            context.pose().translate(offsetX, offsetY);
+            context.pose().scale(scale, scale);
+            renderTrackerDetailBox(context, localMouseX, localMouseY);
+        } finally {
+            context.pose().popMatrix();
+        }
+    }
+
+    private void renderTrackerDetailBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
+        List<TrackerDetailSettings.Button> buttons = TrackerDetailSettings.buttons(openTrackerDetail, this);
+        int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
+        int boxHeight = trackerDetailBoxHeight();
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
+        context.outline(boxX, boxY, boxWidth, boxHeight, DETAIL_BORDER_COLOR);
+        context.text(font, TrackerDetailSettings.title(openTrackerDetail), boxX + 10, boxY + 10, 0xFFFFFF00, false);
+
+        int closeSize = 12;
+        int closeX = boxX + boxWidth - closeSize - 5;
+        int closeY = boxY + 5;
+        boolean closeHovered = mouseX >= closeX && mouseX <= closeX + closeSize
+                && mouseY >= closeY && mouseY <= closeY + closeSize;
+        drawSettingsCloseCross(context, closeX, closeY, closeSize, closeHovered ? 0xFFFF6666 : 0xFFFF0000);
+
+        int buttonWidth = boxWidth - 20;
+        int buttonY = boxY + 36;
+        for (TrackerDetailSettings.Button detailButton : buttons) {
+            drawDetailButton(context, mouseX, mouseY, boxX + 10, buttonY, buttonWidth,
+                    detailButton.label(), detailButton.enabled());
+            buttonY += CLIPBOARD_BUTTON_SPACING;
+        }
+    }
+
+    private boolean handleTrackerDetailClick(double mouseX, double mouseY, int button) {
+        boolean leftClick = button == InputConstants.MOUSE_BUTTON_LEFT;
+        boolean rightClick = button == InputConstants.MOUSE_BUTTON_RIGHT;
+        if (openTrackerDetail == null || (!leftClick && !rightClick)) {
+            return false;
+        }
+        float scale = trackerDetailScale();
+        mouseX = trackerDetailMouseX(mouseX, scale);
+        mouseY = trackerDetailMouseY(mouseY, scale);
+        int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
+        int boxHeight = trackerDetailBoxHeight();
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
+            if (leftClick) {
+                openTrackerDetail = null;
+            }
+            return false;
+        }
+
+        int closeSize = 12;
+        int closeX = boxX + boxWidth - closeSize - 5;
+        int closeY = boxY + 5;
+        if (leftClick && mouseX >= closeX && mouseX <= closeX + closeSize
+                && mouseY >= closeY && mouseY <= closeY + closeSize) {
+            openTrackerDetail = null;
+            return true;
+        }
+
+        List<TrackerDetailSettings.Button> buttons = TrackerDetailSettings.buttons(openTrackerDetail, this);
+        int buttonWidth = boxWidth - 20;
+        int buttonY = boxY + 36;
+        for (TrackerDetailSettings.Button detailButton : buttons) {
+            if (detailButton.enabled()
+                    && mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                    && mouseY >= buttonY && mouseY <= buttonY + CLIPBOARD_BUTTON_HEIGHT) {
+                if (leftClick) {
+                    detailButton.onClick().run();
+                } else if (detailButton.onRightClick() != null) {
+                    detailButton.onRightClick().run();
+                }
+                return true;
+            }
+            buttonY += CLIPBOARD_BUTTON_SPACING;
         }
         return true;
     }

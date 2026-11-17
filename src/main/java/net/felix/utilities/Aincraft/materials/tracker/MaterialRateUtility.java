@@ -23,7 +23,7 @@ public final class MaterialRateUtility {
     private static final Pattern SCOREBOARD_MATERIAL_COUNT =
             Pattern.compile("➥\\s*(\\d+)");
     private static final int RATE_SUFFIX_COLOR = 0xAAAAAA;
-    private static final int SCOREBOARD_RATE_SUFFIX_COLOR = 0x555555;
+    private static final int SCOREBOARD_RATE_SUFFIX_COLOR = 0x55FFFF;
     /** Rate wird nur einmal pro Sekunde neu berechnet. */
     private static final long UPDATE_INTERVAL_MS = 1000L;
     /** Clipboard-Zielzeit erst nach echtem Zuwachs über diese Spanne. */
