@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls;
+import net.felix.utilities.Overall.itemviewer.ui.HelpOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -27,8 +28,8 @@ public abstract class HelpOverlayScreenMixin {
         if ((Object) this instanceof InventoryScreen) {
             return;
         }
-        ItemViewerUtility.renderHelpOverlay(context);
-        ItemViewerUtility.renderFilterOverlay(context);
+        HelpOverlay.renderHelpOverlay(context);
+        FilterOverlayControls.renderFilterOverlay(context);
     }
 }
 

@@ -1,31 +1,30 @@
 package net.felix;
 
-import net.fabricmc.api.ModInitializer;
-import net.felix.utilities.Aincraft.CardsStatuesUtility;
-import net.felix.utilities.Overall.InformationenUtility;
-import net.felix.utilities.Aincraft.BPViewerUtility;
-import net.felix.utilities.Aincraft.KillsUtility;
-import net.felix.utilities.Aincraft.MaterialTrackerUtility;
-import net.felix.utilities.DragOverlay.OverlayEditorUtility;
-import net.felix.utilities.Factory.BossHPUtility;
-import net.felix.utilities.Factory.FactoryLevelTracker;
-import net.felix.utilities.Other.UpdateCheckerUtility;
-import net.felix.utilities.Overall.AnimationBlockerUtility;
-import net.felix.utilities.Overall.KillAnimationUtility;
-import net.felix.utilities.Overall.DamageTrackingUtility;
-import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
-import net.felix.utilities.Town.EquipmentDisplayUtility;
-import net.felix.utilities.Town.KitFilterUtility;
-import net.felix.utilities.Town.ModSounds;
-import net.felix.utilities.Town.SchmiedTrackerUtility;
-import net.felix.leaderboards.LeaderboardManager;
-import net.felix.commands.CCLiveCommands;
-import net.felix.chat.ChatManager;
-import net.felix.profile.ProfileStatsManager;
-import net.felix.profile.PlayerHoverStatsUtility;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import net.fabricmc.api.ModInitializer;
+import net.felix.Community.chat.ChatManager;
+import net.felix.Community.leaderboards.LeaderboardManager;
+import net.felix.Community.profile.PlayerHoverStatsUtility;
+import net.felix.Community.profile.ProfileStatsManager;
+import net.felix.commands.CCLiveCommands;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
+import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsStatuesUtility;
+import net.felix.utilities.Aincraft.information.InformationFeature;
+import net.felix.utilities.Aincraft.kills.DamageTrackingUtility;
+import net.felix.utilities.Aincraft.kills.KillAnimationUtility;
+import net.felix.utilities.Aincraft.kills.KillsUtility;
+import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerUtility;
+import net.felix.utilities.DragOverlay.OverlayEditorUtility;
+import net.felix.utilities.Factory.bosshp.BossHPUtility;
+import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
+import net.felix.utilities.Other.update.UpdateCheckerUtility;
+import net.felix.utilities.Overall.animationblocker.AnimationBlockerUtility;
+import net.felix.utilities.Overall.npcalerts.NpcAlertsFeature;
+import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
+import net.felix.utilities.Town.kits.filter.KitFilterUtility;
+import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
+import net.felix.utilities.Town.sound.ModSounds;
 
 public class CCLiveUtilities implements ModInitializer {
 	public static final String MOD_ID = "cclive-utilities";
@@ -55,13 +54,13 @@ public class CCLiveUtilities implements ModInitializer {
 		ModSounds.initialize();
 
 		// Initialisiere ZeichenUtility zuerst (wird von anderen Utilities benötigt)
-		net.felix.utilities.Overall.ZeichenUtility.initialize();
+		net.felix.utilities.Other.glyphs.ZeichenUtility.initialize();
 
 		// Server-Gate: Features/Uploads nur auf PlayLegend (Dev + Bypass-Spieler ausgenommen)
-		net.felix.utilities.Overall.ServerConnectionGate.initialize();
+		net.felix.utilities.Other.server.ServerConnectionGate.initialize();
 		
 		// Initialisiere JSON-Config-Update-Utility (für automatische Updates vom Server)
-		net.felix.utilities.Overall.JsonConfigUpdateUtility.initialize();
+		net.felix.utilities.Other.config.JsonConfigUpdateUtility.initialize();
 
 		// Initialisiere alle Utility-Klassen
 		EquipmentDisplayUtility.initialize();
@@ -71,29 +70,29 @@ public class CCLiveUtilities implements ModInitializer {
 		FactoryLevelTracker.initialize();
 		CardsStatuesUtility.initialize();
 		KillsUtility.initialize();
-		InformationenUtility.initialize();
+		InformationFeature.initialize();
 		AnimationBlockerUtility.initialize();
 		KillAnimationUtility.initialize();
 		BPViewerUtility.initialize();
-		net.felix.utilities.Aincraft.FishingComponentFoundUtility.initialize();
-		net.felix.utilities.Aincraft.FishTrapFoundUtility.initialize();
+		net.felix.utilities.Farmworld.fishing.found.FishingComponentFoundUtility.initialize();
+		net.felix.utilities.Farmworld.fishing.found.FishTrapFoundUtility.initialize();
 		UpdateCheckerUtility.initialize();
 		OverlayEditorUtility.initialize();
 		KitFilterUtility.initialize();
 		DamageTrackingUtility.initialize();
-		net.felix.utilities.Overall.CoinTrackerUtility.initialize();
-		NpcAlertsUtility.initialize();
-		net.felix.utilities.Other.DebugUtility.initializeItemLogger();
-		net.felix.utilities.Other.Clipboard.ClipboardUtility.initialize();
+		net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility.initialize();
+		NpcAlertsFeature.initialize();
+		net.felix.utilities.Other.debug.DebugUtility.initializeItemLogger();
+		net.felix.utilities.Other.clipboard.ClipboardUtility.initialize();
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
 		
 		// Initialisiere Chat-System
 		try {
 			ChatManager.getInstance().initialize();
-			net.felix.chat.ChatNameColorTracker.getInstance().initialize();
-			net.felix.chat.ItemShareManager.getInstance().initialize();
-			net.felix.chat.BuildShareManager.getInstance().initialize();
+			net.felix.Community.chat.ChatNameColorTracker.getInstance().initialize();
+			net.felix.Community.chat.ItemShareManager.getInstance().initialize();
+			net.felix.Community.chat.BuildShareManager.getInstance().initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}
@@ -114,8 +113,8 @@ public class CCLiveUtilities implements ModInitializer {
 		
 		// DevTools (Allowlist / Fabric-Dev; unabhängig von ServerConnectionGate)
 		try {
-			net.felix.devtools.DevToolsRegistry.initialize();
-			net.felix.devtools.DevToolsHotkeyDispatcher.initialize();
+			net.felix.utilities.Other.devtools.DevToolsRegistry.initialize();
+			net.felix.utilities.Other.devtools.DevToolsHotkeyDispatcher.initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}
@@ -125,8 +124,8 @@ public class CCLiveUtilities implements ModInitializer {
 		
 		// Initialisiere Player Icon System
 		try {
-			net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.initialize();
-			net.felix.utilities.Other.PlayericonUtility.PlayerIconNetworking.initialize();
+			net.felix.Community.playericon.PlayerIconUtility.initialize();
+			net.felix.Community.playericon.PlayerIconNetworking.initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}

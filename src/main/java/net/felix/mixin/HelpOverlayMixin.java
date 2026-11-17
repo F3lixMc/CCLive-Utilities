@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls;
+import net.felix.utilities.Overall.itemviewer.ui.HelpOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,8 +29,8 @@ public abstract class HelpOverlayMixin {
     @Inject(method = "extractRenderState", at = @At(value = "RETURN"))
     private void renderHelpOverlayAtReturn(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Rendere Help-Overlay ganz am Ende, damit es über allem liegt
-        ItemViewerUtility.renderHelpOverlay(context);
-        ItemViewerUtility.renderFilterOverlay(context);
+        HelpOverlay.renderHelpOverlay(context);
+        FilterOverlayControls.renderFilterOverlay(context);
     }
 }
 

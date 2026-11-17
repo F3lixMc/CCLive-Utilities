@@ -1,9 +1,35 @@
 package net.felix.utilities.DragOverlay;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
+import java.util.ArrayList;
+import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Overall.ZeichenUtility;
+import net.felix.Community.buildshare.BuildShareDraggableOverlay;
+import net.felix.Community.leaderboard.LeaderboardDraggableOverlay;
+import net.felix.utilities.Aincraft.blueprints.viewer.BlueprintViewerDraggableOverlay;
+import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsDraggableOverlay;
+import net.felix.utilities.Aincraft.cardsstatues.overlay.StatuesDraggableOverlay;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerDraggableOverlay;
+import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
+import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDraggableOverlay;
+import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
+import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
+import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
+import net.felix.utilities.Factory.mklevel.overlay.MkLevelDraggableOverlay;
+import net.felix.utilities.Farmworld.collections.overlay.CollectionDraggableOverlay;
+import net.felix.utilities.Farmworld.collections.tracker.CollectionTracker;
+import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
+import net.felix.utilities.Farmworld.miningxp.overlay.MiningLumberjackDraggableOverlay;
+import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.aspekte.overlay.ChatAspectOverlayDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.AspectDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
+import net.felix.utilities.Overall.npcalerts.overlay.draggable.StarAspectDraggableOverlay;
+import net.felix.utilities.Town.kits.filter.KitFilterButtonDraggableOverlay;
+import net.felix.utilities.Town.schmied.HideUncraftableButtonDraggableOverlay;
+import net.felix.utilities.Town.schmied.HideWrongClassButtonDraggableOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -12,36 +38,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.felix.utilities.DragOverlay.Aincraft.BlueprintViewerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.CardsDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.ChatAspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.KillsUtilityDraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.MaterialTrackerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.BuildShareDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.CoinTrackerDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.LeaderboardDraggableOverlay;
-import net.felix.utilities.DragOverlay.Overall.DraggableOverlay;
-import net.felix.utilities.DragOverlay.Aincraft.StatuesDraggableOverlay;
-import net.felix.utilities.DragOverlay.Factory.BossHPDraggableOverlay;
-import net.felix.utilities.DragOverlay.Factory.FactoryLevelDraggableOverlay;
-import net.felix.utilities.Factory.FactoryLevelTracker;
-import net.felix.utilities.DragOverlay.Factory.MKLevelDraggableOverlay;
-import net.felix.utilities.DragOverlay.Farmworld.CollectionDraggableOverlay;
-import net.felix.utilities.DragOverlay.Farmworld.MiningLumberjackDraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.HideUncraftableButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.HideWrongClassButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.Schmied.KitFilterButtonDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.AspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.StarAspectOverlayDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsMainDraggableOverlay;
-import net.felix.utilities.DragOverlay.NpcAlerts.NpcAlertsSeparateDraggableOverlay;
-import net.felix.utilities.Overall.InformationenUtility;
 import org.joml.Matrix3x2fStack;
-
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Screen für das Drag-and-Drop-Positionieren von Overlays
@@ -147,7 +144,7 @@ public class OverlayEditorScreen extends Screen {
     
     private void initializeOverlays() {
         // Biom-Erkennung aktualisieren, damit Collection/Mining-Overlays im F6-Menü erscheinen
-        InformationenUtility.refreshFarmzoneScoreboardCache(Minecraft.getInstance());
+        FarmzoneScoreboard.refreshFarmzoneScoreboardCache(Minecraft.getInstance());
 
         // Check if we're in a chat screen
         boolean isInChatScreen = isInChatScreen();
@@ -174,7 +171,7 @@ public class OverlayEditorScreen extends Screen {
         } else if (isInBlueprintInventory) {
             // In blueprint inventory screens, show overlays that are relevant
             // AspectOverlay is only shown in blueprint inventories
-            overlays.add(new AspectOverlayDraggableOverlay());
+            overlays.add(new AspectDraggableOverlay());
             
             // Hide Uncraftable and Hide Wrong Class buttons are only in blueprint inventories
             overlays.add(new HideUncraftableButtonDraggableOverlay());
@@ -190,8 +187,8 @@ public class OverlayEditorScreen extends Screen {
         
         // Star Aspect Overlay - available ONLY in inventories EXCEPT blueprint inventories and "Machtkristalle Verbessern" inventory
         // This is for items with "⭐" in tooltip, different from the blueprint Aspect Overlay
-        if (isInAnyInventory && !isInBlueprintInventory && !isInMKLevelInventory()) {
-            overlays.add(new StarAspectOverlayDraggableOverlay());
+        if (isInAnyInventory && !isInBlueprintInventory && !isInMkLevelInventory()) {
+            overlays.add(new StarAspectDraggableOverlay());
         }
         
         if (!isInBlueprintInventory) {
@@ -210,27 +207,27 @@ public class OverlayEditorScreen extends Screen {
                 // Mining/Lumberjack overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
                 // Only show if biome is detected in scoreboard
-                if (!isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
+                if (!isInPlayerNameDimension() && !isInventoryOpen() && CollectionTracker.isBiomDetected()) {
                     overlays.add(new MiningLumberjackDraggableOverlay());
                 }
                 
                 // Collection overlay - not available in player name dimension or in any inventory
                 // The actual overlay will only show in-game when not in player name dimension or floor dimension
                 // Only show if biome is detected in scoreboard
-                if (!isInPlayerNameDimension() && !isInventoryOpen() && InformationenUtility.isBiomDetected()) {
+                if (!isInPlayerNameDimension() && !isInventoryOpen() && CollectionTracker.isBiomDetected()) {
                     overlays.add(new CollectionDraggableOverlay());
                 }
                 
-                // MKLevel overlay - only available in "Machtkristalle Verbessern" inventory
-                if (isInMKLevelInventory()) {
-                    overlays.add(new MKLevelDraggableOverlay());
+                // MkLevel overlay - only available in "Machtkristalle Verbessern" inventory
+                if (isInMkLevelInventory()) {
+                    overlays.add(new MkLevelDraggableOverlay());
                 }
                 
                 // Note: Aspect Overlay and Hide Uncraftable Button are only available in blueprint inventories
                 // Note: Star Aspect Overlay is available in all inventories EXCEPT blueprint inventories
                 // Note: Equipment Display is only available in equipment chest inventories (with Unicode characters 㬃, 㬄, 㬅, 㬆)
                 // Note: Cards, Statues, BlueprintViewer, Material Tracker, and Kills are only available in floor dimensions
-                // Note: MKLevel Overlay is only available in "Machtkristalle Verbessern" inventory
+                // Note: MkLevel Overlay is only available in "Machtkristalle Verbessern" inventory
             }
         }
         
@@ -425,7 +422,7 @@ public class OverlayEditorScreen extends Screen {
     /**
      * Check if the player is currently in the "Machtkristalle Verbessern" inventory
      */
-    private boolean isInMKLevelInventory() {
+    private boolean isInMkLevelInventory() {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.gui.screen() == null) {
             return false;
@@ -436,7 +433,7 @@ public class OverlayEditorScreen extends Screen {
             return false;
         }
         
-        // Get the screen title to check if it's the MKLevel inventory
+        // Get the screen title to check if it's the MkLevel inventory
         net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen = 
             (net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>) client.gui.screen();
         
@@ -444,7 +441,7 @@ public class OverlayEditorScreen extends Screen {
         
         // Check if the title contains "Machtkristalle Verbessern" or the Glyph "㮌" (Essence Harvester UI)
         return ZeichenUtility.isMkLevelInventoryTitle(
-                net.felix.utilities.Overall.InformationenUtility.getPlainTextFromText(handledScreen.getTitle()),
+                net.felix.utilities.Aincraft.information.tooltip.TooltipTextCleaner.getPlainTextFromText(handledScreen.getTitle()),
                 title);
     }
     
@@ -480,7 +477,7 @@ public class OverlayEditorScreen extends Screen {
             button -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client != null) {
-                    client.gui.setScreen(new net.felix.utilities.Overall.NpcAlerts.NpcAlertsSettingsScreen(this));
+                    client.gui.setScreen(new net.felix.utilities.Overall.npcalerts.ui.NpcAlertsSettingsScreen(this));
                 }
             }
         ).bounds(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
@@ -763,14 +760,14 @@ public class OverlayEditorScreen extends Screen {
                     int screenHeight = client.getWindow().getGuiScaledHeight();
                     int currentY = resizingOverlay.getY();
                     
-                    // Prüfe, ob es das MKLevel-Overlay ist (sollte immer von oben links vergrößern)
-                    boolean isMKLevelOverlay = resizingOverlay instanceof MKLevelDraggableOverlay;
+                    // Prüfe, ob es das MkLevel-Overlay ist (sollte immer von oben links vergrößern)
+                    boolean isMkLevelOverlay = resizingOverlay instanceof MkLevelDraggableOverlay;
                     
                     int newX;
                     int newY = currentY;
                     
-                    if (isMKLevelOverlay) {
-                        // Für MKLevel: Obere linke Ecke immer fixiert
+                    if (isMkLevelOverlay) {
+                        // Für MkLevel: Obere linke Ecke immer fixiert
                         newX = resizeStartOverlayX;
                         // Stelle sicher, dass das Overlay nicht aus dem Bildschirm ragt
                         if (newX + newWidth > screenWidth) {
@@ -1277,7 +1274,7 @@ public class OverlayEditorScreen extends Screen {
             config.showCoinTracker = newValue;
             if (newValue) {
                 // Overlay-Picker steuert das Overlay selbst → Anzeige auf Overlay setzen
-                config.coinTrackerDisplayMode = net.felix.CoinTrackerDisplayMode.OVERLAY;
+                config.coinTrackerDisplayMode = net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode.OVERLAY;
             }
         } else if (overlay instanceof LeaderboardDraggableOverlay) {
             config.leaderboardVisible = !config.leaderboardVisible;
@@ -1290,11 +1287,11 @@ public class OverlayEditorScreen extends Screen {
             config.showLumberjackOverlay = newValue;
         } else if (overlay instanceof CollectionDraggableOverlay) {
             config.showCollectionOverlay = !config.showCollectionOverlay;
-        } else if (overlay instanceof AspectOverlayDraggableOverlay) {
+        } else if (overlay instanceof AspectDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.showAspectOverlay = newValue;
             config.aspectOverlayEnabled = newValue;
-        } else if (overlay instanceof StarAspectOverlayDraggableOverlay) {
+        } else if (overlay instanceof StarAspectDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.showAspectOverlay = newValue;
             config.aspectOverlayEnabled = newValue;
@@ -1308,7 +1305,7 @@ public class OverlayEditorScreen extends Screen {
             config.showHideWrongClassButton = newValue;
         } else if (overlay instanceof KitFilterButtonDraggableOverlay) {
             config.kitFilterButtonsEnabled = !config.kitFilterButtonsEnabled;
-        } else if (overlay instanceof MKLevelDraggableOverlay) {
+        } else if (overlay instanceof MkLevelDraggableOverlay) {
             config.mkLevelEnabled = !config.mkLevelEnabled;
         } else if (overlay instanceof ClipboardDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();

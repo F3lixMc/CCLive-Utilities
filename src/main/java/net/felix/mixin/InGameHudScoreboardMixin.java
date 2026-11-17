@@ -1,10 +1,10 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.CoinTrackerCustomSidebar;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerCustomSidebar;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.Hud;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

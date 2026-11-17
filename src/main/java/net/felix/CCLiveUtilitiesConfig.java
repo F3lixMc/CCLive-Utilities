@@ -1,21 +1,24 @@
 package net.felix;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.*;
 import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
 import dev.isxander.yacl3.config.v2.api.SerialEntry;
 import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
-import net.felix.utilities.Town.ItemDisplayMode;
-import net.felix.utilities.Town.OverlayType;
-import net.felix.utilities.Town.SchmiedItemDisplayMode;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
+import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
+import net.felix.utilities.DragOverlay.OverlayType;
+import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
+import net.felix.utilities.Overall.searchbar.ItemDisplayMode;
+import net.felix.utilities.Town.schmied.SchmiedItemDisplayMode;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 public class CCLiveUtilitiesConfig {
     public static final ConfigClassHandler<CCLiveUtilitiesConfig> HANDLER = ConfigClassHandler.createBuilder(CCLiveUtilitiesConfig.class)
@@ -123,7 +126,7 @@ public class CCLiveUtilitiesConfig {
         
         // Migration für hoverStatsChosenStat von String zu Enum
         if (config.hoverStatsChosenStatString != null && !config.hoverStatsChosenStatString.isEmpty()) {
-            config.hoverStatsChosenStat = net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.fromString(config.hoverStatsChosenStatString);
+            config.hoverStatsChosenStat = net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType.fromString(config.hoverStatsChosenStatString);
             config.hoverStatsChosenStatString = null;
             HANDLER.save();
         }
@@ -421,7 +424,7 @@ public class CCLiveUtilitiesConfig {
      */
     public static boolean isModRuntimeEnabled() {
         return HANDLER.instance().enableMod
-            && net.felix.utilities.Overall.ServerConnectionGate.areFeaturesAllowed();
+            && net.felix.utilities.Other.server.ServerConnectionGate.areFeaturesAllowed();
     }
 
     /**
@@ -430,7 +433,7 @@ public class CCLiveUtilitiesConfig {
      */
     public static boolean isDataTrackingEnabled() {
         return HANDLER.instance().dataTrackingEnabled
-            && net.felix.utilities.Overall.ServerConnectionGate.isDataUploadAllowed();
+            && net.felix.utilities.Other.server.ServerConnectionGate.isDataUploadAllowed();
     }
     
     // Debug Settings
@@ -504,7 +507,7 @@ public class CCLiveUtilitiesConfig {
     
     // Player Hover Stats Settings
     @SerialEntry
-    public net.felix.profile.PlayerHoverStatsUtility.HoverStatsType hoverStatsChosenStat = net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME; // Stat die in Chat-Hover-Events angezeigt wird
+    public net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType hoverStatsChosenStat = net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME; // Stat die in Chat-Hover-Events angezeigt wird
     
     // Migration für hoverStatsChosenStat von String zu Enum
     @SerialEntry
@@ -614,7 +617,7 @@ public class CCLiveUtilitiesConfig {
     public boolean leaderboardVisible = true;
 
     @SerialEntry
-    public float leaderboardScale = net.felix.leaderboards.panel.LeaderboardInventoryOverlay.DEFAULT_SCALE;
+    public float leaderboardScale = net.felix.Community.leaderboards.panel.LeaderboardInventoryOverlay.DEFAULT_SCALE;
 
     @SerialEntry
     public CoinTrackerDisplayMode coinTrackerDisplayMode = CoinTrackerDisplayMode.OVERLAY;
@@ -736,7 +739,7 @@ public class CCLiveUtilitiesConfig {
     public boolean schmiedTrackerShowBackground = true; // Schwarzer Hintergrund für Schmied Tracker
     
     @SerialEntry
-    public net.felix.utilities.Town.SchmiedItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.utilities.Town.SchmiedItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
+    public net.felix.utilities.Town.schmied.SchmiedItemDisplayMode schmiedTrackerItemDisplayMode = net.felix.utilities.Town.schmied.SchmiedItemDisplayMode.BORDER; // Anzeigemodus für Schmied-Items (Rahmen oder Hintergrund)
     
     @SerialEntry
     public boolean hideUncraftableEnabled = true; // Hide Uncraftable Button aktiviert
@@ -1097,18 +1100,18 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean factoryLevelShowBackground = true;
     
-    // MKLevel Settings
+    // MkLevel Settings
     @SerialEntry
-    public boolean mkLevelEnabled = true; // MKLevel Overlay aktiviert
+    public boolean mkLevelEnabled = true; // MkLevel Overlay aktiviert
     
     @SerialEntry
-    public float mkLevelScale = 1.0f; // Skalierung des MKLevel Overlays
+    public float mkLevelScale = 1.0f; // Skalierung des MkLevel Overlays
     
     @SerialEntry
-    public int mkLevelX = 135; // X-Position des MKLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
+    public int mkLevelX = 135; // X-Position des MkLevel Overlays (-1 = automatisch rechts, >= 0 = absolute X-Position)
     
     @SerialEntry
-    public int mkLevelY = 115; // Y-Position des MKLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
+    public int mkLevelY = 115; // Y-Position des MkLevel Overlays (-1 = am Inventar ausrichten, >= 0 = absolute Position)
     
     // Cards/Statues Settings
     @SerialEntry
@@ -1771,7 +1774,7 @@ public class CCLiveUtilitiesConfig {
     public Color miningLumberjackOverlayTextColor = new Color(0xFFFFFFFF);
 
     private static Option<Boolean> dataTrackingOption;
-    private static Option<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType> hoverStatsOption;
+    private static Option<net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType> hoverStatsOption;
     private static Option<Boolean> chatIconOption;
     private static Option<Boolean> nametagIconOption;
     private static boolean dataTrackingUiBuilt = false;
@@ -1786,20 +1789,20 @@ public class CCLiveUtilitiesConfig {
         }
         dataTrackingUiBuilt = true;
 
-        hoverStatsOption = Option.<net.felix.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
+        hoverStatsOption = Option.<net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType>createBuilder()
                 .name(Component.literal("Hover Stats: Gewählter Stat"))
                 .description(OptionDescription.of(Component.literal(
                         "Welcher Wert soll anderen Spielern angezeigt werden, wenn sie im Chat über deinen Namen hovern?\n\n"
                                 + "- Spielzeit\n- Max Coins\n- Gesendete Nachrichten\n- Gefundene Baupläne\n- Max Schaden\n- Schmiedelevel\n\n"
                                 + "!!! Erfordert ein aktives 'Daten Tracking'.")))
                 .binding(
-                        net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
+                        net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
                         () -> HANDLER.instance().hoverStatsChosenStat != null
                                 ? HANDLER.instance().hoverStatsChosenStat
-                                : net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
+                                : net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType.PLAYTIME,
                         newVal -> HANDLER.instance().hoverStatsChosenStat = newVal)
                 .controller(opt -> EnumControllerBuilder.create(opt)
-                        .enumClass(net.felix.profile.PlayerHoverStatsUtility.HoverStatsType.class)
+                        .enumClass(net.felix.Community.profile.PlayerHoverStatsUtility.HoverStatsType.class)
                         .formatValue(value -> value != null
                                 ? Component.literal(value.getDisplayName())
                                 : Component.literal("Spielzeit")))
@@ -1851,7 +1854,7 @@ public class CCLiveUtilitiesConfig {
                     chatIconOption.setAvailable(enabled);
                     nametagIconOption.setAvailable(enabled);
                     if (!enabled) {
-                        net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility.clearPlayers();
+                        net.felix.Community.playericon.PlayerIconUtility.clearPlayers();
                     }
                 })
                 .build();
@@ -1934,7 +1937,7 @@ public class CCLiveUtilitiesConfig {
                                                 () -> HANDLER.instance().itemViewerMaxSlots,
                                                 newVal -> {
                                                     HANDLER.instance().itemViewerMaxSlots = newVal;
-                                                    net.felix.utilities.ItemViewer.ItemViewerUtility.onMaxSlotsConfigChanged();
+                                                    net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.onMaxSlotsConfigChanged();
                                                 })
                                         .controller(StringControllerBuilder::create)
                                         .build())

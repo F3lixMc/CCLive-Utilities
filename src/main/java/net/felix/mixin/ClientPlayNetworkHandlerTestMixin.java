@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.InformationenUtility;
-import net.felix.utilities.Town.StarForgedSoundUtility;
+import net.felix.utilities.Overall.aspekte.chat.AspectChatMessages;
+import net.felix.utilities.Town.sound.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;
@@ -46,7 +46,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         String messageText = originalMessage.getString();
         if (messageText != null && (messageText.contains("[Bauplan]") || messageText.contains("Kombo") || messageText.contains("Belohnungen"))) {
             // Check for blueprint BEFORE modifying the message
-            net.felix.utilities.Aincraft.BPViewerUtility bpInstance = net.felix.utilities.Aincraft.BPViewerUtility.getInstance();
+            net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility bpInstance = net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility.getInstance();
             if (bpInstance != null) {
                 bpInstance.checkForBlueprint(originalMessage, messageText);
             }
@@ -76,7 +76,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         }
         
         // Try to modify the message with aspect info
-        Component modified = InformationenUtility.modifyChatMessageForAspectInfo(originalMessage);
+        Component modified = AspectChatMessages.modifyChatMessageForAspectInfo(originalMessage);
         
         if (modified == null) {
             return;

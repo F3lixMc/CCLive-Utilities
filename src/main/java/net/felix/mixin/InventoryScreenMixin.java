@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls;
+import net.felix.utilities.Overall.itemviewer.ui.HelpOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,22 +28,22 @@ public abstract class InventoryScreenMixin {
         if (net.felix.CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled) {
             // Render aspect overlay if we're hovering over an item with "⭐" (set up by addAspectNameToTooltip)
             // This allows aspect overlay to work in the player inventory
-            boolean shouldRender = net.felix.utilities.Overall.Aspekte.AspectOverlay.isCurrentlyHovering();
+            boolean shouldRender = net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.isCurrentlyHovering();
             
             if (shouldRender) {
                 // Render our aspect overlay AFTER everything else (including buttons and tooltips)
                 try {
-                    net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+                    net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
                 } catch (Exception e) {
                     // Ignore rendering errors
                 }
             }
         }
         // Hilfe und Filter liegen über der Rangliste und den übrigen Inventar-Overlays.
-        if (ItemViewerUtility.isOverlayOpen()) {
+        if (FilterOverlayControls.isOverlayOpen()) {
             context.nextStratum();
-            ItemViewerUtility.renderHelpOverlay(context);
-            ItemViewerUtility.renderFilterOverlay(context);
+            HelpOverlay.renderHelpOverlay(context);
+            FilterOverlayControls.renderFilterOverlay(context);
         }
     }
 }

@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.utilities.Overall.itemviewer.search.SearchFieldInput;
 import net.minecraft.client.KeyboardHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.input.CharacterEvent;
@@ -17,6 +17,6 @@ public class ViewerSearchKeyboardMixin {
         Minecraft client = Minecraft.getInstance();
         if (window != 0 && window != client.getWindow().handle()) return;
         if (client.gui.overlay() != null) return;
-        if (ItemViewerUtility.handleSearchFieldCharTyped(event)) ci.cancel();
+        if (SearchFieldInput.handleSearchFieldCharTyped(event)) ci.cancel();
     }
 }

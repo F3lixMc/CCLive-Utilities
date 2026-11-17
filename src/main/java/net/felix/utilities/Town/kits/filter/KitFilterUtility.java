@@ -1,0 +1,2091 @@
+package net.felix.utilities.Town.kits.filter;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.itemviewer.data.ItemCatalog;
+import net.felix.utilities.Overall.itemviewer.data.ItemData;
+import net.felix.utilities.Overall.itemviewer.search.FloorNumberExtractor;
+import net.felix.utilities.Town.kits.data.BuildSlotMapping;
+import net.felix.utilities.Town.kits.data.CustomKit;
+import net.felix.utilities.Town.kits.data.CustomKitManager;
+import net.felix.utilities.Town.kits.editor.CustomKitEditorScreen;
+import net.felix.utilities.Town.kits.ui.KitSelectionScreen;
+import net.felix.utilities.Town.kits.ui.KitViewScreen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
+public class KitFilterUtility {
+	
+	private static boolean isInitialized = false;
+	
+	// Kit-Typen
+	public enum KitType {
+		MÜNZ_KIT("Münz-Kit"),
+		SCHADEN_KIT("Schaden-Kit"),
+		RESSOURCEN_KIT("Ressourcen-Kit"),
+		HERSTELLUNGS_KIT("Herstellungs-Kit"),
+		TANK_KIT("Tank-Kit");
+		
+		private final String displayName;
+		
+		KitType(String displayName) {
+			this.displayName = displayName;
+		}
+		
+		public String getDisplayName() {
+			return displayName;
+		}
+	}
+	
+	// Gespeicherte Kit-Auswahlen für jeden Button (Kit 1, Kit 2, Kit 3)
+	private static Map<Integer, KitSelection> selectedKits = new HashMap<>();
+	
+	// Aktive Filter-Status für jeden Button (true = Filter ist aktiv)
+	private static Map<Integer, Boolean> activeFilters = new HashMap<>();
+	
+	// Button-Konfiguration
+	private static final int BUTTON_COUNT = 3;
+	private static final int BUTTON_WIDTH = 100;
+	private static final int BUTTON_HEIGHT = 20;
+	
+	// Button-Positionen (werden dynamisch berechnet)
+	private static Map<Integer, ButtonPosition> buttonPositions = new HashMap<>();
+	
+	// Aktuell geöffnetes Inventar für Kit-Auswahl
+	private static int currentButtonIndex = -1; // -1 = kein Button ausgewählt
+	
+	// Status-Tracking
+	private static boolean wasInRelevantInventory = false;
+	private static AbstractContainerScreen<?> lastRelevantInventoryScreen = null;
+	
+	// Flag für verzögertes Öffnen des KitViewScreen (nach Chat-Schließung)
+	private static boolean pendingKitViewScreen = false;
+	
+	// Originale Items speichern (für Wiederherstellung)
+	private static Map<Integer, ItemStack> originalItems = new HashMap<>(); // slotIndex -> original ItemStack
+	private static Map<Integer, ItemStack> lastKnownItems = new HashMap<>(); // slotIndex -> letztes bekanntes ItemStack (für Änderungserkennung)
+	
+	// Item-Informationen für jedes Kit und jede Stufe
+	// Map: KitType -> Level -> Set von Item-Informationen
+	private static Map<KitType, Map<Integer, Set<ItemInfo>>> kitItemInfos = new HashMap<>();
+	private static Map<KitType, Map<Integer, Set<ItemInfo>>> neuKitItemInfos = new HashMap<>();
+	private static final Map<String, ItemInfo> itemInfoByNormalizedName = new HashMap<>();
+	private static final Map<String, List<ItemInfo>> customKitItemInfosCache = new HashMap<>();
+	private static ItemStack[] kitTypeIcons;
+	
+	public static final KitType[] NEU_KIT_TYPES = {
+		KitType.MÜNZ_KIT,
+		KitType.RESSOURCEN_KIT,
+		KitType.HERSTELLUNGS_KIT
+	};
+	public static final int NEU_LEVEL_COUNT = 4;
+
+	public static int getNeuLevelCount(KitType kitType) {
+		if (kitType == KitType.HERSTELLUNGS_KIT) {
+			return 3;
+		}
+		return NEU_LEVEL_COUNT;
+	}
+
+	public static ItemStack getKitTypeIcon(KitType kitType) {
+		if (kitType == null) {
+			return ItemStack.EMPTY;
+		}
+		ItemStack[] icons = getKitTypeIcons();
+		int index = kitType.ordinal();
+		if (index < 0 || index >= icons.length) {
+			return ItemStack.EMPTY;
+		}
+		return icons[index];
+	}
+
+	private static ItemStack[] getKitTypeIcons() {
+		if (kitTypeIcons == null) {
+			kitTypeIcons = buildKitTypeIcons();
+		}
+		return kitTypeIcons;
+	}
+
+	private static ItemStack[] buildKitTypeIcons() {
+		ItemStack[] icons = new ItemStack[KitType.values().length];
+		for (KitType kitType : KitType.values()) {
+			switch (kitType) {
+				case MÜNZ_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.GOLD_NUGGET);
+				case SCHADEN_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.DIAMOND_SWORD);
+				case RESSOURCEN_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.DIAMOND_PICKAXE);
+				case HERSTELLUNGS_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.ANVIL);
+				case TANK_KIT -> icons[kitType.ordinal()] = new ItemStack(Items.DIAMOND_CHESTPLATE);
+				default -> icons[kitType.ordinal()] = ItemStack.EMPTY;
+			}
+		}
+		return icons;
+	}
+	
+	/**
+	 * Repräsentiert Informationen über ein Item in einem Kit
+	 */
+	public static class ItemInfo {
+		public final String name;
+		public final String ebene; // Ebene wo das Item gefunden wird (optional)
+		public final String info; // Zusätzliche Informationen (optional)
+		public final int nameColor; // Farbe für den Item-Namen (optional, Standard: 0xFFFFFFFF = weiß)
+		public final String nameColorString; // Farb-String (z.B. "Epic", "Legendary") für die Farbe
+		public final String itemType; // Item-Typ (z.B. "Helm", "Brust", "Schuhe") für Anzeige vor dem Namen
+		public final String modifier; // Modifier-String (z.B. "[Andere], [Andere], [Schaden]") (optional)
+		
+		public ItemInfo(String name) {
+			this.name = name;
+			this.ebene = null;
+			this.info = null;
+			this.nameColor = 0xFFFFFFFF; // Standard: weiß
+			this.nameColorString = null;
+			this.itemType = null;
+			this.modifier = null;
+		}
+		
+		public ItemInfo(String name, String ebene, String info) {
+			this.name = name;
+			this.ebene = ebene;
+			this.info = info;
+			this.nameColor = 0xFFFFFFFF; // Standard: weiß
+			this.nameColorString = null;
+			this.itemType = null;
+			this.modifier = null;
+		}
+		
+		public ItemInfo(String name, String ebene, String info, int nameColor) {
+			this.name = name;
+			this.ebene = ebene;
+			this.info = info;
+			this.nameColor = nameColor;
+			this.nameColorString = null;
+			this.itemType = null;
+			this.modifier = null;
+		}
+		
+		public ItemInfo(String name, String ebene, String info, int nameColor, String nameColorString) {
+			this.name = name;
+			this.ebene = ebene;
+			this.info = info;
+			this.nameColor = nameColor;
+			this.nameColorString = nameColorString;
+			this.itemType = null;
+			this.modifier = null;
+		}
+		
+		public ItemInfo(String name, String ebene, String info, int nameColor, String nameColorString, String itemType) {
+			this.name = name;
+			this.ebene = ebene;
+			this.info = info;
+			this.nameColor = nameColor;
+			this.nameColorString = nameColorString;
+			this.itemType = itemType;
+			this.modifier = null;
+		}
+		
+		public ItemInfo(String name, String ebene, String info, int nameColor, String nameColorString, String itemType, String modifier) {
+			this.name = name;
+			this.ebene = ebene;
+			this.info = info;
+			this.nameColor = nameColor;
+			this.nameColorString = nameColorString;
+			this.itemType = itemType;
+			this.modifier = modifier;
+		}
+		
+		/**
+		 * Konvertiert einen Farb-String (z.B. "Epic", "Legendary") zu einem Farbcode
+		 */
+		public static int parseColorString(String colorString) {
+			if (colorString == null || colorString.isEmpty()) {
+				return 0xFFFFFFFF; // Standard: weiß
+			}
+			
+			return switch (colorString.toLowerCase()) {
+				case "common" -> 0xFFFFFFFF; // Weiß (wie ItemViewer)
+				case "uncommon" -> 0xFF25D119; // #25d119
+				case "rare" -> 0xFF5555FF; // #5555FF
+				case "epic" -> 0xFF8409DB; // #8409db
+				case "legendary" -> 0xFFDE680D; // #de680d
+				default -> 0xFFFFFFFF;
+			};
+		}
+		
+		/**
+		 * Konvertiert einen Modifier-Namen zu einem Farbcode
+		 */
+		public static int parseModifierColor(String modifierName) {
+			if (modifierName == null || modifierName.isEmpty()) {
+				return 0xFFFFFFFF; // Standard: weiß
+			}
+			
+			switch (modifierName.toLowerCase()) {
+				case "attribut":
+				case "attribute":
+					return 0xFF00A8A8; // #00A8A8
+				case "verteidigung":
+					return 0xFFFCA800; // #FCA800
+				case "fähigkeiten":
+					return 0xFF5454FC; // #5454FC
+				case "schaden":
+					return 0xFFFC5454; // #FC5454
+				case "andere":
+					return 0xFFFC54FC; // #FC54FC
+				case "herstellung":
+					return 0xFFFCFC54; // #FCFC54
+				default:
+					return 0xFFFFFFFF; // Standard: weiß
+			}
+		}
+		
+		/**
+		 * Gibt den Anzeige-Text für das Item zurück (mit optionalen Infos)
+		 */
+		public String getDisplayText() {
+			StringBuilder result = new StringBuilder(name);
+			
+			// Füge Ebene direkt hinter dem Namen hinzu
+			if (ebene != null && !ebene.isEmpty()) {
+				result.append(" ").append(ebene);
+			}
+			
+			// Füge zusätzliche Info in Klammern hinzu (falls vorhanden)
+			if (info != null && !info.isEmpty()) {
+				result.append(" (").append(info).append(")");
+			}
+			
+			return result.toString();
+		}
+	}
+	
+	// Pfad zur JSON-Konfigurationsdatei
+	private static final String KITS_CONFIG_FILE = "assets/cclive-utilities/Kits.json";
+	
+	// Slots die gefiltert werden sollen (Blueprint-Slots)
+	private static final int[] FILTER_SLOTS = {
+		10, 11, 12, 13, 14, 15, 16,  // Erste Reihe
+		19, 20, 21, 22, 23, 24, 25,  // Zweite Reihe
+		28, 29, 30, 31, 32, 33, 34,  // Dritte Reihe
+		37, 38, 39, 40, 41, 42, 43   // Vierte Reihe
+	};
+	
+	/**
+	 * Repräsentiert eine Kit-Auswahl (Standard-Kit oder eigenes Kit).
+	 */
+	public static class KitSelection {
+		public final KitType kitType;
+		public final int level; // 1-7 (Alt) oder 1-4 (Neu), bei eigenen Kits 0
+		public final String customKitId;
+		public final boolean neuKit;
+
+		public KitSelection(KitType kitType, int level) {
+			this(kitType, level, false);
+		}
+
+		public KitSelection(KitType kitType, int level, boolean neuKit) {
+			this.kitType = kitType;
+			this.neuKit = neuKit;
+			this.level = neuKit
+				? Math.max(1, Math.min(getNeuLevelCount(kitType), level))
+				: Math.max(1, Math.min(7, level));
+			this.customKitId = null;
+		}
+
+		public KitSelection(String customKitId) {
+			this.kitType = null;
+			this.level = 0;
+			this.customKitId = customKitId;
+			this.neuKit = false;
+		}
+
+		public boolean isCustom() {
+			return customKitId != null && !customKitId.isEmpty();
+		}
+
+		public String getDisplayName() {
+			if (isCustom()) {
+				CustomKit kit = CustomKitManager.getKit(customKitId);
+				return kit != null ? kit.name : "Eigenes Kit";
+			}
+			return kitType.getDisplayName() + " " + level;
+		}
+	}
+	
+	/**
+	 * Repräsentiert die Position eines Buttons
+	 */
+	private static class ButtonPosition {
+		public int x;
+		public int y;
+		
+		public ButtonPosition(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+	}
+	
+	public static void initialize() {
+		if (isInitialized) {
+			return;
+		}
+		
+		try {
+			// Lade Kit-Item-Namen aus JSON-Datei
+			loadKitItemNames();
+			CustomKitManager.ensureLoaded();
+			
+			// Lade gespeicherte Kit-Auswahlen aus der Config
+			loadSavedKitSelections();
+			
+			// Register commands
+			registerCommands();
+			
+			// Client-seitige Events registrieren
+			ClientTickEvents.END_CLIENT_TICK.register(KitFilterUtility::onClientTick);
+			
+			isInitialized = true;
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+	
+	/**
+	 * Registriert Commands für Kit-Filter
+	 */
+	private static void registerCommands() {
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+			dispatcher.register(ClientCommands.literal("cclive")
+				.then(ClientCommands.literal("kits")
+					.executes(context -> {
+						// Setze Flag, um das Screen im nächsten Tick zu öffnen (nach Chat-Schließung)
+						pendingKitViewScreen = true;
+						return 1;
+					})
+				)
+			);
+		});
+	}
+	
+	/**
+	 * Lädt die gespeicherten Kit-Auswahlen aus der Config
+	 */
+	private static void loadSavedKitSelections() {
+		try {
+			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+			loadButtonKitSelection(0, config.kitFilterButton1CustomKitId, config.kitFilterButton1KitType, config.kitFilterButton1Level, config.kitFilterButton1NeuKit);
+			loadButtonKitSelection(1, config.kitFilterButton2CustomKitId, config.kitFilterButton2KitType, config.kitFilterButton2Level, config.kitFilterButton2NeuKit);
+			loadButtonKitSelection(2, config.kitFilterButton3CustomKitId, config.kitFilterButton3KitType, config.kitFilterButton3Level, config.kitFilterButton3NeuKit);
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+
+	private static void loadButtonKitSelection(int buttonIndex, String customKitId, String kitTypeString, int level, boolean neuKit) {
+		if (customKitId != null && !customKitId.isEmpty() && CustomKitManager.getKit(customKitId) != null) {
+			selectedKits.put(buttonIndex, new KitSelection(customKitId));
+			return;
+		}
+		if (kitTypeString != null && !kitTypeString.isEmpty()) {
+			KitType kitType = getKitTypeFromString(kitTypeString);
+			if (kitType != null) {
+				selectedKits.put(buttonIndex, new KitSelection(kitType, level, neuKit));
+			}
+		}
+	}
+	
+	/**
+	 * Konvertiert einen String zu einem KitType
+	 */
+	private static KitType getKitTypeFromString(String kitTypeString) {
+		try {
+			return KitType.valueOf(kitTypeString);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
+	
+	/**
+	 * Konvertiert einen KitType zu einem String
+	 */
+	private static String getStringFromKitType(KitType kitType) {
+		return kitType != null ? kitType.name() : "";
+	}
+	
+	/**
+	 * Speichert die Kit-Auswahl in der Config
+	 */
+	private static void saveKitSelectionToConfig(int buttonIndex, KitType kitType, int level, boolean neuKit) {
+		try {
+			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+			switch (buttonIndex) {
+				case 0:
+					config.kitFilterButton1KitType = getStringFromKitType(kitType);
+					config.kitFilterButton1Level = level;
+					config.kitFilterButton1CustomKitId = "";
+					config.kitFilterButton1NeuKit = neuKit;
+					break;
+				case 1:
+					config.kitFilterButton2KitType = getStringFromKitType(kitType);
+					config.kitFilterButton2Level = level;
+					config.kitFilterButton2CustomKitId = "";
+					config.kitFilterButton2NeuKit = neuKit;
+					break;
+				case 2:
+					config.kitFilterButton3KitType = getStringFromKitType(kitType);
+					config.kitFilterButton3Level = level;
+					config.kitFilterButton3CustomKitId = "";
+					config.kitFilterButton3NeuKit = neuKit;
+					break;
+			}
+			CCLiveUtilitiesConfig.HANDLER.save();
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+
+	private static void saveCustomKitSelectionToConfig(int buttonIndex, String customKitId) {
+		try {
+			CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+			switch (buttonIndex) {
+				case 0:
+					config.kitFilterButton1CustomKitId = customKitId != null ? customKitId : "";
+					config.kitFilterButton1KitType = "";
+					config.kitFilterButton1Level = 1;
+					config.kitFilterButton1NeuKit = false;
+					break;
+				case 1:
+					config.kitFilterButton2CustomKitId = customKitId != null ? customKitId : "";
+					config.kitFilterButton2KitType = "";
+					config.kitFilterButton2Level = 1;
+					config.kitFilterButton2NeuKit = false;
+					break;
+				case 2:
+					config.kitFilterButton3CustomKitId = customKitId != null ? customKitId : "";
+					config.kitFilterButton3KitType = "";
+					config.kitFilterButton3Level = 1;
+					config.kitFilterButton3NeuKit = false;
+					break;
+			}
+			CCLiveUtilitiesConfig.HANDLER.save();
+		} catch (Exception e) {
+			// Silent error handling
+		}
+	}
+	
+	/**
+	 * Lädt die Kit-Item-Namen aus der JSON-Konfigurationsdatei
+	 */
+	private static void loadKitItemNames() {
+		try {
+			java.nio.file.Path resource = getKitsConfigFilePath();
+			if (resource == null) {
+				return;
+			}
+			
+			try (var inputStream = java.nio.file.Files.newInputStream(resource)) {
+				try (var reader = new java.io.InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+					JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+					
+					for (String kitKey : json.keySet()) {
+						if ("neu".equalsIgnoreCase(kitKey)) {
+							continue;
+						}
+						KitType kitType = getKitTypeFromKey(kitKey);
+						if (kitType == null) {
+							continue;
+						}
+						parseKitLevels(json.getAsJsonObject(kitKey), kitType, 7, false);
+					}
+					
+					if (json.has("neu") && json.get("neu").isJsonObject()) {
+						JsonObject neuData = json.getAsJsonObject("neu");
+						for (String kitKey : neuData.keySet()) {
+							KitType kitType = getKitTypeFromKey(kitKey);
+							if (kitType == null) {
+								continue;
+							}
+							parseKitLevels(neuData.getAsJsonObject(kitKey), kitType, NEU_LEVEL_COUNT, true);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			// Silent error handling
+		}
+		rebuildItemInfoIndex();
+	}
+	
+	private static void parseKitLevels(JsonObject kitData, KitType kitType, int maxLevel, boolean neu) {
+		for (int level = 1; level <= maxLevel; level++) {
+			String levelKey = String.valueOf(level);
+			if (!kitData.has(levelKey)) {
+				continue;
+			}
+			JsonArray itemsArray = kitData.getAsJsonArray(levelKey);
+			Set<ItemInfo> itemInfos = new HashSet<>();
+			ItemInfo lastItemInfo = null;
+			for (var element : itemsArray) {
+				if (element.isJsonObject()) {
+					com.google.gson.JsonObject itemObj = element.getAsJsonObject();
+					String itemName = itemObj.has("name") ? itemObj.get("name").getAsString() : "";
+					
+					if (!itemName.isEmpty()) {
+						String ebene = itemObj.has("floor") ? itemObj.get("floor").getAsString() : null;
+						String info = itemObj.has("info") ? itemObj.get("info").getAsString() : null;
+						String nameColorStr = itemObj.has("rarity") ? itemObj.get("rarity").getAsString() : null;
+						String itemType = itemObj.has("item_type") ? itemObj.get("item_type").getAsString() : null;
+						String modifier = itemObj.has("modifier") ? itemObj.get("modifier").getAsString() : null;
+						int nameColor = ItemInfo.parseColorString(nameColorStr);
+						lastItemInfo = new ItemInfo(itemName, ebene, info, nameColor, nameColorStr, itemType, modifier);
+						itemInfos.add(lastItemInfo);
+					} else if (lastItemInfo != null) {
+						String ebene = itemObj.has("floor") ? itemObj.get("floor").getAsString() : null;
+						String info = itemObj.has("info") ? itemObj.get("info").getAsString() : null;
+						String nameColorStr = itemObj.has("rarity") ? itemObj.get("rarity").getAsString() : null;
+						String itemType = itemObj.has("item_type") ? itemObj.get("item_type").getAsString() : null;
+						String modifier = itemObj.has("modifier") ? itemObj.get("modifier").getAsString() : null;
+						
+						String combinedEbene = (ebene != null && !ebene.isEmpty()) ? ebene : lastItemInfo.ebene;
+						String combinedInfo = (info != null && !info.isEmpty()) ? info : lastItemInfo.info;
+						String combinedColorStr = (nameColorStr != null && !nameColorStr.isEmpty())
+							? nameColorStr
+							: lastItemInfo.nameColorString;
+						String combinedItemType = (itemType != null && !itemType.isEmpty())
+							? itemType
+							: lastItemInfo.itemType;
+						String combinedModifier = (modifier != null && !modifier.isEmpty())
+							? modifier
+							: lastItemInfo.modifier;
+						int combinedColor = (combinedColorStr != null && !combinedColorStr.isEmpty())
+							? ItemInfo.parseColorString(combinedColorStr)
+							: lastItemInfo.nameColor;
+						ItemInfo combinedItemInfo = new ItemInfo(lastItemInfo.name, combinedEbene, combinedInfo, combinedColor, combinedColorStr, combinedItemType, combinedModifier);
+						
+						itemInfos.remove(lastItemInfo);
+						itemInfos.add(combinedItemInfo);
+						lastItemInfo = combinedItemInfo;
+					}
+				} else {
+					String itemName = element.getAsString();
+					if (!itemName.isEmpty()) {
+						lastItemInfo = new ItemInfo(itemName);
+						itemInfos.add(lastItemInfo);
+					}
+				}
+			}
+			
+			if (neu) {
+				setNeuKitItemInfos(kitType, level, itemInfos);
+			} else {
+				setKitItemInfos(kitType, level, itemInfos);
+			}
+		}
+	}
+	
+	/**
+	 * Konvertiert einen String-Key zu einem KitType
+	 */
+	private static KitType getKitTypeFromKey(String key) {
+		switch (key.toLowerCase()) {
+			case "münz_kit":
+			case "muenz_kit":
+				return KitType.MÜNZ_KIT;
+			case "schaden_kit":
+				return KitType.SCHADEN_KIT;
+			case "ressourcen_kit":
+				return KitType.RESSOURCEN_KIT;
+			case "herstellungs_kit":
+				return KitType.HERSTELLUNGS_KIT;
+			case "tank_kit":
+				return KitType.TANK_KIT;
+			default:
+				return null;
+		}
+	}
+	
+	private static void onClientTick(Minecraft client) {
+		// Prüfe Konfiguration
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
+			return;
+		}
+		
+		// Prüfe ob KitViewScreen geöffnet werden soll (nach Chat-Schließung)
+		if (pendingKitViewScreen) {
+			// Prüfe ob Chat geschlossen wurde (kein ChatScreen mehr)
+			if (client.gui.screen() == null || !(client.gui.screen() instanceof net.minecraft.client.gui.screens.ChatScreen)) {
+				// Chat ist geschlossen, öffne das Screen
+				pendingKitViewScreen = false;
+				client.gui.setScreen(new KitViewScreen());
+				return; // Früh zurückkehren, damit andere Logik nicht ausgeführt wird
+			}
+		}
+		
+		if (client.player == null || client.gui.screen() == null) {
+			// Wenn wir das Inventar verlassen haben, stelle alle Items wieder her und setze Filter zurück
+			if (wasInRelevantInventory) {
+				restoreOriginalItems(null);
+				originalItems.clear();
+				lastKnownItems.clear();
+				// Setze alle Filter-Toggles zurück
+				activeFilters.clear();
+				wasInRelevantInventory = false;
+			}
+			return;
+		}
+		
+		// Aktualisiere Button-Positionen und Filter-Logik wenn in einem relevanten Inventar
+		if (client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
+			if (isRelevantInventory(handledScreen)) {
+				lastRelevantInventoryScreen = handledScreen;
+				// Prüfe ob Kit Filter Buttons aktiviert sind
+				if (!CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled) {
+					// Wenn Buttons deaktiviert sind, stelle alle Items wieder her und setze Filter zurück
+					if (wasInRelevantInventory) {
+						restoreOriginalItems(handledScreen);
+						originalItems.clear();
+						lastKnownItems.clear();
+						activeFilters.clear();
+						wasInRelevantInventory = false;
+					}
+					return;
+				}
+				
+				updateButtonPositions(handledScreen, client);
+				
+				// Beim Betreten eines relevanten Inventars: Speichere originale Items und wende Filter sofort an
+				if (!wasInRelevantInventory) {
+					// Beim ersten Betreten: Stelle sicher, dass alle originalen Items gespeichert werden
+					originalItems.clear();
+					lastKnownItems.clear();
+					// Speichere alle originalen Items zuerst
+					saveOriginalItems(handledScreen);
+					// Speichere auch als letzte bekannte Items
+					for (int slotIndex : FILTER_SLOTS) {
+						if (slotIndex < handledScreen.getMenu().slots.size()) {
+							Slot slot = handledScreen.getMenu().slots.get(slotIndex);
+							ItemStack itemStack = slot.getItem();
+							if (!itemStack.isEmpty() && itemStack.getItem() != Items.CONCRETE.black()) {
+								lastKnownItems.put(slotIndex, itemStack.copy());
+							}
+						}
+					}
+				}
+				
+				wasInRelevantInventory = true;
+				
+				// Prüfe ob sich das Inventar geändert hat
+				if (hasInventoryChanged(handledScreen)) {
+					// Inventar hat sich geändert - aktualisiere originale Items und wende Filter neu an
+					updateOriginalItemsAfterChange(handledScreen);
+					lastKnownItems.clear();
+					// Speichere aktuelle Items als letzte bekannte Items
+					for (int slotIndex : FILTER_SLOTS) {
+						if (slotIndex < handledScreen.getMenu().slots.size()) {
+							Slot slot = handledScreen.getMenu().slots.get(slotIndex);
+							ItemStack itemStack = slot.getItem();
+							if (!itemStack.isEmpty() && itemStack.getItem() != Items.CONCRETE.black()) {
+								lastKnownItems.put(slotIndex, itemStack.copy());
+							}
+						}
+					}
+				} else {
+					// Speichere aktuelle Items als letzte bekannte Items (für nächsten Vergleich)
+					for (int slotIndex : FILTER_SLOTS) {
+						if (slotIndex < handledScreen.getMenu().slots.size()) {
+							Slot slot = handledScreen.getMenu().slots.get(slotIndex);
+							ItemStack itemStack = slot.getItem();
+							if (!itemStack.isEmpty() && itemStack.getItem() != Items.CONCRETE.black()) {
+								lastKnownItems.put(slotIndex, itemStack.copy());
+							} else {
+								lastKnownItems.remove(slotIndex);
+							}
+						}
+					}
+				}
+				
+				// Wende Filter sofort an (wird bei jedem Tick aufgerufen, um Änderungen sofort zu reflektieren)
+				updateFilteredItems(handledScreen, client);
+			} else {
+				// Prüfe ob wir gerade ein relevantes Inventar verlassen haben
+				if (wasInRelevantInventory) {
+					// Stelle alle Items wieder her
+					restoreOriginalItems(handledScreen);
+					originalItems.clear();
+					lastKnownItems.clear();
+					// Setze alle Filter-Toggles zurück
+					activeFilters.clear();
+					wasInRelevantInventory = false;
+				}
+			}
+		} else {
+			// Prüfe ob der aktuelle Screen ein KitSelectionScreen ist
+			// In diesem Fall haben wir das Inventar nicht verlassen, sondern nur ein Menü geöffnet
+			if (client.gui.screen() instanceof KitSelectionScreen
+					|| client.gui.screen() instanceof KitViewScreen
+					|| client.gui.screen() instanceof CustomKitEditorScreen) {
+				// Kit-Menüs sind offen - Filter bleiben aktiv
+				return;
+			}
+			
+			// Prüfe ob wir gerade ein relevantes Inventar verlassen haben
+			if (wasInRelevantInventory) {
+				restoreOriginalItems(null);
+				originalItems.clear();
+				// Setze alle Filter-Toggles zurück
+				activeFilters.clear();
+				wasInRelevantInventory = false;
+			}
+		}
+	}
+	
+	/**
+	 * Prüft ob das aktuelle Inventar relevant für Kit-Filter ist
+	 * (Schmied-Bauplan-Inventare: Rüstung, Waffen, Werkzeuge, Shop und Favoriten).
+	 */
+	private static boolean isRelevantInventory(AbstractContainerScreen<?> screen) {
+		String title = screen.getTitle().getString();
+		String cleanTitle = title.replaceAll("§[0-9a-fk-or]", "")
+				.replaceAll("[\\u3400-\\u4DBF]", "");
+
+		return cleanTitle.contains("Baupläne [Waffen]") || cleanTitle.contains("Blueprints [Weapons]") ||
+				cleanTitle.contains("Baupläne [Rüstung]") || cleanTitle.contains("Blueprints [Armor]") ||
+				cleanTitle.contains("Baupläne [Werkzeuge]") || cleanTitle.contains("Blueprints [Tools]") ||
+				cleanTitle.contains("Bauplan [Shop]") || cleanTitle.contains("Blueprint Store") ||
+				cleanTitle.contains("Favorisierte [Rüstungsbaupläne]") || cleanTitle.contains("Favorited [Armor Blueprints]") ||
+				cleanTitle.contains("Favorisierte [Waffenbaupläne]") || cleanTitle.contains("Favorited [Weapon Blueprints]") ||
+				cleanTitle.contains("Favorisierte [Werkzeugbaupläne]") || cleanTitle.contains("Favorited [Tools Blueprints]") ||
+				cleanTitle.contains("CACTUS_CLICKER.blueprints.favorites.title.tools");
+	}
+	
+	/**
+	 * Aktualisiert die Button-Positionen basierend auf dem Screen
+	 */
+	private static void updateButtonPositions(AbstractContainerScreen<?> screen, Minecraft client) {
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		
+		// Positioniere Buttons basierend auf gespeicherten Positionen aus der Config
+		// Verwende die gleiche Logik wie in den DraggableOverlay-Klassen
+		int baseX = screenWidth - BUTTON_WIDTH - 20;
+		
+		// Button 1
+		int button1X = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1X;
+		int button1Y = 50 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Y;
+		buttonPositions.put(0, new ButtonPosition(button1X, button1Y));
+		
+		// Button 2
+		int button2X = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2X;
+		int button2Y = 75 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2Y;
+		buttonPositions.put(1, new ButtonPosition(button2X, button2Y));
+		
+		// Button 3
+		int button3X = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3X;
+		int button3Y = 100 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Y;
+		buttonPositions.put(2, new ButtonPosition(button3X, button3Y));
+	}
+	
+	/**
+	 * Rendert die Kit-Filter-Buttons
+	 */
+	public static void renderKitFilterButtons(GuiGraphicsExtractor context, AbstractContainerScreen<?> screen, int mouseX, int mouseY) {
+		if (!isRelevantInventory(screen)) {
+			return;
+		}
+		
+		// Prüfe ob Kit Filter Buttons aktiviert sind
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled) {
+			return;
+		}
+		
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) return;
+		
+		// Berechne Positionen direkt aus der Config (wie beim Hide Uncraftable Button)
+		// Das stellt sicher, dass Änderungen sofort sichtbar sind
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int baseX = screenWidth - BUTTON_WIDTH - 20;
+		
+		Integer hoveredButtonIndex = null;
+		
+		// Rendere jeden Button
+		for (int i = 0; i < BUTTON_COUNT; i++) {
+			// Berechne Position direkt aus Config
+			int buttonX, buttonY;
+			switch (i) {
+				case 0:
+					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1X;
+					buttonY = 50 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Y;
+					break;
+				case 1:
+					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2X;
+					buttonY = 75 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2Y;
+					break;
+				case 2:
+					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3X;
+					buttonY = 100 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Y;
+					break;
+				default:
+					continue;
+			}
+			
+			ButtonPosition pos = new ButtonPosition(buttonX, buttonY);
+			
+			// Prüfe ob Maus über diesem Button ist
+			if (mouseX >= pos.x && mouseX <= pos.x + BUTTON_WIDTH &&
+				mouseY >= pos.y && mouseY <= pos.y + BUTTON_HEIGHT) {
+				hoveredButtonIndex = i;
+			}
+			
+			// Button-Hintergrund (andere Farbe wenn Filter aktiv ist)
+			boolean isActive = activeFilters.getOrDefault(i, false) && selectedKits.containsKey(i);
+			int backgroundColor = isActive ? 0xFF5A8A7A : 0xFF4B6A69; // Heller wenn aktiv
+			context.fill(pos.x, pos.y, pos.x + BUTTON_WIDTH, pos.y + BUTTON_HEIGHT, backgroundColor);
+			
+			// Button-Rahmen
+			context.fill(pos.x, pos.y, pos.x + BUTTON_WIDTH, pos.y + 2, 0xFF65857C); // Oben
+			context.fill(pos.x, pos.y + BUTTON_HEIGHT - 2, pos.x + BUTTON_WIDTH, pos.y + BUTTON_HEIGHT, 0xFF1D2F3B); // Unten
+			context.fill(pos.x, pos.y, pos.x + 2, pos.y + BUTTON_HEIGHT, 0xFF314E52); // Links
+			context.fill(pos.x + BUTTON_WIDTH - 2, pos.y, pos.x + BUTTON_WIDTH, pos.y + BUTTON_HEIGHT, 0xFF314E52); // Rechts
+			
+			// Button-Text
+			String buttonText = getButtonText(i);
+			int textColor = 0xFF404040; // Dunkelgrau
+			int textX = pos.x + (BUTTON_WIDTH - client.font.width(buttonText)) / 2;
+			int textY = pos.y + (BUTTON_HEIGHT - 8) / 2;
+			context.text(client.font, buttonText, textX, textY, textColor, false);
+		}
+		
+		// Rendere Tooltip wenn über einem Button gehovered wird
+		if (hoveredButtonIndex != null) {
+			renderButtonTooltip(context, mouseX, mouseY, client);
+		}
+	}
+	
+	/**
+	 * Rendert einen Tooltip für die Kit-Filter-Buttons
+	 */
+	private static void renderButtonTooltip(GuiGraphicsExtractor context, int mouseX, int mouseY, Minecraft client) {
+		String line1 = "Linksklick : Filtern";
+		String line2 = "Rechtsklick : Bearbeiten";
+		
+		int line1Width = client.font.width(line1);
+		int line2Width = client.font.width(line2);
+		int maxWidth = Math.max(line1Width, line2Width);
+		int textHeight = client.font.lineHeight;
+		int padding = 4;
+		int lineSpacing = 2;
+		
+		int tooltipX = mouseX + 10;
+		int tooltipY = mouseY - 20;
+		
+		// Stelle sicher, dass der Tooltip nicht außerhalb des Bildschirms ist
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		if (tooltipX + maxWidth + padding * 2 > screenWidth) {
+			tooltipX = mouseX - maxWidth - padding * 2 - 10;
+		}
+		if (tooltipY < 0) {
+			tooltipY = mouseY + 10;
+		}
+		
+		// Berechne Hintergrund-Dimensionen
+		int totalHeight = (textHeight * 2) + (lineSpacing) + (padding * 2);
+		int bgX1 = tooltipX - padding;
+		int bgY1 = tooltipY - padding;
+		int bgX2 = tooltipX + maxWidth + padding;
+		int bgY2 = tooltipY + totalHeight - padding;
+		
+		// Tooltip-Hintergrund (halbtransparent schwarz)
+		context.fill(bgX1, bgY1, bgX2, bgY2, 0xF0000000);
+		
+		// Tooltip-Rahmen (weiß)
+		context.fill(bgX1, bgY1, bgX2, bgY1 + 1, 0xFFFFFFFF); // Oben
+		context.fill(bgX1, bgY2 - 1, bgX2, bgY2, 0xFFFFFFFF); // Unten
+		context.fill(bgX1, bgY1, bgX1 + 1, bgY2, 0xFFFFFFFF); // Links
+		context.fill(bgX2 - 1, bgY1, bgX2, bgY2, 0xFFFFFFFF); // Rechts
+		
+		// Tooltip-Text (zwei Zeilen)
+		context.text(client.font, line1, tooltipX, tooltipY, 0xFFFFFFFF, true);
+		context.text(client.font, line2, tooltipX, tooltipY + textHeight + lineSpacing, 0xFFFFFFFF, true);
+	}
+	
+	/**
+	 * Gibt den Text für einen Button zurück
+	 */
+	private static String getButtonText(int buttonIndex) {
+		KitSelection selection = selectedKits.get(buttonIndex);
+		if (selection != null) {
+			if (selection.isCustom()) {
+				CustomKit kit = CustomKitManager.getKit(selection.customKitId);
+				return kit != null ? kit.name : "Eigenes Kit";
+			}
+			return selection.getDisplayName();
+		}
+		return "Kit " + (buttonIndex + 1);
+	}
+	
+	/**
+	 * Behandelt Mausklicks auf die Kit-Filter-Buttons
+	 * Linksklick: Toggle Filter
+	 * Rechtsklick: Öffne Auswahlmenü
+	 */
+	public static boolean handleButtonClick(double mouseX, double mouseY, int button) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null || client.gui.screen() == null) return false;
+		
+		if (!(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) return false;
+		if (!isRelevantInventory(handledScreen)) return false;
+		
+		// Prüfe ob Kit Filter Buttons aktiviert sind
+		if (!CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButtonsEnabled) {
+			return false;
+		}
+		
+		// Berechne Positionen direkt aus der Config (wie beim Rendern)
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		int baseX = screenWidth - BUTTON_WIDTH - 20;
+		
+		// Prüfe ob ein Button geklickt wurde
+		for (int i = 0; i < BUTTON_COUNT; i++) {
+			// Berechne Position direkt aus Config
+			int buttonX, buttonY;
+			switch (i) {
+				case 0:
+					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1X;
+					buttonY = 50 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton1Y;
+					break;
+				case 1:
+					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2X;
+					buttonY = 75 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton2Y;
+					break;
+				case 2:
+					buttonX = baseX + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3X;
+					buttonY = 100 + CCLiveUtilitiesConfig.HANDLER.instance().kitFilterButton3Y;
+					break;
+				default:
+					continue;
+			}
+			
+			if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH &&
+				mouseY >= buttonY && mouseY <= buttonY + BUTTON_HEIGHT) {
+				
+				if (button == 0) {
+					// Linksklick: Toggle Filter
+					toggleFilter(i, handledScreen, client);
+					return true;
+				} else if (button == 1) {
+					// Rechtsklick: Öffne Auswahlmenü
+					openKitSelectionScreen(i);
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Toggelt den Filter für einen Button
+	 */
+	private static void toggleFilter(int buttonIndex, AbstractContainerScreen<?> screen, Minecraft client) {
+		// Prüfe ob ein Kit für diesen Button ausgewählt ist
+		if (!selectedKits.containsKey(buttonIndex)) {
+			// Kein Kit ausgewählt - öffne stattdessen das Auswahlmenü
+			openKitSelectionScreen(buttonIndex);
+			return;
+		}
+		
+		// Toggle Filter-Status
+		boolean currentStatus = activeFilters.getOrDefault(buttonIndex, false);
+		activeFilters.put(buttonIndex, !currentStatus);
+		
+		// Stelle sicher, dass originale Items gespeichert sind
+		saveOriginalItems(screen);
+		
+		// Aktualisiere die gefilterten Items sofort
+		updateFilteredItems(screen, client);
+	}
+	
+	/**
+	 * Öffnet den Kit-Auswahl-Screen
+	 */
+	public static void openKitSelectionScreen(int buttonIndex) {
+		currentButtonIndex = buttonIndex;
+		
+		// Öffne den Kit-Auswahl-Screen
+		Minecraft client = Minecraft.getInstance();
+		if (client != null) {
+			client.gui.setScreen(new KitSelectionScreen(buttonIndex));
+		}
+	}
+
+	public static AbstractContainerScreen<?> getLastRelevantInventoryScreen() {
+		if (lastRelevantInventoryScreen != null && isRelevantInventory(lastRelevantInventoryScreen)) {
+			return lastRelevantInventoryScreen;
+		}
+		return null;
+	}
+
+	public static AbstractContainerScreen<?> resolveKitEditorItemViewerBackground(net.minecraft.client.gui.screens.Screen directPreviousScreen) {
+		if (directPreviousScreen instanceof AbstractContainerScreen<?> handled && isRelevantInventory(handled)) {
+			return handled;
+		}
+		return getLastRelevantInventoryScreen();
+	}
+	
+	/**
+	 * Setzt die Kit-Auswahl für einen Button
+	 */
+	public static void setKitSelection(int buttonIndex, KitType kitType, int level) {
+		setKitSelection(buttonIndex, kitType, level, false);
+	}
+
+	public static void setNeuKitSelection(int buttonIndex, KitType kitType, int level) {
+		setKitSelection(buttonIndex, kitType, level, true);
+	}
+
+	private static void setKitSelection(int buttonIndex, KitType kitType, int level, boolean neuKit) {
+		KitSelection oldSelection = selectedKits.get(buttonIndex);
+		boolean selectionChanged = oldSelection == null
+				|| oldSelection.isCustom()
+				|| oldSelection.kitType != kitType
+				|| oldSelection.level != level
+				|| oldSelection.neuKit != neuKit;
+
+		selectedKits.put(buttonIndex, new KitSelection(kitType, level, neuKit));
+		saveKitSelectionToConfig(buttonIndex, kitType, level, neuKit);
+		applyKitSelectionSideEffects(buttonIndex, selectionChanged, getKitItemNames(kitType, level, neuKit));
+	}
+
+	public static void setCustomKitSelection(int buttonIndex, String customKitId) {
+		KitSelection oldSelection = selectedKits.get(buttonIndex);
+		boolean selectionChanged = oldSelection == null
+				|| !oldSelection.isCustom()
+				|| !customKitId.equals(oldSelection.customKitId);
+
+		selectedKits.put(buttonIndex, new KitSelection(customKitId));
+		saveCustomKitSelectionToConfig(buttonIndex, customKitId);
+		applyKitSelectionSideEffects(buttonIndex, selectionChanged, getKitItemNamesForSelection(selectedKits.get(buttonIndex)));
+	}
+
+	public static void clearCustomKitSelectionIfDeleted(String kitId) {
+		if (kitId == null || kitId.isEmpty()) {
+			return;
+		}
+		for (int buttonIndex = 0; buttonIndex < 3; buttonIndex++) {
+			KitSelection selection = selectedKits.get(buttonIndex);
+			if (selection != null && selection.isCustom() && kitId.equals(selection.customKitId)) {
+				selectedKits.remove(buttonIndex);
+				saveCustomKitSelectionToConfig(buttonIndex, "");
+				applyKitSelectionSideEffects(buttonIndex, true, Set.of());
+			}
+		}
+	}
+
+	private static void applyKitSelectionSideEffects(int buttonIndex, boolean selectionChanged, Set<String> itemNames) {
+		Minecraft client = Minecraft.getInstance();
+		if (client != null && client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen) {
+			if (isRelevantInventory(handledScreen)) {
+				restoreOriginalItems(handledScreen, false);
+				if (selectionChanged) {
+					saveOriginalItems(handledScreen);
+				} else {
+					saveOriginalItems(handledScreen);
+				}
+				if (itemNames.isEmpty()) {
+					activeFilters.put(buttonIndex, false);
+				} else if (!activeFilters.containsKey(buttonIndex)) {
+					activeFilters.put(buttonIndex, false);
+				}
+				updateFilteredItems(handledScreen, client);
+			}
+		} else {
+			if (itemNames.isEmpty()) {
+				activeFilters.put(buttonIndex, false);
+			} else if (!activeFilters.containsKey(buttonIndex)) {
+				activeFilters.put(buttonIndex, false);
+			}
+		}
+	}
+	
+	/**
+	 * Gibt zurück, ob ein Filter für einen Button aktiv ist
+	 */
+	public static boolean isFilterActive(int buttonIndex) {
+		return activeFilters.getOrDefault(buttonIndex, false);
+	}
+	
+	/**
+	 * Gibt die aktuelle Kit-Auswahl für einen Button zurück
+	 */
+	public static KitSelection getKitSelection(int buttonIndex) {
+		return selectedKits.get(buttonIndex);
+	}
+	
+	/**
+	 * Prüft, ob sich das Inventar geändert hat (Items hinzugefügt, entfernt oder geändert)
+	 */
+	private static boolean hasInventoryChanged(AbstractContainerScreen<?> screen) {
+		if (screen == null || lastKnownItems.isEmpty()) {
+			return false;
+		}
+		
+		// Prüfe alle Filter-Slots
+		for (int slotIndex : FILTER_SLOTS) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
+				continue;
+			}
+			
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack currentItem = slot.getItem();
+			
+			// Wenn es ein schwarzer Betonblock ist, verwende das originale Item für den Vergleich
+			if (currentItem.getItem() == Items.CONCRETE.black()) {
+				currentItem = originalItems.get(slotIndex);
+				if (currentItem == null) {
+					currentItem = ItemStack.EMPTY;
+				}
+			}
+			
+			ItemStack lastKnownItem = lastKnownItems.get(slotIndex);
+			
+			if (currentItem == null || currentItem.isEmpty()) {
+				// Item wurde entfernt
+				if (lastKnownItem != null && !lastKnownItem.isEmpty()) {
+					return true;
+				}
+			} else {
+				// Item ist vorhanden
+				if (lastKnownItem == null || lastKnownItem.isEmpty()) {
+					// Neues Item wurde hinzugefügt
+					return true;
+				} else {
+					// Prüfe ob sich das Item geändert hat (Name oder andere Eigenschaften)
+					if (!areItemsEqual(currentItem, lastKnownItem)) {
+						return true;
+					}
+				}
+			}
+		}
+		
+		// Prüfe auch, ob Items entfernt wurden (in lastKnownItems aber nicht mehr im Inventar)
+		for (Map.Entry<Integer, ItemStack> entry : lastKnownItems.entrySet()) {
+			int slotIndex = entry.getKey();
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack currentItem = slot.getItem();
+				
+				// Wenn es ein schwarzer Betonblock ist, verwende das originale Item
+				if (currentItem.getItem() == Items.CONCRETE.black()) {
+					currentItem = originalItems.get(slotIndex);
+					if (currentItem == null) {
+						currentItem = ItemStack.EMPTY;
+					}
+				}
+				
+				// Wenn das Item leer ist, aber in lastKnownItems vorhanden war, wurde es entfernt
+				if ((currentItem == null || currentItem.isEmpty()) && !entry.getValue().isEmpty()) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Prüft, ob zwei ItemStacks gleich sind (basierend auf Name und anderen wichtigen Eigenschaften)
+	 */
+	private static boolean areItemsEqual(ItemStack item1, ItemStack item2) {
+		if (item1.isEmpty() != item2.isEmpty()) {
+			return false;
+		}
+		if (item1.isEmpty()) {
+			return true;
+		}
+		
+		// Prüfe Item-Typ
+		if (item1.getItem() != item2.getItem()) {
+			return false;
+		}
+		
+		// Prüfe Custom Name
+		var name1 = item1.get(DataComponents.CUSTOM_NAME);
+		var name2 = item2.get(DataComponents.CUSTOM_NAME);
+		if (name1 != null && name2 != null) {
+			if (!name1.getString().equals(name2.getString())) {
+				return false;
+			}
+		} else if (name1 != null || name2 != null) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	/**
+	 * Aktualisiert die originalen Items nach einer Inventaränderung
+	 */
+	private static void updateOriginalItemsAfterChange(AbstractContainerScreen<?> screen) {
+		if (screen == null) {
+			return;
+		}
+		
+		// Stelle zuerst alle originalen Items wieder her
+		restoreOriginalItems(screen, false);
+		
+		// Durchlaufe alle Filter-Slots und aktualisiere originale Items
+		for (int slotIndex : FILTER_SLOTS) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
+				continue;
+			}
+			
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack currentItem = slot.getItem();
+			
+			// Überspringe schwarze Betonblöcke
+			if (currentItem.getItem() == Items.CONCRETE.black()) {
+				continue;
+			}
+			
+			if (currentItem.isEmpty()) {
+				// Item wurde entfernt - entferne auch aus originalItems
+				originalItems.remove(slotIndex);
+			} else {
+				// Item ist vorhanden - aktualisiere oder füge hinzu
+				originalItems.put(slotIndex, currentItem.copy());
+			}
+		}
+	}
+	
+	/**
+	 * Speichert alle originalen Items aus den Filter-Slots
+	 */
+	private static void saveOriginalItems(AbstractContainerScreen<?> screen) {
+		if (screen == null) return;
+		
+		// Durchlaufe nur die Filter-Slots und speichere originale Items
+		for (int slotIndex : FILTER_SLOTS) {
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
+				
+				if (!itemStack.isEmpty()) {
+					// Prüfe ob es bereits ein schwarzer Betonblock ist (dann ist es bereits gefiltert)
+					if (itemStack.getItem() != Items.CONCRETE.black()) {
+						// Speichere das originale Item
+						originalItems.put(slotIndex, itemStack.copy());
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Aktualisiert die Items basierend auf den ausgewählten Kit-Filtern
+	 */
+	private static void updateFilteredItems(AbstractContainerScreen<?> screen, Minecraft client) {
+		// Stelle sicher, dass alle originalen Items in den Filter-Slots gespeichert sind
+		// (falls neue Items hinzugefügt wurden oder das Inventar sich geändert hat)
+		for (int slotIndex : FILTER_SLOTS) {
+			if (slotIndex < screen.getMenu().slots.size()) {
+				Slot slot = screen.getMenu().slots.get(slotIndex);
+				ItemStack itemStack = slot.getItem();
+				
+				if (!itemStack.isEmpty()) {
+					// Prüfe ob es bereits ein schwarzer Betonblock ist (dann ist es bereits gefiltert)
+					if (itemStack.getItem() != Items.CONCRETE.black()) {
+						// Speichere das originale Item falls noch nicht gespeichert
+						if (!originalItems.containsKey(slotIndex)) {
+							originalItems.put(slotIndex, itemStack.copy());
+						}
+					}
+				}
+			}
+		}
+		
+		// Prüfe ob mindestens ein aktiver Filter vorhanden ist
+		boolean hasActiveFilter = false;
+		for (int i = 0; i < BUTTON_COUNT; i++) {
+			if (selectedKits.containsKey(i) && activeFilters.getOrDefault(i, false)) {
+				hasActiveFilter = true;
+				break;
+			}
+		}
+		
+		if (!hasActiveFilter) {
+			// Kein Filter aktiv - stelle alle Items wieder her
+			restoreOriginalItems(screen);
+			return;
+		}
+		
+		// Durchlaufe nur die Filter-Slots und wende Filter an
+		for (int slotIndex : FILTER_SLOTS) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
+				continue;
+			}
+			
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack itemStack = slot.getItem();
+			
+			// Wenn der Slot bereits schwarzen Beton enthält, hole das originale Item
+			if (itemStack.getItem() == Items.CONCRETE.black() && originalItems.containsKey(slotIndex)) {
+				itemStack = originalItems.get(slotIndex);
+			}
+			
+			if (!itemStack.isEmpty() && itemStack.getItem() != Items.CONCRETE.black()) {
+				
+				// Prüfe ob das Item zu einem der aktiven Kits gehört
+				boolean matchesAnyKit = false;
+				for (int i = 0; i < BUTTON_COUNT; i++) {
+					KitSelection selection = selectedKits.get(i);
+					boolean isFilterActive = activeFilters.getOrDefault(i, false);
+					if (selection != null && isFilterActive && isItemInKit(itemStack, selection)) {
+						matchesAnyKit = true;
+						break;
+					}
+				}
+				
+				if (!matchesAnyKit) {
+					// Ersetze mit schwarzem Beton, aber behalte die ursprünglichen Tooltips
+					ItemStack blackConcrete = new ItemStack(Items.CONCRETE.black());
+					
+					// Kopiere die ursprünglichen Komponenten für Tooltips
+					blackConcrete.set(DataComponents.CUSTOM_NAME, itemStack.get(DataComponents.CUSTOM_NAME));
+					blackConcrete.set(DataComponents.LORE, itemStack.get(DataComponents.LORE));
+					
+					// Füge einen Hinweis zum Custom Name hinzu, dass das Item ausgeblendet wurde
+					var customName = blackConcrete.get(DataComponents.CUSTOM_NAME);
+					if (customName != null) {
+						// Füge den Hinweis zum bestehenden Namen hinzu
+						String originalName = customName.getString();
+						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
+						if (!originalName.contains("[Ausgeblendet]")) {
+							Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
+						}
+					} else {
+						// Erstelle einen neuen Custom Name mit Hinweis
+						String originalName = itemStack.getHoverName().getString();
+						// Prüfe ob "[Ausgeblendet]" bereits vorhanden ist (mit oder ohne Formatierungscodes)
+						if (!originalName.contains("[Ausgeblendet]")) {
+							Component newName = Component.literal(originalName + " §7[Ausgeblendet]");
+							blackConcrete.set(DataComponents.CUSTOM_NAME, newName);
+						}
+					}
+					
+					slot.setByPlayer(blackConcrete);
+				} else {
+					// Item passt zu einem Kit - stelle das originale Item wieder her falls es ausgeblendet war
+					ItemStack currentItem = slot.getItem();
+					if (currentItem.getItem() == Items.CONCRETE.black() && originalItems.containsKey(slotIndex)) {
+						slot.setByPlayer(originalItems.get(slotIndex));
+					} else if (currentItem.getItem() != Items.CONCRETE.black() && originalItems.containsKey(slotIndex)) {
+						// Stelle sicher, dass das originale Item angezeigt wird (falls es geändert wurde)
+						ItemStack originalItem = originalItems.get(slotIndex);
+						if (!currentItem.equals(originalItem)) {
+							// Item hat sich geändert - aktualisiere die gespeicherte Version
+							originalItems.put(slotIndex, currentItem.copy());
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Stellt die originalen Items wieder her
+	 * @param clearOriginalItems Wenn true, wird die originalItems Map nach der Wiederherstellung geleert
+	 */
+	private static void restoreOriginalItems(AbstractContainerScreen<?> screen, boolean clearOriginalItems) {
+		if (screen == null) {
+			if (clearOriginalItems) {
+				originalItems.clear();
+			}
+			return;
+		}
+		
+		// Durchlaufe nur die Filter-Slots und stelle Items wieder her
+		for (int slotIndex : FILTER_SLOTS) {
+			if (slotIndex >= screen.getMenu().slots.size()) {
+				continue;
+			}
+			
+			Slot slot = screen.getMenu().slots.get(slotIndex);
+			ItemStack currentItem = slot.getItem();
+			
+			// Wenn der Slot schwarzen Beton enthält, stelle das originale Item wieder her
+			if (currentItem.getItem() == Items.CONCRETE.black()) {
+				if (originalItems.containsKey(slotIndex)) {
+					slot.setByPlayer(originalItems.get(slotIndex));
+				}
+			}
+		}
+		
+		if (clearOriginalItems) {
+			originalItems.clear();
+		}
+	}
+	
+	/**
+	 * Stellt die originalen Items wieder her (ohne originalItems zu löschen)
+	 */
+	private static void restoreOriginalItems(AbstractContainerScreen<?> screen) {
+		restoreOriginalItems(screen, true);
+	}
+	
+	/**
+	 * Prüft ob ein Item zu einem bestimmten Kit gehört
+	 * Vergleicht den Item-Namen mit den gespeicherten Item-Namen für das Kit
+	 */
+	public static boolean isItemInKit(ItemStack itemStack, KitSelection kitSelection) {
+		if (itemStack == null || itemStack.isEmpty() || kitSelection == null) {
+			return false;
+		}
+
+		Set<String> expectedNames = getKitItemNamesForSelection(kitSelection);
+		if (expectedNames.isEmpty()) {
+			return false;
+		}
+
+		String itemName = itemStack.getHoverName().getString();
+		String cleanItemName = itemName.replaceAll("§[0-9a-fk-or]", "");
+
+		for (String expectedName : expectedNames) {
+			String cleanExpectedName = expectedName.replaceAll("§[0-9a-fk-or]", "");
+			if (cleanItemName.equalsIgnoreCase(cleanExpectedName)
+					|| cleanItemName.contains(cleanExpectedName)
+					|| cleanExpectedName.contains(cleanItemName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Setzt die Item-Informationen für ein Kit und eine Stufe
+	 */
+	private static void setKitItemInfos(KitType kitType, int level, Set<ItemInfo> itemInfos) {
+		kitItemInfos.computeIfAbsent(kitType, k -> new HashMap<>()).put(level, itemInfos);
+	}
+
+	private static void setNeuKitItemInfos(KitType kitType, int level, Set<ItemInfo> itemInfos) {
+		neuKitItemInfos.computeIfAbsent(kitType, k -> new HashMap<>()).put(level, itemInfos);
+	}
+	
+	/**
+	 * Gibt die Item-Informationen für ein Kit und eine Stufe zurück
+	 */
+	public static Set<ItemInfo> getKitItemInfos(KitType kitType, int level) {
+		return getKitItemInfos(kitType, level, false);
+	}
+
+	public static Set<ItemInfo> getKitItemInfos(KitType kitType, int level, boolean neuKit) {
+		Map<Integer, Set<ItemInfo>> levelMap = neuKit ? neuKitItemInfos.get(kitType) : kitItemInfos.get(kitType);
+		if (levelMap == null) {
+			return new HashSet<>();
+		}
+		return levelMap.getOrDefault(level, new HashSet<>());
+	}
+	
+	/**
+	 * Gibt die Item-Namen für ein Kit und eine Stufe zurück (nur Namen, für Rückwärtskompatibilität)
+	 */
+	public static Set<String> getKitItemNames(KitType kitType, int level) {
+		return getKitItemNames(kitType, level, false);
+	}
+
+	public static Set<String> getKitItemNames(KitType kitType, int level, boolean neuKit) {
+		Set<ItemInfo> itemInfos = getKitItemInfos(kitType, level, neuKit);
+		Set<String> itemNames = new HashSet<>();
+		for (ItemInfo itemInfo : itemInfos) {
+			itemNames.add(itemInfo.name);
+		}
+		return itemNames;
+	}
+
+	public static ItemInfo findItemInfoByName(String itemName) {
+		if (itemName == null || itemName.isEmpty()) {
+			return null;
+		}
+		String key = normalizeItemName(itemName);
+		ItemInfo indexed = itemInfoByNormalizedName.get(key);
+		if (indexed != null) {
+			return indexed;
+		}
+		ItemInfo fromItemViewer = itemInfoFromItemViewer(itemName);
+		if (fromItemViewer != null) {
+			itemInfoByNormalizedName.putIfAbsent(key, fromItemViewer);
+			return fromItemViewer;
+		}
+		return new ItemInfo(itemName);
+	}
+
+	private static ItemInfo itemInfoFromItemViewer(String itemName) {
+		ItemData item = ItemCatalog.findItemByNameFuzzy(itemName);
+		if (item == null) {
+			return null;
+		}
+		return convertItemDataToKitItemInfo(item);
+	}
+
+	private static ItemInfo convertItemDataToKitItemInfo(ItemData item) {
+		String name = item.name != null ? item.name : "";
+		String ebene = formatItemFoundAt(item);
+		boolean isModule = isModuleItem(item);
+
+		String itemType = null;
+		String nameColorString = null;
+		String modifier = null;
+		String infoText = null;
+		int nameColor = 0xFFFFFFFF;
+
+		if (item.info != null) {
+			net.felix.utilities.Overall.itemviewer.data.ItemInfo ivInfo = item.info;
+			if (isModule) {
+				itemType = "Modul";
+			} else if (ivInfo.piece != null && !ivInfo.piece.isEmpty()) {
+				itemType = ivInfo.piece;
+			} else if (ivInfo.type != null && !ivInfo.type.isEmpty()) {
+				itemType = ivInfo.type;
+			}
+			if (ivInfo.rarity != null && !ivInfo.rarity.isEmpty()) {
+				nameColorString = ivInfo.rarity;
+				nameColor = rarityColorFromItemViewer(ivInfo.rarity);
+			}
+			if (!isModule && ivInfo.modifier != null && !ivInfo.modifier.isEmpty()) {
+				StringBuilder modifierBuilder = new StringBuilder();
+				for (int i = 0; i < ivInfo.modifier.size(); i++) {
+					if (i > 0) {
+						modifierBuilder.append(", ");
+					}
+					String mod = ivInfo.modifier.get(i);
+					if (mod == null || mod.isEmpty()) {
+						continue;
+					}
+					modifierBuilder.append("[").append(mod).append("]");
+				}
+				modifier = modifierBuilder.length() > 0 ? modifierBuilder.toString() : null;
+			}
+			if (ivInfo.description != null && !ivInfo.description.isEmpty()) {
+				infoText = ivInfo.description;
+			}
+		} else if (isModule) {
+			itemType = "Modul";
+		}
+
+		if (isModule || modifier == null || modifier.isEmpty() || "[]".equals(modifier)) {
+			if (isModule) {
+				modifier = "–";
+			}
+		}
+
+		return new ItemInfo(name, ebene, infoText, nameColor, nameColorString, itemType, modifier);
+	}
+
+	private static boolean isModuleItem(ItemData item) {
+		if (item == null) {
+			return false;
+		}
+		if (item.category != null && item.category.equalsIgnoreCase("modules")) {
+			return true;
+		}
+		return item.info != null && Boolean.TRUE.equals(item.info.module);
+	}
+
+	/** Fundorte/Meilensteine aus ItemViewer (Komma-getrennt). */
+	private static String formatItemFoundAt(ItemData item) {
+		if (item == null || item.foundAt == null || item.foundAt.isEmpty()) {
+			return null;
+		}
+		List<String> parts = new ArrayList<>();
+		for (net.felix.utilities.Overall.itemviewer.data.LocationData loc : item.foundAt) {
+			if (loc == null) {
+				continue;
+			}
+			if (loc.collection != null && !loc.collection.isEmpty()) {
+				parts.add(loc.collection);
+			} else if (loc.floor != null && !loc.floor.isEmpty()) {
+				Integer floorNum = FloorNumberExtractor.parseFloorString(loc.floor);
+				parts.add(floorNum != null ? "e" + floorNum : loc.floor);
+			}
+		}
+		return parts.isEmpty() ? null : String.join(", ", parts);
+	}
+
+	private static int rarityColorFromItemViewer(String rarity) {
+		return ItemInfo.parseColorString(rarity);
+	}
+
+	public static String getCustomKitItemCacheKey(CustomKit kit) {
+		return customKitCacheKey(kit);
+	}
+
+	/** Nur Ausrüstung, ohne Angelkomponenten und ohne Karten. */
+	public static List<ItemInfo> getCustomKitItemInfos(CustomKit kit) {
+		if (kit == null) {
+			return new ArrayList<>();
+		}
+		kit.ensureEquipmentEntries();
+		List<ItemInfo> result = new ArrayList<>();
+		if (kit.equipmentEntries != null) {
+			for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+				if (entry == null || entry.jeiName == null) {
+					continue;
+				}
+				ItemInfo info = findItemInfoByName(entry.jeiName);
+				if (info != null) {
+					result.add(info);
+				}
+			}
+		}
+		return collapseSameNames(result);
+	}
+
+	/** Angelkomponenten für Kit-Hover-Abschnitt (Typ aus Speicherung, Metadaten aus items.json). */
+	public static List<ItemInfo> getCustomKitFishingComponentInfos(CustomKit kit) {
+		List<ItemInfo> result = new ArrayList<>();
+		if (kit == null || kit.fishingComponents == null) {
+			return result;
+		}
+		for (CustomKit.FishingComponent fc : kit.fishingComponents) {
+			if (fc == null || fc.itemName == null || fc.itemName.isEmpty()) {
+				continue;
+			}
+			ItemInfo base = findItemInfoByName(fc.itemName);
+			String type = fc.type != null && !fc.type.isEmpty() ? fc.type : "Komponente";
+			if (base != null) {
+				result.add(new ItemInfo(
+					base.name,
+					base.ebene,
+					base.info,
+					base.nameColor,
+					base.nameColorString,
+					type,
+					null));
+			} else {
+				result.add(new ItemInfo(fc.itemName, null, null, 0xFFFFFFFF, null, type, null));
+			}
+		}
+		return result;
+	}
+
+	/** Karten: Effekt + eN-Fundorte aus CardsStatues.json; Found lokal. */
+	public static List<ItemInfo> getCustomKitCardInfos(CustomKit kit) {
+		List<ItemInfo> result = new ArrayList<>();
+		if (kit == null || kit.cardNames == null) {
+			return result;
+		}
+		for (String cardName : kit.cardNames) {
+			if (cardName == null || cardName.isEmpty()) {
+				continue;
+			}
+			String clean = stripCardSuffix(cardName);
+			String effect = net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.getCardEffectByName(clean);
+			if (effect == null || effect.isEmpty()) {
+				effect = "–";
+			}
+			String floors = formatCardFloors(
+				net.felix.utilities.Aincraft.cardsstatues.data.CardsStatuesDatabase.getCardFloorsByName(clean));
+			result.add(new ItemInfo(clean, floors, null, 0xFFFFFFFF, null, "Karte", effect));
+		}
+		return result;
+	}
+
+	private static String stripCardSuffix(String name) {
+		String cleaned = name != null ? name.trim() : "";
+		if (cleaned.endsWith("]")) {
+			int start = cleaned.lastIndexOf('[');
+			if (start >= 0) {
+				String inner = cleaned.substring(start + 1, cleaned.length() - 1).trim();
+				if ("karte".equalsIgnoreCase(inner)) {
+					cleaned = cleaned.substring(0, start).trim();
+				}
+			}
+		}
+		return cleaned;
+	}
+
+	private static String formatCardFloors(List<Integer> floors) {
+		if (floors == null || floors.isEmpty()) {
+			return null;
+		}
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < floors.size(); i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			sb.append("e").append(floors.get(i));
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Kit-Hover-Abschnitte in Reihenfolge:
+	 * Rüstung, Waffen, Werkzeuge, Module, Angelkomponenten, Karten (nur nicht-leere).
+	 */
+	public static List<KitHoverSection> getCustomKitHoverSections(CustomKit kit) {
+		List<KitHoverSection> sections = new ArrayList<>();
+		if (kit == null) {
+			return sections;
+		}
+
+		List<ItemInfo> armor = new ArrayList<>();
+		List<ItemInfo> weapons = new ArrayList<>();
+		List<ItemInfo> tools = new ArrayList<>();
+		List<ItemInfo> modules = new ArrayList<>();
+
+		kit.ensureEquipmentEntries();
+		if (kit.equipmentEntries != null) {
+			for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+				if (entry == null || entry.jeiName == null) {
+					continue;
+				}
+				ItemInfo info = findItemInfoByName(entry.jeiName);
+				if (info == null) {
+					info = new ItemInfo(entry.jeiName, null, null, 0xFFFFFFFF, null,
+						entry.slotType != null ? entry.slotType : "Item", "–");
+				}
+				String cat = resolveEntryCategory(kit, entry);
+				switch (cat) {
+					case "weapons" -> weapons.add(info);
+					case "tools" -> tools.add(info);
+					case "modules" -> modules.add(forceModuleDisplay(info));
+					default -> armor.add(info);
+				}
+			}
+		}
+
+		if (!armor.isEmpty()) {
+			sections.add(new KitHoverSection("Rüstung", collapseSameNames(armor), KitHoverSection.FoundMode.BLUEPRINT));
+		}
+		if (!weapons.isEmpty()) {
+			sections.add(new KitHoverSection("Waffen", collapseSameNames(weapons), KitHoverSection.FoundMode.BLUEPRINT));
+		}
+		if (!tools.isEmpty()) {
+			sections.add(new KitHoverSection("Werkzeuge", collapseSameNames(tools), KitHoverSection.FoundMode.BLUEPRINT));
+		}
+		if (!modules.isEmpty()) {
+			sections.add(new KitHoverSection("Module", collapseSameNames(modules), KitHoverSection.FoundMode.BLUEPRINT));
+		}
+
+		List<ItemInfo> fishing = getCustomKitFishingComponentInfos(kit);
+		if (!fishing.isEmpty()) {
+			sections.add(new KitHoverSection("Angelkomponenten", fishing, KitHoverSection.FoundMode.FISHING));
+		}
+
+		List<ItemInfo> cards = getCustomKitCardInfos(kit);
+		if (!cards.isEmpty()) {
+			sections.add(new KitHoverSection("Karten", cards, KitHoverSection.FoundMode.CARD));
+		}
+
+		return sections;
+	}
+
+	private static ItemInfo forceModuleDisplay(ItemInfo info) {
+		String modifier = info.modifier;
+		if (modifier == null || modifier.isEmpty() || "[]".equals(modifier)) {
+			modifier = "–";
+		}
+		return new ItemInfo(
+			info.name,
+			info.ebene,
+			info.info,
+			info.nameColor,
+			info.nameColorString,
+			"Modul",
+			modifier);
+	}
+
+	private static List<ItemInfo> collapseSameNames(List<ItemInfo> items) {
+		if (items == null || items.isEmpty()) {
+			return items != null ? items : new ArrayList<>();
+		}
+		java.util.LinkedHashMap<String, ItemInfo> first = new java.util.LinkedHashMap<>();
+		java.util.LinkedHashMap<String, Integer> counts = new java.util.LinkedHashMap<>();
+		for (ItemInfo info : items) {
+			if (info == null || info.name == null) {
+				continue;
+			}
+			String key = info.name;
+			counts.put(key, counts.getOrDefault(key, 0) + 1);
+			first.putIfAbsent(key, info);
+		}
+		List<ItemInfo> out = new ArrayList<>();
+		for (java.util.Map.Entry<String, ItemInfo> e : first.entrySet()) {
+			int count = counts.getOrDefault(e.getKey(), 1);
+			ItemInfo info = e.getValue();
+			if (count <= 1) {
+				out.add(info);
+				continue;
+			}
+			out.add(new ItemInfo(
+				info.name + " ×" + count,
+				info.ebene,
+				info.info,
+				info.nameColor,
+				info.nameColorString,
+				info.itemType,
+				info.modifier));
+		}
+		return out;
+	}
+
+	private static String resolveEntryCategory(CustomKit kit, CustomKit.EquipmentEntry entry) {
+		if (entry.inventorySlot != null) {
+			BuildSlotMapping.PieceType type = BuildSlotMapping.pieceTypeForSlot(entry.inventorySlot);
+			BuildSlotMapping.EquipmentCategory category = BuildSlotMapping.categoryForPiece(type);
+			if (category != null) {
+				return category.categoryKey();
+			}
+		}
+		return resolveItemCategory(kit, entry.jeiName);
+	}
+
+	private static String resolveItemCategory(CustomKit kit, String itemName) {
+		if (kit.itemCategories != null) {
+			String stored = kit.itemCategories.get(itemName);
+			if (stored != null && !stored.isEmpty()) {
+				return stored.toLowerCase(Locale.ROOT);
+			}
+		}
+		ItemData data = ItemCatalog.findItemByName(itemName);
+		if (data == null) {
+			data = ItemCatalog.findItemByNameFuzzy(itemName);
+		}
+		return classifyEquipmentCategory(data);
+	}
+
+	private static String classifyEquipmentCategory(ItemData data) {
+		if (data == null) {
+			return "armor";
+		}
+		BuildSlotMapping.EquipmentCategory mapped =
+			BuildSlotMapping.categoryForPiece(BuildSlotMapping.resolvePieceType(data));
+		if (mapped != null) {
+			return mapped.categoryKey();
+		}
+		if (isModuleItem(data)) {
+			return "modules";
+		}
+		String piece = data.info != null && data.info.piece != null
+			? data.info.piece.toLowerCase(Locale.ROOT) : "";
+		String type = data.info != null && data.info.type != null
+			? data.info.type.toLowerCase(Locale.ROOT) : "";
+		String tags = "";
+		if (data.tags != null) {
+			tags = String.join(" ", data.tags).toLowerCase(Locale.ROOT);
+		}
+
+		if (type.contains("tool") || type.contains("werkzeug")
+				|| piece.contains("spitzhacke") || piece.contains("schaufel")
+				|| tags.contains("tool")) {
+			return "tools";
+		}
+		if (type.contains("waffe") || type.contains("weapon")
+				|| piece.contains("schwert") || piece.contains("bogen")
+				|| piece.contains("armbrust") || piece.contains("dolch")
+				|| tags.contains("weapon")) {
+			return "weapons";
+		}
+		return "armor";
+	}
+
+	public static final class KitHoverSection {
+		public enum FoundMode { NONE, BLUEPRINT, FISHING, CARD }
+
+		public final String title;
+		public final List<ItemInfo> items;
+		public final FoundMode foundMode;
+
+		public KitHoverSection(String title, List<ItemInfo> items, FoundMode foundMode) {
+			this.title = title;
+			this.items = items != null ? items : List.of();
+			this.foundMode = foundMode != null ? foundMode : FoundMode.NONE;
+		}
+	}
+
+	private static String customKitCacheKey(CustomKit kit) {
+		StringBuilder key = new StringBuilder(kit.id != null ? kit.id : "");
+		key.append('|').append(kit.name != null ? kit.name : "");
+		kit.ensureEquipmentEntries();
+		if (kit.equipmentEntries != null) {
+			for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+				if (entry == null) {
+					continue;
+				}
+				key.append('|').append(entry.jeiName).append('@').append(entry.inventorySlot);
+			}
+		} else if (kit.itemNames != null) {
+			for (String itemName : kit.itemNames) {
+				key.append('|').append(itemName);
+			}
+		}
+		key.append("|cards");
+		if (kit.cardNames != null) {
+			for (String cardName : kit.cardNames) {
+				key.append('|').append(cardName);
+			}
+		}
+		key.append("|fish");
+		if (kit.fishingComponents != null) {
+			for (CustomKit.FishingComponent fc : kit.fishingComponents) {
+				if (fc == null) {
+					continue;
+				}
+				key.append('|').append(fc.type).append(':').append(fc.itemName);
+			}
+		}
+		key.append("|crystals");
+		if (kit.powerCrystalNames != null) {
+			for (String name : kit.powerCrystalNames) {
+				key.append('|').append(name);
+			}
+		} else {
+			key.append("|null");
+		}
+		key.append("|aspects");
+		if (kit.aspectNames != null) {
+			for (String name : kit.aspectNames) {
+				key.append('|').append(name);
+			}
+		} else {
+			key.append("|null");
+		}
+		return key.toString();
+	}
+
+	private static void rebuildItemInfoIndex() {
+		itemInfoByNormalizedName.clear();
+		for (Map<Integer, Set<ItemInfo>> levelMap : kitItemInfos.values()) {
+			for (Set<ItemInfo> infos : levelMap.values()) {
+				for (ItemInfo info : infos) {
+					registerItemInfoInIndex(info);
+				}
+			}
+		}
+		for (Map<Integer, Set<ItemInfo>> levelMap : neuKitItemInfos.values()) {
+			for (Set<ItemInfo> infos : levelMap.values()) {
+				for (ItemInfo info : infos) {
+					registerItemInfoInIndex(info);
+				}
+			}
+		}
+	}
+
+	private static void registerItemInfoInIndex(ItemInfo info) {
+		if (info == null || info.name == null || info.name.isEmpty()) {
+			return;
+		}
+		itemInfoByNormalizedName.putIfAbsent(normalizeItemName(info.name), info);
+	}
+
+	private static String normalizeItemName(String name) {
+		if (name == null) {
+			return "";
+		}
+		return name.replaceAll("§[0-9a-fk-or]", "").trim().toLowerCase();
+	}
+
+	public static Set<String> getKitItemNamesForSelection(KitSelection selection) {
+		if (selection == null) {
+			return new HashSet<>();
+		}
+		if (selection.isCustom()) {
+			CustomKit kit = CustomKitManager.getKit(selection.customKitId);
+			if (kit == null) {
+				return new HashSet<>();
+			}
+			Set<String> names = new HashSet<>();
+			kit.ensureEquipmentEntries();
+			if (kit.equipmentEntries != null) {
+				for (CustomKit.EquipmentEntry entry : kit.equipmentEntries) {
+					if (entry != null && entry.jeiName != null && !entry.jeiName.isEmpty()) {
+						names.add(entry.jeiName);
+					}
+				}
+			}
+			if (kit.fishingComponents != null) {
+				for (CustomKit.FishingComponent fc : kit.fishingComponents) {
+					if (fc != null && fc.itemName != null && !fc.itemName.isEmpty()) {
+						names.add(fc.itemName);
+					}
+				}
+			}
+			return names;
+		}
+		return getKitItemNames(selection.kitType, selection.level, selection.neuKit);
+	}
+	
+	/**
+	 * Getter für den Button-Index der aktuell geöffnet ist
+	 */
+	public static int getCurrentButtonIndex() {
+		return currentButtonIndex;
+	}
+	
+	/**
+	 * Schließt den Kit-Auswahl-Screen
+	 */
+	public static void closeKitSelectionScreen() {
+		currentButtonIndex = -1;
+	}
+	
+	/**
+	 * Versucht eine Kits-Datei von einem lokalen Pfad zu laden, falls vorhanden, sonst von Mod-Ressourcen
+	 */
+	private static java.nio.file.Path getKitsConfigFilePath() {
+		try {
+			java.nio.file.Path configDir = net.felix.CCLiveUtilities.getConfigDir();
+			java.nio.file.Path modConfigDir = configDir.resolve("cclive-utilities");
+			java.nio.file.Path localFile = modConfigDir.resolve("Kits.json");
+			
+			// Prüfe ob lokale Datei existiert
+			if (java.nio.file.Files.exists(localFile)) {
+				return localFile;
+			}
+		} catch (Exception e) {
+			// Ignoriere Fehler
+		}
+		
+		// Fallback zu Mod-Ressourcen
+		try {
+			return FabricLoader.getInstance().getModContainer("cclive-utilities")
+				.orElseThrow(() -> new RuntimeException("Mod container not found"))
+				.findPath(KITS_CONFIG_FILE)
+				.orElseThrow(() -> new RuntimeException("Kits config file not found"));
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	/**
+	 * Lädt die Kits-Datenbank neu (nach Update vom Server)
+	 */
+	public static void reloadKitsDatabase() {
+		kitItemInfos.clear();
+		neuKitItemInfos.clear();
+		itemInfoByNormalizedName.clear();
+		customKitItemInfosCache.clear();
+		loadKitItemNames();
+	}
+}
+

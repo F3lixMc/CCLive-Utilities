@@ -1,12 +1,11 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
+import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
-import net.felix.utilities.Overall.SearchBarUtility;
-import net.felix.utilities.Town.SchmiedTrackerUtility;
+import net.felix.utilities.Overall.searchbar.SearchBarUtility;
+import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.felix.utilities.Aincraft.ItemInfoUtility;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,7 +21,7 @@ public abstract class SearchBarInputMixin {
     private void onMouseClicked(MouseButtonEvent event, boolean doubled, CallbackInfoReturnable<Boolean> cir) {
         double mouseX = event.x();
         double mouseY = event.y();
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(event.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         // Blockiere Mausklicks wenn der Hilfe-Screen offen ist
         if (SearchBarUtility.isHelpScreenOpen()) {
             cir.setReturnValue(true);
@@ -44,7 +43,7 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Kit Filter Button clicks
-        if (net.felix.utilities.Town.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
+        if (net.felix.utilities.Town.kits.filter.KitFilterUtility.handleButtonClick(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
         
@@ -53,7 +52,7 @@ public abstract class SearchBarInputMixin {
             cir.setReturnValue(true);
         }
         
-        // Handle MKLevel search bar clicks - need to get position from screen
+        // Handle MkLevel search bar clicks - need to get position from screen
         // We can't use @Shadow here, so we'll use reflection as fallback
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if (client != null && client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
@@ -67,7 +66,7 @@ public abstract class SearchBarInputMixin {
                 int inventoryX = xField.getInt(handledScreen);
                 int inventoryY = yField.getInt(handledScreen);
                 int inventoryHeight = bgHeightField.getInt(handledScreen);
-                if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
+                if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelSearchClick(mouseX, mouseY, button, inventoryX, inventoryY, inventoryHeight)) {
                     cir.setReturnValue(true);
                 }
             } catch (Exception e) {
@@ -83,20 +82,20 @@ public abstract class SearchBarInputMixin {
         int modifiers = event.modifiers();
 
         // Container screens override keyPressed and may never reach Screen.keyPressed.
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Overall.itemviewer.search.SearchFieldInput.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
 
 
         if (keyCode == InputConstants.KEY_ESCAPE) {
-            if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayEscape()) {
+            if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.handleFilterOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
             }
         }
 
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
@@ -120,19 +119,19 @@ public abstract class SearchBarInputMixin {
         }
         
         // Handle Item Logger hotkey (works in inventories)
-        if (net.felix.utilities.Other.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
+        if (net.felix.utilities.Other.debug.DebugUtility.handleItemLoggerKeyPress(keyCode)) {
             cir.setReturnValue(true);
             return;
         }
         
         // Handle Clipboard toggle hotkey (works in inventories)
-        if (net.felix.utilities.Other.Clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Other.clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }
         
         // Handle ItemInfo auto-click hotkey (works in inventories)
-        // Get screen position using reflection (same pattern as MKLevel)
+        // Get screen position using reflection (same pattern as MkLevel)
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if (client != null && client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> handledScreen) {
             try {
@@ -207,8 +206,8 @@ public abstract class SearchBarInputMixin {
             cir.setReturnValue(true);
         }
         
-        // Handle key press for MKLevel search bar
-        if (net.felix.utilities.Overall.InformationenUtility.handleMKLevelKeyPressed(keyCode, scanCode, modifiers)) {
+        // Handle key press for MkLevel search bar
+        if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelKeyPressed(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
         }
     }

@@ -1,7 +1,6 @@
 package net.felix.utilities.DragOverlay;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -160,9 +159,9 @@ public class OverlayEditorButtonUtility {
                 int keyCode = (Integer) getCodeMethod.invoke(boundKeyObj);
                 
                 // Konvertiere GLFW Key Code zu lesbarem String
-                String letter = net.felix.utilities.Overall.KeyBindingUtility.letterFromScancode(keyCode, true);
-                Character digit = net.felix.utilities.Overall.KeyBindingUtility.digitFromScancode(keyCode);
-                String functionKey = net.felix.utilities.Overall.KeyBindingUtility.functionKeyName(keyCode);
+                String letter = net.felix.utilities.Other.keybinding.KeyBindingUtility.letterFromScancode(keyCode, true);
+                Character digit = net.felix.utilities.Other.keybinding.KeyBindingUtility.digitFromScancode(keyCode);
+                String functionKey = net.felix.utilities.Other.keybinding.KeyBindingUtility.functionKeyName(keyCode);
                 if (letter != null) {
                     return letter;
                 } else if (digit != null) {
