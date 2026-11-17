@@ -67,12 +67,22 @@ class PlayerRegistrationServiceTest {
     @Test
     void busyJoinDoesNotCountAsAuthFailureAndCallersAttach() throws Exception {
         RecordingTransport transport = RecordingTransport.busyThenSuccess();
-        PlayerRegistrationService service = service(transport);
+        CountDownLatch busyWaitStarted = new CountDownLatch(1);
+        CountDownLatch secondAttached = new CountDownLatch(1);
+        PlayerRegistrationService service = new PlayerRegistrationService(transport, millis -> {
+            transport.sleep(millis);
+            if (millis == PlayerRegistrationService.BUSY_DELAY_MS) {
+                busyWaitStarted.countDown();
+                assertTrue(secondAttached.await(2, TimeUnit.SECONDS));
+            }
+        }, silentLog());
         CompletableFuture<Boolean> first = service.ensureRegistered();
+        assertTrue(busyWaitStarted.await(2, TimeUnit.SECONDS));
         CompletableFuture<Boolean> second = service.ensureRegistered();
+        assertEquals(first, second);
+        secondAttached.countDown();
         assertTrue(first.get(5, TimeUnit.SECONDS));
         assertTrue(second.get(5, TimeUnit.SECONDS));
-        assertEquals(first, second);
         assertTrue(transport.busyJoins.get() >= 1);
         assertEquals(1, transport.registers.get());
         assertEquals("tok-ok", service.token());
@@ -110,7 +120,11 @@ class PlayerRegistrationServiceTest {
     }
 
     private static PlayerRegistrationService service(RecordingTransport transport) {
-        return new PlayerRegistrationService(transport, transport::sleep, new PlayerRegistrationService.Log() {
+        return new PlayerRegistrationService(transport, transport::sleep, silentLog());
+    }
+
+    private static PlayerRegistrationService.Log silentLog() {
+        return new PlayerRegistrationService.Log() {
             @Override
             public void info(String message) {
             }
@@ -118,7 +132,7 @@ class PlayerRegistrationServiceTest {
             @Override
             public void warn(String message) {
             }
-        });
+        };
     }
 
     private static final class RecordingTransport implements PlayerRegistrationService.Transport {
