@@ -67,7 +67,7 @@ public final class FilterCatalog {
     static final List<FilterGroupDef> FILTER_GROUP_DEFS = List.of(
             new FilterGroupDef("Rüstung", List.of(
                     tag("Helm", "helm"),
-                    tag("Brust", "brustplatte"),
+                    tag("Brust", "brust"),
                     tag("Hose", "hose"),
                     tag("Schuhe", "schuhe"),
                     tag("Ring", "ring"),
