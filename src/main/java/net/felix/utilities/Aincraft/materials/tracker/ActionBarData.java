@@ -76,6 +76,7 @@ public class ActionBarData {
             materialTexts.put(materialName, message);
         }
         pendingStorageSync.put(materialName, (long) count);
+        net.felix.utilities.Other.clipboard.overlay.ClipboardTimeEstimate.recordCount(materialName, count);
         schedulePostProcess();
     }
     

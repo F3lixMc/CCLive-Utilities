@@ -1,6 +1,7 @@
 package net.felix.utilities.Other.clipboard;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Locale;
 
 /**
@@ -10,42 +11,28 @@ import java.util.Locale;
 public final class ClipboardTargetTime {
     public static final String NO_BLUEPRINTS = "Keine Baupläne im Clipboard";
     public static final String ALL_COLLECTED = "Alle Materialien gesammelt";
+    /** Gelbe Restzeit wie bei Fire („ ≈ 3.5 min“). */
     public static final int TIME_COLOR = 0xFFFFFF55;
     public static final int COLLECTED_COLOR = 0xFF00FF00;
-
-    private static final long MILLIS_PER_MINUTE = 60_000L;
 
     private ClipboardTargetTime() {
     }
 
-    public static String formatUnit(long remainingMillis) {
-        if (remainingMillis <= 0L) {
-            return "1s";
+    /**
+     * Formatiert Minuten als {@code 3.5 min} bzw. ab einer Stunde als {@code 1.2 h}.
+     */
+    public static String formatDuration(double minutes) {
+        if (minutes >= 60.0) {
+            return BigDecimal.valueOf(minutes / 60.0).setScale(1, RoundingMode.HALF_UP).toPlainString() + " h";
         }
-        long seconds = remainingMillis / 1000L;
-        if (seconds <= 0L) {
-            return "1s";
-        }
-        if (seconds >= 3600L) {
-            return (seconds / 3600L) + "h";
-        }
-        if (seconds >= 60L) {
-            return (seconds / 60L) + "m";
-        }
-        return seconds + "s";
+        return BigDecimal.valueOf(minutes).setScale(1, RoundingMode.HALF_UP).toPlainString() + " min";
     }
 
     public static String formatRemaining(BigDecimal missing, double perMinute) {
         if (missing == null || missing.signum() <= 0 || !positiveRate(perMinute)) {
             return "";
         }
-        BigDecimal millis = missing.multiply(BigDecimal.valueOf(MILLIS_PER_MINUTE))
-                .divide(BigDecimal.valueOf(perMinute), 0, java.math.RoundingMode.DOWN);
-        long remaining = millis.longValue();
-        if (remaining <= 0L) {
-            remaining = 1L;
-        }
-        return " (" + formatUnit(remaining) + ")";
+        return " ≈ " + formatDuration(missing.doubleValue() / perMinute);
     }
 
     /**

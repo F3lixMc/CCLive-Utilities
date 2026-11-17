@@ -25,6 +25,15 @@ class SmithSkillTest {
     }
 
     @Test
+    void commaThousandsSeparatorParsesAsWholeNumber() {
+        SmithSkill.Stand stand = SmithSkill.read(List.of("[Schmiede Skill]", "878 / 1,310 XP [21]"));
+        assertEquals(21, stand.level());
+        assertEquals(878L, stand.xp());
+        assertEquals("21/878", SmithSkill.display(stand));
+        assertEquals(1_310L, LeaderboardNumbers.parseMagnitude("1,310"));
+    }
+
+    @Test
     void oneMillionSuffixParsesAndFormatsBack() {
         SmithSkill.Stand stand = SmithSkill.read(List.of("[Schmiede Skill]", "1.000M / 2.500M [8]"));
         assertEquals(8, stand.level());

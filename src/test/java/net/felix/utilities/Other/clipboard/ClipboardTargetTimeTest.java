@@ -10,12 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClipboardTargetTimeTest {
     @Test
-    void durationUsesOneTruncatedUnit() {
-        assertEquals("1h", ClipboardTargetTime.formatUnit(90L * 60L * 1000L));
-        assertEquals("59m", ClipboardTargetTime.formatUnit(59L * 60L * 1000L));
-        assertEquals("45s", ClipboardTargetTime.formatUnit(45L * 1000L));
-        assertEquals("1s", ClipboardTargetTime.formatUnit(500L));
-        assertEquals(" (1h)", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(120), 2.0));
+    void durationUsesApproxMinutesOrHours() {
+        assertEquals("3.5 min", ClipboardTargetTime.formatDuration(3.5));
+        assertEquals("59.0 min", ClipboardTargetTime.formatDuration(59.0));
+        assertEquals("1.5 h", ClipboardTargetTime.formatDuration(90.0));
+        assertEquals(" ≈ 1.0 h", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(120), 2.0));
+        assertEquals(" ≈ 3.5 min", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(7), 2.0));
         assertEquals("", ClipboardTargetTime.formatRemaining(BigDecimal.ZERO, 5.0));
         assertEquals("", ClipboardTargetTime.formatRemaining(BigDecimal.TEN, 0.0));
     }

@@ -1582,14 +1582,14 @@ public class OverlayEditorScreen extends Screen {
         String button1Text = "Blueprint Shop Kosten: " + (showBPCosts ? "An" : "Aus");
         context.text(font, button1Text, boxX + 15, button1Y + 6, 0xFFFFFFFF, false);
 
-        boolean showTargetTime = CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowTargetTime;
+        boolean approxTimeEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled;
         int targetY = button1Y + buttonSpacing;
         boolean targetHovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
                 mouseY >= targetY && mouseY <= targetY + buttonHeight;
         int targetColor = targetHovered ? 0xFF404040 : 0xFF202020;
         context.fill(boxX + 10, targetY, boxX + 10 + buttonWidth, targetY + buttonHeight, targetColor);
         context.outline(boxX + 10, targetY, buttonWidth, buttonHeight, 0xFFFFFFFF);
-        context.text(font, "Ziel Zeit: " + (showTargetTime ? "An" : "Aus"), boxX + 15, targetY + 6, 0xFFFFFFFF, false);
+        context.text(font, "Ungefähre Zeit: " + (approxTimeEnabled ? "An" : "Aus"), boxX + 15, targetY + 6, 0xFFFFFFFF, false);
         
         // Überschrift: Material Sortierung
         int headerY = targetY + buttonSpacing + 5;
@@ -1727,8 +1727,8 @@ public class OverlayEditorScreen extends Screen {
         int targetY = button1Y + buttonSpacing;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
             mouseY >= targetY && mouseY <= targetY + buttonHeight) {
-            CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowTargetTime =
-                    !CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowTargetTime;
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled =
+                    !CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled;
             CCLiveUtilitiesConfig.HANDLER.save();
             ClipboardDraggableOverlay.invalidateRenderSnapshot();
             return true;

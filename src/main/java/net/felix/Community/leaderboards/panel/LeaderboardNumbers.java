@@ -41,13 +41,14 @@ public final class LeaderboardNumbers {
     /**
      * Umkehrung von {@link #magnitude(long)}.
      * {@code 1.000M} ist 1.000.000. Eine Zahl ohne Suffix bleibt eine ganze Zahl.
+     * Kommas sind Tausendertrennzeichen ({@code 1,310} → 1310).
      * Größer als ein Java-long ist keine gültige Zahl.
      */
     public static Long parseMagnitude(String text) {
         if (text == null) {
             return null;
         }
-        String raw = text.trim();
+        String raw = text.trim().replace(",", "");
         if (raw.isEmpty() || raw.charAt(0) == '-') {
             return null;
         }

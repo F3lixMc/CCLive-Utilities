@@ -7,13 +7,10 @@ import java.text.DecimalFormatSymbols;
 import java.util.*;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
-import net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility;
 import net.felix.utilities.Aincraft.materials.data.MaterialDatabase;
 import net.felix.utilities.Aincraft.materials.data.MaterialFloorInfo;
 import net.felix.utilities.Aincraft.materials.data.MaterialRarityColors;
-import net.felix.utilities.Aincraft.materials.tracker.MaterialRateUtility;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
-import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.felix.utilities.Other.clipboard.ClipboardTargetTime;
 import net.felix.utilities.Other.clipboard.ClipboardUtility;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
@@ -437,6 +434,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     public static void resetCollectedMaterials() {
         clipboardMaterials.clear();
+        ClipboardTimeEstimate.reset();
         invalidateMaterialsSyncCache();
         invalidateRenderSnapshot();
     }
@@ -474,6 +472,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             String normalizedName = normalizeMaterialName(entry.getKey());
             return !requiredMaterials.contains(normalizedName);
         });
+        ClipboardTimeEstimate.retainOnly(requiredMaterials);
         invalidateRenderSnapshot();
     }
     
@@ -1783,25 +1782,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             floorColor = MaterialRarityColors.getMaterialLocationRarityColorArgb(floorInfo);
         }
 
-        boolean complete = ownedAmount.compareTo(neededAmount) >= 0 || neededAmount.compareTo(BigDecimal.ZERO) == 0;
         String timeText = "";
-        if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowTargetTime) {
-            double rate = ClipboardTargetTime.rateFor(
-                    category,
-                    costItem.itemName,
-                    shopLine,
-                    complete,
-                    CCLiveUtilitiesConfig.isModRuntimeEnabled()
-                            && CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerEnabled,
-                    CoinTrackerUtility.isAllowedDimension(),
-                    CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode == null
-                            ? 0
-                            : CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode.ordinal(),
-                    CoinTrackerUtility.getCoinsPerMinute(),
-                    MaterialRateUtility.getRateForMaterial(costItem.itemName),
-                    FarmzoneResourceRateUtility.getCurrentResourceName(),
-                    FarmzoneResourceRateUtility.getPerMinute());
-            timeText = ClipboardTargetTime.formatRemaining(neededAmount.subtract(ownedAmount), rate);
+        if (!isCoins && !shopLine && CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled) {
+            timeText = ClipboardTimeEstimate.buildTimeText(
+                    costItem.itemName, neededAmount.subtract(ownedAmount));
         }
 
         int mainWidth = client.font.width(materialLine);
@@ -1857,10 +1841,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         if (!line.timeText.isEmpty()) {
             context.text(client.font, line.timeText, cursor, y, ClipboardTargetTime.TIME_COLOR, true);
-        }
-        if (!line.timeText.isEmpty()) {
-            context.text(client.font, line.timeText,
-                    5 + line.mainWidth + line.abbrevWidth + line.floorWidth, y, 0xFFAAAAAA, true);
         }
     }
 
