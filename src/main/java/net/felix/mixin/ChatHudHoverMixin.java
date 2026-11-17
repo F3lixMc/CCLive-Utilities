@@ -1,14 +1,15 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import net.felix.utilities.Overall.InformationenUtility;
+import net.felix.utilities.Aincraft.blueprints.chat.BlueprintChatParser;
+import net.felix.utilities.Overall.aspekte.chat.AspectChatMessages;
+import net.felix.utilities.Overall.aspekte.overlay.AspectOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.felix.utilities.Overall.Aspekte.AspectOverlay;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,14 +28,14 @@ abstract class ChatHudHoverMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onRender(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Während Build-Vorschau: keinerlei Chat-Hover (Stats/Item/Build/Aspekt)
-        if (net.felix.chat.BuildShareViewScreen.isActive()) {
+        if (net.felix.Community.chat.BuildShareViewScreen.isActive()) {
             AspectOverlay.onHoverStopped();
-            net.felix.chat.BuildShareManager.clearLastHoveredShareId();
+            net.felix.Community.chat.BuildShareManager.clearLastHoveredShareId();
             return;
         }
 
         // Build-Share: shareId für Linksklick merken (Panel kommt aus componentHoverEffect)
-        net.felix.chat.BuildShareOverviewLayout.trackHoverAtMouse(mouseX, mouseY);
+        net.felix.Community.chat.BuildShareOverviewLayout.trackHoverAtMouse(mouseX, mouseY);
 
         // IMPORTANT: Don't clear overlay if we're hovering over an item with "⭐" in tooltip
         // Items with "⭐" are managed by addAspectNameToTooltip, not by this chat hover mixin
@@ -168,17 +169,17 @@ abstract class ChatHudHoverMixin {
         // Both conditions are met: Shift pressed AND HoverEvent present
         // 1) CCLive Item-Share-Links (!item)
         if (hoveredStyle != null
-                && net.felix.chat.ItemShareManager.getInstance().tryShowAspectOverlayForShare(hoveredStyle)) {
+                && net.felix.Community.chat.ItemShareManager.getInstance().tryShowAspectOverlayForShare(hoveredStyle)) {
             AspectOverlay.renderForegroundForChat(context);
             return;
         }
 
         // 2) Server-Chat Bauplan-Namen (Farbe #FC7E00)
         if (hoveredMessage != null) {
-            String blueprintName = InformationenUtility.extractBlueprintNameFromChatMessage(hoveredMessage);
+            String blueprintName = BlueprintChatParser.extractBlueprintNameFromChatMessage(hoveredMessage);
             if (blueprintName != null && !blueprintName.isEmpty()) {
                 // Pass the text object to check for Epic colors
-                InformationenUtility.updateAspectOverlayFromBlueprintName(blueprintName, hoveredMessage);
+                AspectChatMessages.updateAspectOverlayFromBlueprintName(blueprintName, hoveredMessage);
                 AspectOverlay.renderForegroundForChat(context);
             } else {
                 // HoverEvent exists but no valid blueprint - hide overlay
@@ -284,7 +285,7 @@ abstract class ChatHudHoverMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void cclive$chatContextMenu(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if ((Object) this instanceof ChatScreen) {
-            net.felix.chat.ChatContextMenu.render(context, mouseX, mouseY);
+            net.felix.Community.chat.ChatContextMenu.render(context, mouseX, mouseY);
         }
     }
 }

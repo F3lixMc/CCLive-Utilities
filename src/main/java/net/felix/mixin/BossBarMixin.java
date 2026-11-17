@@ -1,25 +1,24 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Aincraft.KillsUtility;
-import net.felix.utilities.Factory.WaveUtility;
-import net.felix.leaderboards.collectors.FarmworldCollectionsCollector;
-import net.felix.utilities.Overall.ZeichenUtility;
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.UUID;
+import net.felix.Community.leaderboards.collectors.FarmworldCollectionsCollector;
+import net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility;
+import net.felix.utilities.Aincraft.kills.KillsUtility;
+import net.felix.utilities.Factory.wave.WaveUtility;
+import net.felix.utilities.Farmworld.collections.tracker.CollectionTracker;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.itemviewer.inventory.HudStatsReader;
+import net.felix.utilities.Overall.npcalerts.parser.KomboKisteReader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
-import net.felix.utilities.Overall.CoinTrackerUtility;
-import net.felix.utilities.Overall.InformationenUtility;
-import net.felix.utilities.ItemViewer.ItemViewerHudStatsCollector;
-import net.felix.utilities.Overall.NpcAlerts.NpcAlertsUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.UUID;
 
 @SuppressWarnings("unused")
 @Mixin(BossHealthOverlay.class)
@@ -37,9 +36,9 @@ public class BossBarMixin {
                 return;
             }
 
-            NpcAlertsUtility.beginKomboKisteBossBarScan();
+            KomboKisteReader.beginKomboKisteBossBarScan();
             Minecraft mc = Minecraft.getInstance();
-            boolean komboKisteDim = NpcAlertsUtility.isKomboKisteReadingDimension(mc);
+            boolean komboKisteDim = KomboKisteReader.isKomboKisteReadingDimension(mc);
             String aincraftBottomFont = ZeichenUtility.getAincraftBottomFont();
 
             int index = 0;
@@ -47,12 +46,12 @@ public class BossBarMixin {
                 index++;
                 String name = bossBar.getName().getString();
                 if (komboKisteDim) {
-                    NpcAlertsUtility.observeKomboKisteBossBarTitle(name, index);
+                    KomboKisteReader.observeKomboKisteBossBarTitle(name, index);
                 }
 
                 CoinTrackerUtility.processBossBar(name);
-                ItemViewerHudStatsCollector.processBossBar(name);
-                net.felix.utilities.Other.Clipboard.ClipboardCoinCollector.processBossBar(name);
+                HudStatsReader.processBossBar(name);
+                net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector.processBossBar(name);
                 WaveUtility.processBossBarWave(name, index);
 
                 boolean hasAincraftFont = !aincraftBottomFont.isEmpty()
@@ -66,7 +65,7 @@ public class BossBarMixin {
                 // Collection-Bossbar (Farmwelt) – separat, nicht als else-if (gleiche Schrift-Glyphen)
                 if (!name.contains("Kills") && !name.contains("Kill") && hasAincraftFont) {
                     FarmworldCollectionsCollector.processBossBarCollection(name);
-                    InformationenUtility.processBossBarCollection(name);
+                    CollectionTracker.processBossBarCollection(name);
                 }
             }
         } catch (Exception e) {

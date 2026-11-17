@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Overall.SearchBarUtility;
+import net.felix.utilities.Overall.searchbar.SearchBarUtility;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,7 +20,7 @@ public abstract class SearchBarMixin {
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void renderSearchBar(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         // Blockiere das Rendern der Suchleiste, wenn das Hilfe-Overlay vom ItemViewer offen ist
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
+        if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.isOverlayOpen()) {
             return;
         }
         SearchBarUtility.renderInScreen(context, (AbstractContainerScreen<?>) (Object) this, leftPos, topPos);

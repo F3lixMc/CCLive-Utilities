@@ -1,10 +1,10 @@
 package net.felix.mixin;
 
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
-import net.felix.utilities.Town.EquipmentDisplayUtility;
+import net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler;
+import net.felix.utilities.Overall.itemviewer.ui.ViewerInputHandler;
+import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
-import net.felix.utilities.Overall.InformationenUtility;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,29 +26,29 @@ public class MouseScrollMixin {
             double mouseY = client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) windowHeight;
             
             if (client.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
-                    && net.felix.leaderboards.panel.LeaderboardInventoryOverlay.coversScroll(mouseX, mouseY)) {
+                    && net.felix.Community.leaderboards.panel.LeaderboardInventoryOverlay.coversScroll(mouseX, mouseY)) {
                 return;
             }
-            if (ItemViewerUtility.handleMouseScroll(mouseX, mouseY, vertical)) {
+            if (ViewerInputHandler.handleMouseScroll(mouseX, mouseY, vertical)) {
                 // ItemViewer hat das Event behandelt
                 // Hinweis: onMouseScroll ist nicht cancellable, daher können wir das Event nicht verhindern
                 // Das ist aber in Ordnung, da wir nur die Pagination ändern
                 return;
             }
-            if (net.felix.chat.BuildShareViewScreen.isActive()) {
-                net.felix.chat.BuildShareViewScreen view = net.felix.chat.BuildShareViewScreen.getActive();
+            if (net.felix.Community.chat.BuildShareViewScreen.isActive()) {
+                net.felix.Community.chat.BuildShareViewScreen view = net.felix.Community.chat.BuildShareViewScreen.getActive();
                 if (view != null && view.handleStatOverlayScroll(mouseX, mouseY, vertical)) {
                     return;
                 }
             }
-            if (net.felix.chat.BuildShareManager.getInstance().handleOverlayScroll(mouseX, mouseY, vertical)) {
+            if (net.felix.Community.chat.BuildShareManager.getInstance().handleOverlayScroll(mouseX, mouseY, vertical)) {
                 return;
             }
         }
         
         // Übergebe das Scroll-Event an die EquipmentDisplayUtility
         EquipmentDisplayUtility.onMouseScroll(vertical);
-        // Übergebe das Scroll-Event an die InformationenUtility für MKLevel Overlay
-        InformationenUtility.onMKLevelMouseScroll(vertical);
+        // Übergebe das Scroll-Event an den MkLevelInputHandler für das MkLevel Overlay
+        MkLevelInputHandler.onMkLevelMouseScroll(vertical);
     }
 } 

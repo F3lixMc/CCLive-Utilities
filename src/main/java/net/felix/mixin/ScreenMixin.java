@@ -1,8 +1,14 @@
 package net.felix.mixin;
 
 import com.mojang.blaze3d.platform.InputConstants;
-
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.utilities.Overall.itemviewer.ItemViewerHotkeys;
+import net.felix.utilities.Overall.itemviewer.kit.KitEditorMode;
+import net.felix.utilities.Overall.itemviewer.search.SearchFieldInput;
+import net.felix.utilities.Overall.itemviewer.search.SearchFieldState;
+import net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls;
+import net.felix.utilities.Overall.itemviewer.ui.HelpOverlay;
+import net.felix.utilities.Overall.itemviewer.ui.ViewerRenderer;
+import net.felix.utilities.Overall.itemviewer.ui.ViewerState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -23,7 +29,7 @@ public class ScreenMixin {
 
     @Inject(method = "isInputCaptured", at = @At("HEAD"), cancellable = true)
     private void cclive$captureViewerSearchInput(CallbackInfoReturnable<Boolean> cir) {
-        if (ItemViewerUtility.isSearchFieldFocused() && ItemViewerUtility.isVisible()) {
+        if (SearchFieldState.isSearchFieldFocused() && ViewerState.isVisible()) {
             cir.setReturnValue(true);
         }
     }
@@ -33,7 +39,7 @@ public class ScreenMixin {
      */
     @Inject(method = "extractTransparentBackground", at = @At("HEAD"))
     private void cclive$renderOverlaysBehindDim(GuiGraphicsExtractor context, CallbackInfo ci) {
-        net.felix.utilities.Overall.HudOverlayVisibility.renderBehindInventoryDim(context);
+        net.felix.utilities.Other.hud.HudOverlayVisibility.renderBehindInventoryDim(context);
     }
     
     /**
@@ -47,47 +53,47 @@ public class ScreenMixin {
 
         // Prüfe zuerst ESC für Hilfe-Overlay (höchste Priorität)
         if (keyCode == InputConstants.KEY_ESCAPE) {
-            if (ItemViewerUtility.handleHelpOverlayEscape()) {
+            if (HelpOverlay.handleHelpOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
             }
-            if (ItemViewerUtility.handleFilterOverlayEscape()) {
+            if (FilterOverlayControls.handleFilterOverlayEscape()) {
                 cir.setReturnValue(true);
                 return;
             }
         }
 
-        if (ItemViewerUtility.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
+        if (FilterOverlayControls.handleFilterOverlayKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
         
         // Prüfe dann ob Text-Input für Suchfeld behandelt werden soll (höhere Priorität)
-        if (ItemViewerUtility.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
+        if (SearchFieldInput.handleSearchFieldKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
         // Prüfe dann ob unser Keybind gedrückt wurde
-        if (ItemViewerUtility.handleKeyPress(keyCode, scanCode, modifiers)) {
+        if (ItemViewerHotkeys.handleKeyPress(keyCode, scanCode, modifiers)) {
             // Keybind wurde behandelt, verhindere weitere Verarbeitung
             cir.setReturnValue(true);
             return;
         }
         
         // Handle Clipboard toggle hotkey (works in screens)
-        if (net.felix.utilities.Other.Clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.utilities.Other.clipboard.ClipboardUtility.handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }
 
         // CCLive Chat: Item für Share kopieren (Inventar/Chest)
-        if (net.felix.chat.ItemShareManager.getInstance().handleKeyPress(keyCode, scanCode)) {
+        if (net.felix.Community.chat.ItemShareManager.getInstance().handleKeyPress(keyCode, scanCode)) {
             cir.setReturnValue(true);
             return;
         }
 
         // DevTools-Hotkeys (Inventar erlaubt; Dedup mit Client-Tick)
-        if (net.felix.devtools.DevToolsHotkeyDispatcher.handleScreenKeyPress(keyCode, scanCode, modifiers)) {
+        if (net.felix.utilities.Other.devtools.DevToolsHotkeyDispatcher.handleScreenKeyPress(keyCode, scanCode, modifiers)) {
             cir.setReturnValue(true);
             return;
         }
@@ -95,14 +101,14 @@ public class ScreenMixin {
         // Handle keyboard input for Clipboard quantity text field (nur in AbstractContainerScreens)
         Screen screen = (Screen) (Object) this;
         if (screen instanceof AbstractContainerScreen) {
-            if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleQuantityTextFieldKeyPress(keyCode, scanCode, modifiers)) {
+            if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleQuantityTextFieldKeyPress(keyCode, scanCode, modifiers)) {
                 cir.setReturnValue(true);
             }
         }
         
         // Clipboard-Hover bei Tab oder F1 ausblenden
         if (keyCode == InputConstants.KEY_TAB || keyCode == InputConstants.KEY_F1) {
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.hideHover();
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.hideHover();
         }
         
     }
@@ -121,33 +127,33 @@ public class ScreenMixin {
             AbstractContainerScreen<?> handledScreen = (AbstractContainerScreen<?>) screen;
             net.minecraft.network.chat.Component titleText = handledScreen.getTitle();
             String titleWithUnicode = titleText.getString(); // Behält Unicode-Zeichen
-            if (net.felix.utilities.Overall.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
+            if (net.felix.utilities.Other.glyphs.ZeichenUtility.containsSpecialMenusNoJei(titleWithUnicode)) {
                 return; // KEINE JEI UI in diesen speziellen Menüs
             }
             
             Minecraft client = Minecraft.getInstance();
             // Update mouse position
-            ItemViewerUtility.updateMousePosition(mouseX, mouseY);
+            ViewerState.updateMousePosition(mouseX, mouseY);
             
             // Render Clipboard Overlay (wenn aktiviert)
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
             
             // Render Clipboard Button Tooltips (Anzahl, Seiten-Navigation)
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
             
             // Render Item Viewer (als AbstractContainerScreen behandeln)
-            ItemViewerUtility.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
+            ViewerRenderer.renderItemViewerInScreen(context, client, handledScreen, mouseX, mouseY);
             
             // Rendere AspectOverlay NACH dem ItemViewer, damit es über allen Items liegt
             // (wird nur gerendert wenn Shift gedrückt und ItemViewer aktiv ist)
-            if (ItemViewerUtility.isVisible()) {
-                net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+            if (ViewerState.isVisible()) {
+                net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
             }
             
             // Hilfe folgt erst am Ende von InventoryScreen.extractRenderState.
             
             // Rendere minimierten Button (rechts unten), wenn minimiert - nach allem anderen, damit er über dem dunklen Hintergrund liegt
-            ItemViewerUtility.renderMinimizedButtonIfNeeded(context);
+            ViewerRenderer.renderMinimizedButtonIfNeeded(context);
             
             // Render F6 button (bottom left corner)
             if (net.felix.utilities.DragOverlay.OverlayEditorButtonUtility.shouldShowButton(handledScreen)) {
@@ -158,9 +164,9 @@ public class ScreenMixin {
         }
         
         // Kit-Editor: Aspekt-Overlay über dem zentrierten Editor-Panel
-        if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
-            if (ItemViewerUtility.isVisible()) {
-                net.felix.utilities.Overall.Aspekte.AspectOverlay.renderForeground(context);
+        if (screen instanceof net.felix.utilities.Town.kits.editor.CustomKitEditorScreen) {
+            if (ViewerState.isVisible()) {
+                net.felix.utilities.Overall.aspekte.overlay.AspectOverlay.renderForeground(context);
             }
             return;
         }
@@ -175,15 +181,15 @@ public class ScreenMixin {
     @Inject(method = "removed", at = @At("HEAD"))
     private void onRemoved(CallbackInfo ci) {
         Screen screen = (Screen) (Object) this;
-        if (screen instanceof net.felix.utilities.Town.CustomKitEditorScreen) {
-            ItemViewerUtility.stopKitEditorMode();
+        if (screen instanceof net.felix.utilities.Town.kits.editor.CustomKitEditorScreen) {
+            KitEditorMode.stopKitEditorMode();
         }
-        ItemViewerUtility.blurSearchFieldFocus();
-        ItemViewerUtility.closeHelpOverlay();
-        ItemViewerUtility.closeFilterOverlay();
-        net.felix.utilities.Overall.SearchBarUtility.blurSearchBarFocus();
+        SearchFieldState.blurSearchFieldFocus();
+        HelpOverlay.closeHelpOverlay();
+        FilterOverlayControls.closeFilterOverlay();
+        net.felix.utilities.Overall.searchbar.SearchBarUtility.blurSearchBarFocus();
         if (screen instanceof AbstractContainerScreen) {
-            net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.finalizeQuantityTextField();
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.finalizeQuantityTextField();
         }
     }
 }

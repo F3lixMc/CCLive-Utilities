@@ -1,6 +1,6 @@
 package net.felix.mixin;
 
-import net.felix.utilities.Other.PlayericonUtility.PlayerNametagIcons;
+import net.felix.Community.playericon.PlayerNametagIcons;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;

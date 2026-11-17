@@ -1,0 +1,1175 @@
+package net.felix.utilities.Factory.bosshp;
+
+import java.math.BigInteger;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Other.keybinding.KeyBindingUtility;
+import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import org.joml.Matrix3x2fStack;
+
+public class BossHPUtility {
+	
+	
+	private static boolean isInitialized = false;
+	private static boolean showOverlays = true; // Neue Variable für Overlay-Sichtbarkeit
+	private static BossHPUtility INSTANCE;
+	
+	// Boss-Status-Variablen
+	private String currentBossName = null;
+	private String currentBossText = null;
+	private String lastKnownHP = null;
+	private String lastKnownBossName = null;
+	private boolean bossDefeated = false;
+	
+	// DPM-Tracking-Variablen (5s-Fenster, hochgerechnet auf 1 Minute)
+	private BigInteger initialBossHP = null; // Initiale HP beim ersten Erkennen des Bosses
+	private long bossFightStartTime = 0; // Zeitpunkt, wann der Kampf begonnen hat
+	private String lastTrackedBossName = null; // Letzter Boss-Name für Erkennung von Boss-Wechsel
+	private double cachedDpm = 0.0;
+	private long lastDpmUpdateTime = 0;
+	private static final double DPM_EXTRAPOLATION_FACTOR = 12.0; // 5s -> 60s
+	
+	// Last-Dmg + DPM: HP-Snapshot, nach 5 Sekunden Differenz = Schaden in diesem Fenster
+	private BigInteger lastDmgWindowStartHp = null;
+	private long lastDmgWindowStartMs = 0;
+	private BigInteger displayedLastDamage = null; // null bis erste Messung; danach Schaden im letzten 5s-Fenster
+	private static final long LAST_DMG_WINDOW_MS = 5000L;
+	
+	// Validierte Boss-Namen
+	private final Set<String> validBossNames = new HashSet<>();
+	
+	// Regex-Pattern für Boss-Text-Parsing
+	private final Pattern bossPattern = Pattern.compile("(.+?)\\|{5}(\\d+)\\|{5}");
+	
+	// Client-seitige Variablen
+	private String lastDimension = "";
+	private final Set<String> ignoredNames = new HashSet<>();
+	private boolean wavesActive = false;
+	private boolean lastWaveState = false;
+	
+
+	
+	// Boss-Ergebnis-Erkennung
+	private boolean waitingForBossResult = false;
+	private long bossDisappearTimeWithoutReward = 0;
+	private static final long BOSS_DISAPPEAR_TIMEOUT = 5000; // 5 Sekunden
+	private boolean bossLost = false; // Separate variable for boss lost (vs defeated)
+	
+	// Boss-Blockierung nach "Kampfzone"-Nachricht
+	private long bossBlockedUntil = 0;
+	private static final long BOSS_BLOCK_DURATION = 10000; // 10 Sekunden Blockierung
+	
+	// Retry-Logik für "Welle nicht geschafft"
+	private int waveFailedRetryCount = 0;
+	private static final int WAVE_FAILED_MAX_RETRIES = 5;
+	private boolean waitingForWaveFailedRetry = false;
+	
+	/** Pro Scan: eine Boss-Zeile + zugehörige Entity (für Nähe zum Spieler). */
+	private record BossScanHit(Entity entity, String text) {}
+	
+	public BossHPUtility() {
+		INSTANCE = this;
+		initializeBossNames();
+		initializeIgnoredNames();
+	}
+	
+	public static BossHPUtility getInstance() {
+		if (INSTANCE == null) {
+			throw new IllegalStateException("BossHPUtility instance is null!");
+		}
+		return INSTANCE;
+	}
+	
+	private void initializeBossNames() {
+		validBossNames.add("Großer Wächter");
+		validBossNames.add("Sniffer");
+		validBossNames.add("Kamel");
+		validBossNames.add("Wither");
+		validBossNames.add("Warden");
+		validBossNames.add("Riese");
+		validBossNames.add("Ravager");
+	}
+	
+	private void initializeIgnoredNames() {
+		// Räume
+		ignoredNames.add("(Forschraum)");
+		ignoredNames.add("(Schmied)");
+		ignoredNames.add("(Kaktusfarm)");
+		ignoredNames.add("(Seelenraum)");
+		// Status
+		ignoredNames.add("Freigeschalten!");
+		// NPCs
+		ignoredNames.add("Kaktusmacs");
+		ignoredNames.add("Forschermacs");
+		ignoredNames.add("Schmiedmacs");
+		ignoredNames.add("Seelenmacs");
+		ignoredNames.add("Runenmacs");
+		ignoredNames.add("Farmermacs");
+		ignoredNames.add("Soul Harvester");
+		ignoredNames.add("Essence Harvester");
+		// Ranglisten und UI Elemente
+		ignoredNames.add("Top Rangliste");
+		ignoredNames.add("#");
+		ignoredNames.add("Kaktus");
+		ignoredNames.add("Seelen");
+		ignoredNames.add("Nächste Aktualisierung");
+		ignoredNames.add("Klicke für Ranglisten-Wechsel");
+		ignoredNames.add("Deine Rangliste");
+		ignoredNames.add("Aktuelles Tier");
+		ignoredNames.add("Nächstes Tier in");
+	}
+	
+	public static void initialize() {
+		if (isInitialized) {
+			return;
+		}
+		
+		try {
+			// Instance erstellen
+			new BossHPUtility();
+			
+			// Register commands
+			registerCommands();
+			
+			// Client-seitige Events registrieren
+			ClientTickEvents.END_CLIENT_TICK.register(BossHPUtility::onClientTick);
+			
+			// Registriere HUD-Rendering
+			HudElementRegistry.addLast(
+					Identifier.fromNamespaceAndPath("cclive-utilities", "boss_hp"),
+					BossHPUtility::onHudRender);
+			
+			// Chat-Nachrichten Event registrieren
+			ClientReceiveMessageEvents.GAME.register(BossHPUtility::onChatMessage);
+			
+			isInitialized = true;
+		} catch (Exception e) {
+			// Error initializing BossHPUtility
+		}
+	}
+	
+	private static void registerCommands() {
+		// Keine Commands mehr nötig, da Test-Overlay entfernt wurde
+	}
+	
+	private static int entityScanTickCounter = 0;
+	private static final int ENTITY_SCAN_INTERVAL = 5; // Alle 5 Ticks scannen (4x pro Sekunde) - Performance-Optimierung
+	
+	private static void onClientTick(Minecraft client) {
+		// Check Tab key for overlay visibility
+		checkTabKey();
+		BossHPUtility instance = BossHPUtility.getInstance();
+		
+		// Prüfe auf Retry für "Welle nicht geschafft"
+		if (instance.waitingForWaveFailedRetry && instance.waveFailedRetryCount < WAVE_FAILED_MAX_RETRIES) {
+			// Versuche Boss zu erkennen (wird in processTextDisplay behandelt)
+			// Erhöhe Retry-Counter nach jedem Tick
+			instance.waveFailedRetryCount++;
+			
+			// Wenn Max-Retries erreicht, stoppe das Warten
+			if (instance.waveFailedRetryCount >= WAVE_FAILED_MAX_RETRIES) {
+				instance.waitingForWaveFailedRetry = false;
+				instance.waveFailedRetryCount = 0;
+			}
+		}
+		
+		if (client.player == null || client.level == null) {
+			return;
+		}
+
+        String playerName = client.player.getName().getString().toLowerCase();
+        String dimensionPath = client.level.dimension().identifier().getPath();
+        
+        // Check dimension change
+        if (!dimensionPath.equals(instance.lastDimension)) {
+            if (instance.lastDimension.equals(playerName)) {
+                instance.clearCurrentBoss();
+            }
+            instance.lastDimension = dimensionPath;
+        }
+        
+        // Check if dimension matches player name (player is in their own dimension)
+        if (dimensionPath.equals(playerName)) {
+            // Player is in their own dimension - waves are active
+            instance.wavesActive = true;
+            
+            // Performance-Optimierung: Nur alle ENTITY_SCAN_INTERVAL Ticks scannen
+            entityScanTickCounter++;
+            if (entityScanTickCounter >= ENTITY_SCAN_INTERVAL) {
+                entityScanTickCounter = 0;
+                
+                // Alle Boss-Kandidaten sammeln, dann genau einen wählen (nächstes Display = echte Boss-Leiste)
+                List<BossScanHit> bossHits = new ArrayList<>();
+                for (Entity entity : client.level.entitiesForRendering()) {
+                    String displayText = null;
+                    
+                    // Check if it's a TextDisplay or Display entity
+                    if (entity.getType().toString().contains("text_display") || 
+                        entity.getType().toString().contains("display")) {
+                        displayText = getTextFromDisplayEntity(entity);
+                    }
+                    // Fallback to custom name check
+                    else if (entity.hasCustomName()) {
+                        Component customName = entity.getCustomName();
+                        if (customName != null) {
+                            displayText = customName.getString().trim();
+                        }
+                    }
+                    
+                    if (displayText != null && !instance.shouldIgnoreEntity(displayText)
+                        && instance.isStrictBossHpLine(displayText)) {
+                        bossHits.add(new BossScanHit(entity, displayText));
+                    }
+                }
+                instance.applySingleBossDisplayFromScan(client, bossHits);
+            }
+
+        } else {
+            // Player is not in their own dimension - waves are inactive
+            instance.wavesActive = false;
+            
+            // Clear boss if waves become inactive
+            if (instance.lastWaveState && !instance.wavesActive) {
+                if (instance.waitingForBossResult) {
+                    instance.handleBossLost();
+                } else {
+                    instance.clearCurrentBoss();
+                }
+            }
+        }
+        
+        instance.lastWaveState = instance.wavesActive;
+		
+		// Last-Dmg- und DPM-Fenster (alle 5s: Schaden messen, DPM hochrechnen)
+		if (instance.wavesActive && instance.currentBossText != null && !instance.bossDefeated) {
+			instance.tickLastDamageWindow();
+		}
+	}
+	
+	private void resetDpmCache() {
+		cachedDpm = 0.0;
+		lastDpmUpdateTime = 0;
+	}
+	
+	/**
+	 * Parst die aktuelle Boss-HP aus dem Text-Display-Format {@code Name|||||HP|||||}.
+	 */
+	private BigInteger parseHpFromBossText(String bossText) {
+		if (bossText == null || bossText.isEmpty()) {
+			return null;
+		}
+		String[] parts = bossText.split("\\|{5}");
+		if (parts.length < 2) {
+			return null;
+		}
+		try {
+			return new BigInteger(parts[1].trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+	
+	/**
+	 * Einmal pro Tick: nach {@link #LAST_DMG_WINDOW_MS} wird die HP-Differenz zum Snapshot ausgewertet.
+	 * Der Schaden im 5s-Fenster wird als Last Dmg angezeigt und für DPM auf 1 Minute hochgerechnet.
+	 */
+	private void tickLastDamageWindow() {
+		BigInteger hp = parseHpFromBossText(currentBossText);
+		if (hp == null) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		if (lastDmgWindowStartMs <= 0 || lastDmgWindowStartHp == null) {
+			lastDmgWindowStartHp = hp;
+			lastDmgWindowStartMs = now;
+			return;
+		}
+		if (now - lastDmgWindowStartMs < LAST_DMG_WINDOW_MS) {
+			return;
+		}
+		BigInteger delta = lastDmgWindowStartHp.subtract(hp);
+		if (delta.compareTo(BigInteger.ZERO) < 0) {
+			delta = BigInteger.ZERO;
+		}
+		displayedLastDamage = delta;
+		cachedDpm = delta.doubleValue() * DPM_EXTRAPOLATION_FACTOR;
+		lastDpmUpdateTime = now;
+		lastDmgWindowStartHp = hp;
+		lastDmgWindowStartMs = now;
+	}
+	
+	private void resetLastDamageWindow() {
+		lastDmgWindowStartHp = null;
+		lastDmgWindowStartMs = 0;
+		displayedLastDamage = null;
+	}
+	
+	/**
+	 * Attempts to extract text from various types of display entities
+	 */
+	private static String getTextFromDisplayEntity(Entity entity) {
+		try {
+			// Try to get text using reflection for different entity types
+			String entityType = entity.getClass().getSimpleName();
+			
+			// For TextDisplayEntity or similar
+			if (entityType.contains("TextDisplay") || entityType.contains("Display")) {
+				// Try different methods to get text content
+				try {
+					// Method 1: Try to get text component
+					java.lang.reflect.Method getTextMethod = entity.getClass().getMethod("getText");
+					Object textComponent = getTextMethod.invoke(entity);
+					if (textComponent instanceof Component) {
+						String result = ((Component) textComponent).getString();
+						return result;
+					}
+				} catch (Exception e) {
+					// Method not found, continue to next method
+				}
+				
+				try {
+					// Method 2: Try to get text as string
+					java.lang.reflect.Method getTextStringMethod = entity.getClass().getMethod("getTextString");
+					Object textString = getTextStringMethod.invoke(entity);
+					if (textString instanceof String) {
+						String result = (String) textString;
+						return result;
+					}
+				} catch (Exception e) {
+					// Method not found, continue to next method
+				}
+				
+				try {
+					// Method 3: Try to get custom name
+					if (entity.hasCustomName()) {
+						Component customName = entity.getCustomName();
+						if (customName != null) {
+							String result = customName.getString();
+							return result;
+						}
+					}
+				} catch (Exception e) {
+					// Could not get custom name, continue to next method
+				}
+				
+				// Method 4: Try to get entity name
+				String entityName = entity.getName().getString();
+				if (entityName != null && !entityName.isEmpty() && !entityName.equals("entity.minecraft.text_display")) {
+					return entityName;
+				}
+			}
+		} catch (Exception e) {
+			// Error extracting text, return null
+		}
+		
+		return null;
+	}
+	
+
+	
+	private boolean shouldIgnoreEntity(String name) {
+		// Entferne zusätzliche Leerzeichen am Anfang und Ende
+		name = name.trim();
+		// Entferne mehrfache Leerzeichen innerhalb des Textes
+		name = name.replaceAll("\\s+", " ");
+		
+		for (String ignoredName : ignoredNames) {
+			if (name.contains(ignoredName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Volles Boss-HP-Format (Name aus der Boss-Liste + {@code |||||Zahl|||||}) ohne Seiteneffekte.
+	 */
+	private boolean isStrictBossHpLine(String text) {
+		if (!validBossNames.stream().anyMatch(text::contains)) {
+			return false;
+		}
+		Matcher matcher = bossPattern.matcher(text);
+		if (!matcher.matches()) {
+			return false;
+		}
+		String bossName = matcher.group(1).trim();
+		return validBossNames.contains(bossName);
+	}
+	
+	/**
+	 * Verarbeitet pro Entity-Scan höchstens eine Boss-Leiste, damit Start-HP und aktuelle HP aus derselben Quelle stammen.
+	 */
+	private void applySingleBossDisplayFromScan(Minecraft client, List<BossScanHit> bossHits) {
+		if (bossHits.isEmpty()) {
+			return;
+		}
+		BossScanHit chosen = bossHits.size() == 1 ? bossHits.get(0) : pickNearestBossDisplay(client, bossHits);
+		processTextDisplay(chosen.text());
+	}
+	
+	/**
+	 * Unter mehreren gültigen Boss-Texten: nächstes Entity zum Spieler; bei praktisch gleicher Distanz höhere angezeigte HP.
+	 */
+	private BossScanHit pickNearestBossDisplay(Minecraft client, List<BossScanHit> hits) {
+		Player player = client.player;
+		if (player == null) {
+			return hits.get(0);
+		}
+		BossScanHit best = hits.get(0);
+		double bestDist = best.entity().distanceToSqr(player);
+		BigInteger bestHp = parseHpFromBossText(best.text());
+		if (bestHp == null) {
+			bestHp = BigInteger.ZERO;
+		}
+		for (int i = 1; i < hits.size(); i++) {
+			BossScanHit h = hits.get(i);
+			double d = h.entity().distanceToSqr(player);
+			BigInteger hp = parseHpFromBossText(h.text());
+			if (hp == null) {
+				hp = BigInteger.ZERO;
+			}
+			if (d < bestDist - 1e-6) {
+				best = h;
+				bestDist = d;
+				bestHp = hp;
+			} else if (Math.abs(d - bestDist) <= 1e-6 && hp.compareTo(bestHp) > 0) {
+				best = h;
+				bestHp = hp;
+			}
+		}
+		return best;
+	}
+	
+	public void processTextDisplay(String text) {
+		// Prüfe, ob Boss-Erkennung blockiert ist
+		if (System.currentTimeMillis() < bossBlockedUntil) {
+			return; // Boss-Erkennung ist blockiert
+		}
+		
+		boolean containsBossName = validBossNames.stream()
+			.anyMatch(text::contains);
+		
+		if (containsBossName) {
+			Matcher matcher = bossPattern.matcher(text);
+			
+			if (matcher.matches()) {
+				String bossName = matcher.group(1).trim();
+				
+				if (validBossNames.contains(bossName)) {
+					// Wenn wir auf Retry für "Welle nicht geschafft" warten, speichere die HP
+					if (waitingForWaveFailedRetry && waveFailedRetryCount < WAVE_FAILED_MAX_RETRIES) {
+						String[] parts = text.split("\\|{5}");
+						if (parts.length >= 2) {
+							String hp = parts[1].trim();
+							lastKnownHP = hp;
+							lastKnownBossName = bossName;
+							bossDisappearTimeWithoutReward = System.currentTimeMillis();
+							bossLost = true;
+							waitingForWaveFailedRetry = false;
+							waveFailedRetryCount = 0;
+							// Boss wurde erkannt, zeige verbleibende HP
+							return;
+						}
+					}
+					
+					// Reset boss defeated flag when a new boss appears
+					if (bossDefeated) {
+						bossDefeated = false;
+					}
+					
+					// Prüfe ob ein neuer Boss erscheint (anderer Name als vorher oder noch kein Boss getrackt)
+					boolean isNewBoss = !bossName.equals(lastTrackedBossName) || lastTrackedBossName == null;
+					
+					if (isNewBoss) {
+						// Neuer Boss - speichere initiale HP und starte Timer
+						String[] parts = text.split("\\|{5}");
+						if (parts.length >= 2) {
+							try {
+								initialBossHP = new BigInteger(parts[1].trim());
+								bossFightStartTime = System.currentTimeMillis();
+								lastTrackedBossName = bossName;
+								resetLastDamageWindow();
+								resetDpmCache();
+							} catch (NumberFormatException e) {
+								// HP konnte nicht geparst werden, ignoriere
+								initialBossHP = null;
+								bossFightStartTime = 0;
+								resetLastDamageWindow();
+								resetDpmCache();
+							}
+						}
+					}
+					
+					currentBossName = bossName;
+					currentBossText = text;
+				}
+			}
+		}
+	}
+	
+
+	
+	public void hideOverlay() {
+		lastKnownHP = null;
+		lastKnownBossName = null;
+		bossDisappearTimeWithoutReward = 0;
+		waitingForBossResult = false;
+		bossDefeated = false;
+		bossLost = false;
+		currentBossName = null;
+		currentBossText = null;
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
+		resetLastDamageWindow();
+		resetDpmCache();
+		// Blockierung wird automatisch nach BOSS_BLOCK_DURATION ablaufen
+	}
+	
+	public void clearCurrentBoss() {
+		if (currentBossName != null || currentBossText != null) {
+			// Wenn Boss bereits besiegt wurde, verstecke Overlay sofort
+			if (bossDefeated) {
+				hideOverlay();
+				return;
+			}
+			
+			// Wenn Boss bereits verloren wurde, verstecke Overlay sofort
+			if (bossLost) {
+				hideOverlay();
+				return;
+			}
+			
+			// Boss verschwindet - speichere verbleibende HP für 5-Sekunden-Anzeige
+			if (currentBossText != null) {
+				String[] parts = currentBossText.split("\\|{5}");
+				if (parts.length >= 2) {
+					String hp = parts[1].trim();
+					// Boss verschwunden - warte auf Ergebnis (Actionbar oder Chat-Nachricht)
+					lastKnownHP = hp;
+					lastKnownBossName = currentBossName;
+					bossDisappearTimeWithoutReward = System.currentTimeMillis();
+					waitingForBossResult = true;
+				} else {
+					hideOverlay();
+				}
+			} else {
+				hideOverlay();
+			}
+			
+			// Lösche aktuellen Boss
+			currentBossName = null;
+			currentBossText = null;
+			
+			// Reset DPM-Tracking wenn Boss verschwindet
+			initialBossHP = null;
+			bossFightStartTime = 0;
+			lastTrackedBossName = null;
+			resetLastDamageWindow();
+			resetDpmCache();
+		}
+	}
+	
+	public boolean shouldShowDisappearedBoss() {
+		// Wenn Boss besiegt wurde, zeige kein verschwundenes Overlay
+		if (bossDefeated) {
+			return false;
+		}
+		
+		// Wenn Boss verloren wurde, zeige verbleibende HP für 5 Sekunden
+		if (bossLost) {
+			if (lastKnownHP == null || bossDisappearTimeWithoutReward == 0) {
+				return false;
+			}
+			
+			long timeSinceDisappear = System.currentTimeMillis() - bossDisappearTimeWithoutReward;
+			boolean shouldShow = timeSinceDisappear < BOSS_DISAPPEAR_TIMEOUT;
+			
+			// Wenn Zeit abgelaufen ist, verstecke das Overlay
+			if (!shouldShow) {
+				bossLost = false;
+				hideOverlay();
+			}
+			
+			return shouldShow;
+		}
+		
+		// Für verschwundenen Boss ohne Ergebnis (warten auf Actionbar/Chat)
+		if (lastKnownHP == null || bossDisappearTimeWithoutReward == 0) {
+			return false;
+		}
+		
+		if (!waitingForBossResult) {
+			return false;
+		}
+		
+		long timeSinceDisappear = System.currentTimeMillis() - bossDisappearTimeWithoutReward;
+		boolean shouldShow = timeSinceDisappear < BOSS_DISAPPEAR_TIMEOUT;
+		
+		// Wenn Zeit abgelaufen ist, verstecke das Overlay
+		if (!shouldShow && waitingForBossResult) {
+			waitingForBossResult = false;
+			hideOverlay();
+		}
+		
+		return shouldShow;
+	}
+	
+	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
+		Minecraft client = Minecraft.getInstance();
+		if (client == null) {
+			return;
+		}
+		if (!net.felix.utilities.Other.hud.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+			return;
+		}
+		
+		// Hide overlay if F1 menu (debug screen) is open
+		if (client.gui.hud.isHidden()) {
+			return;
+		}
+		
+		// Prüfe Konfiguration
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
+			!CCLiveUtilitiesConfig.HANDLER.instance().bossHPEnabled ||
+			!CCLiveUtilitiesConfig.HANDLER.instance().showBossHP) {
+			return;
+		}
+		
+		// Prüfe ob Spieler in seiner eigenen Dimension ist
+		if (client.player == null || client.level == null) {
+			return;
+		}
+		
+		String playerName = client.player.getName().getString().toLowerCase();
+		String dimensionPath = client.level.dimension().identifier().getPath();
+		
+		// Zeige Boss HP Overlay nur in Dimensionen, die den Spielernamen enthalten
+		if (!dimensionPath.equals(playerName)) {
+			return;
+		}
+		
+		BossHPUtility instance = BossHPUtility.getInstance();
+		
+		// Render nur wenn Overlays sichtbar sind und keine Equipment-Overlays aktiv sind
+		if (showOverlays && !EquipmentDisplayUtility.isEquipmentOverlayActive()) {
+			renderBossHealthBars(context, client, instance);
+		}
+	}
+	
+
+	private static void renderBossHealthBars(GuiGraphicsExtractor context, Minecraft client, BossHPUtility instance) {
+		// Verwende Konfigurationspositionen
+		int configX = CCLiveUtilitiesConfig.HANDLER.instance().bossHPX;
+		int configY = CCLiveUtilitiesConfig.HANDLER.instance().bossHPY;
+		
+		// Zeichne aktuellen Boss (nur wenn nicht besiegt)
+		if (instance.currentBossName != null && instance.currentBossText != null && !instance.bossDefeated) {
+			renderBossBar(context, client, configX, configY, instance.currentBossName, instance.currentBossText, false);
+		}
+		// Zeichne verschwundenen Boss oder verlorenen Boss (für 5 Sekunden)
+		else if (instance.shouldShowDisappearedBoss()) {
+			renderBossBar(context, client, configX, configY, instance.lastKnownBossName, instance.lastKnownHP, true);
+		}
+	}
+	
+	private static void renderBossBar(GuiGraphicsExtractor context, Minecraft client, int x, int y, String bossName, String hpText, boolean isDisappeared) {
+		// Konstanten für das Layout
+		final int TEXT_COLOR = 0xFFFFFFFF; // Weiß
+		final int HP_COLOR = 0xFFFF5555;   // Rot
+		final int BACKGROUND_COLOR = 0x80000000; // Halbtransparentes Schwarz
+		final int PADDING = 4;
+		final int LINE_SPACING = 2; // Abstand zwischen Zeilen
+		
+		// Hole Farben aus Config
+		int dpmColor = CCLiveUtilitiesConfig.HANDLER.instance().bossHPDPMColor.getRGB();
+		int percentageColor = CCLiveUtilitiesConfig.HANDLER.instance().bossHPPercentageColor.getRGB();
+		
+		// Get scale from config
+		float scale = CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale;
+		if (scale <= 0) scale = 1.0f; // Safety check
+		
+		BossHPUtility instance = BossHPUtility.getInstance();
+		
+		// Parse HP-Werte
+		String displayText = null;
+		String displayHP = null;
+		BigInteger currentHP = null;
+		
+		if (isDisappeared) {
+			displayText = bossName + " verbleibend";
+			// Formatiere HP mit Tausender-Trennung
+			try {
+				BigInteger hpValue = new BigInteger(hpText);
+				displayHP = formatBigInteger(hpValue);
+			} catch (NumberFormatException e) {
+				// HP konnte nicht geparst werden, verwende Original-Text
+				displayHP = hpText;
+			}
+		} else if (hpText.isEmpty()) {
+			// Fallback: zeige nur den Boss-Namen
+			displayText = bossName;
+			displayHP = "";
+		} else {
+			String[] parts = hpText.split("\\|{5}");
+			if (parts.length >= 2) {
+				displayText = parts[0].trim();
+				String rawHP = parts[1].trim();
+				try {
+					currentHP = new BigInteger(rawHP);
+					// Formatiere HP mit Tausender-Trennung
+					displayHP = formatBigInteger(currentHP);
+				} catch (NumberFormatException e) {
+					// HP konnte nicht geparst werden, verwende Original-Text
+					displayHP = rawHP;
+					currentHP = null;
+				}
+			}
+		}
+		
+		if (displayText == null) {
+			return;
+		}
+		
+		// Berechne Prozentwert (nur wenn initialBossHP und currentHP verfügbar sind und Prozentwert-Anzeige aktiviert ist)
+		String percentageText = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowPercentage &&
+			instance.initialBossHP != null && currentHP != null && 
+			instance.initialBossHP.compareTo(BigInteger.ZERO) > 0) {
+			// Berechne Prozent: (currentHP / initialBossHP) * 100
+			double percentage = currentHP.doubleValue() / instance.initialBossHP.doubleValue() * 100.0;
+			// Formatiere mit einer Dezimalstelle
+			percentageText = String.format(Locale.US, "%.1f%%", percentage);
+		}
+		
+		// Berechne DPM (nur wenn Boss aktiv ist und nicht verschwunden und DPM-Anzeige aktiviert ist)
+		String dpmText = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
+			dpmText = getFormattedDpmText();
+		}
+		
+		// ETA: geschätzte Restzeit anhand aktueller HP und DPM
+		String etaLine = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta && currentHP != null) {
+			etaLine = getFormattedEtaText(currentHP);
+		}
+		
+		// Last Dmg: Schaden im letzten 5s-Fenster (siehe tickLastDamageWindow)
+		String lastDmgLine = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowLastDmg
+			&& instance.initialBossHP != null && currentHP != null) {
+			String lastVal = instance.displayedLastDamage == null ? "-" : formatBigInteger(instance.displayedLastDamage);
+			int cd = getLastDmgIntervalCountdown();
+			lastDmgLine = "Last Dmg: " + lastVal + " | " + cd + "s";
+		}
+		// Overall DMG: kumulativer Schaden seit Kampfbeginn + Anteil der Start-HP
+		String overallDmgLine = null;
+		if (!isDisappeared && CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowOverallDmg
+			&& instance.initialBossHP != null && currentHP != null
+			&& instance.initialBossHP.compareTo(BigInteger.ZERO) > 0) {
+			BigInteger totalDealt = instance.initialBossHP.subtract(currentHP);
+			if (totalDealt.compareTo(BigInteger.ZERO) < 0) {
+				totalDealt = BigInteger.ZERO;
+			}
+			double removedPct = totalDealt.doubleValue() / instance.initialBossHP.doubleValue() * 100.0;
+			overallDmgLine = "Overall DMG: " + formatBigInteger(totalDealt) + " | "
+				+ String.format(Locale.US, "%.1f%%", removedPct);
+		}
+		
+		// Erste Zeile: Bossname + ": " + HP (+ optional %)
+		String nameWithColon = (!isDisappeared && !displayHP.isEmpty()) ? (displayText + ": ") : displayText;
+		// Berechne die Breiten für das Layout (unscaled)
+		int nameWidth = client.font.width(nameWithColon);
+		int hpWidth = displayHP.isEmpty() ? 0 : client.font.width(displayHP);
+		int separatorWidth = percentageText != null ? client.font.width("|") : 0;
+		int percentageWidth = percentageText != null ? client.font.width(percentageText) : 0;
+		int dpmWidth = dpmText != null ? client.font.width(dpmText) : 0;
+		int etaWidth = etaLine != null ? client.font.width(etaLine) : 0;
+		int lastDmgWidth = lastDmgLine != null ? client.font.width(lastDmgLine) : 0;
+		int overallDmgWidth = overallDmgLine != null ? client.font.width(overallDmgLine) : 0;
+		int totalWidth = Math.max(
+			nameWidth + (displayHP.isEmpty() ? 0 : 4 + hpWidth + (percentageText != null ? 5 + separatorWidth + 5 + percentageWidth : 0)), // Erste Zeile
+			Math.max(dpmWidth, Math.max(etaWidth, Math.max(lastDmgWidth, overallDmgWidth)))
+		);
+		int totalHeight = client.font.lineHeight + PADDING * 2;
+		if (overallDmgLine != null) {
+			totalHeight += client.font.lineHeight + LINE_SPACING;
+		}
+		if (dpmText != null) {
+			totalHeight += client.font.lineHeight + LINE_SPACING;
+		}
+		if (lastDmgLine != null) {
+			totalHeight += client.font.lineHeight + LINE_SPACING;
+		}
+		if (etaLine != null) {
+			totalHeight += client.font.lineHeight + LINE_SPACING;
+		}
+		
+		// Die Gesamtbreite inklusive Padding (unscaled)
+		int unscaledTotalWidth = totalWidth + PADDING * 2;
+		
+		// Berechne skalierte Breite
+		float scaledTotalWidth = unscaledTotalWidth * scale;
+		int overlayWidth = Math.round(scaledTotalWidth);
+		
+		// Position aus Config: baseX ist die linke Kante (wie beim Mining-Overlay)
+		int baseX = x;
+		int screenWidth = client.getWindow().getGuiScaledWidth();
+		
+		// Determine if overlay is on left or right side of screen
+		boolean isOnLeftSide = baseX < screenWidth / 2;
+		
+		// Calculate X position based on side (same logic as Mining overlays)
+		int posX;
+		if (isOnLeftSide) {
+			// On left side: keep left edge fixed, expand to the right
+			posX = baseX;
+		} else {
+			// On right side: keep right edge fixed, expand to the left
+			// Right edge is: baseX (since baseX is on the right side, it represents the right edge)
+			// Keep this right edge fixed, so left edge moves left when width increases
+			posX = baseX - overlayWidth;
+		}
+		
+		// Ensure overlay stays within screen bounds
+		posX = Math.max(0, Math.min(posX, screenWidth - overlayWidth));
+		int posY = y;
+		
+		// Verwende Matrix-Transformationen für Skalierung
+		Matrix3x2fStack matrices = context.pose();
+		matrices.pushMatrix();
+		
+		// Translate to position and scale from there
+		matrices.translate(posX, posY);
+		matrices.scale(scale, scale);
+		
+		// Zeichne den Hintergrund nur wenn aktiviert (innerhalb der Matrix-Transformation)
+		if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowBackground) {
+			context.fill(0, 0, 
+					 unscaledTotalWidth, totalHeight, 
+					 BACKGROUND_COLOR);
+		}
+		
+		// Zeichne den Boss-Namen inkl. Doppelpunkt (weiß) - relativ zur Matrix
+		context.text(client.font, nameWithColon, PADDING, PADDING, TEXT_COLOR, true);
+		
+		// Zeichne die HP (rot) nur wenn vorhanden - relativ zur Matrix
+		if (!displayHP.isEmpty()) {
+			int hpX = PADDING + nameWidth + 4;
+			context.text(client.font, displayHP, hpX, PADDING, HP_COLOR, true);
+			
+			// Zeichne Prozentwert direkt nach den HP
+			if (percentageText != null) {
+				int separatorX = hpX + hpWidth + 5; // 5 Pixel Abstand nach den HP
+				context.text(client.font, "|", separatorX, PADDING, HP_COLOR, true);
+				int percentageX = separatorX + separatorWidth + 5; // 5 Pixel Abstand nach dem Separator
+				context.text(client.font, percentageText, percentageX, PADDING, percentageColor, true);
+			}
+		}
+		
+		// Stat-Zeilen unter der ersten Zeile (Overall DMG, DPM, Last Dmg, Benötigte Zeit)
+		int statLineY = PADDING + client.font.lineHeight + LINE_SPACING;
+		if (overallDmgLine != null) {
+			context.text(client.font, overallDmgLine, PADDING, statLineY, dpmColor, true);
+			statLineY += client.font.lineHeight + LINE_SPACING;
+		}
+		if (dpmText != null) {
+			context.text(client.font, dpmText, PADDING, statLineY, dpmColor, true);
+			statLineY += client.font.lineHeight + LINE_SPACING;
+		}
+		if (lastDmgLine != null) {
+			context.text(client.font, lastDmgLine, PADDING, statLineY, dpmColor, true);
+			statLineY += client.font.lineHeight + LINE_SPACING;
+		}
+		if (etaLine != null) {
+			context.text(client.font, etaLine, PADDING, statLineY, dpmColor, true);
+		}
+
+		matrices.popMatrix();
+	}
+	
+
+	
+
+	
+
+	
+	/**
+	 * Chat-Nachrichten Event Handler
+	 * Note: Actionbar messages are now handled via ActionBarMixin
+	 */
+	private static void checkTabKey() {
+		// Check if player list key is pressed (respects custom key bindings)
+		if (KeyBindingUtility.isPlayerListKeyPressed()) {
+			showOverlays = false; // Hide overlays when player list key is pressed
+		} else {
+			showOverlays = true; // Show overlays when player list key is released
+		}
+	}
+	
+	private static void onChatMessage(Component message, boolean overlay) {
+		BossHPUtility instance = BossHPUtility.getInstance();
+		String content = message.getString();
+		
+		// Only handle regular chat messages (not actionbar)
+		if (!overlay) {
+			// Prüfe auf "Ein Monster hat XXX Kakteen und XXX Seelen geklaut!" (Chat-Nachricht)
+			if (content.contains("Ein Monster hat") && content.contains("Kakteen") && content.contains("Seelen geklaut")) {
+				instance.handleBossLost();
+			}
+			// Prüfe auf "Du warst zu lange außerhalb der Kampfzone" (Chat-Nachricht)
+			if (content.toLowerCase().contains("zu lange außerhalb") && content.toLowerCase().contains("kampfzone")) {
+				// Blockiere Boss-Erkennung für 10 Sekunden
+				instance.bossBlockedUntil = System.currentTimeMillis() + BOSS_BLOCK_DURATION;
+				
+				// Rufe handleBossLost() mehrmals auf, um sicherzustellen, dass der Boss auf "verloren" gesetzt wird
+				instance.handleBossLost();
+				instance.handleBossLost();
+				instance.handleBossLost();
+			}
+			// Prüfe auf "Die welle wurde nicht geschafft! für die nächsten X minuten: farmen deaktiviert und -X% aktiver Ertrag" (Chat-Nachricht)
+			if (content.toLowerCase().contains("die welle wurde nicht geschafft") && 
+				content.toLowerCase().contains("farmen deaktiviert") && 
+				content.toLowerCase().contains("aktiver ertrag")) {
+				instance.handleWaveFailed();
+			}
+			// Prüfe auf "Die Welle wurde nicht geschafft! Versuche sie erneut." (Chat-Nachricht)
+			if (content.contains("Die Welle wurde nicht geschafft! Versuche sie erneut.") || 
+				content.contains("Die welle wurde nicht geschafft! Versuche sie erneut.")) {
+				instance.handleWaveFailedRetry();
+			}
+		}
+	}
+	
+
+	
+	/**
+	 * Handler für Boss verloren (Chat-Nachricht)
+	 */
+	public void handleBossLost() {
+		bossLost = true;
+		waitingForBossResult = false;
+		
+		// Setze die verbleibenden HP für 5 Sekunden Anzeige
+		if (currentBossText != null) {
+			String[] parts = currentBossText.split("\\|{5}");
+			if (parts.length >= 2) {
+				String hp = parts[1].trim();
+				lastKnownHP = hp;
+				lastKnownBossName = currentBossName;
+				bossDisappearTimeWithoutReward = System.currentTimeMillis();
+			}
+		}
+		
+		// Lösche aktuellen Boss
+		currentBossName = null;
+		currentBossText = null;
+		
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
+		resetLastDamageWindow();
+		resetDpmCache();
+	}
+	
+	/**
+	 * Handler für gescheiterte Welle (Chat-Nachricht)
+	 * Zeigt verbleibende Boss-HP an, wenn eine Welle nicht geschafft wurde
+	 */
+	public void handleWaveFailed() {
+		bossLost = true;
+		waitingForBossResult = false;
+		
+		// Setze die verbleibenden HP für 5 Sekunden Anzeige
+		if (currentBossText != null) {
+			String[] parts = currentBossText.split("\\|{5}");
+			if (parts.length >= 2) {
+				String hp = parts[1].trim();
+				lastKnownHP = hp;
+				lastKnownBossName = currentBossName;
+				bossDisappearTimeWithoutReward = System.currentTimeMillis();
+			}
+		}
+		
+		// Lösche aktuellen Boss
+		currentBossName = null;
+		currentBossText = null;
+		
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
+		resetLastDamageWindow();
+		resetDpmCache();
+	}
+	
+	/**
+	 * Handler für "Die Welle wurde nicht geschafft! Versuche sie erneut." (Chat-Nachricht)
+	 * Versucht 5 mal, die verbleibenden HP anzuzeigen, falls der Boss nochmal erkannt wird
+	 */
+	public void handleWaveFailedRetry() {
+		bossLost = true;
+		waitingForBossResult = false;
+		waitingForWaveFailedRetry = true;
+		waveFailedRetryCount = 0;
+		
+		// Setze die verbleibenden HP für Anzeige, falls vorhanden
+		if (currentBossText != null) {
+			String[] parts = currentBossText.split("\\|{5}");
+			if (parts.length >= 2) {
+				String hp = parts[1].trim();
+				lastKnownHP = hp;
+				lastKnownBossName = currentBossName;
+				bossDisappearTimeWithoutReward = System.currentTimeMillis();
+			}
+		}
+		
+		// Lösche aktuellen Boss
+		currentBossName = null;
+		currentBossText = null;
+		
+		// Reset DPM-Tracking
+		initialBossHP = null;
+		bossFightStartTime = 0;
+		lastTrackedBossName = null;
+		resetLastDamageWindow();
+		resetDpmCache();
+	}
+	
+	/**
+	 * Handler für Boss besiegt (Actionbar-Nachricht)
+	 */
+	public void handleBossDefeated() {
+		bossDefeated = true;
+		waitingForBossResult = false;
+		hideOverlay();
+	}
+	
+	/**
+	 * Prüft, ob aktuell ein Boss aktiv ist
+	 */
+	public static boolean isBossActive() {
+		BossHPUtility instance = getInstance();
+		return instance != null && instance.currentBossName != null && instance.currentBossText != null && !instance.bossDefeated;
+	}
+	
+	/**
+	 * Gibt den aktuellen Boss-Namen zurück
+	 */
+	public static String getCurrentBossName() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.currentBossName : null;
+	}
+	
+	/**
+	 * Gibt den aktuellen Boss-Text zurück
+	 */
+	public static String getCurrentBossText() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.currentBossText : null;
+	}
+	
+	/**
+	 * Gibt die initialen Boss-HP zurück (für Prozentwert-Berechnung)
+	 */
+	public static BigInteger getInitialBossHP() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.initialBossHP : null;
+	}
+	
+	/**
+	 * Gibt die Startzeit des Boss-Kampfes zurück (für DPM-Berechnung)
+	 */
+	public static long getBossFightStartTime() {
+		BossHPUtility instance = getInstance();
+		return instance != null ? instance.bossFightStartTime : 0;
+	}
+	
+	public static String getFormattedDpmText() {
+		BossHPUtility instance = getInstance();
+		if (instance == null || instance.lastDpmUpdateTime <= 0) {
+			return "DPM: -";
+		}
+		return String.format(Locale.US, "DPM: %,.0f", instance.cachedDpm);
+	}
+	
+	/**
+	 * Geschätzte Restzeit bis der Boss besiegt ist, basierend auf aktueller HP und DPM.
+	 */
+	public static String getFormattedEtaText(BigInteger currentHP) {
+		BossHPUtility instance = getInstance();
+		if (currentHP == null || currentHP.compareTo(BigInteger.ZERO) <= 0) {
+			return "Benötigte Zeit: 0:00";
+		}
+		if (instance == null || instance.lastDpmUpdateTime <= 0 || instance.cachedDpm <= 0) {
+			return "Benötigte Zeit: -";
+		}
+		double remainingMinutes = currentHP.doubleValue() / instance.cachedDpm;
+		return "Benötigte Zeit: " + formatEtaDuration(remainingMinutes);
+	}
+	
+	private static String formatEtaDuration(double totalMinutes) {
+		if (totalMinutes <= 0) {
+			return "0:00";
+		}
+		long totalSeconds = Math.max(1, Math.round(totalMinutes * 60));
+		long hours = totalSeconds / 3600;
+		long minutes = (totalSeconds % 3600) / 60;
+		long seconds = totalSeconds % 60;
+		if (hours > 0) {
+			return String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds);
+		}
+		return String.format(Locale.US, "%d:%02d", minutes, seconds);
+	}
+	
+	/**
+	 * Schaden im letzten abgeschlossenen 5s-Fenster; null bis die erste Messung.
+	 */
+	public static BigInteger getDisplayedLastDamage() {
+		return getInstance().displayedLastDamage;
+	}
+	
+	/**
+	 * Countdown bis zum Ende des aktuellen 5s-Messfensters: {@code 5} bis {@code 0}.
+	 */
+	public static int getLastDmgIntervalCountdown() {
+		BossHPUtility inst = getInstance();
+		if (inst.lastDmgWindowStartMs <= 0L) {
+			return 5;
+		}
+		long elapsed = System.currentTimeMillis() - inst.lastDmgWindowStartMs;
+		if (elapsed < 0L || elapsed >= LAST_DMG_WINDOW_MS) {
+			return 5;
+		}
+		int secondsRemaining = (int) Math.ceil((LAST_DMG_WINDOW_MS - elapsed) / 1000.0);
+		return Math.max(0, secondsRemaining);
+	}
+	
+	/**
+	 * Formatiert eine BigInteger-Zahl mit Tausendertrennzeichen
+	 */
+	public static String formatBigInteger(BigInteger value) {
+		NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
+		return formatter.format(value);
+	}
+
+} 

@@ -18,7 +18,7 @@ public class MouseClickMixin {
      */
     @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
     private void onMouseButton(long window, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
-        int button = net.felix.utilities.Overall.KeyBindingUtility.legacyMouseButton(buttonInfo.button());
+        int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(buttonInfo.button());
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.gui.screen() != null) {
             return; // Nur behandeln wenn kein Screen offen ist
@@ -34,7 +34,7 @@ public class MouseClickMixin {
                 int mouseY = (int) (client.mouseHandler.ypos() * (double) client.getWindow().getGuiScaledHeight() / (double) windowHeight);
                 
                 // Handle clicks on Clipboard Overlay buttons
-                if (net.felix.utilities.DragOverlay.Overall.ClipboardDraggableOverlay.handleButtonClick(mouseX, mouseY)) {
+                if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleButtonClick(mouseX, mouseY)) {
                     // Button wurde geklickt - verhindere weitere Verarbeitung
                     ci.cancel();
                 }

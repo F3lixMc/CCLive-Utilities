@@ -2,7 +2,7 @@ package net.felix;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
-import net.felix.utilities.ItemViewer.ItemViewerUtility;
+import net.felix.utilities.Overall.itemviewer.ItemViewerFeature;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -14,7 +14,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         // Zeichen aus Resourcepack (minecraft:font/default.json) – erster Versuch beim Client-Start
-        net.felix.utilities.Overall.ZeichenUtility.reloadFromActiveResourcePack("client-init");
+        net.felix.utilities.Other.glyphs.ZeichenUtility.reloadFromActiveResourcePack("client-init");
 
         // Verifiziere, dass die Font-Definition geladen wird
         // Die Font wird automatisch aus assets/cclive-utilities/font/default.json geladen
@@ -69,7 +69,7 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
         // });
         
         // Initialisiere Item-Viewer
-        ItemViewerUtility.initialize();
+        ItemViewerFeature.initialize();
         
         // Item-Info-Extraktion derzeit deaktiviert (ItemInfoUtility.ENABLED = false)
         // ItemInfoUtility.initialize();

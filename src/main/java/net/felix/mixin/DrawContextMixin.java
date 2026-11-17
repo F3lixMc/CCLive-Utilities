@@ -1,8 +1,9 @@
 package net.felix.mixin;
 
-import net.felix.chat.BuildShareManager;
-import net.felix.chat.BuildShareOverviewLayout;
-import net.felix.utilities.Overall.ZeichenUtility;
+import java.util.List;
+import net.felix.Community.chat.BuildShareManager;
+import net.felix.Community.chat.BuildShareOverviewLayout;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -13,8 +14,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
 
 /**
  * Mixin for GuiGraphicsExtractor to disable the dark inventory overlay for Equipment Display screens.
@@ -46,7 +45,7 @@ public class DrawContextMixin {
      */
     @Inject(method = "componentHoverEffect", at = @At("HEAD"), cancellable = true)
     private void cclive$replaceBuildShareHover(Font font, Style style, int mouseX, int mouseY, CallbackInfo ci) {
-        if (net.felix.chat.ChatContextMenu.hidesPlayerStatsHover()) {
+        if (net.felix.Community.chat.ChatContextMenu.hidesPlayerStatsHover()) {
             ci.cancel();
             return;
         }
@@ -68,7 +67,7 @@ public class DrawContextMixin {
     @Inject(method = "setComponentTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;II)V", at = @At("HEAD"), cancellable = true)
     private void blockItemTooltipsWhenHelpOverlayOpen(Font textRenderer, List<Component> lines, int x, int y, CallbackInfo ci) {
         // Blockiere nur wenn Hilfe-Overlay offen ist
-        if (net.felix.utilities.ItemViewer.ItemViewerUtility.isOverlayOpen()) {
+        if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.isOverlayOpen()) {
             if (lines == null || lines.isEmpty()) {
                 return;
             }

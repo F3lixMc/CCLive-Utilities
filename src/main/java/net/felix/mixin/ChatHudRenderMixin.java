@@ -1,22 +1,21 @@
 package net.felix.mixin;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.felix.Community.playericon.PlayerIconUtility;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
+import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.felix.utilities.Other.PlayericonUtility.PlayerIconUtility;
-import net.minecraft.client.multiplayer.chat.GuiMessage;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.ChatComponent;
-import net.minecraft.util.Mth;
 
 /**
  * Fallback-Icon-Rendering im Chat, falls keine Icon-Glyphe (ѳ) in der Nachricht steht.

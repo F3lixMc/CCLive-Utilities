@@ -29,7 +29,7 @@ public abstract class ChatHudAddMessageMixin {
     //     }
     //     
     //     // Modify the message to add aspect information
-    //     Text modified = InformationenUtility.modifyChatMessageForAspectInfo(message);
+    //     Text modified = AspectChatMessages.modifyChatMessageForAspectInfo(message);
     //     if (modified != message) {
     //         // If we need to replace the message, we'd need to use a different approach
     //         // For now, this is just a placeholder

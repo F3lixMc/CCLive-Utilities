@@ -1,0 +1,22 @@
+---
+description: Java-Namenskonventionen und Strukturregeln fuer alle Java-Dateien im Projekt
+globs: src/**/*.java
+alwaysApply: false
+---
+
+# Java-Namenskonventionen
+
+- **Packages**: nur Kleinbuchstaben, keine Unterstriche (`net.felix.features.information.mklevel`). Nie `Overall`, `Town`, `Other` o. ae.
+- **Klassen/Interfaces/Enums/Records**: `PascalCase`, Substantiv, sagt was die Klasse tut (`MiningLumberjackTracker`, nicht `Utility` oder `Helper`).
+- **Methoden**: `camelCase`, Verb am Anfang (`loadAspectsDatabase`, `isInFarmzone`).
+- **Felder/Variablen**: `camelCase`. Konstanten (`static final`, unveraenderlich): `UPPER_SNAKE_CASE`.
+- **Abkuerzungen als Woerter schreiben**: `MkLevel`, `Xp`, `Rgb`, `Hp` — nicht `MKLevel`, `XP`, `RGB`. Ausnahmen: Namen fremder APIs (`Color.getRGB`) und Dateinamen in Strings (`"MKLevel.json"`).
+- Keine nichtssagenden Namen: `Info`, `Data`, `Manager`, `Util(ity)` nur, wenn der Zusatz den Inhalt wirklich beschreibt.
+- Ein Dateiname entspricht genau dem Namen der oeffentlichen Klasse.
+
+# Struktur
+
+- Pro Klasse eine klare Verantwortung (Datenbank laden, Tooltip ergaenzen, Overlay zeichnen, Eingaben verarbeiten ...), keine Dateien mit mehreren Features.
+- Neue Features liegen in `net.felix.features.<feature>` mit Unterpaketen nach Aufgabe.
+- Datentypen (Records/Datenklassen) liegen in eigenen Dateien, nicht als verschachtelte `private static class`.
+- Sichtbarkeit so eng wie moeglich: `private` > package-private > `public`.
