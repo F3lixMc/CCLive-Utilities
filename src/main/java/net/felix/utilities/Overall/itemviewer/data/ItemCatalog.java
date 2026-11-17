@@ -161,14 +161,14 @@ public final class ItemCatalog {
         // 2. Neue Struktur (Deutsch)
         addItemsWithJson(rootJson, "bauplan", data.bauplan, "blueprints", true);
         addItems(data.fähigkeiten, "abilities");
-        addItems(data.module, "modules");
+        addItemsWithJson(rootJson, "module", data.module, "modules", false);
 
         // 3. Neue Struktur (Englisch)
         addItemsWithJson(rootJson, "blueprints", data.blueprints, "blueprints", true);
         addItems(data.abilities, "abilities");
-        addItems(data.modules, "modules");
+        addItemsWithJson(rootJson, "modules", data.modules, "modules", false);
         addItems(data.runes, "runes");
-        addItems(data.power_crystals, "power_crystals");
+        addItemsWithJson(rootJson, "power_crystals", data.power_crystals, "power_crystals", false);
         addItems(data.power_crystal_slots, "power_crystal_slots");
         addItems(data.essences, "essences");
         addItemsWithJson(rootJson, "fishing_components", data.fishing_components, "fishing_components", false);

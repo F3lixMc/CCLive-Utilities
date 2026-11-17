@@ -73,7 +73,6 @@ public final class ClipboardFarmzoneActionBar {
         }
 
         CollectedMaterialsResourcesStorage.updateResource(resourceName, total);
-        net.felix.utilities.Other.clipboard.overlay.ClipboardTimeEstimate.recordCount(resourceName, total);
         if (CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateEnabled) {
             FarmzoneResourceRateUtility.update(resourceName, total);
         }

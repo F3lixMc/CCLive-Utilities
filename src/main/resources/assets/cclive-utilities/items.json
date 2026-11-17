@@ -191710,8 +191710,7 @@
       "foundAt": [
         {
           "collection": "Eichenholz I",
-          "factoryLevel": "Fabriklevel 20"
-        }
+          "factoryLevel": "Fabriklevel 20"        }
       ],
       "price": {
         "coin": {
@@ -191773,8 +191772,7 @@
       "foundAt": [
         {
           "collection": "Kupfer IV",
-          "factoryLevel": "Fabriklevel 55"
-        }
+          "factoryLevel": "Fabriklevel 55"        }
       ],
       "price": {
         "coin": {
@@ -191836,8 +191834,7 @@
       "foundAt": [
         {
           "collection": "Pilzholz IV",
-          "factoryLevel": "Fabriklevel 100"
-        }
+          "factoryLevel": "Fabriklevel 100"        }
       ],
       "price": {
         "coin": {
@@ -191899,8 +191896,7 @@
       "foundAt": [
         {
           "collection": "Diamanten V",
-          "factoryLevel": "Fabriklevel 400"
-        }
+          "factoryLevel": "Fabriklevel 400"        }
       ],
       "price": {
         "coin": {
@@ -191962,8 +191958,7 @@
       "foundAt": [
         {
           "collection": "Obsidian VI",
-          "factoryLevel": "Fabriklevel 600"
-        }
+          "factoryLevel": "Fabriklevel 600"        }
       ],
       "price": {
         "coin": {
@@ -192025,8 +192020,7 @@
       "foundAt": [
         {
           "collection": "Echokristall VII",
-          "factoryLevel": "Fabriklevel 800"
-        }
+          "factoryLevel": "Fabriklevel 800"        }
       ],
       "price": {
         "coin": {
@@ -195575,6 +195569,11 @@
     {
       "id": "minecraft:diamond",
       "name": "Machtkristall Slot 1",
+      "foundAt": [
+        {
+          "factoryLevel": "Fabriklevel 80"
+        }
+      ],
       "price": {
         "coin": {
           "itemName": "Coins",
@@ -195620,6 +195619,11 @@
     {
       "id": "minecraft:diamond",
       "name": "Machtkristall Slot 2",
+      "foundAt": [
+        {
+          "factoryLevel": "Fabriklevel 150"
+        }
+      ],
       "price": {
         "coin": {
           "itemName": "Coins",
@@ -195665,6 +195669,11 @@
     {
       "id": "minecraft:diamond",
       "name": "Machtkristall Slot 3",
+      "foundAt": [
+        {
+          "factoryLevel": "Fabriklevel 350"
+        }
+      ],
       "price": {
         "coin": {
           "itemName": "Coins",

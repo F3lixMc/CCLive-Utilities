@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 
 /**
- * Draggable Overlay für den Kills Utility
+ * Draggable Overlay für den Kill Tracker
  */
 public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
@@ -18,7 +18,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     
     @Override
     public String getOverlayName() {
-        return "Kills Utility";
+        return "Kill Tracker";
     }
     
     @Override
@@ -255,7 +255,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled &&
     
     @Override
     public Component getTooltip() {
-        return Component.literal("Kills Utility - Shows kill and death statistics");
+        return Component.literal("Kill Tracker - Shows kill and death statistics");
     }
     
     @Override

@@ -28,5 +28,18 @@ public class ItemData {
     public Integer clipboard_id;         // Optional: Interne ID für Clipboard (nur für Baupläne mit doppelten Namen)
     /** Inventar-Tooltip für Chat-Shares (konkretes Item inkl. Farbe/Stil, nicht Template). */
     public java.util.List<net.felix.Community.chat.ChatTooltipLine> chatTooltip;
+
+    /** Rechtsklick-Favorit: Baupläne, Module und Machtkristalle, nicht Slots oder Taschen. */
+    public static boolean isFavoritable(ItemData item) {
+        if (item == null || item.name == null || item.name.isEmpty()) {
+            return false;
+        }
+        if (item.info != null && Boolean.TRUE.equals(item.info.blueprint)) {
+            return true;
+        }
+        return "blueprints".equals(item.category)
+                || "modules".equals(item.category)
+                || "power_crystals".equals(item.category);
+    }
 }
 

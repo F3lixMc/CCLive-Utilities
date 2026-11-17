@@ -54,7 +54,8 @@ temp_*.png
 # Server & Database (NICHT ins öffentliche Repo!)
 server.js
 *.sql
-NOTIZEN_TODOS.md
+NOTIZEN.md
+TODOS.md
 SEASON_MANAGEMENT.md
 public/
 LEADERBOARD_SETUP.md

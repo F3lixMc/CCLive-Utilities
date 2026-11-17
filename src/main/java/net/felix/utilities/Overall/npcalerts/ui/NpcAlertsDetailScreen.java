@@ -1,12 +1,10 @@
 package net.felix.utilities.Overall.npcalerts.ui;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import java.util.Set;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.OverlayEditorScreen;
-import net.felix.utilities.Other.keybinding.KeyBindingUtility;
+import net.felix.utilities.Other.keybinding.NumericFieldInput;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -46,9 +44,8 @@ public class NpcAlertsDetailScreen extends Screen {
 
     private final String configKey;
 
-    private StringWidget titleWidget;
-
     private String warnPercentInput = ""; // Warn-Prozentwert oder Kombo-Zielwert
+    private final NumericFieldInput.State warnField = new NumericFieldInput.State();
 
     private boolean isEditingWarnPercent = false;
 
@@ -161,14 +158,6 @@ public class NpcAlertsDetailScreen extends Screen {
     protected void init() {
         super.init();
         
-        // Title
-        titleWidget = new StringWidget(
-            Component.literal(infoName + " - Einstellungen"),
-            font
-        );
-        titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, 20);
-        addRenderableWidget(titleWidget);
-        
         if ("komboKiste".equals(configKey)) {
             int z = CCLiveUtilitiesConfig.HANDLER.instance().npcAlertsKomboKisteZielwert;
             if (z < 1) {
@@ -198,9 +187,6 @@ public class NpcAlertsDetailScreen extends Screen {
         
         // Render very transparent background overlay
         context.fill(0, 0, width, height, 0x20000000);
-        
-        // Render title
-        titleWidget.extractRenderState(context, mouseX, mouseY, delta);
         
         // Render settings box
         float scale = settingsScale();
@@ -353,7 +339,7 @@ public class NpcAlertsDetailScreen extends Screen {
         int boxX = layout.boxX();
         int boxY = layout.boxY();
         context.fill(boxX, boxY, boxX + SETTINGS_BOX_WIDTH, boxY + layout.boxHeight(), 0xFF000000);
-        context.outline(boxX, boxY, SETTINGS_BOX_WIDTH, layout.boxHeight(), 0xFFFFFFFF);
+        context.outline(boxX, boxY, SETTINGS_BOX_WIDTH, layout.boxHeight(), 0xFF55FFFF);
         context.text(font, infoName + " - Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
 
         int closeX = layout.closeButtonX();
@@ -426,7 +412,7 @@ public class NpcAlertsDetailScreen extends Screen {
                     "(Leer lassen oder -1 = deaktiviert)");
             }
         } else if ("komboKiste".equals(configKey)) {
-            String targetText = warnPercentInput.isEmpty() ? "1" : warnPercentInput;
+            String targetText = !isEditingWarnPercent && warnPercentInput.isEmpty() ? "1" : warnPercentInput;
             drawNumberInput(context, x, getPercentCheckboxY(boxY), 125, "Zielwert (rechts):", targetText, "",
                 "Warnung bei Erreichen oder darüber (min. 1)");
         } else {
@@ -447,16 +433,17 @@ public class NpcAlertsDetailScreen extends Screen {
         context.outline(fieldX, y, INPUT_WIDTH, INPUT_HEIGHT, isEditingWarnPercent ? 0xFFFFFF00 : 0xFF808080);
 
         int textX = fieldX + 3;
-        if (!valueText.isEmpty()) {
-            context.text(font, valueText, textX, y + 4, 0xFFFFFFFF, false);
-            textX += font.width(valueText);
-            if (!suffix.isEmpty()) {
-                context.text(font, suffix, textX, y + 4, 0xFFFFFFFF, false);
-                textX += font.width(suffix);
+        if (isEditingWarnPercent) {
+            syncWarnFieldFromInput();
+            NumericFieldInput.draw(context, font, warnField, textX, y + 4, 0xFFFFFFFF, true);
+            if (!suffix.isEmpty() && !warnField.text.isEmpty()) {
+                context.text(font, suffix, textX + font.width(warnField.text), y + 4, 0xFFFFFFFF, false);
             }
-        }
-        if (isEditingWarnPercent && System.currentTimeMillis() % 1000 < 500) {
-            context.text(font, "_", textX, y + 4, 0xFFFFFFFF, false);
+        } else if (!valueText.isEmpty()) {
+            context.text(font, valueText, textX, y + 4, 0xFFFFFFFF, false);
+            if (!suffix.isEmpty()) {
+                context.text(font, suffix, textX + font.width(valueText), y + 4, 0xFFFFFFFF, false);
+            }
         }
         context.text(font, hint, x, y + INPUT_HEIGHT + 5, COLOR_DISABLED_TEXT, false);
     }
@@ -689,14 +676,14 @@ public class NpcAlertsDetailScreen extends Screen {
             // Warn-Eingabefeld
             int fieldX = boxX + 90;
             if (isInsideInclusive(mouseX, mouseY, fieldX, getWarnInputY(boxY), INPUT_WIDTH, INPUT_HEIGHT)) {
-                isEditingWarnPercent = true;
+                focusWarnField();
                 return true;
             }
             isEditingWarnPercent = false;
         } else if ("komboKiste".equals(configKey)) {
             int fieldX = boxX + 135;
             if (isInsideInclusive(mouseX, mouseY, fieldX, getPercentCheckboxY(boxY), INPUT_WIDTH, INPUT_HEIGHT)) {
-                isEditingWarnPercent = true;
+                focusWarnField();
                 return true;
             }
             isEditingWarnPercent = false;
@@ -820,33 +807,48 @@ public class NpcAlertsDetailScreen extends Screen {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         if (isEditingWarnPercent) {
-            int key = event.key();
-            Character digit = KeyBindingUtility.digitFromScancode(key);
-            if (digit != null) {
-                if (warnPercentInput.length() < 12) {
-                    warnPercentInput += digit;
-                    saveWarnPercent();
-                }
-                return true;
-            }
-            if (key == InputConstants.KEY_BACKSPACE) {
-                if (!warnPercentInput.isEmpty()) {
-                    warnPercentInput = warnPercentInput.substring(0, warnPercentInput.length() - 1);
-                    saveWarnPercent();
-                }
-                return true;
-            }
-            if (key == InputConstants.KEY_RETURN || key == InputConstants.KEY_NUMPADENTER) {
+            syncWarnFieldFromInput();
+            String before = warnField.text;
+            NumericFieldInput.Result result = NumericFieldInput.handle(warnField, event.key(), event.modifiers(), 12);
+            warnPercentInput = warnField.text;
+            if (result == NumericFieldInput.Result.SUBMIT) {
                 saveWarnPercent();
                 isEditingWarnPercent = false;
                 return true;
             }
-            if (key == InputConstants.KEY_ESCAPE) {
+            if (result == NumericFieldInput.Result.CANCEL) {
                 isEditingWarnPercent = false;
                 return true;
             }
+            if (result == NumericFieldInput.Result.HANDLED && !before.equals(warnField.text)) {
+                saveWarnPercent();
+                syncWarnFieldFromInput();
+            }
+            return true;
         }
         return super.keyPressed(event);
+    }
+
+    private void focusWarnField() {
+        if (!isEditingWarnPercent) {
+            syncWarnFieldFromInput();
+            warnField.focusAtEnd();
+        }
+        isEditingWarnPercent = true;
+    }
+
+    private void syncWarnFieldFromInput() {
+        if (warnPercentInput == null) {
+            warnPercentInput = "";
+        }
+        if (warnPercentInput.equals(warnField.text)) {
+            return;
+        }
+        int cursor = warnField.cursor;
+        int anchor = warnField.anchor;
+        warnField.text = warnPercentInput;
+        warnField.cursor = Math.min(cursor, warnField.text.length());
+        warnField.anchor = anchor < 0 ? -1 : Math.min(anchor, warnField.text.length());
     }
 
     private void saveWarnPercent() {
@@ -899,8 +901,9 @@ public class NpcAlertsDetailScreen extends Screen {
                 }
             }
             setWarnPercent(configKey, value);
-            if (isMachtkristallWarnCappedAt100() && value == 100.0) {
+            if (isMachtkristallWarnCappedAt100() && value == 100.0 && !"100".equals(warnPercentInput)) {
                 warnPercentInput = "100";
+                warnField.setText("100");
             }
             CCLiveUtilitiesConfig.HANDLER.save();
         } catch (NumberFormatException e) {

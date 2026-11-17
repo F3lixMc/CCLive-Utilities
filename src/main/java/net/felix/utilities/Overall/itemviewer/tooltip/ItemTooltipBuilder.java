@@ -83,7 +83,7 @@ public final class ItemTooltipBuilder {
         }
 
         if (info.power_crystal != null && info.power_crystal) {
-            appendPowerCrystalLines(tooltipLines, hoveredItem, info, includeCosts);
+            appendPowerCrystalLines(tooltipLines, hoveredItem, info, includeInteractionHints, includeCosts);
         } else {
             appendStandardLines(tooltipLines, hoveredItem, info, includeInteractionHints, includeCosts);
         }
@@ -115,7 +115,7 @@ public final class ItemTooltipBuilder {
      * first_upgrade (dark_aqua), Kosten und Forschungszeit.
      */
     private static void appendPowerCrystalLines(List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info,
-            boolean includeCosts) {
+            boolean includeInteractionHints, boolean includeCosts) {
         if (info.description != null && !info.description.isEmpty()) {
             appendPowerCrystalDescription(tooltipLines, info.description);
         }
@@ -135,6 +135,8 @@ public final class ItemTooltipBuilder {
             tooltipLines.add(styledLine(info.first_upgrade, 0xFF00AAAA)); // dark_aqua
         }
 
+        appendFoundAtLocationLines(tooltipLines, hoveredItem, false);
+
         // Kosten für Power Crystal Slots (nach first_upgrade)
         appendPriceSection(tooltipLines, hoveredItem, true, includeCosts);
 
@@ -144,6 +146,10 @@ public final class ItemTooltipBuilder {
             tooltipLines.add(Component.empty());
             tooltipLines.add(styledLine("Forschungs Zeit:", 0xFFFFFF00)); // yellow
             tooltipLines.add(styledLine(formatAmount(hoveredItem.time.hours) + "h", 0xFF55FF55)); // green
+        }
+
+        if (includeInteractionHints) {
+            appendInteractionHints(tooltipLines, hoveredItem, info);
         }
 
         // Leere Zeilen am Ende
@@ -419,7 +425,7 @@ public final class ItemTooltipBuilder {
     }
 
     static void appendInteractionHints(java.util.List<Component> tooltipLines, ItemData hoveredItem, ItemInfo info) {
-        if (info.blueprint != null && info.blueprint) {
+        if (ItemData.isFavoritable(hoveredItem)) {
             boolean isFavorite = net.felix.utilities.Overall.itemviewer.inventory.FavoriteBlueprintsStore.isFavorite(hoveredItem.name);
             tooltipLines.add(Component.empty());
             if (isFavorite) {

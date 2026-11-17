@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialRateUtility;
-import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerUtility;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
@@ -19,6 +18,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
+import java.util.Optional;
 
 /**
  * Ersetzt die Vanilla-Sidebar: Server-Zeilen auslesen, CPM einfügen, im Vanilla-Stil rendern.
@@ -40,9 +40,7 @@ public final class CoinTrackerCustomSidebar {
         }
         boolean coinScoreboard = config.coinTrackerEnabled
                 && config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD;
-        boolean materialScoreboard = config.materialTrackerEnabled
-                && config.materialTrackerRateEnabled
-                && config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.SCOREBOARD;
+        boolean materialScoreboard = MaterialTrackerUtility.usesScoreboardRateDisplay();
         boolean resourceScoreboard = config.resourceTrackerRateEnabled
                 && config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.SCOREBOARD;
         return coinScoreboard || materialScoreboard || resourceScoreboard;
@@ -128,10 +126,7 @@ public final class CoinTrackerCustomSidebar {
     }
 
     private static boolean shouldAppendMaterialRates() {
-        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         return CCLiveUtilitiesConfig.isModRuntimeEnabled()
-                && config.materialTrackerEnabled
-                && config.materialTrackerRateEnabled
                 && MaterialTrackerUtility.usesScoreboardRateDisplay()
                 && BossBarHudValueDecoder.isFloorDimension();
     }
@@ -141,6 +136,9 @@ public final class CoinTrackerCustomSidebar {
         if (materialienIndex < 0) {
             return;
         }
+
+        rows.set(materialienIndex, ScoreboardSidebarReader.Row.nameOnly(
+                withMaterialienPerMinuteHeader(rows.get(materialienIndex).name())));
 
         for (int i = materialienIndex + 1; i < rows.size(); i++) {
             ScoreboardSidebarReader.Row row = rows.get(i);
@@ -272,6 +270,25 @@ public final class CoinTrackerCustomSidebar {
 
     private static boolean isEmptyLine(ScoreboardSidebarReader.Row row) {
         return cleanLine(row.name().getString()).isEmpty();
+    }
+
+    static Component withMaterialienPerMinuteHeader(Component header) {
+        if (header == null) {
+            return Component.empty();
+        }
+        MutableComponent result = Component.empty();
+        header.visit((style, text) -> {
+            if (text == null || text.isEmpty()) {
+                return Optional.empty();
+            }
+            String replaced = text;
+            if (replaced.contains("Materialien") && !replaced.contains("Materialien/min")) {
+                replaced = replaced.replace("Materialien", "Materialien/min");
+            }
+            result.append(Component.literal(replaced).setStyle(style));
+            return Optional.empty();
+        }, Style.EMPTY);
+        return result;
     }
 
     private static boolean isMaterialienHeader(String cleanLine) {

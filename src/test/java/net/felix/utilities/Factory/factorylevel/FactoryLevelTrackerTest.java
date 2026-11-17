@@ -21,7 +21,7 @@ class FactoryLevelTrackerTest {
 
         assertEquals(List.of(
                 "Nächstes Ziel: Level 100",
-                "• Gadgetslot 3",
+                "• Modultasche 3",
                 "• Runenslot 2",
                 "",
                 "Dauer bis Ziel: Wird ermittelt …"
@@ -34,6 +34,18 @@ class FactoryLevelTrackerTest {
         ), FactoryLevelDisplay.body(79, FactoryLevelEstimate.Status.MEASURING, 0L));
 
         assertTrue(FactoryLevelDisplay.lineCount(149) > FactoryLevelDisplay.lineCount(79));
+        assertEquals(List.of(
+                "Nächstes Ziel: Level 50",
+                "• Runenslot 1",
+                "• Buff-Turm",
+                "",
+                "Dauer bis Ziel: Wird ermittelt …"
+        ), FactoryLevelDisplay.body(49, FactoryLevelEstimate.Status.MEASURING, 0L));
+        assertTrue(FactoryLevelDisplay.body(34, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Jäger NPC"));
+        assertTrue(FactoryLevelDisplay.body(44, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Seelen NPC"));
+        assertTrue(FactoryLevelDisplay.body(52, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Whitefeather NPC"));
+        assertTrue(FactoryLevelDisplay.body(109, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Essenzen NPC"));
+        assertTrue(FactoryLevelDisplay.body(899, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Amethyst NPC"));
         assertTrue(FactoryLevelDisplay.body(349, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Machtkristallslot 3"));
         assertTrue(FactoryLevelDisplay.body(249, FactoryLevelEstimate.Status.MEASURING, 0L).contains("• Recycler"));
 

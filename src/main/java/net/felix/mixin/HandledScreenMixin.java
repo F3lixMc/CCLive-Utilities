@@ -330,6 +330,11 @@ public abstract class HandledScreenMixin {
     @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)
     private void onLeaderboardScroll(double mouseX, double mouseY, double horizontal, double vertical,
                                      CallbackInfoReturnable<Boolean> cir) {
+        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.mouseScrolled(
+                mouseX, mouseY, vertical)) {
+            cir.setReturnValue(true);
+            return;
+        }
         if ((Object) this instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
                 && net.felix.Community.leaderboards.panel.LeaderboardInventoryOverlay.mouseScrolled(
                     mouseX, mouseY, vertical, leftPos, topPos, imageHeight)) {
@@ -351,6 +356,10 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
+        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleScrollbarDrag(mouseY)) {
+            cir.setReturnValue(true);
+            return;
+        }
         if (net.felix.utilities.Factory.mklevel.overlay.MkLevelInputHandler.handleMkLevelScrollbarDrag(mouseX, mouseY, button, leftPos, topPos, imageHeight)) {
             cir.setReturnValue(true);
         }
@@ -365,6 +374,10 @@ public abstract class HandledScreenMixin {
         double mouseY = event.y();
         int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.handleFilterOverlayRelease(mouseX, mouseY, button)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleScrollbarRelease(button)) {
             cir.setReturnValue(true);
             return;
         }

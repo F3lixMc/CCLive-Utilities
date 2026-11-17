@@ -151,10 +151,7 @@ public final class ItemFilterPipeline {
         if (favoritesMode) {
             Set<String> favoriteNames = FavoriteBlueprintsStore.getFavoriteNames();
             itemsToFilter = allItems.stream()
-                .filter(item -> item.info != null &&
-                               Boolean.TRUE.equals(item.info.blueprint) &&
-                               item.name != null &&
-                               favoriteNames.contains(item.name))
+                .filter(item -> ItemData.isFavoritable(item) && favoriteNames.contains(item.name))
                 .collect(Collectors.toList());
         }
 

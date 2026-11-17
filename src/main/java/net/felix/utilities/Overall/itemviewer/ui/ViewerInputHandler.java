@@ -374,10 +374,7 @@ public final class ViewerInputHandler {
             return false;
         }
 
-        boolean isBlueprint = hoveredItemForClick.info != null
-                && Boolean.TRUE.equals(hoveredItemForClick.info.blueprint)
-                && hoveredItemForClick.name != null && !hoveredItemForClick.name.isEmpty();
-        if (!isBlueprint) {
+        if (!net.felix.utilities.Overall.itemviewer.data.ItemData.isFavoritable(hoveredItemForClick)) {
             return false;
         }
 

@@ -31,6 +31,7 @@ public class MaterialTrackerUtility {
 	private static boolean showOverlays = true; // Neue Variable für Overlay-Sichtbarkeit
 	private static String lastDimension = null; // Speichert die letzte Dimension für Dimensionswechsel-Erkennung
 	private static String lastRateDimension = null;
+	private static boolean lastRateInFarmzone = false;
 	
 	// Test overlay variables
 	private static boolean showTestOverlay = false;
@@ -68,6 +69,10 @@ public class MaterialTrackerUtility {
 			
 			// Client-seitige Events registrieren
 			ClientTickEvents.END_CLIENT_TICK.register(MaterialTrackerUtility::onClientTick);
+			net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+					MaterialRateUtility.resetSession());
+			net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+					MaterialRateUtility.resetSession());
 			
 			// Registriere HUD-Rendering
 			HudElementRegistry.addLast(
@@ -190,10 +195,7 @@ public class MaterialTrackerUtility {
 	}
 
 	private static void updateMaterialRates(Minecraft client) {
-		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()
-				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled
-				|| !CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateEnabled
-				|| client.player == null) {
+		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() || client.player == null) {
 			MaterialRateUtility.resetSession();
 			return;
 		}
@@ -211,15 +213,21 @@ public class MaterialTrackerUtility {
 			// Silent error handling
 		}
 
+		boolean inFarmzone = net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard.isInFarmzone(client);
+		if (inFarmzone != lastRateInFarmzone) {
+			MaterialRateUtility.resetSession();
+			lastRateInFarmzone = inFarmzone;
+		}
+
 		if (lastRateDimension != null && currentDimension != null && !lastRateDimension.equals(currentDimension)) {
 			ActionBarData.reset();
 			MaterialRateUtility.resetSession();
 		}
 		lastRateDimension = currentDimension;
 
-		if (isOnFloor && ActionBarData.hasMaterials()) {
+		if (isOnFloor && !inFarmzone && ActionBarData.hasMaterials()) {
 			MaterialRateUtility.updateFromActionBar();
-		} else if (!isOnFloor) {
+		} else if (!isOnFloor || inFarmzone) {
 			MaterialRateUtility.resetSession();
 		}
 	}

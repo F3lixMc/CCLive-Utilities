@@ -418,6 +418,9 @@ public final class BuildShareManager {
                 return SlotClassification.empty();
             }
             data.name = ShareTextCleaner.cleanDisplayName(data.name != null ? data.name : rawName);
+            if (category == EquipmentCategory.MODULES) {
+                MagnetModuleNames.apply(data);
+            }
             return SlotClassification.filled(data);
         }
 

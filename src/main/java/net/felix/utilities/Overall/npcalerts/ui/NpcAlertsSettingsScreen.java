@@ -176,7 +176,7 @@ public class NpcAlertsSettingsScreen extends Screen {
         int boxHeight = computeSettingsBoxHeight();
 
         context.fill(boxX, boxY, boxX + BOX_WIDTH, boxY + boxHeight, 0xFF000000);
-        context.outline(boxX, boxY, BOX_WIDTH, boxHeight, 0xFFFFFFFF);
+        context.outline(boxX, boxY, BOX_WIDTH, boxHeight, 0xFF55FFFF);
         context.text(font, "NPC Alerts Einstellungen", boxX + 10, boxY + 10, 0xFFFFFF00, false);
         drawCloseButton(context, mouseX, mouseY);
 

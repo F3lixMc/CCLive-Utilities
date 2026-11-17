@@ -488,7 +488,7 @@ public final class InventoryItemCapture {
      * Bereinigt einen Item-Namen für die Suche in items.json
      * Entfernt Formatierungszeichen, chinesische Zeichen und "- [Bauplan]" Suffixe
      */
-    private static String cleanItemNameForLookup(String itemName) {
+    public static String cleanItemNameForLookup(String itemName) {
         if (itemName == null || itemName.isEmpty()) {
             return itemName;
         }
@@ -504,12 +504,7 @@ public final class InventoryItemCapture {
         if (bracketIdx >= 0) {
             itemName = itemName.substring(0, bracketIdx).trim();
         }
-        
-        // 2. Entferne " - [Bauplan]" oder ähnliche Suffixe komplett (inkl. Bindestrich)
-        // Pattern: "name - [Bauplan]" -> "name"
-        // Unterstützt auch Varianten wie "name - [Bauplan] [e1]" -> "name"
-        // Entferne zuerst alles ab " - [" bis zum Ende (inkl. mehrerer eckiger Klammern)
-        itemName = itemName.replaceAll("\\s*-\\s*\\[.*$", "");
+        itemName = itemName.replaceAll("\\s+-\\s*$", "");
         
         // 3. Entferne chinesische Formatierungszeichen (㔚㔘 etc.) am Anfang und Ende
         // Diese Zeichen sind typischerweise am Anfang und Ende des Namens
