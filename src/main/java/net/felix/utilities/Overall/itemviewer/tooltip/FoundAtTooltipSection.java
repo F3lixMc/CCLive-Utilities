@@ -28,6 +28,7 @@ public final class FoundAtTooltipSection {
                 ? buildForgingConditionText(resolveForgingCondition(hoveredItem)) : null;
         boolean hasLocation = hoveredItem.foundAt != null && !hoveredItem.foundAt.isEmpty();
         String locationLine = null;
+        String factoryLevelLine = null;
 
         if (hasLocation) {
             LocationData firstLocation = hoveredItem.foundAt.get(0);
@@ -36,9 +37,13 @@ public final class FoundAtTooltipSection {
             } else if (firstLocation.collection != null && !firstLocation.collection.isEmpty()) {
                 locationLine = firstLocation.collection;
             }
+            if (firstLocation.factoryLevel != null && !firstLocation.factoryLevel.isEmpty()) {
+                factoryLevelLine = firstLocation.factoryLevel;
+            }
         }
 
-        if (itemScoreText == null && forgingConditionText == null && locationLine == null) {
+        if (itemScoreText == null && forgingConditionText == null && locationLine == null
+                && factoryLevelLine == null) {
             return;
         }
 
@@ -51,6 +56,10 @@ public final class FoundAtTooltipSection {
         }
         if (locationLine != null) {
             tooltipLines.add(Component.literal(locationLine)
+                .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false)));
+        }
+        if (factoryLevelLine != null) {
+            tooltipLines.add(Component.literal(factoryLevelLine)
                 .setStyle(Style.EMPTY.withColor(0xFFFF00FF).withItalic(false)));
         }
         if (trailingEmptyLine) {

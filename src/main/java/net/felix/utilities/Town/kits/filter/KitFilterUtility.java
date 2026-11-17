@@ -1623,6 +1623,9 @@ public class KitFilterUtility {
 			}
 			if (loc.collection != null && !loc.collection.isEmpty()) {
 				parts.add(loc.collection);
+				if (loc.factoryLevel != null && !loc.factoryLevel.isEmpty()) {
+					parts.add(loc.factoryLevel);
+				}
 			} else if (loc.floor != null && !loc.floor.isEmpty()) {
 				Integer floorNum = FloorNumberExtractor.parseFloorString(loc.floor);
 				parts.add(floorNum != null ? "e" + floorNum : loc.floor);
