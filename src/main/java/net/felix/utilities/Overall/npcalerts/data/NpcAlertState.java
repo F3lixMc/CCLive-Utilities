@@ -1,7 +1,7 @@
 package net.felix.utilities.Overall.npcalerts.data;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Aktueller Zustand aller NPC-Alerts (Forschung, Kapazitaeten, Kombo-Kiste, Machtkristall- und Recycler-Slots).
@@ -36,10 +36,6 @@ public final class NpcAlertState {
 		}
 	}
 
-	// Legacy: Für Kompatibilität mit bestehendem Code
-	@Deprecated
-	public static final Map<String, XpProgress> machtkristalle = new HashMap<>();
-
 	// Recycler Slots
 	public static final CapacityData recyclerSlot1 = new CapacityData();
 
@@ -47,23 +43,33 @@ public final class NpcAlertState {
 
 	public static final CapacityData recyclerSlot3 = new CapacityData();
 
-	/**
-	 * Gibt alle Machtkristall-Namen zurück
-	 */
-	public static java.util.Set<String> getMachtkristallNames() {
-		return machtkristalle.keySet();
+	/** Alle gesetzten Machtkristall-Namen aus den Slots. */
+	public static Set<String> getMachtkristallNames() {
+		Set<String> names = new LinkedHashSet<>();
+		for (MachtkristallSlot slot : machtkristallSlots) {
+			if (slot != null && slot.name != null && !slot.name.isEmpty()) {
+				names.add(slot.name);
+			}
+		}
+		return names;
 	}
 
-	/**
-	 * Gibt XP-Daten für einen bestimmten Machtkristall zurück
-	 */
+	/** XP-Daten für einen Machtkristall-Namen; leeres {@link XpProgress}, falls nicht gefunden. */
 	public static XpProgress getMachtkristallXp(String kristallName) {
-		return machtkristalle.getOrDefault(kristallName, new XpProgress());
+		if (kristallName == null || kristallName.isEmpty()) {
+			return new XpProgress();
+		}
+		for (MachtkristallSlot slot : machtkristallSlots) {
+			if (slot != null && kristallName.equals(slot.name) && slot.xpData != null) {
+				return slot.xpData;
+			}
+		}
+		return new XpProgress();
 	}
 
 	/**
-	 * Gibt die Anzahl der Machtkristalle zurück (für DraggableOverlay)
-	 * Gibt immer 3 zurück (maximal 3 Slots)
+	 * Gibt die Anzahl der Machtkristall-Slots zurück (für DraggableOverlay).
+	 * Immer 3 (maximal 3 Slots).
 	 */
 	public static int getMachtkristallCount() {
 		return 3;

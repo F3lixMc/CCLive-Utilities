@@ -23,8 +23,6 @@ public final class LeaderboardInventoryOverlay {
     static final float MIN_SCALE = 0.5f;
     static final float MAX_SCALE = 2.0f;
 
-    private static final int TEXT_DX = -1;
-    private static final int TEXT_DY = -1;
     private static int anchorLeft;
     private static int anchorTop;
     private static int anchorHeight;
@@ -87,43 +85,9 @@ public final class LeaderboardInventoryOverlay {
         matrices.popMatrix();
 
         PixelFont57.ScreenGrid grid = PixelFont57.ScreenGrid.choose(guiScale(), scale);
-        PixelFont57.drawCentered(
-            context, entry.title(),
-            anchorX(originX, LeaderboardPanelLayout.CENTER_X, scale),
-            anchorY(originY, LeaderboardPanelLayout.TYPE_CENTER_Y, scale),
-            LeaderboardPanelLayout.TYPE_COLOR, grid);
-         PixelFont57.drawCentered(
-            context, entry.header(),
-            anchorX(originX, LeaderboardPanelLayout.VALUE_HEADER_X, scale),
-            anchorY(originY, LeaderboardPanelLayout.VALUE_HEADER_Y, scale),
-            LeaderboardPanelLayout.TYPE_COLOR, grid);
-
-        String selfName = self != null ? self.name() : null;
-        for (int row = 0; row < shownRows.size(); row++) {
-            LeaderboardSnapshot.Row line = shownRows.get(row);
-            boolean own = selfName != null && selfName.equalsIgnoreCase(line.name());
-            drawLine(
-                context, originX, originY, LeaderboardPanelLayout.ROW_CENTER_Y[row], scale, grid,
-                line.rank(), line.name(), format(entry.style(), line),
-                own ? LeaderboardPanelLayout.SELF_COLOR : LeaderboardPanelLayout.ROW_COLOR);
-        }
-
-        if (self != null) {
-            drawLine(context, originX, originY, LeaderboardPanelLayout.SELF_CENTER_Y, scale, grid,
-                self.rank(), self.name(), format(entry.style(), self), LeaderboardPanelLayout.SELF_COLOR);
-        } else {
-            drawLine(context, originX, originY, LeaderboardPanelLayout.SELF_CENTER_Y, scale, grid,
-                -1, localName(), "-", LeaderboardPanelLayout.SELF_COLOR);
-        }
-
-        PixelFont57.drawAroundHyphen(
-            context,
-            Integer.toString(page * 10 + 1),
-            Integer.toString(page * 10 + 10),
-            anchorX(originX, LeaderboardPanelLayout.CENTER_X, scale),
-            anchorY(originY, LeaderboardPanelLayout.PAGE_CENTER_Y, scale),
-            LeaderboardPanelLayout.PAGE_COLOR,
-            grid, scale);
+        LeaderboardTextLayer.blit(
+            context, originX, originY, scale, grid,
+            entry, shownRows, self, localName(), page);
         hoverText(context, mouseX, mouseY, localX, localY);
     }
 
@@ -189,38 +153,6 @@ public final class LeaderboardInventoryOverlay {
         return contains(mouseX, mouseY, anchorLeft, anchorTop, anchorHeight, scale());
     }
 
-    private static void drawLine(GuiGraphicsExtractor context, int originX, int originY, int textureCenter,
-                                 float scale, PixelFont57.ScreenGrid grid, int rank, String name, String value,
-                                 int color) {
-        double top = anchorY(originY, textureCenter, scale) - 3 * grid.guiPixel();
-        PixelFont57.drawRank(context, rank, anchorX(originX, LeaderboardPanelLayout.RANK_PERIOD_X, scale), top, color, grid);
-        int limit = Math.min(LeaderboardPanelLayout.NAME_MAX, grid.maxNameChars(scale));
-        String shown = name.length() > limit ? name.substring(0, limit) : name;
-        PixelFont57.drawCentered(
-            context, shown,
-            anchorX(originX, LeaderboardPanelLayout.NAME_CENTER_X, scale),
-            top + 3 * grid.guiPixel(),
-            color, grid);
-        if ("-".equals(value) || value.indexOf('/') >= 0) {
-            PixelFont57.drawCentered(
-                context, value,
-                anchorX(originX, LeaderboardPanelLayout.VALUE_HEADER_X, scale),
-                top + 3 * grid.guiPixel(),
-                color, grid);
-            return;
-        }
-        double valueRight = anchorX(originX, LeaderboardPanelLayout.VALUE_TEXT_RIGHT + 1, scale);
-        PixelFont57.drawRight(context, value, valueRight, top, color, grid);
-    }
-
-    private static double anchorX(int originX, int textureX, float scale) {
-        return originX + (TEXT_DX + textureX) * (double) scale;
-    }
-
-    private static double anchorY(int originY, int textureY, float scale) {
-        return originY + (TEXT_DY + textureY) * (double) scale;
-    }
-
     private static int guiScale() {
         Minecraft client = Minecraft.getInstance();
         if (client == null || client.getWindow() == null || client.getWindow().getGuiScale() <= 0) {
@@ -237,6 +169,7 @@ public final class LeaderboardInventoryOverlay {
         placeKey = "";
         seenTick = Integer.MIN_VALUE;
         hasLastPos = false;
+        LeaderboardTextLayer.invalidate();
     }
 
     /**
@@ -362,17 +295,6 @@ public final class LeaderboardInventoryOverlay {
             return null;
         }
         return LeaderboardSync.getInstance().snapshot().board(entry.boardId());
-    }
-
-    private static String format(LeaderboardPlaces.Style style, LeaderboardSnapshot.Row line) {
-        return switch (style) {
-            case PLAYTIME -> LeaderboardNumbers.playtime(line.score());
-            case LEVEL -> line.smithLevel() == null || line.smithXp() == null
-                ? "-"
-                : SmithSkill.display(line.smithLevel(), line.smithXp());
-            case SHORT -> LeaderboardNumbers.magnitude(line.score());
-            case FACTORY -> Long.toString(line.score());
-        };
     }
 
     /** Spielername für die eigene Zeile, solange der Server keinen Eintrag hat. */

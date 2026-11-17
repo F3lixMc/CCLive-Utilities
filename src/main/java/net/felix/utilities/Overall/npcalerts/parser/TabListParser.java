@@ -12,7 +12,6 @@ import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.essenzenC
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.forschung;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.jaegerCapacity;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.machtkristallSlots;
-import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.machtkristalle;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.recyclerSlot1;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.recyclerSlot2;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.recyclerSlot3;
@@ -163,10 +162,7 @@ public final class TabListParser {
 			machtkristallSlots[i].name = null;
 			machtkristallSlots[i].xpData = new XpProgress();
 		}
-		
-		// Leere Legacy-HashMap
-		machtkristalle.clear();
-		
+
 		int currentSlot = 0; // Aktueller Slot (0, 1, 2)
 		boolean foundAnyMachtkristallEntry = false; // Prüfe ob überhaupt Machtkristall-Einträge gefunden wurden
 		
@@ -187,12 +183,9 @@ public final class TabListParser {
 				if (kristallName != null && !kristallName.isEmpty()) {
 					// Setze Namen und parse XP-Daten
 					machtkristallSlots[currentSlot].name = kristallName;
-					parseXpData(entries, i, getEntryText, removeFormatting, 
+					parseXpData(entries, i, getEntryText, removeFormatting,
 						machtkristallSlots[currentSlot].xpData, "Machtkristall");
-					
-					// Legacy: Für Kompatibilität
-					machtkristalle.put(kristallName, machtkristallSlots[currentSlot].xpData);
-					
+
 					currentSlot++;
 				}
 			}
