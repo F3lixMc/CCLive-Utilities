@@ -343,7 +343,8 @@ public final class InventoryItemCapture {
             java.util.List<net.minecraft.network.chat.Component> tooltip = null;
             
             try {
-                java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
+                // getTooltipFromItem ist statisch in Screen deklariert, nicht in der konkreten Container-Screen-Klasse
+                java.lang.reflect.Method[] methods = net.minecraft.client.gui.screens.Screen.class.getDeclaredMethods();
                 for (java.lang.reflect.Method method : methods) {
                     if (!"getTooltipFromItem".equals(method.getName())) {
                         continue;
@@ -414,7 +415,8 @@ public final class InventoryItemCapture {
             java.util.List<net.minecraft.network.chat.Component> tooltip = null;
             
             try {
-                java.lang.reflect.Method[] methods = screen.getClass().getDeclaredMethods();
+                // getTooltipFromItem ist statisch in Screen deklariert, nicht in der konkreten Container-Screen-Klasse
+                java.lang.reflect.Method[] methods = net.minecraft.client.gui.screens.Screen.class.getDeclaredMethods();
                 for (java.lang.reflect.Method method : methods) {
                     if (!"getTooltipFromItem".equals(method.getName())) {
                         continue;
@@ -493,6 +495,9 @@ public final class InventoryItemCapture {
         
         // 1. Entferne alle Minecraft-Formatierungscodes (§[0-9a-fk-or])
         itemName = itemName.replaceAll("§[0-9a-fk-or]", "");
+
+        // 1a. " - [Bauplan]"-Suffix zuerst entfernen, sonst bleibt nach 1b ein hängender Bindestrich ("Name -")
+        itemName = itemName.replaceAll("\\s*-\\s*\\[.*$", "");
 
         // 1b. Schmiedegrad / Suffix in eckigen Klammern: "Name [Drachengeschmiedet]" → "Name"
         int bracketIdx = itemName.indexOf('[');
