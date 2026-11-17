@@ -426,7 +426,6 @@ public class CCLiveUtilitiesConfig {
         return HANDLER.instance().enableMod
             && net.felix.utilities.Other.server.ServerConnectionGate.areFeaturesAllowed();
     }
-
     /**
      * Opt-in Datentracking + nur auf erlaubtem Server (PlayLegend) bzw. Dev.
      * Bypass-Spieler ohne erkannte PlayLegend-IP: Features an, Uploads aus.
@@ -998,6 +997,12 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public int clipboardCostDisplayMode = 1; // Kostenanzeige-Modus: 1 = ausblenden, 2 = ans Ende setzen
     
+    @SerialEntry
+    public boolean clipboardApproxTimeEnabled = false; // Ungefähre Restzeit hinter Materialien/Ressourcen anzeigen
+
+    @SerialEntry
+    public int clipboardPage1Quantity = 1; // Herstellungsanzahl der Gesamtliste (Seite 1)
+
     @SerialEntry
     public List<ClipboardEntryData> clipboardEntries = new ArrayList<>(); // Gespeicherte Clipboard-Einträge
     

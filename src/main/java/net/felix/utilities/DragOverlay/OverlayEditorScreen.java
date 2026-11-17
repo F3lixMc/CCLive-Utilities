@@ -1453,6 +1453,21 @@ public class OverlayEditorScreen extends Screen {
         String button5Text = costDisplayMode == 1 ? "Ausblenden" : "Ans Ende setzen";
         int button5TextColor = costDisplayEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
         context.text(font, button5Text, boxX + 15, button5Y + 6, button5TextColor, false);
+        
+        // Überschrift: Ungefähre Zeit
+        int timeHeaderY = button5Y + buttonSpacing + 5;
+        context.text(font, "Ungefähre Zeit", boxX + 10, timeHeaderY, 0xFFFFFF00, false);
+        
+        // Button 6: Ungefähre Zeit An/Aus
+        int button6Y = timeHeaderY + 20;
+        boolean approxTimeEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled;
+        boolean button6Hovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                                 mouseY >= button6Y && mouseY <= button6Y + buttonHeight;
+        int button6Color = button6Hovered ? 0xFF404040 : 0xFF202020;
+        context.fill(boxX + 10, button6Y, boxX + 10 + buttonWidth, button6Y + buttonHeight, button6Color);
+        context.outline(boxX + 10, button6Y, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        String button6Text = "Ungefähre Zeit: " + (approxTimeEnabled ? "An" : "Aus");
+        context.text(font, button6Text, boxX + 15, button6Y + 6, 0xFFFFFFFF, false);
     }
     
     /**
@@ -1539,6 +1554,18 @@ public class OverlayEditorScreen extends Screen {
             int currentMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
             CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode = (currentMode == 1) ? 2 : 1;
             CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        
+        // Button 6: Ungefähre Zeit An/Aus
+        int timeHeaderY = button5Y + buttonSpacing + 5;
+        int button6Y = timeHeaderY + 20;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= button6Y && mouseY <= button6Y + buttonHeight) {
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled =
+                !CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.invalidateRenderSnapshot();
             return true;
         }
         

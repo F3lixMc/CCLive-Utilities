@@ -23,8 +23,9 @@ public final class MaterialRateUtility {
     private static final Pattern SCOREBOARD_MATERIAL_COUNT =
             Pattern.compile("➥\\s*(\\d+)");
     private static final int RATE_SUFFIX_COLOR = 0xAAAAAA;
-    /** Rate wird nur einmal pro Sekunde neu berechnet. */
-    private static final long UPDATE_INTERVAL_MS = 1000L;
+    /** Rate wird nur einmal pro Sekunde neu berechnet (wie SessionRateUtility / Ressourcen-Overlay). */
+    private static final long UPDATE_INTERVAL_MS =
+            net.felix.utilities.Other.hud.SessionRateUtility.UPDATE_INTERVAL_MS;
 
     private static final Map<String, MaterialSession> sessions = new HashMap<>();
     private static long lastUpdateMs = 0L;
