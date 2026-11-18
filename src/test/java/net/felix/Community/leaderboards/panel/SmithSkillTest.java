@@ -5,6 +5,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,6 +32,20 @@ class SmithSkillTest {
         assertEquals(878L, stand.xp());
         assertEquals("21/878", SmithSkill.display(stand));
         assertEquals(1_310L, LeaderboardNumbers.parseMagnitude("1,310"));
+
+        SmithSkill.Stand withoutXpLabel = SmithSkill.read(List.of("[Schmiede Skill]", "1,238 / 1,416 [22]"));
+        assertEquals(22, withoutXpLabel.level());
+        assertEquals(1_238L, withoutXpLabel.xp());
+        assertEquals("22/1.238K", SmithSkill.display(withoutXpLabel));
+    }
+
+    @Test
+    void playerNameBetweenHeaderAndValueIsSkipped() {
+        List<String> lines = List.of("[Schmiede Skill]", "ale_c996", "1,238 / 1,416 [22]");
+        SmithSkill.Stand stand = SmithSkill.read(lines);
+        assertEquals(22, stand.level());
+        assertEquals(1_238L, stand.xp());
+        assertEquals("Schmiedeskill gelesen: Level 22, XP 1238", SmithSkill.diagnose(lines));
     }
 
     @Test
@@ -68,6 +83,9 @@ class SmithSkillTest {
             SmithSkill.diagnose(List.of("[Schmiede Skill]", "[Forschung]", "1 / 2 [4]")));
         assertEquals("Schmiedeskill: Wertezeile ungültig: Ada",
             SmithSkill.diagnose(List.of("[Schmiede Skill]", "Ada")));
+        assertTrue(SmithSkill.widgetAbsent(List.of("Spieler1", "Spieler2")));
+        assertTrue(SmithSkill.widgetAbsent(List.of()));
+        assertFalse(SmithSkill.widgetAbsent(List.of("[Schmiede Skill]", "Ada")));
     }
 
     @Test

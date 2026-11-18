@@ -7,8 +7,9 @@ import java.util.regex.Pattern;
 
 /**
  * Schmiedeskill aus der Tab-Liste.
- * Nur die nächste nicht leere Zeile unter [Schmiede Skill] gehört dazu.
- * Eine folgende Widget-Überschrift oder eine unlesbare Zeile verwirft die Erkennung.
+ * Unter [Schmiede Skill] gehört die nächste gültige Wertezeile dazu.
+ * Leere Zeilen und Spielernamen dazwischen werden übersprungen (wie TabListParser).
+ * Eine folgende Widget-Überschrift beendet die Suche ohne Treffer.
  */
 public final class SmithSkill {
     public static final String BOARD = "smith_skill";
@@ -29,13 +30,7 @@ public final class SmithSkill {
         if (lines == null) {
             return null;
         }
-        int header = -1;
-        for (int i = 0; i < lines.size(); i++) {
-            if (strip(lines.get(i)).contains("[Schmiede Skill]")) {
-                header = i;
-                break;
-            }
-        }
+        int header = findHeader(lines);
         if (header < 0) {
             return null;
         }
@@ -47,9 +42,21 @@ public final class SmithSkill {
             if (next.startsWith("[")) {
                 return null;
             }
-            return parseValue(next);
+            Stand stand = parseValue(next);
+            if (stand != null) {
+                return stand;
+            }
+            // Spielername o.ä. zwischen Header und Wertezeile — weiter suchen
         }
         return null;
+    }
+
+    /**
+     * Tab-Liste zeigt das Widget nicht (Lobby, Serverwechsel, andere Welt).
+     * Kein Parsefehler — der letzte Stand bleibt stehen.
+     */
+    public static boolean widgetAbsent(List<String> lines) {
+        return lines == null || lines.isEmpty() || findHeader(lines) < 0;
     }
 
     /** Eine Zeile fürs Player-Stats-Debug: warum gelesen oder verworfen wurde. */
@@ -57,16 +64,11 @@ public final class SmithSkill {
         if (lines == null || lines.isEmpty()) {
             return "Schmiedeskill: Tab-Liste leer";
         }
-        int header = -1;
-        for (int i = 0; i < lines.size(); i++) {
-            if (strip(lines.get(i)).contains("[Schmiede Skill]")) {
-                header = i;
-                break;
-            }
-        }
+        int header = findHeader(lines);
         if (header < 0) {
             return "Schmiedeskill: kein [Schmiede Skill] in " + lines.size() + " Tab-Zeilen";
         }
+        String lastSkipped = null;
         for (int i = header + 1; i < lines.size(); i++) {
             String next = strip(lines.get(i));
             if (next.isEmpty()) {
@@ -76,12 +78,24 @@ public final class SmithSkill {
                 return "Schmiedeskill: nächste Zeile ist ein anderes Widget: " + clip(next);
             }
             Stand stand = parseValue(next);
-            if (stand == null) {
-                return "Schmiedeskill: Wertezeile ungültig: " + clip(next);
+            if (stand != null) {
+                return "Schmiedeskill gelesen: Level " + stand.level() + ", XP " + xpText(stand.xp());
             }
-            return "Schmiedeskill gelesen: Level " + stand.level() + ", XP " + xpText(stand.xp());
+            lastSkipped = next;
+        }
+        if (lastSkipped != null) {
+            return "Schmiedeskill: Wertezeile ungültig: " + clip(lastSkipped);
         }
         return "Schmiedeskill: [Schmiede Skill] ohne Wertezeile";
+    }
+
+    private static int findHeader(List<String> lines) {
+        for (int i = 0; i < lines.size(); i++) {
+            if (strip(lines.get(i)).contains("[Schmiede Skill]")) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static String clip(String line) {

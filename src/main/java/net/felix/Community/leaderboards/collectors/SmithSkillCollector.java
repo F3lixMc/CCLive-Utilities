@@ -43,7 +43,10 @@ public class SmithSkillCollector implements DataCollector {
         List<String> lines = tabLines(client);
         SmithSkill.Stand stand = SmithSkill.read(lines);
         if (stand == null) {
-            DebugUtility.debugPlayerStats("smith-read", SmithSkill.diagnose(lines));
+            // Ohne Widget (Serverwechsel/Lobby) still bleiben — nur echte Parsefehler loggen.
+            if (!SmithSkill.widgetAbsent(lines)) {
+                DebugUtility.debugPlayerStats("smith-read", SmithSkill.diagnose(lines));
+            }
             return;
         }
         if (!net.felix.CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
