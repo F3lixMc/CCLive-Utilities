@@ -18,6 +18,7 @@ import net.felix.utilities.Factory.mklevel.data.MkLevelDatabase;
 import net.felix.utilities.Factory.mklevel.data.MkLevelInfo;
 import net.felix.utilities.Factory.wave.WaveUtility;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Other.hud.HudOverlayVisibility;
 import net.felix.utilities.Other.util.NumberFormatting;
 import net.felix.utilities.Overall.npcalerts.data.MachtkristallSlot;
@@ -322,12 +323,13 @@ public final class EssenceFarmTracker {
 		}
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
 		String title = screen.getTitle().getString();
-		if (!config.essenceFarmAutoDropChance || !EssenceFarmStatsReader.isStatsTitle(title)
+		if (!config.essenceFarmAutoDropChance || !ZeichenUtility.containsProfileStatsUi(title)
 				|| title.equals(lastStatsTitle) || client.font == null) {
 			return;
 		}
 		lastStatsTitle = title;
-		EssenceFarmStatsReader.essenceDropChance(EssenceFarmStatsReader.layout(screen.getTitle(), client.font))
+		EssenceFarmStatsReader.essenceDropChance(EssenceFarmStatsReader.layout(screen.getTitle(), client.font),
+				ZeichenUtility.getProfileStatsGlyphs())
 				.ifPresent(value -> {
 					if (Math.abs(value - config.essenceFarmDropChance) > 1e-6) {
 						config.essenceFarmDropChance = value;

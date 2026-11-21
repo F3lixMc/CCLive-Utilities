@@ -115,6 +115,19 @@ public class ZeichenUtility {
     private static Map<Character, String> aincraftFontFirstLine = new HashMap<>();
     private static Map<Integer, Integer> npcAlertsKomboKisteBossBarDigitCodePoints = new HashMap<>();
 
+    /**
+     * Number glyph of the compass stats overview: {@code row} is 0-based ({@code numbers_row_1} = 0),
+     * {@code index} is the position in {@code profile/numbers.png} (0-9 digits, 10 '|', 11 '%', ...).
+     */
+    public record ProfileStatsGlyph(int row, int index) {
+    }
+
+    /** Glyphs from {@code cactusclicker_profile_font} / {@code numbers_row_N}, by code point. */
+    private static Map<Integer, ProfileStatsGlyph> profileStatsGlyphs = new HashMap<>();
+    /** Left and right background glyph of the compass stats overview. */
+    private static String profileStatsBackgrounds = "";
+    private static final int PROFILE_STATS_MAX_ROWS = 40;
+
     public static void initialize() {
         if (!reloadListenerRegistered) {
             registerResourceReloadListener();
@@ -288,6 +301,8 @@ public class ZeichenUtility {
         factoryFontFirstLine = new HashMap<>();
         aincraftFontFirstLine = new HashMap<>();
         npcAlertsKomboKisteBossBarDigitCodePoints = new HashMap<>();
+        profileStatsGlyphs = new HashMap<>();
+        profileStatsBackgrounds = "";
     }
 
     private static void applyFromFontProviderIndex(Map<ZeichenFontLoader.FontProviderKey, List<Integer>> index) {
@@ -360,6 +375,49 @@ public class ZeichenUtility {
                 aincraftFontFirstLine = buildGlyphToDecodedMap(cps, STANDARD_LINE_DECODE));
         find(index, "cactusclicker_factory_overlay", "font_first_line").ifPresent(cps ->
                 factoryFontFirstLine = buildGlyphToDecodedMap(cps, STANDARD_LINE_DECODE));
+
+        Map<Integer, ProfileStatsGlyph> statsGlyphs = new HashMap<>();
+        for (int row = 0; row < PROFILE_STATS_MAX_ROWS; row++) {
+            int rowIndex = row;
+            find(index, "cactusclicker_profile_font", "numbers_row_" + (row + 1)).ifPresent(cps -> {
+                for (int i = 0; i < cps.size(); i++) {
+                    statsGlyphs.put(cps.get(i), new ProfileStatsGlyph(rowIndex, i));
+                }
+            });
+        }
+        profileStatsGlyphs = statsGlyphs;
+        profileStatsBackgrounds = singleChar(index, "cactusclicker_left_profile", "left_profile_background")
+                + singleChar(index, "cactusclicker_right_profile", "right_profile_background");
+    }
+
+    /** Defaults of the original pack: 22 rows of 41 glyphs, contiguous from U+392E. */
+    private static Map<Integer, ProfileStatsGlyph> defaultProfileStatsGlyphs() {
+        Map<Integer, ProfileStatsGlyph> glyphs = new HashMap<>();
+        for (int row = 0; row < 22; row++) {
+            for (int i = 0; i < 41; i++) {
+                glyphs.put(0x392E + row * 41 + i, new ProfileStatsGlyph(row, i));
+            }
+        }
+        return glyphs;
+    }
+
+    /** Number glyphs of the compass stats overview, from the active pack or the original pack defaults. */
+    public static Map<Integer, ProfileStatsGlyph> getProfileStatsGlyphs() {
+        ensureInitialized();
+        if (profileStatsGlyphs.isEmpty()) {
+            profileStatsGlyphs = defaultProfileStatsGlyphs();
+        }
+        return Collections.unmodifiableMap(profileStatsGlyphs);
+    }
+
+    /** Compass stats overview ("Essn Drp Chc", "Drop Chc", ...): the title holds its background glyphs. */
+    public static boolean containsProfileStatsUi(String text) {
+        ensureInitialized();
+        if (text == null) {
+            return false;
+        }
+        String backgrounds = profileStatsBackgrounds.isEmpty() ? "\u3CB4\u392D" : profileStatsBackgrounds;
+        return backgrounds.codePoints().anyMatch(cp -> text.indexOf(cp) >= 0);
     }
 
     public static java.util.Optional<java.util.Set<Integer>> applyBlockedGlyphPackUpdate(

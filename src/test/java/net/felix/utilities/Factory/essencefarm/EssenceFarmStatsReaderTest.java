@@ -1,8 +1,11 @@
 package net.felix.utilities.Factory.essencefarm;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import net.felix.utilities.Other.glyphs.ZeichenUtility.ProfileStatsGlyph;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,6 +13,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EssenceFarmStatsReaderTest {
+
+	/** Glyph layout like a pack provides it: 22 rows of 41 glyphs, deliberately not at the original code points. */
+	private static final int BASE = 0x5000;
+	private static final Map<Integer, ProfileStatsGlyph> GLYPHS = new HashMap<>();
+
+	static {
+		for (int row = 0; row < 22; row++) {
+			for (int i = 0; i < 41; i++) {
+				GLYPHS.put(BASE + row * 41 + i, new ProfileStatsGlyph(row, i));
+			}
+		}
+	}
 
 	/** Glyph column in numbers.png for a character. */
 	private static int column(char c) {
@@ -33,7 +48,7 @@ class EssenceFarmStatsReaderTest {
 				x += 4;
 				continue;
 			}
-			int cp = EssenceFarmStatsReader.FIRST_GLYPH + row * EssenceFarmStatsReader.GLYPHS_PER_ROW + column(c);
+			int cp = BASE + row * 41 + column(c);
 			out.add(new EssenceFarmStatsReader.Glyph(cp, x));
 			x += 6;
 		}
@@ -48,15 +63,15 @@ class EssenceFarmStatsReaderTest {
 		put(glyphs, 19, 190, "431%");
 		put(glyphs, 19, 60, "409%");
 		glyphs.add(new EssenceFarmStatsReader.Glyph('A', 0));
-		assertEquals(Optional.of(409.0), EssenceFarmStatsReader.essenceDropChance(glyphs));
+		assertEquals(Optional.of(409.0), EssenceFarmStatsReader.essenceDropChance(glyphs, GLYPHS));
 	}
 
 	@Test
 	void valueWithSeparatorKeepsFirstPart() {
 		List<EssenceFarmStatsReader.Glyph> glyphs = new ArrayList<>();
 		put(glyphs, 19, 60, "241 | 4%");
-		assertEquals(List.of("241|4%"), EssenceFarmStatsReader.rowValues(glyphs, 19));
-		assertEquals(Optional.of(241.0), EssenceFarmStatsReader.essenceDropChance(glyphs));
+		assertEquals(List.of("241|4%"), EssenceFarmStatsReader.rowValues(glyphs, GLYPHS, 19));
+		assertEquals(Optional.of(241.0), EssenceFarmStatsReader.essenceDropChance(glyphs, GLYPHS));
 	}
 
 	@Test
@@ -71,13 +86,7 @@ class EssenceFarmStatsReaderTest {
 	void missingRowGivesNothing() {
 		List<EssenceFarmStatsReader.Glyph> glyphs = new ArrayList<>();
 		put(glyphs, 3, 60, "96");
-		assertTrue(EssenceFarmStatsReader.essenceDropChance(glyphs).isEmpty());
-	}
-
-	@Test
-	void detectsStatsTitle() {
-		assertTrue(EssenceFarmStatsReader.isStatsTitle("x㲴y"));
-		assertFalse(EssenceFarmStatsReader.isStatsTitle("Essenz-Tasche"));
+		assertTrue(EssenceFarmStatsReader.essenceDropChance(glyphs, GLYPHS).isEmpty());
 	}
 
 	@Test

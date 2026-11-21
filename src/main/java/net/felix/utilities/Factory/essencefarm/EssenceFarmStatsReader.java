@@ -3,7 +3,10 @@ package net.felix.utilities.Factory.essencefarm;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.glyphs.ZeichenUtility.ProfileStatsGlyph;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -13,20 +16,13 @@ import net.minecraft.network.chat.Style;
  * Reads "Essn Drp Chc" from the server-side stats overview (compass menu).
  *
  * <p>The server writes the stat values into the screen title with glyphs from the resource pack's
- * {@code profile/numbers.png}: 22 text rows (one font provider per row, different ascent),
- * 41 glyphs per row, code points contiguous from {@link #FIRST_GLYPH}. The labels are part of the
- * background image, so a value is identified by its row and its horizontal position.
- * "Essn Drp Chc" is the leftmost value in row 19 (the same row holds "Wood Yield" further right).
+ * {@code profile/numbers.png}: one font provider per text row ({@code numbers_row_N}, different ascent).
+ * {@link ZeichenUtility#getProfileStatsGlyphs()} resolves them from the active pack. The labels are part
+ * of the background image, so a value is identified by its row and its horizontal position.
+ * "Essn Drp Chc" is the leftmost value in row 19, 0-based (the same row holds "Wood Yield" further right).
  */
 public final class EssenceFarmStatsReader {
 
-	/** Left / right stats background glyphs; one of them marks the stats screen title. */
-	public static final char LEFT_BACKGROUND = '㲴';
-	public static final char RIGHT_BACKGROUND = '㤭';
-
-	static final int FIRST_GLYPH = 0x392E;
-	static final int GLYPHS_PER_ROW = 41;
-	static final int ROWS = 22;
 	static final int ESSENCE_DROP_CHANCE_ROW = 19;
 
 	/** Values further apart than this (in GUI pixels) belong to different stat columns. */
@@ -45,10 +41,6 @@ public final class EssenceFarmStatsReader {
 	private EssenceFarmStatsReader() {
 	}
 
-	public static boolean isStatsTitle(String title) {
-		return title != null && (title.indexOf(LEFT_BACKGROUND) >= 0 || title.indexOf(RIGHT_BACKGROUND) >= 0);
-	}
-
 	/** Lays out the title like the renderer does and returns each code point with its x position. */
 	public static List<Glyph> layout(Component title, Font font) {
 		List<Glyph> glyphs = new ArrayList<>();
@@ -64,17 +56,17 @@ public final class EssenceFarmStatsReader {
 	}
 
 	/** Essence drop chance in percent, or empty if the row holds no readable value. */
-	public static Optional<Double> essenceDropChance(List<Glyph> glyphs) {
-		List<String> values = rowValues(glyphs, ESSENCE_DROP_CHANCE_ROW);
+	public static Optional<Double> essenceDropChance(List<Glyph> glyphs, Map<Integer, ProfileStatsGlyph> glyphMap) {
+		List<String> values = rowValues(glyphs, glyphMap, ESSENCE_DROP_CHANCE_ROW);
 		return values.isEmpty() ? Optional.empty() : parseValue(values.get(0));
 	}
 
 	/** Text of every value in a row, ordered left to right. */
-	static List<String> rowValues(List<Glyph> glyphs, int row) {
+	static List<String> rowValues(List<Glyph> glyphs, Map<Integer, ProfileStatsGlyph> glyphMap, int row) {
 		List<Glyph> inRow = new ArrayList<>();
 		for (Glyph glyph : glyphs) {
-			int index = glyph.codePoint() - FIRST_GLYPH;
-			if (index >= 0 && index < ROWS * GLYPHS_PER_ROW && index / GLYPHS_PER_ROW == row) {
+			ProfileStatsGlyph known = glyphMap.get(glyph.codePoint());
+			if (known != null && known.row() == row) {
 				inRow.add(glyph);
 			}
 		}
@@ -87,7 +79,7 @@ public final class EssenceFarmStatsReader {
 				values.add(current.toString());
 				current.setLength(0);
 			}
-			int column = (glyph.codePoint() - FIRST_GLYPH) % GLYPHS_PER_ROW;
+			int column = glyphMap.get(glyph.codePoint()).index();
 			current.append(column < GLYPH_CHARS.length ? GLYPH_CHARS[column] : '?');
 			lastX = glyph.x();
 		}
