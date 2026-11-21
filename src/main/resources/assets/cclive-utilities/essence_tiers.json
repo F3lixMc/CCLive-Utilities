@@ -1,0 +1,753 @@
+{
+ "_comment": "Waves from which a mob drops its next essence tier: tier = 1 + number of values below the wave.",
+ "mobs": [
+  {
+   "type": "horse",
+   "name": "Pferd",
+   "aliases": [
+    "Pferde"
+   ],
+   "bagName": "Pferde",
+   "tierWaves": [
+    701,
+    1401,
+    2101,
+    2801,
+    3501,
+    4201,
+    4901,
+    5601,
+    6301,
+    7001,
+    7701
+   ]
+  },
+  {
+   "type": "blaze",
+   "name": "Lohe",
+   "aliases": [],
+   "bagName": "Lohen",
+   "tierWaves": [
+    710,
+    1410,
+    2110,
+    2810,
+    3510,
+    4210,
+    4910,
+    5610,
+    6310,
+    7010,
+    7710
+   ]
+  },
+  {
+   "type": "zombie",
+   "name": "Zombie",
+   "aliases": [],
+   "bagName": "Zombie",
+   "tierWaves": [
+    740,
+    1440,
+    2140,
+    2840,
+    3540,
+    4240,
+    4940,
+    5640,
+    6340,
+    7040,
+    7740
+   ]
+  },
+  {
+   "type": "husk",
+   "name": "Husk",
+   "aliases": [],
+   "bagName": "Husk",
+   "tierWaves": [
+    780,
+    1480,
+    2180,
+    2880,
+    3580,
+    4280,
+    4980,
+    5680,
+    6380,
+    7080,
+    7780
+   ]
+  },
+  {
+   "type": "wolf",
+   "name": "Wolf",
+   "aliases": [],
+   "bagName": "Wolf",
+   "tierWaves": [
+    820,
+    1520,
+    2220,
+    2920,
+    3620,
+    4320,
+    5020,
+    5720,
+    6420,
+    7120,
+    7820
+   ]
+  },
+  {
+   "type": "chicken",
+   "name": "Huhn",
+   "aliases": [
+    "Hühner"
+   ],
+   "bagName": "Hühner",
+   "tierWaves": [
+    870,
+    1570,
+    2270,
+    2970,
+    3670,
+    4370,
+    5070,
+    5770,
+    6470,
+    7170,
+    7870
+   ]
+  },
+  {
+   "type": "wither_skeleton",
+   "name": "Witherskelett",
+   "aliases": [],
+   "bagName": "Witherskelett",
+   "tierWaves": [
+    850,
+    1550,
+    2250,
+    2950,
+    3650,
+    4350,
+    5050,
+    5750,
+    6450,
+    7150,
+    7850
+   ]
+  },
+  {
+   "type": "skeleton",
+   "name": "Skelett",
+   "aliases": [],
+   "bagName": "Skelett",
+   "tierWaves": [
+    930,
+    1630,
+    2330,
+    3030,
+    3730,
+    4430,
+    5130,
+    5830,
+    6530,
+    7230,
+    7930
+   ]
+  },
+  {
+   "type": "stray",
+   "name": "Stray",
+   "aliases": [],
+   "bagName": "Stray",
+   "tierWaves": [
+    960,
+    1660,
+    2360,
+    3060,
+    3760,
+    4460,
+    5160,
+    5860,
+    6560,
+    7260,
+    7960
+   ]
+  },
+  {
+   "type": "ocelot",
+   "name": "Ozelot",
+   "aliases": [
+    "Ocelot"
+   ],
+   "bagName": "Ocelot",
+   "tierWaves": [
+    901,
+    1601,
+    2301,
+    3001,
+    3701,
+    4401,
+    5101,
+    5801,
+    6501,
+    7201,
+    7901
+   ]
+  },
+  {
+   "type": "goat",
+   "name": "Ziege",
+   "aliases": [],
+   "bagName": "Ziegen",
+   "tierWaves": [
+    1001,
+    1701,
+    2401,
+    3101,
+    3801,
+    4501,
+    5201,
+    5901,
+    6601,
+    7301
+   ]
+  },
+  {
+   "type": "piglin",
+   "name": "Piglin",
+   "aliases": [],
+   "bagName": "Piglin",
+   "tierWaves": [
+    1050,
+    1750,
+    2450,
+    3150,
+    3850,
+    4550,
+    5250,
+    5950,
+    6650,
+    7350
+   ]
+  },
+  {
+   "type": "spider",
+   "name": "Spinne",
+   "aliases": [],
+   "bagName": "Spinnen",
+   "tierWaves": [
+    1210,
+    1910,
+    2610,
+    3310,
+    4010,
+    4710,
+    5410,
+    6110,
+    6810,
+    7510
+   ]
+  },
+  {
+   "type": "endermite",
+   "name": "Endermite",
+   "aliases": [],
+   "bagName": "Endermite",
+   "tierWaves": [
+    1160,
+    1860,
+    2560,
+    3260,
+    3960,
+    4660,
+    5360,
+    6060,
+    6760,
+    7460
+   ]
+  },
+  {
+   "type": "bee",
+   "name": "Biene",
+   "aliases": [],
+   "bagName": "Bienen",
+   "tierWaves": [
+    1110,
+    1810,
+    2510,
+    3210,
+    3910,
+    4610,
+    5310,
+    6010,
+    6710,
+    7410
+   ]
+  },
+  {
+   "type": "turtle",
+   "name": "Schildkröte",
+   "aliases": [],
+   "bagName": "Schildkröten",
+   "tierWaves": [
+    1290,
+    1990,
+    2690,
+    3390,
+    4090,
+    4790,
+    5490,
+    6190,
+    6890,
+    7590
+   ]
+  },
+  {
+   "type": "hoglin",
+   "name": "Hoglin",
+   "aliases": [],
+   "bagName": "Hoglin",
+   "tierWaves": [
+    1601,
+    2301,
+    3001,
+    3701,
+    4401,
+    5101,
+    5801,
+    6501,
+    7201,
+    7901
+   ]
+  },
+  {
+   "type": "creeper",
+   "name": "Creeper",
+   "aliases": [],
+   "bagName": "Creeper",
+   "tierWaves": [
+    1510,
+    2210,
+    2910,
+    3610,
+    4310,
+    5010,
+    5710,
+    6410,
+    7110,
+    7810
+   ]
+  },
+  {
+   "type": "guardian",
+   "name": "Wächter",
+   "aliases": [],
+   "bagName": "Wächter",
+   "tierWaves": [
+    1430,
+    2130,
+    2830,
+    3530,
+    4230,
+    4930,
+    5630,
+    6330,
+    7030,
+    7730
+   ]
+  },
+  {
+   "type": "axolotl",
+   "name": "Axolotl",
+   "aliases": [],
+   "bagName": "Axolotl",
+   "tierWaves": [
+    1360,
+    2060,
+    2760,
+    3460,
+    4160,
+    4860,
+    5560,
+    6260,
+    6960,
+    7660
+   ]
+  },
+  {
+   "type": "frog",
+   "name": "Frosch",
+   "aliases": [],
+   "bagName": "Frosch",
+   "tierWaves": [
+    2150,
+    2850,
+    3550,
+    4250,
+    4950,
+    5650,
+    6350,
+    7050,
+    7750
+   ]
+  },
+  {
+   "type": "zombified_piglin",
+   "name": "Zombiepiglin",
+   "aliases": [
+    "Zombifizierter Piglin"
+   ],
+   "bagName": "Zombifizierter Piglin",
+   "tierWaves": [
+    2050,
+    2750,
+    3450,
+    4150,
+    4850,
+    5550,
+    6250,
+    6950,
+    7650
+   ]
+  },
+  {
+   "type": "fox",
+   "name": "Fuchs",
+   "aliases": [],
+   "bagName": "Fuchs",
+   "tierWaves": [
+    1930,
+    2630,
+    3330,
+    4030,
+    4730,
+    5430,
+    6130,
+    6830,
+    7530
+   ]
+  },
+  {
+   "type": "witch",
+   "name": "Hexe",
+   "aliases": [],
+   "bagName": "Hexen",
+   "tierWaves": [
+    1820,
+    2520,
+    3220,
+    3920,
+    4620,
+    5320,
+    6020,
+    6720,
+    7420
+   ]
+  },
+  {
+   "type": "snow_golem",
+   "name": "Schneemann",
+   "aliases": [],
+   "bagName": "Schneemann",
+   "tierWaves": [
+    1701,
+    2401,
+    3101,
+    3801,
+    4501,
+    5201,
+    5901,
+    6601,
+    7301
+   ]
+  },
+  {
+   "type": "skeleton_horse",
+   "name": "Skelettpferd",
+   "aliases": [],
+   "bagName": "Skelettpferd",
+   "tierWaves": [
+    2701,
+    3401,
+    4101,
+    4801,
+    5501,
+    6201,
+    6901,
+    7601
+   ]
+  },
+  {
+   "type": "piglin_brute",
+   "name": "Piglin-Brute",
+   "aliases": [
+    "Piglin Brute",
+    "Piglin Grobian"
+   ],
+   "bagName": "Piglin Grobian",
+   "tierWaves": [
+    2550,
+    3250,
+    3950,
+    4650,
+    5350,
+    6050,
+    6750,
+    7450
+   ]
+  },
+  {
+   "type": "enderman",
+   "name": "Enderman",
+   "aliases": [],
+   "bagName": "Enderman",
+   "tierWaves": [
+    2410,
+    3110,
+    3810,
+    4510,
+    5210,
+    5910,
+    6610,
+    7310
+   ]
+  },
+  {
+   "type": "vindicator",
+   "name": "Vindicator",
+   "aliases": [],
+   "bagName": "Vindicator",
+   "tierWaves": [
+    2280,
+    2980,
+    3680,
+    4380,
+    5080,
+    5780,
+    6480,
+    7180,
+    7880
+   ]
+  },
+  {
+   "type": "panda",
+   "name": "Panda",
+   "aliases": [],
+   "bagName": "Panda",
+   "tierWaves": [
+    2830,
+    3530,
+    4230,
+    4930,
+    5630,
+    6330,
+    7030,
+    7730
+   ]
+  },
+  {
+   "type": "zombie_horse",
+   "name": "Zombiepferd",
+   "aliases": [],
+   "bagName": "Zombiepferde",
+   "tierWaves": [
+    3310,
+    4010,
+    4710,
+    5410,
+    6110,
+    6810,
+    7510
+   ]
+  },
+  {
+   "type": "zoglin",
+   "name": "Zoglin",
+   "aliases": [],
+   "bagName": "Zoglin",
+   "tierWaves": [
+    3130,
+    3830,
+    4530,
+    5230,
+    5930,
+    6630,
+    7330
+   ]
+  },
+  {
+   "type": "drowned",
+   "name": "Ertrunkener",
+   "aliases": [],
+   "bagName": "Ertrunkener",
+   "tierWaves": [
+    2960,
+    3660,
+    4360,
+    5060,
+    5760,
+    6460,
+    7160,
+    7860
+   ]
+  },
+  {
+   "type": "evoker",
+   "name": "Evoker",
+   "aliases": [],
+   "bagName": "Evoker",
+   "tierWaves": [
+    3650,
+    4350,
+    5050,
+    5750,
+    6450,
+    7150,
+    7850
+   ]
+  },
+  {
+   "type": "polar_bear",
+   "name": "Polarbär",
+   "aliases": [],
+   "bagName": "Polarbär",
+   "tierWaves": [
+    3480,
+    4180,
+    4880,
+    5580,
+    6280,
+    6980,
+    7680
+   ]
+  },
+  {
+   "type": "camel",
+   "tierWaves": [
+    299,
+    799,
+    1499,
+    2099,
+    2899,
+    3899,
+    4899,
+    5899,
+    7099,
+    9099
+   ]
+  },
+  {
+   "type": "sniffer",
+   "tierWaves": [
+    399,
+    899,
+    1599,
+    2599,
+    3599,
+    4599,
+    5599,
+    6599,
+    7599,
+    8599,
+    9599
+   ]
+  },
+  {
+   "type": "elder_guardian",
+   "tierWaves": [
+    1299,
+    2299,
+    3299,
+    4299,
+    5299,
+    6299,
+    7299,
+    8299,
+    9299
+   ]
+  },
+  {
+   "type": "ravager",
+   "tierWaves": [
+    1399,
+    2399,
+    3399,
+    4399,
+    5399,
+    6399,
+    7399,
+    8399,
+    9399
+   ]
+  },
+  {
+   "type": "wither",
+   "name": "Wither",
+   "aliases": [],
+   "bagName": "Wither",
+   "tierWaves": [
+    7999,
+    8999,
+    9999
+   ]
+  },
+  {
+   "type": "warden",
+   "tierWaves": [
+    4999,
+    5999,
+    6899,
+    7899,
+    8899,
+    9899
+   ]
+  },
+  {
+   "type": "giant",
+   "tierWaves": [
+    2999,
+    3499,
+    4499,
+    5499,
+    6499,
+    7499,
+    8499,
+    9499
+   ]
+  },
+  {
+   "type": "iron_golem",
+   "tierWaves": [
+    399,
+    899,
+    1599,
+    2599,
+    3599,
+    4599,
+    5599,
+    6599,
+    7599,
+    8599,
+    9599
+   ]
+  },
+  {
+   "type": "zombie_villager",
+   "tierWaves": [
+    299,
+    799,
+    1499,
+    2099,
+    2899,
+    3899,
+    4899,
+    5899,
+    7099,
+    9099
+   ]
+  }
+ ]
+}

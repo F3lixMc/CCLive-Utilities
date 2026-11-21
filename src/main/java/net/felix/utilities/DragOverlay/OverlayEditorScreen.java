@@ -18,6 +18,7 @@ import net.felix.utilities.Aincraft.kills.KillTrackerColors;
 import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDraggableOverlay;
 import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
+import net.felix.utilities.Factory.essencefarm.EssenceFarmDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
 import net.felix.utilities.Factory.mklevel.overlay.MkLevelDraggableOverlay;
@@ -181,6 +182,7 @@ public class OverlayEditorScreen extends Screen {
 
         if (FactoryLevelTracker.isInFactory()) {
             overlays.add(new FactoryLevelDraggableOverlay());
+            overlays.add(new EssenceFarmDraggableOverlay());
         }
         
         if (isInChatScreen) {
@@ -1315,6 +1317,10 @@ public class OverlayEditorScreen extends Screen {
             boolean newValue = !overlay.isConfigEnabled();
             config.showFactoryLevel = newValue;
             config.factoryLevelEnabled = newValue;
+        } else if (overlay instanceof EssenceFarmDraggableOverlay) {
+            boolean newValue = !overlay.isConfigEnabled();
+            config.showEssenceFarm = newValue;
+            config.essenceFarmEnabled = newValue;
         } else if (overlay instanceof CardsDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.showCard = newValue;

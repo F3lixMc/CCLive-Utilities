@@ -1126,6 +1126,34 @@ public class CCLiveUtilitiesConfig {
 
     @SerialEntry
     public boolean factoryLevelShowBackground = true;
+
+    // Essence farm planner (best waves for the selected power crystals)
+    @SerialEntry
+    public boolean essenceFarmEnabled = true;
+
+    @SerialEntry
+    public boolean showEssenceFarm = true;
+
+    @SerialEntry
+    public int essenceFarmX = 8;
+
+    @SerialEntry
+    public int essenceFarmY = 120;
+
+    @SerialEntry
+    public float essenceFarmScale = 1.0f;
+
+    @SerialEntry
+    public boolean essenceFarmShowBackground = true;
+
+    @SerialEntry
+    public double essenceFarmDropChance = -1.0; // "Essn Drp Chc" in percent (409 = x4.09), -1 = unknown
+
+    @SerialEntry
+    public boolean essenceFarmAutoDropChance = true; // take the drop chance from the stats overview automatically
+
+    @SerialEntry
+    public boolean essenceFarmDebug = false; // show diagnostic lines in the essence farm overlay
     
     // MkLevel Settings
     @SerialEntry
@@ -2160,6 +2188,8 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
+                        // Essence farm planner: same groups as its F6 detail screen
+                        .groups(net.felix.utilities.Factory.essencefarm.EssenceFarmSettingsScreen.groups())
                         .build())
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Stadt"))
