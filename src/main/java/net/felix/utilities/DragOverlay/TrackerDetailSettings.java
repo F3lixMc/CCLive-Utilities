@@ -15,6 +15,7 @@ import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Farmworld.collections.overlay.CollectionDraggableOverlay;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
 import net.felix.utilities.Farmworld.miningxp.overlay.MiningLumberjackDraggableOverlay;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 
@@ -68,7 +69,12 @@ public final class TrackerDetailSettings {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         List<Button> buttons = new ArrayList<>();
         if (overlay instanceof CoinTrackerDraggableOverlay) {
-            buttons.add(toggle("CPM: " + (config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
+            RateDisplayUnit coinUnit = RateDisplayUnit.orDefault(config.coinTrackerRateUnit);
+            buttons.add(rateUnitToggle(
+                    () -> config.coinTrackerRateUnit,
+                    value -> config.coinTrackerRateUnit = value));
+            buttons.add(toggle(coinUnit.abbreviated("CPM") + ": "
+                    + (config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
                     ? "Scoreboard" : "Overlay"), () -> config.coinTrackerDisplayMode =
                     config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
                             ? CoinTrackerDisplayMode.OVERLAY
@@ -92,7 +98,10 @@ public final class TrackerDetailSettings {
                     value -> config.statueTextScale = value));
         } else if (overlay instanceof BlueprintViewerDraggableOverlay) {
             buttons.add(toggle("Aktivieren: " + onOff(config.blueprintViewerEnabled),
-                    () -> config.blueprintViewerEnabled = !config.blueprintViewerEnabled));
+                    () -> {
+                        config.blueprintViewerEnabled = !config.blueprintViewerEnabled;
+                        net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility.resetHotkeyVisibility();
+                    }));
             buttons.add(toggle("Overlay-Typ: " + overlayTypeLabel(config.blueprintViewerOverlayType),
                     () -> config.blueprintViewerOverlayType = nextOverlayType(config.blueprintViewerOverlayType)));
             buttons.add(toggle("Missing Mode: " + onOff(config.blueprintViewerMissingMode),
@@ -100,9 +109,13 @@ public final class TrackerDetailSettings {
             buttons.add(toggle("Haken im Moblexicon: " + onOff(config.moblexiconBlueprintCheckmarksEnabled),
                     () -> config.moblexiconBlueprintCheckmarksEnabled = !config.moblexiconBlueprintCheckmarksEnabled));
         } else if (overlay instanceof BossHPDraggableOverlay) {
+            RateDisplayUnit bossUnit = RateDisplayUnit.orDefault(config.bossHPRateUnit);
+            buttons.add(rateUnitToggle(
+                    () -> config.bossHPRateUnit,
+                    value -> config.bossHPRateUnit = value));
             buttons.add(toggle("Hintergrund: " + onOff(config.bossHPShowBackground),
                     () -> config.bossHPShowBackground = !config.bossHPShowBackground));
-            buttons.add(toggle("DPM: " + onOff(config.bossHPShowDPM),
+            buttons.add(toggle(bossUnit.abbreviated("DPM") + ": " + onOff(config.bossHPShowDPM),
                     () -> config.bossHPShowDPM = !config.bossHPShowDPM));
             buttons.add(toggle("Last Dmg: " + onOff(config.bossHPShowLastDmg),
                     () -> config.bossHPShowLastDmg = !config.bossHPShowLastDmg));
@@ -117,6 +130,9 @@ public final class TrackerDetailSettings {
             buttons.add(toggle("Hintergrund: " + onOff(config.factoryLevelShowBackground),
                     () -> config.factoryLevelShowBackground = !config.factoryLevelShowBackground));
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
+            buttons.add(rateUnitToggle(
+                    () -> config.miningLumberjackRateUnit,
+                    value -> config.miningLumberjackRateUnit = value));
             buttons.add(colors(returnTo, "Mining / Holzfäller Farben", List.of(
                     color("Überschriftenfarbe", "Farbe für die Überschriften (Bergbau/Holzfäller)", new Color(0xFFFFFF00),
                             () -> config.miningLumberjackOverlayHeaderColor,
@@ -125,11 +141,15 @@ public final class TrackerDetailSettings {
                             () -> config.miningLumberjackOverlayTextColor,
                             value -> config.miningLumberjackOverlayTextColor = value))));
         } else if (overlay instanceof CollectionDraggableOverlay) {
+            RateDisplayUnit resourceUnit = RateDisplayUnit.orDefault(config.resourceTrackerRateUnit);
+            buttons.add(rateUnitToggle(
+                    () -> config.resourceTrackerRateUnit,
+                    value -> config.resourceTrackerRateUnit = value));
             buttons.add(toggle("Benötigte Blöcke: " + onOff(config.collectionOverlayShowBlocksNeeded),
                     () -> config.collectionOverlayShowBlocksNeeded = !config.collectionOverlayShowBlocksNeeded));
             buttons.add(toggle("Benötigte Zeit: " + onOff(config.collectionOverlayShowTimeToNext),
                     () -> config.collectionOverlayShowTimeToNext = !config.collectionOverlayShowTimeToNext));
-            buttons.add(toggle("Ressourcen/min: " + onOff(config.resourceTrackerRateEnabled),
+            buttons.add(toggle(resourceUnit.withBase("Ressourcen") + ": " + onOff(config.resourceTrackerRateEnabled),
                     () -> config.resourceTrackerRateEnabled = !config.resourceTrackerRateEnabled));
             buttons.add(new Button(
                     "Anzeige: " + (config.resourceTrackerDisplayMode == ResourceTrackerDisplayMode.SCOREBOARD
@@ -156,6 +176,16 @@ public final class TrackerDetailSettings {
     private static Button toggle(String label, Runnable change) {
         return new Button(label, true, () -> {
             change.run();
+            CCLiveUtilitiesConfig.HANDLER.save();
+        });
+    }
+
+    private static Button rateUnitToggle(
+            java.util.function.Supplier<RateDisplayUnit> getter,
+            java.util.function.Consumer<RateDisplayUnit> setter) {
+        RateDisplayUnit unit = RateDisplayUnit.orDefault(getter.get());
+        return new Button(unit.settingsSwitcherLabel(), true, () -> {
+            setter.accept(RateDisplayUnit.orDefault(getter.get()).toggled());
             CCLiveUtilitiesConfig.HANDLER.save();
         });
     }

@@ -3,6 +3,7 @@ package net.felix.utilities.Farmworld.collections.overlay;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -89,7 +90,7 @@ public final class CollectionOverlay {
 		String header = "Collection:";
 		String timeLine = timeText; // timeText already contains "Zeit: XX:XX"
 		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
-		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String blocksPerMinLine = formatBlocksPerUnitLine();
 		String resourceRateLine = getCollectionResourceRateLine(client);
 		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
 		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
@@ -198,7 +199,7 @@ public final class CollectionOverlay {
 		String header = "Collection:";
 		String timeLine = timeText;
 		String blocksLine = "Abgebaut: " + formatNumberWithSeparator(sessionBlocks);
-		String blocksPerMinLine = "Blöcke/min: " + (blocksPerMinute > 0 ? formatDoubleWithSeparator(blocksPerMinute) : "-");
+		String blocksPerMinLine = formatBlocksPerUnitLine();
 		String resourceRateLine = getCollectionResourceRateLine(client);
 		String blocksNeededLine = "Benötigte Blöcke: " + formatNumberWithSeparator(blocksNeededForNextCollection);
 		String timeToNextLine = "Nächste Collection: " + formatTimeMinutes(calculateTimeUntilNextCollection());
@@ -228,5 +229,14 @@ public final class CollectionOverlay {
 	public static int getCurrentCollectionOverlayHeight() {
 		int padding = 5;
 		return getCollectionOverlayLineCount() * 11 + padding * 2;
+	}
+
+	private static String formatBlocksPerUnitLine() {
+		RateDisplayUnit unit = RateDisplayUnit.orDefault(
+				CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateUnit);
+		String value = blocksPerMinute > 0
+				? formatDoubleWithSeparator(unit.fromPerMinute(blocksPerMinute))
+				: "-";
+		return unit.formatLabeledRate("Blöcke", value);
 	}
 }

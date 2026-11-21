@@ -7,7 +7,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Other.hud.HudNumberSuffixUtility;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -116,22 +118,35 @@ public final class MaterialRateUtility {
         return trimmed.startsWith("➥") && SCOREBOARD_MATERIAL_COUNT.matcher(trimmed).find();
     }
 
-    public static String formatRate(double rate) {
-        if (rate <= 0) {
-            return "x/min";
-        }
-        return formatRateValue(rate);
+    public static String formatRate(double ratePerMinute) {
+        return formatRate(ratePerMinute, materialRateUnit());
     }
 
-    private static String formatRateValue(double rate) {
+    public static String formatRate(double ratePerMinute, RateDisplayUnit unit) {
+        RateDisplayUnit displayUnit = RateDisplayUnit.orDefault(unit);
+        if (ratePerMinute <= 0) {
+            return displayUnit.idlePlaceholder();
+        }
+        return formatRateValue(displayUnit.fromPerMinute(ratePerMinute), displayUnit);
+    }
+
+    public static RateDisplayUnit materialRateUnit() {
+        try {
+            return RateDisplayUnit.orDefault(CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerRateUnit);
+        } catch (Throwable ignored) {
+            return RateDisplayUnit.PER_MINUTE;
+        }
+    }
+
+    private static String formatRateValue(double rate, RateDisplayUnit unit) {
         long rounded = Math.round(rate);
         if (rounded > 0) {
-            return HudNumberSuffixUtility.formatAbbreviated(BigDecimal.valueOf(rounded)) + "/min";
+            return HudNumberSuffixUtility.formatAbbreviated(BigDecimal.valueOf(rounded)) + unit.suffix();
         }
         return BigDecimal.valueOf(rate)
                 .setScale(1, RoundingMode.HALF_UP)
                 .stripTrailingZeros()
-                .toPlainString() + "/min";
+                .toPlainString() + unit.suffix();
     }
 
     private static MutableComponent appendRateSuffix(Component baseText, String suffix, int color) {

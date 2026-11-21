@@ -2,6 +2,7 @@ package net.felix.utilities.Aincraft.kills;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -187,7 +188,8 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         int currentY = PADDING + 15; // Same as KillsUtility line 561
         context.text(
             client.font,
-            "KPM: -",
+            RateDisplayUnit.orDefault(CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityRateUnit)
+                    .formatAbbrevIdle("KPM"),
             PADDING, currentY, // Relative position
             0xFFFFFFFF,
             true

@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.Locale;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -176,7 +177,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
         }
         
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
-            String dpmText = "DPM: -";
+            String dpmText = RateDisplayUnit.orDefault(
+                    CCLiveUtilitiesConfig.HANDLER.instance().bossHPRateUnit).formatAbbrevIdle("DPM");
             previewWidth = Math.max(previewWidth, client.font.width(dpmText));
         }
         if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowEta) {
@@ -320,7 +322,8 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
                 lineY += client.font.lineHeight + LINE_SPACING;
             }
             if (CCLiveUtilitiesConfig.HANDLER.instance().bossHPShowDPM) {
-                String dpmText = "DPM: -";
+                String dpmText = RateDisplayUnit.orDefault(
+                    CCLiveUtilitiesConfig.HANDLER.instance().bossHPRateUnit).formatAbbrevIdle("DPM");
                 int dpmTextWidth = client.font.width(dpmText);
                 int dpmTextX = (unscaledWidth - dpmTextWidth) / 2;
                 context.text(client.font, dpmText, dpmTextX, lineY, 0xFFFFFF00, false);

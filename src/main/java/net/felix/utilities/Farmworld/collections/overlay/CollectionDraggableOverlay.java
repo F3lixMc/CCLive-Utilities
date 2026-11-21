@@ -2,6 +2,7 @@ package net.felix.utilities.Farmworld.collections.overlay;
 
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -153,7 +154,8 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         currentY += LINE_HEIGHT;
         context.text(
             client.font,
-            "Blöcke/min: -",
+            RateDisplayUnit.orDefault(CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateUnit)
+                    .formatLabeledRate("Blöcke", "-"),
             PADDING, currentY,
             0xFFFFFFFF,
             true

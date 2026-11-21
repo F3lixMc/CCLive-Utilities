@@ -9,6 +9,7 @@ import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayM
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Other.hud.ScoreboardSidebarReader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -254,7 +255,9 @@ public final class CoinTrackerCustomSidebar {
     private static ScoreboardSidebarReader.Row cpmHeaderRow() {
         MutableComponent text = Component.empty()
                 .append(Component.literal("▌").setStyle(Style.EMPTY.withColor(CPM_BAR_COLOR)))
-                .append(Component.literal(" Coins/min").setStyle(Style.EMPTY.withColor(CPM_HEADER_COLOR)));
+                .append(Component.literal(" " + RateDisplayUnit.orDefault(
+                                CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerRateUnit).withBase("Coins"))
+                        .setStyle(Style.EMPTY.withColor(CPM_HEADER_COLOR)));
         return ScoreboardSidebarReader.Row.nameOnly(text);
     }
 
@@ -276,14 +279,19 @@ public final class CoinTrackerCustomSidebar {
         if (header == null) {
             return Component.empty();
         }
+        String rateHeader = MaterialRateUtility.materialRateUnit().withBase("Materialien");
         MutableComponent result = Component.empty();
         header.visit((style, text) -> {
             if (text == null || text.isEmpty()) {
                 return Optional.empty();
             }
             String replaced = text;
-            if (replaced.contains("Materialien") && !replaced.contains("Materialien/min")) {
-                replaced = replaced.replace("Materialien", "Materialien/min");
+            if (replaced.contains("Materialien/min")) {
+                replaced = replaced.replace("Materialien/min", rateHeader);
+            } else if (replaced.contains("Materialien/h")) {
+                replaced = replaced.replace("Materialien/h", rateHeader);
+            } else if (replaced.contains("Materialien")) {
+                replaced = replaced.replace("Materialien", rateHeader);
             }
             result.append(Component.literal(replaced).setStyle(style));
             return Optional.empty();

@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialRateUtility;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -86,7 +87,7 @@ public final class FarmzoneResourceRateUtility {
     }
 
     public static String getOverlayText() {
-        return "Ressource: " + MaterialRateUtility.formatRate(perMinute);
+        return "Ressource: " + MaterialRateUtility.formatRate(perMinute, resourceRateUnit());
     }
 
     public static String getCurrentResourceName() {
@@ -129,9 +130,18 @@ public final class FarmzoneResourceRateUtility {
         }
 
         MutableComponent result = lineText.copy();
-        result.append(Component.literal(" -> " + MaterialRateUtility.formatRate(perMinute))
+        result.append(Component.literal(" -> " + MaterialRateUtility.formatRate(perMinute, resourceRateUnit()))
                 .setStyle(Style.EMPTY.withColor(RATE_SUFFIX_COLOR)));
         return result;
+    }
+
+    private static RateDisplayUnit resourceRateUnit() {
+        try {
+            return RateDisplayUnit.orDefault(
+                    net.felix.CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateUnit);
+        } catch (Throwable ignored) {
+            return RateDisplayUnit.PER_MINUTE;
+        }
     }
 
     private static String extractResourceNameFromScoreboardLine(String cleanLine) {

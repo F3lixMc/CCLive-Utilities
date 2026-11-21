@@ -3,6 +3,7 @@ package net.felix.utilities.Aincraft.cointracker;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -148,7 +149,10 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
         textY += LINE_HEIGHT;
         context.text(client.font, Component.literal("Gewinn: +250"), PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
-        context.text(client.font, Component.literal("CPM: 1,2k"), PADDING, textY, textColor, true);
+        context.text(client.font, Component.literal(
+                        RateDisplayUnit.orDefault(CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerRateUnit)
+                                .formatAbbrevLine("CPM", "1,2k")),
+                PADDING, textY, textColor, true);
         textY += LINE_HEIGHT;
         context.text(client.font, Component.literal("Zeit: 05:30"), PADDING, textY, textColor, true);
 
