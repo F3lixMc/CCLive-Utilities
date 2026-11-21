@@ -31,6 +31,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
     private void onGameMessage(ClientboundSystemChatPacket packet, CallbackInfo ci) {
         if (packet != null) {
             StarForgedSoundUtility.handleIncomingMessage(packet.content(), packet.overlay());
+            net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.handleIncomingMessage(packet.content(), packet.overlay());
         }
 
         if (packet == null) {
