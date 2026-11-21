@@ -42,6 +42,15 @@ public class ClipboardAmbossRessourceCollector {
     // Cache für den letzten Screen-Titel, um zu erkennen wenn sich das Inventar ändert
     private static String lastScreenTitle = "";
     private static int lastSlotCount = 0;
+
+    // The essence bag is rescanned at most every ESSENCE_BAG_SCAN_INTERVAL ticks; building ~34 tooltips
+    // and pushing every tier line into the storage each tick made the bag lag.
+    private static final int ESSENCE_BAG_SCAN_INTERVAL = 10;
+    private static int essenceBagScanCooldown = 0;
+    // Essence values collected during one scan, pushed to the storage in one batch.
+    private static final Map<String, Long> pendingEssences = new HashMap<>();
+    // Last values pushed while the bag is open; only changed values are written again.
+    private static final Map<String, Long> pushedEssences = new HashMap<>();
     
     /**
      * Initialisiert den ClipboardAmbossRessourceCollector
@@ -67,6 +76,8 @@ public class ClipboardAmbossRessourceCollector {
             // Inventar geschlossen - Cache zurücksetzen
             lastScreenTitle = "";
             lastSlotCount = 0;
+            pushedEssences.clear();
+            essenceBagScanCooldown = 0;
             return;
         }
         
@@ -91,6 +102,16 @@ public class ClipboardAmbossRessourceCollector {
             // Die Werte bleiben erhalten, auch wenn wir die Seite wechseln
             lastScreenTitle = screenTitle;
             lastSlotCount = currentSlotCount;
+            // New page or reload: scan right away.
+            essenceBagScanCooldown = 0;
+        }
+        if (isEssenceBag) {
+            if (essenceBagScanCooldown > 0) {
+                essenceBagScanCooldown--;
+                return;
+            }
+            essenceBagScanCooldown = ESSENCE_BAG_SCAN_INTERVAL;
+            pendingEssences.clear();
         }
         
         // Sammle Items aus allen Slots
@@ -137,6 +158,25 @@ public class ClipboardAmbossRessourceCollector {
         } catch (Exception e) {
             // Fehler beim Zugriff auf Slots - ignoriere
         }
+        if (isEssenceBag) {
+            flushPendingEssences();
+        }
+    }
+
+    /** Pushes only essence values that changed since the last push, in a single storage update. */
+    private static void flushPendingEssences() {
+        Map<String, Long> changed = new HashMap<>();
+        for (Map.Entry<String, Long> entry : pendingEssences.entrySet()) {
+            if (!entry.getValue().equals(pushedEssences.get(entry.getKey()))) {
+                changed.put(entry.getKey(), entry.getValue());
+            }
+        }
+        pendingEssences.clear();
+        if (changed.isEmpty()) {
+            return;
+        }
+        pushedEssences.putAll(changed);
+        CollectedMaterialsResourcesStorage.updateEssences(changed);
     }
     
     /**
@@ -150,6 +190,7 @@ public class ClipboardAmbossRessourceCollector {
             return;
         }
         if (itemName.contains("[Essenz]")) {
+            // One bag item lists every tier the player owns ("Tier 9 - 1,024", "Tier 4 - 7,059", ...): store each.
             for (int j = 1; j < tooltip.size(); j++) {
                 Matcher matcher = ESSENCE_TIER_PATTERN.matcher(cleanTooltipLine(tooltip.get(j).getString()));
                 if (!matcher.find()) {
@@ -161,7 +202,6 @@ public class ClipboardAmbossRessourceCollector {
                     storedName = storedName + " " + tierLabel;
                 }
                 updateEssenceFromBag(storedName, parseAmount(matcher.group(2)));
-                return;
             }
             return;
         }
@@ -242,7 +282,7 @@ public class ClipboardAmbossRessourceCollector {
         if (cleanItemName.isEmpty()) {
             return;
         }
-        CollectedMaterialsResourcesStorage.updateEssence(cleanItemName, amount);
+        pendingEssences.put(cleanItemName, amount);
     }
     
     private static String cleanTooltipLine(String lineText) {

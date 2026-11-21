@@ -11,7 +11,7 @@ import net.minecraft.client.multiplayer.ServerData;
  * Steuert, ob die Mod-Features und Daten-Uploads auf dem aktuellen Server erlaubt sind.
  *
  * <ul>
- *   <li>Erlaubt: Verbindung zu {@code playlegend.net:25565} (Proxy reicht; Lobby/CC egal)</li>
+ *   <li>Erlaubt: Verbindung zu {@code playlegend.net:25565} oder {@code beta.playlegend.net:25565} (same proxy)</li>
  *   <li>Dev-Umgebung: lokale Features erlaubt</li>
  *   <li>Bypass-Spieler (firestarter03, F3lixMc_): Features immer an;
  *       Uploads nur auf erlaubtem Server. Unbekannte/nicht erkannte IP → Features an, keine Uploads</li>
@@ -29,7 +29,8 @@ public final class ServerConnectionGate {
         DISALLOWED
     }
 
-    private static final String ALLOWED_HOST = "playlegend.net";
+    /** Both names reach the same PlayLegend proxy. */
+    private static final Set<String> ALLOWED_HOSTS = Set.of("playlegend.net", "beta.playlegend.net");
     private static final int ALLOWED_PORT = 25565;
 
     private static final Set<String> BYPASS_PLAYERS = Set.of(
@@ -136,8 +137,11 @@ public final class ServerConnectionGate {
     }
 
     static boolean matchesAllowed(String address) {
-        String requested = address.trim();
-        return ALLOWED_HOST.equalsIgnoreCase(requested)
-                || (ALLOWED_HOST + ":" + ALLOWED_PORT).equalsIgnoreCase(requested);
+        String requested = address.trim().toLowerCase(Locale.ROOT);
+        String portSuffix = ":" + ALLOWED_PORT;
+        if (requested.endsWith(portSuffix)) {
+            requested = requested.substring(0, requested.length() - portSuffix.length());
+        }
+        return ALLOWED_HOSTS.contains(requested);
     }
 }
