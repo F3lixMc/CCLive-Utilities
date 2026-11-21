@@ -28,6 +28,7 @@ import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesSt
 import net.felix.utilities.Other.devtools.DevToolsAccess;
 import net.felix.utilities.Other.devtools.DevToolsScreen;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.eventsound.ui.EventSoundListScreen;
 import net.felix.utilities.Town.sound.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -140,6 +141,8 @@ public class CCLiveCommands {
                     .executes(CCLiveCommands::resetMaterialsResources)))
             
             // Sternengeschmiedet Sound Test
+            .then(literal("eventsounds")
+                .executes(CCLiveCommands::openEventSounds))
             .then(literal("sternen_sound_test")
                 .executes(CCLiveCommands::testStarForgedSound))
             
@@ -493,6 +496,15 @@ public class CCLiveCommands {
         client.execute(DevToolsScreen::open);
         return 1;
     }
+
+    private static int openEventSounds(CommandContext<FabricClientCommandSource> context) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return 0;
+        }
+        client.execute(() -> client.gui.setScreen(new EventSoundListScreen(null)));
+        return 1;
+    }
     
     // =================== CHAT COMMANDS ===================
     
@@ -639,6 +651,7 @@ public class CCLiveCommands {
         }
 
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive eventsounds §f- Event-Sound-Menü öffnen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive sternen_sound_test §f- Sternengeschmiedet-Sound testen"));
         context.getSource().sendFeedback(Component.literal(""));
         

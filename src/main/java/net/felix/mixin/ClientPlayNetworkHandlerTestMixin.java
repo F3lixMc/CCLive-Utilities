@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.aspekte.chat.AspectChatMessages;
+import net.felix.utilities.Overall.eventsound.chat.EventSoundChat;
 import net.felix.utilities.Town.sound.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -31,6 +32,7 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
     private void onGameMessage(ClientboundSystemChatPacket packet, CallbackInfo ci) {
         if (packet != null) {
             StarForgedSoundUtility.handleIncomingMessage(packet.content(), packet.overlay());
+            EventSoundChat.handleIncomingMessage(packet.content(), packet.overlay());
         }
 
         if (packet == null) {

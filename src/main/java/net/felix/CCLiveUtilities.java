@@ -120,6 +120,12 @@ public class CCLiveUtilities implements ModInitializer {
 			// Silent error handling
 		}
 
+		try {
+			net.felix.utilities.Overall.eventsound.config.EventSoundStore.load();
+		} catch (Exception e) {
+			// Silent error handling
+		}
+
 		// Registriere alle CCLive-Commands (Blueprint + Leaderboard)
 		CCLiveCommands.register();
 		

@@ -17,6 +17,8 @@ import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayM
 import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Overall.searchbar.ItemDisplayMode;
 import net.felix.utilities.Town.schmied.SchmiedItemDisplayMode;
+import net.felix.utilities.Overall.eventsound.ui.EventSoundListScreen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -2390,6 +2392,21 @@ public class CCLiveUtilitiesConfig {
                                                         + "\"[Legend] Schmiedezustand erhalten: [Sternengeschmiedet]\" erscheint")))
                                         .binding(true, () -> HANDLER.instance().starForgedSoundEnabled, newVal -> HANDLER.instance().starForgedSoundEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Event-Sounds"))
+                                .option(ButtonOption.createBuilder()
+                                        .name(Component.literal("Event-Sounds"))
+                                        .text(Component.literal("Öffnen"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Sounds für Schmiedezustände, Bauplan-Drops und eigene Chat-Nachrichten")))
+                                        .action((screen, button) -> {
+                                            Minecraft client = Minecraft.getInstance();
+                                            if (client != null) {
+                                                client.gui.setScreen(new EventSoundListScreen(screen));
+                                            }
+                                        })
                                         .build())
                                 .build())
                         .build())

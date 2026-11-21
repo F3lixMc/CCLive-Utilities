@@ -51,6 +51,7 @@ import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.getViewerSe
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.getViewerSettingsOwnedButtonX;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.resolveAbstractContainerScreenForInput;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.resolveViewerPositionForMouseInput;
+import net.felix.utilities.Overall.itemviewer.ui.ViewerState;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerState.activeCategoryOverlay;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerState.favoritesMode;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerState.helpScreenHovered;
@@ -192,6 +193,9 @@ public final class ViewerInputHandler {
         if (handlePaginationClick(client, pos, mouseX, mouseY, button)) {
             return true;
         }
+        if (handleExternalGridPickClick(pos, mouseX, mouseY, button)) {
+            return true;
+        }
         return handleKitEditorPickClick(pos, mouseX, mouseY, button);
     }
 
@@ -216,6 +220,9 @@ public final class ViewerInputHandler {
      * Im Kit-Editor ohne Hintergrund-Screen genügt irgendein offener Screen.
      */
     private static boolean isClickTargetScreenAvailable(Minecraft client) {
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerState.externalGridPick != null) {
+            return client.gui.screen() != null;
+        }
         if (!isKitEditorMode() || kitEditorBackgroundScreen != null) {
             AbstractContainerScreen<?> handledScreen = resolveAbstractContainerScreenForInput(client);
             if (handledScreen == null) {
@@ -528,6 +535,26 @@ public final class ViewerInputHandler {
             return true;
         }
         return false;
+    }
+
+    /** Bauplan-Auswahl: Linksklick übernimmt nur Einträge der Kategorie blueprints. */
+    private static boolean handleExternalGridPickClick(ViewerPosition pos, double mouseX, double mouseY, int button) {
+        if (!(ViewerState.externalGridPick != null && button == 0 && hoveredItemForClick != null)) {
+            return false;
+        }
+        int gridX = pos.viewerX + VIEWER_PADDING;
+        int gridY = pos.dropdownY + SORT_DROPDOWN_HEIGHT + 5;
+        int paginationY = pos.viewerY + pos.viewerHeight - PAGINATION_HEIGHT - VIEWER_PADDING;
+        int gridWidth = pos.viewerWidth - VIEWER_PADDING * 2;
+        int gridHeight = paginationY - gridY;
+        if (!isInside(mouseX, mouseY, gridX, gridY, gridWidth, gridHeight)) {
+            return false;
+        }
+        if (!"blueprints".equals(hoveredItemForClick.category)) {
+            return true;
+        }
+        ViewerState.externalGridPick.accept(hoveredItemForClick);
+        return true;
     }
 
     /** Kit-Editor: Linksklick auf ein Item im Grid übernimmt Item/Icon. */
