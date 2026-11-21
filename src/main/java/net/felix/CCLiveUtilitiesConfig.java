@@ -1997,6 +1997,21 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Event-Sounds"))
+                                .option(ButtonOption.createBuilder()
+                                        .name(Component.literal("Event-Sounds"))
+                                        .text(Component.literal("Öffnen"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Sounds für Schmiedezustände, Bauplan-Drops und eigene Chat-Nachrichten")))
+                                        .action((screen, button) -> {
+                                            Minecraft client = Minecraft.getInstance();
+                                            if (client != null) {
+                                                client.gui.setScreen(new EventSoundListScreen(screen));
+                                            }
+                                        })
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Wellen Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Wellen Anzeige bei Essenzen"))
@@ -2390,21 +2405,6 @@ public class CCLiveUtilitiesConfig {
                                         .description(OptionDescription.of(Component.literal("Regenbogen-Animation für Sternengeschmiedete Items Ein/Aus")))
                                         .binding(true, () -> HANDLER.instance().sternengeschmiedetRainbow, newVal -> HANDLER.instance().sternengeschmiedetRainbow = newVal)
                                         .controller(TickBoxControllerBuilder::create)
-                                        .build())
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Component.literal("Event-Sounds"))
-                                .option(ButtonOption.createBuilder()
-                                        .name(Component.literal("Event-Sounds"))
-                                        .text(Component.literal("Öffnen"))
-                                        .description(OptionDescription.of(Component.literal(
-                                                "Sounds für Schmiedezustände, Bauplan-Drops und eigene Chat-Nachrichten")))
-                                        .action((screen, button) -> {
-                                            Minecraft client = Minecraft.getInstance();
-                                            if (client != null) {
-                                                client.gui.setScreen(new EventSoundListScreen(screen));
-                                            }
-                                        })
                                         .build())
                                 .build())
                         .build())
