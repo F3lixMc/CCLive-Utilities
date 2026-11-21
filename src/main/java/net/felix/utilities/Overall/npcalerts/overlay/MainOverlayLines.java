@@ -50,6 +50,8 @@ public final class MainOverlayLines {
 		int count = 0;
 		count += isInMainOverlay(config.showNpcAlertsForschung, config.npcAlertsForschungSeparateOverlay) ? 1 : 0;
 		count += isInMainOverlay(config.showNpcAlertsAmboss, config.npcAlertsAmbossSeparateOverlay) ? 1 : 0;
+		count += isInMainOverlay(config.showNpcAlertsAmboss, config.npcAlertsAmbossSeparateOverlay)
+				&& AmbossSlots.slot2InSharedOverlay() ? 1 : 0;
 		count += isInMainOverlay(config.showNpcAlertsSchmelzofen, config.npcAlertsSchmelzofenSeparateOverlay) ? 1 : 0;
 		count += isInMainOverlay(config.showNpcAlertsJaeger, config.npcAlertsJaegerSeparateOverlay) ? 1 : 0;
 		count += isInMainOverlay(config.showNpcAlertsSeelen, config.npcAlertsSeelenSeparateOverlay) ? 1 : 0;
@@ -77,6 +79,10 @@ public final class MainOverlayLines {
 		}
 		if (isInMainOverlay(config.showNpcAlertsAmboss, config.npcAlertsAmbossSeparateOverlay)) {
 			addEditModeLine(lines, "amboss", "Amboss", config.showNpcAlertsAmbossPercent, config.npcAlertsAmbossShowIcon);
+			if (AmbossSlots.slot2InSharedOverlay()) {
+				lines.add(new LineWithPercent(EDIT_MODE_VALUE, config.showNpcAlertsAmbossPercent ? EDIT_MODE_PERCENT : null,
+						config.showNpcAlertsAmbossPercent, false, "amboss", config.npcAlertsAmbossShowIcon));
+			}
 		}
 		if (isInMainOverlay(config.showNpcAlertsSchmelzofen, config.npcAlertsSchmelzofenSeparateOverlay)) {
 			addEditModeLine(lines, "schmelzofen", "Schmelzofen", config.showNpcAlertsSchmelzofenPercent, config.npcAlertsSchmelzofenShowIcon);
@@ -157,8 +163,13 @@ public final class MainOverlayLines {
 			lines.add(forschungLine(config));
 		}
 		if (isInMainOverlay(config.showNpcAlertsAmboss, config.npcAlertsAmbossSeparateOverlay)) {
-			lines.add(capacityLine(ambossCapacity, "amboss", "Amboss", ambossCapacity.getDisplayString(),
-				config.showNpcAlertsAmbossPercent, config.npcAlertsAmbossWarnPercent, config.npcAlertsAmbossShowIcon));
+			lines.add(ambossLine(ambossCapacity, config.npcAlertsAmbossShowIcon
+					? ambossCapacity.getDisplayString()
+					: "Amboss: " + ambossCapacity.getDisplayString(), config));
+			if (AmbossSlots.slot2InSharedOverlay()) {
+				var slot2 = net.felix.utilities.Overall.npcalerts.data.NpcAlertState.ambossSlot2;
+				lines.add(ambossLine(slot2, slot2.getDisplayString(), config));
+			}
 		}
 		if (isInMainOverlay(config.showNpcAlertsSchmelzofen, config.npcAlertsSchmelzofenSeparateOverlay)) {
 			lines.add(capacityLine(schmelzofenCapacity, "schmelzofen", "Schmelzofen", schmelzofenCapacity.getDisplayString(),
@@ -208,6 +219,18 @@ public final class MainOverlayLines {
 		boolean showIcon = config.npcAlertsForschungShowIcon;
 		String displayText = showIcon ? forschung.getDisplayString() : "Forschung: " + forschung.getDisplayString();
 		return new LineWithPercent(displayText, percent, showPercent, showWarning, "forschung", showIcon);
+	}
+
+	/** Amboss-Zeile: Prozent bleibt an der eigenen Menge, voll zählt auch ohne Warnschwelle. */
+	private static LineWithPercent ambossLine(net.felix.utilities.Overall.npcalerts.data.CapacityData data,
+			String text, CCLiveUtilitiesConfig config) {
+		String percent = config.showNpcAlertsAmbossPercent && data.isValid()
+				? formatPercent(data.current, data.max) : null;
+		boolean full = data.isValid() && data.max > 0 && data.current >= data.max;
+		double filled = data.isValid() && data.max > 0
+				? ((double) data.current / (double) data.max) * 100.0 : 0;
+		boolean warning = full || (config.npcAlertsAmbossWarnPercent >= 0 && filled >= config.npcAlertsAmbossWarnPercent);
+		return new LineWithPercent(text, percent, percent != null, warning, "amboss", config.npcAlertsAmbossShowIcon);
 	}
 
 	/** Kapazitäts-Zeile (Amboss, Schmelzofen, Jäger, Seelen, Essenzen): Warnung, wenn die Füllung >= Schwelle ist. */

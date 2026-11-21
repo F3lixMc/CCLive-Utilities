@@ -21,6 +21,8 @@ import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.schmelzof
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.seelenCapacity;
 import static net.felix.utilities.Overall.npcalerts.message.ScreenMessages.getMachtkristallShowWarning;
 import static net.felix.utilities.Overall.npcalerts.message.ScreenMessages.shouldShowForschungWarning;
+import static net.felix.utilities.Overall.npcalerts.overlay.AmbossSlots.slot2InSharedOverlay;
+import static net.felix.utilities.Overall.npcalerts.overlay.AmbossSlots.slot2SeparateOverlay;
 import static net.felix.utilities.Overall.npcalerts.overlay.MultiLineOverlayRenderer.renderMultiLineOverlay;
 import static net.felix.utilities.Overall.npcalerts.overlay.PercentFormatter.formatPercent;
 import static net.felix.utilities.Overall.npcalerts.overlay.SeparateOverlayContent.machtkristallDisplayText;
@@ -43,6 +45,7 @@ public final class SeparateOverlayRenderer {
 	static void renderSeparateOverlays(GuiGraphicsExtractor context, Minecraft client) {
 		renderForschung(context, client);
 		renderAmboss(context, client);
+		renderAmbossSlot2(context, client);
 		renderSchmelzofen(context, client);
 		renderJaeger(context, client);
 		renderSeelen(context, client);
@@ -89,9 +92,44 @@ public final class SeparateOverlayRenderer {
 		if (!(config.showNpcAlertsAmboss && config.npcAlertsAmbossSeparateOverlay)) {
 			return;
 		}
+		if (slot2InSharedOverlay()) {
+			var slot2 = net.felix.utilities.Overall.npcalerts.data.NpcAlertState.ambossSlot2;
+			String first = config.npcAlertsAmbossShowIcon
+					? ambossCapacity.getDisplayString()
+					: "Amboss: " + ambossCapacity.getDisplayString();
+			java.util.List<SingleInfoOverlayRenderer.CapacityRow> rows = java.util.List.of(
+					ambossRow(ambossCapacity, first, config.showNpcAlertsAmbossPercent, config.npcAlertsAmbossWarnPercent),
+					ambossRow(slot2, slot2.getDisplayString(), config.showNpcAlertsAmbossPercent, config.npcAlertsAmbossWarnPercent));
+			SingleInfoOverlayRenderer.renderCapacityRows(context, client, rows, config.showNpcAlertsAmbossPercent,
+					"amboss", config.npcAlertsAmbossShowIcon, config.npcAlertsAmbossX, config.npcAlertsAmbossY,
+					config.npcAlertsAmbossShowBackground);
+			return;
+		}
 		renderCapacityOverlay(context, client, ambossCapacity, ambossCapacity.getDisplayString(), "Amboss: ", "amboss",
 				config.showNpcAlertsAmbossPercent, config.npcAlertsAmbossWarnPercent, config.npcAlertsAmbossShowIcon,
 				config.npcAlertsAmbossX, config.npcAlertsAmbossY, config.npcAlertsAmbossShowBackground);
+	}
+
+	private static SingleInfoOverlayRenderer.CapacityRow ambossRow(net.felix.utilities.Overall.npcalerts.data.CapacityData data,
+			String text, boolean showPercent, double warnPercent) {
+		String percent = showPercent && data.isValid() ? formatPercent(data.current, data.max) : null;
+		double currentPercent = data.isValid() && data.max > 0
+				? ((double) data.current / (double) data.max) * 100.0
+				: 0;
+		boolean full = data.isValid() && data.max > 0 && data.current >= data.max;
+		boolean warning = full || (warnPercent >= 0 && currentPercent >= warnPercent);
+		return new SingleInfoOverlayRenderer.CapacityRow(text, percent, warning);
+	}
+
+	private static void renderAmbossSlot2(GuiGraphicsExtractor context, Minecraft client) {
+		if (!slot2SeparateOverlay()) {
+			return;
+		}
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		var slot = net.felix.utilities.Overall.npcalerts.data.NpcAlertState.ambossSlot2;
+		renderCapacityOverlay(context, client, slot, slot.getDisplayString(), "Amboss Slot 2: ", "ambossSlot2",
+				config.showNpcAlertsAmbossPercent, config.npcAlertsAmbossWarnPercent, config.npcAlertsAmbossShowIcon,
+				config.npcAlertsAmbossSlot2X, config.npcAlertsAmbossSlot2Y, config.npcAlertsAmbossShowBackground);
 	}
 
 	private static void renderSchmelzofen(GuiGraphicsExtractor context, Minecraft client) {

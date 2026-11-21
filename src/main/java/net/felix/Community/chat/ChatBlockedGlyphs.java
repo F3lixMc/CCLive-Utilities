@@ -78,10 +78,13 @@ public final class ChatBlockedGlyphs {
      * Fehlendes Pack leert die bisherige Liste nicht.
      */
     public static void reloadFromResourceManager(ResourceManager manager) {
-        ZeichenUtility.applyBlockedGlyphPackUpdate(manager).ifPresent(codePoints -> {
-            PACK.set(Set.copyOf(codePoints));
-            writeExportFile();
-        });
+        ZeichenUtility.applyBlockedGlyphPackUpdate(manager).ifPresent(ChatBlockedGlyphs::acceptPackCodePoints);
+    }
+
+    /** Übernimmt eine bereits gelesene Pack-Liste und schreibt die Exportdatei. */
+    public static void acceptPackCodePoints(Set<Integer> codePoints) {
+        PACK.set(codePoints == null ? Set.of() : Set.copyOf(codePoints));
+        writeExportFile();
     }
 
     public static void replaceServerCodePoints(Set<Integer> codePoints) {

@@ -112,6 +112,9 @@ public class BuildShareDraggableOverlay implements DraggableOverlay {
     }
 
     public static boolean handleButtonClick(int mouseX, int mouseY, int button) {
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerInputHandler.blocksUnderlyingOverlay(mouseX, mouseY)) {
+            return false;
+        }
         return BuildShareManager.getInstance().handleOverlayClick(mouseX, mouseY, button);
     }
 }

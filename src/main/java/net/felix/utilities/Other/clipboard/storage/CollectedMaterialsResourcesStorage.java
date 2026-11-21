@@ -8,10 +8,12 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,14 +53,26 @@ public class CollectedMaterialsResourcesStorage {
     private static final Map<String, Long> normalizedEssences = new HashMap<>();
     private static final Map<String, Long> normalizedOther = new HashMap<>();
     private static final Map<String, String> normalizedOtherAbbreviated = new HashMap<>();
+    /** Nur um das atomare Verschieben der Datei. Der Spielthread nimmt dieses Lock nicht. */
+    private static final Object FILE_LOCK = new Object();
+    /** Kurze Speicheränderung. Wird nie während Dateilesen oder -schreiben gehalten. */
+    private static final Object MEMORY = new Object();
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(CollectedMaterialsResourcesStorage.class.getName());
     private static final AtomicBoolean saveScheduled = new AtomicBoolean(false);
+    private static final AtomicBoolean saveDirty = new AtomicBoolean(false);
     /** Invalidiert verzögerte Saves nach Season-Reset. */
     private static final AtomicLong saveGeneration = new AtomicLong(0L);
+    /** Jede Speicheränderung. Ein laufender Reload mit älterer Nummer wird verworfen. */
+    private static final AtomicLong memoryRevision = new AtomicLong(0L);
+    private static final AtomicBoolean reloadScheduled = new AtomicBoolean(false);
     private static File storageFile;
     private static boolean initialized = false;
-    private static long lastKnownModified = -1L;
-    private static long lastReloadCheck = 0L;
+    private static volatile long lastKnownModified = -1L;
+    private static volatile long lastReloadCheck = 0L;
     private static final long RELOAD_CHECK_INTERVAL_MS = 1500L;
+    /** Test: künstliche Wartezeit im Dateischreiben, außerhalb von {@link #MEMORY}. */
+    private static long saveIoDelayMillis = 0L;
+    private static final AtomicBoolean saveIoEntered = new AtomicBoolean(false);
     
     public static void initialize() {
         if (initialized) {
@@ -78,7 +92,7 @@ public class CollectedMaterialsResourcesStorage {
     
     public static Map<String, Long> getAllMaterials() {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         synchronized (materials) {
             return new HashMap<>(materials);
         }
@@ -86,7 +100,7 @@ public class CollectedMaterialsResourcesStorage {
     
     public static Map<String, Long> getAllResources() {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         synchronized (resources) {
             return new HashMap<>(resources);
         }
@@ -94,7 +108,7 @@ public class CollectedMaterialsResourcesStorage {
 
     public static Map<String, Long> getAllOther() {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         synchronized (other) {
             return new HashMap<>(other);
         }
@@ -102,7 +116,7 @@ public class CollectedMaterialsResourcesStorage {
     
     public static long getMaterialAmount(String materialName) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (materialName == null) {
             return 0L;
         }
@@ -117,7 +131,7 @@ public class CollectedMaterialsResourcesStorage {
     
     public static long getResourceAmount(String resourceName) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (resourceName == null) {
             return 0L;
         }
@@ -132,7 +146,7 @@ public class CollectedMaterialsResourcesStorage {
 
     public static long getEssenceAmount(String essenceName) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (essenceName == null) {
             return 0L;
         }
@@ -152,7 +166,7 @@ public class CollectedMaterialsResourcesStorage {
 
     public static BigDecimal getOtherAmountBigDecimal(String name) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (name == null) {
             return BigDecimal.ZERO;
         }
@@ -165,7 +179,7 @@ public class CollectedMaterialsResourcesStorage {
     /** HUD-Abkürzung für Kaktus/Seelen (z. B. {@code 8.542kl}); sonst formatierte Zahl. */
     public static String getOtherDisplay(String name) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (name == null) {
             return "";
         }
@@ -215,7 +229,7 @@ public class CollectedMaterialsResourcesStorage {
             return;
         }
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         boolean changed = false;
         synchronized (otherAbbreviated) {
             String current = otherAbbreviated.get(name);
@@ -237,7 +251,7 @@ public class CollectedMaterialsResourcesStorage {
     /** Kopiert Materialien in {@code target} ohne zusätzliche Map-Allokation pro Lookup. */
     public static void copyMaterialsInto(Map<String, Long> target) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (target == null) {
             return;
         }
@@ -250,7 +264,7 @@ public class CollectedMaterialsResourcesStorage {
     /** Kopiert Ressourcen in {@code target}. */
     public static void copyResourcesInto(Map<String, Long> target) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (target == null) {
             return;
         }
@@ -262,7 +276,7 @@ public class CollectedMaterialsResourcesStorage {
     
     public static void updateMaterials(Map<String, Long> updates) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (updates == null || updates.isEmpty()) {
             return;
         }
@@ -301,7 +315,7 @@ public class CollectedMaterialsResourcesStorage {
     
     public static void updateResources(Map<String, Long> updates) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (updates == null || updates.isEmpty()) {
             return;
         }
@@ -367,7 +381,7 @@ public class CollectedMaterialsResourcesStorage {
 
     public static void updateEssences(Map<String, Long> updates) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (updates == null || updates.isEmpty()) {
             return;
         }
@@ -399,7 +413,7 @@ public class CollectedMaterialsResourcesStorage {
     /** Addiert Mengen zu bestehenden Material-Einträgen (z. B. Fisch-Belohnungen im Chat). */
     public static void addMaterials(Map<String, Long> deltas) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (deltas == null || deltas.isEmpty()) {
             return;
         }
@@ -452,7 +466,7 @@ public class CollectedMaterialsResourcesStorage {
     /** Addiert Mengen zu bestehenden Ressourcen-Einträgen (z. B. Legend+-Sammler). */
     public static void addResources(Map<String, Long> deltas) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (deltas == null || deltas.isEmpty()) {
             return;
         }
@@ -516,7 +530,7 @@ public class CollectedMaterialsResourcesStorage {
 
     public static void updateOther(Map<String, Long> updates) {
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         if (updates == null || updates.isEmpty()) {
             return;
         }
@@ -580,7 +594,7 @@ public class CollectedMaterialsResourcesStorage {
             return;
         }
         ensureInitialized();
-        refreshIfChanged();
+        requestReload();
         boolean changed = false;
         synchronized (other) {
             long current = other.getOrDefault(name, 0L);
@@ -674,44 +688,10 @@ public class CollectedMaterialsResourcesStorage {
      */
     public static boolean resetAllAndFlushSync() {
         ensureInitialized();
-        saveGeneration.incrementAndGet();
-        final long generation = saveGeneration.get();
-        synchronized (materials) {
-            materials.clear();
-        }
-        synchronized (resources) {
-            resources.clear();
-        }
-        synchronized (essences) {
-            essences.clear();
-        }
-        synchronized (other) {
-            other.clear();
-        }
-        synchronized (otherAbbreviated) {
-            otherAbbreviated.clear();
-        }
-        rebuildNormalizedCaches();
-        return saveReturningSuccess(generation);
-    }
-    
-    private static void ensureInitialized() {
-        if (!initialized) {
-            initialize();
-        }
-    }
-    
-    private static void refreshIfChanged() {
-        if (storageFile == null) {
-            return;
-        }
-        long now = System.currentTimeMillis();
-        if (now - lastReloadCheck < RELOAD_CHECK_INTERVAL_MS) {
-            return;
-        }
-        lastReloadCheck = now;
-        
-        if (!storageFile.exists()) {
+        final long generation;
+        synchronized (MEMORY) {
+            generation = saveGeneration.incrementAndGet();
+            memoryRevision.incrementAndGet();
             synchronized (materials) {
                 materials.clear();
             }
@@ -727,64 +707,141 @@ public class CollectedMaterialsResourcesStorage {
             synchronized (otherAbbreviated) {
                 otherAbbreviated.clear();
             }
-            lastKnownModified = 0L;
-            return;
+            rebuildNormalizedCaches();
         }
-        
-        long modified = storageFile.lastModified();
-        if (modified != lastKnownModified) {
-            load();
-            lastKnownModified = modified;
-        }
+        return saveReturningSuccess(generation);
     }
     
-    private static void load() {
+    private static void ensureInitialized() {
+        if (!initialized) {
+            initialize();
+        }
+    }
+
+    /**
+     * HUD- und Updatepfad: prüft höchstens alle 1,5 s und liest die Datei auf einem Hintergrundthread.
+     * Der Aufrufer wartet nicht auf Datei oder Lock.
+     */
+    private static void requestReload() {
         if (storageFile == null) {
             return;
         }
-        synchronized (materials) {
-            materials.clear();
-        }
-        synchronized (resources) {
-            resources.clear();
-        }
-        synchronized (essences) {
-            essences.clear();
-        }
-        synchronized (other) {
-            other.clear();
-        }
-        synchronized (otherAbbreviated) {
-            otherAbbreviated.clear();
-        }
-        
-        if (!storageFile.exists()) {
-            save();
+        long now = System.currentTimeMillis();
+        if (now - lastReloadCheck < RELOAD_CHECK_INTERVAL_MS) {
             return;
         }
-        
-        try (FileReader reader = new FileReader(storageFile)) {
-            JsonElement element = JsonParser.parseReader(reader);
-            if (element != null && element.isJsonObject()) {
-                JsonObject root = element.getAsJsonObject();
-                readSection(root, "materials", materials);
-                readSection(root, "resources", resources);
-                readSection(root, "essence", essences);
-                readOtherSection(root);
-            }
-        } catch (Exception e) {
-            // Silent error handling
+        lastReloadCheck = now;
+        if (!reloadScheduled.compareAndSet(false, true)) {
+            return;
         }
-        
-        migrateLegacyOtherEntries();
-        migrateEssenceEntries();
-        rebuildNormalizedCaches();
-        
-        if (storageFile.exists()) {
-            lastKnownModified = storageFile.lastModified();
+        final long generation = saveGeneration.get();
+        final long revision = memoryRevision.get();
+        Thread reloadThread = new Thread(() -> {
+            try {
+                reloadFromDisk(generation, revision);
+            } finally {
+                reloadScheduled.set(false);
+            }
+        }, "CCLive-Utilities-MaterialsReload");
+        reloadThread.setDaemon(true);
+        reloadThread.start();
+    }
+
+    /** Synchroner Prüfpfad für Tests. Eine fehlende Datei lässt die Bestände stehen. */
+    private static void refreshIfChanged() {
+        if (storageFile == null) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now - lastReloadCheck < RELOAD_CHECK_INTERVAL_MS) {
+            return;
+        }
+        lastReloadCheck = now;
+        if (storageFile.isFile() && storageFile.lastModified() != lastKnownModified) {
+            load();
         }
     }
-    
+
+    private static void reloadFromDisk(long generation, long revision) {
+        Snapshot snapshot = readSnapshot();
+        if (snapshot == null || snapshot.modified == lastKnownModified) {
+            return;
+        }
+        applySnapshot(snapshot, generation, revision, false);
+    }
+
+    private static void load() {
+        Snapshot snapshot = readSnapshot();
+        if (snapshot == null) {
+            return;
+        }
+        applySnapshot(snapshot, saveGeneration.get(), memoryRevision.get(), true);
+    }
+
+    private static Snapshot readSnapshot() {
+        File file = storageFile;
+        if (file == null || !file.isFile()) {
+            return null;
+        }
+        long modified = file.lastModified();
+        Map<String, Long> nextMaterials = new HashMap<>();
+        Map<String, Long> nextResources = new HashMap<>();
+        Map<String, Long> nextEssences = new HashMap<>();
+        Map<String, Long> nextOther = new HashMap<>();
+        Map<String, String> nextAbbreviated = new HashMap<>();
+        try (FileReader reader = new FileReader(file)) {
+            JsonElement element = JsonParser.parseReader(reader);
+            if (element == null || !element.isJsonObject()) {
+                throw new IOException("Expected a JSON object");
+            }
+            JsonObject root = element.getAsJsonObject();
+            if (!root.has("materials") && !root.has("resources") && !root.has("essence") && !root.has("other")) {
+                throw new IOException("No recognized inventory section");
+            }
+            readSection(root, "materials", nextMaterials);
+            readSection(root, "resources", nextResources);
+            readSection(root, "essence", nextEssences);
+            readOtherSection(root, nextOther, nextAbbreviated);
+        } catch (Exception e) {
+            LOG.warning("Materialspeicher nicht geladen; vorhandene Bestände bleiben erhalten: " + e.getMessage());
+            return null;
+        }
+        return new Snapshot(modified, nextMaterials, nextResources, nextEssences, nextOther, nextAbbreviated);
+    }
+
+    private static void applySnapshot(Snapshot snapshot, long generation, long revision, boolean force) {
+        synchronized (MEMORY) {
+            if (!force && (generation != saveGeneration.get() || revision != memoryRevision.get())) {
+                return;
+            }
+            replaceValues(materials, snapshot.materials);
+            replaceValues(resources, snapshot.resources);
+            replaceValues(essences, snapshot.essences);
+            replaceValues(other, snapshot.other);
+            replaceValues(otherAbbreviated, snapshot.abbreviated);
+            migrateLegacyOtherEntries();
+            migrateEssenceEntries();
+            rebuildNormalizedCaches();
+            lastKnownModified = snapshot.modified;
+        }
+    }
+
+    private record Snapshot(
+            long modified,
+            Map<String, Long> materials,
+            Map<String, Long> resources,
+            Map<String, Long> essences,
+            Map<String, Long> other,
+            Map<String, String> abbreviated) {
+    }
+
+    private static <T> void replaceValues(Map<String, T> target, Map<String, T> replacement) {
+        synchronized (target) {
+            target.clear();
+            target.putAll(replacement);
+        }
+    }
+
     private static void rebuildNormalizedCaches() {
         normalizedMaterials.clear();
         normalizedResources.clear();
@@ -1036,13 +1093,13 @@ public class CollectedMaterialsResourcesStorage {
         return normalizeAbbreviatedDisplayForStorage(HudNumberSuffixUtility.formatAbbreviated(value));
     }
 
-    private static void readOtherSection(JsonObject root) {
+    private static void readOtherSection(JsonObject root, Map<String, Long> targetOther, Map<String, String> targetAbbreviated) {
         if (root == null || !root.has("other")) {
             return;
         }
         JsonElement section = root.get("other");
         if (!section.isJsonObject()) {
-            return;
+            throw new IllegalArgumentException("Invalid other section");
         }
         JsonObject obj = section.getAsJsonObject();
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
@@ -1054,28 +1111,28 @@ public class CollectedMaterialsResourcesStorage {
             JsonPrimitive primitive = value.getAsJsonPrimitive();
             if (isAbbreviatedOtherName(name)) {
                 if (primitive.isString()) {
-                    synchronized (otherAbbreviated) {
-                        otherAbbreviated.put(name, normalizeAbbreviatedDisplayForStorage(primitive.getAsString()));
+                    synchronized (targetAbbreviated) {
+                        targetAbbreviated.put(name, normalizeAbbreviatedDisplayForStorage(primitive.getAsString()));
                     }
                 } else {
                     try {
                         long amount = primitive.getAsLong();
-                        synchronized (otherAbbreviated) {
-                            otherAbbreviated.put(name, formatAbbreviatedOtherDisplay(BigDecimal.valueOf(amount)));
+                        synchronized (targetAbbreviated) {
+                            targetAbbreviated.put(name, formatAbbreviatedOtherDisplay(BigDecimal.valueOf(amount)));
                         }
                     } catch (Exception ignored) {
-                        // Ignore invalid values
+                        throw new IllegalArgumentException("Invalid inventory value for " + name, ignored);
                     }
                 }
                 continue;
             }
             try {
                 long amount = primitive.getAsLong();
-                synchronized (other) {
-                    other.put(name, amount);
+                synchronized (targetOther) {
+                    targetOther.put(name, amount);
                 }
             } catch (Exception ignored) {
-                // Ignore invalid values
+                throw new IllegalArgumentException("Invalid inventory value for " + name, ignored);
             }
         }
     }
@@ -1151,7 +1208,7 @@ public class CollectedMaterialsResourcesStorage {
         }
         JsonElement section = root.get(sectionName);
         if (!section.isJsonObject()) {
-            return;
+            throw new IllegalArgumentException("Invalid " + sectionName + " section");
         }
         JsonObject obj = section.getAsJsonObject();
         synchronized (target) {
@@ -1165,7 +1222,7 @@ public class CollectedMaterialsResourcesStorage {
                     long amount = value.getAsLong();
                     target.put(name, amount);
                 } catch (Exception ignored) {
-                    // Ignore invalid values
+                    throw new IllegalArgumentException("Invalid inventory value for " + name, ignored);
                 }
             }
         }
@@ -1176,36 +1233,59 @@ public class CollectedMaterialsResourcesStorage {
     }
 
     private static boolean saveReturningSuccess(long expectedGeneration) {
-        if (storageFile == null) {
+        if (storageFile == null || expectedGeneration != saveGeneration.get()) {
             return false;
         }
-        if (expectedGeneration != saveGeneration.get()) {
-            return false;
+        JsonObject payload;
+        synchronized (MEMORY) {
+            if (expectedGeneration != saveGeneration.get()) {
+                return false;
+            }
+            purgeOtherFromLegacySections();
+            payload = buildJsonObject();
         }
-        purgeOtherFromLegacySections();
+        if (saveIoDelayMillis > 0L) {
+            saveIoEntered.set(true);
+            try {
+                Thread.sleep(saveIoDelayMillis);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        Path temporary = null;
         try {
-            File parent = storageFile.getParentFile();
-            if (parent != null) {
-                parent.mkdirs();
+            Path target = storageFile.toPath().toAbsolutePath();
+            Files.createDirectories(target.getParent());
+            temporary = Files.createTempFile(target.getParent(), "collected-materials-", ".tmp");
+            Files.writeString(temporary, GSON.toJson(payload));
+            synchronized (FILE_LOCK) {
+                if (expectedGeneration != saveGeneration.get()) {
+                    return false;
+                }
+                try {
+                    Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+                temporary = null;
+                lastKnownModified = storageFile.lastModified();
             }
-            // Snapshot vor Schreiben — Generation nochmal prüfen
-            JsonObject payload = buildJsonObject();
-            if (expectedGeneration != saveGeneration.get()) {
-                return false;
-            }
-            try (FileWriter writer = new FileWriter(storageFile)) {
-                GSON.toJson(payload, writer);
-            }
-            if (expectedGeneration != saveGeneration.get()) {
-                return false;
-            }
-            lastKnownModified = storageFile.lastModified();
             return true;
         } catch (IOException e) {
+            LOG.warning("Materialspeicher nicht gespeichert: " + e.getMessage());
             return false;
+        } finally {
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (IOException e) {
+                    LOG.warning("Temporäre Materialdatei nicht entfernt: " + e.getMessage());
+                }
+            }
         }
     }
-    
+
     private static JsonObject buildJsonObject() {
         JsonObject root = new JsonObject();
         root.add("materials", buildSection(materials));
@@ -1245,10 +1325,15 @@ public class CollectedMaterialsResourcesStorage {
     }
     
     private static void scheduleSave() {
+        memoryRevision.incrementAndGet();
+        enqueueSave();
+    }
+
+    private static void enqueueSave() {
+        saveDirty.set(true);
         if (!saveScheduled.compareAndSet(false, true)) {
             return;
         }
-        final long generationAtSchedule = saveGeneration.get();
         Thread saveThread = new Thread(() -> {
             try {
                 Thread.sleep(200);
@@ -1256,11 +1341,14 @@ public class CollectedMaterialsResourcesStorage {
                 Thread.currentThread().interrupt();
             }
             try {
-                if (generationAtSchedule == saveGeneration.get()) {
-                    saveReturningSuccess(generationAtSchedule);
+                while (saveDirty.getAndSet(false)) {
+                    saveReturningSuccess(saveGeneration.get());
                 }
             } finally {
                 saveScheduled.set(false);
+                if (saveDirty.get()) {
+                    enqueueSave();
+                }
             }
         }, "CCLive-Utilities-MaterialsResourcesSave");
         saveThread.setDaemon(true);

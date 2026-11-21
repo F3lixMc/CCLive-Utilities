@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.iteminfo.ItemInfoUtility;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.components.BossHealthOverlay;
 import net.minecraft.client.gui.components.LerpingBossEvent;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -849,21 +848,9 @@ public class DebugUtility {
                     .filter(e -> !e.isHidden())
                     .toList();
             
-            // Try to sort with Gui.SCOREBOARD_ENTRY_COMPARATOR (via reflection if needed)
-            List<PlayerScoreEntry> entries;
-            try {
-                java.lang.reflect.Field comparatorField = Gui.class.getField("SCOREBOARD_ENTRY_COMPARATOR");
-                @SuppressWarnings("unchecked")
-                java.util.Comparator<PlayerScoreEntry> comparator = (java.util.Comparator<PlayerScoreEntry>) comparatorField.get(null);
-                entries = filteredEntries.stream()
-                        .sorted(comparator)
-                        .toList();
-            } catch (Exception e) {
-                // Fallback: sort by score value (descending)
-                entries = filteredEntries.stream()
-                        .sorted((a, b) -> Integer.compare(b.value(), a.value()))
-                        .toList();
-            }
+            List<PlayerScoreEntry> entries = filteredEntries.stream()
+                    .sorted(net.felix.utilities.Other.hud.ScoreboardSidebarReader.entryComparator())
+                    .toList();
             
             // Extract text from each entry (same logic as InformationenUtility.java)
             for (int i = 0; i < entries.size(); i++) {

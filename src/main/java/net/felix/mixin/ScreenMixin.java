@@ -37,8 +37,12 @@ public class ScreenMixin {
     /**
      * Welt-HUD-Overlays vor dem Inventar-Dim zeichnen, damit sie abgedunkelt dahinter sichtbar bleiben.
      */
-    @Inject(method = "extractTransparentBackground", at = @At("HEAD"))
+    @Inject(method = "extractTransparentBackground", at = @At("HEAD"), cancellable = true)
     private void cclive$renderOverlaysBehindDim(GuiGraphicsExtractor context, CallbackInfo ci) {
+        if (net.felix.utilities.DragOverlay.F6MenuBackground.suppressUnderlyingDim()) {
+            ci.cancel();
+            return;
+        }
         net.felix.utilities.Other.hud.HudOverlayVisibility.renderBehindInventoryDim(context);
     }
     

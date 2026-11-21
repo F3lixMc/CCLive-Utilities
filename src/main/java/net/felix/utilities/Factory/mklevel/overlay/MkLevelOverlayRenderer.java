@@ -33,6 +33,21 @@ public final class MkLevelOverlayRenderer {
 	private MkLevelOverlayRenderer() {
 	}
 
+	public static final int VERTICAL_INSET = 2;
+	public static final int SEARCH_BAR_HEIGHT = 16;
+
+	public static int contentTop() {
+		return VERTICAL_INSET + SEARCH_BAR_HEIGHT + 2;
+	}
+
+	public static int contentBottom(int unscaledHeight) {
+		return unscaledHeight - VERTICAL_INSET;
+	}
+
+	public static int availableContentHeight(int unscaledHeight) {
+		return Math.max(0, contentBottom(unscaledHeight) - contentTop());
+	}
+
 	/**
 	 * Renders MkLevel overlay
 	 */
@@ -92,11 +107,10 @@ public final class MkLevelOverlayRenderer {
 		matrices.scale(scale, scale);
 		
 		// Unscaled coordinates (will be scaled by matrix)
-		int padding = 5;
+		int horizontalPadding = 5;
 		int lineHeight = 12;
-		int searchBarHeight = 16; // Height of search bar
-		int contentOffset = 3; // Shift content 3px up
-		int textX = padding;
+		int searchBarHeight = SEARCH_BAR_HEIGHT;
+		int textX = horizontalPadding;
 		
 		// Draw tab buttons above overlay (at negative Y, aligned with top edge)
 		int buttonY = -buttonHeight;
@@ -120,9 +134,9 @@ public final class MkLevelOverlayRenderer {
 			context.text(client.font, buttonText, textXButton, textYButton, 0xFFFFFFFF, false);
 		}
 		
-		int searchBarY = padding - contentOffset; // Shift search bar 3px up
-		int contentY = searchBarY + searchBarHeight + 2; // Content starts below search bar
-		int maxY = unscaledHeight - padding;
+		int searchBarY = VERTICAL_INSET;
+		int contentY = contentTop();
+		int maxY = contentBottom(unscaledHeight);
 		
 		// Draw background (scaled)
 		context.fill(0, 0, unscaledWidth, unscaledHeight, 0x80000000);
@@ -131,8 +145,8 @@ public final class MkLevelOverlayRenderer {
 		context.outline(0, 0, unscaledWidth, unscaledHeight, 0xFFFFFFFF);
 		
 		// Draw search bar background (relative to matrix)
-		int searchBarX = padding;
-		int searchBarWidth = unscaledWidth - padding * 2;
+		int searchBarX = horizontalPadding;
+		int searchBarWidth = unscaledWidth - horizontalPadding * 2;
 		context.fill(searchBarX, searchBarY, searchBarX + searchBarWidth, searchBarY + searchBarHeight, 0xFF000000);
 		context.outline(searchBarX, searchBarY, searchBarWidth, searchBarHeight, mkLevelSearchFocused ? 0xFFFFFF00 : 0xFF808080);
 		
@@ -157,7 +171,7 @@ public final class MkLevelOverlayRenderer {
 		}
 		
 		// Calculate available height for content
-		int availableHeight = unscaledHeight - padding * 2 - searchBarHeight - 2 - contentOffset;
+		int availableHeight = availableContentHeight(unscaledHeight);
 		
 		List<MkLevelRenderLine> allLines = buildMkLevelRenderLines(client);
 		renderMkLevelScrollableLines(context, client, allLines, textX, contentY, maxY, availableHeight, lineHeight);
@@ -165,9 +179,9 @@ public final class MkLevelOverlayRenderer {
 		// Draw scrollbar on the right side
 		// Scrollbar goes from bottom of overlay to bottom of search bar
 		int scrollbarWidth = 6; // Width of scrollbar
-		int scrollbarX = unscaledWidth - scrollbarWidth - padding;
+		int scrollbarX = unscaledWidth - scrollbarWidth - horizontalPadding;
 		int scrollbarTop = contentY; // Start below search bar
-		int scrollbarBottom = unscaledHeight - padding; // End at bottom of overlay
+		int scrollbarBottom = maxY;
 		int scrollbarHeight = scrollbarBottom - scrollbarTop;
 		
 		// Only show scrollbar if there's content to scroll
@@ -277,7 +291,7 @@ public final class MkLevelOverlayRenderer {
 		}
 	}
 
-	private static List<MkLevelRenderLine> buildMkLevelRenderLines(Minecraft client) {
+	public static List<MkLevelRenderLine> buildMkLevelRenderLines(Minecraft client) {
 		List<MkLevelRenderLine> allLines = new ArrayList<>();
 		
 		switch (mkLevelActiveTab) {
@@ -375,14 +389,32 @@ public final class MkLevelOverlayRenderer {
 		
 		textY -= pixelOffset;
 		int minRenderY = startLine > 0 ? contentY + lineHeight : contentY;
-		boolean mightHaveMoreLines = startLine + (availableHeight / lineHeight) < allLines.size();
-		int maxRenderY = mightHaveMoreLines ? maxY - lineHeight : maxY;
-		
+		int fontHeight = client.font.lineHeight;
+		boolean hasMoreLines = scrollOffset < maxScrollOffset;
+		int contentLimit = hasMoreLines ? maxY - fontHeight : maxY;
+		int firstTextY = textY;
+		int fitted = 0;
+		int probeY = textY;
 		for (int i = startLine; i < allLines.size(); i++) {
-			if (textY >= maxRenderY) {
+			if (probeY + fontHeight > contentLimit) {
 				break;
 			}
-			if (textY + lineHeight > minRenderY) {
+			fitted++;
+			probeY += lineHeight;
+		}
+		if (fitted > 0) {
+			int lastGlyphBottom = firstTextY + (fitted - 1) * lineHeight + fontHeight;
+			int leftover = contentLimit - lastGlyphBottom;
+			if (leftover > 0) {
+				textY += Math.min(leftover, lineHeight - fontHeight);
+			}
+		}
+
+		for (int i = startLine; i < allLines.size(); i++) {
+			if (textY + fontHeight > contentLimit) {
+				break;
+			}
+			if (textY + fontHeight > minRenderY) {
 				MkLevelRenderLine line = allLines.get(i);
 				if (line.hasSecondPart) {
 					context.text(client.font, line.text, textX + line.xOffset, textY, line.color, true);
@@ -396,13 +428,12 @@ public final class MkLevelOverlayRenderer {
 			}
 			textY += lineHeight;
 		}
-		
-		boolean hasMoreLines = getMkLevelScrollOffset() < maxScrollOffset;
-		if (hasMoreLines && textY < maxY) {
+
+		if (hasMoreLines) {
 			String moreText = mkLevelActiveTab == MkLevelOverlayTab.TOTAL_ESSENCES
 				? "↓ Weitere Essenzen (Scrollen)"
 				: "↓ Weitere Level (Scrollen)";
-			context.text(client.font, moreText, textX, textY, 0x80FFFFFF, true);
+			context.text(client.font, moreText, textX, maxY - fontHeight, 0x80FFFFFF, true);
 		}
 	}
 }

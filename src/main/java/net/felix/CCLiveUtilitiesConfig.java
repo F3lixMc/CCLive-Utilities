@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
+import net.felix.utilities.DragOverlay.F6TransparencyPreview;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
 import net.felix.utilities.Other.hud.RateDisplayUnit;
@@ -256,6 +257,9 @@ public class CCLiveUtilitiesConfig {
             if (repairOverlayFlagDesync(loadedConfig)) {
                 configChanged = true;
             }
+            if (restoreClipboardTimeFlag(loadedConfig, rawConfig)) {
+                configChanged = true;
+            }
 
             // Speichere Config nur wenn Änderungen vorgenommen wurden
             if (configChanged) {
@@ -264,6 +268,27 @@ public class CCLiveUtilitiesConfig {
         } catch (Exception e) {
             // Silent error handling - Migration schlägt fehl, aber Mod funktioniert weiter
         }
+    }
+
+    /**
+     * Der Merge hat die Restzeit unter einem zweiten Schalter abgelegt.
+     * Fehlt der neue Eintrag, bleibt der bereits gespeicherte Schalter gültig.
+     */
+    private static boolean restoreClipboardTimeFlag(CCLiveUtilitiesConfig loaded, JsonObject raw) {
+        if (loaded == null || raw == null) {
+            return false;
+        }
+        boolean hasApprox = raw.has("clipboardApproxTimeEnabled") && !raw.get("clipboardApproxTimeEnabled").isJsonNull();
+        if (hasApprox) {
+            return false;
+        }
+        if (!raw.has("clipboardShowTargetTime") || raw.get("clipboardShowTargetTime").isJsonNull()) {
+            return false;
+        }
+        boolean saved = raw.get("clipboardShowTargetTime").getAsBoolean();
+        loaded.clipboardApproxTimeEnabled = saved;
+        loaded.clipboardShowTargetTime = saved;
+        return true;
     }
 
     /**
@@ -374,9 +399,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean chatShowDefault = true;
 
-    /** Sichtbarkeit CCLive-Chat (persistiert). */
+    /** CCLive-Chat ist vom Modus-Besitzer verboten und bleibt aus. */
     @SerialEntry
-    public boolean chatShowCCLive = true;
+    public boolean chatShowCCLive = false;
 
     /**
      * Schreibziel wenn beide Chats sichtbar sind: {@code "default"} oder {@code "cclive"}.
@@ -626,6 +651,18 @@ public class CCLiveUtilitiesConfig {
     // Schmied Tracker Settings
     @SerialEntry
     public boolean schmiedTrackerEnabled = true;
+
+    /** Einmalig: die frühere Standardtaste F7 der Schmied-Rahmen wird gelöst. */
+    @SerialEntry
+    public boolean schmiedFramesF7Released = false;
+
+    /** 0 = vollständig dunkel, 100 = vollständig durchsichtig. 87 entspricht dem bisherigen Alpha 0x20 am nächsten. */
+    @SerialEntry
+    public int f6MenuBackgroundTransparency = 87;
+
+    /** Modsprache, gesetzt durch die PlayLegend-Systemmeldung. {@code de} oder {@code en}. */
+    @SerialEntry
+    public String modLanguage = "de";
     
     @SerialEntry
     public boolean showSchmiedTracker = true;
@@ -1026,6 +1063,12 @@ public class CCLiveUtilitiesConfig {
     public boolean clipboardApproxTimeEnabled = false; // Ungefähre Restzeit hinter Materialien/Ressourcen anzeigen
 
     @SerialEntry
+    public boolean clipboardHideEmpty = false; // Clipboard ausblenden, solange kein Bauplan sichtbar ist
+
+    @SerialEntry
+    public boolean clipboardHideCompletedBlueprints = false; // Vervollständigte Baupläne aus der Seitenauswahl nehmen
+
+    @SerialEntry
     public int clipboardPage1Quantity = 1; // Herstellungsanzahl der Gesamtliste (Seite 1)
 
     @SerialEntry
@@ -1352,6 +1395,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean npcAlertsAmbossSeparateOverlay = false;
+
+    @SerialEntry
+    public boolean npcAlertsAmbossSlot2Separate = false;
     
     @SerialEntry
     public boolean npcAlertsSchmelzofenSeparateOverlay = false;
@@ -1639,6 +1685,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public float npcAlertsAmbossScale = 1.0f;
+
+    @SerialEntry
+    public float npcAlertsAmbossSlot2Scale = 1.0f;
     
     @SerialEntry
     public float npcAlertsSchmelzofenScale = 1.0f;
@@ -1695,6 +1744,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean showNpcAlertsAmboss = true;
+
+    @SerialEntry
+    public boolean showNpcAlertsAmbossSlot2 = true;
     
     @SerialEntry
     public boolean showNpcAlertsSchmelzofen = true;
@@ -1735,6 +1787,12 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public int npcAlertsAmbossY = 50;
+
+    @SerialEntry
+    public int npcAlertsAmbossSlot2X = 10;
+
+    @SerialEntry
+    public int npcAlertsAmbossSlot2Y = 70;
     
     @SerialEntry
     public int npcAlertsSchmelzofenX = 10;
@@ -1938,6 +1996,31 @@ public class CCLiveUtilitiesConfig {
                 .build();
     }
 
+    public static int f6BackgroundAlpha(int percent) {
+        return net.felix.utilities.DragOverlay.F6MenuBackground.alpha(percent);
+    }
+
+    public static int f6MenuBackgroundColor() {
+        return net.felix.utilities.DragOverlay.F6MenuBackground.color(HANDLER.instance().f6MenuBackgroundTransparency);
+    }
+
+    private static OptionGroup buildF6MenuGroup() {
+        Option<Integer>[] transparency = new Option[1];
+        transparency[0] = Option.<Integer>createBuilder()
+                .name(net.felix.utilities.Overall.language.ModTexts.text("cclive.f6.transparency_option"))
+                .description(OptionDescription.createBuilder()
+                        .text(net.felix.utilities.Overall.language.ModTexts.text("cclive.f6.transparency_description"))
+                        .customImage(new F6TransparencyPreview(() -> transparency[0].pendingValue()))
+                        .build())
+                .binding(87, () -> HANDLER.instance().f6MenuBackgroundTransparency, value -> HANDLER.instance().f6MenuBackgroundTransparency = value)
+                .controller(option -> IntegerSliderControllerBuilder.create(option).range(0, 100).step(1))
+                .build();
+        return OptionGroup.createBuilder()
+                .name(net.felix.utilities.Overall.language.ModTexts.text("cclive.f6.group"))
+                .option(transparency[0])
+                .build();
+    }
+
     public static Screen createConfigScreen(Screen parent) {
         // Beim erneuten Öffnen Availability an aktuellen Config-Stand anpassen
         dataTrackingUiBuilt = false;
@@ -2130,6 +2213,7 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
+                        .group(buildF6MenuGroup())
                         .build())
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Fabrik"))

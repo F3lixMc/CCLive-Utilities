@@ -70,6 +70,17 @@ public final class ViewerLayout {
      * Viewer-Breite/-Höhe aus maximalem Platz; Grid höchstens laut Config ({@link CCLiveUtilitiesConfig#getItemViewerMaxSlots()} Slots).
      */
     private static int[] computeViewerSize(int maxViewerWidth, int maxViewerHeight) {
+        if (net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.useCompactKit()) {
+            int slot = ItemViewerGrid.getSlotSize();
+            int maxColumns = Math.max(1, (maxViewerWidth - VIEWER_PADDING * 2) / slot);
+            int maxRows = Math.max(1, (maxViewerHeight - VIEWER_GRID_CHROME_HEIGHT) / slot);
+            int[] compact = net.felix.utilities.Overall.itemviewer.kit.KitCompactLayout.gridForCount(
+                    net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.compactItemCount, maxColumns, maxRows);
+            return new int[] {
+                    compact[0] * slot + VIEWER_PADDING * 2,
+                    VIEWER_GRID_CHROME_HEIGHT + compact[1] * slot
+            };
+        }
         int minViewerWidth = ItemViewerGrid.getDefaultGridWidth() + VIEWER_PADDING * 2;
         int gridSpaceW = Math.max(ItemViewerGrid.getDefaultGridWidth(), maxViewerWidth - VIEWER_PADDING * 2);
         int gridSpaceH = Math.max(ItemViewerGrid.getGridHeight(), maxViewerHeight - VIEWER_GRID_CHROME_HEIGHT);

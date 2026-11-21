@@ -8,6 +8,7 @@ import net.felix.utilities.Overall.npcalerts.data.XpProgress;
 import net.minecraft.client.Minecraft;
 
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.ambossCapacity;
+import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.ambossSlot2;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.essenzenCapacity;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.forschung;
 import static net.felix.utilities.Overall.npcalerts.data.NpcAlertState.jaegerCapacity;
@@ -28,6 +29,8 @@ public final class TabListParser {
 	}
 
 	public static long lastTabListCheck = 0; // Cache für Tab-Liste Checks (jede 1 Sekunde)
+
+	private static int lastParsedCapacityIndex = -1;
 
 	/**
 	 * Setzt ein CapacityData-Objekt auf "nicht gefunden" zurück
@@ -107,8 +110,15 @@ public final class TabListParser {
 				if (cleanEntryText.contains(CAPACITY_MARKERS[target])) {
 					found[target] = true;
 					parseCapacityData(entries, i, getEntryText, removeFormatting, targets[target], CAPACITY_LABELS[target]);
+					if (target == 1) {
+						fillAmbossSlot2(entries, lastParsedCapacityIndex, getEntryText, removeFormatting);
+					}
 				}
 			}
+		}
+
+		if (!found[1]) {
+			resetCapacityData(ambossSlot2);
 		}
 
 		// Setze nur die Werte zurück, die nicht im Tab-Widget gefunden wurden
@@ -246,6 +256,40 @@ public final class TabListParser {
 	 * Parst Kapazitätsdaten (Aktuell / Maximal) aus der Tab-Liste
 	 * Sucht nach dem Header und dann nach der Datenzeile darunter
 	 */
+	private static void fillAmbossSlot2(
+		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries,
+		int firstLine,
+		java.util.function.Function<Integer, String> getEntryText,
+		java.util.function.Function<String, String> removeFormatting
+	) {
+		resetCapacityData(ambossSlot2);
+		if (firstLine < 0) {
+			return;
+		}
+		for (int j = firstLine + 1; j < Math.min(firstLine + 8, entries.size()); j++) {
+			String dataText = getEntryText.apply(j);
+			String clean = dataText == null ? "" : removeFormatting.apply(dataText);
+			if (clean == null || clean.isBlank()) {
+				continue;
+			}
+			boolean nextHeader = false;
+			for (String marker : CAPACITY_MARKERS) {
+				if (clean.contains(marker)) {
+					nextHeader = true;
+					break;
+				}
+			}
+			if (nextHeader || !clean.contains("/")) {
+				if (nextHeader) {
+					return;
+				}
+				continue;
+			}
+			parseCapacityData(entries, j - 1, getEntryText, removeFormatting, ambossSlot2, "Amboss");
+			return;
+		}
+	}
+
 	private static void parseCapacityData(
 		java.util.List<net.minecraft.client.multiplayer.PlayerInfo> entries,
 		int headerIndex,
@@ -254,6 +298,7 @@ public final class TabListParser {
 		CapacityData data,
 		String debugName
 	) {
+		lastParsedCapacityIndex = -1;
 		// Suche nach der Datenzeile nach dem Header
 		// Es kann sein, dass ein Spielername dazwischen steht, also suchen wir in den nächsten 10 Einträgen
 		for (int j = headerIndex + 1; j < Math.min(headerIndex + 11, entries.size()); j++) {
@@ -276,6 +321,7 @@ public final class TabListParser {
 			
 			// Prüfe, ob dies eine Kapazitätszeile ist (enthält "/")
 			if (cleanDataText.contains("/")) {
+				lastParsedCapacityIndex = j;
 				// Versuche, die formatierten Strings zu extrahieren
 				// Format: "AKTUELL / MAXIMAL" oder "AKTUELL/MAXIMAL"
 				// Beispiel: "35,241K / 100K" oder "123 / 500"

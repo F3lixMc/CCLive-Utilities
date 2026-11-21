@@ -220,19 +220,19 @@
     ],
     "magnet_gadgets": [
         {
-            "name": "[Magnet]",
+            "name": "Magnet",
             "aliases": "Magnet [Modul]",
             "level": "I",
             "location": "Eisen Collection VII"
         },
         {
-            "name": "[Magnet]",
+            "name": "Magnet",
             "aliases": "Magnet [Modul]",
             "level": "II",
             "location": "Gold Collection VII"
         },
         {
-            "name": "[Magnet]",
+            "name": "Magnet",
             "aliases": "Magnet [Modul]",
             "level": "III",
             "location": "Diamant Collection VIII"

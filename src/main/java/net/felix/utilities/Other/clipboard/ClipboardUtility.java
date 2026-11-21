@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Other.clipboard.collector.AnvilFurnaceLagerCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardCoinCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardFarmzoneActionBar;
@@ -14,6 +15,7 @@ import net.felix.utilities.Other.clipboard.collector.ClipboardMaterialCollector;
 import net.felix.utilities.Other.clipboard.collector.ClipboardPaperShredsCollector;
 import net.felix.utilities.Other.clipboard.collector.FishingRewardChatCollector;
 import net.felix.utilities.Other.clipboard.collector.LegendPlusSammlerCollector;
+import net.felix.utilities.Other.clipboard.collector.StorageRateTooltip;
 import net.felix.utilities.Other.clipboard.collector.TreasureFoundChatCollector;
 import net.felix.utilities.Other.clipboard.cost.ClipboardCostPurchaseTracker;
 import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
@@ -100,6 +102,8 @@ public class ClipboardUtility {
 
         // Legend+-Sammler: Ressourcen aus [Sammler]-Tooltip bei Klick
         LegendPlusSammlerCollector.initialize();
+        AnvilFurnaceLagerCollector.initialize();
+        StorageRateTooltip.initialize();
 
         // Kosten-Inventare: Kauf-Abzug wenn kein Tooltip mehr den aktuellen Wert liefert
         ClipboardCostPurchaseTracker.initialize();
@@ -680,8 +684,8 @@ public class ClipboardUtility {
         if (page <= 1) {
             return null; // Seite 1 = Gesamtliste
         }
-        
-        int index = page - 2; // Seite 2 = Index 0, Seite 3 = Index 1, etc.
+
+        int index = ClipboardDraggableOverlay.storedIndexForVisiblePage(page);
         synchronized (clipboardEntries) {
             if (index >= 0 && index < clipboardEntries.size()) {
                 return clipboardEntries.get(index);
@@ -717,6 +721,10 @@ public class ClipboardUtility {
      * Gibt die Gesamtanzahl der Seiten zurück
      */
     public static int getTotalPages() {
+        int visible = ClipboardDraggableOverlay.visiblePageCountOrZero();
+        if (visible > 0) {
+            return visible;
+        }
         return CCLiveUtilitiesConfig.HANDLER.instance().clipboardTotalPages;
     }
     

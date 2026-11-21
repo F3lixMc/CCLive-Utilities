@@ -16,24 +16,22 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Erkennt Ressourcen-Sammlungen im Legend+-Menü über das Item {@code [Sammler]}.
- * Format: {@code Amboss [Verbessertes Zahnrad]: 129/307 (283) [+1]}
- * Nach Linksklick wird kurz geprüft, ob der abholbare Wert gesunken ist;
- * dann wird die volle Menge vor dem Klick addiert (nicht nur die Differenz).
+ * Format: {@code Amboss [Verbessertes Zahnrad] 129/307 (283) [+1]}
+ * Der Doppelpunkt der älteren Zeile bleibt gültig. Gutgeschrieben wird die Menge
+ * erst, wenn sie innerhalb von 60 Ticks auf 0 fällt.
  */
 public final class LegendPlusSammlerCollector {
 
+    static final String EMPTY_CONTAINERS_HINT = "[Linksklick] Alle Container leeren.";
+
     /**
-     * Amboss/Schmelzofen [Ressource]: abholbar/max
+     * Amboss/Schmelzofen [Ressource] abholbar/max, mit oder ohne Doppelpunkt.
      */
     private static final Pattern SAMMLER_RESOURCE_PATTERN = Pattern.compile(
-            "^(Amboss|Schmelzofen)\\s+\\[([^\\]]+)]\\s*:\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s*/\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)",
+            "^(Amboss|Schmelzofen)\\s+\\[([^\\]]+)]\\s*:?\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s*/\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)",
             Pattern.CASE_INSENSITIVE);
 
-    /** Kurzes Fenster (~250 ms), damit neue Produktion den Tooltip nicht verfälscht. */
-    private static final int VERIFY_TICKS = 5;
-
-    private static Map<String, Long> pendingBeforeClick = null;
-    private static int pendingTicksRemaining = 0;
+    private static final ResourcePickupGate PICKUP = new ResourcePickupGate();
 
     private LegendPlusSammlerCollector() {
     }
@@ -65,99 +63,104 @@ public final class LegendPlusSammlerCollector {
             return;
         }
 
-        List<Component> tooltip = getTooltip(stack);
-        Map<String, Long> snapshot = parseSammlerResources(tooltip);
-        if (snapshot.isEmpty()) {
+        List<String> lines = tooltipLines(getTooltip(stack));
+        if (!containsEmptyContainersHint(lines)) {
             return;
         }
-
-        pendingBeforeClick = snapshot;
-        pendingTicksRemaining = VERIFY_TICKS;
+        PICKUP.arm("legend", parseSammlerLines(lines));
     }
 
     private static void onClientTick(net.minecraft.client.Minecraft client) {
-        if (pendingBeforeClick == null || pendingBeforeClick.isEmpty() || pendingTicksRemaining <= 0) {
-            clearPending();
+        if (!PICKUP.isPending()) {
             return;
         }
-
-        if (client.player == null || client.level == null || !(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
-            pendingTicksRemaining--;
-            if (pendingTicksRemaining <= 0) {
-                clearPending();
-            }
+        boolean connected = client != null && client.player != null;
+        if (!connected || client.gui.screen() == null
+                || !(client.gui.screen() instanceof AbstractContainerScreen<?> handledScreen)) {
+            PICKUP.observe(null, Map.of(), connected);
             return;
         }
-
         String title = handledScreen.getTitle() != null ? handledScreen.getTitle().getString() : "";
-        if (!ZeichenUtility.containsLegendPlusUiBackground(title)) {
-            clearPending();
-            return;
-        }
-
+        String token = ZeichenUtility.containsLegendPlusUiBackground(title) ? "legend" : "";
         ItemStack sammlerStack = findSammlerStack(handledScreen);
-        if (sammlerStack == null) {
-            pendingTicksRemaining--;
-            if (pendingTicksRemaining <= 0) {
-                clearPending();
-            }
-            return;
-        }
-
-        Map<String, Long> current = parseSammlerResources(getTooltip(sammlerStack));
-        Map<String, Long> collected = new HashMap<>();
-
-        for (Map.Entry<String, Long> entry : pendingBeforeClick.entrySet()) {
-            String resourceName = entry.getKey();
-            long beforeCollectable = entry.getValue();
-            if (beforeCollectable <= 0) {
-                continue;
-            }
-            if (!current.containsKey(resourceName)) {
-                continue;
-            }
-            long afterCollectable = current.get(resourceName);
-            if (afterCollectable < beforeCollectable) {
-                collected.put(resourceName, beforeCollectable);
-            }
-        }
-
+        Map<String, Long> current = sammlerStack == null ? Map.of() : parseSammlerResources(getTooltip(sammlerStack));
+        Map<String, Long> collected = collapseByResource(PICKUP.observe(token, current, true, sammlerStack != null));
         if (!collected.isEmpty()) {
             CollectedMaterialsResourcesStorage.addResources(collected);
-            pendingBeforeClick.keySet().removeAll(collected.keySet());
         }
-
-        pendingTicksRemaining--;
-        if (pendingBeforeClick.isEmpty() || pendingTicksRemaining <= 0) {
-            clearPending();
-        }
-    }
-
-    private static void clearPending() {
-        pendingBeforeClick = null;
-        pendingTicksRemaining = 0;
     }
 
     static Map<String, Long> parseSammlerResources(List<Component> tooltip) {
+        return parseSammlerLines(tooltipLines(tooltip));
+    }
+
+    static Map<String, Long> parseSammlerLines(List<String> lines) {
         Map<String, Long> resources = new HashMap<>();
-        if (tooltip == null) {
+        if (lines == null) {
             return resources;
         }
-        for (Component line : tooltip) {
-            String cleanLine = cleanTooltipLine(line.getString());
-            if (cleanLine.isEmpty()) {
+        for (String cleanLine : lines) {
+            if (cleanLine == null || cleanLine.isEmpty()) {
                 continue;
             }
             Matcher matcher = SAMMLER_RESOURCE_PATTERN.matcher(cleanLine);
-            if (matcher.find()) {
-                String resourceName = cleanTooltipLine(matcher.group(2));
-                long collectable = parseAmount(matcher.group(3));
-                if (!resourceName.isEmpty()) {
-                    resources.put(resourceName, collectable);
-                }
+            if (!matcher.find()) {
+                continue;
+            }
+            String resourceName = cleanTooltipLine(matcher.group(2));
+            long collectable = parseAmount(matcher.group(3));
+            if (!resourceName.isEmpty()) {
+                resources.put(lineKey(matcher.group(1), resourceName), collectable);
             }
         }
         return resources;
+    }
+
+    static boolean containsEmptyContainersHint(List<String> lines) {
+        if (lines == null) {
+            return false;
+        }
+        for (String line : lines) {
+            if (line != null && cleanTooltipLine(line).equalsIgnoreCase(EMPTY_CONTAINERS_HINT)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static String lineKey(String source, String resource) {
+        return source.toLowerCase(java.util.Locale.ROOT) + "\u0000" + resource;
+    }
+
+    static Map<String, Long> collapseByResource(Map<String, Long> keyed) {
+        Map<String, Long> resources = new HashMap<>();
+        if (keyed == null) {
+            return resources;
+        }
+        for (Map.Entry<String, Long> entry : keyed.entrySet()) {
+            String key = entry.getKey();
+            int split = key.indexOf('\u0000');
+            String resource = split < 0 ? key : key.substring(split + 1);
+            if (resource.isEmpty() || entry.getValue() == null || entry.getValue() <= 0L) {
+                continue;
+            }
+            resources.merge(resource, entry.getValue(), Long::sum);
+        }
+        return resources;
+    }
+
+    private static List<String> tooltipLines(List<Component> tooltip) {
+        List<String> lines = new ArrayList<>();
+        if (tooltip == null) {
+            return lines;
+        }
+        for (Component line : tooltip) {
+            String cleanLine = cleanTooltipLine(line.getString());
+            if (!cleanLine.isEmpty()) {
+                lines.add(cleanLine);
+            }
+        }
+        return lines;
     }
 
     private static boolean isSammlerItem(ItemStack stack) {
@@ -168,7 +171,7 @@ public final class LegendPlusSammlerCollector {
         return "[Sammler]".equalsIgnoreCase(name);
     }
 
-    private static ItemStack findSammlerStack(AbstractContainerScreen<?> screen) {
+    static ItemStack findSammlerStack(AbstractContainerScreen<?> screen) {
         for (Slot slot : screen.getMenu().slots) {
             if (slot.hasItem() && isSammlerItem(slot.getItem())) {
                 return slot.getItem();

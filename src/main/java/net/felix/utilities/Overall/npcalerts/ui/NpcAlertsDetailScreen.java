@@ -301,6 +301,11 @@ public class NpcAlertsDetailScreen extends Screen {
             if (hasSeparateOverlay) {
                 boxHeight += 60;
             }
+        } else if ("amboss".equals(configKey)) {
+            boxHeight += 24;
+            if (getSeparateOverlay(configKey)) {
+                boxHeight += 24;
+            }
         }
 
         int boxX = width / 2 - SETTINGS_BOX_WIDTH / 2;
@@ -516,6 +521,9 @@ public class NpcAlertsDetailScreen extends Screen {
 
     /** Slot-Checkboxen für Machtkristalle/Recycler; "Einzeln" nur bei aktivem "Separates Overlay". */
     private void drawSlotCheckboxes(GuiGraphicsExtractor context, SettingsLayout layout) {
+        if ("amboss".equals(configKey)) {
+            drawAmbossSlot2Checkboxes(context, layout);
+        }
         if (!hasSlotCheckboxes()) {
             return;
         }
@@ -553,6 +561,12 @@ public class NpcAlertsDetailScreen extends Screen {
         drawButtonHover(context, mouseX, mouseY, x, layout.colorButtonY());
         drawButtonHover(context, mouseX, mouseY, x, layout.separateButtonY());
 
+        if ("amboss".equals(configKey)) {
+            drawCheckboxHover(context, mouseX, mouseY, x, layout.slotStartY(), "Slot 2 anzeigen", true);
+            if (getSeparateOverlay(configKey)) {
+                drawCheckboxHover(context, mouseX, mouseY, x, layout.slotStartY() + SLOT_ROW_SPACING, "Slot 2 Einzeln", true);
+            }
+        }
         if (hasSlotCheckboxes()) {
             // Beim Recycler ist bei den "ein/aus"-Zeilen nur die Checkbox selbst hervorgehoben, nicht das Label
             boolean highlightLabelOfEnabledRows = isMachtkristalleKey();
@@ -761,7 +775,38 @@ public class NpcAlertsDetailScreen extends Screen {
     }
 
     /** Slot-Checkboxen für Machtkristalle/Recycler; "Einzeln" nur bei aktivem "Separates Overlay". */
+    private void drawAmbossSlot2Checkboxes(GuiGraphicsExtractor context, SettingsLayout layout) {
+        int x = layout.contentX();
+        int y = layout.slotStartY();
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        drawCheckbox(context, x, y, config.showNpcAlertsAmbossSlot2, "Slot 2 anzeigen");
+        if (getSeparateOverlay(configKey)) {
+            drawCheckbox(context, x, y + SLOT_ROW_SPACING, config.npcAlertsAmbossSlot2Separate, "Slot 2 Einzeln");
+        }
+    }
+
+    private boolean handleAmbossSlot2Click(SettingsLayout layout, double mouseX, double mouseY) {
+        int x = layout.contentX();
+        int y = layout.slotStartY();
+        CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+        if (isOverCheckbox(mouseX, mouseY, x, y, "Slot 2 anzeigen")) {
+            config.showNpcAlertsAmbossSlot2 = !config.showNpcAlertsAmbossSlot2;
+            saveConfig();
+            return true;
+        }
+        if (getSeparateOverlay(configKey)
+                && isOverCheckbox(mouseX, mouseY, x, y + SLOT_ROW_SPACING, "Slot 2 Einzeln")) {
+            config.npcAlertsAmbossSlot2Separate = !config.npcAlertsAmbossSlot2Separate;
+            saveConfig();
+            return true;
+        }
+        return false;
+    }
+
     private boolean handleSlotCheckboxClick(SettingsLayout layout, double mouseX, double mouseY) {
+        if ("amboss".equals(configKey) && handleAmbossSlot2Click(layout, mouseX, mouseY)) {
+            return true;
+        }
         if (!hasSlotCheckboxes()) {
             return false;
         }

@@ -2,6 +2,7 @@ package net.felix.utilities.Aincraft.information.gadgets;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import net.minecraft.network.chat.Component;
 
@@ -41,12 +42,7 @@ public final class GadgetTooltip {
 				continue;
 			}
 			
-			// Remove formatting codes
-			String cleanLineText = lineText.replaceAll("§[0-9a-fk-orxA-FK-ORX]", "")
-				.replaceAll("§#[0-9a-fA-F]{6}", "")
-				.replaceAll("§x(§[0-9a-fA-F]){6}", "")
-				.replaceAll("[\\u3400-\\u4DBF]", "")
-				.trim();
+			String cleanLineText = normalizeGadgetText(lineText);
 			
 			// Try to identify the item by checking if any gadget name/alias appears in the tooltip
 			// Sort by length (longest first) to avoid shorter names matching before longer ones
@@ -54,12 +50,7 @@ public final class GadgetTooltip {
 			sortedGadgetKeys.sort((a, b) -> Integer.compare(b.length(), a.length()));
 			
 			for (String gadgetKey : sortedGadgetKeys) {
-				String cleanGadgetKey = gadgetKey.replaceAll("§[0-9a-fk-orx]", "")
-					.replaceAll("§#[0-9a-fA-F]{6}", "")
-					.replaceAll("[\\u3400-\\u4DBF]", "")
-					.trim();
-				
-				if (cleanLineText.toLowerCase().contains(cleanGadgetKey.toLowerCase())) {
+				if (gadgetNamesMatch(cleanLineText, gadgetKey)) {
 					itemName = gadgetKey;
 					break;
 				}
@@ -182,5 +173,49 @@ public final class GadgetTooltip {
 				}
 			}
 		}
+	}
+
+	/**
+	 * „Magnet [Modul]“ und „[Magnet]“ sind derselbe Gegenstand.
+	 * Layout-Glyphen zwischen Name und [Modul] dürfen den Vergleich nicht sprengen.
+	 */
+	private static boolean gadgetNamesMatch(String cleanLine, String gadgetKey) {
+		String key = normalizeGadgetText(gadgetKey).toLowerCase(Locale.ROOT);
+		if (cleanLine.isEmpty() || key.isEmpty()) {
+			return false;
+		}
+		if (cleanLine.contains(key)) {
+			return true;
+		}
+		String lineBase = moduleBaseName(cleanLine);
+		String keyBase = moduleBaseName(key);
+		return !lineBase.isEmpty() && lineBase.equals(keyBase);
+	}
+
+	private static String moduleBaseName(String cleanLower) {
+		String name = cleanLower;
+		if (name.endsWith("]")) {
+			int start = name.lastIndexOf('[');
+			if (start >= 0 && "modul".equals(name.substring(start + 1, name.length() - 1).trim())) {
+				name = name.substring(0, start).trim();
+			}
+		}
+		if (name.startsWith("[") && name.endsWith("]") && name.length() > 2) {
+			name = name.substring(1, name.length() - 1).trim();
+		}
+		return name;
+	}
+
+	private static String normalizeGadgetText(String text) {
+		if (text == null || text.isEmpty()) {
+			return "";
+		}
+		return text.replaceAll("§[0-9a-fk-orxA-FK-ORX]", "")
+			.replaceAll("§#[0-9a-fA-F]{6}", "")
+			.replaceAll("§x(§[0-9a-fA-F]){6}", "")
+			.replaceAll("[\\u3400-\\u4DBF\\u4E00-\\u9FFF\\uE000-\\uF8FF]", "")
+			.replaceAll("\\s+", " ")
+			.trim()
+			.toLowerCase(Locale.ROOT);
 	}
 }

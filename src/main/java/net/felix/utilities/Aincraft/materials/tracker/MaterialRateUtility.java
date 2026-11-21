@@ -71,7 +71,7 @@ public final class MaterialRateUtility {
         }
     }
 
-    static void observeCount(String cleanName, int count, long now) {
+    public static void observeCount(String cleanName, int count, long now) {
         observeCount(cleanName, count, now, null);
     }
 
@@ -181,8 +181,8 @@ public final class MaterialRateUtility {
         return perMinute;
     }
 
-    /** Sofortige Rate für Scoreboard und Materialtracker, ohne Mindestzeit und Stillstand. */
-    static double immediateRate(String materialName) {
+    /** Sofortige Rate für Scoreboard, Materialtracker und Lager-Tooltips, ohne Mindestzeit und Stillstand. */
+    public static double immediateRate(String materialName) {
         MaterialSession session = findSessionByNormalizedName(materialName);
         return session != null ? session.perMinute : 0.0;
     }

@@ -1,5 +1,6 @@
 package net.felix.utilities.Other.hud;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -15,7 +16,14 @@ import net.minecraft.world.scores.Scoreboard;
 /** Liest Sidebar-Zeilen vom Server-Scoreboard (sortiert wie Vanilla-HUD). */
 public final class ScoreboardSidebarReader {
 
+    private static final Comparator<PlayerScoreEntry> ENTRY_COMPARATOR = resolveComparator();
+
     private ScoreboardSidebarReader() {
+    }
+
+    /** Einmal aufgelöst. Fehlende Felder bleiben der Wert-Fallback, ohne erneute Reflection. */
+    public static Comparator<PlayerScoreEntry> entryComparator() {
+        return ENTRY_COMPARATOR;
     }
 
     public record Row(Component name, Component score, int scoreWidth) {
@@ -35,10 +43,9 @@ public final class ScoreboardSidebarReader {
             return rows;
         }
 
-        Comparator<PlayerScoreEntry> comparator = resolveComparator();
         List<PlayerScoreEntry> entries = rawEntries.stream()
                 .filter(entry -> !entry.isHidden())
-                .sorted(comparator)
+                .sorted(ENTRY_COMPARATOR)
                 .limit(CoinTrackerCustomSidebar.VANILLA_MAX_LINES)
                 .toList();
 
@@ -49,14 +56,34 @@ public final class ScoreboardSidebarReader {
     }
 
     private static Comparator<PlayerScoreEntry> resolveComparator() {
+        Comparator<PlayerScoreEntry> named = readComparatorField("SCOREBOARD_ENTRY_COMPARATOR");
+        return named != null ? named : valueComparator();
+    }
+
+    private static Comparator<PlayerScoreEntry> readComparatorField(String name) {
         try {
-            @SuppressWarnings("unchecked")
-            Comparator<PlayerScoreEntry> comparator =
-                    (Comparator<PlayerScoreEntry>) Gui.class.getField("SCOREBOARD_ENTRY_COMPARATOR").get(null);
-            return comparator;
+            return readComparatorField(Gui.class.getDeclaredField(name));
         } catch (ReflectiveOperationException ignored) {
-            return (a, b) -> Integer.compare(b.value(), a.value());
+            return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Comparator<PlayerScoreEntry> readComparatorField(Field field) {
+        try {
+            field.setAccessible(true);
+            Object value = field.get(null);
+            if (value instanceof Comparator<?> comparator) {
+                return (Comparator<PlayerScoreEntry>) comparator;
+            }
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+        return null;
+    }
+
+    private static Comparator<PlayerScoreEntry> valueComparator() {
+        return (a, b) -> Integer.compare(b.value(), a.value());
     }
 
     private static Component resolveDisplayName(Scoreboard scoreboard, PlayerScoreEntry entry) {

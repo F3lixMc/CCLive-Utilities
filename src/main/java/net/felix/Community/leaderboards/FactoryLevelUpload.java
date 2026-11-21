@@ -58,6 +58,19 @@ public final class FactoryLevelUpload {
         executor.execute(() -> outbox.observe(account, phase, level));
     }
 
+    public void forget(String account, int seasonId, boolean preseason) {
+        if (account == null || seasonId < 0) {
+            return;
+        }
+        executor.execute(() -> {
+            if (!loaded) {
+                outbox.load();
+                loaded = true;
+            }
+            outbox.forget(account, new SmithSkillOutbox.Phase(seasonId, preseason));
+        });
+    }
+
     private void tick() {
         if (!loaded) {
             return;
@@ -73,7 +86,9 @@ public final class FactoryLevelUpload {
             SmithSkillOutbox.Clock clock = sync == null
                     ? null
                     : new SmithSkillOutbox.Clock(sync.receivedAt(), sync.serverTime(), sync.nextSyncAt());
-            boolean allowed = manager != null && manager.canUploadBufferedScore();
+            boolean allowed = manager != null && manager.canUploadBufferedScore()
+                    && !PlayerFullReset.blocks(account, seasonId == null ? -1 : seasonId,
+                    phase != null && phase.preseason());
             long now = System.currentTimeMillis();
             FactoryLevelOutbox.Attempt attempt = outbox.begin(account, phase, now, clock, allowed);
             if (attempt == null) {

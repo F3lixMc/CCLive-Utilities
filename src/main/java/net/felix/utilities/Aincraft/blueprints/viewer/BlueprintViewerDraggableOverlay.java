@@ -163,10 +163,22 @@ return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
         return maxWidth - 15;
     }
 
+    private static int visibleRowCount(java.util.List<String> items) {
+        try {
+            BPViewerUtility instance = BPViewerUtility.getInstance();
+            if (instance != null) {
+                return instance.countVisibleRows(items);
+            }
+        } catch (Exception ignored) {
+        }
+        return items == null ? 0 : items.size();
+    }
+
     private int calculateUnscaledHeightUnscaled() {
         BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
         if (rarityData == null || rarityData.items == null) return DEFAULT_HEIGHT;
-        return 20 + rarityData.items.size() * 12 + 5;
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+        return BPViewerUtility.heightForVisibleRows(visibleRowCount(rarityData.items), scale);
     }
 
     private int calculateDynamicWidth() {
@@ -189,9 +201,9 @@ return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
     private int calculateDynamicHeight() {
         BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
         if (rarityData == null || rarityData.items == null) return DEFAULT_HEIGHT;
-        int totalHeight = 20 + rarityData.items.size() * 12 + 5;
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
         if (scale <= 0) scale = 1.0f;
+        int totalHeight = BPViewerUtility.heightForVisibleRows(visibleRowCount(rarityData.items), scale);
         return (int) (totalHeight * scale);
     }
 

@@ -195,6 +195,25 @@ public final class SmithSkillOutbox {
         return account != null && inflight.containsKey(account);
     }
 
+    /** Entfernt den gespeicherten Höchststand dieser Phase, auch einen laufenden Versuch. */
+    public void forget(String account, Phase phase) {
+        if (account == null || phase == null) {
+            return;
+        }
+        Attempt current = inflight.get(account);
+        if (current != null && phase.equals(current.phase())) {
+            inflight.remove(account);
+        }
+        Map<String, Saved> phases = accounts.get(account);
+        if (phases != null) {
+            phases.remove(key(phase));
+            if (phases.isEmpty()) {
+                accounts.remove(account);
+            }
+        }
+        save();
+    }
+
     private Saved ensure(String account, Phase phase) {
         Map<String, Saved> phases = accounts.computeIfAbsent(account, key -> new LinkedHashMap<>());
         return phases.computeIfAbsent(key(phase), key -> new Saved());

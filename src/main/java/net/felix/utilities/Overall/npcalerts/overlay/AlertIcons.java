@@ -39,7 +39,7 @@ public final class AlertIcons {
 		}
 		return switch (configKey) {
 			case "forschung" -> FORSCHUNG_ICON;
-			case "amboss" -> AMBOSS_ICON;
+			case "amboss", "ambossSlot2" -> AMBOSS_ICON;
 			case "schmelzofen" -> SCHMELZOFEN_ICON;
 			case "seelen" -> SEELEN_ICON;
 			case "essenzen" -> ESSENZEN_ICON;
@@ -60,7 +60,7 @@ public final class AlertIcons {
 		}
 		return switch (configKey) {
 			case "forschung" -> "Forschung: ";
-			case "amboss" -> "Amboss: ";
+			case "amboss", "ambossSlot2" -> "Amboss: ";
 			case "schmelzofen" -> "Schmelzofen: ";
 			case "seelen" -> "Seelen: ";
 			case "essenzen" -> "Essenzen: ";

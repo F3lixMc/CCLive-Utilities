@@ -2,6 +2,7 @@ package net.felix.utilities.Other.clipboard;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -11,11 +12,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ClipboardTargetTimeTest {
     @Test
     void durationUsesApproxMinutesOrHours() {
-        assertEquals("3.5 min", ClipboardTargetTime.formatDuration(3.5));
-        assertEquals("59.0 min", ClipboardTargetTime.formatDuration(59.0));
-        assertEquals("1.5 h", ClipboardTargetTime.formatDuration(90.0));
-        assertEquals(" ≈ 1.0 h", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(120), 2.0));
-        assertEquals(" ≈ 3.5 min", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(7), 2.0));
+        assertEquals("3min", ClipboardTargetTime.formatDuration(3.5));
+        assertEquals("59min", ClipboardTargetTime.formatDuration(59.0));
+        assertEquals("1h", ClipboardTargetTime.formatDuration(90.0));
+        assertEquals("1h", ClipboardTargetTime.formatDuration(119.0));
+        assertEquals("2h", ClipboardTargetTime.formatDuration(120.0));
+        assertEquals("30sek", ClipboardTargetTime.formatDuration(0.5));
+        assertEquals("1sek", ClipboardTargetTime.formatDuration(0.01));
+        assertEquals("1h 30min", ClipboardTargetTime.formatDurationDetailed(90.0));
+        assertEquals("1h", ClipboardTargetTime.formatDurationDetailed(60.0));
+        assertEquals("1h 59min", ClipboardTargetTime.formatDurationDetailed(119.0));
+        assertEquals("3min 30sek", ClipboardTargetTime.formatDurationDetailed(3.5));
+        assertEquals("30sek", ClipboardTargetTime.formatDurationDetailed(0.5));
+        assertEquals("1h 30min", ClipboardTargetTime.chooseTimeText("1h", "1h 30min", 80, 48, 140));
+        assertEquals("1h", ClipboardTargetTime.chooseTimeText("1h", "1h 30min", 80, 48, 127));
+        assertEquals(" ≈ 1h", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(120), 2.0));
+        assertEquals(" ≈ 3min", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(7), 2.0));
         assertEquals("", ClipboardTargetTime.formatRemaining(BigDecimal.ZERO, 5.0));
         assertEquals("", ClipboardTargetTime.formatRemaining(BigDecimal.TEN, 0.0));
     }
@@ -85,6 +97,43 @@ class ClipboardTargetTimeTest {
         assertEquals(ClipboardTargetTime.ALL_COLLECTED, ClipboardTargetTime.statusText(true, 0, 0));
         assertNull(ClipboardTargetTime.statusText(true, 4, 0));
         assertNull(ClipboardTargetTime.statusText(true, 2, 2));
+    }
+
+    @Test
+    void shopCostsMergeOnlyWhileTheOptionIsOn() {
+        Map<String, BigDecimal> normal = Map.of(ClipboardTargetTime.totalKey(0, "Coins"), BigDecimal.valueOf(100),
+                ClipboardTargetTime.totalKey(1, "Holz"), BigDecimal.TEN);
+        Map<String, BigDecimal> shop = Map.of(ClipboardTargetTime.totalKey(0, "Coins"), BigDecimal.valueOf(40),
+                ClipboardTargetTime.totalKey(1, "Pergamentfetzen"), BigDecimal.valueOf(2));
+        Map<String, BigDecimal> off = ClipboardTargetTime.mergeCosts(normal, shop, false);
+        assertEquals(BigDecimal.valueOf(100), off.get(ClipboardTargetTime.totalKey(0, "Coins")));
+        assertFalse(off.containsKey(ClipboardTargetTime.totalKey(1, "Pergamentfetzen")));
+
+        Map<String, BigDecimal> on = ClipboardTargetTime.mergeCosts(normal, shop, true);
+        assertEquals(BigDecimal.valueOf(140), on.get(ClipboardTargetTime.totalKey(0, "Coins")));
+        assertEquals(BigDecimal.valueOf(2), on.get(ClipboardTargetTime.totalKey(1, "Pergamentfetzen")));
+    }
+
+    @Test
+    void completionUsesTheOverviewQuantityOnTheMergedList() {
+        String coins = ClipboardTargetTime.totalKey(0, "Coins");
+        Map<String, BigDecimal> needed = ClipboardTargetTime.mergeCosts(
+                Map.of(coins, BigDecimal.valueOf(10)),
+                Map.of(coins, BigDecimal.valueOf(5)),
+                true);
+        Map<String, BigDecimal> owned = Map.of(coins, BigDecimal.valueOf(30));
+        assertTrue(ClipboardTargetTime.costsComplete(needed, owned, 2));
+        assertFalse(ClipboardTargetTime.costsComplete(needed, owned, 3));
+        assertTrue(ClipboardTargetTime.costsComplete(
+                ClipboardTargetTime.mergeCosts(Map.of(coins, BigDecimal.TEN), Map.of(coins, BigDecimal.TEN), false),
+                owned, 3));
+    }
+
+    @Test
+    void mergedCoinTimeUsesTheWholeMissingAmount() {
+        assertEquals(" ≈ 15min", ClipboardTargetTime.timeLabels(BigDecimal.valueOf(30), 2.0)[0]);
+        assertEquals("", ClipboardTargetTime.timeLabels(BigDecimal.valueOf(30), 0.0)[0]);
+        assertEquals("", ClipboardTargetTime.formatRemaining(BigDecimal.valueOf(4), 0.0));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package net.felix.mixin;
 
 import net.felix.utilities.Overall.aspekte.chat.AspectChatMessages;
+import net.felix.utilities.Overall.language.PlayLegendLanguageSwitch;
 import net.felix.utilities.Town.sound.StarForgedSoundUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
@@ -29,6 +30,13 @@ public abstract class ClientPlayNetworkHandlerTestMixin {
         cancellable = true
     )
     private void onGameMessage(ClientboundSystemChatPacket packet, CallbackInfo ci) {
+        if (packet != null && !packet.overlay() && packet.content() != null) {
+            String plain = packet.content().getString();
+            Minecraft client = Minecraft.getInstance();
+            if (client != null) {
+                client.execute(() -> PlayLegendLanguageSwitch.apply(plain));
+            }
+        }
         if (packet != null) {
             StarForgedSoundUtility.handleIncomingMessage(packet.content(), packet.overlay());
             net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.handleIncomingMessage(packet.content(), packet.overlay());

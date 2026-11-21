@@ -49,7 +49,41 @@ public class SchmiedTrackerUtility {
 	
 	// Frame Toggle State
 	private static boolean framesVisible = true; // Standardmäßig sichtbar
+
+	/** Schmiedezustände und erfüllte Machtkristall-Kosten. */
+	public static boolean areStateFramesVisible() {
+		return framesVisible;
+	}
 	private static KeyMapping toggleFramesKeyMapping;
+	private static boolean framesKeyMigrationChecked;
+
+	private static void applyFramesKeyMigration() {
+		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+		boolean boundToF7 = toggleFramesKeyMapping.matches(
+				new net.minecraft.client.input.KeyEvent(InputConstants.KEY_F7, -1, 0));
+		SchmiedFramesKeyMigration.Action action = SchmiedFramesKeyMigration.decide(config.schmiedFramesF7Released, boundToF7);
+		if (action == SchmiedFramesKeyMigration.Action.NONE) {
+			return;
+		}
+		if (action == SchmiedFramesKeyMigration.Action.UNBIND) {
+			toggleFramesKeyMapping.setKey(InputConstants.UNKNOWN);
+			Minecraft client = Minecraft.getInstance();
+			if (client != null && client.options != null) {
+				client.options.save();
+			}
+		}
+		config.schmiedFramesF7Released = true;
+		CCLiveUtilitiesConfig.HANDLER.save();
+	}
+
+	private static boolean editorBarOwnsThisKey() {
+		Minecraft client = Minecraft.getInstance();
+		return client != null
+				&& client.gui.screen() instanceof net.felix.utilities.DragOverlay.OverlayEditorScreen
+				&& toggleFramesKeyMapping != null
+				&& net.felix.utilities.DragOverlay.OverlayEditorUtility.editorBarUsesKey(InputConstants.KEY_F7)
+				&& toggleFramesKeyMapping.matches(new net.minecraft.client.input.KeyEvent(InputConstants.KEY_F7, -1, 0));
+	}
 	
 	// Schmied-Typen und ihre Konfigurationsschlüssel
 	private static final Map<String, String> SMITHING_CONFIG_KEYS = new HashMap<>();
@@ -142,7 +176,7 @@ public class SchmiedTrackerUtility {
 		toggleFramesKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.cclive-utilities.toggle-schmied-frames",
 			InputConstants.Type.KEYBOARD,
-			InputConstants.KEY_F7, // Standard: F7
+			InputConstants.UNKNOWN.getValue(),
 			KeyCategories.of("cclive-utilities", "schmied")
 		));
 	}
@@ -155,8 +189,14 @@ public class SchmiedTrackerUtility {
 	private static void onClientTick(Minecraft client) {
 		// Prüfe ob der Hotkey zum Togglen der Rahmen gedrückt wurde
 		// Dies sollte IMMER geprüft werden, unabhängig von der Config, damit der Toggle funktioniert
+		if (!framesKeyMigrationChecked && toggleFramesKeyMapping != null) {
+			framesKeyMigrationChecked = true;
+			applyFramesKeyMigration();
+		}
 		if (toggleFramesKeyMapping != null && toggleFramesKeyMapping.consumeClick()) {
-			framesVisible = !framesVisible;
+			if (!editorBarOwnsThisKey()) {
+				framesVisible = !framesVisible;
+			}
 		}
 		
 		// Prüfe Konfiguration
@@ -1057,7 +1097,9 @@ public class SchmiedTrackerUtility {
 			// Check if F7 is pressed (default key for toggling frames)
 			// Note: This checks the default key, not the configured key binding
 			// For full support of custom key bindings, we'd need to check the KeyMapping's bound key
-			if (keyCode == InputConstants.KEY_F7) {
+			if (toggleFramesKeyMapping != null
+					&& toggleFramesKeyMapping.matches(new net.minecraft.client.input.KeyEvent(keyCode, -1, 0))
+					&& !editorBarOwnsThisKey()) {
 				framesVisible = !framesVisible;
 				return true;
 			}

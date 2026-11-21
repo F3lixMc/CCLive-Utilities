@@ -81,6 +81,7 @@ public abstract class HandledScreenMixin {
         if (isSmithingInventory()) {
             renderSmithingFrames(context);
         }
+        renderMkUpgradeFrames(context);
         
         // Render the Hide Uncraftable button ONLY in blueprint inventories
         if (isBlueprintInventory()) {
@@ -702,6 +703,16 @@ public abstract class HandledScreenMixin {
         }
     }
     
+    /** Gleicher 1px-Rahmen wie die Schmiedegrade, in der Farbe von Titangeschmiedet. */
+    private void renderMkUpgradeFrames(GuiGraphicsExtractor context) {
+        try {
+            AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) (Object) this;
+            net.felix.utilities.Factory.mklevel.MkUpgradeFrames.render(context, screen, leftPos, topPos);
+        } catch (Exception e) {
+            // Ignore rendering errors
+        }
+    }
+
     /**
      * Checks if the current screen is a smithing-related inventory that should show colored frames
      */

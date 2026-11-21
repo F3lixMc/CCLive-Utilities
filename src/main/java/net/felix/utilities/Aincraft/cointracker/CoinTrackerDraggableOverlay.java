@@ -182,6 +182,13 @@ return isConfigEnabled()
     }
 
     @Override
+    public boolean isDrawnInEditor() {
+        return isConfigEnabled()
+                && CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerDisplayMode
+                == net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode.OVERLAY;
+    }
+
+    @Override
     public Component getTooltip() {
         return Component.literal("Coin Tracker - Liest Coins aus der HUD-Bossbar und zeigt Session-Statistiken");
     }

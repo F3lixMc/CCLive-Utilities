@@ -283,6 +283,10 @@
     "aspect_name": "Aspekt der Pyrolyse",
     "aspect_description": "Deine Angriffe haben eine 80% - 100% Chance, bei einem tödlichen Treffer Gegner mit einem Brandeffekt explodieren zu lassen, was 30% - 50% ihres maximalen Lebens als Schaden im Umkreis von 2 - 6 Blöcken verursacht."
   },
+  "Glutgewebte Treter": {
+    "aspect_name": "Aspekt der Pyrolyse",
+    "aspect_description": "Deine Angriffe haben eine 80% - 100% Chance, bei einem tödlichen Treffer Gegner mit einem Brandeffekt explodieren zu lassen, was 30% - 50% ihres maximalen Lebens als Schaden im Umkreis von 2 - 6 Blöcken verursacht."
+  },
   "Glutgewebtes Beinkleid": {
     "aspect_name": "-",
     "aspect_description": "Kein Aspekt auf diesem Bauplan"

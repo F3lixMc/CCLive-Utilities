@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -20,9 +21,12 @@ import net.minecraft.world.item.ItemStack;
  * [Ressourcenname]
  * [Anzahl / Max-Kapazität]
  * </pre>
- * Beim Linksklick werden die angezeigten Mengen direkt addiert.
+ * Beim Linksklick wird der Stand gemerkt. Gutgeschrieben wird er erst,
+ * wenn der Tooltip innerhalb von 60 Ticks auf 0 fällt.
  */
 public final class AnvilFurnaceLagerCollector {
+
+    private static final ResourcePickupGate PICKUP = new ResourcePickupGate();
 
     private static final Pattern AMOUNT_MAX_PATTERN = Pattern.compile(
             "^(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s*/\\s*(\\d{1,3}(?:[.,]\\d{3})*|\\d+)\\s*$");
@@ -33,6 +37,10 @@ public final class AnvilFurnaceLagerCollector {
     private static final Pattern BRACKETED_RESOURCE_NAME_PATTERN = Pattern.compile("^\\[([^\\]]+)]\\s*$");
 
     private AnvilFurnaceLagerCollector() {
+    }
+
+    public static void initialize() {
+        ClientTickEvents.END_CLIENT_TICK.register(AnvilFurnaceLagerCollector::onClientTick);
     }
 
     /**
@@ -58,36 +66,66 @@ public final class AnvilFurnaceLagerCollector {
             return;
         }
 
-        Map<String, Long> resources = parseLagerResources(getTooltip(stack));
-        if (!resources.isEmpty()) {
-            CollectedMaterialsResourcesStorage.addResources(resources);
+        PICKUP.arm(screenToken(title), parseLagerResources(getTooltip(stack)));
+    }
+
+    private static void onClientTick(net.minecraft.client.Minecraft client) {
+        if (!PICKUP.isPending()) {
+            return;
+        }
+        boolean connected = client != null && client.player != null;
+        if (!connected || client.gui.screen() == null
+                || !(client.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
+            PICKUP.observe(null, Map.of(), connected);
+            return;
+        }
+        String title = screen.getTitle() != null ? screen.getTitle().getString() : "";
+        String token = screenToken(title);
+        ItemStack lager = findLagerStack(screen);
+        Map<String, Long> current = lager == null ? Map.of() : parseLagerResources(getTooltip(lager));
+        Map<String, Long> credit = PICKUP.observe(token, current, true, lager != null);
+        if (!credit.isEmpty()) {
+            CollectedMaterialsResourcesStorage.addResources(credit);
         }
     }
 
+    private static String screenToken(String title) {
+        if (ZeichenUtility.containsAnvilMainUi(title)) {
+            return "anvil";
+        }
+        if (ZeichenUtility.containsFurnaceMainUi(title)) {
+            return "furnace";
+        }
+        return "";
+    }
+
     static Map<String, Long> parseLagerResources(List<Component> tooltip) {
+        List<String> lines = new ArrayList<>();
+        if (tooltip != null) {
+            for (Component line : tooltip) {
+                String cleanLine = cleanTooltipLine(line.getString());
+                if (cleanLine.isEmpty() || isLagerItemName(cleanLine)) {
+                    continue;
+                }
+                lines.add(cleanLine);
+            }
+        }
+        return parseLagerLines(lines);
+    }
+
+    static Map<String, Long> parseLagerLines(List<String> lines) {
         Map<String, Long> resources = new HashMap<>();
-        if (tooltip == null) {
+        if (lines == null) {
             return resources;
         }
 
-        List<String> lines = new ArrayList<>();
-        for (Component line : tooltip) {
-            String cleanLine = cleanTooltipLine(line.getString());
-            if (cleanLine.isEmpty() || isLagerItemName(cleanLine)) {
-                continue;
-            }
-            lines.add(cleanLine);
-        }
-
         String pendingName = null;
-        for (String line : lines) {
+        for (String rawLine : lines) {
+            String line = StorageLineText.withoutRate(rawLine);
             Matcher bracketedAmount = BRACKETED_AMOUNT_MAX_PATTERN.matcher(line);
             if (bracketedAmount.matches()) {
                 if (pendingName != null && !pendingName.isEmpty()) {
-                    long amount = parseAmount(bracketedAmount.group(1));
-                    if (amount > 0) {
-                        resources.put(pendingName, amount);
-                    }
+                    resources.put(pendingName, parseAmount(bracketedAmount.group(1)));
                 }
                 pendingName = null;
                 continue;
@@ -103,10 +141,7 @@ public final class AnvilFurnaceLagerCollector {
             Matcher amountMatcher = AMOUNT_MAX_PATTERN.matcher(unwrapped);
             if (amountMatcher.matches()) {
                 if (pendingName != null && !pendingName.isEmpty()) {
-                    long amount = parseAmount(amountMatcher.group(1));
-                    if (amount > 0) {
-                        resources.put(pendingName, amount);
-                    }
+                    resources.put(pendingName, parseAmount(amountMatcher.group(1)));
                 }
                 pendingName = null;
             } else if (!unwrapped.isEmpty()) {
@@ -126,6 +161,18 @@ public final class AnvilFurnaceLagerCollector {
 
     private static boolean isLagerItemName(String name) {
         return "Lager".equalsIgnoreCase(unwrapBrackets(name));
+    }
+
+    static ItemStack findLagerStack(AbstractContainerScreen<?> screen) {
+        if (screen.getMenu() == null) {
+            return null;
+        }
+        for (Slot slot : screen.getMenu().slots) {
+            if (slot.hasItem() && isLagerItem(slot.getItem())) {
+                return slot.getItem();
+            }
+        }
+        return null;
     }
 
     private static String unwrapBrackets(String line) {

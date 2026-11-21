@@ -74,12 +74,10 @@ public final class TrackerDetailSettings {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         List<Button> buttons = new ArrayList<>();
         if (overlay instanceof CoinTrackerDraggableOverlay) {
-            RateDisplayUnit coinUnit = RateDisplayUnit.orDefault(config.coinTrackerRateUnit);
             buttons.add(rateUnitToggle(
                     () -> config.coinTrackerRateUnit,
                     value -> config.coinTrackerRateUnit = value));
-            buttons.add(toggle(coinUnit.abbreviated("CPM") + ": "
-                    + (config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
+            buttons.add(toggle("Ansichtsort: " + (config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
                     ? "Scoreboard" : "Overlay"), () -> config.coinTrackerDisplayMode =
                     config.coinTrackerDisplayMode == CoinTrackerDisplayMode.SCOREBOARD
                             ? CoinTrackerDisplayMode.OVERLAY

@@ -17,6 +17,8 @@ public final class NpcAlertState {
 	// Kapazitäten
 	public static final CapacityData ambossCapacity = new CapacityData();
 
+	public static final CapacityData ambossSlot2 = new CapacityData();
+
 	public static final CapacityData schmelzofenCapacity = new CapacityData();
 
 	public static final CapacityData jaegerCapacity = new CapacityData();

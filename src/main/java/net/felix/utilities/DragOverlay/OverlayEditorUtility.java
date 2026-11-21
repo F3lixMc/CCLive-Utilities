@@ -17,6 +17,7 @@ public class OverlayEditorUtility {
     
     // KeyMapping for the overlay editor
     private static KeyMapping overlayEditorKeyMapping;
+    private static KeyMapping editorBarKeyMapping;
     
     
     public static void initialize() {
@@ -45,6 +46,24 @@ public class OverlayEditorUtility {
             InputConstants.KEY_F6, // Default to F6
             KeyCategories.of("cclive-utilities", "overlay")
         ));
+        editorBarKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            "key.cclive-utilities.toggle-overlay-editor-buttons",
+            InputConstants.Type.KEYBOARD,
+            InputConstants.KEY_F7,
+            KeyCategories.of("cclive-utilities", "overlay")
+        ));
+    }
+
+    public static boolean matchesEditorBarKey(net.minecraft.client.input.KeyEvent event) {
+        if (editorBarKeyMapping == null || event == null) {
+            return false;
+        }
+        return editorBarKeyMapping.matches(event) || editorBarUsesKey(event.key());
+    }
+
+    public static boolean editorBarUsesKey(int keyCode) {
+        return editorBarKeyMapping != null
+                && editorBarKeyMapping.matches(new net.minecraft.client.input.KeyEvent(keyCode, -1, 0));
     }
     
     private static void onClientTick(Minecraft client) {

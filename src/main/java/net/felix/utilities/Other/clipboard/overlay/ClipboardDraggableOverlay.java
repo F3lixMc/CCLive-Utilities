@@ -11,6 +11,7 @@ import net.felix.utilities.Aincraft.materials.data.MaterialDatabase;
 import net.felix.utilities.Aincraft.materials.data.MaterialFloorInfo;
 import net.felix.utilities.Aincraft.materials.data.MaterialRarityColors;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
+import net.felix.utilities.Other.clipboard.ClipboardLayout;
 import net.felix.utilities.Other.clipboard.ClipboardTargetTime;
 import net.felix.utilities.Other.clipboard.ClipboardUtility;
 import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
@@ -40,7 +41,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      */
     private static class CostItemWithCategory {
         CostItem costItem;
-        int category; // 0 = Coins, 1 = Materialien, 2 = Amboss, 3 = Ressource
+        int category; // 0 = Coins, 1 = Materialien, 2 = Amboss/Ofen, 3 = Ressource
         
         CostItemWithCategory(CostItem costItem, int category) {
             this.costItem = costItem;
@@ -72,15 +73,15 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         if (price.material3 != null) list.add(new CostItemWithCategory(price.material3, 1));
         if (price.material4 != null) list.add(new CostItemWithCategory(price.material4, 1));
         if (price.material5 != null) list.add(new CostItemWithCategory(price.material5, 1));
-        CostItem amboss = resolveAmboss(price);
-        if (amboss != null) list.add(new CostItemWithCategory(amboss, 2));
         CostItem ressource = resolveRessource(price);
         if (ressource != null) list.add(new CostItemWithCategory(ressource, 3));
+        CostItem amboss = resolveAmboss(price);
+        if (amboss != null) list.add(new CostItemWithCategory(amboss, 2));
     }
 
     /**
      * Wendet die Kostenanzeige-Filterung an (Ausblenden / Ans Ende setzen).
-     * Modus 1 entfernt fertige Items (außer Coins), Modus 2 sortiert sie ans Ende.
+     * Modus 1 entfernt fertige Items, Modus 2 sortiert sie ans Ende.
      */
     private static void filterCostItemsForDisplay(List<CostItemWithCategory> costItemsWithCategory, int quantity) {
         if (costItemsWithCategory == null || costItemsWithCategory.isEmpty()) {
@@ -94,33 +95,37 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
 
         int costDisplayMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
         if (costDisplayMode == 1) {
-            costItemsWithCategory.removeIf(item -> {
-                if (item.category == 0) {
-                    return false;
-                }
-                return isCostItemComplete(item.costItem, quantity);
-            });
+            costItemsWithCategory.removeIf(item -> isCostItemComplete(item.costItem, quantity));
         } else if (costDisplayMode == 2) {
             List<CostItemWithCategory> notComplete = new ArrayList<>();
             List<CostItemWithCategory> complete = new ArrayList<>();
 
             for (CostItemWithCategory item : costItemsWithCategory) {
-                if (item.category == 0) {
-                    notComplete.add(item);
-                } else if (isCostItemComplete(item.costItem, quantity)) {
+                if (isCostItemComplete(item.costItem, quantity)) {
                     complete.add(item);
                 } else {
                     notComplete.add(item);
                 }
             }
 
-            notComplete.sort((item1, item2) -> Integer.compare(item1.category, item2.category));
-            complete.sort((item1, item2) -> Integer.compare(item1.category, item2.category));
+            notComplete.sort((item1, item2) -> Integer.compare(costCategoryOrder(item1.category), costCategoryOrder(item2.category)));
+            complete.sort((item1, item2) -> Integer.compare(costCategoryOrder(item1.category), costCategoryOrder(item2.category)));
 
             costItemsWithCategory.clear();
             costItemsWithCategory.addAll(notComplete);
             costItemsWithCategory.addAll(complete);
         }
+    }
+
+    /** Anzeige: Coins, Materialien, Ressourcen, danach Amboss und Ofen. */
+    private static int costCategoryOrder(int category) {
+        return switch (category) {
+            case 0 -> 0;
+            case 1 -> 1;
+            case 3 -> 2;
+            case 2 -> 3;
+            default -> 4;
+        };
     }
     
     private static void addPriceCostItemsToTotal(Map<String, CostItemWithCategory> totalCostsMap, net.felix.utilities.Overall.itemviewer.data.PriceData price, int quantity) {
@@ -175,19 +180,22 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         final String floorText;
         final int floorColor;
         final String timeText;
+        final String timeTextDetailed;
         final int mainWidth;
         final int abbrevWidth;
         final int floorWidth;
         final int totalWidth;
 
         PreparedCostLine(String mainText, int mainColor, String abbrevText, String floorText,
-                         int floorColor, String timeText, int mainWidth, int abbrevWidth, int floorWidth, int totalWidth) {
+                         int floorColor, String timeText, String timeTextDetailed,
+                         int mainWidth, int abbrevWidth, int floorWidth, int totalWidth) {
             this.mainText = mainText;
             this.mainColor = mainColor;
             this.abbrevText = abbrevText != null ? abbrevText : "";
             this.floorText = floorText != null ? floorText : "";
             this.floorColor = floorColor;
             this.timeText = timeText != null ? timeText : "";
+            this.timeTextDetailed = timeTextDetailed != null ? timeTextDetailed : this.timeText;
             this.mainWidth = mainWidth;
             this.abbrevWidth = abbrevWidth;
             this.floorWidth = floorWidth;
@@ -210,11 +218,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         final int scrollMax;
         final int renderWidth;
         final int lineCount;
+        final int quantityAreaWidth;
+        final int maxUnscaledHeight;
 
         RenderSnapshot(int tick, int entriesRevision, int currentPage, int displayQuantity,
                        List<PreparedCostLine> mainCostLines, List<PreparedCostLine> shopCostLines,
                        String statusMessage, boolean scrollable, boolean overflow, int scrollOffset, int scrollMax,
-                       int renderWidth, int lineCount) {
+                       int renderWidth, int lineCount, int quantityAreaWidth, int maxUnscaledHeight) {
             this.tick = tick;
             this.entriesRevision = entriesRevision;
             this.currentPage = currentPage;
@@ -228,6 +238,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             this.scrollMax = scrollMax;
             this.renderWidth = renderWidth;
             this.lineCount = lineCount;
+            this.quantityAreaWidth = quantityAreaWidth;
+            this.maxUnscaledHeight = maxUnscaledHeight;
         }
     }
 
@@ -247,7 +259,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     private static int costOverlayScreenY;
     private static int costOverlayScreenWidth;
     private static int costOverlayScreenHeight;
+    private static int costOverlayMaxScaledHeight;
+    private static int[] visibleStoredIndexes = new int[0];
+    private static boolean visiblePagesReady;
+    private static int lastMappedRevision = -1;
     private static final int COST_SCROLLBAR_WIDTH = 6;
+    private static final int REMOVE_BUTTON_HEIGHT = 20;
+    private static final int REMOVE_BUTTON_GAP = 5;
     private static final int DEFAULT_HEIGHT = 150;
     private static final String QUANTITY_PREFIX = "x";
     private static final int QUANTITY_FIELD_PADDING = 4;
@@ -376,60 +394,271 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
 
         List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
+        if (lastMappedRevision != revision) {
+            visiblePagesReady = false;
+            lastMappedRevision = revision;
+        }
+        page = retainVisiblePage(entries);
+        entry = ClipboardUtility.getEntryForPage(page);
+        displayQuantity = readDisplayQuantity(page, entry);
+        if (costScrollPage != page) {
+            costScrollOffset = 0;
+            costScrollPage = page;
+        }
+
+        boolean inventory = client.gui.screen() instanceof AbstractContainerScreen;
+        int navigationWidth = getNavigationButtonsWidth(client);
+        int maxLines = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaxCostLines;
+        int entryCount = entries.size();
+        int[] lineWidths = new int[entryCount];
+        int[] nameBlocks = new int[entryCount];
+        int[] entryLineCounts = new int[entryCount];
+        int[] quantityWidths = new int[entryCount];
+        boolean anyScrollable = false;
+        for (int i = 0; i < entryCount; i++) {
+            ClipboardUtility.ClipboardEntry pinned = entries.get(i);
+            int quantity = pinned.quantity > 0 ? pinned.quantity : 1;
+            PreparedEntry prepared = prepareEntry(client, pinned, quantity);
+            int lineWidth = widestLine(prepared.normal, List.of());
+            lineWidths[i] = lineWidth;
+            nameBlocks[i] = headerNameBlock(client, pinned.blueprintName, resolveEntryFoundStatus(pinned), navigationWidth);
+            quantityWidths[i] = getQuantityAreaWidth(client, formatQuantityText(quantity), inventory);
+            ClipboardTargetTime.CostWindow entryWindow = ClipboardTargetTime.window(
+                    prepared.normal.size(), 0, maxLines, 0);
+            if (entryWindow.scrollable) {
+                anyScrollable = true;
+            }
+            List<PreparedCostLine> shown = prepared.normal.subList(0, entryWindow.count);
+            String entryStatus = ClipboardTargetTime.statusText(true, prepared.normal.size(), shown.size());
+            entryLineCounts[i] = computeLineCount(2, shown, List.of(), entryStatus);
+        }
+
+        List<ClipboardUtility.ClipboardEntry> visibleEntries = new ArrayList<>();
+        for (int index : visibleStoredIndexes) {
+            if (index >= 0 && index < entryCount) {
+                visibleEntries.add(entries.get(index));
+            }
+        }
+        int overviewQuantity = readDisplayQuantity(1, null);
+        TotalCostsBundle overviewCosts = buildTotalCostsBundle(visibleEntries, overviewQuantity);
+        List<PreparedCostLine> overviewNormal = prepareCategorizedCostLines(client, overviewCosts.normal, overviewQuantity, false);
+        List<PreparedCostLine> overviewShop = List.of();
+        ClipboardTargetTime.CostWindow overviewWindow = ClipboardTargetTime.window(
+                overviewNormal.size(), 0, maxLines, 0);
+        if (overviewWindow.scrollable) {
+            anyScrollable = true;
+        }
+        int overviewQuantityWidth = getQuantityAreaWidth(client, formatQuantityText(overviewQuantity), inventory);
+        int maxQuantityWidth = overviewQuantityWidth;
+        for (int quantityWidth : quantityWidths) {
+            maxQuantityWidth = Math.max(maxQuantityWidth, quantityWidth);
+        }
+        FoundStatusLabel overviewStatus = resolveOverallFoundStatus(visibleEntries);
+        int overviewNameBlock = headerNameBlock(client, "Gesamtliste", overviewStatus, navigationWidth);
+        int overviewWidth = Math.max(widestLine(overviewNormal, List.of()),
+                overviewNameBlock + maxQuantityWidth + HEADER_COUNT_PADDING);
+        int[] pinnedWidths = new int[entryCount];
+        for (int i = 0; i < entryCount; i++) {
+            pinnedWidths[i] = Math.max(lineWidths[i], nameBlocks[i] + maxQuantityWidth + HEADER_COUNT_PADDING);
+        }
+        int minimum = DEFAULT_WIDTH;
+        minimum = Math.max(minimum, client.font.width("Bauplan Kosten:") + 10);
+        int renderWidth = ClipboardLayout.sharedWidth(minimum, overviewWidth, pinnedWidths, anyScrollable,
+                COST_SCROLLBAR_WIDTH + 2);
+
+        List<PreparedCostLine> shownOverview = overviewNormal.subList(0, overviewWindow.count);
+        String overviewMessage = ClipboardTargetTime.statusText(!visibleEntries.isEmpty(), overviewNormal.size(), shownOverview.size());
+        int overviewLineCount = computeLineCount(1, shownOverview, overviewShop, overviewMessage);
+        int maxLineCount = overviewLineCount;
+        for (int entryLineCount : entryLineCounts) {
+            maxLineCount = Math.max(maxLineCount, entryLineCount);
+        }
+
         List<PreparedCostLine> fullNormalLines;
         List<PreparedCostLine> shopCostLines;
-        boolean hasEntries = entries != null && !entries.isEmpty();
-
+        boolean hasEntries = !visibleEntries.isEmpty();
         if (page == 1) {
-            TotalCostsBundle costs = buildTotalCostsBundle(entries, displayQuantity);
-            fullNormalLines = prepareCategorizedCostLines(client, costs.normal, displayQuantity, false);
-            shopCostLines = (!CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts || costs.shop.isEmpty())
-                    ? List.of()
-                    : prepareShopCostLines(client, costs.shop, displayQuantity);
-        } else if (entry != null && entry.price != null) {
-            List<CostItemWithCategory> costItemsWithCategory = new ArrayList<>();
-            addPriceCostItemsToDisplayList(costItemsWithCategory, entry.price);
-            if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled) {
-                filterCostItemsForDisplay(costItemsWithCategory, displayQuantity);
-            }
-            fullNormalLines = prepareCategorizedCostLines(client, costItemsWithCategory, displayQuantity, false);
-            shopCostLines = List.of();
-            if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts
-                    && entry.blueprintShop != null && entry.blueprintShop.price != null) {
-                List<CostItem> shopItems = new ArrayList<>();
-                if (entry.blueprintShop.price.coin != null) {
-                    shopItems.add(entry.blueprintShop.price.coin);
-                }
-                if (entry.blueprintShop.price.paper_shreds != null) {
-                    shopItems.add(entry.blueprintShop.price.paper_shreds);
-                }
-                shopCostLines = prepareShopCostLines(client, shopItems, displayQuantity);
-            }
+            fullNormalLines = overviewNormal;
+            shopCostLines = overviewShop;
+        } else if (entry != null) {
+            int quantity = entry.quantity > 0 ? entry.quantity : 1;
+            PreparedEntry current = prepareEntry(client, entry, quantity);
+            fullNormalLines = current.normal;
+            shopCostLines = current.shop;
         } else {
             fullNormalLines = List.of();
             shopCostLines = List.of();
             hasEntries = false;
         }
 
-        int maxLines = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaxCostLines;
         ClipboardTargetTime.CostWindow window = ClipboardTargetTime.window(
-                fullNormalLines.size(), shopCostLines.size(), maxLines, costScrollOffset);
+                fullNormalLines.size(), 0, maxLines, costScrollOffset);
         costScrollOffset = window.start;
         costScrollable = window.scrollable;
         List<PreparedCostLine> mainCostLines = new ArrayList<>(
                 fullNormalLines.subList(window.start, window.start + window.count));
         String statusMessage = ClipboardTargetTime.statusText(hasEntries, fullNormalLines.size(), mainCostLines.size());
-
-        int renderWidth = computeRenderWidth(client, page, entry, entries, mainCostLines, shopCostLines, displayQuantity);
-        if (window.scrollable) {
-            renderWidth += COST_SCROLLBAR_WIDTH + 2;
-        }
         int lineCount = computeLineCount(page, mainCostLines, shopCostLines, statusMessage);
+        int lineHeight = client.font.lineHeight + 2;
+        int maxUnscaledHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+                5, lineHeight, client.font.lineHeight, maxLineCount);
 
         cachedRenderSnapshot = new RenderSnapshot(
                 tick, revision, page, displayQuantity, mainCostLines, shopCostLines,
-                statusMessage, window.scrollable, window.overflow, costScrollOffset, window.maxOffset, renderWidth, lineCount);
+                statusMessage, window.scrollable, window.overflow, costScrollOffset, window.maxOffset,
+                renderWidth, lineCount, maxQuantityWidth, maxUnscaledHeight);
         return cachedRenderSnapshot;
+    }
+
+    private static int retainVisiblePage(List<ClipboardUtility.ClipboardEntry> entries) {
+        int currentPage = ClipboardUtility.getCurrentPage();
+        int shown = -1;
+        if (currentPage > 1) {
+            shown = visiblePagesReady
+                    ? ClipboardLayout.storedIndexForPage(visibleStoredIndexes, currentPage)
+                    : currentPage - 2;
+        }
+        boolean[] completed = new boolean[entries.size()];
+        boolean hideCompleted = CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideCompletedBlueprints;
+        boolean totalsMet = overviewCostsComplete(entries);
+        for (int i = 0; i < entries.size(); i++) {
+            ClipboardUtility.ClipboardEntry entry = entries.get(i);
+            int quantity = entry.quantity > 0 ? entry.quantity : 1;
+            if (mergedCostTotals(entry, quantity).isEmpty()) {
+                completed[i] = entryComplete(entry, quantity);
+            } else {
+                completed[i] = totalsMet;
+            }
+        }
+        int[] next = ClipboardLayout.visibleStoredIndexes(completed, hideCompleted);
+        int newPage = ClipboardLayout.pageForStoredIndex(next, shown);
+        int previousStored = shown;
+        visibleStoredIndexes = next;
+        visiblePagesReady = true;
+        if (newPage != currentPage) {
+            setCurrentPage(newPage);
+            int nowStored = ClipboardLayout.storedIndexForPage(next, newPage);
+            if (quantityTextField != null && previousStored != nowStored) {
+                resetQuantityTextField();
+            } else if (quantityTextFieldPage > 1) {
+                quantityTextFieldPage = newPage;
+            }
+        }
+        return newPage;
+    }
+
+    /**
+     * Gesamtkosten wie auf Seite 1: jede Bauplan-Anzahl ist eingerechnet, danach die Anzeige-Menge der Übersicht.
+     * Ein Material zählt erst, wenn der gemeinsame Vorrat für alle Baupläne reicht.
+     */
+    private static boolean overviewCostsComplete(List<ClipboardUtility.ClipboardEntry> entries) {
+        Map<String, CostItemWithCategory> totals = new HashMap<>();
+        if (entries != null) {
+            for (ClipboardUtility.ClipboardEntry entry : entries) {
+                if (entry == null) {
+                    continue;
+                }
+                int quantity = entry.quantity > 0 ? entry.quantity : 1;
+                for (CostItemWithCategory item : mergedCostTotals(entry, quantity).values()) {
+                    addCategorizedCost(totals, item.costItem, item.category);
+                }
+            }
+        }
+        if (totals.isEmpty()) {
+            return true;
+        }
+        int overviewQuantity = getPage1Quantity();
+        for (CostItemWithCategory item : totals.values()) {
+            if (!isCostItemComplete(item.costItem, overviewQuantity)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean entryComplete(ClipboardUtility.ClipboardEntry entry, int quantity) {
+        if (entry == null) {
+            return false;
+        }
+        Map<String, CostItemWithCategory> totals = mergedCostTotals(entry, 1);
+        if (totals.isEmpty()) {
+            return entry.price != null;
+        }
+        boolean[] flags = new boolean[totals.size()];
+        int index = 0;
+        for (CostItemWithCategory item : totals.values()) {
+            flags[index++] = isCostItemComplete(item.costItem, quantity);
+        }
+        return ClipboardLayout.normalCostsComplete(flags);
+    }
+
+    private static boolean includeShopCosts() {
+        return CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts;
+    }
+
+    private static Map<String, CostItemWithCategory> mergedCostTotals(ClipboardUtility.ClipboardEntry entry, int quantity) {
+        Map<String, CostItemWithCategory> totals = new HashMap<>();
+        if (entry == null) {
+            return totals;
+        }
+        if (entry.price != null) {
+            addPriceCostItemsToTotal(totals, entry.price, quantity);
+        }
+        if (includeShopCosts()) {
+            addShopCosts(totals, entry.blueprintShop, quantity);
+        }
+        return totals;
+    }
+
+    private static void addShopCosts(Map<String, CostItemWithCategory> totals,
+            net.felix.utilities.Overall.itemviewer.data.BlueprintShopData shop, int quantity) {
+        if (totals == null || shop == null || shop.price == null) {
+            return;
+        }
+        addCategorizedCost(totals, multiplyCostItem(shop.price.coin, quantity), 0);
+        addCategorizedCost(totals, multiplyCostItem(shop.price.paper_shreds, quantity), 1);
+    }
+
+    private static final class PreparedEntry {
+        final List<PreparedCostLine> normal;
+        final List<PreparedCostLine> shop;
+        final boolean complete;
+
+        PreparedEntry(List<PreparedCostLine> normal, List<PreparedCostLine> shop, boolean complete) {
+            this.normal = normal;
+            this.shop = shop;
+            this.complete = complete;
+        }
+    }
+
+    private static PreparedEntry prepareEntry(Minecraft client, ClipboardUtility.ClipboardEntry entry, int quantity) {
+        boolean complete = entryComplete(entry, quantity);
+        List<CostItemWithCategory> items = categorizeCategorizedTotals(mergedCostTotals(entry, 1), quantity);
+        List<PreparedCostLine> normal = prepareCategorizedCostLines(client, items, quantity, false);
+        return new PreparedEntry(normal, List.of(), complete);
+    }
+
+    private static int widestLine(List<PreparedCostLine> normal, List<PreparedCostLine> shop) {
+        int width = 0;
+        if (normal != null) {
+            for (PreparedCostLine line : normal) {
+                width = Math.max(width, line.totalWidth + COST_LINE_HORIZONTAL_PADDING);
+            }
+        }
+        if (shop != null) {
+            for (PreparedCostLine line : shop) {
+                width = Math.max(width, line.totalWidth + COST_LINE_HORIZONTAL_PADDING);
+            }
+        }
+        return width;
+    }
+
+    private static int headerNameBlock(Minecraft client, String name, FoundStatusLabel status, int navigationWidth) {
+        int nameEnd = HEADER_NAME_PADDING + client.font.width(name != null ? name : "");
+        if (status != null && status.text != null && !status.text.isEmpty()) {
+            nameEnd += client.font.width(" ") + client.font.width(status.text);
+        }
+        return nameEnd + HEADER_BUTTON_GAP + navigationWidth + QUANTITY_AFTER_BUTTONS_SPACING;
     }
     
     public static void resetCollectedMaterials() {
@@ -491,7 +720,20 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     // Gesamtanzahl der Seiten (wird später dynamisch berechnet)
     private static int getTotalPages() {
-        return Math.max(1, CCLiveUtilitiesConfig.HANDLER.instance().clipboardTotalPages);
+        return ClipboardUtility.getTotalPages();
+    }
+
+    /** 0, solange die sichtbaren Seiten noch nicht aus den angepinnten Einträgen gebaut wurden. */
+    public static int visiblePageCountOrZero() {
+        return visiblePagesReady ? 1 + visibleStoredIndexes.length : 0;
+    }
+
+    /** Vor dem ersten Aufbau bleibt die alte Seitenzahl die Position in der vollen Liste. */
+    public static int storedIndexForVisiblePage(int page) {
+        if (!visiblePagesReady) {
+            return page - 2;
+        }
+        return ClipboardLayout.storedIndexForPage(visibleStoredIndexes, page);
     }
     
     @Override
@@ -563,53 +805,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         return snapshot != null ? snapshot.renderWidth : DEFAULT_WIDTH;
     }
 
-    private static int computeRenderWidth(Minecraft client, int currentPage,
-            ClipboardUtility.ClipboardEntry entry, List<ClipboardUtility.ClipboardEntry> entries,
-            List<PreparedCostLine> mainCostLines, List<PreparedCostLine> shopCostLines, int displayQuantity) {
-        int maxWidth = DEFAULT_WIDTH;
-        maxWidth = Math.max(maxWidth, client.font.width("Bauplan Kosten:") + 10);
-        maxWidth = Math.max(maxWidth, client.font.width("Eichenholz: 10x") + 10);
-        if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts) {
-            maxWidth = Math.max(maxWidth, client.font.width("Bauplan Shop Kosten:") + 10);
-        }
-
-        for (ClipboardUtility.ClipboardEntry clipboardEntry : entries) {
-            if (clipboardEntry.blueprintName != null) {
-                String countText = formatQuantityText(clipboardEntry.quantity > 0 ? clipboardEntry.quantity : 1);
-                FoundStatusLabel status = resolveEntryFoundStatus(clipboardEntry);
-                maxWidth = Math.max(maxWidth, computeHeaderLineWidth(client, clipboardEntry.blueprintName,
-                    status != null ? status.text : null, countText));
-            }
-        }
-
-        String blueprintName;
-        String countText;
-        FoundStatusLabel pageStatus;
-        if (currentPage == 1) {
-            blueprintName = "Gesamtliste";
-            countText = formatQuantityText(displayQuantity);
-            pageStatus = resolveOverallFoundStatus();
-        } else if (entry != null) {
-            blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
-            countText = formatQuantityText(displayQuantity);
-            pageStatus = resolveEntryFoundStatus(entry);
-        } else {
-            blueprintName = "Bauplan Name";
-            countText = formatQuantityText(1);
-            pageStatus = null;
-        }
-        maxWidth = Math.max(maxWidth, computeHeaderLineWidth(client, blueprintName,
-            pageStatus != null ? pageStatus.text : null, countText));
-
-        for (PreparedCostLine line : mainCostLines) {
-            maxWidth = Math.max(maxWidth, line.totalWidth + COST_LINE_HORIZONTAL_PADDING);
-        }
-        for (PreparedCostLine line : shopCostLines) {
-            maxWidth = Math.max(maxWidth, line.totalWidth + COST_LINE_HORIZONTAL_PADDING);
-        }
-        return maxWidth;
-    }
-
     private static int computeLineCount(int currentPage, List<PreparedCostLine> mainCostLines,
             List<PreparedCostLine> shopCostLines, String statusMessage) {
         int lineCount = 1;
@@ -627,9 +822,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             if (allCollected) {
                 lineCount += 1;
             }
-        }
-        if (!shopCostLines.isEmpty()) {
-            lineCount += 1 + shopCostLines.size();
         }
         if (lineCount == 1) {
             lineCount += 1;
@@ -655,12 +847,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         height += lineHeight; // "Bauplan Kosten:"
         height += lineHeight * 4; // Coins, Material, Amboss, Ressource
         
-        if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts) {
-            height += lineHeight; // "Bauplan Shop Kosten:"
-            height += lineHeight * 2; // Coins, Pergamentfetzen
-        }
-        
         height += padding;
+        height -= Math.max(0, lineHeight - client.font.lineHeight);
         return height;
     }
     
@@ -850,7 +1038,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         context.text(
             client.font,
-            "Amboss",
+            "Ressource",
             5, currentY,
             0xFFFFFFFF,
             true
@@ -859,41 +1047,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         context.text(
             client.font,
-            "Ressource",
+            "Amboss",
             5, currentY,
             0xFFFFFFFF,
             true
         );
         currentY += lineHeight;
-        
-        // Optional: "Bauplan Shop Kosten:" (wenn aktiviert)
-        if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowBlueprintShopCosts) {
-            context.text(
-                client.font,
-                "Bauplan Shop Kosten:",
-                5, currentY,
-                0xFFAAAAAA,
-                true
-            );
-            currentY += lineHeight;
-            
-            context.text(
-                client.font,
-                "Coins",
-                5, currentY,
-                0xFFFFFFFF,
-                true
-            );
-            currentY += lineHeight;
-            
-            context.text(
-                client.font,
-                "Pergamentfetzen",
-                5, currentY,
-                0xFFFFFFFF,
-                true
-            );
-        }
         
         matrices.popMatrix();
     }
@@ -958,22 +1117,38 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         
-        int x = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
-        int y = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
+        if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideEmpty && visibleStoredIndexes.length == 0) {
+            clearQuantityHoverBounds();
+            costOverlayScreenWidth = 0;
+            costOverlayScreenHeight = 0;
+            deleteButtonVisible = false;
+            return;
+        }
+
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
         if (scale <= 0) scale = 1.0f;
+        int lineHeight = client.font.lineHeight + 2;
+        int padding = 5;
+        int estimatedLineCount = snapshot.lineCount;
+        int estimatedHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+                padding, lineHeight, client.font.lineHeight, estimatedLineCount);
+        int unscaledWidthForOrigin = snapshot.renderWidth;
+        int scaledWidth = Math.round(unscaledWidthForOrigin * scale);
+        boolean inventoryOpen = client.gui.screen() instanceof AbstractContainerScreen;
+        int footprintHeight = Math.round(snapshot.maxUnscaledHeight * scale);
+        if (inventoryOpen) {
+            footprintHeight += REMOVE_BUTTON_GAP + REMOVE_BUTTON_HEIGHT;
+        }
+        ClipboardLayout.Point origin = screenOrigin(client, scaledWidth, footprintHeight);
+        int x = origin.x();
+        int y = origin.y();
+        costOverlayMaxScaledHeight = footprintHeight;
         
         // Render content with scale using matrix transformation
         Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
         matrices.translate(x, y);
         matrices.scale(scale, scale);
-        
-        // Berechne Höhe für Background (nach Matrix-Transformation, damit Background und Text in derselben Ebene sind)
-        int lineHeight = client.font.lineHeight + 2;
-        int padding = 5;
-        int estimatedLineCount = snapshot.lineCount;
-        int estimatedHeight = padding + (estimatedLineCount * lineHeight) + padding;
         
         int currentPage = snapshot.currentPage;
         ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(currentPage);
@@ -1008,10 +1183,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             foundStatus = null;
         }
 
-        String statusLabel = foundStatus != null ? foundStatus.text : null;
-        
-        // Berechne Button-Positionen mit Hilfsmethode
-        int[] buttonPositions = calculateButtonPositions(client, blueprintName, statusLabel, countText, unscaledWidth);
+        int[] buttonPositions = calculateButtonPositions(client, unscaledWidth, snapshot.quantityAreaWidth);
         int leftButtonX = buttonPositions[0];
         int rightButtonX = buttonPositions[1];
         int spaceAfterLeftX = buttonPositions[2];
@@ -1141,22 +1313,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                 lineCount++;
                 normalStartY = currentY;
                 for (PreparedCostLine line : snapshot.mainCostLines) {
-                    drawPreparedCostLine(context, client, line, currentY);
+                    drawPreparedCostLine(context, client, line, currentY, unscaledWidth, isInInventory && snapshot.scrollable);
                     currentY += lineHeight;
                     lineCount++;
                 }
                 if (allCollected) {
                     context.text(client.font, snapshot.statusMessage, 5, currentY, ClipboardTargetTime.COLLECTED_COLOR, true);
-                    currentY += lineHeight;
-                    lineCount++;
-                }
-            }
-            if (!snapshot.shopCostLines.isEmpty()) {
-                context.text(client.font, "Bauplan Shop Kosten:", 5, currentY, 0xFFAAAAAA, true);
-                currentY += lineHeight;
-                lineCount++;
-                for (PreparedCostLine line : snapshot.shopCostLines) {
-                    drawPreparedCostLine(context, client, line, currentY);
                     currentY += lineHeight;
                     lineCount++;
                 }
@@ -1169,7 +1331,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         drawCostOverflow(context, snapshot, isInInventory, unscaledWidth, normalStartY, normalEndY, scale, x, y);
         
         // Berechne tatsächliche Höhe basierend auf gerenderten Zeilen
-        int actualHeight = padding + (lineCount * lineHeight) + padding;
+        int actualHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(
+                padding, lineHeight, client.font.lineHeight, lineCount);
         
         matrices.popMatrix();
         
@@ -1184,8 +1347,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // Rendere Button zum Entfernen (mittig unterhalb des Overlays) - nur in Inventaren
         // WICHTIG: Button wird NACH dem Matrix-Pop gerendert, damit er nicht skaliert wird
         if (isInInventory) {
-            int buttonHeight = 20;
-            int buttonSpacing = 5; // Abstand zwischen Overlay und Button
+            int buttonHeight = REMOVE_BUTTON_HEIGHT;
+            int buttonSpacing = REMOVE_BUTTON_GAP;
             int buttonY = y + actualScaledHeight + buttonSpacing; // Skalierte Y-Position
             int buttonWidth = (int)((unscaledWidth - 10) * scale); // Skalierte Breite
             int buttonX = x + (width - buttonWidth) / 2; // Mittig im Overlay
@@ -1586,11 +1749,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         return sum;
     }
     
-    /**
-     * Sammelt und addiert alle CostItems aus allen Bauplänen
-     * @param forBlueprintShop true für Bauplan-Shop-Kosten, false für normale Bauplan-Kosten
-     * @return Liste von CostItems sortiert nach Kategorien (Coins, Materialien, Amboss, Ressource)
-     */
     private static void collectAmbossAndRessourceNames(List<ClipboardUtility.ClipboardEntry> entries,
             Set<String> ambossNames, Set<String> ressourceNames) {
         for (ClipboardUtility.ClipboardEntry entry : entries) {
@@ -1620,24 +1778,19 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
 
     private static TotalCostsBundle buildTotalCostsBundle(List<ClipboardUtility.ClipboardEntry> entries, int filterQuantity) {
         Map<String, CostItemWithCategory> normalMap = new HashMap<>();
-        Map<String, CostItem> shopMap = new HashMap<>();
         for (ClipboardUtility.ClipboardEntry entry : entries) {
             int quantity = entry.quantity > 0 ? entry.quantity : 1;
             if (entry.price != null) {
                 addPriceCostItemsToTotal(normalMap, entry.price, quantity);
             }
-            if (entry.blueprintShop != null && entry.blueprintShop.price != null) {
-                addCostItemToTotal(shopMap, multiplyCostItem(entry.blueprintShop.price.coin, quantity));
-                addCostItemToTotal(shopMap, multiplyCostItem(entry.blueprintShop.price.paper_shreds, quantity));
+            if (includeShopCosts()) {
+                addShopCosts(normalMap, entry.blueprintShop, quantity);
             }
         }
 
-        Set<String> ambossNames = new HashSet<>();
-        Set<String> ressourceNames = new HashSet<>();
-        collectAmbossAndRessourceNames(entries, ambossNames, ressourceNames);
         return new TotalCostsBundle(
                 categorizeCategorizedTotals(normalMap, filterQuantity),
-                categorizeTotalCostsMap(shopMap, ambossNames, ressourceNames, true, filterQuantity)
+                List.of()
         );
     }
 
@@ -1697,27 +1850,31 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         ressourceItems.sort(byName);
 
         List<CostItemWithCategory> result = new ArrayList<>();
-        result.addAll(coins);
         boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
         int costDisplayMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
         if (costDisplayEnabled && costDisplayMode == 1) {
+            coins.removeIf(item -> isCostItemComplete(item.costItem, filterQuantity));
             materials.removeIf(item -> isCostItemComplete(item.costItem, filterQuantity));
             ambossItems.removeIf(item -> isCostItemComplete(item.costItem, filterQuantity));
             ressourceItems.removeIf(item -> isCostItemComplete(item.costItem, filterQuantity));
+            result.addAll(coins);
             result.addAll(materials);
-            result.addAll(ambossItems);
             result.addAll(ressourceItems);
+            result.addAll(ambossItems);
         } else if (costDisplayEnabled && costDisplayMode == 2) {
+            result.addAll(incomplete(coins, filterQuantity));
             result.addAll(incomplete(materials, filterQuantity));
-            result.addAll(incomplete(ambossItems, filterQuantity));
             result.addAll(incomplete(ressourceItems, filterQuantity));
+            result.addAll(incomplete(ambossItems, filterQuantity));
+            result.addAll(complete(coins, filterQuantity));
             result.addAll(complete(materials, filterQuantity));
-            result.addAll(complete(ambossItems, filterQuantity));
             result.addAll(complete(ressourceItems, filterQuantity));
+            result.addAll(complete(ambossItems, filterQuantity));
         } else {
+            result.addAll(coins);
             result.addAll(materials);
-            result.addAll(ambossItems);
             result.addAll(ressourceItems);
+            result.addAll(ambossItems);
         }
         return result;
     }
@@ -1783,19 +1940,34 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
 
         String timeText = "";
-        if (!isCoins && !shopLine && CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled) {
-            timeText = ClipboardTimeEstimate.buildTimeText(
-                    costItem.itemName, neededAmount.subtract(ownedAmount));
+        String timeTextDetailed = "";
+        if (CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled) {
+            BigDecimal missing = neededAmount.subtract(ownedAmount);
+            if (isCoins) {
+                double rate = ClipboardTargetTime.coinRate(
+                        CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerEnabled,
+                        net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility.isTracking()
+                                && net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility.isAllowedDimension(),
+                        0,
+                        net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility.getCoinsPerMinute());
+                String[] labels = ClipboardTargetTime.timeLabels(missing, rate);
+                timeText = labels[0];
+                timeTextDetailed = labels[1];
+            } else if (!shopLine) {
+                ClipboardTimeEstimate.TimeLabel timeLabel = ClipboardTimeEstimate.buildTimeText(costItem.itemName, missing);
+                timeText = timeLabel.compact();
+                timeTextDetailed = timeLabel.detailed();
+            }
         }
 
         int mainWidth = client.font.width(materialLine);
         int abbrevWidth = abbreviatedText.isEmpty() ? 0 : client.font.width(abbreviatedText);
         int floorWidth = floorText.isEmpty() ? 0 : client.font.width(floorText);
-        int timeWidth = timeText.isEmpty() ? 0 : client.font.width(timeText);
+        int timeWidth = timeTextWidth(client, timeText);
         int totalWidth = mainWidth + abbrevWidth + floorWidth + timeWidth;
 
         return new PreparedCostLine(materialLine, textColor, abbreviatedText, floorText,
-                floorColor, timeText, mainWidth, abbrevWidth, floorWidth, totalWidth);
+                floorColor, timeText, timeTextDetailed, mainWidth, abbrevWidth, floorWidth, totalWidth);
     }
 
     private static List<PreparedCostLine> prepareCategorizedCostLines(Minecraft client,
@@ -1828,7 +2000,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         return lines;
     }
 
-    private static void drawPreparedCostLine(GuiGraphicsExtractor context, Minecraft client, PreparedCostLine line, int y) {
+    private static void drawPreparedCostLine(GuiGraphicsExtractor context, Minecraft client, PreparedCostLine line, int y,
+            int unscaledWidth, boolean reserveScrollbar) {
         context.text(client.font, line.mainText, 5, y, line.mainColor, true);
         int cursor = 5 + line.mainWidth;
         if (!line.abbrevText.isEmpty()) {
@@ -1840,8 +2013,44 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             cursor += line.floorWidth;
         }
         if (!line.timeText.isEmpty()) {
-            context.text(client.font, line.timeText, cursor, y, ClipboardTargetTime.TIME_COLOR, true);
+            int right = unscaledWidth - 5;
+            if (reserveScrollbar) {
+                right = unscaledWidth - COST_SCROLLBAR_WIDTH - 4;
+            }
+            int detailedWidth = ClipboardTargetTime.isCalculating(line.timeTextDetailed)
+                    ? timeTextWidth(client, line.timeTextDetailed)
+                    : client.font.width(line.timeTextDetailed);
+            String shown = ClipboardTargetTime.chooseTimeText(
+                    line.timeText, line.timeTextDetailed, cursor, detailedWidth, right);
+            drawTimeText(context, client, shown, cursor, y);
         }
+    }
+
+    private static int timeTextWidth(Minecraft client, String timeText) {
+        if (timeText == null || timeText.isEmpty()) {
+            return 0;
+        }
+        if (ClipboardTargetTime.isCalculating(timeText)) {
+            return client.font.width(ClipboardTargetTime.CALCULATING_PREFIX) + ClipboardTargetTime.calculatingDotsWidth();
+        }
+        return client.font.width(timeText);
+    }
+
+    private static void drawTimeText(GuiGraphicsExtractor context, Minecraft client, String timeText, int x, int y) {
+        if (ClipboardTargetTime.isCalculating(timeText)) {
+            context.text(client.font, ClipboardTargetTime.CALCULATING_PREFIX, x, y, ClipboardTargetTime.TIME_COLOR, true);
+            int dotsX = x + client.font.width(ClipboardTargetTime.CALCULATING_PREFIX);
+            int dotTop = y + ClipboardTargetTime.CALCULATING_DOT_TOP;
+            int size = ClipboardTargetTime.CALCULATING_DOT_SIZE;
+            int step = size + ClipboardTargetTime.CALCULATING_DOT_GAP;
+            for (int i = 0; i < ClipboardTargetTime.CALCULATING_DOT_COUNT; i++) {
+                int left = dotsX + i * step;
+                context.fill(left + 1, dotTop + 1, left + size + 1, dotTop + size + 1, 0xFF3F3F00);
+                context.fill(left, dotTop, left + size, dotTop + size, ClipboardTargetTime.TIME_COLOR);
+            }
+            return;
+        }
+        context.text(client.font, timeText, x, y, ClipboardTargetTime.TIME_COLOR, true);
     }
 
     private static void drawCostOverflow(GuiGraphicsExtractor context, RenderSnapshot snapshot, boolean inInventory,
@@ -1974,8 +2183,8 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                     ambossItems.removeIf(item -> isCostItemComplete(item, quantity));
                     ressourceItems.removeIf(item -> isCostItemComplete(item, quantity));
                     result.addAll(materials);
-                    result.addAll(ambossItems);
                     result.addAll(ressourceItems);
+                    result.addAll(ambossItems);
                 } else if (costDisplayMode == 2) {
                     List<CostItem> materialsNotComplete = new ArrayList<>();
                     List<CostItem> materialsComplete = new ArrayList<>();
@@ -2008,25 +2217,25 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
                     }
 
                     result.addAll(materialsNotComplete);
-                    result.addAll(ambossNotComplete);
                     result.addAll(ressourceNotComplete);
+                    result.addAll(ambossNotComplete);
                     result.addAll(materialsComplete);
-                    result.addAll(ambossComplete);
                     result.addAll(ressourceComplete);
+                    result.addAll(ambossComplete);
                 } else {
                     result.addAll(materials);
-                    result.addAll(ambossItems);
                     result.addAll(ressourceItems);
+                    result.addAll(ambossItems);
                 }
             } else {
                 result.addAll(materials);
-                result.addAll(ambossItems);
                 result.addAll(ressourceItems);
+                result.addAll(ambossItems);
             }
         } else {
             result.addAll(materials);
-            result.addAll(ambossItems);
             result.addAll(ressourceItems);
+            result.addAll(ambossItems);
         }
 
         return result;
@@ -2124,13 +2333,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * @param unscaledWidth Unskalierte Breite des Overlays
      * @return Array mit [leftButtonX, rightButtonX, spaceAfterLeftX, separatorX, spaceAfterSeparatorX, spaceAfterRightX, countX]
      */
-    private static int[] calculateButtonPositions(Minecraft client, String blueprintName, String statusLabel,
-            String countText, int unscaledWidth) {
-        int nameWidth = client.font.width(blueprintName);
-        if (statusLabel != null && !statusLabel.isEmpty()) {
-            nameWidth += client.font.width(" ") + client.font.width(statusLabel);
-        }
-        
+    private static int[] calculateButtonPositions(Minecraft client, int unscaledWidth, int quantityAreaWidth) {
         String leftArrow = "«";
         String rightArrow = "»";
         String separator = "|";
@@ -2140,41 +2343,36 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         int separatorWidth = client.font.width(separator);
         int spaceWidth = client.font.width(space);
         int totalButtonWidth = leftArrowWidth + spaceWidth + separatorWidth + spaceWidth + rightArrowWidth;
-        
-        // Berücksichtige Textfeld-Breite + "x"-Präfix wenn in Inventar
-        boolean isInInventory = client.gui.screen() instanceof AbstractContainerScreen;
-        int quantityAreaWidth = getQuantityAreaWidth(client, countText, isInInventory);
-        int quantityAreaX = unscaledWidth - quantityAreaWidth - HEADER_COUNT_PADDING;
-        
-        int countX = quantityAreaX;
-        int nameX = HEADER_NAME_PADDING;
-        int buttonSpacing = HEADER_BUTTON_GAP;
-        
-        int buttonsX = quantityAreaX - QUANTITY_AFTER_BUTTONS_SPACING - totalButtonWidth;
-        
-        int nameEndX = nameX + nameWidth;
-        int buttonsAfterNameX = nameEndX + buttonSpacing;
-        
-        int leftButtonX, rightButtonX, spaceAfterLeftX, separatorX, spaceAfterSeparatorX, spaceAfterRightX;
-        
-        if (buttonsAfterNameX + totalButtonWidth <= buttonsX) {
-            leftButtonX = buttonsX;
-            spaceAfterLeftX = leftButtonX + leftArrowWidth;
-            separatorX = spaceAfterLeftX + spaceWidth;
-            spaceAfterSeparatorX = separatorX + separatorWidth;
-            spaceAfterRightX = spaceAfterSeparatorX + spaceWidth;
-            rightButtonX = spaceAfterRightX;
-        } else {
-            leftButtonX = nameEndX + buttonSpacing;
-            spaceAfterLeftX = leftButtonX + leftArrowWidth;
-            separatorX = spaceAfterLeftX + spaceWidth;
-            spaceAfterSeparatorX = separatorX + separatorWidth;
-            spaceAfterRightX = spaceAfterSeparatorX + spaceWidth;
-            rightButtonX = spaceAfterRightX;
-            countX = rightButtonX + rightArrowWidth + QUANTITY_AFTER_BUTTONS_SPACING;
-        }
-        
+        int leftButtonX = ClipboardLayout.arrowLeft(unscaledWidth, quantityAreaWidth, totalButtonWidth,
+                HEADER_COUNT_PADDING, QUANTITY_AFTER_BUTTONS_SPACING);
+        int spaceAfterLeftX = leftButtonX + leftArrowWidth;
+        int separatorX = spaceAfterLeftX + spaceWidth;
+        int spaceAfterSeparatorX = separatorX + separatorWidth;
+        int spaceAfterRightX = spaceAfterSeparatorX + spaceWidth;
+        int rightButtonX = spaceAfterRightX;
+        int countX = unscaledWidth - quantityAreaWidth - HEADER_COUNT_PADDING;
         return new int[]{leftButtonX, rightButtonX, spaceAfterLeftX, separatorX, spaceAfterSeparatorX, spaceAfterRightX, countX};
+    }
+
+    private static ClipboardLayout.Point screenOrigin(Minecraft client, int scaledWidth, int footprintHeight) {
+        int screenWidth = client.getWindow().getGuiScaledWidth();
+        int screenHeight = client.getWindow().getGuiScaledHeight();
+        return ClipboardLayout.clampOrigin(
+                CCLiveUtilitiesConfig.HANDLER.instance().clipboardX,
+                CCLiveUtilitiesConfig.HANDLER.instance().clipboardY,
+                scaledWidth, footprintHeight, screenWidth, screenHeight);
+    }
+
+    private static ClipboardLayout.Point currentScreenOrigin(Minecraft client) {
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
+        if (scale <= 0) {
+            scale = 1.0f;
+        }
+        int width = costOverlayScreenWidth > 0
+                ? costOverlayScreenWidth
+                : Math.round(calculateUnscaledWidth() * scale);
+        int height = costOverlayMaxScaledHeight > 0 ? costOverlayMaxScaledHeight : costOverlayScreenHeight;
+        return screenOrigin(client, width, height);
     }
     
     /**
@@ -2217,6 +2415,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * @return true wenn ein Button geklickt wurde
      */
     public static boolean mouseScrolled(double mouseX, double mouseY, double vertical) {
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerInputHandler.blocksUnderlyingOverlay(mouseX, mouseY)) {
+            return false;
+        }
         if (vertical == 0.0 || !clipboardInputEnabled() || !pointInClipboard(mouseX, mouseY)) {
             return false;
         }
@@ -2257,7 +2458,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
 
     private static boolean clipboardInputEnabled() {
         return CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled
-                && CCLiveUtilitiesConfig.HANDLER.instance().showClipboard;
+                && CCLiveUtilitiesConfig.HANDLER.instance().showClipboard
+                && !(CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideEmpty
+                && visiblePagesReady && visibleStoredIndexes.length == 0);
     }
 
     private static boolean pointInClipboard(double mouseX, double mouseY) {
@@ -2286,6 +2489,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
 
     public static boolean handleButtonClick(int mouseX, int mouseY) {
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerInputHandler.blocksUnderlyingOverlay(mouseX, mouseY)) {
+            return false;
+        }
         if (!clipboardInputEnabled()) {
             return false;
         }
@@ -2345,10 +2551,15 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return true;
         }
         
-        int x = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
-        int y = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
+        RenderSnapshot clickSnapshot = ensureRenderSnapshot(client);
+        if (clickSnapshot == null) {
+            return false;
+        }
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
         if (scale <= 0) scale = 1.0f;
+        ClipboardLayout.Point origin = currentScreenOrigin(client);
+        int x = origin.x();
+        int y = origin.y();
         
         // Konvertiere skalierten Maus-Koordinaten zu unskalierten
         int unscaledMouseX = (int) ((mouseX - x) / scale);
@@ -2360,45 +2571,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // Y-Position der Buttons (bei "Bauplanname [Anzahl]" Zeile)
         // Muss exakt mit renderInGame übereinstimmen!
         int buttonY = currentY;
+        int currentPage = clickSnapshot.currentPage;
         
-        // Berechne Button-Positionen (MUSS exakt mit renderInGame übereinstimmen!)
-        // Hole aktuelle Seite und Daten (wie in renderInGame)
-        int currentPage = ClipboardUtility.getCurrentPage();
-        ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(currentPage);
-        
-        String countText;
-        if (currentPage == 1) {
-            // Seite 1: Gesamtliste
-            // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
-            int quantityForPage1 = getQuantityForPage(1, null);
-            countText = formatQuantityText(quantityForPage1);
-        } else if (entry != null) {
-            // Seite 2+: Einzelner Bauplan
-            countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
-        } else {
-            // Fallback
-            countText = formatQuantityText(1);
-        }
-        
-        // Hole Bauplan-Name für Button-Positionierung
-        String blueprintName;
-        FoundStatusLabel foundStatus;
-        if (currentPage == 1) {
-            blueprintName = "Gesamtliste";
-            foundStatus = resolveOverallFoundStatus();
-        } else if (entry != null) {
-            blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
-            foundStatus = resolveEntryFoundStatus(entry);
-        } else {
-            blueprintName = "Bauplan Name";
-            foundStatus = null;
-        }
-        
-        int unscaledWidth = calculateUnscaledWidth();
-        
-        // Berechne Button-Positionen mit Hilfsmethode (exakt wie in renderInGame)
-        int[] buttonPositions = calculateButtonPositions(client, blueprintName,
-            foundStatus != null ? foundStatus.text : null, countText, unscaledWidth);
+        int[] buttonPositions = calculateButtonPositions(client, clickSnapshot.renderWidth, clickSnapshot.quantityAreaWidth);
         int leftButtonX = buttonPositions[0];
         int rightButtonX = buttonPositions[1];
         
@@ -2578,10 +2753,16 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             return;
         }
         
-        int x = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
-        int y = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
+        RenderSnapshot tooltipSnapshot = ensureRenderSnapshot(client);
+        if (tooltipSnapshot == null || (CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideEmpty
+                && visibleStoredIndexes.length == 0)) {
+            return;
+        }
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
         if (scale <= 0) scale = 1.0f;
+        ClipboardLayout.Point origin = currentScreenOrigin(client);
+        int x = origin.x();
+        int y = origin.y();
         
         // Konvertiere skalierten Maus-Koordinaten zu unskalierten
         int unscaledMouseX = (int) ((mouseX - x) / scale);
@@ -2593,34 +2774,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         // Y-Position der Buttons
         int buttonY = currentY;
         
-        // Hole aktuelle Seite und Daten für Button-Positionierung
-        int currentPage = ClipboardUtility.getCurrentPage();
-        ClipboardUtility.ClipboardEntry entry = ClipboardUtility.getEntryForPage(currentPage);
-        
-        String blueprintName;
-        String countText;
-        FoundStatusLabel foundStatus;
-        if (currentPage == 1) {
-            blueprintName = "Gesamtliste";
-            // Hole aktuelle Anzahl für Seite 1 (aus Textfeld oder Standard 1)
-            int quantityForPage1 = getQuantityForPage(1, null);
-            countText = formatQuantityText(quantityForPage1);
-            foundStatus = resolveOverallFoundStatus();
-        } else if (entry != null) {
-            blueprintName = entry.blueprintName != null ? entry.blueprintName : "Bauplan Name";
-            countText = formatQuantityText(entry.quantity > 0 ? entry.quantity : 1);
-            foundStatus = resolveEntryFoundStatus(entry);
-        } else {
-            blueprintName = "Bauplan Name";
-            countText = formatQuantityText(1);
-            foundStatus = null;
-        }
-        
-        int unscaledWidth = calculateUnscaledWidth();
-        
-        // Berechne Button-Positionen mit Hilfsmethode (exakt wie in renderInGame)
-        int[] buttonPositions = calculateButtonPositions(client, blueprintName,
-            foundStatus != null ? foundStatus.text : null, countText, unscaledWidth);
+        int[] buttonPositions = calculateButtonPositions(client, tooltipSnapshot.renderWidth, tooltipSnapshot.quantityAreaWidth);
         int leftButtonX = buttonPositions[0];
         int rightButtonX = buttonPositions[1];
         
@@ -2758,26 +2912,21 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             + client.font.width("»");
     }
     
-    private static int computeHeaderLineWidth(Minecraft client, String blueprintName, String statusLabel, String countText) {
-        boolean isInInventory = client.gui.screen() instanceof AbstractContainerScreen;
-        int quantityAreaWidth = getQuantityAreaWidth(client, countText, isInInventory);
-        int totalButtonWidth = getNavigationButtonsWidth(client);
-        int nameEndX = HEADER_NAME_PADDING + client.font.width(blueprintName);
-        if (statusLabel != null && !statusLabel.isEmpty()) {
-            nameEndX += client.font.width(" ") + client.font.width(statusLabel);
+    private static FoundStatusLabel resolveOverallFoundStatus() {
+        if (!visiblePagesReady) {
+            return resolveOverallFoundStatus(ClipboardUtility.getEntries());
         }
-        
-        int flowLayoutWidth = nameEndX + HEADER_BUTTON_GAP + totalButtonWidth
-            + QUANTITY_AFTER_BUTTONS_SPACING + quantityAreaWidth + HEADER_COUNT_PADDING;
-        
-        int rightAlignedMinWidth = nameEndX + HEADER_BUTTON_GAP + QUANTITY_AFTER_BUTTONS_SPACING + totalButtonWidth
-            + QUANTITY_AFTER_BUTTONS_SPACING + quantityAreaWidth + HEADER_COUNT_PADDING;
-        
-        return Math.max(flowLayoutWidth, rightAlignedMinWidth);
+        List<ClipboardUtility.ClipboardEntry> visible = new ArrayList<>();
+        List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
+        for (int index : visibleStoredIndexes) {
+            if (index >= 0 && index < entries.size()) {
+                visible.add(entries.get(index));
+            }
+        }
+        return resolveOverallFoundStatus(visible);
     }
 
-    private static FoundStatusLabel resolveOverallFoundStatus() {
-        List<ClipboardUtility.ClipboardEntry> entries = ClipboardUtility.getEntries();
+    private static FoundStatusLabel resolveOverallFoundStatus(List<ClipboardUtility.ClipboardEntry> entries) {
         if (entries == null || entries.isEmpty()) {
             return null;
         }
@@ -2938,8 +3087,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         
         // Rendere Textfeld (Matrix-Stack ist bereits aktiv in renderInGame)
         // Mouse position für Textfeld-Rendering (unskaliert, relativ zum Overlay)
-        int unscaledMouseX = (int) ((client.mouseHandler.xpos() - CCLiveUtilitiesConfig.HANDLER.instance().clipboardX) / scale);
-        int unscaledMouseY = (int) ((client.mouseHandler.ypos() - CCLiveUtilitiesConfig.HANDLER.instance().clipboardY) / scale);
+        ClipboardLayout.Point fieldOrigin = currentScreenOrigin(client);
+        int unscaledMouseX = (int) ((client.mouseHandler.xpos() - fieldOrigin.x()) / scale);
+        int unscaledMouseY = (int) ((client.mouseHandler.ypos() - fieldOrigin.y()) / scale);
         quantityTextField.extractRenderState(context, unscaledMouseX, unscaledMouseY, 0.0f);
         
         // Aktualisiere entry.quantity wenn Textfeld geändert wurde
@@ -2965,6 +3115,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * Behandelt Klicks auf das [Anzahl] Textfeld
      */
     public static boolean handleQuantityTextFieldClick(int mouseX, int mouseY, int button) {
+        if (net.felix.utilities.Overall.itemviewer.ui.ViewerInputHandler.blocksUnderlyingOverlay(mouseX, mouseY)) {
+            return false;
+        }
         if (quantityTextField == null) {
             return false;
         }
@@ -2975,8 +3128,9 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         
         // Hole Overlay-Position und Skalierung
-        int overlayX = CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
-        int overlayY = CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
+        ClipboardLayout.Point overlayOrigin = currentScreenOrigin(client);
+        int overlayX = overlayOrigin.x();
+        int overlayY = overlayOrigin.y();
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
         if (scale <= 0) scale = 1.0f;
         

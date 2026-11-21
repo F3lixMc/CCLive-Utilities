@@ -158,6 +158,25 @@ public final class FactoryLevelOutbox {
         return account != null && inflight.containsKey(account);
     }
 
+    /** Entfernt den gespeicherten Höchststand dieser Phase, auch einen laufenden Versuch. */
+    public void forget(String account, SmithSkillOutbox.Phase phase) {
+        if (account == null || phase == null) {
+            return;
+        }
+        Attempt current = inflight.get(account);
+        if (current != null && phase.equals(current.phase())) {
+            inflight.remove(account);
+        }
+        Map<String, Saved> phases = accounts.get(account);
+        if (phases != null) {
+            phases.remove(SmithSkillOutbox.key(phase));
+            if (phases.isEmpty()) {
+                accounts.remove(account);
+            }
+        }
+        save();
+    }
+
     static boolean better(Integer next, Integer current) {
         if (next == null || !FactoryLevel.fits(next)) {
             return false;

@@ -116,7 +116,9 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     }
     
     private int calculateUnscaledHeight() {
-        return PADDING * 2 + LINE_HEIGHT * 5;
+        Minecraft client = Minecraft.getInstance();
+        int fontHeight = client != null && client.font != null ? client.font.lineHeight : 9;
+        return net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(PADDING, LINE_HEIGHT, fontHeight, 5);
     }
     
     @Override

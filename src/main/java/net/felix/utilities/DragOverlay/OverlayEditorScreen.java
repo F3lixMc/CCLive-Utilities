@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Overall.language.ModTexts;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
 import net.felix.utilities.Other.clipboard.ClipboardTargetTime;
 import net.felix.utilities.Other.keybinding.NumericFieldInput;
@@ -70,6 +71,8 @@ public class OverlayEditorScreen extends Screen {
     private Button resetButton;
     private Button overlayButton;
     private StringWidget titleWidget;
+    private F6TransparencySlider transparencySlider;
+    private boolean editorButtonsVisible = true;
     
     // Store the previous screen so we can restore it
     private Screen previousScreen;
@@ -93,7 +96,7 @@ public class OverlayEditorScreen extends Screen {
     private final NumericFieldInput.State clipboardMaxLinesField = new NumericFieldInput.State();
     
     public OverlayEditorScreen() {
-        super(Component.literal("Overlay Editor"));
+        super(ModTexts.text("cclive.f6.screen"));
         // Store the current screen before opening the overlay editor
         this.previousScreen = Minecraft.getInstance().gui.screen();
         initializeOverlays();
@@ -116,6 +119,9 @@ public class OverlayEditorScreen extends Screen {
             // Separate Overlays - immer hinzufügen (werden nur gerendert wenn enabled)
             overlays.add(new NpcAlertsSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
             overlays.add(new NpcAlertsSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
+            if (net.felix.utilities.Overall.npcalerts.overlay.AmbossSlots.slot2SeparateOverlay()) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("ambossSlot2", "ambossSlot2", "Amboss Slot 2"));
+            }
             overlays.add(new NpcAlertsSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
             overlays.add(new NpcAlertsSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
             overlays.add(new NpcAlertsSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
@@ -260,6 +266,9 @@ public class OverlayEditorScreen extends Screen {
             // Separate Overlays - immer hinzufügen (werden nur gerendert wenn enabled)
             overlays.add(new NpcAlertsSeparateDraggableOverlay("forschung", "forschung", "Forschung"));
             overlays.add(new NpcAlertsSeparateDraggableOverlay("amboss", "amboss", "Amboss"));
+            if (net.felix.utilities.Overall.npcalerts.overlay.AmbossSlots.slot2SeparateOverlay()) {
+                overlays.add(new NpcAlertsSeparateDraggableOverlay("ambossSlot2", "ambossSlot2", "Amboss Slot 2"));
+            }
             overlays.add(new NpcAlertsSeparateDraggableOverlay("schmelzofen", "schmelzofen", "Schmelzofen"));
             overlays.add(new NpcAlertsSeparateDraggableOverlay("jaeger", "jaeger", "Jäger"));
             overlays.add(new NpcAlertsSeparateDraggableOverlay("seelen", "seelen", "Seelen"));
@@ -466,74 +475,115 @@ public class OverlayEditorScreen extends Screen {
     }
     
     @Override
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    }
+
+    @Override
+    public void extractTransparentBackground(GuiGraphicsExtractor context) {
+    }
+
+    @Override
     protected void init() {
+        clearWidgets();
         super.init();
+        transparencySlider = null;
         
         // Title
         titleWidget = new StringWidget(
-            Component.literal("Overlay Editor - Drag & Drop to reposition overlays"),
+            ModTexts.text("cclive.f6.title"),
             font
         );
-        titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, 20);
-        addRenderableWidget(titleWidget);
-        
-        // Buttons horizontal zentrieren
-        // 4 Buttons à 80 Pixel = 320 Pixel, 3 Abstände à 10 Pixel = 30 Pixel, Gesamt = 350 Pixel
+        int buttonHeight = 20;
         int buttonWidth = 80;
         int buttonSpacing = 10;
-        int totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing; // 350 Pixel
-        int startX = width / 2 - totalButtonsWidth / 2; // width / 2 - 175
+        int totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing;
+        int startX = Math.max(0, (width - totalButtonsWidth) / 2);
+        int titleY = 5;
+        if (editorButtonsVisible) {
+            int gap = 4;
+            int sliderWidth = 118;
+            int sliderHeight = 28;
+            int sliderX = startX - gap - sliderWidth;
+            if (sliderX < 2) {
+                sliderX = 2;
+                int needed = sliderX + sliderWidth + gap;
+                if (startX < needed) {
+                    startX = needed;
+                }
+                if (startX + totalButtonsWidth > width - 2) {
+                    buttonSpacing = 4;
+                    int available = Math.max(0, width - 2 - needed);
+                    buttonWidth = Math.max(32, (available - 3 * buttonSpacing) / 4);
+                    totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing;
+                    startX = needed;
+                }
+            }
+            transparencySlider = new F6TransparencySlider(sliderX, 5, sliderWidth, sliderHeight);
+            addRenderableWidget(transparencySlider);
+            titleY = Math.max(5 + buttonHeight, 5 + sliderHeight) + 5;
+        }
+        titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, titleY);
+        addRenderableWidget(titleWidget);
+
+        if (!editorButtonsVisible) {
+            return;
+        }
+
+        int buttonY = 5;
         
         // Done Button
         doneButton = Button.builder(
-            Component.literal("Done"),
+            ModTexts.text("cclive.f6.done"),
             button -> onClose()
-        ).bounds(startX, height - 30, buttonWidth, 20).build();
+        ).bounds(startX, buttonY, buttonWidth, buttonHeight).build();
         addRenderableWidget(doneButton);
         
         // NPC Alerts Button
         Button npcAlertsButton = Button.builder(
-            Component.literal("NPC Alerts"),
+            ModTexts.text("cclive.f6.npc_alerts"),
             button -> {
                 Minecraft client = Minecraft.getInstance();
                 if (client != null) {
                     client.gui.setScreen(new net.felix.utilities.Overall.npcalerts.ui.NpcAlertsSettingsScreen(this));
                 }
             }
-        ).bounds(startX + buttonWidth + buttonSpacing, height - 30, buttonWidth, 20).build();
+        ).bounds(startX + buttonWidth + buttonSpacing, buttonY, buttonWidth, buttonHeight).build();
         addRenderableWidget(npcAlertsButton);
         
         // Overlay Button
         overlayButton = Button.builder(
-            Component.literal("Overlay"),
+            ModTexts.text("cclive.f6.overlay"),
             button -> overlaySettingsOpen = !overlaySettingsOpen
-        ).bounds(startX + 2 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
+        ).bounds(startX + 2 * (buttonWidth + buttonSpacing), buttonY, buttonWidth, buttonHeight).build();
         addRenderableWidget(overlayButton);
         
         // Reset Button
         resetButton = Button.builder(
-            Component.literal("Reset All"),
+            ModTexts.text("cclive.f6.reset_all"),
             button -> resetAllOverlays()
-        ).bounds(startX + 3 * (buttonWidth + buttonSpacing), height - 30, buttonWidth, 20).build();
+        ).bounds(startX + 3 * (buttonWidth + buttonSpacing), buttonY, buttonWidth, buttonHeight).build();
         addRenderableWidget(resetButton);
     }
     
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        // Render the previous screen in the background if it exists
-        if (previousScreen != null) {
-            previousScreen.extractRenderState(context, mouseX, mouseY, delta);
+        F6MenuBackground.setSuppressUnderlyingDim(true);
+        try {
+            if (previousScreen != null) {
+                previousScreen.extractRenderState(context, mouseX, mouseY, delta);
+            }
+        } finally {
+            F6MenuBackground.setSuppressUnderlyingDim(false);
         }
 
-        // Render very transparent background overlay
-        context.fill(0, 0, width, height, 0x20000000);
+        context.fill(0, 0, width, height, CCLiveUtilitiesConfig.f6MenuBackgroundColor());
         
         // Render title
         titleWidget.extractRenderState(context, mouseX, mouseY, delta);
         
         // Render all overlays in edit mode
         for (DraggableOverlay overlay : overlays) {
-            if (overlay.isConfigEnabled()) {
+            if (overlay.isDrawnInEditor()) {
                 overlay.renderInEditMode(context, mouseX, mouseY, delta);
                 
                 // Render resize handle and reset handle if hovering over the overlay
@@ -573,17 +623,18 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void renderOverlayHandleTooltips(GuiGraphicsExtractor context, int mouseX, int mouseY) {
-        for (DraggableOverlay overlay : overlays) {
-            if (!overlay.isConfigEnabled()) {
+        for (int i = overlays.size() - 1; i >= 0; i--) {
+            DraggableOverlay overlay = overlays.get(i);
+            if (!overlay.isDrawnInEditor()) {
                 continue;
             }
             
             if (isOverlayResetHandle(mouseX, mouseY, overlay)) {
-                context.setComponentTooltipForNextFrame(font, List.of(Component.literal("Größe zurücksetzen")), mouseX, mouseY);
+                context.setComponentTooltipForNextFrame(font, List.of(ModTexts.text("cclive.f6.tooltip.reset_size")), mouseX, mouseY);
                 return;
             }
             if (isOverlayResizeHandle(mouseX, mouseY, overlay)) {
-                context.setComponentTooltipForNextFrame(font, List.of(Component.literal("Ziehen um Größe anzupassen")), mouseX, mouseY);
+                context.setComponentTooltipForNextFrame(font, List.of(ModTexts.text("cclive.f6.tooltip.resize")), mouseX, mouseY);
                 return;
             }
         }
@@ -667,10 +718,10 @@ public class OverlayEditorScreen extends Screen {
     private void renderInstructions(GuiGraphicsExtractor context) {
         int y = height - 92;
         String[] instructions = {
-            "Left Click + Drag: Move overlay",
-            "Left Click + Drag (corner): Resize overlay",
-            "Left Click + Arrow Keys: Move overlay 1 pixel",
-            "ESC: Close editor"
+            ModTexts.get("cclive.f6.instruction.move"),
+            ModTexts.get("cclive.f6.instruction.resize"),
+            ModTexts.get("cclive.f6.instruction.nudge"),
+            ModTexts.get("cclive.f6.instruction.close")
         };
         
         for (String instruction : instructions) {
@@ -703,54 +754,54 @@ public class OverlayEditorScreen extends Screen {
             return true;
         }
         
+        if (draggingOverlay != null || resizingOverlay != null) {
+            return true;
+        }
+
+        if (super.mouseClicked(event, doubled)) {
+            return true;
+        }
+
         if (button == InputConstants.MOUSE_BUTTON_LEFT) {
-            // Check for reset area first (highest priority)
-            for (DraggableOverlay overlay : overlays) {
-                if (overlay.isConfigEnabled() && overlay.isResetArea((int) mouseX, (int) mouseY)) {
-                    overlay.resetSizeToDefault();
-                    overlay.savePosition();
+            int clickX = (int) mouseX;
+            int clickY = (int) mouseY;
+            DraggableOverlay top = OverlayHitOrder.topmost(overlays, overlay -> overlay.isDrawnInEditor()
+                    && (overlay.isResetArea(clickX, clickY) || overlay.isResizeArea(clickX, clickY) || overlay.isHovered(clickX, clickY)));
+            if (top != null) {
+                if (top.isResetArea(clickX, clickY)) {
+                    top.resetSizeToDefault();
+                    top.savePosition();
                     CCLiveUtilitiesConfig.HANDLER.save();
                     return true;
                 }
-            }
-            
-            // Check for resize area
-            for (DraggableOverlay overlay : overlays) {
-                if (overlay.isConfigEnabled() && overlay.isResizeArea((int) mouseX, (int) mouseY)) {
-                    // Check if dragging is allowed for this overlay
-                    if (!canDragOverlay(overlay)) {
-                        continue;
-                    }
-                    resizingOverlay = overlay;
-                    resizeStartX = (int) mouseX;
-                    resizeStartY = (int) mouseY;
-                    resizeStartWidth = overlay.getWidth();
-                    resizeStartHeight = overlay.getHeight();
-                    resizeStartOverlayX = overlay.getX(); // Speichere die ursprüngliche X-Position
+                if (top.isResizeArea(clickX, clickY) && canDragOverlay(top)) {
+                    resizingOverlay = top;
+                    resizeStartX = clickX;
+                    resizeStartY = clickY;
+                    resizeStartWidth = top.getWidth();
+                    resizeStartHeight = top.getHeight();
+                    resizeStartOverlayX = top.getX();
                     return true;
                 }
-            }
-            
-            // Check for drag area
-            for (DraggableOverlay overlay : overlays) {
-                if (overlay.isConfigEnabled() && overlay.isHovered((int) mouseX, (int) mouseY)) {
-                    // Check if dragging is allowed for this overlay
-                    if (!canDragOverlay(overlay) || !overlay.allowsMove()) {
-                        continue;
-                    }
-                    draggingOverlay = overlay;
-                    dragOffsetX = (int) mouseX - overlay.getX();
-                    dragOffsetY = (int) mouseY - overlay.getY();
+                if (top.isHovered(clickX, clickY) && canDragOverlay(top) && top.allowsMove()) {
+                    draggingOverlay = top;
+                    dragOffsetX = clickX - top.getX();
+                    dragOffsetY = clickY - top.getY();
                     return true;
                 }
+                return true;
             }
         }
-        
-        return super.mouseClicked(event, doubled);
+
+        return false;
     }
     
     @Override
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event, double deltaX, double deltaY) {
+        if (transparencySlider != null && transparencySlider.isDragging()) {
+            transparencySlider.mouseDragged(event, deltaX, deltaY);
+            return true;
+        }
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -852,6 +903,12 @@ public class OverlayEditorScreen extends Screen {
     
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
+        if (transparencySlider != null && transparencySlider.isDragging()) {
+            super.mouseReleased(event);
+            transparencySlider.stopDragging();
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
         int button = event.button();
         if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
@@ -884,6 +941,18 @@ public class OverlayEditorScreen extends Screen {
 
         if (keyCode == InputConstants.KEY_ESCAPE) {
             onClose();
+            return true;
+        }
+
+        if (OverlayEditorUtility.matchesEditorBarKey(event)) {
+            editorButtonsVisible = !editorButtonsVisible;
+            init();
+            return true;
+        }
+
+        if (draggingOverlay == null && transparencySlider != null && getFocused() == transparencySlider
+                && transparencySlider.keyPressed(event)) {
+            CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
         
@@ -1465,7 +1534,9 @@ public class OverlayEditorScreen extends Screen {
     private int clipboardButton5Y(int boxY) {
         int button1 = clipboardFirstButtonY(boxY);
         int target = button1 + CLIPBOARD_BUTTON_SPACING;
-        int button2 = target + CLIPBOARD_BUTTON_SPACING + 5 + CLIPBOARD_BUTTON_HEIGHT;
+        int hideEmpty = target + CLIPBOARD_BUTTON_SPACING;
+        int hideCompleted = hideEmpty + CLIPBOARD_BUTTON_SPACING;
+        int button2 = hideCompleted + CLIPBOARD_BUTTON_SPACING + 5 + CLIPBOARD_BUTTON_HEIGHT;
         int button3 = button2 + CLIPBOARD_BUTTON_SPACING;
         int button4 = button3 + CLIPBOARD_BUTTON_SPACING + 5 + CLIPBOARD_BUTTON_HEIGHT;
         return button4 + CLIPBOARD_BUTTON_SPACING;
@@ -1599,9 +1670,29 @@ public class OverlayEditorScreen extends Screen {
         context.fill(boxX + 10, targetY, boxX + 10 + buttonWidth, targetY + buttonHeight, targetColor);
         context.outline(boxX + 10, targetY, buttonWidth, buttonHeight, 0xFFFFFFFF);
         context.text(font, "Ungefähre Zeit: " + (approxTimeEnabled ? "An" : "Aus"), boxX + 15, targetY + 6, 0xFFFFFFFF, false);
+
+        boolean hideEmpty = CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideEmpty;
+        int hideEmptyY = targetY + buttonSpacing;
+        boolean hideEmptyHovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                mouseY >= hideEmptyY && mouseY <= hideEmptyY + buttonHeight;
+        context.fill(boxX + 10, hideEmptyY, boxX + 10 + buttonWidth, hideEmptyY + buttonHeight,
+                hideEmptyHovered ? 0xFF404040 : 0xFF202020);
+        context.outline(boxX + 10, hideEmptyY, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.text(font, "Leeres Clipboard ausblenden: " + (hideEmpty ? "An" : "Aus"),
+                boxX + 15, hideEmptyY + 6, 0xFFFFFFFF, false);
+
+        boolean hideCompleted = CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideCompletedBlueprints;
+        int hideCompletedY = hideEmptyY + buttonSpacing;
+        boolean hideCompletedHovered = mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+                mouseY >= hideCompletedY && mouseY <= hideCompletedY + buttonHeight;
+        context.fill(boxX + 10, hideCompletedY, boxX + 10 + buttonWidth, hideCompletedY + buttonHeight,
+                hideCompletedHovered ? 0xFF404040 : 0xFF202020);
+        context.outline(boxX + 10, hideCompletedY, buttonWidth, buttonHeight, 0xFFFFFFFF);
+        context.text(font, "Vervollständigte Baupläne ausblenden: " + (hideCompleted ? "An" : "Aus"),
+                boxX + 15, hideCompletedY + 6, 0xFFFFFFFF, false);
         
         // Überschrift: Material Sortierung
-        int headerY = targetY + buttonSpacing + 5;
+        int headerY = hideCompletedY + buttonSpacing + 5;
         context.text(font, "Material Sortierung", boxX + 10, headerY, 0xFFFFFF00, false);
         
         // Button 2: Material Sortierung An/Aus
@@ -1736,15 +1827,36 @@ public class OverlayEditorScreen extends Screen {
         int targetY = button1Y + buttonSpacing;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
             mouseY >= targetY && mouseY <= targetY + buttonHeight) {
-            CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled =
-                    !CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled;
+            boolean showTime = !CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled;
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardApproxTimeEnabled = showTime;
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardShowTargetTime = showTime;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            ClipboardDraggableOverlay.invalidateRenderSnapshot();
+            return true;
+        }
+
+        int hideEmptyY = targetY + buttonSpacing;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= hideEmptyY && mouseY <= hideEmptyY + buttonHeight) {
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideEmpty =
+                    !CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideEmpty;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            ClipboardDraggableOverlay.invalidateRenderSnapshot();
+            return true;
+        }
+
+        int hideCompletedY = hideEmptyY + buttonSpacing;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
+            mouseY >= hideCompletedY && mouseY <= hideCompletedY + buttonHeight) {
+            CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideCompletedBlueprints =
+                    !CCLiveUtilitiesConfig.HANDLER.instance().clipboardHideCompletedBlueprints;
             CCLiveUtilitiesConfig.HANDLER.save();
             ClipboardDraggableOverlay.invalidateRenderSnapshot();
             return true;
         }
         
         // Button 2: Material Sortierung An/Aus
-        int headerY = targetY + buttonSpacing + 5;
+        int headerY = hideCompletedY + buttonSpacing + 5;
         int button2Y = headerY + 20;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth &&
             mouseY >= button2Y && mouseY <= button2Y + buttonHeight) {

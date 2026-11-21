@@ -202,6 +202,9 @@ public final class ItemFilterPipeline {
                 .collect(Collectors.toList());
         }
 
+        if (kitFilterActive) {
+            net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.compactItemCount = Math.max(1, result.size());
+        }
         return result;
     }
 

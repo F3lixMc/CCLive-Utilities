@@ -137,7 +137,7 @@ public final class MiningLumberjackOverlay {
 		int padding = 5;
 		int lineHeight = 12;
 		int lines = 5;
-		int overlayHeight = padding * 2 + lineHeight * lines;
+		int overlayHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(padding, lineHeight, client.font.lineHeight, lines);
 		int minOverlayWidth = 100;
 		
 		// Calculate text width
@@ -228,7 +228,7 @@ public final class MiningLumberjackOverlay {
 		int padding = 5;
 		int lineHeight = 12;
 		int lines = 5;
-		int overlayHeight = padding * 2 + lineHeight * lines;
+		int overlayHeight = net.felix.utilities.DragOverlay.OverlayInsets.heightForLines(padding, lineHeight, client.font.lineHeight, lines);
 		int minOverlayWidth = 100;
 		
 		// Calculate text width

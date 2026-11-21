@@ -1,10 +1,10 @@
 package net.felix.utilities.Other.clipboard.overlay;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.felix.utilities.Other.clipboard.ClipboardTargetTime;
 import net.felix.utilities.Other.clipboard.ClipboardUtility;
 import net.felix.utilities.Other.clipboard.collector.ClipboardPaperShredsCollector;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
@@ -92,13 +92,19 @@ public final class ClipboardTimeEstimate {
         final BigDecimal remaining;
         final boolean showTime;
         final String text;
+        final String detailedText;
 
-        CachedEstimate(long computedAtMs, BigDecimal remaining, boolean showTime, String text) {
+        CachedEstimate(long computedAtMs, BigDecimal remaining, boolean showTime, String text, String detailedText) {
             this.computedAtMs = computedAtMs;
             this.remaining = remaining;
             this.showTime = showTime;
             this.text = text;
+            this.detailedText = detailedText;
         }
+    }
+
+    public record TimeLabel(String compact, String detailed) {
+        static final TimeLabel EMPTY = new TimeLabel("", "");
     }
 
     /**
@@ -191,16 +197,26 @@ public final class ClipboardTimeEstimate {
      * @param itemName  Name des Materials/der Ressource
      * @param remaining noch fehlende Menge (&lt;= 0 heißt fertig)
      * @return {@code " ≈ /"} sobald die Einstellung aktiv ist (noch nicht fertig),
-     *         {@code " ≈ Wird errechnet"} während des Farmens ohne Rate,
-     *         {@code " ≈ 3.5 min"} mit Rate, leer wenn fertig
+     *         {@link ClipboardTargetTime#CALCULATING} während des Farmens ohne Rate,
+     *         {@code " ≈ 1h"} mit Rate. {@code detailed} hängt die nächste Einheit an, wenn sie nicht null ist.
      */
-    public static synchronized String buildTimeText(String itemName, BigDecimal remaining) {
-        if (itemName == null || itemName.isEmpty() || remaining == null || !isSupported(itemName)) {
-            return "";
+    public static synchronized TimeLabel buildTimeText(String itemName, BigDecimal remaining) {
+        if (itemName == null || itemName.isEmpty() || remaining == null) {
+            return TimeLabel.EMPTY;
         }
         // Fertig: keinen Zeit-Suffix anzeigen
         if (remaining.signum() <= 0) {
-            return "";
+            return TimeLabel.EMPTY;
+        }
+        double storageRate = net.felix.utilities.Other.clipboard.collector.StorageRateTooltip.rateForItem(itemName);
+        if (storageRate > 0.0) {
+            double minutes = remaining.doubleValue() / storageRate;
+            return new TimeLabel(
+                    " ≈ " + ClipboardTargetTime.formatDuration(minutes),
+                    " ≈ " + ClipboardTargetTime.formatDurationDetailed(minutes));
+        }
+        if (!isSupported(itemName)) {
+            return TimeLabel.EMPTY;
         }
 
         checkDimensionChange();
@@ -213,24 +229,28 @@ public final class ClipboardTimeEstimate {
                 && now - cached.computedAtMs < UPDATE_INTERVAL_MS
                 && cached.remaining.compareTo(remaining) == 0
                 && cached.showTime == showTime) {
-            return cached.text;
+            return new TimeLabel(cached.text, cached.detailedText);
         }
 
         // Standard mit aktivierter Einstellung: Platzhalter, bis eine Rate vorliegt
         String text = " ≈ /";
+        String detailed = text;
         if (showTime) {
             Session session = sessions.get(key);
             if (session != null) {
                 double rate = session.ratePerMinute(now);
                 if (rate > 0.0) {
-                    text = " ≈ " + formatDuration(remaining.doubleValue() / rate);
+                    double minutes = remaining.doubleValue() / rate;
+                    text = " ≈ " + ClipboardTargetTime.formatDuration(minutes);
+                    detailed = " ≈ " + ClipboardTargetTime.formatDurationDetailed(minutes);
                 } else {
-                    text = " ≈ Wird errechnet";
+                    text = ClipboardTargetTime.CALCULATING;
+                    detailed = text;
                 }
             }
         }
-        cache.put(key, new CachedEstimate(now, remaining, showTime, text));
-        return text;
+        cache.put(key, new CachedEstimate(now, remaining, showTime, text, detailed));
+        return new TimeLabel(text, detailed);
     }
 
     /** Jedes Material mit aktivem Abbau (Drop innerhalb von {@link #ACTIVE_WINDOW_MS}) zeigt eine Zeit. */
@@ -275,10 +295,4 @@ public final class ClipboardTimeEstimate {
         return false;
     }
 
-    private static String formatDuration(double minutes) {
-        if (minutes >= 60.0) {
-            return BigDecimal.valueOf(minutes / 60.0).setScale(1, RoundingMode.HALF_UP).toPlainString() + " h";
-        }
-        return BigDecimal.valueOf(minutes).setScale(1, RoundingMode.HALF_UP).toPlainString() + " min";
-    }
 }

@@ -5,6 +5,7 @@ import java.nio.file.Paths;
 import net.fabricmc.api.ModInitializer;
 import net.felix.Community.chat.ChatManager;
 import net.felix.Community.leaderboards.LeaderboardManager;
+import net.felix.Community.leaderboards.PlayerFullReset;
 import net.felix.Community.profile.PlayerHoverStatsUtility;
 import net.felix.Community.profile.ProfileStatsManager;
 import net.felix.commands.CCLiveCommands;
@@ -85,6 +86,8 @@ public class CCLiveUtilities implements ModInitializer {
 		NpcAlertsFeature.initialize();
 		net.felix.utilities.Other.debug.DebugUtility.initializeItemLogger();
 		net.felix.utilities.Other.clipboard.ClipboardUtility.initialize();
+		// Offene Spieler-Resets vor den ersten Fortschritts-Uploads abschließen
+		PlayerFullReset.initialize();
 		// Initialisiere Leaderboard-System
 		LeaderboardManager.getInstance().initialize();
 		

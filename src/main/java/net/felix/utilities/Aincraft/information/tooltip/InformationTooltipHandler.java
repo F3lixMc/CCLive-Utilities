@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import net.felix.utilities.Aincraft.materials.data.MaterialDatabase;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Aincraft.materials.data.MaterialFloorInfo;
 import net.felix.utilities.Aincraft.materials.data.MaterialInfo;
@@ -36,6 +37,45 @@ import static net.felix.utilities.Overall.moblexicon.MoblexiconTooltip.addMoblex
 public final class InformationTooltipHandler {
 
 	private InformationTooltipHandler() {
+	}
+
+	private record MaterialPattern(MaterialInfo info, Pattern pattern) {
+	}
+
+	private static volatile int cachedMaterialGeneration = Integer.MIN_VALUE;
+	private static volatile List<MaterialPattern> cachedMaterialPatterns = List.of();
+
+	private static List<MaterialPattern> materialPatterns() {
+		int generation = MaterialDatabase.databaseGeneration.get();
+		if (generation == cachedMaterialGeneration) {
+			return cachedMaterialPatterns;
+		}
+		synchronized (InformationTooltipHandler.class) {
+			while (true) {
+				generation = MaterialDatabase.databaseGeneration.get();
+				if (generation == cachedMaterialGeneration) {
+					return cachedMaterialPatterns;
+				}
+				List<Map.Entry<String, MaterialInfo>> sorted = new ArrayList<>(materialsDatabase.entrySet());
+				sorted.sort((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()));
+				List<MaterialPattern> patterns = new ArrayList<>(sorted.size());
+				for (Map.Entry<String, MaterialInfo> entry : sorted) {
+					String materialName = entry.getKey();
+					if (materialName == null || materialName.isEmpty() || entry.getValue() == null) {
+						continue;
+					}
+					patterns.add(new MaterialPattern(
+							entry.getValue(),
+							Pattern.compile("\\b" + Pattern.quote(materialName) + "\\b", Pattern.UNICODE_CHARACTER_CLASS)));
+				}
+				if (MaterialDatabase.databaseGeneration.get() != generation) {
+					continue;
+				}
+				cachedMaterialPatterns = List.copyOf(patterns);
+				cachedMaterialGeneration = generation;
+				return cachedMaterialPatterns;
+			}
+		}
 	}
 
 	/**
@@ -267,17 +307,9 @@ public final class InformationTooltipHandler {
 	 */
 	private static boolean appendMaterialLocation(List<Component> lines, int index, Component line, String lineText,
 												  String materialNamePart, TooltipInventoryContext inventory) {
-		// Nach Laenge sortieren (laengste zuerst), damit kuerzere Namen nicht vor laengeren matchen
-		List<Map.Entry<String, MaterialInfo>> sortedMaterials = new ArrayList<>(materialsDatabase.entrySet());
-		sortedMaterials.sort((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()));
-
-		for (Map.Entry<String, MaterialInfo> entry : sortedMaterials) {
-			String materialName = entry.getKey();
-			MaterialInfo info = entry.getValue();
-
-			// Wortgrenzen verhindern Teiltreffer ("Schweinehuf" vs. "Kräftiger Schweinehuf"), auch bei "ß"
-			String pattern = "\\b" + Pattern.quote(materialName) + "\\b";
-			if (!Pattern.compile(pattern, Pattern.UNICODE_CHARACTER_CLASS).matcher(materialNamePart).find()) {
+		for (MaterialPattern entry : materialPatterns()) {
+			MaterialInfo info = entry.info();
+			if (!entry.pattern().matcher(materialNamePart).find()) {
 				continue;
 			}
 			// Bauplan-Zeilen uebernimmt der Blueprint-Viewer

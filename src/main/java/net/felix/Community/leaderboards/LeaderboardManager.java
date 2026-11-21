@@ -271,6 +271,17 @@ public class LeaderboardManager {
         return SeasonChangeGate.getInstance().areSeasonUploadsAllowed();
     }
 
+    private boolean blockedByPlayerReset(String boardName) {
+        return !"playtime".equals(boardName) && PlayerFullReset.blocksCurrentProgress();
+    }
+
+    private static void attachResetId(JsonObject request) {
+        String resetId = PlayerFullReset.currentUploadResetId();
+        if (request != null && resetId != null) {
+            request.addProperty("resetId", resetId);
+        }
+    }
+
     /**
      * Schmiedeskill wird gesammelt und erst im Fenster vor dem Sync hochgeladen.
      * Level und XP ersetzen einen schlechteren lokalen Stand. Ein unverändertes Fenster wird nicht erneut gesendet.
@@ -302,6 +313,7 @@ public class LeaderboardManager {
             requestData.addProperty("level", level);
             requestData.addProperty("seasonId", seasonId);
             requestData.addProperty("isPreseason", preseason);
+            PlayerFullReset.attachResetId(requestData, seasonId, preseason);
             JsonObject response = httpClient.postWithToken("/update", requestData, token);
             return response != null && response.has("success") && response.get("success").getAsBoolean();
         } catch (Exception e) {
@@ -322,6 +334,7 @@ public class LeaderboardManager {
             requestData.addProperty("xp", SmithSkill.xpText(xp));
             requestData.addProperty("seasonId", seasonId);
             requestData.addProperty("isPreseason", preseason);
+            PlayerFullReset.attachResetId(requestData, seasonId, preseason);
             JsonObject response = httpClient.postWithToken("/update", requestData, token);
             return response != null && response.has("success") && response.get("success").getAsBoolean();
         } catch (Exception e) {
@@ -384,6 +397,10 @@ public class LeaderboardManager {
             }
             return;
         }
+
+        if (blockedByPlayerReset(boardName)) {
+            return;
+        }
         
         if (!isEnabled || !isRegistered() || getPlayerToken() == null) {
             if (config.isDebugMode()) {
@@ -431,9 +448,13 @@ public class LeaderboardManager {
                 if (config.isDebugMode()) {
                     System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
                 }
+                if (blockedByPlayerReset(boardName)) {
+                    return;
+                }
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("board", boardName);
                 requestData.addProperty("score", score);
+                attachResetId(requestData);
                 
                 JsonObject response = httpClient.postWithToken("/update", requestData, getPlayerToken());
                 if (config.isDebugMode()) {
@@ -509,6 +530,10 @@ public class LeaderboardManager {
             }
             return;
         }
+
+        if (blockedByPlayerReset(boardName)) {
+            return;
+        }
         
         if (!isEnabled || !isRegistered() || getPlayerToken() == null) {
             if (config.isDebugMode()) {
@@ -541,9 +566,13 @@ public class LeaderboardManager {
                 if (config.isDebugMode()) {
                     System.out.println("🔥 DEBUG: Sende HTTP-Request für " + boardName + " = " + score);
                 }
+                if (blockedByPlayerReset(boardName)) {
+                    return;
+                }
                 JsonObject requestData = new JsonObject();
                 requestData.addProperty("board", boardName);
                 requestData.addProperty("score", score);
+                attachResetId(requestData);
                 
                 JsonObject response = httpClient.postWithToken("/update", requestData, getPlayerToken());
                 if (config.isDebugMode()) {

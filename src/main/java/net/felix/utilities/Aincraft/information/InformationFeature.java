@@ -99,10 +99,8 @@ public final class InformationFeature {
 	}
 
 	private static void tickResourceRate(Minecraft client) {
-		if (CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateEnabled) {
-			if (FarmzoneScoreboard.isInFarmzone(client)) {
-				FarmzoneResourceRateUtility.tick();
-			}
+		if (FarmzoneScoreboard.isInFarmzone(client)) {
+			FarmzoneResourceRateUtility.tick();
 		} else {
 			FarmzoneResourceRateUtility.resetSession();
 		}

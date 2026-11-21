@@ -175,7 +175,16 @@ public final class ViewerRenderer {
         context.fill(pos.viewerX, pos.viewerY, pos.viewerX + pos.viewerWidth, pos.viewerY + 1, 0xFF808080); // Oben
         context.fill(pos.viewerX, pos.viewerY + pos.viewerHeight - 1, pos.viewerX + pos.viewerWidth, pos.viewerY + pos.viewerHeight, 0xFF808080); // Unten
         context.fill(pos.viewerX, pos.viewerY, pos.viewerX + 1, pos.viewerY + pos.viewerHeight, 0xFF808080); // Links
-        context.fill(pos.viewerX + pos.viewerWidth - 1, pos.viewerY, pos.viewerX + pos.viewerWidth, pos.viewerY + pos.viewerHeight, 0xFF808080); // Rechts
+        int rightEdge = net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive ? 0xFFFFFFFF : 0xFF808080;
+        context.fill(pos.viewerX + pos.viewerWidth - 1, pos.viewerY, pos.viewerX + pos.viewerWidth, pos.viewerY + pos.viewerHeight, rightEdge); // Rechts
+        if (net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive) {
+            int button = 12;
+            int buttonX = pos.viewerX + pos.viewerWidth - button - 2;
+            int buttonY = pos.viewerY + 2;
+            context.fill(buttonX, buttonY, buttonX + button, buttonY + button, 0xFF202020);
+            context.text(client.font, net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitCompact ? "+" : "-",
+                    buttonX + 3, buttonY + 2, 0xFFFFFF55, false);
+        }
         
         int currentY = pos.viewerY + VIEWER_PADDING;
         

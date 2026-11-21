@@ -12,7 +12,7 @@ import net.minecraft.client.multiplayer.ServerData;
  *
  * <ul>
  *   <li>Erlaubt: Verbindung zu {@code playlegend.net:25565} oder {@code beta.playlegend.net:25565} (same proxy)</li>
- *   <li>Dev-Umgebung: lokale Features erlaubt</li>
+ *   <li>Dev-Umgebung: Features und Uploads erlaubt, auch in einer Singleplayer-Welt</li>
  *   <li>Bypass-Spieler (firestarter03, F3lixMc_): Features immer an;
  *       Uploads nur auf erlaubtem Server. Unbekannte/nicht erkannte IP → Features an, keine Uploads</li>
  *   <li>Andere Spieler auf falschem/unerkanntem Server: Mod-Features aus</li>
@@ -106,8 +106,11 @@ public final class ServerConnectionGate {
         return cachedState == MatchState.ALLOWED;
     }
 
-    /** Register, Uploads, Chat-WS Auth-pflichtige Sends, Shares. */
+    /** Register, Uploads, Chat-WS Auth-pflichtige Sends, Shares. In der Dev-Umgebung auch Singleplayer. */
     public static boolean isDataUploadAllowed() {
+        if (isDevelopmentEnvironment()) {
+            return true;
+        }
         return cachedState == MatchState.ALLOWED;
     }
 

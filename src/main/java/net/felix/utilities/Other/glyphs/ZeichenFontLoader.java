@@ -169,17 +169,27 @@ final class ZeichenFontLoader {
     }
 
     static Map<FontProviderKey, List<Integer>> indexProviders(ResourceManager manager) {
-        Map<FontProviderKey, List<Integer>> index = new HashMap<>();
+        if (manager == null) {
+            return new HashMap<>();
+        }
         Optional<Resource> resource = manager.getResource(MINECRAFT_DEFAULT_FONT);
         if (resource.isEmpty()) {
-            return index;
+            return new HashMap<>();
         }
         try (var reader = new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8)) {
+            return indexProviders(reader);
+        } catch (Exception ignored) {
+            return new HashMap<>();
+        }
+    }
+
+    static Map<FontProviderKey, List<Integer>> indexProviders(java.io.Reader reader) {
+        Map<FontProviderKey, List<Integer>> index = new HashMap<>();
+        try {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            if (!root.has("providers")) {
-                return index;
+            if (root.has("providers")) {
+                collectBitmapProviders(root.getAsJsonArray("providers"), index);
             }
-            collectBitmapProviders(root.getAsJsonArray("providers"), index);
         } catch (Exception ignored) {
             return index;
         }

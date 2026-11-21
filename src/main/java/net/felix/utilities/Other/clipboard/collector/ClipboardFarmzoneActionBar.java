@@ -2,7 +2,6 @@ package net.felix.utilities.Other.clipboard.collector;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneResourceRateUtility;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
@@ -74,9 +73,7 @@ public final class ClipboardFarmzoneActionBar {
 
         CollectedMaterialsResourcesStorage.updateResource(resourceName, total);
         net.felix.utilities.Other.clipboard.overlay.ClipboardTimeEstimate.recordCount(resourceName, total);
-        if (CCLiveUtilitiesConfig.HANDLER.instance().resourceTrackerRateEnabled) {
-            FarmzoneResourceRateUtility.update(resourceName, total);
-        }
+        FarmzoneResourceRateUtility.update(resourceName, total);
         return true;
     }
 

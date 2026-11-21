@@ -10,6 +10,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
@@ -61,6 +66,12 @@ public class ZeichenUtility {
     private static String lastLoadTrigger = "unbekannt";
     private static boolean reloadListenerRegistered = false;
     private static boolean joinReloadRegistered = false;
+    private static final AtomicLong glyphReloadGeneration = new AtomicLong();
+    private static final ExecutorService GLYPH_RELOAD = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "CCLive-ZeichenReload");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private static String aincraftBottomFont = "";
     private static Map<Character, Integer> aincraftBottomFontNumbers = new HashMap<>();
@@ -157,10 +168,76 @@ public class ZeichenUtility {
     }
 
     public static void reloadFromActiveResourcePack(String trigger) {
+        Minecraft client = Minecraft.getInstance();
+        ResourceManager manager = client == null ? null : client.getResourceManager();
+        scheduleReload(trigger, client, manager);
+    }
+
+    /**
+     * Font-JSON und die Glyphenliste werden abseits des Spielthreads gelesen.
+     * Die fertigen Zeichen werden danach auf dem Spielthread eingesetzt.
+     */
+    private static void scheduleReload(String trigger, Minecraft client, ResourceManager manager) {
+        long generation = glyphReloadGeneration.incrementAndGet();
+        GLYPH_RELOAD.execute(() -> {
+            long started = System.nanoTime();
+            Map<ZeichenFontLoader.FontProviderKey, List<Integer>> index = new HashMap<>();
+            Optional<Set<Integer>> blocked = Optional.empty();
+            try {
+                if (manager != null) {
+                    var resource = manager.getResource(ZeichenFontLoader.MINECRAFT_DEFAULT_FONT);
+                    if (resource.isPresent()) {
+                        try (var reader = new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8)) {
+                            index = ZeichenFontLoader.indexProviders(reader);
+                        }
+                    }
+                    blocked = applyBlockedGlyphPackUpdate(manager);
+                }
+            } catch (Exception ignored) {
+                index = new HashMap<>();
+                blocked = Optional.empty();
+            }
+            long workMs = (System.nanoTime() - started) / 1_000_000L;
+            blocked.ifPresent(net.felix.Community.chat.ChatBlockedGlyphs::acceptPackCodePoints);
+            Map<ZeichenFontLoader.FontProviderKey, List<Integer>> parsedIndex = index;
+            Runnable apply = () -> applyReload(trigger, generation, parsedIndex, workMs);
+            if (client != null) {
+                client.execute(apply);
+            } else {
+                apply.run();
+            }
+        });
+    }
+
+    private static void applyReload(String trigger,
+                                    long generation,
+                                    Map<ZeichenFontLoader.FontProviderKey, List<Integer>> index,
+                                    long workMs) {
+        if (generation != glyphReloadGeneration.get()) {
+            return;
+        }
+        long applyStarted = System.nanoTime();
         lastLoadTrigger = trigger;
-        loadAllSources();
-        isInitialized = true;
-        notifyDependents();
+        if (index != null && index.containsKey(AINCRAFT_BOTTOM_KEY)) {
+            clearAllZeichen();
+            applyFromFontProviderIndex(index);
+            loadedFromResourcePack = true;
+            isInitialized = true;
+            notifyDependents();
+            logStatus("[" + trigger + "] OK aus Resourcepack – moblexicon='"
+                    + moblexicon + "', aincraft-Ziffern=" + aincraftBottomFontNumbers.size()
+                    + ", Provider gesamt: " + index.size());
+        } else {
+            loadedFromResourcePack = false;
+            loadFallbackSources();
+            isInitialized = true;
+            notifyDependents();
+        }
+        long applyMs = (System.nanoTime() - applyStarted) / 1_000_000L;
+        if (workMs >= 50L || applyMs >= 50L) {
+            System.out.println("[CCLive-Utilities/Perf] Zeichen trigger=" + trigger
+                    + " hintergrund=" + workMs + "ms anwenden=" + applyMs + "ms");
+        }
     }
 
     private static void loadAllSources() {
@@ -169,6 +246,11 @@ public class ZeichenUtility {
             return;
         }
         loadedFromResourcePack = false;
+        loadFallbackSources();
+    }
+
+    private static void loadFallbackSources() {
+        clearAllZeichen();
         if (DISABLE_ZEICHEN_FALLBACK_FOR_TESTING) {
             logStatus("[" + lastLoadTrigger + "] Kein CactusClicker-Font – Zeichen geleert (Fallback aus).");
             return;
@@ -242,12 +324,7 @@ public class ZeichenUtility {
                 new ResourceManagerReloadListener() {
                     @Override
                     public void onResourceManagerReload(ResourceManager manager) {
-                        lastLoadTrigger = "resource-reload";
-                        net.felix.Community.chat.ChatBlockedGlyphs.reloadFromResourceManager(manager);
-                        // Immer neu laden (leert zuerst den Cache, dann Pack oder Fallback)
-                        loadAllSources();
-                        isInitialized = true;
-                        notifyDependents();
+                        scheduleReload("resource-reload", Minecraft.getInstance(), manager);
                     }
                 }
         );
