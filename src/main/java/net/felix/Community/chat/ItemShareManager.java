@@ -66,6 +66,7 @@ public final class ItemShareManager {
     }
 
     public void initialize() {
+        ChatShareClient.install();
         copyItemKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.chat.copy-item",
             InputConstants.Type.KEYBOARD,
@@ -74,6 +75,7 @@ public final class ItemShareManager {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            ChatShareClient.tick(client);
             if (copyItemKeyMapping != null && copyItemKeyMapping.consumeClick()) {
                 if (client.gui.screen() == null) {
                     tryCopyHoveredItem();
@@ -426,6 +428,19 @@ public final class ItemShareManager {
 
     public static final String SHARE_INSERTION_PREFIX = "cclive-share:";
 
+    /** Lädt den Share in den Cache. Für den Empfänger, der den Snapshot noch nicht lokal hat. */
+    public boolean ensureCached(String shareId) {
+        if (getResolvedItem(shareId) != null) {
+            return true;
+        }
+        ItemData data = fetchShareSync(shareId);
+        if (data == null) {
+            return false;
+        }
+        resolvedCache.put(shareId, data);
+        return true;
+    }
+
     public ItemData getResolvedItem(String shareId) {
         if (shareId == null || shareId.isEmpty()) {
             return null;
@@ -503,6 +518,10 @@ public final class ItemShareManager {
             debugChat("✗ Resolve fehlgeschlagen für " + shareId + ": " + e.getMessage());
             return null;
         }
+    }
+
+    public static Component hoverTooltip(ItemData data) {
+        return data == null ? Component.empty() : buildHoverTooltip(data);
     }
 
     private static Component buildHoverTooltip(ItemData data) {

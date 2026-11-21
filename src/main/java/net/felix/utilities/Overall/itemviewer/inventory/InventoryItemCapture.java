@@ -58,7 +58,7 @@ public final class InventoryItemCapture {
         if (itemName == null || itemName.isEmpty()) {
             itemName = stack.getHoverName().getString();
         }
-        itemName = cleanItemNameForLookup(itemName);
+        itemName = resolveCatalogName(handledScreen, client, stack, itemName);
         
         String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
         ItemData itemData = findItemByNameAndFoundAt(itemName, foundAtFloor);
@@ -102,7 +102,7 @@ public final class InventoryItemCapture {
             rawName = stack.getHoverName().getString();
         }
         String displayName = cleanItemNameForDisplay(rawName);
-        String lookupName = cleanItemNameForLookup(rawName);
+        String lookupName = resolveCatalogName(rawName, tooltipLines);
 
         String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
         ItemData template = findItemByNameAndFoundAt(lookupName, foundAtFloor);
@@ -131,7 +131,7 @@ public final class InventoryItemCapture {
             rawName = stack.getHoverName().getString();
         }
         String displayName = cleanItemNameForDisplay(rawName);
-        String lookupName = cleanItemNameForLookup(rawName);
+        String lookupName = resolveCatalogName(rawName, tooltipLines);
 
         String foundAtFloor = extractFoundAtFromTooltip(handledScreen, client, stack);
         ItemData template = findItemByNameAndFoundAt(lookupName, foundAtFloor);
@@ -482,6 +482,30 @@ public final class InventoryItemCapture {
             // Ignoriere Fehler
         }
         return null;
+    }
+
+    /**
+     * „Magnet [Modul]“ plus Tooltip-Zeile {@code Stufe: [I]} wird zum JEI-Namen
+     * (Kupfermagnet, Eisenmagnet, Goldmagnet, Diamantmagnet). Sonst normale Suche.
+     */
+    private static String resolveCatalogName(
+            net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen,
+            Minecraft client,
+            net.minecraft.world.item.ItemStack stack,
+            String rawName) {
+        return resolveCatalogName(rawName, extractShareTooltipLines(screen, client, stack));
+    }
+
+    private static String resolveCatalogName(
+            String rawName,
+            java.util.List<net.felix.Community.chat.ChatTooltipLine> tooltipLines) {
+        String mapped = net.felix.Community.chat.MagnetModuleNames.jeiName(rawName, tooltipLines);
+        if (mapped != null) {
+            return mapped;
+        }
+        String lookup = cleanItemNameForLookup(rawName);
+        mapped = net.felix.Community.chat.MagnetModuleNames.jeiName(lookup, tooltipLines);
+        return mapped != null ? mapped : lookup;
     }
 
     /**

@@ -26,6 +26,7 @@ public class ChatRulesScreen extends Screen {
     };
 
     private final boolean accepting;
+    private Screen returnTo;
     private final List<String> domains = new ArrayList<>();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private Button actionButton;
@@ -55,7 +56,13 @@ public class ChatRulesScreen extends Screen {
     }
 
     public static ChatRulesScreen forAcceptance() {
-        return new ChatRulesScreen(true);
+        return forAcceptance(null);
+    }
+
+    public static ChatRulesScreen forAcceptance(Screen returnTo) {
+        ChatRulesScreen screen = new ChatRulesScreen(true);
+        screen.returnTo = returnTo;
+        return screen;
     }
 
     @Override
@@ -71,6 +78,10 @@ public class ChatRulesScreen extends Screen {
     @Override
     public void onClose() {
         closed.set(true);
+        if (returnTo != null && this.minecraft != null) {
+            this.minecraft.gui.setScreen(returnTo);
+            return;
+        }
         super.onClose();
     }
 
@@ -119,6 +130,10 @@ public class ChatRulesScreen extends Screen {
         }
         String draft = store.draft() == null ? "" : store.draft();
         store.clearDraft();
+        if (returnTo != null) {
+            onClose();
+            return;
+        }
         onClose();
         Minecraft client = Minecraft.getInstance();
         if (client == null) return;

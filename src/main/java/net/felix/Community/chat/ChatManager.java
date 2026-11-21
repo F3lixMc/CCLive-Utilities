@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.Community.leaderboards.LeaderboardManager;
 import net.felix.Community.profile.PlayerHoverStatsUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -37,6 +36,8 @@ public class ChatManager {
     // Accessed only on the client thread, like the chat HUD.
     private final java.util.Map<Long, String> recentDeletions = new java.util.LinkedHashMap<>();
     private static final int RECENT_DELETION_LIMIT = 1000;
+    public static final String DISABLED_LINE = "Chat wurde nach Absprache mit dem PlayLegend Team Deaktiviert!";
+    public static final String DISABLED_FOLLOWUP = "Das Teilen von Items oder Kits wird im nächsten Update woanders eingebaut.";
     static final String PLACEHOLDER = "Nachricht von Moderatoren gelöscht!";
     static final int DELETED_BODY_COLOR = 0xC8C8C8;
     public static final String MESSAGE_ID_PREFIX = "cclive-msg:";
@@ -75,51 +76,21 @@ public class ChatManager {
 
         // Config ist zu diesem Zeitpunkt geladen (inkl. Migration)
         loadChatSettings();
+        webSocket.disconnect();
 
-        if (!isEnabled) {
-            isInitialized = true;
-            return;
-        }
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) ->
+            client.execute(() -> net.felix.Community.playericon.PlayerIconUtility.refreshModeratorNamesIfDue()));
 
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
-            // Sichtbarkeit/Schreibmodus bleiben aus Config — nur WS neu verbinden
-            client.execute(() -> {
-                ensureSocketConnected();
-                ChatBlockedGlyphs.refreshFromServerAsync();
-                net.felix.Community.playericon.PlayerIconUtility.refreshModeratorNamesIfDue();
-            });
-        });
-
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
-            client.execute(webSocket::disconnect));
-
-        // Periodisch Verbindung halten / reconnecten
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.player == null || !isEnabled || !showCCLiveChat) {
+            if (client.player == null) {
                 return;
             }
             if (client.player.tickCount > 0 && client.player.tickCount % 100 == 0) {
-                ensureSocketConnected();
                 net.felix.Community.playericon.PlayerIconUtility.refreshModeratorNamesIfDue();
             }
         });
 
-        ensureSocketConnected();
         isInitialized = true;
-    }
-
-    private void ensureSocketConnected() {
-        if (!isEnabled || !showCCLiveChat) {
-            return;
-        }
-        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
-            // Bypass/unbekannte IP oder falscher Server: keine Verbindung zum Backend
-            if (webSocket.isConnected()) {
-                webSocket.disconnect();
-            }
-            return;
-        }
-        webSocket.connectIfNeeded();
     }
 
     /**
@@ -128,58 +99,22 @@ public class ChatManager {
      * @return null bei Erfolg, sonst Fehlermeldung
      */
     public CompletableFuture<String> sendMessage(String message) {
-        if (!isEnabled) {
-            return CompletableFuture.completedFuture("CCLive-Chat ist deaktiviert.");
-        }
+        showDisabledNotice();
+        return CompletableFuture.completedFuture(null);
+    }
 
-        if (message == null || message.trim().isEmpty()) {
-            return CompletableFuture.completedFuture("Nachricht ist leer.");
+    /** Zwei Chatzeilen: Sperre in Rot, Hinweis zum Item- und Kit-Teilen in Gelb. */
+    public static void showDisabledNotice() {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return;
         }
-
-        if (ChatBlockedGlyphs.containsBlockedGlyph(message)) {
-            return CompletableFuture.completedFuture(ChatBlockedGlyphs.ERROR_MESSAGE);
-        }
-
-        StringBuilder prepared = new StringBuilder();
-        String prepareError = ItemShareManager.getInstance().prepareCcliveOutgoing(message.trim(), prepared);
-        if (prepareError != null) {
-            return CompletableFuture.completedFuture(prepareError);
-        }
-        final String trimmed = prepared.toString();
-
-        // Doppel-Enter / doppelter Mixin-Aufruf: gleiche Payload innerhalb 750ms nur einmal senden
-        long now = System.currentTimeMillis();
-        if (trimmed.equals(lastSendPayload) && now - lastSendAtMs < 750L) {
-            return CompletableFuture.completedFuture(null);
-        }
-        lastSendPayload = trimmed;
-        lastSendAtMs = now;
-
-        if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
-            return CompletableFuture.completedFuture(
-                "Datentracking ist aus — Chat-Senden braucht Registrierung. In den Mod-Einstellungen aktivieren."
-            );
-        }
-
-        return CompletableFuture.supplyAsync(() -> {
-            LeaderboardManager leaderboardManager = LeaderboardManager.getInstance();
-            if (!leaderboardManager.awaitRegistration(20_000L)) {
-                return "Nicht registriert. Warte kurz nach Server-Join oder nutze /cclive connection refresh.";
+        client.execute(() -> {
+            if (client.player == null) {
+                return;
             }
-            return null;
-        }).thenCompose(regError -> {
-            if (regError != null) {
-                return CompletableFuture.completedFuture(regError);
-            }
-            ensureSocketConnected();
-            return webSocket.sendChat(trimmed).thenApply(result -> {
-                if (result == null || result.error() != null) {
-                    return ChatBlockedGlyphs.clientErrorMessage(
-                        result == null ? "Senden fehlgeschlagen." : result.error());
-                }
-                echoOwnMessage(trimmed, result.messageId(), result.timestamp());
-                return null;
-            });
+            client.player.sendSystemMessage(Component.literal("§c" + DISABLED_LINE));
+            client.player.sendSystemMessage(Component.literal("§e" + DISABLED_FOLLOWUP));
         });
     }
 
@@ -460,15 +395,18 @@ public class ChatManager {
 
     private void loadChatSettings() {
         CCLiveUtilitiesConfig cfg = CCLiveUtilitiesConfig.HANDLER.instance();
-        showDefaultChat = cfg.chatShowDefault;
-        showCCLiveChat = cfg.chatShowCCLive;
-        // Mindestens ein Chat muss an sein
-        if (!showDefaultChat && !showCCLiveChat) {
-            showDefaultChat = true;
-            cfg.chatShowDefault = true;
+        boolean persist = !cfg.chatShowDefault || cfg.chatShowCCLive
+                || (cfg.chatWriteMode != null && cfg.chatWriteMode.equalsIgnoreCase("cclive"));
+        showDefaultChat = true;
+        showCCLiveChat = false;
+        currentChatMode = ChatMode.DEFAULT;
+        cfg.chatShowDefault = true;
+        cfg.chatShowCCLive = false;
+        cfg.chatWriteMode = "default";
+        if (persist) {
+            CCLiveUtilitiesConfig.HANDLER.save();
         }
-        currentChatMode = parseWriteMode(cfg.chatWriteMode);
-        currentChatMode = ChatChannelRules.clamp(currentChatMode, showDefaultChat, showCCLiveChat);
+        webSocket.disconnect();
     }
 
     private void saveChatSettings() {
@@ -495,30 +433,42 @@ public class ChatManager {
     }
 
     public void setChatMode(ChatMode mode) {
-        if (mode == ChatMode.CCLIVE && !showCCLiveChat) {
+        if (mode == ChatMode.CCLIVE) {
+            showCCLiveChat = false;
+            currentChatMode = ChatMode.DEFAULT;
+            webSocket.disconnect();
             return;
         }
         if (mode == ChatMode.DEFAULT && !showDefaultChat) {
             return;
         }
-        this.currentChatMode = mode;
+        this.currentChatMode = ChatMode.DEFAULT;
+        showCCLiveChat = false;
         saveChatSettings();
+        webSocket.disconnect();
     }
 
     public void toggleChat(String chatType) {
-        ChatChannelRules.State next = ChatChannelRules.toggle(
-            new ChatChannelRules.State(showDefaultChat, showCCLiveChat, currentChatMode),
-            chatType);
-        showDefaultChat = next.showDefault();
-        showCCLiveChat = next.showCCLive();
-        currentChatMode = next.writeMode();
-        saveChatSettings();
-
-        if (showCCLiveChat) {
-            ensureSocketConnected();
-        } else {
+        if (chatType != null && chatType.equalsIgnoreCase("cclive")) {
+            showCCLiveChat = false;
+            if (currentChatMode == ChatMode.CCLIVE) {
+                currentChatMode = ChatMode.DEFAULT;
+            }
             webSocket.disconnect();
+            saveChatSettings();
+            return;
         }
+        ChatChannelRules.State next = ChatChannelRules.toggle(
+            new ChatChannelRules.State(showDefaultChat, false, ChatMode.DEFAULT),
+            chatType);
+        showDefaultChat = next.showDefault() || !next.showCCLive();
+        showCCLiveChat = false;
+        currentChatMode = ChatMode.DEFAULT;
+        if (!showDefaultChat) {
+            showDefaultChat = true;
+        }
+        saveChatSettings();
+        webSocket.disconnect();
     }
 
     public boolean isChatVisible(String chatType) {
@@ -540,10 +490,7 @@ public class ChatManager {
     public boolean isEnabled() { return isEnabled; }
     public void setEnabled(boolean enabled) {
         this.isEnabled = enabled;
-        if (!enabled) {
-            webSocket.disconnect();
-        } else if (showCCLiveChat) {
-            ensureSocketConnected();
-        }
+        showCCLiveChat = false;
+        webSocket.disconnect();
     }
 }

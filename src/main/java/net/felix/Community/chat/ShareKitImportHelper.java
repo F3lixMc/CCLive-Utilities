@@ -238,6 +238,12 @@ public final class ShareKitImportHelper {
                         unresolved.add("(ohne Namen)");
                         continue;
                     }
+                    if (modules) {
+                        String mapped = MagnetModuleNames.jeiName(raw, shareItem.chatTooltip);
+                        if (mapped != null) {
+                            raw = mapped;
+                        }
+                    }
                     ItemData db = findExactItemsJsonEntry(raw, modules);
                     if (db == null || db.name == null || db.name.isEmpty()) {
                         String shown = extractEquipmentBaseName(raw, modules);

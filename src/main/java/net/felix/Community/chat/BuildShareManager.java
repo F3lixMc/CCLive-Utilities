@@ -1216,6 +1216,19 @@ public final class BuildShareManager {
     private static volatile String lastHoveredShareId;
     private static final AtomicInteger openRequestGeneration = new AtomicInteger(0);
 
+    /** Lädt den Build in den Cache. Für den Empfänger, der den Snapshot noch nicht lokal hat. */
+    public boolean ensureCached(String shareId) {
+        if (getResolvedBuild(shareId) != null) {
+            return true;
+        }
+        BuildSnapshot loaded = fetchBuildSync(shareId);
+        if (loaded == null) {
+            return false;
+        }
+        resolvedCache.put(shareId, loaded);
+        return true;
+    }
+
     public BuildSnapshot getResolvedBuild(String shareId) {
         if (shareId == null || shareId.isEmpty()) {
             return null;
@@ -1562,8 +1575,9 @@ public final class BuildShareManager {
 
         CompletableFuture.runAsync(() -> {
             try {
-                if (!CCLiveUtilitiesConfig.isDataTrackingEnabled()) {
-                    finishUpload(generation, null, snapshot, "§cUpload fehlgeschlagen (Datentracking aus). Build bleibt lokal.");
+                String blocked = uploadBlockedReason();
+                if (blocked != null) {
+                    finishUpload(generation, null, snapshot, blocked);
                     return;
                 }
                 LeaderboardManager lb = LeaderboardManager.getInstance();
@@ -1575,22 +1589,36 @@ public final class BuildShareManager {
                 JsonObject body = new JsonObject();
                 body.add("data", GSON.toJsonTree(snapshot));
 
-                JsonObject response = httpClient.postWithToken(
+                net.felix.Community.leaderboards.http.HttpClient.JsonResponse response = httpClient.postResultWithToken(
                     "/share/build",
                     body,
                     lb.getPlayerToken()
                 );
-                if (response != null && response.has("id")) {
-                    String id = response.get("id").getAsString();
+                if (response != null && response.status() == 200 && response.body() != null && response.body().has("id")) {
+                    String id = response.body().get("id").getAsString();
                     finishUpload(generation, id, snapshot, "§aBuild-Share: §f" + id);
                 } else {
+                    int status = response == null ? 0 : response.status();
+                    String detail = status == 0 ? "keine Antwort" : "HTTP " + status;
                     finishUpload(generation, null, snapshot,
-                        "§cUpload fehlgeschlagen. Build bleibt lokal. §7(Server-Route /share/build fehlt?)");
+                        "§cUpload fehlgeschlagen (" + detail + "). Build bleibt lokal.");
                 }
             } catch (Exception e) {
                 finishUpload(generation, null, snapshot, "§cUpload fehlgeschlagen. Build bleibt lokal.");
             }
         });
+    }
+
+    private static String uploadBlockedReason() {
+        if (!CCLiveUtilitiesConfig.HANDLER.instance().dataTrackingEnabled) {
+            return "§cUpload fehlgeschlagen (Daten-Tracking ist in der Config aus). Build bleibt lokal.";
+        }
+        if (!net.felix.utilities.Other.server.ServerConnectionGate.isDataUploadAllowed()) {
+            String address = net.felix.utilities.Other.server.ServerConnectionGate.getCachedRawAddress();
+            String shown = address == null || address.isBlank() ? "keine Adresse" : address;
+            return "§cUpload fehlgeschlagen (Server nicht als playlegend.net erkannt: " + shown + "). Build bleibt lokal.";
+        }
+        return null;
     }
 
     private void finishUpload(int generation, String shareId, BuildSnapshot snapshot, String feedback) {
