@@ -13,13 +13,17 @@ import java.util.List;
 import java.util.Optional;
 import net.felix.utilities.Overall.eventsound.data.EventSoundKind;
 import net.felix.utilities.Overall.eventsound.data.EventSoundRule;
+import net.felix.utilities.Overall.eventsound.sound.EventSoundLibrary;
 
 /**
  * Lädt und speichert die Event-Sound-Regeln als JSON.
  */
 public final class EventSoundStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final int BUILTIN_VERSION = 1;
+    private static final String STARFORGED_RULE_ID = "builtin-sternengeschmiedet";
     private static final List<EventSoundRule> RULES = new ArrayList<>();
+    private static int builtinVersion;
     private static boolean loaded;
 
     private EventSoundStore() {
@@ -28,20 +32,33 @@ public final class EventSoundStore {
     public static void load() {
         synchronized (RULES) {
             RULES.clear();
+            builtinVersion = 0;
             Path file = EventSoundPaths.rulesFile();
             if (Files.isRegularFile(file)) {
                 try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
                     FileContents contents = GSON.fromJson(reader, FileContents.class);
-                    if (contents != null && contents.rules != null) {
-                        for (EventSoundRule rule : contents.rules) {
-                            if (rule != null && rule.kind != null && rule.id != null && !rule.id.isBlank()) {
-                                RULES.add(rule);
+                    if (contents != null) {
+                        builtinVersion = Math.max(0, contents.builtinVersion);
+                        if (contents.rules != null) {
+                            for (EventSoundRule rule : contents.rules) {
+                                if (rule != null && rule.kind != null && rule.id != null && !rule.id.isBlank()) {
+                                    RULES.add(rule);
+                                }
                             }
                         }
                     }
                 } catch (IOException | RuntimeException ignored) {
                     RULES.clear();
+                    builtinVersion = 0;
                 }
+            }
+            EventSoundLibrary.ensureBundled();
+            if (builtinVersion < BUILTIN_VERSION) {
+                if (RULES.stream().noneMatch(EventSoundStore::isStarforgedRule)) {
+                    RULES.add(starforgedRule());
+                }
+                builtinVersion = BUILTIN_VERSION;
+                write();
             }
             loaded = true;
         }
@@ -114,10 +131,27 @@ public final class EventSoundStore {
         return false;
     }
 
+    private static boolean isStarforgedRule(EventSoundRule rule) {
+        return rule.kind == EventSoundKind.SMITHING && "Sternengeschmiedet".equals(rule.target);
+    }
+
+    private static EventSoundRule starforgedRule() {
+        EventSoundRule rule = new EventSoundRule();
+        rule.id = STARFORGED_RULE_ID;
+        rule.kind = EventSoundKind.SMITHING;
+        rule.target = "Sternengeschmiedet";
+        rule.soundFile = EventSoundLibrary.BUNDLED_STARFORGED;
+        rule.volume = 1f;
+        rule.fromServer = true;
+        rule.fromPlayer = false;
+        return rule;
+    }
+
     private static void write() {
         try {
             Files.createDirectories(EventSoundPaths.root());
             FileContents contents = new FileContents();
+            contents.builtinVersion = builtinVersion;
             contents.rules = new ArrayList<>(RULES);
             Files.writeString(EventSoundPaths.rulesFile(), GSON.toJson(contents), StandardCharsets.UTF_8);
         } catch (IOException ignored) {
@@ -127,11 +161,13 @@ public final class EventSoundStore {
     public static void resetForTests() {
         synchronized (RULES) {
             RULES.clear();
+            builtinVersion = 0;
             loaded = false;
         }
     }
 
     private static final class FileContents {
+        int builtinVersion;
         List<EventSoundRule> rules = new ArrayList<>();
     }
 }

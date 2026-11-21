@@ -3,6 +3,7 @@ package net.felix.utilities.Overall.eventsound.sound;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -18,7 +19,33 @@ import net.minecraft.client.Minecraft;
  * Kopiert gewählte Sounddateien in den lokalen Ordner und listet sie auf.
  */
 public final class EventSoundLibrary {
+    public static final String BUNDLED_STARFORGED = "starforged.ogg";
+    public static final String BUNDLED_RICK = "Rick.ogg";
+    private static final String BUNDLED_RESOURCE_ROOT = "/assets/cclive-utilities/eventsounds/";
+    private static final List<String> BUNDLED = List.of(BUNDLED_STARFORGED, BUNDLED_RICK);
+
     private EventSoundLibrary() {
+    }
+
+    /** Legt mitgelieferte Sounds in den lokalen Ordner, falls sie dort noch fehlen. */
+    public static void ensureBundled() {
+        try {
+            Path directory = EventSoundPaths.files();
+            Files.createDirectories(directory);
+            for (String name : BUNDLED) {
+                Path destination = directory.resolve(name);
+                if (Files.isRegularFile(destination)) {
+                    continue;
+                }
+                try (InputStream input = EventSoundLibrary.class.getResourceAsStream(BUNDLED_RESOURCE_ROOT + name)) {
+                    if (input == null) {
+                        continue;
+                    }
+                    Files.copy(input, destination);
+                }
+            }
+        } catch (IOException ignored) {
+        }
     }
 
     public static List<String> fileNames() {

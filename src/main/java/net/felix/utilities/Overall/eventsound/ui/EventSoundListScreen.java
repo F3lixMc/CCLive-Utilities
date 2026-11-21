@@ -142,7 +142,7 @@ public final class EventSoundListScreen extends Screen {
                 return true;
             }
             if (EventSoundUi.inside(mouseX, mouseY, row.speakerX, row.y + 2, ICON, ICON)) {
-                EventSoundPlayer.playFile(row.rule.soundFile, row.rule.volume);
+                EventSoundPlayer.playFile(row.rule.soundFile, row.rule.volume, row.rule.maxSeconds);
                 return true;
             }
             if (EventSoundUi.inside(mouseX, mouseY, row.deleteX, row.y + 2, ICON, ICON)) {

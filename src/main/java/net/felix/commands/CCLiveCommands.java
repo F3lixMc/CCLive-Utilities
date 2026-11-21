@@ -28,6 +28,7 @@ import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesSt
 import net.felix.utilities.Other.devtools.DevToolsAccess;
 import net.felix.utilities.Other.devtools.DevToolsScreen;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.eventsound.sound.EventSoundPlayer;
 import net.felix.utilities.Overall.eventsound.ui.EventSoundListScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -139,8 +140,11 @@ public class CCLiveCommands {
                 .then(literal("reset")
                     .executes(CCLiveCommands::resetMaterialsResources)))
             
-            .then(literal("eventsounds")
-                .executes(CCLiveCommands::openEventSounds))
+            .then(literal("eventsound")
+                .then(literal("open")
+                    .executes(CCLiveCommands::openEventSounds))
+                .then(literal("stop")
+                    .executes(CCLiveCommands::stopEventSounds)))
 
             // Fragment drop animation test
             .then(literal("fragment_animation_test")
@@ -497,6 +501,16 @@ public class CCLiveCommands {
         client.execute(() -> client.gui.setScreen(new EventSoundListScreen(null)));
         return 1;
     }
+
+    private static int stopEventSounds(CommandContext<FabricClientCommandSource> context) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return 0;
+        }
+        client.execute(EventSoundPlayer::stopAll);
+        context.getSource().sendFeedback(Component.literal("§aLaufende Event-Sounds gestoppt."));
+        return 1;
+    }
     
     // =================== CHAT COMMANDS ===================
     
@@ -643,7 +657,8 @@ public class CCLiveCommands {
         }
 
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
-        context.getSource().sendFeedback(Component.literal("§7/cclive eventsounds §f- Event-Sound-Menü öffnen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive eventsound open §f- Event-Sound-Menü öffnen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive eventsound stop §f- Laufende Event-Sounds stoppen"));
         context.getSource().sendFeedback(Component.literal("§7/cclive fragment_animation_test §f- Talismanfragment-Animation testen"));
         context.getSource().sendFeedback(Component.literal(""));
         

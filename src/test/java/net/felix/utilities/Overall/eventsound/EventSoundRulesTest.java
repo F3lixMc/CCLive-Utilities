@@ -7,6 +7,7 @@ import net.felix.utilities.Overall.eventsound.config.EventSoundStore;
 import net.felix.utilities.Overall.eventsound.data.EventSoundKind;
 import net.felix.utilities.Overall.eventsound.data.EventSoundMatchMode;
 import net.felix.utilities.Overall.eventsound.data.EventSoundRule;
+import net.felix.utilities.Overall.eventsound.sound.EventSoundLibrary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -114,11 +115,84 @@ class EventSoundRulesTest {
         EventSoundStore.resetForTests();
         EventSoundStore.load();
 
-        assertEquals(2, EventSoundStore.rules().size());
+        assertEquals(3, EventSoundStore.rules().size());
         EventSoundRule storedFrost = EventSoundStore.findSmithing("Frostgeschmiedet").orElseThrow();
         assertEquals("neu.ogg", storedFrost.soundFile);
         assertEquals(0.4f, storedFrost.volume);
         assertTrue(EventSoundStore.rules().stream().anyMatch(rule -> rule.kind == EventSoundKind.CUSTOM && "Drop".equals(rule.pattern)));
+        assertEquals("starforged.ogg", EventSoundStore.findSmithing("Sternengeschmiedet").orElseThrow().soundFile);
+    }
+
+    @Test
+    void freshInstallIncludesStarforgedEvent() {
+        EventSoundStore.load();
+
+        EventSoundRule rule = EventSoundStore.findSmithing("Sternengeschmiedet").orElseThrow();
+        assertEquals("builtin-sternengeschmiedet", rule.id);
+        assertEquals(EventSoundLibrary.BUNDLED_STARFORGED, rule.soundFile);
+        assertTrue(java.nio.file.Files.isRegularFile(EventSoundPaths.files().resolve(EventSoundLibrary.BUNDLED_STARFORGED)));
+        assertTrue(java.nio.file.Files.isRegularFile(EventSoundPaths.files().resolve(EventSoundLibrary.BUNDLED_RICK)));
+    }
+
+    @Test
+    void maxPlayTimeIsOptionalAndStoredInSeconds() {
+        assertEquals(0f, EventSoundRule.parseMaxSeconds("  "));
+        assertEquals(12.5f, EventSoundRule.parseMaxSeconds("12,5"));
+        assertNull(EventSoundRule.parseMaxSeconds("abc"));
+        assertEquals("", EventSoundRule.formatMaxSeconds(0f));
+        assertEquals("10", EventSoundRule.formatMaxSeconds(10f));
+
+        EventSoundRule rule = new EventSoundRule();
+        rule.kind = EventSoundKind.CUSTOM;
+        rule.pattern = "Hallo";
+        rule.soundFile = "drop.wav";
+        rule.maxSeconds = 12.5f;
+        EventSoundStore.save(rule);
+
+        EventSoundStore.resetForTests();
+        EventSoundStore.load();
+
+        EventSoundRule stored = EventSoundStore.rules().stream()
+                .filter(entry -> entry.kind == EventSoundKind.CUSTOM)
+                .findFirst()
+                .orElseThrow();
+        assertEquals(12.5f, stored.maxSeconds, 0.001f);
+    }
+
+    @Test
+    void deletedStarforgedEventStaysGone() {
+        EventSoundStore.load();
+        EventSoundStore.remove("builtin-sternengeschmiedet");
+
+        EventSoundStore.resetForTests();
+        EventSoundStore.load();
+
+        assertTrue(EventSoundStore.findSmithing("Sternengeschmiedet").isEmpty());
+    }
+
+    @Test
+    void existingStarforgedRuleIsNotReplaced() throws Exception {
+        java.nio.file.Files.createDirectories(EventSoundPaths.root());
+        java.nio.file.Files.writeString(EventSoundPaths.rulesFile(), """
+                {
+                  "rules": [
+                    {
+                      "id": "alt",
+                      "kind": "SMITHING",
+                      "target": "Sternengeschmiedet",
+                      "soundFile": "eigen.ogg",
+                      "volume": 0.5
+                    }
+                  ]
+                }
+                """);
+
+        EventSoundStore.load();
+
+        EventSoundRule rule = EventSoundStore.findSmithing("Sternengeschmiedet").orElseThrow();
+        assertEquals("alt", rule.id);
+        assertEquals("eigen.ogg", rule.soundFile);
+        assertEquals(1, EventSoundStore.rules().size());
     }
 
     private static EventSoundRule custom(String pattern) {

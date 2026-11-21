@@ -51,7 +51,7 @@ public final class EventSoundChat {
                 }
                 LAST_PLAYED.put(rule.id, now);
             }
-            EventSoundPlayer.playFile(rule.soundFile, rule.volume);
+            EventSoundPlayer.playFile(rule.soundFile, rule.volume, rule.maxSeconds);
         }
     }
 
