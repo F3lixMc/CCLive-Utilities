@@ -11,6 +11,8 @@ import net.felix.utilities.Aincraft.cardsstatues.overlay.StatuesDraggableOverlay
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDraggableOverlay;
 import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
+import net.felix.utilities.Factory.essencefarm.EssenceFarmDraggableOverlay;
+import net.felix.utilities.Factory.essencefarm.EssenceFarmSettingsScreen;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Farmworld.collections.overlay.CollectionDraggableOverlay;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
@@ -55,6 +57,9 @@ public final class TrackerDetailSettings {
         }
         if (overlay instanceof FactoryLevelDraggableOverlay) {
             return "Fabriklevel Progress";
+        }
+        if (overlay instanceof EssenceFarmDraggableOverlay) {
+            return "Essenzen-Farmplan";
         }
         if (overlay instanceof MiningLumberjackDraggableOverlay) {
             return "Mining / Holzfäller";
@@ -125,6 +130,18 @@ public final class TrackerDetailSettings {
         } else if (overlay instanceof FactoryLevelDraggableOverlay) {
             buttons.add(toggle("Hintergrund: " + onOff(config.factoryLevelShowBackground),
                     () -> config.factoryLevelShowBackground = !config.factoryLevelShowBackground));
+        } else if (overlay instanceof EssenceFarmDraggableOverlay) {
+            buttons.add(toggle("Hintergrund: " + onOff(config.essenceFarmShowBackground),
+                    () -> config.essenceFarmShowBackground = !config.essenceFarmShowBackground));
+            buttons.add(toggle("Debug-Infos: " + onOff(config.essenceFarmDebug),
+                    () -> config.essenceFarmDebug = !config.essenceFarmDebug));
+            // Target level per power crystal and drop chance are typed into a YACL screen.
+            buttons.add(new Button("Ziellevel & Dropchance", true, () -> {
+                Minecraft client = Minecraft.getInstance();
+                if (client != null) {
+                    client.gui.setScreen(EssenceFarmSettingsScreen.create(returnTo));
+                }
+            }));
         } else if (overlay instanceof MiningLumberjackDraggableOverlay) {
             buttons.add(rateUnitToggle(
                     () -> config.miningLumberjackRateUnit,

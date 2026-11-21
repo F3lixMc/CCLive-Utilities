@@ -30,6 +30,9 @@ public class ActionBarMixin {
             // Farmzone: Ressourcen (+XXX NAME [GESAMT]) → collected_materials-ressources.json
             ClipboardFarmzoneActionBar.processActionBarMessage(message);
 
+            // Factory: wave completion ("+X XP +Y Seelen") for the essence farm planner
+            net.felix.utilities.Factory.essencefarm.EssenceFarmTracker.onActionBar(content);
+
             // Aincrad-Floor: Material-Tracking aus der ActionBar
             if (ActionBarData.isOnFloor()) {
                 ActionBarData.processActionBarMessage(message);
