@@ -142,6 +142,10 @@ public class CCLiveCommands {
             // Sternengeschmiedet Sound Test
             .then(literal("sternen_sound_test")
                 .executes(CCLiveCommands::testStarForgedSound))
+
+            // Fragment drop animation test
+            .then(literal("fragment_animation_test")
+                .executes(CCLiveCommands::testFragmentAnimation))
             
             .then(literal("mod")
                 .requires(source -> StaffClientAccess.isStaffCommandVisible())
@@ -313,6 +317,14 @@ public class CCLiveCommands {
             context.getSource().sendError(Component.literal("§cFehler beim Zurücksetzen: " + e.getMessage()));
             return 0;
         }
+    }
+
+    // =================== FRAGMENT DROP ANIMATION ===================
+
+    private static int testFragmentAnimation(CommandContext<FabricClientCommandSource> context) {
+        net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.playTestAnimation();
+        context.getSource().sendFeedback(Component.literal("§aTalismanfragment-Animation abgespielt"));
+        return 1;
     }
 
     // =================== STERNENGESCHMIEDET SOUND ===================
@@ -640,6 +652,7 @@ public class CCLiveCommands {
 
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
         context.getSource().sendFeedback(Component.literal("§7/cclive sternen_sound_test §f- Sternengeschmiedet-Sound testen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive fragment_animation_test §f- Talismanfragment-Animation testen"));
         context.getSource().sendFeedback(Component.literal(""));
         
         // Debug Commands nur anzeigen wenn Debug aktiviert ist

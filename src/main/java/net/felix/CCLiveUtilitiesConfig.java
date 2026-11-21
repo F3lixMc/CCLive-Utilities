@@ -899,6 +899,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean starForgedSoundDebugging = false; // Debug-Logs für Sternengeschmiedet-Sound
 
+    @SerialEntry
+    public boolean fragmentDropAnimationEnabled = true; // Totem animation with prismarine shard on fragment drop
+
     // Material Tracker Settings
     @SerialEntry
     public boolean materialTrackerEnabled = true;
@@ -2115,6 +2118,15 @@ public class CCLiveUtilitiesConfig {
                                         .name(Component.literal("Monster Todesanimationen Ein/Aus"))
                                         .description(OptionDescription.of(Component.literal("Monster Todesanimationen aktivieren oder deaktivieren")))
                                         .binding(false, () -> HANDLER.instance().killAnimationUtilityEnabled, newVal -> HANDLER.instance().killAnimationUtilityEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Animations"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Talismanfragment Animation"))
+                                        .description(OptionDescription.of(Component.literal("Spielt die Totem-Animation mit einer Prismarinscherbe ab, wenn ein Talismanfragment gefunden wird")))
+                                        .binding(true, () -> HANDLER.instance().fragmentDropAnimationEnabled, newVal -> HANDLER.instance().fragmentDropAnimationEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
