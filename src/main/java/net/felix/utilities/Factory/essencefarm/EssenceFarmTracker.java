@@ -20,6 +20,7 @@ import net.felix.utilities.Factory.wave.WaveUtility;
 import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Other.hud.HudOverlayVisibility;
+import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.felix.utilities.Other.util.NumberFormatting;
 import net.felix.utilities.Overall.npcalerts.data.MachtkristallSlot;
 import net.felix.utilities.Overall.npcalerts.data.NpcAlertState;
@@ -615,6 +616,10 @@ public final class EssenceFarmTracker {
 			}
 			if (client.gui.hud.isHidden()) {
 				hudSkipReason = "HUD versteckt";
+				return;
+			}
+			if (KeyBindingUtility.isPlayerListKeyPressed()) {
+				hudSkipReason = "Spielerliste";
 				return;
 			}
 			if (!HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
