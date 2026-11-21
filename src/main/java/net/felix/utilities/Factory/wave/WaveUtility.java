@@ -1,6 +1,8 @@
 package net.felix.utilities.Factory.wave;
 
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.Community.profile.ProfileStatsManager;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
@@ -13,10 +15,45 @@ import net.minecraft.client.Minecraft;
  * - Jeder Spieler hat eine eigene Fabrik-Dimension:
  *   minecraft:<spielername> oder minecraft:<spielername>_xyz
  * - Floors enthalten "floor" im Dimensionsnamen und sind KEINE Fabrik.
- * - Die aktuelle Welle wird in der 2. Bossbar angezeigt und verwendet
+ * - Die aktuelle Welle wird in einer Bossbar angezeigt (observed as the topmost one) und verwendet
  *   dieselben chinesischen Ziffern wie die Floor-Kills.
  */
 public class WaveUtility {
+
+    /** A decoded value counts as current for this long after the last boss bar update. */
+    private static final long CURRENT_WAVE_TTL_MS = 5000L;
+    // Decoded number and time per boss bar index; other boss bars can use the same digit glyphs.
+    private static final Map<Integer, long[]> decodedByIndex = new ConcurrentHashMap<>();
+
+    /**
+     * Wave from the topmost recently seen boss bar with factory digits, or -1 if none.
+     * In game the wave bar was observed as bar #1 (2026-11-21); the topmost bar is used so other
+     * digit bars further down cannot overwrite it.
+     */
+    public static int getCurrentWave() {
+        long now = System.currentTimeMillis();
+        int bestIndex = Integer.MAX_VALUE;
+        int wave = -1;
+        for (Map.Entry<Integer, long[]> entry : decodedByIndex.entrySet()) {
+            if (now - entry.getValue()[1] <= CURRENT_WAVE_TTL_MS && entry.getKey() < bestIndex) {
+                bestIndex = entry.getKey();
+                wave = (int) entry.getValue()[0];
+            }
+        }
+        return wave;
+    }
+
+    /** Recently decoded numbers per boss bar index, e.g. "#1=518 #2=3362" (diagnostics). */
+    public static String debugWaves() {
+        long now = System.currentTimeMillis();
+        StringBuilder out = new StringBuilder();
+        for (Map.Entry<Integer, long[]> entry : new TreeMap<>(decodedByIndex).entrySet()) {
+            if (now - entry.getValue()[1] <= CURRENT_WAVE_TTL_MS) {
+                out.append('#').append(entry.getKey()).append('=').append(entry.getValue()[0]).append(' ');
+            }
+        }
+        return out.length() == 0 ? "-" : out.toString().trim();
+    }
 
     /**
      * Gibt das Mapping der chinesischen Ziffern → normale Ziffern zurück.
@@ -105,6 +142,8 @@ public class WaveUtility {
             if (debug) {
                 // Silent error handling("[WaveUtility] Dekodierte Welle: " + wave + " → updateHighestWave()");
             }
+
+            decodedByIndex.put(index, new long[] {wave, System.currentTimeMillis()});
 
             try {
                 ProfileStatsManager.getInstance().updateHighestWave(wave);

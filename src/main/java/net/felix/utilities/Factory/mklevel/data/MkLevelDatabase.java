@@ -392,6 +392,16 @@ public final class MkLevelDatabase {
 		return filtered;
 	}
 
+	/** Level entry from MKLevel.json (essence and amount needed to reach {@code level}); null if unknown. */
+	public static MkLevelInfo getLevelInfo(int level) {
+		for (MkLevelInfo info : mkLevelDatabase) {
+			if (info.level == level) {
+				return info;
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * Lädt die MkLevel-Datenbank neu (nach Update vom Server)
 	 */

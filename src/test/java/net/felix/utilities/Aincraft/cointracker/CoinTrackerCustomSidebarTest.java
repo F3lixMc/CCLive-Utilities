@@ -20,5 +20,11 @@ class CoinTrackerCustomSidebarTest {
 
         Component twice = CoinTrackerCustomSidebar.withMaterialienPerMinuteHeader(once);
         assertEquals("▌ Materialien/min", twice.getString());
+
+        Component hourHeader = Component.empty()
+                .append(Component.literal("▌").setStyle(Style.EMPTY.withColor(0x545454)))
+                .append(Component.literal(" Materialien/h").setStyle(Style.EMPTY.withColor(0xFCFC54)));
+        Component fromHour = CoinTrackerCustomSidebar.withMaterialienPerMinuteHeader(hourHeader);
+        assertEquals("▌ Materialien/min", fromHour.getString());
     }
 }

@@ -14,6 +14,7 @@ import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Overall.searchbar.ItemDisplayMode;
 import net.felix.utilities.Town.schmied.SchmiedItemDisplayMode;
 import net.minecraft.client.gui.screens.Screen;
@@ -898,6 +899,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public boolean starForgedSoundDebugging = false; // Debug-Logs für Sternengeschmiedet-Sound
 
+    @SerialEntry
+    public boolean fragmentDropAnimationEnabled = true; // Totem animation with prismarine shard on fragment drop
+
     // Material Tracker Settings
     @SerialEntry
     public boolean materialTrackerEnabled = true;
@@ -928,6 +932,21 @@ public class CCLiveUtilitiesConfig {
 
     @SerialEntry
     public boolean materialTrackerRateEnabled = false;
+
+    @SerialEntry
+    public RateDisplayUnit materialTrackerRateUnit = RateDisplayUnit.PER_MINUTE;
+
+    @SerialEntry
+    public RateDisplayUnit resourceTrackerRateUnit = RateDisplayUnit.PER_MINUTE;
+
+    @SerialEntry
+    public RateDisplayUnit coinTrackerRateUnit = RateDisplayUnit.PER_MINUTE;
+
+    @SerialEntry
+    public RateDisplayUnit killsUtilityRateUnit = RateDisplayUnit.PER_MINUTE;
+
+    @SerialEntry
+    public RateDisplayUnit miningLumberjackRateUnit = RateDisplayUnit.PER_MINUTE;
 
     // Collection Overlay Settings
     @SerialEntry
@@ -1110,6 +1129,34 @@ public class CCLiveUtilitiesConfig {
 
     @SerialEntry
     public boolean factoryLevelShowBackground = true;
+
+    // Essence farm planner (best waves for the selected power crystals)
+    @SerialEntry
+    public boolean essenceFarmEnabled = true;
+
+    @SerialEntry
+    public boolean showEssenceFarm = true;
+
+    @SerialEntry
+    public int essenceFarmX = 8;
+
+    @SerialEntry
+    public int essenceFarmY = 120;
+
+    @SerialEntry
+    public float essenceFarmScale = 1.0f;
+
+    @SerialEntry
+    public boolean essenceFarmShowBackground = true;
+
+    @SerialEntry
+    public double essenceFarmDropChance = -1.0; // "Essn Drp Chc" in percent (409 = x4.09), -1 = unknown
+
+    @SerialEntry
+    public boolean essenceFarmAutoDropChance = true; // take the drop chance from the stats overview automatically
+
+    @SerialEntry
+    public boolean essenceFarmDebug = false; // show diagnostic lines in the essence farm overlay
     
     // MkLevel Settings
     @SerialEntry
@@ -1963,6 +2010,17 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Rate-Anzeige"))
+                                .option(rateUnitOption("Collection / Ressourcen",
+                                        "Rate-Einheit für Blöcke und Ressourcen (X/min ↔ X/h)",
+                                        () -> HANDLER.instance().resourceTrackerRateUnit,
+                                        v -> HANDLER.instance().resourceTrackerRateUnit = v))
+                                .option(rateUnitOption("Mining / Holzfäller",
+                                        "Rate-Einheit für XP (XP/Min ↔ XP/h)",
+                                        () -> HANDLER.instance().miningLumberjackRateUnit,
+                                        v -> HANDLER.instance().miningLumberjackRateUnit = v))
+                                .build())
+                        .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Aspekt Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Aspekt Anzeige aktivieren"))
@@ -2011,6 +2069,15 @@ public class CCLiveUtilitiesConfig {
                                                 }))
                                         .build())
 
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Animations"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Talismanfragment Animation"))
+                                        .description(OptionDescription.of(Component.literal("Spielt die Totem-Animation mit einer Prismarinscherbe ab, wenn ein Talismanfragment gefunden wird")))
+                                        .binding(true, () -> HANDLER.instance().fragmentDropAnimationEnabled, newVal -> HANDLER.instance().fragmentDropAnimationEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Animation Blocker"))
@@ -2063,6 +2130,78 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Component.literal("Fabrik"))
+                        .tooltip(Component.literal("Einstellungen für Fabrik-bezogene Utilities"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Boss HP"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Boss HP aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Boss-HP Anzeige aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().bossHPEnabled && HANDLER.instance().showBossHP, newVal -> {
+                                            HANDLER.instance().bossHPEnabled = newVal;
+                                            HANDLER.instance().showBossHP = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den Text in der Boss-HP Anzeige")))
+                                        .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().bossHPTextColor, newVal -> HANDLER.instance().bossHPTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter der Boss HP Anzeige anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowBackground, newVal -> HANDLER.instance().bossHPShowBackground = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("DPM anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("DPM (Damage Per Minute) Anzeige im Boss HP Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowDPM, newVal -> HANDLER.instance().bossHPShowDPM = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Last Dmg anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Last Dmg“ (Schaden im letzten Messfenster) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowLastDmg, newVal -> HANDLER.instance().bossHPShowLastDmg = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Gesamtschaden anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Overall DMG“ (kumulativer Schaden und Prozent) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowOverallDmg, newVal -> HANDLER.instance().bossHPShowOverallDmg = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Restzeit anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Benötigte Zeit“ (geschätzte Restzeit basierend auf DPM und aktueller Boss-HP) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowEta, newVal -> HANDLER.instance().bossHPShowEta = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Fabriklevel Progress"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Fabriklevel-Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt in der Fabrik das nächste Ziellevel und eine geschätzte Restzeit")))
+                                        .binding(true, () -> HANDLER.instance().factoryLevelEnabled && HANDLER.instance().showFactoryLevel, newVal -> {
+                                            HANDLER.instance().factoryLevelEnabled = newVal;
+                                            HANDLER.instance().showFactoryLevel = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter dem Fabriklevel-Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().factoryLevelShowBackground, newVal -> HANDLER.instance().factoryLevelShowBackground = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        // Essence farm planner: same groups as its F6 detail screen
+                        .groups(net.felix.utilities.Factory.essencefarm.EssenceFarmSettingsScreen.groups())
                         .build())
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Stadt"))
@@ -2267,6 +2406,246 @@ public class CCLiveUtilitiesConfig {
                                 .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
+                        .name(Component.literal("Aincraft"))
+                        .tooltip(Component.literal("Einstellungen für Aincraft-bezogene Utilities"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Material Tracker"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Material Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Material Tracker aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().materialTrackerEnabled && HANDLER.instance().showMaterialTracker, newVal -> {
+                                            HANDLER.instance().materialTrackerEnabled = newVal;
+                                            HANDLER.instance().showMaterialTracker = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(rateUnitOption("Rate-Einheit",
+                                        "Rate-Einheit für Materialien (X/min ↔ X/h)",
+                                        () -> HANDLER.instance().materialTrackerRateUnit,
+                                        v -> HANDLER.instance().materialTrackerRateUnit = v))
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Kill Tracker"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Kill Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Kill Tracker aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().killsUtilityEnabled && HANDLER.instance().showKillsUtility, newVal -> {
+                                            HANDLER.instance().killsUtilityEnabled = newVal;
+                                            HANDLER.instance().showKillsUtility = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(rateUnitOption("Rate-Einheit",
+                                        "Rate-Einheit für Kills (KPM/KPH)",
+                                        () -> HANDLER.instance().killsUtilityRateUnit,
+                                        v -> HANDLER.instance().killsUtilityRateUnit = v))
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschrift in der Kills-Anzeige")))
+                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().killsUtilityHeaderColor, newVal -> HANDLER.instance().killsUtilityHeaderColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den Text in der Kills-Anzeige")))
+                                        .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().killsUtilityTextColor, newVal -> HANDLER.instance().killsUtilityTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter dem Kill Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().killsUtilityShowBackground, newVal -> HANDLER.instance().killsUtilityShowBackground = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Benötigte Kills anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile 'Benötigte Kills' im Kill Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().killsUtilityShowRequiredKills, newVal -> HANDLER.instance().killsUtilityShowRequiredKills = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Nächste Ebene anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile 'Nächste Ebene' im Kill Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().killsUtilityShowNextLevel, newVal -> HANDLER.instance().killsUtilityShowNextLevel = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Coin Tracker"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Coin Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Liest Coins aus der HUD-Bossbar in Aincraft-Ebenen (floor_X) und zeigt Session-Statistiken an")))
+                                        .binding(true, () -> HANDLER.instance().coinTrackerEnabled && HANDLER.instance().showCoinTracker, newVal -> {
+                                            HANDLER.instance().coinTrackerEnabled = newVal;
+                                            HANDLER.instance().showCoinTracker = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(rateUnitOption("Rate-Einheit",
+                                        "Rate-Einheit für Coins (CPM/CPH)",
+                                        () -> HANDLER.instance().coinTrackerRateUnit,
+                                        v -> HANDLER.instance().coinTrackerRateUnit = v))
+                                .option(Option.<CoinTrackerDisplayMode>createBuilder()
+                                        .name(Component.literal("CPM-Anzeige Position"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Wo Coins pro Minute angezeigt werden:\n"
+                                                        + "• Overlay – CPM im Coin Tracker Overlay\n"
+                                                        + "• Scoreboard – CPM im Scoreboard")))
+                                        .binding(CoinTrackerDisplayMode.OVERLAY,
+                                                () -> HANDLER.instance().coinTrackerDisplayMode,
+                                                newVal -> HANDLER.instance().coinTrackerDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(CoinTrackerDisplayMode.class)
+                                                .formatValue(mode -> switch (mode) {
+                                                    case OVERLAY -> Component.literal("Overlay");
+                                                    case SCOREBOARD -> Component.literal("Scoreboard");
+                                                }))
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschrift im Coin Tracker")))
+                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().coinTrackerHeaderColor, newVal -> HANDLER.instance().coinTrackerHeaderColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den Text im Coin Tracker")))
+                                        .binding(new Color(0xE6FFFFFF), () -> HANDLER.instance().coinTrackerTextColor, newVal -> HANDLER.instance().coinTrackerTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter dem Coin Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().coinTrackerShowBackground, newVal -> HANDLER.instance().coinTrackerShowBackground = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Karten"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Karten anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Karten Overlay anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().cardsStatuesEnabled && HANDLER.instance().cardEnabled && HANDLER.instance().showCard, newVal -> {
+                                            HANDLER.instance().showCard = newVal;
+                                            HANDLER.instance().cardEnabled = newVal;
+                                            if (newVal) {
+                                                HANDLER.instance().cardsStatuesEnabled = true;
+                                            }
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<OverlayType>createBuilder()
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für die Karten:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().cardOverlayType, newVal -> {
+                                            HANDLER.instance().cardOverlayType = newVal;
+                                            HANDLER.save();
+                                        })
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                            .enumClass(OverlayType.class)
+                                            .formatValue(v -> switch (v) {
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
+                                            }))
+                                        .build())
+                                .option(Option.<Float>createBuilder()
+                                        .name(Component.literal("Text-Größe"))
+                                        .description(OptionDescription.of(Component.literal("Text-Größe für Karten-Overlay (1.0 = normal, 1.5 = 50% größer)")))
+                                        .binding(1.0f, () -> HANDLER.instance().cardTextScale, newVal -> HANDLER.instance().cardTextScale = newVal)
+                                        .controller(opt -> FloatSliderControllerBuilder.create(opt)
+                                                .range(1.0f, 1.5f)
+                                                .step(0.1f))
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Statuen"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Statuen anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Statuen Overlay anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().cardsStatuesEnabled && HANDLER.instance().statueEnabled && HANDLER.instance().showStatue, newVal -> {
+                                            HANDLER.instance().showStatue = newVal;
+                                            HANDLER.instance().statueEnabled = newVal;
+                                            if (newVal) {
+                                                HANDLER.instance().cardsStatuesEnabled = true;
+                                            }
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<OverlayType>createBuilder()
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für die Statuen:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().statueOverlayType, newVal -> {
+                                            HANDLER.instance().statueOverlayType = newVal;
+                                            HANDLER.save();
+                                        })
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                            .enumClass(OverlayType.class)
+                                            .formatValue(v -> switch (v) {
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
+                                            }))
+                                        .build())
+                                .option(Option.<Float>createBuilder()
+                                        .name(Component.literal("Text-Größe"))
+                                        .description(OptionDescription.of(Component.literal("Text-Größe für Statuen-Overlay (1.0 = normal, 1.5 = 50% größer)")))
+                                        .binding(1.0f, () -> HANDLER.instance().statueTextScale, newVal -> HANDLER.instance().statueTextScale = newVal)
+                                        .controller(opt -> FloatSliderControllerBuilder.create(opt)
+                                                .range(1.0f, 1.5f)
+                                                .step(0.1f))
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Blueprint Tracker"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Blueprint Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Blueprint Tracker aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().blueprintViewerEnabled, newVal -> {
+                                            HANDLER.instance().blueprintViewerEnabled = newVal;
+                                            net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility.resetHotkeyVisibility();
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Blueprint Tracker Overlay anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Blueprint Tracker Overlay anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().showBlueprintViewer, newVal -> {
+                                            HANDLER.instance().showBlueprintViewer = newVal;
+                                            net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility.resetHotkeyVisibility();
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<OverlayType>createBuilder()
+                                        .name(Component.literal("Overlay-Typ"))
+                                        .description(OptionDescription.of(Component.literal("Wähle den Hintergrund-Typ für den Blueprint Tracker:\n• Bild-Overlay \n• Schwarzes Overlay \n• Kein Hintergrund ")))
+                                        .binding(OverlayType.CUSTOM, () -> HANDLER.instance().blueprintViewerOverlayType, newVal -> {
+                                            HANDLER.instance().blueprintViewerOverlayType = newVal;
+                                            HANDLER.save();
+                                        })
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                            .enumClass(OverlayType.class)
+                                            .formatValue(v -> switch (v) {
+                                                case CUSTOM -> Component.literal("Bild-Overlay");
+                                                case BLACK -> Component.literal("Schwarzes Overlay");
+                                                case NONE -> Component.literal("Kein Hintergrund");
+                                            }))
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Missing Mode"))
+                                        .description(OptionDescription.of(Component.literal("Im Missing Mode werden nur fehlende Baupläne angezeigt. Gefundene Baupläne werden ausgeblendet.")))
+                                        .binding(false, () -> HANDLER.instance().blueprintViewerMissingMode, newVal -> HANDLER.instance().blueprintViewerMissingMode = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Haken im Moblexicon"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt im Moblexicon grüne Haken bzw. rote Kreuze bei Bauplan-Tooltips (nur dort, keine anderen Menüs).")))
+                                        .binding(false, () -> HANDLER.instance().moblexiconBlueprintCheckmarksEnabled, newVal -> HANDLER.instance().moblexiconBlueprintCheckmarksEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Farmwelt"))
                         .tooltip(Component.literal("Einstellungen für Farmwelt-bezogene Utilities"))
                         .group(OptionGroup.createBuilder()
@@ -2357,5 +2736,21 @@ public class CCLiveUtilitiesConfig {
                 })
                 .build()
                 .generateScreen(parent);
+    }
+
+    private static Option<RateDisplayUnit> rateUnitOption(
+            String name,
+            String description,
+            java.util.function.Supplier<RateDisplayUnit> getter,
+            java.util.function.Consumer<RateDisplayUnit> setter) {
+        return Option.<RateDisplayUnit>createBuilder()
+                .name(Component.literal(name))
+                .description(OptionDescription.of(Component.literal(description)))
+                .binding(RateDisplayUnit.PER_MINUTE, getter, setter)
+                .controller(opt -> EnumControllerBuilder.create(opt)
+                        .enumClass(RateDisplayUnit.class)
+                        .formatValue(unit -> Component.literal(
+                                RateDisplayUnit.orDefault(unit) == RateDisplayUnit.PER_HOUR ? "X/h" : "X/min")))
+                .build();
     }
 } 

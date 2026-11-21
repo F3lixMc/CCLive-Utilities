@@ -68,6 +68,7 @@ public class CCLiveUtilities implements ModInitializer {
 		MaterialTrackerUtility.initialize();
 		BossHPUtility.initialize();
 		FactoryLevelTracker.initialize();
+		net.felix.utilities.Factory.essencefarm.EssenceFarmTracker.initialize();
 		CardsStatuesUtility.initialize();
 		KillsUtility.initialize();
 		InformationFeature.initialize();

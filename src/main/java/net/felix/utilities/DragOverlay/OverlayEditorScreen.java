@@ -9,6 +9,7 @@ import net.felix.utilities.Other.clipboard.ClipboardTargetTime;
 import net.felix.utilities.Other.keybinding.NumericFieldInput;
 import net.felix.Community.buildshare.BuildShareDraggableOverlay;
 import net.felix.Community.leaderboard.LeaderboardDraggableOverlay;
+import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Aincraft.blueprints.viewer.BlueprintViewerDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.overlay.StatuesDraggableOverlay;
@@ -17,6 +18,7 @@ import net.felix.utilities.Aincraft.kills.KillTrackerColors;
 import net.felix.utilities.Aincraft.kills.KillsUtilityDraggableOverlay;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDraggableOverlay;
 import net.felix.utilities.Factory.bosshp.BossHPDraggableOverlay;
+import net.felix.utilities.Factory.essencefarm.EssenceFarmDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelDraggableOverlay;
 import net.felix.utilities.Factory.factorylevel.FactoryLevelTracker;
 import net.felix.utilities.Factory.mklevel.overlay.MkLevelDraggableOverlay;
@@ -26,6 +28,7 @@ import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Farmworld.miningxp.overlay.MiningLumberjackDraggableOverlay;
 import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Overall.aspekte.overlay.ChatAspectOverlayDraggableOverlay;
 import net.felix.utilities.Overall.npcalerts.overlay.draggable.AspectDraggableOverlay;
 import net.felix.utilities.Overall.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
@@ -179,6 +182,7 @@ public class OverlayEditorScreen extends Screen {
 
         if (FactoryLevelTracker.isInFactory()) {
             overlays.add(new FactoryLevelDraggableOverlay());
+            overlays.add(new EssenceFarmDraggableOverlay());
         }
         
         if (isInChatScreen) {
@@ -1313,6 +1317,10 @@ public class OverlayEditorScreen extends Screen {
             boolean newValue = !overlay.isConfigEnabled();
             config.showFactoryLevel = newValue;
             config.factoryLevelEnabled = newValue;
+        } else if (overlay instanceof EssenceFarmDraggableOverlay) {
+            boolean newValue = !overlay.isConfigEnabled();
+            config.showEssenceFarm = newValue;
+            config.essenceFarmEnabled = newValue;
         } else if (overlay instanceof CardsDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.showCard = newValue;
@@ -1330,6 +1338,7 @@ public class OverlayEditorScreen extends Screen {
         } else if (overlay instanceof BlueprintViewerDraggableOverlay) {
             // Nur showBlueprintViewer togglen (gleichgestellt mit "Blueprint Tracker Overlay anzeigen" in Config)
             config.showBlueprintViewer = !config.showBlueprintViewer;
+            BPViewerUtility.resetHotkeyVisibility();
         } else if (overlay instanceof MaterialTrackerDraggableOverlay) {
             boolean newValue = !overlay.isConfigEnabled();
             config.materialTrackerEnabled = newValue;
@@ -1788,7 +1797,7 @@ public class OverlayEditorScreen extends Screen {
     }
 
     private int materialTrackerSettingsBoxHeight() {
-        return 36 + CLIPBOARD_BUTTON_SPACING * 2 + CLIPBOARD_BUTTON_HEIGHT + 12;
+        return 36 + CLIPBOARD_BUTTON_SPACING * 3 + CLIPBOARD_BUTTON_HEIGHT + 12;
     }
 
     private float materialTrackerSettingsScale() {
@@ -1845,13 +1854,18 @@ public class OverlayEditorScreen extends Screen {
 
         int buttonWidth = boxWidth - 20;
         int button1Y = boxY + 36;
+        RateDisplayUnit materialUnit = RateDisplayUnit.orDefault(config.materialTrackerRateUnit);
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button1Y, buttonWidth,
-                "Overlay-Typ: " + materialTrackerOverlayTypeLabel(config.materialTrackerOverlayType), true);
+                materialUnit.settingsSwitcherLabel(), true);
         int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button2Y, buttonWidth,
-                "Materialien/min: " + (config.materialTrackerRateEnabled ? "An" : "Aus"), true);
+                "Overlay-Typ: " + materialTrackerOverlayTypeLabel(config.materialTrackerOverlayType), true);
         int button3Y = button2Y + CLIPBOARD_BUTTON_SPACING;
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button3Y, buttonWidth,
+                materialUnit.withBase("Materialien") + ": "
+                        + (config.materialTrackerRateEnabled ? "An" : "Aus"), true);
+        int button4Y = button3Y + CLIPBOARD_BUTTON_SPACING;
+        drawDetailButton(context, mouseX, mouseY, boxX + 10, button4Y, buttonWidth,
                 "Anzeige: " + (config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.SCOREBOARD
                         ? "Scoreboard" : "Overlay"),
                 config.materialTrackerRateEnabled);
@@ -1904,6 +1918,14 @@ public class OverlayEditorScreen extends Screen {
         int button1Y = boxY + 36;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
                 && mouseY >= button1Y && mouseY <= button1Y + CLIPBOARD_BUTTON_HEIGHT) {
+            config.materialTrackerRateUnit =
+                    RateDisplayUnit.orDefault(config.materialTrackerRateUnit).toggled();
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                && mouseY >= button2Y && mouseY <= button2Y + CLIPBOARD_BUTTON_HEIGHT) {
             config.materialTrackerOverlayType = switch (config.materialTrackerOverlayType) {
                 case CUSTOM -> OverlayType.BLACK;
                 case BLACK -> OverlayType.NONE;
@@ -1912,17 +1934,17 @@ public class OverlayEditorScreen extends Screen {
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
-        int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
+        int button3Y = button2Y + CLIPBOARD_BUTTON_SPACING;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
-                && mouseY >= button2Y && mouseY <= button2Y + CLIPBOARD_BUTTON_HEIGHT) {
+                && mouseY >= button3Y && mouseY <= button3Y + CLIPBOARD_BUTTON_HEIGHT) {
             config.materialTrackerRateEnabled = !config.materialTrackerRateEnabled;
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
-        int button3Y = button2Y + CLIPBOARD_BUTTON_SPACING;
+        int button4Y = button3Y + CLIPBOARD_BUTTON_SPACING;
         if (config.materialTrackerRateEnabled
                 && mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
-                && mouseY >= button3Y && mouseY <= button3Y + CLIPBOARD_BUTTON_HEIGHT) {
+                && mouseY >= button4Y && mouseY <= button4Y + CLIPBOARD_BUTTON_HEIGHT) {
             config.materialTrackerDisplayMode = config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.SCOREBOARD
                     ? MaterialTrackerDisplayMode.OVERLAY
                     : MaterialTrackerDisplayMode.SCOREBOARD;
@@ -1940,7 +1962,7 @@ public class OverlayEditorScreen extends Screen {
     }
 
     private int killTrackerSettingsBoxHeight() {
-        return 36 + CLIPBOARD_BUTTON_SPACING * 3 + CLIPBOARD_BUTTON_HEIGHT + 12;
+        return 36 + CLIPBOARD_BUTTON_SPACING * 4 + CLIPBOARD_BUTTON_HEIGHT + 12;
     }
 
     private float killTrackerSettingsScale() {
@@ -1994,15 +2016,18 @@ public class OverlayEditorScreen extends Screen {
         int buttonWidth = boxWidth - 20;
         int button1Y = boxY + 36;
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button1Y, buttonWidth,
-                "Hintergrund: " + (config.killsUtilityShowBackground ? "An" : "Aus"), true);
+                RateDisplayUnit.orDefault(config.killsUtilityRateUnit).settingsSwitcherLabel(), true);
         int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button2Y, buttonWidth,
-                "Benötigte Kills: " + (config.killsUtilityShowRequiredKills ? "An" : "Aus"), true);
+                "Hintergrund: " + (config.killsUtilityShowBackground ? "An" : "Aus"), true);
         int button3Y = button2Y + CLIPBOARD_BUTTON_SPACING;
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button3Y, buttonWidth,
-                "Nächste Ebene: " + (config.killsUtilityShowNextLevel ? "An" : "Aus"), true);
+                "Benötigte Kills: " + (config.killsUtilityShowRequiredKills ? "An" : "Aus"), true);
         int button4Y = button3Y + CLIPBOARD_BUTTON_SPACING;
-        drawDetailButton(context, mouseX, mouseY, boxX + 10, button4Y, buttonWidth, "Farben", true);
+        drawDetailButton(context, mouseX, mouseY, boxX + 10, button4Y, buttonWidth,
+                "Nächste Ebene: " + (config.killsUtilityShowNextLevel ? "An" : "Aus"), true);
+        int button5Y = button4Y + CLIPBOARD_BUTTON_SPACING;
+        drawDetailButton(context, mouseX, mouseY, boxX + 10, button5Y, buttonWidth, "Farben", true);
     }
 
     private boolean handleKillTrackerSettingsClick(double mouseX, double mouseY, int button) {
@@ -2034,27 +2059,35 @@ public class OverlayEditorScreen extends Screen {
         int button1Y = boxY + 36;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
                 && mouseY >= button1Y && mouseY <= button1Y + CLIPBOARD_BUTTON_HEIGHT) {
-            config.killsUtilityShowBackground = !config.killsUtilityShowBackground;
+            config.killsUtilityRateUnit =
+                    RateDisplayUnit.orDefault(config.killsUtilityRateUnit).toggled();
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
         int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
                 && mouseY >= button2Y && mouseY <= button2Y + CLIPBOARD_BUTTON_HEIGHT) {
-            config.killsUtilityShowRequiredKills = !config.killsUtilityShowRequiredKills;
+            config.killsUtilityShowBackground = !config.killsUtilityShowBackground;
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
         int button3Y = button2Y + CLIPBOARD_BUTTON_SPACING;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
                 && mouseY >= button3Y && mouseY <= button3Y + CLIPBOARD_BUTTON_HEIGHT) {
-            config.killsUtilityShowNextLevel = !config.killsUtilityShowNextLevel;
+            config.killsUtilityShowRequiredKills = !config.killsUtilityShowRequiredKills;
             CCLiveUtilitiesConfig.HANDLER.save();
             return true;
         }
         int button4Y = button3Y + CLIPBOARD_BUTTON_SPACING;
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
                 && mouseY >= button4Y && mouseY <= button4Y + CLIPBOARD_BUTTON_HEIGHT) {
+            config.killsUtilityShowNextLevel = !config.killsUtilityShowNextLevel;
+            CCLiveUtilitiesConfig.HANDLER.save();
+            return true;
+        }
+        int button5Y = button4Y + CLIPBOARD_BUTTON_SPACING;
+        if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                && mouseY >= button5Y && mouseY <= button5Y + CLIPBOARD_BUTTON_HEIGHT) {
             Minecraft client = Minecraft.getInstance();
             if (client != null) {
                 client.gui.setScreen(KillTrackerColors.createScreen(this));

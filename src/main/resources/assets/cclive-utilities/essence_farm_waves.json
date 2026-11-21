@@ -1,0 +1,329 @@
+{
+ "_comment": "Farm waves from the wiki analysis. counts: mobs of a type per run (target essences only).",
+ "waves": [
+  {
+   "wave": 475,
+   "mobs": 18,
+   "counts": {
+    "horse": 6,
+    "blaze": 4,
+    "zombie": 4,
+    "wolf": 3
+   }
+  },
+  {
+   "wave": 825,
+   "mobs": 33,
+   "counts": {
+    "wither_skeleton": 12,
+    "stray": 5,
+    "wolf": 4
+   }
+  },
+  {
+   "wave": 999,
+   "mobs": 37,
+   "counts": {
+    "goat": 8,
+    "bee": 11,
+    "piglin": 6,
+    "chicken": 10
+   }
+  },
+  {
+   "wave": 1230,
+   "mobs": 43,
+   "counts": {
+    "blaze": 7,
+    "goat": 7,
+    "piglin": 6,
+    "endermite": 6
+   }
+  },
+  {
+   "wave": 1862,
+   "mobs": 57,
+   "counts": {
+    "chicken": 13,
+    "wither_skeleton": 9,
+    "blaze": 17,
+    "skeleton": 8
+   }
+  },
+  {
+   "wave": 2384,
+   "mobs": 68,
+   "counts": {
+    "piglin": 20,
+    "snow_golem": 5,
+    "bee": 11,
+    "guardian": 16,
+    "wither_skeleton": 6,
+    "blaze": 10
+   }
+  },
+  {
+   "wave": 2547,
+   "mobs": 71,
+   "counts": {
+    "fox": 18,
+    "wolf": 9,
+    "horse": 11,
+    "creeper": 8
+   }
+  },
+  {
+   "wave": 3130,
+   "mobs": 83,
+   "counts": {
+    "blaze": 14,
+    "zombified_piglin": 8,
+    "creeper": 8,
+    "wither_skeleton": 27
+   }
+  },
+  {
+   "wave": 3563,
+   "mobs": 92,
+   "counts": {
+    "hoglin": 8,
+    "vindicator": 8,
+    "turtle": 20,
+    "blaze": 17
+   }
+  },
+  {
+   "wave": 3008,
+   "mobs": 81,
+   "counts": {
+    "bee": 15,
+    "frog": 20,
+    "chicken": 9,
+    "guardian": 20
+   }
+  },
+  {
+   "wave": 3785,
+   "mobs": 97,
+   "counts": {
+    "witch": 26,
+    "spider": 8,
+    "enderman": 9
+   }
+  },
+  {
+   "wave": 4155,
+   "mobs": 104,
+   "counts": {
+    "axolotl": 12,
+    "hoglin": 20,
+    "stray": 12,
+    "piglin": 28
+   }
+  },
+  {
+   "wave": 4261,
+   "mobs": 106,
+   "counts": {
+    "snow_golem": 29,
+    "chicken": 16,
+    "zombie": 19
+   }
+  },
+  {
+   "wave": 4607,
+   "mobs": 114,
+   "counts": {
+    "endermite": 22,
+    "blaze": 26,
+    "piglin": 28
+   }
+  },
+  {
+   "wave": 4964,
+   "mobs": 120,
+   "counts": {
+    "wolf": 24,
+    "goat": 11,
+    "horse": 11,
+    "axolotl": 23,
+    "guardian": 24
+   }
+  },
+  {
+   "wave": 4848,
+   "mobs": 118,
+   "counts": {
+    "skeleton": 29,
+    "snow_golem": 29,
+    "spider": 30
+   }
+  },
+  {
+   "wave": 4952,
+   "mobs": 120,
+   "counts": {
+    "stray": 15,
+    "zoglin": 33,
+    "panda": 14
+   }
+  },
+  {
+   "wave": 5346,
+   "mobs": 129,
+   "counts": {
+    "blaze": 21,
+    "piglin": 36,
+    "wither_skeleton": 30,
+    "hoglin": 13
+   }
+  },
+  {
+   "wave": 5725,
+   "mobs": 135,
+   "counts": {
+    "spider": 18,
+    "guardian": 21,
+    "panda": 17,
+    "turtle": 17
+   }
+  },
+  {
+   "wave": 6312,
+   "mobs": 147,
+   "counts": {
+    "wither_skeleton": 17,
+    "skeleton": 41,
+    "bee": 40,
+    "horse": 17
+   }
+  },
+  {
+   "wave": 6574,
+   "mobs": 152,
+   "counts": {
+    "piglin": 38,
+    "polar_bear": 48,
+    "fox": 38,
+    "skeleton": 21
+   }
+  },
+  {
+   "wave": 6182,
+   "mobs": 144,
+   "counts": {
+    "zombie": 31,
+    "goat": 20
+   }
+  },
+  {
+   "wave": 6992,
+   "mobs": 160,
+   "counts": {
+    "zoglin": 40,
+    "evoker": 24,
+    "creeper": 14,
+    "zombified_piglin": 23
+   }
+  },
+  {
+   "wave": 7109,
+   "mobs": 162,
+   "counts": {
+    "endermite": 24,
+    "husk": 22,
+    "blaze": 36
+   }
+  },
+  {
+   "wave": 7336,
+   "mobs": 167,
+   "counts": {
+    "axolotl": 30,
+    "frog": 20,
+    "evoker": 40,
+    "turtle": 25,
+    "enderman": 28
+   }
+  },
+  {
+   "wave": 7610,
+   "mobs": 172,
+   "counts": {
+    "guardian": 17,
+    "drowned": 28,
+    "snow_golem": 47,
+    "zombie_horse": 25,
+    "piglin_brute": 23
+   }
+  },
+  {
+   "wave": 9487,
+   "mobs": 208,
+   "counts": {
+    "bee": 26,
+    "piglin": 55,
+    "ocelot": 24,
+    "wither_skeleton": 33,
+    "panda": 17,
+    "blaze": 24,
+    "zoglin": 23
+   }
+  },
+  {
+   "wave": 7853,
+   "mobs": 177,
+   "counts": {
+    "spider": 33,
+    "creeper": 39,
+    "fox": 26,
+    "chicken": 14,
+    "zombie": 21
+   }
+  },
+  {
+   "wave": 9192,
+   "mobs": 203,
+   "counts": {
+    "horse": 35,
+    "wolf": 19,
+    "skeleton": 24,
+    "drowned": 49,
+    "goat": 54
+   }
+  },
+  {
+   "wave": 9316,
+   "mobs": 205,
+   "counts": {
+    "stray": 41,
+    "evoker": 26,
+    "vindicator": 19,
+    "witch": 23,
+    "zombified_piglin": 27,
+    "skeleton_horse": 20
+   }
+  },
+  {
+   "wave": 8826,
+   "mobs": 197,
+   "counts": {
+    "chicken": 39,
+    "turtle": 18,
+    "endermite": 24,
+    "hoglin": 25,
+    "husk": 22
+   }
+  },
+  {
+   "wave": 8314,
+   "mobs": 186,
+   "counts": {
+    "axolotl": 23,
+    "guardian": 47,
+    "polar_bear": 47,
+    "frog": 23
+   }
+  }
+ ]
+}

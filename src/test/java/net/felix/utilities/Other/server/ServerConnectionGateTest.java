@@ -16,4 +16,12 @@ class ServerConnectionGateTest {
         assertFalse(ServerConnectionGate.matchesAllowed("playlegend.net/192.0.2.1"));
         assertFalse(ServerConnectionGate.matchesAllowed("192.0.2.1:25565"));
     }
+
+    @org.junit.jupiter.api.Test
+    void betaNameReachesTheSameServer() {
+        assertTrue(ServerConnectionGate.matchesAllowed("beta.playlegend.net"));
+        assertTrue(ServerConnectionGate.matchesAllowed("BETA.playlegend.net:25565"));
+        assertFalse(ServerConnectionGate.matchesAllowed("beta.playlegend.net:25566"));
+        assertFalse(ServerConnectionGate.matchesAllowed("beta.playlegend.net.example"));
+    }
 }

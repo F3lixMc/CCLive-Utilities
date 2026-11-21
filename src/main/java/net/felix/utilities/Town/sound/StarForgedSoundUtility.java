@@ -1,5 +1,6 @@
 package net.felix.utilities.Town.sound;
 
+import java.util.regex.Pattern;
 import net.felix.CCLiveUtilitiesConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -11,6 +12,15 @@ public class StarForgedSoundUtility {
 
 	private static final String DEBUG_PREFIX = "[StarForgedSound-DEBUG]";
 	private static final long DUPLICATE_COOLDOWN_MS = 500L;
+
+	/**
+	 * Nur offizielle Server-Nachrichten, z.B.
+	 * {@code [Legend] Schmiedezustand erhalten: [Sternengeschmiedet]}.
+	 * Spielerchat ({@code Name >> ...}) darf denselben Text nicht auslösen.
+	 */
+	private static final Pattern STAR_FORGED_SERVER_PATTERN = Pattern.compile(
+			"^\\[Legend\\]\\s*Schmiedezustand erhalten:\\s*\\[(?:Sternengeschmiedet|Starforged)\\].*",
+			Pattern.DOTALL);
 
 	private static String lastTriggeredMessage = "";
 	private static long lastTriggeredAtMs = 0L;
@@ -39,13 +49,16 @@ public class StarForgedSoundUtility {
 		String normalized = normalizeMessageText(message);
 		if (isDebugEnabled()) {
 			debug("Normalisierter Text: '" + truncate(normalized, 160) + "'");
-			debug("Matcher | Schmiedezustand erhalten=" + normalized.contains("Schmiedezustand erhalten")
+			debug("Matcher | startsWith[Legend]=" + normalized.startsWith("[Legend]")
+					+ " | playerChat(>>)=" + normalized.contains(">>")
+					+ " | Schmiedezustand erhalten=" + normalized.contains("Schmiedezustand erhalten")
 					+ " | Sternengeschmiedet=" + normalized.contains("Sternengeschmiedet")
 					+ " | Starforged=" + normalized.contains("Starforged"));
 		}
 
 		if (!isStarForgedSmithingMessage(normalized)) {
-			debugSkip("Nachricht entspricht nicht dem Sternengeschmiedet-Muster");
+			debugSkip("Nachricht entspricht nicht dem offiziellen Server-Muster "
+					+ "([Legend] Schmiedezustand erhalten: [Sternengeschmiedet])");
 			return;
 		}
 
@@ -132,8 +145,18 @@ public class StarForgedSoundUtility {
 			return false;
 		}
 
-		return messageText.contains("Schmiedezustand erhalten")
-				&& (messageText.contains("Sternengeschmiedet") || messageText.contains("Starforged"));
+		// PlayLegend-Spielerchat: "Name >> Text" – auch bei exakt gleichem Inhalt ignorieren
+		if (messageText.contains(">>")) {
+			return false;
+		}
+
+		int legendIndex = messageText.indexOf("[Legend]");
+		if (legendIndex < 0) {
+			return false;
+		}
+
+		// Ab [Legend] matchen, falls vor dem Prefix noch Glyphs übrig sind
+		return STAR_FORGED_SERVER_PATTERN.matcher(messageText.substring(legendIndex)).matches();
 	}
 
 	private static boolean isDebugEnabled() {

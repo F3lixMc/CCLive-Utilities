@@ -1227,6 +1227,11 @@ public class BPViewerUtility {
             getInstance().setManualFloor(floor);
         }
     }
+
+    /** Setzt die Hotkey-Ausblendung zurück, damit das Overlay nach Config-Ein/Aus wieder sichtbar ist. */
+    public static void resetHotkeyVisibility() {
+        isVisible = true;
+    }
     
     public static boolean isVisible() {
         return isVisible;

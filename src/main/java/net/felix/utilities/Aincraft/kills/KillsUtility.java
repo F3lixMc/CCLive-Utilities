@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Other.hud.SessionRateUtility;
 import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.felix.utilities.Other.keybinding.KeyCategories;
@@ -558,8 +559,8 @@ public class KillsUtility {
 		int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityY;
 		
 		// Prepare text content
-		String title = "Kills/min";
-		String kpmText = String.format("KPM: %.1f", currentKPM);
+		String title = killsRateUnit().withBase("Kills");
+		String kpmText = formatKillsPerUnitLine();
 		String newKillsText = String.format("Kills: %d", newKills);
 		
 		// Calculate session time text
@@ -800,8 +801,8 @@ public class KillsUtility {
 		}
 		
 		// Prepare text content (same as in renderKillsDisplay)
-		String title = "Kills/min";
-		String kpmText = String.format("KPM: %.1f", currentKPM);
+		String title = killsRateUnit().withBase("Kills");
+		String kpmText = formatKillsPerUnitLine();
 		String newKillsText = String.format("Kills: %d", newKills);
 		
 		// Calculate session time text
@@ -917,5 +918,14 @@ public class KillsUtility {
 		} catch (Exception e) {
 			// Silent error handling
 		}
+	}
+
+	private static String formatKillsPerUnitLine() {
+		RateDisplayUnit unit = killsRateUnit();
+		return unit.formatAbbrevLine("KPM", String.format("%.1f", unit.fromPerMinute(currentKPM)));
+	}
+
+	private static RateDisplayUnit killsRateUnit() {
+		return RateDisplayUnit.orDefault(CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityRateUnit);
 	}
 }

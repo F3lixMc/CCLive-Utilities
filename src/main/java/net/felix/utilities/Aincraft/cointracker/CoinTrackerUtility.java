@@ -12,6 +12,7 @@ import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesSt
 import net.felix.utilities.Other.hud.BossBarHudValueDecoder;
 import net.felix.utilities.Other.hud.HudNumberSuffixUtility;
 import net.felix.utilities.Other.hud.HudOverlayVisibility;
+import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Other.hud.SessionRateUtility;
 import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.felix.utilities.Other.keybinding.KeyCategories;
@@ -283,7 +284,7 @@ public class CoinTrackerUtility {
         String coinsText = "Coins: " + formatHudValueDisplay(currentCoinsDisplay, currentCoins);
         String gainedText = "Gewinn: " + (gainedCoins.signum() >= 0 ? "+" : "")
                 + formatAbbreviatedDisplay(gainedCoins);
-        String cpmText = "CPM: " + formatAbbreviatedDisplay(Math.round(coinsPerMinute));
+        String cpmText = formatCoinsPerUnitLine();
 
         String timeText = "Zeit: 00:00";
         if (sessionStartTime > 0) {
@@ -407,7 +408,7 @@ public class CoinTrackerUtility {
         return new String[] {
                 "Coins: " + formatHudValueDisplay(currentCoinsDisplay, currentCoins),
                 "Gewinn: " + (gainedCoins.signum() >= 0 ? "+" : "") + formatAbbreviatedDisplay(gainedCoins),
-                "CPM: " + formatAbbreviatedDisplay(Math.round(coinsPerMinute)),
+                formatCoinsPerUnitLine(),
                 "Zeit: 00:00"
         };
     }
@@ -433,7 +434,18 @@ public class CoinTrackerUtility {
     }
 
     public static String formatCpmForScoreboard() {
-        return formatAbbreviatedDisplay(Math.round(coinsPerMinute));
+        RateDisplayUnit unit = coinRateUnit();
+        return formatAbbreviatedDisplay(Math.round(unit.fromPerMinute(coinsPerMinute)));
+    }
+
+    private static String formatCoinsPerUnitLine() {
+        RateDisplayUnit unit = coinRateUnit();
+        return unit.formatAbbrevLine("CPM",
+                formatAbbreviatedDisplay(Math.round(unit.fromPerMinute(coinsPerMinute))));
+    }
+
+    private static RateDisplayUnit coinRateUnit() {
+        return RateDisplayUnit.orDefault(CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerRateUnit);
     }
 
     public static long getCurrentSouls() {

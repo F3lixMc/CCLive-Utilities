@@ -68,6 +68,7 @@ public final class HudOverlayVisibility {
             NpcAlertsFeature.onHudRender(context, tickCounter);
             BossHPUtility.onHudRender(context, tickCounter);
             FactoryLevelTracker.onHudRender(context, tickCounter);
+            net.felix.utilities.Factory.essencefarm.EssenceFarmTracker.onHudRender(context, tickCounter);
             BPViewerUtility bp = BPViewerUtility.getInstance();
             if (bp != null) {
                 bp.onHudRender(context, tickCounter);
