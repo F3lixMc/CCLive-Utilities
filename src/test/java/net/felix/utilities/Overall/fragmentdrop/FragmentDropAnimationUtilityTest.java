@@ -2,27 +2,36 @@ package net.felix.utilities.Overall.fragmentdrop;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class FragmentDropAnimationUtilityTest {
 
 	@Test
-	void matchesServerFragmentMessage() {
-		assertTrue(FragmentDropAnimationUtility.isFragmentDropMessage(
+	void extractsNameFromServerFragmentMessage() {
+		assertEquals("Schmiedekammer-Talismanfragment", FragmentDropAnimationUtility.extractFragmentName(
 				"§r[Legend] Du hast Schmiedekammer-Talismanfragment gefunden."));
-		assertTrue(FragmentDropAnimationUtility.isFragmentDropMessage(
+		assertEquals("Schmiedekammer-Talismanfragment", FragmentDropAnimationUtility.extractFragmentName(
 				"[Legend] Du hast Schmiedekammer-Talismanfragment gefunden."));
 	}
 
 	@Test
 	void rejectsPlayerChatAndOtherMessages() {
-		assertFalse(FragmentDropAnimationUtility.isFragmentDropMessage(
+		assertNull(FragmentDropAnimationUtility.extractFragmentName(
 				"Spieler >> [Legend] Du hast Schmiedekammer-Talismanfragment gefunden."));
-		assertFalse(FragmentDropAnimationUtility.isFragmentDropMessage(
+		assertNull(FragmentDropAnimationUtility.extractFragmentName(
 				"Du hast Schmiedekammer-Talismanfragment gefunden."));
-		assertFalse(FragmentDropAnimationUtility.isFragmentDropMessage(
+		assertNull(FragmentDropAnimationUtility.extractFragmentName(
 				"[Legend] Schmiedezustand erhalten: [Sternengeschmiedet]"));
-		assertFalse(FragmentDropAnimationUtility.isFragmentDropMessage(null));
+		assertNull(FragmentDropAnimationUtility.extractFragmentName(null));
+	}
+
+	@Test
+	void splitsNameIntoTitleAndSubtitle() {
+		assertArrayEquals(new String[] { "Talismanfragment", "Schmiedekammer" },
+				FragmentDropAnimationUtility.splitFragmentName("Schmiedekammer-Talismanfragment"));
+		assertArrayEquals(new String[] { "Talismanfragment", "" },
+				FragmentDropAnimationUtility.splitFragmentName("Talismanfragment"));
 	}
 }
