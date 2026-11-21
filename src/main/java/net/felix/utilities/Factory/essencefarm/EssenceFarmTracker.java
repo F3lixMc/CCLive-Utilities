@@ -81,7 +81,6 @@ public final class EssenceFarmTracker {
 	private static boolean runActive;
 	private static boolean runComplete;
 	private static int runWave = -1;
-	private static long runStartMs;
 	private static long lastCompletionAt;
 	private static String lastCompletionText;
 	private static int ticksSinceLevelChange;
@@ -216,7 +215,6 @@ public final class EssenceFarmTracker {
 		runActive = true;
 		runComplete = complete;
 		runWave = -1;
-		runStartMs = System.currentTimeMillis();
 		runSpawns.clear();
 	}
 
