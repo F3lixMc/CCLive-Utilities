@@ -13,7 +13,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.minecraft.client.DeltaTracker;
@@ -1107,13 +1106,10 @@ public class BossHPUtility {
 	
 	public static String getFormattedDpmText() {
 		BossHPUtility instance = getInstance();
-		RateDisplayUnit unit = RateDisplayUnit.orDefault(
-				CCLiveUtilitiesConfig.HANDLER.instance().bossHPRateUnit);
 		if (instance == null || instance.lastDpmUpdateTime <= 0) {
-			return unit.formatAbbrevIdle("DPM");
+			return "DPM: -";
 		}
-		return unit.formatAbbrevLine("DPM",
-				String.format(Locale.US, "%,.0f", unit.fromPerMinute(instance.cachedDpm)));
+		return String.format(Locale.US, "DPM: %,.0f", instance.cachedDpm);
 	}
 	
 	/**

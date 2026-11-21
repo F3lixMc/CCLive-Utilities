@@ -109,13 +109,9 @@ public final class TrackerDetailSettings {
             buttons.add(toggle("Haken im Moblexicon: " + onOff(config.moblexiconBlueprintCheckmarksEnabled),
                     () -> config.moblexiconBlueprintCheckmarksEnabled = !config.moblexiconBlueprintCheckmarksEnabled));
         } else if (overlay instanceof BossHPDraggableOverlay) {
-            RateDisplayUnit bossUnit = RateDisplayUnit.orDefault(config.bossHPRateUnit);
-            buttons.add(rateUnitToggle(
-                    () -> config.bossHPRateUnit,
-                    value -> config.bossHPRateUnit = value));
             buttons.add(toggle("Hintergrund: " + onOff(config.bossHPShowBackground),
                     () -> config.bossHPShowBackground = !config.bossHPShowBackground));
-            buttons.add(toggle(bossUnit.abbreviated("DPM") + ": " + onOff(config.bossHPShowDPM),
+            buttons.add(toggle("DPM: " + onOff(config.bossHPShowDPM),
                     () -> config.bossHPShowDPM = !config.bossHPShowDPM));
             buttons.add(toggle("Last Dmg: " + onOff(config.bossHPShowLastDmg),
                     () -> config.bossHPShowLastDmg = !config.bossHPShowLastDmg));

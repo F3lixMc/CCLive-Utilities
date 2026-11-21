@@ -945,9 +945,6 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public RateDisplayUnit miningLumberjackRateUnit = RateDisplayUnit.PER_MINUTE;
 
-    @SerialEntry
-    public RateDisplayUnit bossHPRateUnit = RateDisplayUnit.PER_MINUTE;
-
     // Collection Overlay Settings
     @SerialEntry
     public boolean showCollectionOverlay = true;
@@ -1991,10 +1988,6 @@ public class CCLiveUtilitiesConfig {
                                         "Rate-Einheit für XP (XP/Min ↔ XP/h)",
                                         () -> HANDLER.instance().miningLumberjackRateUnit,
                                         v -> HANDLER.instance().miningLumberjackRateUnit = v))
-                                .option(rateUnitOption("BossHP",
-                                        "Rate-Einheit für Schaden (DPM/DPH)",
-                                        () -> HANDLER.instance().bossHPRateUnit,
-                                        v -> HANDLER.instance().bossHPRateUnit = v))
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Aspekt Anzeige"))
@@ -2094,6 +2087,76 @@ public class CCLiveUtilitiesConfig {
                                         .name(Component.literal("Monster Todesanimationen Ein/Aus"))
                                         .description(OptionDescription.of(Component.literal("Monster Todesanimationen aktivieren oder deaktivieren")))
                                         .binding(false, () -> HANDLER.instance().killAnimationUtilityEnabled, newVal -> HANDLER.instance().killAnimationUtilityEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Component.literal("Fabrik"))
+                        .tooltip(Component.literal("Einstellungen für Fabrik-bezogene Utilities"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Boss HP"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Boss HP aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Boss-HP Anzeige aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().bossHPEnabled && HANDLER.instance().showBossHP, newVal -> {
+                                            HANDLER.instance().bossHPEnabled = newVal;
+                                            HANDLER.instance().showBossHP = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den Text in der Boss-HP Anzeige")))
+                                        .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().bossHPTextColor, newVal -> HANDLER.instance().bossHPTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter der Boss HP Anzeige anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowBackground, newVal -> HANDLER.instance().bossHPShowBackground = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("DPM anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("DPM (Damage Per Minute) Anzeige im Boss HP Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowDPM, newVal -> HANDLER.instance().bossHPShowDPM = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Last Dmg anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Last Dmg“ (Schaden im letzten Messfenster) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowLastDmg, newVal -> HANDLER.instance().bossHPShowLastDmg = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Gesamtschaden anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Overall DMG“ (kumulativer Schaden und Prozent) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowOverallDmg, newVal -> HANDLER.instance().bossHPShowOverallDmg = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Restzeit anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeile „Benötigte Zeit“ (geschätzte Restzeit basierend auf DPM und aktueller Boss-HP) im Boss-HP-Overlay ein- oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().bossHPShowEta, newVal -> HANDLER.instance().bossHPShowEta = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Fabriklevel Progress"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Fabriklevel-Tracker aktivieren"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt in der Fabrik das nächste Ziellevel und eine geschätzte Restzeit")))
+                                        .binding(true, () -> HANDLER.instance().factoryLevelEnabled && HANDLER.instance().showFactoryLevel, newVal -> {
+                                            HANDLER.instance().factoryLevelEnabled = newVal;
+                                            HANDLER.instance().showFactoryLevel = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Hintergrund anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Schwarzen Hintergrund hinter dem Fabriklevel-Tracker anzeigen oder ausblenden")))
+                                        .binding(true, () -> HANDLER.instance().factoryLevelShowBackground, newVal -> HANDLER.instance().factoryLevelShowBackground = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
