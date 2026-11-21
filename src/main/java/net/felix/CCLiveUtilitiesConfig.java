@@ -2067,7 +2067,7 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Component.literal("Fragment Drop Animation"))
+                                .name(Component.literal("Animations"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Talismanfragment Animation"))
                                         .description(OptionDescription.of(Component.literal("Spielt die Totem-Animation mit einer Prismarinscherbe ab, wenn ein Talismanfragment gefunden wird")))
