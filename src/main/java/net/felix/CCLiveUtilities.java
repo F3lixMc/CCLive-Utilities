@@ -24,7 +24,6 @@ import net.felix.utilities.Overall.npcalerts.NpcAlertsFeature;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
 import net.felix.utilities.Town.kits.filter.KitFilterUtility;
 import net.felix.utilities.Town.schmied.SchmiedTrackerUtility;
-import net.felix.utilities.Town.sound.ModSounds;
 
 public class CCLiveUtilities implements ModInitializer {
 	public static final String MOD_ID = "cclive-utilities";
@@ -50,8 +49,6 @@ public class CCLiveUtilities implements ModInitializer {
 		
 		// Migriere Config-Felder: Füge fehlende Felder mit Default-Werten hinzu
 		CCLiveUtilitiesConfig.migrateConfigFields();
-
-		ModSounds.initialize();
 
 		// Initialisiere ZeichenUtility zuerst (wird von anderen Utilities benötigt)
 		net.felix.utilities.Other.glyphs.ZeichenUtility.initialize();

@@ -51,7 +51,6 @@ import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.getViewerSe
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.getViewerSettingsOwnedButtonX;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.resolveAbstractContainerScreenForInput;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerLayout.resolveViewerPositionForMouseInput;
-import net.felix.utilities.Overall.itemviewer.ui.ViewerState;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerState.activeCategoryOverlay;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerState.favoritesMode;
 import static net.felix.utilities.Overall.itemviewer.ui.ViewerState.helpScreenHovered;
