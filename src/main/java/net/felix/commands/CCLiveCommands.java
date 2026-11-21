@@ -141,6 +141,10 @@ public class CCLiveCommands {
             
             .then(literal("eventsounds")
                 .executes(CCLiveCommands::openEventSounds))
+
+            // Fragment drop animation test
+            .then(literal("fragment_animation_test")
+                .executes(CCLiveCommands::testFragmentAnimation))
             
             .then(literal("mod")
                 .requires(source -> StaffClientAccess.isStaffCommandVisible())
@@ -313,6 +317,15 @@ public class CCLiveCommands {
             return 0;
         }
     }
+
+    // =================== FRAGMENT DROP ANIMATION ===================
+
+    private static int testFragmentAnimation(CommandContext<FabricClientCommandSource> context) {
+        net.felix.utilities.Overall.fragmentdrop.FragmentDropAnimationUtility.playTestAnimation();
+        context.getSource().sendFeedback(Component.literal("§aTalismanfragment-Animation abgespielt"));
+        return 1;
+    }
+
 
     // =================== LEADERBOARD COMMANDS ===================
     
@@ -631,6 +644,7 @@ public class CCLiveCommands {
 
         context.getSource().sendFeedback(Component.literal("§e§lSchmied:"));
         context.getSource().sendFeedback(Component.literal("§7/cclive eventsounds §f- Event-Sound-Menü öffnen"));
+        context.getSource().sendFeedback(Component.literal("§7/cclive fragment_animation_test §f- Talismanfragment-Animation testen"));
         context.getSource().sendFeedback(Component.literal(""));
         
         // Debug Commands nur anzeigen wenn Debug aktiviert ist

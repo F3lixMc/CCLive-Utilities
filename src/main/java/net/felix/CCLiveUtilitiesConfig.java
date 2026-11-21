@@ -895,6 +895,9 @@ public class CCLiveUtilitiesConfig {
     @SerialEntry
     public Color sternengeschmiedetColor = new Color(0xFF00FF); // Normale Farbe (wenn Regenbogen aus)
 
+    @SerialEntry
+    public boolean fragmentDropAnimationEnabled = true; // Totem animation with prismarine shard on fragment drop
+
     // Material Tracker Settings
     @SerialEntry
     public boolean materialTrackerEnabled = true;
@@ -2062,6 +2065,15 @@ public class CCLiveUtilitiesConfig {
                                                 }))
                                         .build())
 
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Animations"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Talismanfragment Animation"))
+                                        .description(OptionDescription.of(Component.literal("Spielt die Totem-Animation mit einer Prismarinscherbe ab, wenn ein Talismanfragment gefunden wird")))
+                                        .binding(true, () -> HANDLER.instance().fragmentDropAnimationEnabled, newVal -> HANDLER.instance().fragmentDropAnimationEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Animation Blocker"))
