@@ -463,9 +463,9 @@ public final class ViewerInputHandler {
         if (button != 0 || !net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive) {
             return false;
         }
-        int size = 12;
-        int buttonX = pos.viewerX + pos.viewerWidth - size - 2;
-        int buttonY = pos.viewerY + 2;
+        int size = ViewerLayout.KIT_COMPACT_BUTTON_SIZE;
+        int buttonX = ViewerLayout.kitCompactButtonX(pos);
+        int buttonY = ViewerLayout.kitCompactButtonY(pos);
         if (!isInside(mouseX, mouseY, buttonX, buttonY, size, size)) {
             return false;
         }

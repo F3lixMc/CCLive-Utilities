@@ -51,6 +51,7 @@
     "cclive.f6.instruction.resize": "Linksklick + Ziehen (Ecke): Größe ändern",
     "cclive.f6.instruction.nudge": "Linksklick + Pfeiltasten: Overlay 1 Pixel verschieben",
     "cclive.f6.instruction.close": "ESC: Editor schließen",
+    "cclive.f6.instruction.buttons": "F7: Buttons ein- und ausblenden",
     "cclive.f6.transparency": "Transparenz",
     "cclive.f6.group": "F6 Menü",
     "cclive.f6.transparency_option": "Hintergrund Transparenz",

@@ -5,7 +5,7 @@ import java.nio.file.Paths;
 import net.fabricmc.api.ModInitializer;
 import net.felix.Community.chat.ChatManager;
 import net.felix.Community.leaderboards.LeaderboardManager;
-import net.felix.Community.leaderboards.PlayerFullReset;
+import net.felix.Community.leaderboards.reset.PlayerFullReset;
 import net.felix.Community.profile.PlayerHoverStatsUtility;
 import net.felix.Community.profile.ProfileStatsManager;
 import net.felix.commands.CCLiveCommands;
@@ -82,7 +82,7 @@ public class CCLiveUtilities implements ModInitializer {
 		net.felix.utilities.Aincraft.cointracker.CoinTrackerUtility.initialize();
 		NpcAlertsFeature.initialize();
 		net.felix.utilities.Other.debug.DebugUtility.initializeItemLogger();
-		net.felix.utilities.Other.clipboard.ClipboardUtility.initialize();
+		net.felix.utilities.Overall.clipboard.ClipboardUtility.initialize();
 		// Offene Spieler-Resets vor den ersten Fortschritts-Uploads abschließen
 		PlayerFullReset.initialize();
 		// Initialisiere Leaderboard-System
@@ -92,8 +92,8 @@ public class CCLiveUtilities implements ModInitializer {
 		try {
 			ChatManager.getInstance().initialize();
 			net.felix.Community.chat.ChatNameColorTracker.getInstance().initialize();
-			net.felix.Community.chat.ItemShareManager.getInstance().initialize();
-			net.felix.Community.chat.BuildShareManager.getInstance().initialize();
+			net.felix.Community.chat.share.ItemShareManager.getInstance().initialize();
+			net.felix.Community.chat.buildshare.BuildShareManager.getInstance().initialize();
 		} catch (Exception e) {
 			// Silent error handling
 		}

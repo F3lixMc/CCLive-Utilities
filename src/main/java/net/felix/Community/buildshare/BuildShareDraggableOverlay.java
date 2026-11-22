@@ -1,7 +1,7 @@
 package net.felix.Community.buildshare;
 
 import net.felix.CCLiveUtilitiesConfig;
-import net.felix.Community.chat.BuildShareManager;
+import net.felix.Community.chat.buildshare.BuildShareManager;
 import net.felix.utilities.DragOverlay.DraggableOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;

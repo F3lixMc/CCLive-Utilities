@@ -88,7 +88,6 @@ public class NpcAlertsSettingsScreen extends Screen {
         int boxHeight = computeSettingsBoxHeight();
         int boxY = height / 2 - boxHeight / 2;
         titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, boxY - 24);
-        addRenderableWidget(titleWidget);
     }
 
     private int computeSettingsBoxHeight() {
@@ -105,13 +104,44 @@ public class NpcAlertsSettingsScreen extends Screen {
         // Render very transparent background overlay
         context.fill(0, 0, width, height, 0x20000000);
 
-        // Render title
-        titleWidget.extractRenderState(context, mouseX, mouseY, delta);
+        float scale = panelScale();
+        int layoutMouseX = (int) Math.floor(toLayoutX(mouseX, scale));
+        int layoutMouseY = (int) Math.floor(toLayoutY(mouseY, scale));
+        context.pose().pushMatrix();
+        try {
+            context.pose().translate(panelOffsetX(scale), panelOffsetY(scale));
+            context.pose().scale(scale, scale);
+            titleWidget.extractRenderState(context, layoutMouseX, layoutMouseY, delta);
+            renderSettingsBox(context, layoutMouseX, layoutMouseY);
+        } finally {
+            context.pose().popMatrix();
+        }
 
-        renderSettingsBox(context, mouseX, mouseY);
-
-        // Render buttons
         super.extractRenderState(context, mouseX, mouseY, delta);
+    }
+
+    /** Skaliert die Box, wenn sie höher oder breiter als das Fenster ist. */
+    private float panelScale() {
+        int boxHeight = computeSettingsBoxHeight();
+        float fitHeight = Math.max(1, height - 8) / (float) Math.max(1, boxHeight + 28);
+        float fitWidth = Math.max(1, width - 8) / (float) BOX_WIDTH;
+        return Math.min(1.0f, Math.min(fitHeight, fitWidth));
+    }
+
+    private float panelOffsetX(float scale) {
+        return width / 2.0f * (1.0f - scale);
+    }
+
+    private float panelOffsetY(float scale) {
+        return height / 2.0f * (1.0f - scale);
+    }
+
+    private double toLayoutX(double mouseX, float scale) {
+        return (mouseX - panelOffsetX(scale)) / scale;
+    }
+
+    private double toLayoutY(double mouseY, float scale) {
+        return (mouseY - panelOffsetY(scale)) / scale;
     }
 
     // ------------------------------------------------------------------ Layout
@@ -252,8 +282,11 @@ public class NpcAlertsSettingsScreen extends Screen {
         double mouseY = event.y();
         int button = net.felix.utilities.Other.keybinding.KeyBindingUtility.legacyMouseButton(event.button());
         if (button == 0) {
+            float scale = panelScale();
+            double layoutX = toLayoutX(mouseX, scale);
+            double layoutY = toLayoutY(mouseY, scale);
             // Zuerst das Schließen-Kreuz prüfen
-            if (isOverCloseButton(mouseX, mouseY)) {
+            if (isOverCloseButton(layoutX, layoutY)) {
                 onClose();
                 return true;
             }
@@ -269,7 +302,7 @@ public class NpcAlertsSettingsScreen extends Screen {
                 }
             }
 
-            if (handleSettingsClick(mouseX, mouseY, button)) {
+            if (handleSettingsClick(layoutX, layoutY, button)) {
                 return true;
             }
         }

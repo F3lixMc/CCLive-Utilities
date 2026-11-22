@@ -3,7 +3,7 @@ package net.felix.Community.leaderboards.panel;
 import com.mojang.blaze3d.platform.NativeImage;
 import java.util.List;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.felix.Community.leaderboards.LeaderboardSnapshot;
+import net.felix.Community.leaderboards.sync.LeaderboardSnapshot;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.DynamicTexture;

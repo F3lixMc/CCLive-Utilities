@@ -177,14 +177,6 @@ public final class ViewerRenderer {
         context.fill(pos.viewerX, pos.viewerY, pos.viewerX + 1, pos.viewerY + pos.viewerHeight, 0xFF808080); // Links
         int rightEdge = net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive ? 0xFFFFFFFF : 0xFF808080;
         context.fill(pos.viewerX + pos.viewerWidth - 1, pos.viewerY, pos.viewerX + pos.viewerWidth, pos.viewerY + pos.viewerHeight, rightEdge); // Rechts
-        if (net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive) {
-            int button = 12;
-            int buttonX = pos.viewerX + pos.viewerWidth - button - 2;
-            int buttonY = pos.viewerY + 2;
-            context.fill(buttonX, buttonY, buttonX + button, buttonY + button, 0xFF202020);
-            context.text(client.font, net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitCompact ? "+" : "-",
-                    buttonX + 3, buttonY + 2, 0xFFFFFF55, false);
-        }
         
         int currentY = pos.viewerY + VIEWER_PADDING;
         
@@ -201,6 +193,7 @@ public final class ViewerRenderer {
         
         // Rendere Symbol-Button (oben rechts neben der Suchleiste)
         renderSymbolButton(context, pos.symbolButtonX, pos.symbolButtonY);
+        renderKitCompactButton(context, client, pos);
         
         // Rendere Symbol-Menü wenn geöffnet
         if (isSymbolMenuOpen) {
@@ -278,6 +271,27 @@ public final class ViewerRenderer {
         // Hilfe-Overlay wird jetzt in den Mixins (ScreenMixin/AbstractContainerScreenMixin) gerendert,
         // nach dem ItemViewer, damit es über allen Items liegt
         // AspectOverlay wird auch in den Mixins gerendert
+    }
+
+    private static void renderKitCompactButton(GuiGraphicsExtractor context, Minecraft client, ViewerPosition pos) {
+        if (!net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitFilterActive) {
+            return;
+        }
+        int size = ViewerLayout.KIT_COMPACT_BUTTON_SIZE;
+        int buttonX = ViewerLayout.kitCompactButtonX(pos);
+        int buttonY = ViewerLayout.kitCompactButtonY(pos);
+        boolean hovered = lastMouseX >= buttonX && lastMouseX < buttonX + size
+                && lastMouseY >= buttonY && lastMouseY < buttonY + size;
+        context.fill(buttonX, buttonY, buttonX + size, buttonY + size, hovered ? 0xFF404040 : 0xFF202020);
+        int border = hovered ? 0xFFFFFFFF : 0xFF808080;
+        context.fill(buttonX, buttonY, buttonX + size, buttonY + 1, border);
+        context.fill(buttonX, buttonY + size - 1, buttonX + size, buttonY + size, border);
+        context.fill(buttonX, buttonY, buttonX + 1, buttonY + size, border);
+        context.fill(buttonX + size - 1, buttonY, buttonX + size, buttonY + size, border);
+        String label = net.felix.utilities.Overall.itemviewer.kit.KitEditorMode.kitCompact ? "+" : "-";
+        int textX = buttonX + (size - client.font.width(label)) / 2;
+        int textY = buttonY + (size - client.font.lineHeight) / 2 + 1;
+        context.text(client.font, label, textX, textY, 0xFFFFFF55, false);
     }
 
     /**

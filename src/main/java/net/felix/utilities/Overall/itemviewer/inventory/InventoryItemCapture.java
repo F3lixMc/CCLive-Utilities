@@ -66,8 +66,8 @@ public final class InventoryItemCapture {
             itemData = findItemByName(itemName);
         }
         
-        if (itemData != null && net.felix.utilities.Other.clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
-            return net.felix.utilities.Other.clipboard.ClipboardUtility.addBlueprint(itemData);
+        if (itemData != null && net.felix.utilities.Overall.clipboard.ClipboardUtility.isClipboardPinnable(itemData)) {
+            return net.felix.utilities.Overall.clipboard.ClipboardUtility.addBlueprint(itemData);
         }
         return false;
     }
@@ -110,7 +110,7 @@ public final class InventoryItemCapture {
             template = findItemByName(lookupName);
         }
 
-        return net.felix.Community.chat.ItemShareManager.buildSnapshotFromTooltip(displayName, tooltipLines, template);
+        return net.felix.Community.chat.share.ItemShareManager.buildSnapshotFromTooltip(displayName, tooltipLines, template);
     }
 
     /**
@@ -139,7 +139,7 @@ public final class InventoryItemCapture {
             template = findItemByName(lookupName);
         }
 
-        ItemData snapshot = net.felix.Community.chat.ItemShareManager.buildSnapshotFromTooltip(
+        ItemData snapshot = net.felix.Community.chat.share.ItemShareManager.buildSnapshotFromTooltip(
             displayName, tooltipLines, template);
         // Live-Stack hat Vorrang für Icon (Modul-Platzhalter oft nicht in ItemViewer)
         applyLiveStackVisuals(snapshot, stack);
@@ -499,12 +499,12 @@ public final class InventoryItemCapture {
     private static String resolveCatalogName(
             String rawName,
             java.util.List<net.felix.Community.chat.ChatTooltipLine> tooltipLines) {
-        String mapped = net.felix.Community.chat.MagnetModuleNames.jeiName(rawName, tooltipLines);
+        String mapped = net.felix.Community.chat.share.MagnetModuleNames.jeiName(rawName, tooltipLines);
         if (mapped != null) {
             return mapped;
         }
         String lookup = cleanItemNameForLookup(rawName);
-        mapped = net.felix.Community.chat.MagnetModuleNames.jeiName(lookup, tooltipLines);
+        mapped = net.felix.Community.chat.share.MagnetModuleNames.jeiName(lookup, tooltipLines);
         return mapped != null ? mapped : lookup;
     }
 
@@ -561,6 +561,6 @@ public final class InventoryItemCapture {
 
     /** Anzeigename: Layout-Glyphen/Spacer weg, Schmiedegrad in [] bleibt erhalten. */
     private static String cleanItemNameForDisplay(String itemName) {
-        return net.felix.Community.chat.ShareTextCleaner.cleanDisplayName(itemName);
+        return net.felix.Community.chat.share.ShareTextCleaner.cleanDisplayName(itemName);
     }
 }

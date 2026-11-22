@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.felix.Community.chat.share.ItemShareManager;
 
 class ChatLinkSpansTest {
     private static final List<String> DOMAINS = List.of("youtube.com", "twitch.tv", "cclive-utilities.net");

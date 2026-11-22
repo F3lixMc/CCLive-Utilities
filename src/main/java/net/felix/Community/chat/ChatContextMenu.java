@@ -12,6 +12,7 @@ import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.multiplayer.chat.GuiMessage;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.felix.Community.chat.ignore.ChatIgnoreList;
 
 /**
  * Rechtsklick-Menü im offenen Chat. Es schließt den Chat nicht.

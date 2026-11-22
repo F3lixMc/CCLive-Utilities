@@ -1,7 +1,7 @@
 package net.felix.mixin;
 
-import net.felix.Community.chat.ChatShareClient;
-import net.felix.Community.chat.ChatShareLine;
+import net.felix.Community.chat.share.ChatShareClient;
+import net.felix.Community.chat.share.ChatShareLine;
 import net.felix.Community.profile.PlayerHoverStatsUtility;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;

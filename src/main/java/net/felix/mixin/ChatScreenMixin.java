@@ -1,9 +1,9 @@
 package net.felix.mixin;
 
-import net.felix.Community.chat.BuildShareManager;
-import net.felix.Community.chat.BuildShareViewScreen;
+import net.felix.Community.chat.buildshare.BuildShareManager;
+import net.felix.Community.chat.buildshare.BuildShareViewScreen;
 import net.felix.Community.chat.ChatManager;
-import net.felix.Community.chat.ItemShareManager;
+import net.felix.Community.chat.share.ItemShareManager;
 import net.felix.Community.profile.ProfileStatsManager;
 import net.felix.Community.staff.StaffClientAccess;
 import net.felix.utilities.DragOverlay.OverlayEditorUtility;
@@ -67,7 +67,7 @@ public abstract class ChatScreenMixin {
             cclive$openRulesAfterClose = false;
             net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
             if (client != null && client.gui != null) {
-                client.gui.setScreen(net.felix.Community.chat.ChatRulesScreen.forAcceptance((net.minecraft.client.gui.screens.Screen) (Object) this));
+                client.gui.setScreen(net.felix.Community.chat.rules.ChatRulesScreen.forAcceptance((net.minecraft.client.gui.screens.Screen) (Object) this));
             }
             cir.setReturnValue(true);
         }
@@ -87,8 +87,8 @@ public abstract class ChatScreenMixin {
         if (client.gui.hud != null && client.gui.hud.getChat() != null) {
             client.gui.hud.getChat().saveAsDraft(draft);
         }
-        if (!(client.gui.screen() instanceof net.felix.Community.chat.ChatRulesScreen)) {
-            client.gui.setScreen(net.felix.Community.chat.ChatRulesScreen.forAcceptance());
+        if (!(client.gui.screen() instanceof net.felix.Community.chat.rules.ChatRulesScreen)) {
+            client.gui.setScreen(net.felix.Community.chat.rules.ChatRulesScreen.forAcceptance());
         }
     }
 
@@ -158,7 +158,7 @@ public abstract class ChatScreenMixin {
                 return;
             }
             if (send == ShareSend.VANILLA) {
-                net.felix.Community.chat.ChatShareClient.notePlain(message);
+                net.felix.Community.chat.share.ChatShareClient.notePlain(message);
             }
             trackMessageSent();
             return;
@@ -238,7 +238,7 @@ public abstract class ChatScreenMixin {
                 return;
             }
             if (send == ShareSend.VANILLA) {
-                net.felix.Community.chat.ChatShareClient.notePlain(message);
+                net.felix.Community.chat.share.ChatShareClient.notePlain(message);
             }
             trackMessageSent();
         }
@@ -247,9 +247,9 @@ public abstract class ChatScreenMixin {
     private enum ShareSend { VANILLA, SENT, BLOCKED }
 
     private static ShareSend dispatchShareChat(String text, CallbackInfo ci, boolean alwaysSend) {
-        net.felix.Community.chat.ChatShareOutgoing.Draft draft =
-                net.felix.Community.chat.ChatShareOutgoing.prepare(text);
-        net.felix.Community.chat.ChatShareTexts.Replacement replacement = draft.replacement();
+        net.felix.Community.chat.share.ChatShareOutgoing.Draft draft =
+                net.felix.Community.chat.share.ChatShareOutgoing.prepare(text);
+        net.felix.Community.chat.share.ChatShareTexts.Replacement replacement = draft.replacement();
         if (replacement.error() != null) {
             ci.cancel();
             scheduleChatError("§c" + replacement.error());
@@ -261,13 +261,13 @@ public abstract class ChatScreenMixin {
             return ShareSend.VANILLA;
         }
         if (replacement.share()) {
-            net.felix.Community.chat.ChatShareClient.noteShare(replacement, draft.shareId(), draft.nameColor());
+            net.felix.Community.chat.share.ChatShareClient.noteShare(replacement, draft.shareId(), draft.nameColor());
         } else if (changed || alwaysSend) {
-            net.felix.Community.chat.ChatShareClient.notePlain(outgoing);
+            net.felix.Community.chat.share.ChatShareClient.notePlain(outgoing);
         }
         ci.cancel();
         if (!sendMinecraftChat(outgoing)) {
-            net.felix.Community.chat.ChatShareClient.dropNoted();
+            net.felix.Community.chat.share.ChatShareClient.dropNoted();
             return ShareSend.BLOCKED;
         }
         return ShareSend.SENT;
@@ -314,13 +314,13 @@ public abstract class ChatScreenMixin {
     }
 
     private boolean holdForChatRules(String rawInput) {
-        if (!net.felix.Community.chat.ChatRulesAcceptance.isRulesGatedSend(
+        if (!net.felix.Community.chat.rules.ChatRulesAcceptance.isRulesGatedSend(
                 rawInput, ChatManager.getInstance().getEffectiveWriteMode() == ChatManager.ChatMode.CCLIVE)) {
             return false;
         }
-        net.felix.Community.chat.ChatRulesAcceptance store = net.felix.Community.chat.ChatRulesAcceptance.shared();
-        String accountId = net.felix.Community.chat.ChatIgnoreList.localAccountId();
-        Integer seasonId = net.felix.Community.leaderboards.SeasonChangeGate.confirmedSeasonId();
+        net.felix.Community.chat.rules.ChatRulesAcceptance store = net.felix.Community.chat.rules.ChatRulesAcceptance.shared();
+        String accountId = net.felix.Community.chat.ignore.ChatIgnoreList.localAccountId();
+        Integer seasonId = net.felix.Community.leaderboards.sync.SeasonChangeGate.confirmedSeasonId();
         if (!store.shouldHold(accountId, seasonId)) {
             return false;
         }

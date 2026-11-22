@@ -22,12 +22,12 @@ import net.felix.Community.staff.StaffModerationCommands;
 import net.felix.Community.staff.StaffNameSuggestions;
 import net.felix.Community.staff.StaffPermsCommands;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
-import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
-import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
-import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Other.devtools.DevToolsAccess;
 import net.felix.utilities.Other.devtools.DevToolsScreen;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.Overall.clipboard.collector.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay;
+import net.felix.utilities.Overall.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.felix.utilities.Overall.eventsound.sound.EventSoundPlayer;
 import net.felix.utilities.Overall.eventsound.ui.EventSoundListScreen;
 import net.minecraft.client.Minecraft;
@@ -548,12 +548,12 @@ public class CCLiveCommands {
     }
 
     private static int openIgnoreList(CommandContext<FabricClientCommandSource> context) {
-        net.felix.Community.chat.ChatIgnoreScreen.open();
+        net.felix.Community.chat.ignore.ChatIgnoreScreen.open();
         return 1;
     }
 
     private static int openChatRules(CommandContext<FabricClientCommandSource> context) {
-        net.felix.Community.chat.ChatRulesScreen.open();
+        net.felix.Community.chat.rules.ChatRulesScreen.open();
         return 1;
     }
 

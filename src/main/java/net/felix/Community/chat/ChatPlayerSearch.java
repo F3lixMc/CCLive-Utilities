@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import net.felix.Community.leaderboards.LeaderboardManager;
 import net.felix.Community.leaderboards.http.HttpClient;
 import net.minecraft.client.Minecraft;
+import net.felix.Community.chat.ignore.ChatIgnoreRules;
 
 /**
  * Spielersuche für normale Mod-Nutzer. Der Admin-Endpunkt bleibt ungenutzt.
@@ -20,7 +21,7 @@ import net.minecraft.client.Minecraft;
  */
 public final class ChatPlayerSearch {
     public static final String UNREACHABLE = "Die Spielersuche ist gerade nicht erreichbar.";
-    static final long DELAY_MS = 200L;
+    public static final long DELAY_MS = 200L;
     private static final AtomicLong SEQUENCE = new AtomicLong();
     private static volatile Long knownSelfId;
 
@@ -33,7 +34,7 @@ public final class ChatPlayerSearch {
     private ChatPlayerSearch() {
     }
 
-    static boolean isCurrent(long seq, String query, long currentSeq, String currentText) {
+    public static boolean isCurrent(long seq, String query, long currentSeq, String currentText) {
         String typed = currentText == null ? "" : currentText.trim();
         return seq == currentSeq && query != null && query.equals(typed);
     }

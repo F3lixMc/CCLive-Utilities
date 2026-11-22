@@ -381,10 +381,10 @@ public class ProfileStatsManager {
             return;
         }
 
-        if (!net.felix.Community.leaderboards.SeasonChangeGate.getInstance().areSeasonUploadsAllowed()) {
+        if (!net.felix.Community.leaderboards.sync.SeasonChangeGate.getInstance().areSeasonUploadsAllowed()) {
             return;
         }
-        if (net.felix.Community.leaderboards.PlayerFullReset.blocksCurrentProgress()) {
+        if (net.felix.Community.leaderboards.reset.PlayerFullReset.blocksCurrentProgress()) {
             return;
         }
 
@@ -455,7 +455,7 @@ public class ProfileStatsManager {
             payload.add("statues", statuesJson);
         }
         
-        String resetId = net.felix.Community.leaderboards.PlayerFullReset.currentUploadResetId();
+        String resetId = net.felix.Community.leaderboards.reset.PlayerFullReset.currentUploadResetId();
         if (resetId != null) {
             payload.addProperty("resetId", resetId);
         }

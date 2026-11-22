@@ -684,7 +684,7 @@ public class KitViewScreen extends Screen {
 		if (client == null || kit == null) {
 			return;
 		}
-		client.gui.setScreen(new net.felix.Community.chat.BuildShareViewScreen(
+		client.gui.setScreen(new net.felix.Community.chat.buildshare.BuildShareViewScreen(
 			CustomKitPreviewFactory.fromKit(kit), this, true));
 	}
 

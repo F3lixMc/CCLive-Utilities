@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.felix.Community.chat.ignore.ChatIgnoreList;
+import net.felix.Community.chat.ignore.ChatIgnoreRules;
 
 class ChatContextTargetTest {
     private static final int[] GRADIENT = {0x112233, 0x445566, 0x778899, 0x99AABB, 0xCCDDEE};

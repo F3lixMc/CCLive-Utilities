@@ -16,6 +16,8 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
+import net.felix.Community.chat.ignore.ChatIgnoreList;
+import net.felix.Community.chat.share.ItemShareManager;
 
 /**
  * Manager für das CCLive Chat-System.

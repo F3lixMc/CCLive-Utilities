@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
+import net.felix.utilities.DragOverlay.F6ButtonPlace;
 import net.felix.utilities.DragOverlay.F6TransparencyPreview;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
@@ -650,6 +651,14 @@ public class CCLiveUtilitiesConfig {
     public CoinTrackerDisplayMode coinTrackerDisplayMode = CoinTrackerDisplayMode.OVERLAY;
 
 
+    /** X/min im Amboss-Lager, im Sammler und in der Clipboard-Zeit. */
+    @SerialEntry
+    public boolean ambossRateEnabled = true;
+
+    /** X/min im Schmelzofen-Lager, im Sammler und in der Clipboard-Zeit. */
+    @SerialEntry
+    public boolean ofenRateEnabled = true;
+
     // Schmied Tracker Settings
     @SerialEntry
     public boolean schmiedTrackerEnabled = true;
@@ -661,6 +670,9 @@ public class CCLiveUtilitiesConfig {
     /** 0 = vollständig dunkel, 100 = vollständig durchsichtig. 87 entspricht dem bisherigen Alpha 0x20 am nächsten. */
     @SerialEntry
     public int f6MenuBackgroundTransparency = 87;
+
+    @SerialEntry
+    public F6ButtonPlace f6ButtonPlace = F6ButtonPlace.TOP;
 
     /** Modsprache, gesetzt durch die PlayLegend-Systemmeldung. {@code de} oder {@code en}. */
     @SerialEntry
@@ -2104,17 +2116,6 @@ public class CCLiveUtilitiesConfig {
                                         .build())
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Component.literal("Rate-Anzeige"))
-                                .option(rateUnitOption("Collection / Ressourcen",
-                                        "Rate-Einheit für Blöcke und Ressourcen (X/min ↔ X/h)",
-                                        () -> HANDLER.instance().resourceTrackerRateUnit,
-                                        v -> HANDLER.instance().resourceTrackerRateUnit = v))
-                                .option(rateUnitOption("Mining / Holzfäller",
-                                        "Rate-Einheit für XP (XP/Min ↔ XP/h)",
-                                        () -> HANDLER.instance().miningLumberjackRateUnit,
-                                        v -> HANDLER.instance().miningLumberjackRateUnit = v))
-                                .build())
-                        .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Aspekt Anzeige"))
                                 .option(Option.<Boolean>createBuilder()
                                         .name(Component.literal("Aspekt Anzeige aktivieren"))
@@ -2340,6 +2341,27 @@ public class CCLiveUtilitiesConfig {
                                         .name(Component.literal("Kit Filter Buttons Ein/Aus"))
                                         .description(OptionDescription.of(Component.literal("Kit Filter Buttons in Baupläne Inventaren ein- oder ausblenden")))
                                         .binding(true, () -> HANDLER.instance().kitFilterButtonsEnabled, newVal -> HANDLER.instance().kitFilterButtonsEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("X/min"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Amboss"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "X/min im Amboss anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
+                                        .binding(true,
+                                                () -> HANDLER.instance().ambossRateEnabled,
+                                                newVal -> HANDLER.instance().ambossRateEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Ofen"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "X/min im Schmelzofen anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
+                                        .binding(true,
+                                                () -> HANDLER.instance().ofenRateEnabled,
+                                                newVal -> HANDLER.instance().ofenRateEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
@@ -2750,10 +2772,124 @@ public class CCLiveUtilitiesConfig {
                                         .controller(TickBoxControllerBuilder::create)
                                         .build())
                                 .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Holzfäller/Bergbau"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Holzfäller/Bergbau Overlay ein/aus"))
+                                        .description(OptionDescription.of(Component.literal("Aktiviert oder deaktiviert sowohl das Holzfäller- als auch das Bergbau-Overlay")))
+                                        .binding(true, () -> {
+                                            var c = HANDLER.instance();
+                                            return c.miningLumberjackOverlayEnabled
+                                                    && ((c.miningOverlayEnabled && c.showMiningOverlay)
+                                                    || (c.lumberjackOverlayEnabled && c.showLumberjackOverlay));
+                                        }, newVal -> {
+                                            var c = HANDLER.instance();
+                                            c.miningLumberjackOverlayEnabled = newVal;
+                                            c.miningOverlayEnabled = newVal;
+                                            c.lumberjackOverlayEnabled = newVal;
+                                            c.showMiningOverlay = newVal;
+                                            c.showLumberjackOverlay = newVal;
+                                        })
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(rateUnitOption("Rate-Einheit",
+                                        "Rate-Einheit für XP (XP/Min ↔ XP/h)",
+                                        () -> HANDLER.instance().miningLumberjackRateUnit,
+                                        v -> HANDLER.instance().miningLumberjackRateUnit = v))
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschriften (Bergbau/Holzfäller)")))
+                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().miningLumberjackOverlayHeaderColor, newVal -> HANDLER.instance().miningLumberjackOverlayHeaderColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den normalen Text im Holzfäller/Bergbau Overlay")))
+                                        .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().miningLumberjackOverlayTextColor, newVal -> HANDLER.instance().miningLumberjackOverlayTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Collection"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Collection Overlay ein/aus"))
+                                        .description(OptionDescription.of(Component.literal("Collection Overlay aktivieren oder deaktivieren")))
+                                        .binding(true, () -> HANDLER.instance().showCollectionOverlay, newVal -> HANDLER.instance().showCollectionOverlay = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(rateUnitOption("Rate-Einheit",
+                                        "Rate-Einheit für Blöcke und Ressourcen (X/min ↔ X/h)",
+                                        () -> HANDLER.instance().resourceTrackerRateUnit,
+                                        v -> HANDLER.instance().resourceTrackerRateUnit = v))
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Überschriftenfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für die Überschrift (Collection:)")))
+                                        .binding(new Color(0xFFFFFF00), () -> HANDLER.instance().collectionOverlayHeaderColor, newVal -> HANDLER.instance().collectionOverlayHeaderColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Color>createBuilder()
+                                        .name(Component.literal("Textfarbe"))
+                                        .description(OptionDescription.of(Component.literal("Farbe für den normalen Text im Collection Overlay")))
+                                        .binding(new Color(0xFFFFFFFF), () -> HANDLER.instance().collectionOverlayTextColor, newVal -> HANDLER.instance().collectionOverlayTextColor = newVal)
+                                        .controller(ColorControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Benötigte Blöcke anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt die noch benötigten Blöcke bis zur nächsten Collection im Overlay")))
+                                        .binding(true, () -> HANDLER.instance().collectionOverlayShowBlocksNeeded, newVal -> HANDLER.instance().collectionOverlayShowBlocksNeeded = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Benötigte Zeit anzeigen"))
+                                        .description(OptionDescription.of(Component.literal("Zeigt die geschätzte Zeit bis zur nächsten Collection im Overlay")))
+                                        .binding(true, () -> HANDLER.instance().collectionOverlayShowTimeToNext, newVal -> HANDLER.instance().collectionOverlayShowTimeToNext = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Ressourcen/min aktivieren"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Ressourcen pro Minute berechnen und anzeigen (Collection-Overlay oder Scoreboard)")))
+                                        .binding(false,
+                                                () -> HANDLER.instance().resourceTrackerRateEnabled,
+                                                newVal -> HANDLER.instance().resourceTrackerRateEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.<ResourceTrackerDisplayMode>createBuilder()
+                                        .name(Component.literal("Ressourcen/min-Anzeige Position"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Wo Ressourcen pro Minute angezeigt werden:\n"
+                                                        + "• Overlay – im Collection-Overlay\n"
+                                                        + "• Scoreboard – hinter dem Ressourcennamen im Scoreboard")))
+                                        .binding(ResourceTrackerDisplayMode.OVERLAY,
+                                                () -> HANDLER.instance().resourceTrackerDisplayMode,
+                                                newVal -> HANDLER.instance().resourceTrackerDisplayMode = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(ResourceTrackerDisplayMode.class)
+                                                .formatValue(mode -> switch (mode) {
+                                                    case OVERLAY -> Component.literal("Overlay");
+                                                    case SCOREBOARD -> Component.literal("Scoreboard");
+                                                }))
+                                        .build())
+                                .build())
                         .build())
                 .category(ConfigCategory.createBuilder()
                         .name(Component.literal("Verschiedenes"))
                         .tooltip(Component.literal("Verschiedene Einstellungen"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("F6 Menü"))
+                                .option(Option.<F6ButtonPlace>createBuilder()
+                                        .name(Component.literal("Position der F6-Buttons"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Oben ist die aktuelle Leiste. Unten setzt sie wieder an den unteren Rand.")))
+                                        .binding(F6ButtonPlace.TOP,
+                                                () -> HANDLER.instance().f6ButtonPlace,
+                                                newVal -> HANDLER.instance().f6ButtonPlace = newVal)
+                                        .controller(opt -> EnumControllerBuilder.create(opt)
+                                                .enumClass(F6ButtonPlace.class)
+                                                .formatValue(place -> Component.literal(
+                                                        place == F6ButtonPlace.BOTTOM ? "Unten" : "Oben")))
+                                        .build())
+                                .build())
                         .group(buildDataTrackingGroup())
                         .group(buildLeaderboardsAndIconsGroup())
                         .group(OptionGroup.createBuilder()

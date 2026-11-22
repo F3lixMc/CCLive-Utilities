@@ -294,7 +294,7 @@ public class PlayerHoverStatsUtility {
      */
     private static String extractPlayerNameFromText(Component message) {
         return message == null ? null
-                : net.felix.Community.chat.ChatShareTexts.senderName(message.getString());
+                : net.felix.Community.chat.share.ChatShareTexts.senderName(message.getString());
     }
 
     // Glyphe als Marker für das Icon (Cyrillic letter fita - ѳ)

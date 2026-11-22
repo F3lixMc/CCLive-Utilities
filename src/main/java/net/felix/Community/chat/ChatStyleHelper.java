@@ -13,6 +13,8 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.FormattedCharSequence;
 import org.joml.Matrix3x2f;
+import net.felix.Community.chat.buildshare.BuildShareManager;
+import net.felix.Community.chat.share.ItemShareManager;
 
 /**
  * Ermittelt den Chat-{@link Style} unter der Maus (26.1+: {@link ActiveTextCollector.ClickableStyleFinder}).

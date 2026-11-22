@@ -51,6 +51,7 @@
     "cclive.f6.instruction.resize": "Left Click + Drag (corner): Resize overlay",
     "cclive.f6.instruction.nudge": "Left Click + Arrow Keys: Move overlay 1 pixel",
     "cclive.f6.instruction.close": "ESC: Close editor",
+    "cclive.f6.instruction.buttons": "F7: Show or hide the buttons",
     "cclive.f6.transparency": "Transparency",
     "cclive.f6.group": "F6 Menu",
     "cclive.f6.transparency_option": "Background Transparency",

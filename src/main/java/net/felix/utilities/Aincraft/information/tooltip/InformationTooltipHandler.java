@@ -27,8 +27,8 @@ import static net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.f
 import static net.felix.utilities.Aincraft.materials.data.MaterialRarityColors.getMaterialLocationRarityColor;
 import static net.felix.utilities.Farmworld.fishing.ponds.FishingMaterials.appendFishingMaterialLocationToLine;
 import static net.felix.utilities.Farmworld.fishing.ponds.PondTooltip.checkForPondInformation;
-import static net.felix.utilities.Other.clipboard.tooltip.ClipboardPinTooltip.addClipboardPinTextToTooltip;
 import static net.felix.utilities.Overall.aspekte.tooltip.AspectTooltip.addAspectNameToTooltip;
+import static net.felix.utilities.Overall.clipboard.tooltip.ClipboardPinTooltip.addClipboardPinTextToTooltip;
 import static net.felix.utilities.Overall.moblexicon.MoblexiconTooltip.addMoblexiconHpToTooltip;
 
 /**

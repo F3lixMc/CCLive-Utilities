@@ -6,10 +6,9 @@ import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
 import net.felix.utilities.Overall.language.ModTexts;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
-import net.felix.utilities.Other.clipboard.ClipboardTargetTime;
 import net.felix.utilities.Other.keybinding.NumericFieldInput;
 import net.felix.Community.buildshare.BuildShareDraggableOverlay;
-import net.felix.Community.leaderboard.LeaderboardDraggableOverlay;
+import net.felix.Community.leaderboards.panel.LeaderboardDraggableOverlay;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
 import net.felix.utilities.Aincraft.blueprints.viewer.BlueprintViewerDraggableOverlay;
 import net.felix.utilities.Aincraft.cardsstatues.overlay.CardsDraggableOverlay;
@@ -27,10 +26,11 @@ import net.felix.utilities.Farmworld.collections.overlay.CollectionDraggableOver
 import net.felix.utilities.Farmworld.collections.tracker.CollectionTracker;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Farmworld.miningxp.overlay.MiningLumberjackDraggableOverlay;
-import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Overall.aspekte.overlay.ChatAspectOverlayDraggableOverlay;
+import net.felix.utilities.Overall.clipboard.ClipboardTargetTime;
+import net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay;
 import net.felix.utilities.Overall.npcalerts.overlay.draggable.AspectDraggableOverlay;
 import net.felix.utilities.Overall.npcalerts.overlay.draggable.NpcAlertsMainDraggableOverlay;
 import net.felix.utilities.Overall.npcalerts.overlay.draggable.NpcAlertsSeparateDraggableOverlay;
@@ -498,6 +498,8 @@ public class OverlayEditorScreen extends Screen {
         int buttonSpacing = 10;
         int totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing;
         int startX = Math.max(0, (width - totalButtonsWidth) / 2);
+        boolean buttonsOnTop = CCLiveUtilitiesConfig.HANDLER.instance().f6ButtonPlace != F6ButtonPlace.BOTTOM;
+        int buttonY = buttonsOnTop ? 5 : Math.max(5, height - 30);
         int titleY = 5;
         if (editorButtonsVisible) {
             int gap = 4;
@@ -518,9 +520,12 @@ public class OverlayEditorScreen extends Screen {
                     startX = needed;
                 }
             }
-            transparencySlider = new F6TransparencySlider(sliderX, 5, sliderWidth, sliderHeight);
+            int sliderY = buttonsOnTop ? 5 : Math.max(5, buttonY - (sliderHeight - buttonHeight) / 2);
+            transparencySlider = new F6TransparencySlider(sliderX, sliderY, sliderWidth, sliderHeight);
             addRenderableWidget(transparencySlider);
-            titleY = Math.max(5 + buttonHeight, 5 + sliderHeight) + 5;
+            if (buttonsOnTop) {
+                titleY = Math.max(5 + buttonHeight, 5 + sliderHeight) + 5;
+            }
         }
         titleWidget.setPosition(width / 2 - titleWidget.getWidth() / 2, titleY);
         addRenderableWidget(titleWidget);
@@ -529,7 +534,6 @@ public class OverlayEditorScreen extends Screen {
             return;
         }
 
-        int buttonY = 5;
         
         // Done Button
         doneButton = Button.builder(
@@ -716,13 +720,14 @@ public class OverlayEditorScreen extends Screen {
     }
     
     private void renderInstructions(GuiGraphicsExtractor context) {
-        int y = height - 92;
         String[] instructions = {
             ModTexts.get("cclive.f6.instruction.move"),
             ModTexts.get("cclive.f6.instruction.resize"),
             ModTexts.get("cclive.f6.instruction.nudge"),
-            ModTexts.get("cclive.f6.instruction.close")
+            ModTexts.get("cclive.f6.instruction.close"),
+            ModTexts.get("cclive.f6.instruction.buttons")
         };
+        int y = height - 104;
         
         for (String instruction : instructions) {
             context.text(font, instruction, 10, y, 0xFFFFFFFF, false);

@@ -28,6 +28,12 @@ import net.felix.utilities.Other.debug.DebugUtility;
 import net.felix.utilities.Other.server.ServerConnectionGate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.felix.Community.leaderboards.upload.FactoryLevel;
+import net.felix.Community.leaderboards.upload.FactoryLevelUpload;
+import net.felix.Community.leaderboards.sync.LeaderboardSync;
+import net.felix.Community.leaderboards.reset.PlayerFullReset;
+import net.felix.Community.leaderboards.sync.SeasonChangeGate;
+import net.felix.Community.leaderboards.upload.SmithSkillUpload;
 
 /**
  * Zentraler Manager für alle Leaderboard-Funktionen

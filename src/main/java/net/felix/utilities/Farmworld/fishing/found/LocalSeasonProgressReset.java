@@ -2,9 +2,9 @@ package net.felix.utilities.Farmworld.fishing.found;
 
 import net.felix.Community.profile.ProfileStatsManager;
 import net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility;
-import net.felix.utilities.Other.clipboard.collector.ClipboardAmbossRessourceCollector;
-import net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay;
-import net.felix.utilities.Other.clipboard.storage.CollectedMaterialsResourcesStorage;
+import net.felix.utilities.Overall.clipboard.collector.ClipboardAmbossRessourceCollector;
+import net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay;
+import net.felix.utilities.Overall.clipboard.storage.CollectedMaterialsResourcesStorage;
 
 /**
  * Rein lokaler Season-Progress-Reset der sechs Fortschrittsdateien.

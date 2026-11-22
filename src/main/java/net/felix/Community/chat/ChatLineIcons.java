@@ -5,6 +5,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.Identifier;
+import net.felix.Community.chat.share.ChatShareLine;
+import net.felix.Community.chat.share.ChatShareTexts;
 
 /** Inserts chat icons as font glyphs so wrapping, scaling and fading follow the message. */
 public final class ChatLineIcons {

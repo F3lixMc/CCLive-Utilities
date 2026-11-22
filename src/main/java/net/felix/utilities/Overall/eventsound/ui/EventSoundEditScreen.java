@@ -36,9 +36,10 @@ public final class EventSoundEditScreen extends Screen {
     private static final int SOUND_BUTTONS_Y = 138;
     private static final int SOUND_LABEL_Y = 162;
     private static final int MAX_TIME_Y = 184;
-    private static final int SLIDER_OFFSET_Y = 224;
-    private static final int STOP_OFFSET_Y = 250;
+    private static final int SLIDER_OFFSET_Y = 236;
+    private static final int STOP_OFFSET_Y = 262;
     private static final String MAX_TIME_LABEL = "Max. Spielzeit:";
+    private static final String EMPTY_DURATION_HINT = "Leer = volle Länge";
     private static final String[] INFO_LINES = {
             "#Text",
             "Nur der Nachrichtentext wird verglichen.",
@@ -151,6 +152,7 @@ public final class EventSoundEditScreen extends Screen {
         context.centeredText(this.font, Component.literal(EventSoundUi.trim(this.font, draft.listLabel(), titleRoom)), this.width / 2, boxY + 10, 0xFFFFFFFF);
         EventSoundUi.text(context, this.font, EventSoundUi.trim(this.font, soundLabel(), Math.max(20, boxWidth() - 24)), boxX + 12, boxY + 56, soundLabelColor());
         drawMaxTimeLabel(context, sliderX, durationBox == null ? boxY + 74 : durationBox.getY());
+        drawDurationHint(context);
         EventSoundUi.text(context, this.font, "Lautstärke: " + Math.round(draft.volume * 100f) + "%", sliderX, sliderY - 14, 0xFFFFFFFF);
         context.fill(sliderX, sliderY, sliderX + sliderWidth, sliderY + 8, 0xFF2A3542);
         int fill = (int) (sliderWidth * draft.volume);
@@ -206,7 +208,7 @@ public final class EventSoundEditScreen extends Screen {
         sliderX = x;
         sliderWidth = inner;
         sliderY = stopY - (draft.kind == EventSoundKind.BLUEPRINT ? 78 : 50);
-        placeDurationBox(x, sliderY - 40, inner, true);
+        placeDurationBox(x, sliderY - 52, inner, true);
     }
 
     @Override
@@ -459,7 +461,7 @@ public final class EventSoundEditScreen extends Screen {
     private int boxHeight() {
         int preferred = draft.kind == EventSoundKind.CUSTOM
                 ? HEADER + customContentHeight() + FOOTER
-                : draft.kind == EventSoundKind.BLUEPRINT ? 264 : 228;
+                : draft.kind == EventSoundKind.BLUEPRINT ? 276 : 240;
         return EventSoundUi.fit(this.height, preferred, 8);
     }
 
@@ -511,6 +513,7 @@ public final class EventSoundEditScreen extends Screen {
         if (overlapsViewport(contentY(MAX_TIME_Y), 20)) {
             drawMaxTimeLabel(context, x, contentY(MAX_TIME_Y));
         }
+        drawDurationHint(context);
         EventSoundUi.text(context, this.font, "Lautstärke: " + Math.round(draft.volume * 100f) + "%", sliderX, sliderY - 14, 0xFFFFFFFF);
         context.fill(sliderX, sliderY, sliderX + sliderWidth, sliderY + 8, 0xFF2A3542);
         int fill = (int) (sliderWidth * draft.volume);
@@ -579,7 +582,7 @@ public final class EventSoundEditScreen extends Screen {
     }
 
     private int customContentHeight() {
-        return 280;
+        return 292;
     }
 
     private void placeDurationBox(int x, int y, int inner, boolean visible) {
@@ -597,6 +600,17 @@ public final class EventSoundEditScreen extends Screen {
 
     private void drawMaxTimeLabel(GuiGraphicsExtractor context, int x, int y) {
         EventSoundUi.text(context, this.font, MAX_TIME_LABEL, x, y + 6, 0xFFFFFFFF);
+    }
+
+    private void drawDurationHint(GuiGraphicsExtractor context) {
+        if (durationBox == null) {
+            return;
+        }
+        int x = durationBox.getX();
+        int maxWidth = boxX() + boxWidth() - 12 - x;
+        EventSoundUi.text(context, this.font,
+                EventSoundUi.trim(this.font, EMPTY_DURATION_HINT, maxWidth),
+                x, durationBox.getY() + durationBox.getHeight() + 2, 0xFF9AA4B2);
     }
 
     private void move(Button button, int x, int y, int width, int height, boolean visible) {

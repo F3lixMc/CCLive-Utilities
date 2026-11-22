@@ -595,7 +595,7 @@ public final class KitTooltipHelper {
 			return "";
 		}
 		String cleaned = name.replaceAll("\\s*×\\d+$", "").trim();
-		return net.felix.Community.chat.ShareKitImportHelper.extractEquipmentBaseName(cleaned);
+		return net.felix.Community.chat.share.ShareKitImportHelper.extractEquipmentBaseName(cleaned);
 	}
 
 	private static void drawActionHintLine(

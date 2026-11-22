@@ -54,7 +54,7 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Other.debug.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Container-Geometrie für Build-Share (links am Inventar statt Screen-Rand)
-        net.felix.Community.chat.ContainerScreenBounds.update(leftPos, topPos, imageWidth, imageHeight);
+        net.felix.Community.chat.buildshare.ContainerScreenBounds.update(leftPos, topPos, imageWidth, imageHeight);
 
         // Update mouse position for Item Viewer
         net.felix.utilities.Overall.itemviewer.ui.ViewerState.updateMousePosition(mouseX, mouseY);
@@ -66,10 +66,10 @@ public abstract class HandledScreenMixin {
         net.felix.utilities.Other.debug.DebugUtility.updateMousePosition(mouseX, mouseY);
         
         // Render Clipboard Overlay (wenn aktiviert)
-        net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
+        net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
         
         // Render Clipboard Button Tooltips
-        net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
+        net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.renderButtonTooltips(context, mouseX, mouseY);
         
         // Build-Share Overlay (Ausrüstung / Karten / Wardrobe)
         net.felix.Community.buildshare.BuildShareDraggableOverlay.renderInGame(context, mouseX, mouseY, delta);
@@ -250,7 +250,7 @@ public abstract class HandledScreenMixin {
         }
         
         // Handle clicks on Clipboard Overlay buttons (inkl. Delete-Button)
-        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {
+        if (net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.handleButtonClick((int) mouseX, (int) mouseY)) {
             cir.setReturnValue(true);
             return;
         }
@@ -258,11 +258,11 @@ public abstract class HandledScreenMixin {
         // Wardrobe: Hover + Rechtsklick → Kit-Name (Server-Klick nicht blockieren)
         if (button == 1) {
             AbstractContainerScreen<?> wardrobeScreen = (AbstractContainerScreen<?>) (Object) this;
-            net.felix.Community.chat.BuildShareManager.getInstance().handleWardrobeRightClick(wardrobeScreen, button);
+            net.felix.Community.chat.buildshare.BuildShareManager.getInstance().handleWardrobeRightClick(wardrobeScreen, button);
         }
         
         // Handle clicks on Clipboard quantity text field
-        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, sdlButton)) {
+        if (net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.handleQuantityTextFieldClick((int) mouseX, (int) mouseY, sdlButton)) {
             cir.setReturnValue(true);
             return;
         }
@@ -316,22 +316,22 @@ public abstract class HandledScreenMixin {
 
         // Legend+-Sammler: Ressourcen vor Linksklick auf [Sammler] merken
         AbstractContainerScreen<?> legendPlusScreen = (AbstractContainerScreen<?>) (Object) this;
-        net.felix.utilities.Other.clipboard.collector.LegendPlusSammlerCollector.handleMouseClick(
+        net.felix.utilities.Overall.clipboard.collector.LegendPlusSammlerCollector.handleMouseClick(
                 legendPlusScreen, mouseX, mouseY, button, leftPos, topPos);
 
         // Amboss/Schmelzofen: Ressourcen aus Lager-Tooltip bei Linksklick addieren
-        net.felix.utilities.Other.clipboard.collector.AnvilFurnaceLagerCollector.handleMouseClick(
+        net.felix.utilities.Overall.clipboard.collector.AnvilFurnaceLagerCollector.handleMouseClick(
                 legendPlusScreen, mouseX, mouseY, button, leftPos, topPos);
 
         // Kosten-Inventare: Kauf-Kosten merken und nach Klick ggf. abziehen
-        net.felix.utilities.Other.clipboard.cost.ClipboardCostPurchaseTracker.handleMouseClick(
+        net.felix.utilities.Overall.clipboard.cost.ClipboardCostPurchaseTracker.handleMouseClick(
                 legendPlusScreen, mouseX, mouseY, button, leftPos, topPos);
     }
 
     @Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true)
     private void onLeaderboardScroll(double mouseX, double mouseY, double horizontal, double vertical,
                                      CallbackInfoReturnable<Boolean> cir) {
-        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.mouseScrolled(
+        if (net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.mouseScrolled(
                 mouseX, mouseY, vertical)) {
             cir.setReturnValue(true);
             return;
@@ -357,7 +357,7 @@ public abstract class HandledScreenMixin {
                 return;
             }
         }
-        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleScrollbarDrag(mouseY)) {
+        if (net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.handleScrollbarDrag(mouseY)) {
             cir.setReturnValue(true);
             return;
         }
@@ -378,7 +378,7 @@ public abstract class HandledScreenMixin {
             cir.setReturnValue(true);
             return;
         }
-        if (net.felix.utilities.Other.clipboard.overlay.ClipboardDraggableOverlay.handleScrollbarRelease(button)) {
+        if (net.felix.utilities.Overall.clipboard.overlay.ClipboardDraggableOverlay.handleScrollbarRelease(button)) {
             cir.setReturnValue(true);
             return;
         }

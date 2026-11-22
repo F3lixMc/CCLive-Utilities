@@ -221,6 +221,8 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         for (int i = 1; i < texts.length; i++) {
             displayTexts[i] = texts[i].replaceAll(": .+", ": -");
         }
+
+        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
         
         // Apply matrix transformations for scaling
         var matrices = context.pose();
@@ -258,9 +260,6 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
         }
         
         matrices.popMatrix();
-        
-        // Render border after scaling (using scaled dimensions)
-        context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
     }
     
     @Override

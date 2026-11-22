@@ -21,6 +21,7 @@
 		"PlayerNametagIconMixin",
 		"PlayerTextDisplayIconMixin",
 		"DrawContextMixin",
+		"GuiRendererScissorMixin",
 		"ScreenMixin",
 		"ViewerSearchKeyboardMixin",
 		"InventoryScreenMixin",
