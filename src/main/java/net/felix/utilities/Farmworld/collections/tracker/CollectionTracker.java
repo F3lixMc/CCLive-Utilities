@@ -58,6 +58,11 @@ public final class CollectionTracker {
 
 	private static final long ZONE_BOSSBAR_READ_DELAY_MS = 5000L;
 
+	/** Blockzahl vor dem letzten Dimensionswechsel, falls das Biom erst danach erkannt wird. */
+	private static int blocksLeftBehind = -1;
+
+	private static final ZoneBossBarGate zoneBossBarGate = new ZoneBossBarGate();
+
 	// Collection hotkey
 	private static KeyMapping collectionResetKeyMapping;
 
@@ -77,6 +82,10 @@ public final class CollectionTracker {
 			int blocks = decodeChineseNumber(bossBarName);
 			
 			if (blocks >= 0) {
+				ZoneBossBarGate.Decision zoneSample = zoneBossBarGate.decide(blocks);
+				if (zoneSample == ZoneBossBarGate.Decision.IGNORE) {
+					return;
+				}
 				if (firstBossBarUpdate) {
 					initialBlocks = blocks;
 					currentBlocks = blocks;
@@ -97,7 +106,9 @@ public final class CollectionTracker {
 					currentBlocks = blocks;
 					sessionBlocks = currentBlocks - initialBlocks;
 				}
-				publishCollectionUnlocks();
+				if (zoneSample == ZoneBossBarGate.Decision.TRACK_AND_UNLOCK) {
+					publishCollectionUnlocks();
+				}
 			}
 		} catch (Exception e) {
 			// Silent error handling
@@ -142,6 +153,7 @@ public final class CollectionTracker {
 				String newDimension = client.level.dimension().identifier().toString();
 				
 				if (collectionDimension != null && !collectionDimension.equals(newDimension)) {
+					blocksLeftBehind = currentBlocks;
 					// Dimension changed, reset collection tracking
 					resetCollectionTracking();
 					// Reset biom detection
@@ -234,6 +246,9 @@ public final class CollectionTracker {
 				boolean wasDetected = biomDetected;
 				biomDetected = true;
 				if (currentBiomName == null || !currentBiomName.equals(biomName)) {
+					int leftBehind = currentBlocks > 0 ? currentBlocks : blocksLeftBehind;
+					zoneBossBarGate.onZoneChanged(leftBehind);
+					blocksLeftBehind = -1;
 					currentBiomName = biomName;
 					bossBarReadAllowedAfterMs = System.currentTimeMillis() + ZONE_BOSSBAR_READ_DELAY_MS;
 					resetCollectionTracking();
@@ -286,6 +301,10 @@ public final class CollectionTracker {
 	 * Handles collection hotkeys
 	 */
 	public static void handleCollectionHotkeys() {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(collectionResetKeyMapping);
+			return;
+		}
 		// Handle reset hotkey
 		if (collectionResetKeyMapping != null && collectionResetKeyMapping.consumeClick()) {
 			resetCollectionTracking();

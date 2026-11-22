@@ -20,13 +20,28 @@ public class ChatAspectOverlayDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getX() {
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.CHAT_ASPECT;
+    }
+
+    @Override
+    public int undockedX() {
         return CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayX;
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayY;
+    }
+
+    @Override
+    public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+    
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
     }
     
     @Override
@@ -49,8 +64,8 @@ public class ChatAspectOverlayDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Render background if enabled
         if (CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayShowBackground) {
@@ -108,6 +123,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayEnabled;
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayX = 7;
         CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayY = 15;
     }

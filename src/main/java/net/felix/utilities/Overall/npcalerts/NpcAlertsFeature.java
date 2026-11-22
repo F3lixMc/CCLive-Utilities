@@ -89,6 +89,21 @@ public final class NpcAlertsFeature {
 	/**
 	 * HUD Render callback für das NPC Alerts Overlay
 	 */
+	public static void contributeLayout(Minecraft client) {
+		if (client == null || client.player == null || client.level == null) {
+			return;
+		}
+		if (!HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+			return;
+		}
+		if (client.gui.hud.isHidden() || isInGeneralLobby() || KeyBindingUtility.isPlayerListKeyPressed() || !showOverlays) {
+			return;
+		}
+		if (areNpcAlertsOverlaysActive()) {
+			renderNpcAlertsDisplay(null, client);
+		}
+	}
+
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.player == null || client.level == null) {

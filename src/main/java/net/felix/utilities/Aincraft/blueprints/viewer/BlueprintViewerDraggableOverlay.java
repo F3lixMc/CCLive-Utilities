@@ -20,7 +20,22 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.BLUEPRINT;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         int screenWidth = client.getWindow().getGuiScaledWidth();
@@ -36,7 +51,7 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY;
     }
 
@@ -84,8 +99,8 @@ public class BlueprintViewerDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         net.felix.utilities.DragOverlay.OverlayType overlayType = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerOverlayType;
         if (overlayType == net.felix.utilities.DragOverlay.OverlayType.CUSTOM) {
             try {
@@ -123,6 +138,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
 
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX = 654;
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerY = 199;
         CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerYStoredAsPixels = true;
@@ -136,75 +152,34 @@ return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
 
     // ---- Helpers using public getters instead of reflection ----
 
-    private BPViewerUtility.BlueprintConfig.RarityData getRarityData() {
-        try {
-            BPViewerUtility instance = BPViewerUtility.getInstance();
-            String activeFloor = instance.getActiveFloor();
-            if (activeFloor == null) return null;
-            BPViewerUtility.BlueprintConfig.FloorData floorData = instance.getConfig().getFloorData(activeFloor);
-            if (floorData == null || floorData.blueprints == null) return null;
-            return floorData.blueprints.get(instance.getCurrentRarity());
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     private int calculateUnscaledWidth() {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null) return DEFAULT_WIDTH;
-        BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
-        if (rarityData == null || rarityData.items == null) return DEFAULT_WIDTH;
-        int maxWidth = DEFAULT_WIDTH;
-        for (String blueprint : rarityData.items) {
-            String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            int textWidth = client.font.width(displayText) + 45;
-            if (textWidth > maxWidth) maxWidth = textWidth;
-        }
-        return maxWidth - 15;
-    }
-
-    private static int visibleRowCount(java.util.List<String> items) {
         try {
-            BPViewerUtility instance = BPViewerUtility.getInstance();
-            if (instance != null) {
-                return instance.countVisibleRows(items);
-            }
-        } catch (Exception ignored) {
+            return BPViewerUtility.getInstance().layoutUnscaledWidth();
+        } catch (Exception e) {
+            return DEFAULT_WIDTH;
         }
-        return items == null ? 0 : items.size();
     }
 
     private int calculateUnscaledHeightUnscaled() {
-        BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
-        if (rarityData == null || rarityData.items == null) return DEFAULT_HEIGHT;
+        try {
+            return BPViewerUtility.getInstance().layoutUnscaledHeight();
+        } catch (Exception e) {
+            return DEFAULT_HEIGHT;
+        }
+    }
+
+    private int scaled(int unscaled) {
         float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
-        return BPViewerUtility.heightForVisibleRows(visibleRowCount(rarityData.items), scale);
+        if (scale <= 0) scale = 1.0f;
+        return Math.round(unscaled * scale);
     }
 
     private int calculateDynamicWidth() {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null) return DEFAULT_WIDTH;
-        BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
-        if (rarityData == null || rarityData.items == null) return DEFAULT_WIDTH;
-        int maxWidth = DEFAULT_WIDTH;
-        for (String blueprint : rarityData.items) {
-            String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-            int textWidth = client.font.width(displayText) + 45;
-            if (textWidth > maxWidth) maxWidth = textWidth;
-        }
-        int baseWidth = maxWidth - 15;
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
-        if (scale <= 0) scale = 1.0f;
-        return (int) (baseWidth * scale);
+        return scaled(calculateUnscaledWidth());
     }
 
     private int calculateDynamicHeight() {
-        BPViewerUtility.BlueprintConfig.RarityData rarityData = getRarityData();
-        if (rarityData == null || rarityData.items == null) return DEFAULT_HEIGHT;
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
-        if (scale <= 0) scale = 1.0f;
-        int totalHeight = BPViewerUtility.heightForVisibleRows(visibleRowCount(rarityData.items), scale);
-        return (int) (totalHeight * scale);
+        return scaled(calculateUnscaledHeightUnscaled());
     }
 
     private void renderBlueprintData(GuiGraphicsExtractor context, int x, int y, int width, int height) {
@@ -212,36 +187,28 @@ return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
         if (client == null) return;
         try {
             BPViewerUtility instance = BPViewerUtility.getInstance();
-            String activeFloor = instance.getActiveFloor();
-            if (activeFloor != null) {
-                BPViewerUtility.BlueprintConfig.FloorData floorData = instance.getConfig().getFloorData(activeFloor);
-                if (floorData != null && floorData.blueprints != null) {
-                    String currentRarity = instance.getCurrentRarity();
-                    BPViewerUtility.BlueprintConfig.RarityData rarityData = floorData.blueprints.get(currentRarity);
-                    if (rarityData != null && rarityData.items != null && !rarityData.items.isEmpty()) {
-                        context.text(client.font, currentRarity.toUpperCase(), x + 8, y + 20, getRarityColor(currentRarity), true);
-                        int blueprintY = y + 25;
-                        int maxItems = Math.min(3, (height - 30) / 12);
-                        int count = 0;
-                        for (String blueprint : rarityData.items) {
-                            if (count >= maxItems) break;
-                            String displayText = blueprint.startsWith("- ") ? blueprint.substring(2) : blueprint;
-                            int availableWidth = width - 16;
-                            int textWidth = client.font.width(displayText);
-                            if (textWidth > availableWidth) {
-                                int maxChars = (int) ((double) availableWidth / textWidth * displayText.length());
-                                displayText = maxChars > 3 ? displayText.substring(0, maxChars - 3) + "..." : "...";
-                            }
-                            context.text(client.font, displayText, x + 8, blueprintY, 0xFFFFFFFF, true);
-                            blueprintY += 12;
-                            count++;
-                        }
-                        if (rarityData.items.size() > maxItems) {
-                            context.text(client.font, "... and " + (rarityData.items.size() - maxItems) + " more", x + 8, blueprintY, 0xFF888888, true);
-                        }
-                        return;
+            java.util.List<String> labels = instance.layoutPreviewLabels();
+            if (labels != null) {
+                context.text(client.font, instance.layoutTitle(), x + 8, y + 20, instance.layoutTitleColor(), true);
+                int blueprintY = y + 25;
+                int maxItems = Math.min(3, Math.max(0, (height - 30) / 12));
+                int count = 0;
+                for (String displayText : labels) {
+                    if (count >= maxItems) break;
+                    int availableWidth = width - 16;
+                    int textWidth = client.font.width(displayText);
+                    if (textWidth > availableWidth && displayText.length() > 0) {
+                        int maxChars = (int) ((double) availableWidth / textWidth * displayText.length());
+                        displayText = maxChars > 3 ? displayText.substring(0, maxChars - 3) + "..." : "...";
                     }
+                    context.text(client.font, displayText, x + 8, blueprintY, 0xFFFFFFFF, true);
+                    blueprintY += 12;
+                    count++;
                 }
+                if (labels.size() > maxItems) {
+                    context.text(client.font, "... and " + (labels.size() - maxItems) + " more", x + 8, blueprintY, 0xFF888888, true);
+                }
+                return;
             }
         } catch (Exception e) {
             // Fall through to sample data
@@ -263,16 +230,6 @@ return CCLiveUtilitiesConfig.HANDLER.instance().showBlueprintViewer;
         }
         if (maxItems >= 3) {
             context.text(client.font, "... and more", x + 8, blueprintY, 0xFF888888, true);
-        }
-    }
-
-    private int getRarityColor(String rarity) {
-        switch (rarity.toLowerCase()) {
-            case "uncommon": return 0xFF00FF00;
-            case "rare":     return 0xFF0000FF;
-            case "epic":     return 0xFFFF00FF;
-            case "legendary": return 0xFFFFFF00;
-            default:         return 0xFFFFFFFF;
         }
     }
 }

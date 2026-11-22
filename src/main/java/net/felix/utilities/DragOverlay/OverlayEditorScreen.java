@@ -27,6 +27,11 @@ import net.felix.utilities.Farmworld.collections.tracker.CollectionTracker;
 import net.felix.utilities.Farmworld.farmzone.FarmzoneScoreboard;
 import net.felix.utilities.Farmworld.miningxp.overlay.MiningLumberjackDraggableOverlay;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
+import net.felix.utilities.DragOverlay.dock.OverlayDockLayout;
+import net.felix.utilities.DragOverlay.dock.OverlayDockLink;
+import net.felix.utilities.DragOverlay.dock.OverlayDockRect;
+import net.felix.utilities.DragOverlay.dock.OverlayDockSnap;
+import net.felix.utilities.DragOverlay.dock.OverlayDockStore;
 import net.felix.utilities.Other.hud.RateDisplayUnit;
 import net.felix.utilities.Overall.aspekte.overlay.ChatAspectOverlayDraggableOverlay;
 import net.felix.utilities.Overall.clipboard.ClipboardTargetTime;
@@ -38,6 +43,7 @@ import net.felix.utilities.Overall.npcalerts.overlay.draggable.StarAspectDraggab
 import net.felix.utilities.Town.kits.filter.KitFilterButtonDraggableOverlay;
 import net.felix.utilities.Town.schmied.HideUncraftableButtonDraggableOverlay;
 import net.felix.utilities.Town.schmied.HideWrongClassButtonDraggableOverlay;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -52,6 +58,7 @@ import org.joml.Matrix3x2fStack;
  */
 public class OverlayEditorScreen extends Screen {
     
+    private static final Identifier DOCK_MAGNET_ICON = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/magnet.png");
     private static final int MIN_OVERLAY_RESIZE_WIDTH = 20;
     private static final int MIN_OVERLAY_RESIZE_HEIGHT = 6;
     
@@ -65,6 +72,10 @@ public class OverlayEditorScreen extends Screen {
     private int resizeStartWidth = 0;
     private int resizeStartHeight = 0;
     private int resizeStartOverlayX = 0; // Speichere die ursprüngliche X-Position beim Resize-Start
+    private int dragStartX = 0;
+    private int dragStartY = 0;
+    private boolean dragDetached = false;
+    private OverlayDockSnap.Candidate snapOffer;
     
     private Button doneButton;
     private Button resetButton;
@@ -91,6 +102,7 @@ public class OverlayEditorScreen extends Screen {
     private boolean materialTrackerSettingsOpen = false;
     private boolean killTrackerSettingsOpen = false;
     private DraggableOverlay openTrackerDetail = null;
+    private int detailScroll;
     private boolean clipboardMaxLinesFocused = false;
     private final NumericFieldInput.State clipboardMaxLinesField = new NumericFieldInput.State();
     
@@ -495,7 +507,8 @@ public class OverlayEditorScreen extends Screen {
         int buttonHeight = 20;
         int buttonWidth = 80;
         int buttonSpacing = 10;
-        int totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing;
+        int magnetSize = 20;
+        int totalButtonsWidth = 4 * buttonWidth + 4 * buttonSpacing + magnetSize;
         int startX = Math.max(0, (width - totalButtonsWidth) / 2);
         boolean buttonsOnTop = CCLiveUtilitiesConfig.HANDLER.instance().f6ButtonPlace != F6ButtonPlace.BOTTOM;
         int buttonY = buttonsOnTop ? 5 : Math.max(5, height - 30);
@@ -514,8 +527,8 @@ public class OverlayEditorScreen extends Screen {
                 if (startX + totalButtonsWidth > width - 2) {
                     buttonSpacing = 4;
                     int available = Math.max(0, width - 2 - needed);
-                    buttonWidth = Math.max(32, (available - 3 * buttonSpacing) / 4);
-                    totalButtonsWidth = 4 * buttonWidth + 3 * buttonSpacing;
+                    buttonWidth = Math.max(32, (available - 4 * buttonSpacing - magnetSize) / 4);
+                    totalButtonsWidth = 4 * buttonWidth + 4 * buttonSpacing + magnetSize;
                     startX = needed;
                 }
             }
@@ -566,6 +579,8 @@ public class OverlayEditorScreen extends Screen {
             button -> resetAllOverlays()
         ).bounds(startX + 3 * (buttonWidth + buttonSpacing), buttonY, buttonWidth, buttonHeight).build();
         addRenderableWidget(resetButton);
+        int magnetX = startX + 3 * (buttonWidth + buttonSpacing) + buttonWidth + buttonSpacing;
+        addRenderableWidget(new OverlayMagnetButton(magnetX, buttonY));
     }
     
     @Override
@@ -580,6 +595,8 @@ public class OverlayEditorScreen extends Screen {
         }
 
         context.fill(0, 0, width, height, CCLiveUtilitiesConfig.f6MenuBackgroundColor());
+        OverlayDockLayout.syncEditor(overlays, width, height);
+        updateSnapOffer();
         
         // Render title
         titleWidget.extractRenderState(context, mouseX, mouseY, delta);
@@ -596,6 +613,7 @@ public class OverlayEditorScreen extends Screen {
                 }
             }
         }
+        renderDockMarkers(context);
         
         // Render instructions
         renderInstructions(context);
@@ -645,22 +663,22 @@ public class OverlayEditorScreen extends Screen {
     
     private boolean isOverlayResizeHandle(int mouseX, int mouseY, DraggableOverlay overlay) {
         int handleSize = 10;
-        int x = overlay.getX() + overlay.getWidth() - handleSize;
-        int y = overlay.getY() + overlay.getHeight() - handleSize;
+        int x = overlay.getX() + OverlayDockLayout.shownWidth(overlay) - handleSize;
+        int y = overlay.getY() + OverlayDockLayout.shownHeight(overlay) - handleSize;
         return mouseX >= x && mouseX <= x + handleSize && mouseY >= y && mouseY <= y + handleSize;
     }
     
     private boolean isOverlayResetHandle(int mouseX, int mouseY, DraggableOverlay overlay) {
         int handleSize = 10;
-        int x = overlay.getX() + overlay.getWidth() - handleSize;
+        int x = overlay.getX() + OverlayDockLayout.shownWidth(overlay) - handleSize;
         int y = overlay.getY();
         return mouseX >= x && mouseX <= x + handleSize && mouseY >= y && mouseY <= y + handleSize;
     }
     
     private void renderResizeHandle(GuiGraphicsExtractor context, DraggableOverlay overlay) {
         int handleSize = 10;
-        int x = overlay.getX() + overlay.getWidth() - handleSize;
-        int y = overlay.getY() + overlay.getHeight() - handleSize;
+        int x = overlay.getX() + OverlayDockLayout.shownWidth(overlay) - handleSize;
+        int y = overlay.getY() + OverlayDockLayout.shownHeight(overlay) - handleSize;
         
         // Draw resize handle background (small square with white border)
         context.fill(x, y, x + handleSize, y + handleSize, 0xFFFFFFFF);
@@ -691,7 +709,7 @@ public class OverlayEditorScreen extends Screen {
     
     private void renderResetHandle(GuiGraphicsExtractor context, DraggableOverlay overlay) {
         int handleSize = 10;
-        int x = overlay.getX() + overlay.getWidth() - handleSize;
+        int x = overlay.getX() + OverlayDockLayout.shownWidth(overlay) - handleSize;
         int y = overlay.getY();
         
         // Draw reset handle background (small square with white border)
@@ -774,6 +792,7 @@ public class OverlayEditorScreen extends Screen {
             if (top != null) {
                 if (top.isResetArea(clickX, clickY)) {
                     top.resetSizeToDefault();
+                    OverlayDockLayout.invalidatePositions();
                     top.savePosition();
                     CCLiveUtilitiesConfig.HANDLER.save();
                     return true;
@@ -791,6 +810,13 @@ public class OverlayEditorScreen extends Screen {
                     draggingOverlay = top;
                     dragOffsetX = clickX - top.getX();
                     dragOffsetY = clickY - top.getY();
+                    dragStartX = top.getX();
+                    dragStartY = top.getY();
+                    dragDetached = top.dockId() == null || top.dockId().isBlank() || !OverlayDockStore.involves(top.dockId());
+                    snapOffer = null;
+                    if (top.dockId() != null && !top.dockId().isBlank()) {
+                        OverlayDockLayout.setEditorDragSkip(top.dockId());
+                    }
                     return true;
                 }
                 return true;
@@ -813,7 +839,9 @@ public class OverlayEditorScreen extends Screen {
             if (draggingOverlay != null) {
                 // Check if dragging is still allowed (might have changed dimension or opened inventory)
                 if (!canDragOverlay(draggingOverlay)) {
+                    OverlayDockLayout.clearEditorDragSkip();
                     draggingOverlay = null;
+                    snapOffer = null;
                     return false;
                 }
                 
@@ -825,8 +853,8 @@ public class OverlayEditorScreen extends Screen {
                 newY = Math.max(0, Math.min(newY, height - draggingOverlay.getHeight()));
                 
                 draggingOverlay.setPosition(newX, newY);
-                // Auto-save position during dragging to ensure it's always saved
-                draggingOverlay.savePosition();
+                detachIfPulledAway(draggingOverlay, newX, newY);
+                OverlayDockLayout.invalidatePositions();
                 return true;
             }
             
@@ -896,8 +924,7 @@ public class OverlayEditorScreen extends Screen {
                     resizingOverlay.setPosition(newX, newY);
                 }
                 
-                // Auto-save position during resizing to ensure it's always saved
-                resizingOverlay.savePosition();
+                OverlayDockLayout.invalidatePositions();
                 return true;
             }
         }
@@ -916,8 +943,11 @@ public class OverlayEditorScreen extends Screen {
         int button = event.button();
         if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             if (draggingOverlay != null) {
+                commitDock(draggingOverlay);
+                OverlayDockLayout.clearEditorDragSkip();
                 draggingOverlay.savePosition();
                 draggingOverlay = null;
+                snapOffer = null;
                 return true;
             }
             
@@ -934,6 +964,12 @@ public class OverlayEditorScreen extends Screen {
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
         int keyCode = event.key();
+        if (DetailKeybindCapture.blocksModHotkeys()) {
+            if (DetailKeybindCapture.isCapturing()) {
+                DetailKeybindActions.onKey(keyCode);
+            }
+            return true;
+        }
         if (clipboardSettingsOpen && clipboardMaxLinesFocused) {
             NumericFieldInput.Result result = NumericFieldInput.handle(
                     clipboardMaxLinesField, keyCode, event.modifiers(), 4);
@@ -1003,7 +1039,8 @@ public class OverlayEditorScreen extends Screen {
                 // Update position if it changed
                 if (newX != currentX || newY != currentY) {
                     draggingOverlay.setPosition(newX, newY);
-                    draggingOverlay.savePosition();
+                    detachIfPulledAway(draggingOverlay, newX, newY);
+                    OverlayDockLayout.invalidatePositions();
                     return true;
                 }
             }
@@ -1011,8 +1048,163 @@ public class OverlayEditorScreen extends Screen {
         
         return super.keyPressed(event);
     }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        if (detailPanelOpen() && vertical != 0 && detailScrollHit(mouseX, mouseY)) {
+            detailScroll = DetailSettingsFrame.clampScroll(
+                    detailScroll - (int) Math.signum(vertical) * 30,
+                    detailContentHeight(),
+                    detailVisibleHeight());
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
+    }
     
+    private void updateSnapOffer() {
+        OverlayDockSnap.Candidate previous = snapOffer;
+        snapOffer = null;
+        if (draggingOverlay == null || !dragDetached || !OverlayDockStore.isMagnetEnabled()) {
+            return;
+        }
+        String id = draggingOverlay.dockId();
+        if (id == null || id.isBlank()) {
+            return;
+        }
+        snapOffer = OverlayDockSnap.findBest(
+                id,
+                new OverlayDockRect(draggingOverlay.getX(), draggingOverlay.getY(), draggingOverlay.getWidth(), draggingOverlay.getHeight()),
+                snapParticipants(id),
+                previous,
+                true,
+                OverlayDockStore.links(),
+                width,
+                height);
+    }
+
+    private List<OverlayDockSnap.Participant> snapParticipants(String draggedId) {
+        List<OverlayDockSnap.Participant> participants = new java.util.ArrayList<>();
+        for (DraggableOverlay overlay : overlays) {
+            if (overlay == null || !overlay.isDrawnInEditor()) {
+                continue;
+            }
+            String id = overlay.dockId();
+            if (id == null || id.isBlank() || id.equals(draggedId)) {
+                continue;
+            }
+            participants.add(new OverlayDockSnap.Participant(id,
+                    new OverlayDockRect(overlay.getX(), overlay.getY(), overlay.getWidth(), overlay.getHeight())));
+        }
+        return participants;
+    }
+
+    private void detachIfPulledAway(DraggableOverlay overlay, int x, int y) {
+        if (dragDetached || overlay.dockId() == null || overlay.dockId().isBlank()) {
+            return;
+        }
+        if (!OverlayDockLayout.shouldDetach(x - dragStartX, y - dragStartY)) {
+            return;
+        }
+        if (OverlayDockStore.removeLinksInvolving(overlay.dockId())) {
+            CCLiveUtilitiesConfig.HANDLER.save();
+        }
+        dragDetached = true;
+    }
+
+    private void commitDock(DraggableOverlay overlay) {
+        String id = overlay.dockId();
+        if (!dragDetached || id == null || id.isBlank() || !OverlayDockStore.isMagnetEnabled()) {
+            return;
+        }
+        OverlayDockLayout.syncEditor(overlays, width, height);
+        OverlayDockSnap.Candidate fresh = OverlayDockSnap.revalidate(
+                id,
+                new OverlayDockRect(overlay.getX(), overlay.getY(), overlay.getWidth(), overlay.getHeight()),
+                snapParticipants(id),
+                snapOffer,
+                true,
+                OverlayDockStore.links(),
+                width,
+                height);
+        if (fresh == null) {
+            return;
+        }
+        overlay.setPosition(fresh.snappedX(), fresh.snappedY());
+        OverlayDockStore.setAttachment(fresh.toLink());
+    }
+
+    private void renderDockMarkers(GuiGraphicsExtractor context) {
+        if (snapOffer != null) {
+            drawDockMark(context, snapOffer.dragIconX(), snapOffer.dragIconY(), 0xE036539E, 0xFFFFFFFF);
+            drawDockMark(context, snapOffer.anchorIconX(), snapOffer.anchorIconY(), 0xE036539E, 0xFFFFFFFF);
+        }
+        if (!OverlayDockStore.isMagnetEnabled()) {
+            return;
+        }
+        for (OverlayDockLink link : OverlayDockStore.links()) {
+            DraggableOverlay attached = overlayByDockId(link.attachedId);
+            DraggableOverlay anchor = overlayByDockId(link.anchorId);
+            if (attached == null || anchor == null || !attached.isDrawnInEditor() || !anchor.isDrawnInEditor()) {
+                continue;
+            }
+            int attachedX = attached.getX();
+            int attachedY = attached.getY();
+            int anchorX = anchor.getX();
+            int anchorY = anchor.getY();
+            int markX;
+            int markY;
+            switch (link.side) {
+                case BOTTOM -> {
+                    markX = (Math.max(attachedX, anchorX) + Math.min(attachedX + attached.getWidth(), anchorX + anchor.getWidth())) / 2;
+                    markY = anchorY + anchor.getHeight();
+                }
+                case TOP -> {
+                    markX = (Math.max(attachedX, anchorX) + Math.min(attachedX + attached.getWidth(), anchorX + anchor.getWidth())) / 2;
+                    markY = anchorY;
+                }
+                case RIGHT -> {
+                    markX = anchorX + anchor.getWidth();
+                    markY = (Math.max(attachedY, anchorY) + Math.min(attachedY + attached.getHeight(), anchorY + anchor.getHeight())) / 2;
+                }
+                case LEFT -> {
+                    markX = anchorX;
+                    markY = (Math.max(attachedY, anchorY) + Math.min(attachedY + attached.getHeight(), anchorY + anchor.getHeight())) / 2;
+                }
+                default -> {
+                    continue;
+                }
+            }
+            drawDockMark(context, markX, markY, 0x50202848, 0x60FFFFFF);
+        }
+    }
+
+    private DraggableOverlay overlayByDockId(String id) {
+        for (DraggableOverlay overlay : overlays) {
+            if (overlay != null && id.equals(overlay.dockId())) {
+                return overlay;
+            }
+        }
+        return null;
+    }
+
+    private void drawDockMark(GuiGraphicsExtractor context, int centerX, int centerY, int fill, int outline) {
+        int size = 10;
+        int x = centerX - size / 2;
+        int y = centerY - size / 2;
+        context.fill(x, y, x + size, y + size, fill);
+        context.outline(x, y, size, size, outline);
+        int icon = size - 2;
+        Matrix3x2fStack matrices = context.pose();
+        matrices.pushMatrix();
+        matrices.translate(x + 1, y + 1);
+        matrices.scale(icon / 24f, icon / 24f);
+        context.blit(RenderPipelines.GUI_TEXTURED, DOCK_MAGNET_ICON, 0, 0, 0.0f, 0.0f, 24, 24, 24, 24);
+        matrices.popMatrix();
+    }
+
     private void resetAllOverlays() {
+        OverlayDockStore.clearAll();
+        OverlayDockLayout.invalidate();
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isConfigEnabled()) {
                 overlay.resetToDefault();
@@ -1020,14 +1212,19 @@ public class OverlayEditorScreen extends Screen {
                 overlay.savePosition();
             }
         }
+        OverlayDockLayout.syncEditor(overlays, width, height);
     }
 
     private void clampOverlayToScreen(DraggableOverlay overlay) {
         int maxX = Math.max(0, width - overlay.getWidth());
         int maxY = Math.max(0, height - overlay.getHeight());
-        int clampedX = Math.max(0, Math.min(overlay.getX(), maxX));
-        int clampedY = Math.max(0, Math.min(overlay.getY(), maxY));
-        overlay.setPosition(clampedX, clampedY);
+        int x = overlay.undockedX();
+        int y = overlay.undockedY();
+        int clampedX = Math.max(0, Math.min(x, maxX));
+        int clampedY = Math.max(0, Math.min(y, maxY));
+        if (clampedX != x || clampedY != y) {
+            overlay.setPosition(clampedX, clampedY);
+        }
     }
     
     @Override
@@ -1042,6 +1239,8 @@ public class OverlayEditorScreen extends Screen {
         
         // Reset the overlay editor open status
         OverlayEditorUtility.setOverlayEditorOpen(false);
+        OverlayDockLayout.onEditorClosed();
+        resetDetailScroll();
         
         // Restore the previous screen instead of closing
         Minecraft client = Minecraft.getInstance();
@@ -1324,6 +1523,7 @@ public class OverlayEditorScreen extends Screen {
             }
             
             if (clickedOnSettings) {
+                resetDetailScroll();
                 if (entry.overlay instanceof MaterialTrackerDraggableOverlay) {
                     materialTrackerSettingsOpen = !materialTrackerSettingsOpen;
                     if (materialTrackerSettingsOpen) {
@@ -1466,6 +1666,9 @@ public class OverlayEditorScreen extends Screen {
         } else if (overlay instanceof BuildShareDraggableOverlay) {
             config.buildShareEnabled = !config.buildShareEnabled;
         }
+        if (overlay.dockId() != null && !overlay.dockId().isBlank() && !overlay.isConfigEnabled()) {
+            OverlayDockStore.removeLinksInvolving(overlay.dockId());
+        }
     }
     
     /**
@@ -1528,7 +1731,7 @@ public class OverlayEditorScreen extends Screen {
     }
 
     private int clipboardMaxLinesY(int boxY) {
-        return boxY + 36;
+        return boxY + 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindCatalog.Panel.CLIPBOARD);
     }
 
     private int clipboardFirstButtonY(int boxY) {
@@ -1564,14 +1767,12 @@ public class OverlayEditorScreen extends Screen {
     }
 
     private float clipboardSettingsScale() {
-        float fitWidth = Math.max(1, width - 24) / (float) CLIPBOARD_SETTINGS_WIDTH;
-        float fitHeight = Math.max(1, height - CLIPBOARD_SETTINGS_TOP_MARGIN - CLIPBOARD_SETTINGS_BOTTOM_MARGIN)
-                / (float) clipboardSettingsBoxHeight();
-        return Math.min(0.85f, Math.min(fitWidth, fitHeight));
+        return DetailSettingsFrame.scale(width, height, CLIPBOARD_SETTINGS_WIDTH, clipboardSettingsBoxHeight());
     }
 
     private float clipboardSettingsCenterY(float scale) {
-        float scaledHeight = clipboardSettingsBoxHeight() * scale;
+        int visible = DetailSettingsFrame.visibleHeight(height, scale, clipboardSettingsBoxHeight());
+        float scaledHeight = visible * scale;
         float top = height - CLIPBOARD_SETTINGS_BOTTOM_MARGIN - scaledHeight;
         if (top < CLIPBOARD_SETTINGS_TOP_MARGIN) {
             top = CLIPBOARD_SETTINGS_TOP_MARGIN;
@@ -1608,7 +1809,7 @@ public class OverlayEditorScreen extends Screen {
 
     private void renderClipboardSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = clipboardSettingsBoxHeight();
+        int boxHeight = fittedDetailHeight(clipboardSettingsBoxHeight(), clipboardSettingsScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -1627,6 +1828,8 @@ public class OverlayEditorScreen extends Screen {
         boolean closeHovered = mouseX >= closeX && mouseX <= closeX + closeSize
                 && mouseY >= closeY && mouseY <= closeY + closeSize;
         drawSettingsCloseCross(context, closeX, closeY, closeSize, closeHovered ? 0xFFFF6666 : 0xFFFF0000);
+        beginDetailContent(context, mouseX, mouseY, boxX, boxY, boxWidth, boxHeight, DetailKeybindCatalog.Panel.CLIPBOARD);
+        mouseY += detailScroll;
         
         // Buttons
         int buttonHeight = CLIPBOARD_BUTTON_HEIGHT;
@@ -1756,6 +1959,7 @@ public class OverlayEditorScreen extends Screen {
         String button5Text = costDisplayMode == 1 ? "Ausblenden" : "Ans Ende setzen";
         int button5TextColor = costDisplayEnabled ? 0xFFFFFFFF : 0xFF808080; // Grau wenn deaktiviert
         context.text(font, button5Text, boxX + 15, button5Y + 6, button5TextColor, false);
+        endDetailContent(context);
     }
     
     /**
@@ -1770,7 +1974,7 @@ public class OverlayEditorScreen extends Screen {
         mouseX = clipboardSettingsMouseX(mouseX, scale);
         mouseY = clipboardSettingsMouseY(mouseY, scale);
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = clipboardSettingsBoxHeight();
+        int boxHeight = fittedDetailHeight(clipboardSettingsBoxHeight(), clipboardSettingsScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         
@@ -1781,6 +1985,7 @@ public class OverlayEditorScreen extends Screen {
                 commitClipboardMaxLines();
             }
             clipboardSettingsOpen = false;
+            resetDetailScroll();
             return false;
         }
         
@@ -1792,13 +1997,21 @@ public class OverlayEditorScreen extends Screen {
                 commitClipboardMaxLines();
             }
             clipboardSettingsOpen = false;
+            resetDetailScroll();
             return true;
         }
+        if (mouseY < boxY + 36) {
+            return true;
+        }
+        mouseY += detailScroll;
 
         // Button-Koordinaten
         int buttonHeight = CLIPBOARD_BUTTON_HEIGHT;
         int buttonSpacing = CLIPBOARD_BUTTON_SPACING;
         int buttonWidth = boxWidth - 20;
+        if (handleKeybindClick(mouseX, mouseY, boxX, boxY, buttonWidth, DetailKeybindCatalog.Panel.CLIPBOARD)) {
+            return true;
+        }
 
         int maxLinesY = clipboardMaxLinesY(boxY);
         int fieldX = boxX + 10 + font.width("Maximale Zeilen:") + 8;
@@ -1913,14 +2126,12 @@ public class OverlayEditorScreen extends Screen {
     }
 
     private int materialTrackerSettingsBoxHeight() {
-        return 36 + CLIPBOARD_BUTTON_SPACING * 3 + CLIPBOARD_BUTTON_HEIGHT + 12;
+        return 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindCatalog.Panel.MATERIAL)
+                + CLIPBOARD_BUTTON_SPACING * 3 + CLIPBOARD_BUTTON_HEIGHT + 12;
     }
 
     private float materialTrackerSettingsScale() {
-        float fitWidth = Math.max(1, width - 24) / (float) CLIPBOARD_SETTINGS_WIDTH;
-        float fitHeight = Math.max(1, height - CLIPBOARD_SETTINGS_TOP_MARGIN - CLIPBOARD_SETTINGS_BOTTOM_MARGIN)
-                / (float) materialTrackerSettingsBoxHeight();
-        return Math.min(0.85f, Math.min(fitWidth, fitHeight));
+        return DetailSettingsFrame.scale(width, height, CLIPBOARD_SETTINGS_WIDTH, materialTrackerSettingsBoxHeight());
     }
 
     private float materialTrackerSettingsCenterY(float scale) {
@@ -1954,7 +2165,7 @@ public class OverlayEditorScreen extends Screen {
     private void renderMaterialTrackerSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = materialTrackerSettingsBoxHeight();
+        int boxHeight = fittedDetailHeight(materialTrackerSettingsBoxHeight(), materialTrackerSettingsScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
@@ -1967,9 +2178,11 @@ public class OverlayEditorScreen extends Screen {
         boolean closeHovered = mouseX >= closeX && mouseX <= closeX + closeSize
                 && mouseY >= closeY && mouseY <= closeY + closeSize;
         drawSettingsCloseCross(context, closeX, closeY, closeSize, closeHovered ? 0xFFFF6666 : 0xFFFF0000);
+        beginDetailContent(context, mouseX, mouseY, boxX, boxY, boxWidth, boxHeight, DetailKeybindCatalog.Panel.MATERIAL);
+        mouseY += detailScroll;
 
         int buttonWidth = boxWidth - 20;
-        int button1Y = boxY + 36;
+        int button1Y = boxY + 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindCatalog.Panel.MATERIAL);
         RateDisplayUnit materialUnit = RateDisplayUnit.orDefault(config.materialTrackerRateUnit);
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button1Y, buttonWidth,
                 materialUnit.settingsSwitcherLabel(), true);
@@ -1985,6 +2198,7 @@ public class OverlayEditorScreen extends Screen {
                 "Anzeige: " + (config.materialTrackerDisplayMode == MaterialTrackerDisplayMode.SCOREBOARD
                         ? "Scoreboard" : "Overlay"),
                 config.materialTrackerRateEnabled);
+        endDetailContent(context);
     }
 
     private void drawDetailButton(GuiGraphicsExtractor context, int mouseX, int mouseY, int x, int y, int buttonWidth,
@@ -2013,11 +2227,12 @@ public class OverlayEditorScreen extends Screen {
         mouseX = materialTrackerSettingsMouseX(mouseX, scale);
         mouseY = materialTrackerSettingsMouseY(mouseY, scale);
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = materialTrackerSettingsBoxHeight();
+        int boxHeight = fittedDetailHeight(materialTrackerSettingsBoxHeight(), materialTrackerSettingsScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
             materialTrackerSettingsOpen = false;
+            resetDetailScroll();
             return false;
         }
 
@@ -2026,12 +2241,20 @@ public class OverlayEditorScreen extends Screen {
         int closeY = boxY + 5;
         if (mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize) {
             materialTrackerSettingsOpen = false;
+            resetDetailScroll();
             return true;
         }
+        if (mouseY < boxY + 36) {
+            return true;
+        }
+        mouseY += detailScroll;
 
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         int buttonWidth = boxWidth - 20;
-        int button1Y = boxY + 36;
+        int button1Y = boxY + 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindCatalog.Panel.MATERIAL);
+        if (handleKeybindClick(mouseX, mouseY, boxX, boxY, buttonWidth, DetailKeybindCatalog.Panel.MATERIAL)) {
+            return true;
+        }
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
                 && mouseY >= button1Y && mouseY <= button1Y + CLIPBOARD_BUTTON_HEIGHT) {
             config.materialTrackerRateUnit =
@@ -2078,14 +2301,12 @@ public class OverlayEditorScreen extends Screen {
     }
 
     private int killTrackerSettingsBoxHeight() {
-        return 36 + CLIPBOARD_BUTTON_SPACING * 4 + CLIPBOARD_BUTTON_HEIGHT + 12;
+        return 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindCatalog.Panel.KILLS)
+                + CLIPBOARD_BUTTON_SPACING * 4 + CLIPBOARD_BUTTON_HEIGHT + 12;
     }
 
     private float killTrackerSettingsScale() {
-        float fitWidth = Math.max(1, width - 24) / (float) CLIPBOARD_SETTINGS_WIDTH;
-        float fitHeight = Math.max(1, height - CLIPBOARD_SETTINGS_TOP_MARGIN - CLIPBOARD_SETTINGS_BOTTOM_MARGIN)
-                / (float) killTrackerSettingsBoxHeight();
-        return Math.min(0.85f, Math.min(fitWidth, fitHeight));
+        return DetailSettingsFrame.scale(width, height, CLIPBOARD_SETTINGS_WIDTH, killTrackerSettingsBoxHeight());
     }
 
     private int killTrackerSettingsMouseX(double mouseX, float scale) {
@@ -2115,7 +2336,7 @@ public class OverlayEditorScreen extends Screen {
     private void renderKillTrackerSettingsBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = killTrackerSettingsBoxHeight();
+        int boxHeight = fittedDetailHeight(killTrackerSettingsBoxHeight(), killTrackerSettingsScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
@@ -2128,9 +2349,11 @@ public class OverlayEditorScreen extends Screen {
         boolean closeHovered = mouseX >= closeX && mouseX <= closeX + closeSize
                 && mouseY >= closeY && mouseY <= closeY + closeSize;
         drawSettingsCloseCross(context, closeX, closeY, closeSize, closeHovered ? 0xFFFF6666 : 0xFFFF0000);
+        beginDetailContent(context, mouseX, mouseY, boxX, boxY, boxWidth, boxHeight, DetailKeybindCatalog.Panel.KILLS);
+        mouseY += detailScroll;
 
         int buttonWidth = boxWidth - 20;
-        int button1Y = boxY + 36;
+        int button1Y = boxY + 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindCatalog.Panel.KILLS);
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button1Y, buttonWidth,
                 RateDisplayUnit.orDefault(config.killsUtilityRateUnit).settingsSwitcherLabel(), true);
         int button2Y = button1Y + CLIPBOARD_BUTTON_SPACING;
@@ -2144,6 +2367,7 @@ public class OverlayEditorScreen extends Screen {
                 "Nächste Ebene: " + (config.killsUtilityShowNextLevel ? "An" : "Aus"), true);
         int button5Y = button4Y + CLIPBOARD_BUTTON_SPACING;
         drawDetailButton(context, mouseX, mouseY, boxX + 10, button5Y, buttonWidth, "Farben", true);
+        endDetailContent(context);
     }
 
     private boolean handleKillTrackerSettingsClick(double mouseX, double mouseY, int button) {
@@ -2154,11 +2378,12 @@ public class OverlayEditorScreen extends Screen {
         mouseX = killTrackerSettingsMouseX(mouseX, scale);
         mouseY = killTrackerSettingsMouseY(mouseY, scale);
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = killTrackerSettingsBoxHeight();
+        int boxHeight = fittedDetailHeight(killTrackerSettingsBoxHeight(), killTrackerSettingsScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
             killTrackerSettingsOpen = false;
+            resetDetailScroll();
             return false;
         }
 
@@ -2167,12 +2392,20 @@ public class OverlayEditorScreen extends Screen {
         int closeY = boxY + 5;
         if (mouseX >= closeX && mouseX <= closeX + closeSize && mouseY >= closeY && mouseY <= closeY + closeSize) {
             killTrackerSettingsOpen = false;
+            resetDetailScroll();
             return true;
         }
+        if (mouseY < boxY + 36) {
+            return true;
+        }
+        mouseY += detailScroll;
 
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         int buttonWidth = boxWidth - 20;
-        int button1Y = boxY + 36;
+        int button1Y = boxY + 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindCatalog.Panel.KILLS);
+        if (handleKeybindClick(mouseX, mouseY, boxX, boxY, buttonWidth, DetailKeybindCatalog.Panel.KILLS)) {
+            return true;
+        }
         if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
                 && mouseY >= button1Y && mouseY <= button1Y + CLIPBOARD_BUTTON_HEIGHT) {
             config.killsUtilityRateUnit =
@@ -2215,14 +2448,13 @@ public class OverlayEditorScreen extends Screen {
 
     private int trackerDetailBoxHeight() {
         int count = Math.max(1, TrackerDetailSettings.buttons(openTrackerDetail, this).size());
-        return 36 + CLIPBOARD_BUTTON_SPACING * (count - 1) + CLIPBOARD_BUTTON_HEIGHT + 12;
+        DetailKeybindCatalog.Panel panel = DetailKeybindBindings.panelFor(openTrackerDetail);
+        return 36 + DetailKeybindCatalog.introducedHeight(panel)
+                + CLIPBOARD_BUTTON_SPACING * (count - 1) + CLIPBOARD_BUTTON_HEIGHT + 12;
     }
 
     private float trackerDetailScale() {
-        float fitWidth = Math.max(1, width - 24) / (float) CLIPBOARD_SETTINGS_WIDTH;
-        float fitHeight = Math.max(1, height - CLIPBOARD_SETTINGS_TOP_MARGIN - CLIPBOARD_SETTINGS_BOTTOM_MARGIN)
-                / (float) trackerDetailBoxHeight();
-        return Math.min(0.85f, Math.min(fitWidth, fitHeight));
+        return DetailSettingsFrame.scale(width, height, CLIPBOARD_SETTINGS_WIDTH, trackerDetailBoxHeight());
     }
 
     private int trackerDetailMouseX(double mouseX, float scale) {
@@ -2252,7 +2484,7 @@ public class OverlayEditorScreen extends Screen {
     private void renderTrackerDetailBox(GuiGraphicsExtractor context, int mouseX, int mouseY) {
         List<TrackerDetailSettings.Button> buttons = TrackerDetailSettings.buttons(openTrackerDetail, this);
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = trackerDetailBoxHeight();
+        int boxHeight = fittedDetailHeight(trackerDetailBoxHeight(), trackerDetailScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         context.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xFF000000);
@@ -2265,14 +2497,18 @@ public class OverlayEditorScreen extends Screen {
         boolean closeHovered = mouseX >= closeX && mouseX <= closeX + closeSize
                 && mouseY >= closeY && mouseY <= closeY + closeSize;
         drawSettingsCloseCross(context, closeX, closeY, closeSize, closeHovered ? 0xFFFF6666 : 0xFFFF0000);
+        beginDetailContent(context, mouseX, mouseY, boxX, boxY, boxWidth, boxHeight,
+                DetailKeybindBindings.panelFor(openTrackerDetail));
+        mouseY += detailScroll;
 
         int buttonWidth = boxWidth - 20;
-        int buttonY = boxY + 36;
+        int buttonY = boxY + 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindBindings.panelFor(openTrackerDetail));
         for (TrackerDetailSettings.Button detailButton : buttons) {
             drawDetailButton(context, mouseX, mouseY, boxX + 10, buttonY, buttonWidth,
                     detailButton.label(), detailButton.enabled());
             buttonY += CLIPBOARD_BUTTON_SPACING;
         }
+        endDetailContent(context);
     }
 
     private boolean handleTrackerDetailClick(double mouseX, double mouseY, int button) {
@@ -2285,12 +2521,13 @@ public class OverlayEditorScreen extends Screen {
         mouseX = trackerDetailMouseX(mouseX, scale);
         mouseY = trackerDetailMouseY(mouseY, scale);
         int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
-        int boxHeight = trackerDetailBoxHeight();
+        int boxHeight = fittedDetailHeight(trackerDetailBoxHeight(), trackerDetailScale());
         int boxX = width / 2 - boxWidth / 2;
         int boxY = height / 2 - boxHeight / 2;
         if (mouseX < boxX || mouseX > boxX + boxWidth || mouseY < boxY || mouseY > boxY + boxHeight) {
             if (leftClick) {
                 openTrackerDetail = null;
+                resetDetailScroll();
             }
             return false;
         }
@@ -2301,12 +2538,20 @@ public class OverlayEditorScreen extends Screen {
         if (leftClick && mouseX >= closeX && mouseX <= closeX + closeSize
                 && mouseY >= closeY && mouseY <= closeY + closeSize) {
             openTrackerDetail = null;
+            resetDetailScroll();
             return true;
         }
+        if (mouseY < boxY + 36) {
+            return true;
+        }
+        mouseY += detailScroll;
 
         List<TrackerDetailSettings.Button> buttons = TrackerDetailSettings.buttons(openTrackerDetail, this);
         int buttonWidth = boxWidth - 20;
-        int buttonY = boxY + 36;
+        int buttonY = boxY + 36 + DetailKeybindCatalog.introducedHeight(DetailKeybindBindings.panelFor(openTrackerDetail));
+        if (handleKeybindClick(mouseX, mouseY, boxX, boxY, buttonWidth, DetailKeybindBindings.panelFor(openTrackerDetail))) {
+            return true;
+        }
         for (TrackerDetailSettings.Button detailButton : buttons) {
             if (detailButton.enabled()
                     && mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
@@ -2321,6 +2566,105 @@ public class OverlayEditorScreen extends Screen {
             buttonY += CLIPBOARD_BUTTON_SPACING;
         }
         return true;
+    }
+
+    private void resetDetailScroll() {
+        detailScroll = 0;
+        DetailKeybindActions.abort();
+    }
+
+    private boolean detailPanelOpen() {
+        return clipboardSettingsOpen || materialTrackerSettingsOpen || killTrackerSettingsOpen || openTrackerDetail != null;
+    }
+
+    private int detailContentHeight() {
+        if (clipboardSettingsOpen) {
+            return clipboardSettingsBoxHeight();
+        }
+        if (materialTrackerSettingsOpen) {
+            return materialTrackerSettingsBoxHeight();
+        }
+        if (killTrackerSettingsOpen) {
+            return killTrackerSettingsBoxHeight();
+        }
+        if (openTrackerDetail != null) {
+            return trackerDetailBoxHeight();
+        }
+        return 0;
+    }
+
+    private float detailScale() {
+        return DetailSettingsFrame.scale(width, height, CLIPBOARD_SETTINGS_WIDTH, Math.max(1, detailContentHeight()));
+    }
+
+    private int detailVisibleHeight() {
+        return DetailSettingsFrame.visibleHeight(height, detailScale(), Math.max(1, detailContentHeight()));
+    }
+
+    private int fittedDetailHeight(int contentHeight, float scale) {
+        int visible = DetailSettingsFrame.visibleHeight(height, scale, contentHeight);
+        detailScroll = DetailSettingsFrame.clampScroll(detailScroll, contentHeight, visible);
+        return visible;
+    }
+
+    private boolean detailScrollHit(double mouseX, double mouseY) {
+        float scale = detailScale();
+        float offsetX = width / 2.0f * (1.0f - scale);
+        float offsetY = height / 2.0f * (1.0f - scale);
+        double localX = (mouseX - offsetX) / scale;
+        double localY = (mouseY - offsetY) / scale;
+        int boxWidth = CLIPBOARD_SETTINGS_WIDTH;
+        int boxHeight = detailVisibleHeight();
+        int boxX = width / 2 - boxWidth / 2;
+        int boxY = height / 2 - boxHeight / 2;
+        return localX >= boxX && localX <= boxX + boxWidth && localY >= boxY && localY <= boxY + boxHeight;
+    }
+
+    private void beginDetailContent(GuiGraphicsExtractor context, int mouseX, int mouseY, int boxX, int boxY,
+            int boxWidth, int boxHeight, DetailKeybindCatalog.Panel panel) {
+        int top = boxY + 30;
+        int bottom = boxY + boxHeight - 4;
+        context.enableScissor(boxX + 1, top, boxX + boxWidth - 1, Math.max(top + 1, bottom));
+        context.pose().pushMatrix();
+        context.pose().translate(0.0f, -detailScroll);
+        drawSectionHeadersAndKeybinds(context, mouseX, mouseY + detailScroll, boxX, boxY, panel, boxWidth - 20);
+    }
+
+    private void endDetailContent(GuiGraphicsExtractor context) {
+        context.pose().popMatrix();
+        context.disableScissor();
+    }
+
+    private void drawSectionHeadersAndKeybinds(GuiGraphicsExtractor context, int mouseX, int mouseY, int boxX, int boxY,
+            DetailKeybindCatalog.Panel panel, int buttonWidth) {
+        int y = boxY + 36;
+        if (DetailKeybindCatalog.hasKeybinds(panel)) {
+            context.text(font, "Keybinds", boxX + 10, y, 0xFFFFFF00, false);
+            y += 16;
+            for (KeyMapping mapping : DetailKeybindBindings.mappings(panel)) {
+                drawDetailButton(context, mouseX, mouseY, boxX + 10, y, buttonWidth,
+                        DetailKeybindActions.rowLabel(mapping), true);
+                y += CLIPBOARD_BUTTON_SPACING;
+            }
+        }
+        context.text(font, "Haupt Einstellungen", boxX + 10, y, 0xFFFFFF00, false);
+    }
+
+    private boolean handleKeybindClick(double mouseX, double mouseY, int boxX, int boxY, int buttonWidth,
+            DetailKeybindCatalog.Panel panel) {
+        if (!DetailKeybindCatalog.hasKeybinds(panel)) {
+            return false;
+        }
+        int y = boxY + 36 + 16;
+        for (KeyMapping mapping : DetailKeybindBindings.mappings(panel)) {
+            if (mouseX >= boxX + 10 && mouseX <= boxX + 10 + buttonWidth
+                    && mouseY >= y && mouseY <= y + CLIPBOARD_BUTTON_HEIGHT) {
+                DetailKeybindActions.begin(mapping);
+                return true;
+            }
+            y += CLIPBOARD_BUTTON_SPACING;
+        }
+        return false;
     }
 }
 

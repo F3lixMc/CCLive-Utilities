@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
 import net.felix.utilities.DragOverlay.F6ButtonPlace;
+import net.felix.utilities.DragOverlay.dock.OverlayDockLink;
 import net.felix.utilities.DragOverlay.F6TransparencyPreview;
 import net.felix.utilities.DragOverlay.OverlayType;
 import net.felix.utilities.Farmworld.collections.tracker.ResourceTrackerDisplayMode;
@@ -262,6 +263,9 @@ public class CCLiveUtilitiesConfig {
                 configChanged = true;
             }
             if (restoreClipboardTimeFlag(loadedConfig, rawConfig)) {
+                configChanged = true;
+            }
+            if (net.felix.utilities.DragOverlay.dock.OverlayDockStore.sanitizePersisted()) {
                 configChanged = true;
             }
 
@@ -674,6 +678,13 @@ public class CCLiveUtilitiesConfig {
 
     @SerialEntry
     public F6ButtonPlace f6ButtonPlace = F6ButtonPlace.TOP;
+
+    /** Magnetisches Andocken. Aus heißt: keine neuen Kanten, gespeicherte bleiben aktiv. */
+    @SerialEntry
+    public boolean overlayMagnetEnabled = true;
+
+    @SerialEntry
+    public List<OverlayDockLink> overlayDockLinks = new ArrayList<>();
 
     /** Modsprache, gesetzt durch die PlayLegend-Systemmeldung. {@code de} oder {@code en}. */
     @SerialEntry
@@ -1327,6 +1338,9 @@ public class CCLiveUtilitiesConfig {
     
     @SerialEntry
     public boolean blueprintViewerMissingMode = false; // Missing Mode: Zeige nur fehlende Baupläne (gefundene werden ausgeblendet)
+
+    @SerialEntry
+    public boolean blueprintViewerKitFilterEnabled = false; // BP Viewer auf die ItemViewer-Kitauswahl von Button 0 einschränken
 
     /** Nur Moblexicon: grüner Haken / rotes Kreuz bei gefundenen bzw. fehlenden Bauplänen in den Tooltips. */
     @SerialEntry

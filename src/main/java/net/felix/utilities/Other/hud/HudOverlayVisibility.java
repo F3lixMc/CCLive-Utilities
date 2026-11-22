@@ -64,6 +64,7 @@ public final class HudOverlayVisibility {
         DeltaTracker tickCounter = client.getDeltaTracker();
         RENDERING_BEHIND_DIM.set(true);
         try {
+            net.felix.utilities.DragOverlay.dock.OverlayDockLayout.prepareFrame();
             CoinTrackerUtility.onHudRender(context, tickCounter);
             KillsUtility.onHudRender(context, tickCounter);
             MaterialTrackerUtility.onHudRender(context, tickCounter);

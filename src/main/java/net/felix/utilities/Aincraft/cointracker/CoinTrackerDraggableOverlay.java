@@ -24,7 +24,22 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.COIN;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) {
             return 0;
@@ -44,7 +59,7 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerY;
     }
 
@@ -120,13 +135,11 @@ public class CoinTrackerDraggableOverlay implements DraggableOverlay {
         int x = getX();
         int y = getY();
 
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerScale;
-        if (scale <= 0) {
-            scale = 1.0f;
-        }
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerScale);
 
-        int scaledWidth = (int) (unscaledWidth * scale);
-        int scaledHeight = (int) (unscaledHeight * scale);
+        int scaledWidth = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int scaledHeight = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
 
         context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
 
@@ -195,6 +208,7 @@ return isConfigEnabled()
 
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerX = 734;
         CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerY = 286;
         CCLiveUtilitiesConfig.HANDLER.instance().coinTrackerScale = 1.0f;

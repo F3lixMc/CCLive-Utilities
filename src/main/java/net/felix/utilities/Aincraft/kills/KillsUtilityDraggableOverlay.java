@@ -23,7 +23,22 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.KILLS;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
@@ -57,7 +72,7 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityY;
     }
     
@@ -152,12 +167,11 @@ public class KillsUtilityDraggableOverlay implements DraggableOverlay {
         int y = getY();
         
         // Get scale
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale;
-        if (scale <= 0) scale = 1.0f;
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale);
         
-        // Calculate scaled dimensions
-        int scaledWidth = (int) (unscaledWidth * scale);
-        int scaledHeight = (int) (unscaledHeight * scale);
+        int scaledWidth = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int scaledHeight = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Render border for edit mode (unscaled, so it's always visible)
         context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
@@ -262,6 +276,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled &&
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityX = 789;
         CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityY = 116;
         CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale = 1.0f;

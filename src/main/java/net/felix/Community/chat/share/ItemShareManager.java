@@ -81,7 +81,9 @@ public final class ItemShareManager {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             ChatShareClient.tick(client);
-            if (copyItemKeyMapping != null && copyItemKeyMapping.consumeClick()) {
+            if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+                net.felix.utilities.DragOverlay.ModHotkeyGate.discard(copyItemKeyMapping);
+            } else if (copyItemKeyMapping != null && copyItemKeyMapping.consumeClick()) {
                 if (client.gui.screen() == null) {
                     tryCopyHoveredItem();
                 }
@@ -91,6 +93,9 @@ public final class ItemShareManager {
 
     /** Wird aus ScreenMixin aufgerufen (Inventar geöffnet). */
     public boolean handleKeyPress(int keyCode, int scanCode) {
+        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+            return false;
+        }
         Minecraft client = Minecraft.getInstance();
         if (copyItemKeyMapping == null) {
             return false;

@@ -21,7 +21,22 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         // Calculate X position using the same logic as renderMiningOverlay()
         // Use unscaled width for positioning (same as actual overlay)
         Minecraft client = Minecraft.getInstance();
@@ -50,12 +65,11 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
             x = rightEdge - overlayWidth;
         }
         
-        // Ensure overlay stays within screen bounds
-        return Math.max(0, Math.min(x, screenWidth - overlayWidth));
+		return x;
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayY;
     }
     
@@ -198,9 +212,10 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int scaledWidth = getWidth();
-        int scaledHeight = getHeight();
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayScale;
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayScale);
+        int scaledWidth = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int scaledHeight = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Get actual texts from the overlays to calculate correct width
         // But replace values with "?" for display in editor
@@ -284,6 +299,7 @@ public class MiningLumberjackDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayX = 0;
         CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayY = 109;
         CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayScale = 1.0f;

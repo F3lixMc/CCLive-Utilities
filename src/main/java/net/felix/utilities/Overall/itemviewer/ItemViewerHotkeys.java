@@ -28,6 +28,10 @@ public final class ItemViewerHotkeys {
 
     private static KeyMapping clipboardPinKeyMapping;
 
+    public static KeyMapping clipboardPinKey() {
+        return clipboardPinKeyMapping;
+    }
+
     static void registerKeybind() {
         toggleKeyMapping = KeyMappingHelper.registerKeyMapping(new KeyMapping(
             "key.cclive-utilities.itemviewer.toggle",
@@ -180,6 +184,11 @@ public final class ItemViewerHotkeys {
      * (bei offenem Screen greift {@link #handleKeyPress(int, int, int)} über den ScreenMixin).
      */
     public static void onClientTick(Minecraft client) {
+        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
+            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(clipboardPinKeyMapping);
+            return;
+        }
         if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
             // Verhindert, dass der Hotkey aktiviert wird, wenn der Spieler "I" in ein Textfeld tippt
             if (isTextFieldFocused(client)) {
@@ -218,6 +227,9 @@ public final class ItemViewerHotkeys {
      * @return true wenn der Keybind behandelt wurde, false sonst
      */
     public static boolean handleKeyPress(int keyCode, int scanCode, int modifiers) {
+        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+            return false;
+        }
         Minecraft client = Minecraft.getInstance();
         
         // Prüfe Clipboard-Pin Hotkey

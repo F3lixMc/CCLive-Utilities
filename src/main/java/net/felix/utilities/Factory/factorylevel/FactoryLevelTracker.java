@@ -92,7 +92,7 @@ public final class FactoryLevelTracker {
 
     public static void render(GuiGraphicsExtractor context) {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || client.font == null || context == null) {
+        if (client == null || client.font == null) {
             return;
         }
         List<String> lines = cachedLines;
@@ -103,9 +103,17 @@ public final class FactoryLevelTracker {
             scale = 1f;
         }
 
+        net.felix.utilities.DragOverlay.dock.OverlayDockRect factoryDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                net.felix.utilities.DragOverlay.dock.OverlayDockIds.FACTORY,
+                x(), y(), Math.round(width * scale), Math.round(height * scale));
+        if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring() || context == null) {
+            return;
+        }
+        scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                net.felix.utilities.DragOverlay.dock.OverlayDockIds.FACTORY, scale);
         Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
-        matrices.translate(x(), y());
+        matrices.translate(factoryDock.x(), factoryDock.y());
         matrices.scale(scale, scale);
 
         if (CCLiveUtilitiesConfig.HANDLER.instance().factoryLevelShowBackground) {
@@ -223,9 +231,16 @@ public final class FactoryLevelTracker {
         activeDimension = null;
     }
 
+    public static void contributeLayout(Minecraft client) {
+        if (client == null) {
+            return;
+        }
+        onHudRender(null, client.getDeltaTracker());
+    }
+
     public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
         Minecraft client = Minecraft.getInstance();
-        if (client == null || context == null) {
+        if (client == null) {
             return;
         }
         if (!HudOverlayVisibility.shouldRenderWorldHudOverlays()) {

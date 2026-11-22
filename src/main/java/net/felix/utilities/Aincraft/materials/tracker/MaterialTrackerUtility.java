@@ -241,7 +241,20 @@ public class MaterialTrackerUtility {
 		}
 	}
 	
+	public static net.minecraft.client.KeyMapping toggleKey() {
+		return toggleKeyMapping;
+	}
+
+	public static net.minecraft.client.KeyMapping resetRateKey() {
+		return resetRateKeyMapping;
+	}
+
 	private static void handleHotkey() {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(resetRateKeyMapping);
+			return;
+		}
 		// Handle toggle hotkey
 		if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
 			boolean newValue = !(CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled
@@ -256,6 +269,13 @@ public class MaterialTrackerUtility {
 		}
 	}
 	
+	public static void contributeLayout(Minecraft client) {
+		if (client == null) {
+			return;
+		}
+		onHudRender(null, client.getDeltaTracker());
+	}
+
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled() ||
@@ -328,14 +348,22 @@ public class MaterialTrackerUtility {
 		}
 		int yPosition = yOffset;
 		
-		// Use Matrix transformations for scaling (like Blueprint Viewer)
-		Matrix3x2fStack matrices = context.pose();
-		matrices.pushMatrix();
-		
 		// Scale based on config
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect materialDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL,
+				xPosition, yPosition, Math.round(overlayWidth * scale), Math.round((OVERLAY_HEIGHT - 23) * scale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			return;
+		}
+		xPosition = materialDock.x();
+		yPosition = materialDock.y();
+		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL, scale);
 		
 		// Translate to position and scale from there
+		Matrix3x2fStack matrices = context.pose();
+		matrices.pushMatrix();
 		matrices.translate(xPosition, yPosition);
 		matrices.scale(scale, scale);
 		
@@ -462,14 +490,22 @@ public class MaterialTrackerUtility {
 		int xPosition = screenWidth - overlayWidth - xOffset;
 		int yPosition = yOffset;
 		
-		// Use Matrix transformations for scaling (like Blueprint Viewer)
-		Matrix3x2fStack matrices = context.pose();
-		matrices.pushMatrix();
-		
 		// Scale based on config
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect materialDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL,
+				xPosition, yPosition, Math.round(overlayWidth * scale), Math.round((OVERLAY_HEIGHT - 23) * scale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			return;
+		}
+		xPosition = materialDock.x();
+		yPosition = materialDock.y();
+		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL, scale);
 		
 		// Translate to position and scale from there
+		Matrix3x2fStack matrices = context.pose();
+		matrices.pushMatrix();
 		matrices.translate(xPosition, yPosition);
 		matrices.scale(scale, scale);
 		

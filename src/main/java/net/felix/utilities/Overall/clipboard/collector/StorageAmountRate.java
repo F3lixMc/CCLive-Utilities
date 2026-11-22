@@ -5,7 +5,8 @@ import java.util.Map;
 
 /**
  * Produktionsrate aus der aktuellen Menge im Lager-Tooltip.
- * Dieselbe Menge erneut gelesen ändert die Rate nicht. Ein Rückgang startet die Stichprobe neu.
+ * Dieselbe Menge erneut gelesen ändert die Rate nicht.
+ * Ein Rückgang, etwa beim Einsammeln, setzt Zähler und Berechnung gemeinsam auf null.
  */
 public final class StorageAmountRate {
 
@@ -76,20 +77,26 @@ public final class StorageAmountRate {
         Sample sample = open.get(key);
         if (sample == null) {
             open.put(key, new Sample(now, amount));
-            rates.putIfAbsent(key, 0.0);
+            rates.put(key, 0.0);
             return 0.0;
         }
         if (amount < sample.amount) {
-            open.put(key, new Sample(now, amount));
-            return rates.getOrDefault(key, 0.0);
+            restart(key, amount, now);
+            return 0.0;
         }
         long elapsed = now - sample.at;
         if (elapsed < 1000L || amount == sample.amount) {
             return rates.getOrDefault(key, 0.0);
         }
         double perMinute = (amount - sample.amount) * 60000.0 / elapsed;
+        open.put(key, new Sample(now, amount));
         rates.put(key, perMinute);
         return perMinute;
+    }
+
+    private void restart(String key, long amount, long now) {
+        open.put(key, new Sample(now, amount));
+        rates.put(key, 0.0);
     }
 
     public double rate(String key) {

@@ -20,7 +20,22 @@ public class AspectDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.ASPECT;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
@@ -30,7 +45,7 @@ public class AspectDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY;
     }
     
@@ -61,8 +76,8 @@ public class AspectDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Render background if enabled
         if (CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayShowBackground) {
@@ -129,6 +144,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled &&
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayX = 530;
         CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayY = 120;
     }

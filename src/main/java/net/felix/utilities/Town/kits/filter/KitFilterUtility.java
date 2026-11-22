@@ -2008,6 +2008,19 @@ public class KitFilterUtility {
 		return name.replaceAll("§[0-9a-fk-or]", "").trim().toLowerCase();
 	}
 
+	public static List<ItemInfo> getKitItemInfosForSelection(KitSelection selection) {
+		if (selection == null) {
+			return new ArrayList<>();
+		}
+		if (selection.isCustom()) {
+			CustomKit kit = CustomKitManager.getKit(selection.customKitId);
+			List<ItemInfo> infos = new ArrayList<>(getCustomKitItemInfos(kit));
+			infos.addAll(getCustomKitFishingComponentInfos(kit));
+			return infos;
+		}
+		return new ArrayList<>(getKitItemInfos(selection.kitType, selection.level, selection.neuKit));
+	}
+
 	public static Set<String> getKitItemNamesForSelection(KitSelection selection) {
 		if (selection == null) {
 			return new HashSet<>();

@@ -47,6 +47,8 @@
     "cclive.f6.npc_alerts": "NPC Alerts",
     "cclive.f6.overlay": "Overlay",
     "cclive.f6.reset_all": "Reset All",
+    "cclive.f6.magnet": "Docking on/off.",
+    "cclive.f6.magnet_keep": "Existing connections stay in place.",
     "cclive.f6.instruction.move": "Left Click + Drag: Move overlay",
     "cclive.f6.instruction.resize": "Left Click + Drag (corner): Resize overlay",
     "cclive.f6.instruction.nudge": "Left Click + Arrow Keys: Move overlay 1 pixel",

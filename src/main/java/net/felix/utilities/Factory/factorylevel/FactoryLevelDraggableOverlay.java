@@ -16,13 +16,28 @@ public class FactoryLevelDraggableOverlay implements DraggableOverlay {
     }
 
     @Override
-    public int getX() {
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.FACTORY;
+    }
+
+    @Override
+    public int undockedX() {
         return FactoryLevelTracker.x();
     }
 
     @Override
-    public int getY() {
+    public int undockedY() {
         return FactoryLevelTracker.y();
+    }
+
+    @Override
+    public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
     }
 
     @Override
@@ -73,7 +88,10 @@ public class FactoryLevelDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        context.outline(x, y, getWidth(), getHeight(), 0xFFFF0000);
+        context.outline(x, y,
+                net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this),
+                net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this),
+                0xFFFF0000);
         FactoryLevelTracker.render(context);
     }
 
@@ -102,6 +120,7 @@ public class FactoryLevelDraggableOverlay implements DraggableOverlay {
 
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
         config.factoryLevelX = 8;
         config.factoryLevelY = 36;

@@ -13,6 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +38,12 @@ import net.felix.utilities.Farmworld.fishing.found.FishingComponentFoundUtility;
 import net.felix.utilities.Other.glyphs.ZeichenUtility;
 import net.felix.utilities.Other.keybinding.KeyBindingUtility;
 import net.felix.utilities.Other.keybinding.KeyCategories;
+import net.felix.utilities.Overall.itemviewer.kit.KitEditorMode;
 import net.felix.utilities.Town.equipment.EquipmentDisplayUtility;
+import net.felix.utilities.Town.kits.data.CustomKit;
+import net.felix.utilities.Town.kits.data.CustomKitManager;
+import net.felix.utilities.Town.kits.filter.KitFilterUtility;
+import net.felix.utilities.Town.kits.ui.KitTooltipHelper;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -64,7 +70,6 @@ public class BPViewerUtility {
     private final Map<String, Set<String>> floorProgress = new HashMap<>();
     
     // Constants
-    private static final String[] RARITY_ORDER = {"common", "uncommon", "rare", "epic", "legendary"};
     private static final int HUD_WIDTH = 200;
     // Background texture for blueprint display
     private static final Identifier BLUEPRINT_BACKGROUND_TEXTURE = Identifier.fromNamespaceAndPath("cclive-utilities", "textures/gui/blueprint_background.png");
@@ -104,6 +109,12 @@ public class BPViewerUtility {
     // Blueprint configuration
     private final BlueprintConfig config = new BlueprintConfig();
     private static final String BLUEPRINTS_CONFIG_FILE = "assets/cclive-utilities/blueprints.json";
+    private long catalogGeneration;
+    private long indexedGeneration = -1;
+    private List<BlueprintKitFilter.CatalogItem> catalogItems = List.of();
+    private String kitPageKey = "";
+    private List<BlueprintKitFilter.Entry> kitPageEntries = List.of();
+    private boolean kitFilterWasEffective;
     
     // Debug tracking
     private static String lastDebugFloor = null;
@@ -145,6 +156,28 @@ public class BPViewerUtility {
     public String getCurrentRarity() {
         return currentRarity;
     }
+
+    public static KeyMapping toggleKey() {
+        return toggleKeyMapping;
+    }
+
+    public static KeyMapping missingModeKey() {
+        return toggleMissingModeKeyMapping;
+    }
+
+    public static KeyMapping nextPageKey() {
+        return nextRarityKeyMapping;
+    }
+
+    public static KeyMapping previousPageKey() {
+        return previousRarityKeyMapping;
+    }
+
+    public static void notifyKitFilterChanged() {
+        if (INSTANCE != null) {
+            INSTANCE.syncKitFilterPage(INSTANCE.isKitFilterEffective());
+        }
+    }
     
     /**
      * Gibt die Anzahl aller gefundenen Blueprints zurück (für ProfileStatsManager)
@@ -177,6 +210,12 @@ public class BPViewerUtility {
                ClientTickEvents.END_CLIENT_TICK.register(client -> {
                    if (client.level != null) {
                        // Handle key bindings
+                       if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
+                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(nextRarityKeyMapping);
+                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(previousRarityKeyMapping);
+                           net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleMissingModeKeyMapping);
+                       } else {
                        if (toggleKeyMapping.consumeClick()) {
                            toggleVisibility();
                        }
@@ -191,6 +230,7 @@ public class BPViewerUtility {
                        
                        if (toggleMissingModeKeyMapping.consumeClick()) {
                            toggleMissingMode();
+                       }
                        }
                        
                        // Check for blueprint shop inventory
@@ -523,6 +563,14 @@ public class BPViewerUtility {
                });
            }
     
+    public static void contributeLayout(Minecraft client) {
+        BPViewerUtility instance = getInstance();
+        if (instance == null || client == null) {
+            return;
+        }
+        instance.onHudRender(null, client.getDeltaTracker());
+    }
+
     public void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
         try {
             Minecraft client = Minecraft.getInstance();
@@ -559,21 +607,39 @@ public class BPViewerUtility {
 
             
             // Get floor data and render blueprints
+            boolean kitFilter = isKitFilterEffective();
+            syncKitFilterPage(kitFilter);
             String activeFloor = getActiveFloor();
             if (!java.util.Objects.equals(activeFloor, lastDebugFloor)) {
                 lastDebugFloor = activeFloor;
             }
-            if (activeFloor == null) {
+            if (activeFloor == null && !kitFilter) {
                 return;
             }
-            BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
-            
-            if (floorData != null && floorData.blueprints != null && floorData.blueprints.containsKey(currentRarity)) {
-                BlueprintConfig.RarityData rarityData = floorData.blueprints.get(currentRarity);
-                
-                // Calculate dynamic size - 15px smaller from right
-                int dynamicWidth = calculateRequiredWidth(rarityData.items) - 15;
-                int dynamicHeight = calculateRequiredHeight(rarityData.items);
+            List<String> plainItems = null;
+            List<BlueprintKitFilter.Entry> kitRows = null;
+            int dynamicWidth;
+            int dynamicHeight;
+            if (kitFilter) {
+                kitRows = filteredEntries(activeFloor);
+                dynamicWidth = filteredContentWidth(kitRows) - 15;
+                dynamicHeight = filteredContentHeight(kitRows);
+            } else {
+                BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
+                if (floorData == null || floorData.blueprints == null || !floorData.blueprints.containsKey(currentRarity)) {
+                    if (context != null && !net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+                        context.text(client.font, "No data for floor: " + activeFloor, x + 10, y + 30, 0xFFFF0000, false);
+                        context.text(client.font, "Rarity: " + currentRarity, x + 10, y + 45, 0xFFFFFF00, false);
+                        if (floorData != null && floorData.blueprints != null) {
+                            context.text(client.font, "Available: " + floorData.blueprints.keySet(), x + 10, y + 60, 0xFFFFFF00, false);
+                        }
+                    }
+                    return;
+                }
+                plainItems = floorData.blueprints.get(currentRarity).items;
+                dynamicWidth = calculateRequiredWidth(plainItems) - 15;
+                dynamicHeight = calculateRequiredHeight(plainItems);
+            }
                 
                 // Determine if overlay is on left or right side of screen
                 int baseX = screenWidth - HUD_WIDTH - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
@@ -591,15 +657,23 @@ public class BPViewerUtility {
                     dynamicX = screenWidth - dynamicWidth - CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerX;
                 }
                 
-                // Verwende Matrix-Transformationen für das gesamte Overlay
-                Matrix3x2fStack matrices = context.pose();
-                matrices.pushMatrix();
-                
                 // Skaliere basierend auf der Config
                 float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
                 if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+                net.felix.utilities.DragOverlay.dock.OverlayDockRect blueprintDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                        net.felix.utilities.DragOverlay.dock.OverlayDockIds.BLUEPRINT,
+                        dynamicX, y, Math.round(dynamicWidth * scale), Math.round(dynamicHeight * scale));
+                if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+                    return;
+                }
+                dynamicX = blueprintDock.x();
+                y = blueprintDock.y();
+                scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                        net.felix.utilities.DragOverlay.dock.OverlayDockIds.BLUEPRINT, scale);
                 
                 // Übersetze zur Position und skaliere von dort aus
+                Matrix3x2fStack matrices = context.pose();
+                matrices.pushMatrix();
                 matrices.translate(dynamicX, y);
                 matrices.scale(scale, scale);
                 
@@ -631,15 +705,11 @@ public class BPViewerUtility {
                 }
                 
                 // Render title and blueprint list together in the scaled area
-                renderTitleAndBlueprintList(context, dynamicX + 10, y + 2, rarityData.items, rarityData.color, dynamicWidth);
-            } else {
-                // Show error message if no data found
-                context.text(client.font, "No data for floor: " + activeFloor, x + 10, y + 30, 0xFFFF0000, false);
-                context.text(client.font, "Rarity: " + currentRarity, x + 10, y + 45, 0xFFFFFF00, false);
-                if (floorData != null && floorData.blueprints != null) {
-                    context.text(client.font, "Available: " + floorData.blueprints.keySet(), x + 10, y + 60, 0xFFFFFF00, false);
+                if (kitFilter) {
+                    renderFilteredTitleAndList(context, dynamicX + 10, y + 2, kitRows, dynamicWidth);
+                } else {
+                    renderTitleAndBlueprintList(context, dynamicX + 10, y + 2, plainItems, null, dynamicWidth);
                 }
-            }
             
         } catch (Exception e) {
             // Silent error handling
@@ -766,16 +836,7 @@ public class BPViewerUtility {
         int titleX = -9 + (overlayWidth - textWidth) / 2;
         
         // Get the appropriate color for the rarity - using bright colors
-        int titleColor;
-        switch (currentRarity.toLowerCase()) {
-            case "common": titleColor = 0xFFFFFFFF; break;      // Bright white
-            case "uncommon": titleColor = 0xFF00FF00; break;    // Bright green
-            case "rare": titleColor = 0xFF0000FF; break;        // Bright blue
-            case "epic": titleColor = 0xFFFF00FF; break;        // Bright magenta
-            case "legendary": titleColor = 0xFFFFFF00; break;   // Bright yellow
-            default: titleColor = 0xFFFFFFFF; break;            // Bright white as default
-        }
-        context.text(client.font, rarityDisplay, titleX, 5, titleColor, true);
+        context.text(client.font, rarityDisplay, titleX, 5, rarityTitleColor(currentRarity), true);
         
         // Render blueprint list - start below the title (moved 3 pixels up)
         int blueprintY = 17; // Start below the title
@@ -836,6 +897,315 @@ public class BPViewerUtility {
         
         // Matrix-Transformationen wiederherstellen
         matrices.popMatrix();
+    }
+
+    private boolean isKitFilterEffective() {
+        try {
+            CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
+            if (config == null || !config.blueprintViewerKitFilterEnabled || !KitEditorMode.kitFilterActive) {
+                return false;
+            }
+            return KitFilterUtility.getKitSelection(KitEditorMode.KIT_BUTTON_INDEX) != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void syncKitFilterPage(boolean effective) {
+        currentRarity = BlueprintKitFilter.pageAfter(kitFilterWasEffective, effective, currentRarity);
+        kitFilterWasEffective = effective;
+    }
+
+    private String kitFilterTitle() {
+        try {
+            KitFilterUtility.KitSelection selection = KitFilterUtility.getKitSelection(KitEditorMode.KIT_BUTTON_INDEX);
+            if (selection == null) {
+                return "Kit";
+            }
+            String name = selection.getDisplayName();
+            return name == null || name.isEmpty() ? "Kit" : name;
+        } catch (Exception e) {
+            return "Kit";
+        }
+    }
+
+    private List<BlueprintKitFilter.CatalogItem> catalogItems() {
+        if (indexedGeneration == catalogGeneration) {
+            return catalogItems;
+        }
+        List<BlueprintKitFilter.CatalogItem> items = new ArrayList<>();
+        for (Map.Entry<String, BlueprintConfig.FloorData> floorEntry : config.floors.entrySet()) {
+            BlueprintConfig.FloorData floor = floorEntry.getValue();
+            if (floor == null || floor.blueprints == null) {
+                continue;
+            }
+            for (Map.Entry<String, BlueprintConfig.RarityData> rarityEntry : floor.blueprints.entrySet()) {
+                if (rarityEntry.getValue() == null || rarityEntry.getValue().items == null) {
+                    continue;
+                }
+                for (String name : rarityEntry.getValue().items) {
+                    items.add(new BlueprintKitFilter.CatalogItem(floorEntry.getKey(), rarityEntry.getKey(), name));
+                }
+            }
+        }
+        catalogItems = List.copyOf(items);
+        indexedGeneration = catalogGeneration;
+        return catalogItems;
+    }
+
+    private List<BlueprintKitFilter.KitPart> currentKitParts() {
+        List<BlueprintKitFilter.KitPart> parts = new ArrayList<>();
+        KitFilterUtility.KitSelection selection = KitFilterUtility.getKitSelection(KitEditorMode.KIT_BUTTON_INDEX);
+        for (KitFilterUtility.ItemInfo info : KitFilterUtility.getKitItemInfosForSelection(selection)) {
+            if (info == null || info.name == null || info.name.isEmpty()) {
+                continue;
+            }
+            String lookup = KitTooltipHelper.blueprintLookupName(info.name);
+            String name = lookup == null || lookup.isEmpty() ? info.name : lookup;
+            parts.add(new BlueprintKitFilter.KitPart(name, info.nameColorString));
+        }
+        return parts;
+    }
+
+    private String kitPageCacheKey(List<BlueprintKitFilter.KitPart> parts) {
+        KitFilterUtility.KitSelection selection = KitFilterUtility.getKitSelection(KitEditorMode.KIT_BUTTON_INDEX);
+        String selectionId = "";
+        String extra = "";
+        if (selection != null) {
+            if (selection.isCustom()) {
+                selectionId = "custom|" + selection.customKitId;
+                CustomKit kit = CustomKitManager.getKit(selection.customKitId);
+                if (kit != null) {
+                    extra = KitFilterUtility.getCustomKitItemCacheKey(kit);
+                }
+            } else {
+                selectionId = selection.kitType + "|" + selection.level + "|" + selection.neuKit;
+            }
+        }
+        return BlueprintKitFilter.listKey(
+                selectionId,
+                kitFilterTitle(),
+                extra,
+                BlueprintKitFilter.contentSignature(parts),
+                catalogGeneration);
+    }
+
+    private List<BlueprintKitFilter.Entry> kitPageEntries(List<BlueprintKitFilter.KitPart> parts) {
+        String key = kitPageCacheKey(parts);
+        if (!key.equals(kitPageKey)) {
+            kitPageKey = key;
+            kitPageEntries = BlueprintKitFilter.kitPage(catalogItems(), parts);
+        }
+        return kitPageEntries;
+    }
+
+    private List<BlueprintKitFilter.Entry> filteredEntries(String activeFloor) {
+        List<BlueprintKitFilter.KitPart> parts = currentKitParts();
+        if (BlueprintKitFilter.PAGE.equals(currentRarity)) {
+            return kitPageEntries(parts);
+        }
+        return BlueprintKitFilter.rarityPage(catalogItems(), parts, activeFloor, currentRarity);
+    }
+
+    private boolean entryFound(BlueprintKitFilter.Entry entry) {
+        return BlueprintKitFilter.isFound(entry.name(), entry.rarity(), this::isBlueprintFoundExact);
+    }
+
+    private int filteredVisibleCount(List<BlueprintKitFilter.Entry> entries) {
+        int notFound = 0;
+        for (BlueprintKitFilter.Entry entry : entries) {
+            if (!entryFound(entry)) {
+                notFound++;
+            }
+        }
+        return BlueprintKitFilter.filteredVisibleRows(
+                entries.size(),
+                notFound,
+                CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode);
+    }
+
+    private int filteredContentWidth(List<BlueprintKitFilter.Entry> entries) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null) {
+            return HUD_WIDTH;
+        }
+        boolean kitPage = BlueprintKitFilter.PAGE.equals(currentRarity);
+        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
+        List<Integer> rowWidths = new ArrayList<>();
+        int notFound = 0;
+        for (BlueprintKitFilter.Entry entry : entries) {
+            boolean found = entryFound(entry);
+            if (!found) {
+                notFound++;
+            }
+            if (missingMode && found) {
+                continue;
+            }
+            rowWidths.add(client.font.width(entry.label()));
+        }
+        String placeholder = BlueprintKitFilter.placeholder(entries.size(), notFound, missingMode);
+        if (placeholder != null) {
+            rowWidths.add(client.font.width(placeholder));
+        }
+        String title = kitPage ? kitFilterTitle() : currentRarity.toUpperCase();
+        return BlueprintKitFilter.contentWidth(HUD_WIDTH, 45, kitPage, client.font.width(title), rowWidths);
+    }
+
+    private int filteredContentHeight(List<BlueprintKitFilter.Entry> entries) {
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+        return heightForVisibleRows(filteredVisibleCount(entries), scale);
+    }
+
+    public int layoutUnscaledWidth() {
+        if (isKitFilterEffective()) {
+            return filteredContentWidth(filteredEntries(getActiveFloor())) - 15;
+        }
+        List<String> items = unfilteredItems();
+        if (items == null) {
+            return HUD_WIDTH;
+        }
+        return calculateRequiredWidth(items) - 15;
+    }
+
+    public int layoutUnscaledHeight() {
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+        if (scale <= 0) {
+            scale = 1.0f;
+        }
+        if (isKitFilterEffective()) {
+            return heightForVisibleRows(filteredVisibleCount(filteredEntries(getActiveFloor())), scale);
+        }
+        List<String> items = unfilteredItems();
+        if (items == null) {
+            return 100;
+        }
+        return heightForVisibleRows(countVisibleRows(items), scale);
+    }
+
+    public String layoutTitle() {
+        if (isKitFilterEffective() && BlueprintKitFilter.PAGE.equals(currentRarity)) {
+            return kitFilterTitle();
+        }
+        return currentRarity.toUpperCase();
+    }
+
+    public int layoutTitleColor() {
+        if (isKitFilterEffective() && BlueprintKitFilter.PAGE.equals(currentRarity)) {
+            return BlueprintKitFilter.TITLE_AQUA;
+        }
+        return rarityTitleColor(currentRarity);
+    }
+
+    public List<String> layoutPreviewLabels() {
+        if (isKitFilterEffective()) {
+            return visibleLabels(filteredEntries(getActiveFloor()));
+        }
+        List<String> items = unfilteredItems();
+        if (items == null) {
+            return null;
+        }
+        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
+        List<String> visible = new ArrayList<>();
+        for (String item : items) {
+            if (missingMode && isListedBlueprintFound(item)) {
+                continue;
+            }
+            visible.add(item.startsWith("- ") ? item.substring(2) : item);
+        }
+        if (missingMode && !items.isEmpty() && visible.isEmpty()) {
+            visible.add("Alle gefunden");
+        }
+        return visible;
+    }
+
+    private List<String> visibleLabels(List<BlueprintKitFilter.Entry> entries) {
+        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
+        List<String> visible = new ArrayList<>();
+        int notFound = 0;
+        for (BlueprintKitFilter.Entry entry : entries) {
+            boolean found = entryFound(entry);
+            if (!found) {
+                notFound++;
+            }
+            if (missingMode && found) {
+                continue;
+            }
+            visible.add(entry.label());
+        }
+        String placeholder = BlueprintKitFilter.placeholder(entries.size(), notFound, missingMode);
+        if (placeholder != null) {
+            visible.add(placeholder);
+        }
+        return visible;
+    }
+
+    private List<String> unfilteredItems() {
+        String activeFloor = getActiveFloor();
+        if (activeFloor == null) {
+            return null;
+        }
+        BlueprintConfig.FloorData floorData = config.getFloorData(activeFloor);
+        if (floorData == null || floorData.blueprints == null) {
+            return null;
+        }
+        BlueprintConfig.RarityData rarityData = floorData.blueprints.get(currentRarity);
+        if (rarityData == null || rarityData.items == null) {
+            return null;
+        }
+        return rarityData.items;
+    }
+
+    private void renderFilteredTitleAndList(GuiGraphicsExtractor context, int x, int y, List<BlueprintKitFilter.Entry> entries, int overlayWidth) {
+        Minecraft client = Minecraft.getInstance();
+        if (client == null || context == null) {
+            return;
+        }
+        Matrix3x2fStack matrices = context.pose();
+        matrices.pushMatrix();
+        float scale = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerScale;
+        if (scale <= 0) {
+            scale = 1.0f;
+        }
+        matrices.translate(x, y);
+        matrices.scale(scale, scale);
+
+        boolean kitPage = BlueprintKitFilter.PAGE.equals(currentRarity);
+        String title = kitPage ? kitFilterTitle() : currentRarity.toUpperCase();
+        int titleColor = kitPage ? BlueprintKitFilter.TITLE_AQUA : rarityTitleColor(currentRarity);
+        int titleX = -9 + (overlayWidth - client.font.width(title)) / 2;
+        context.text(client.font, title, titleX, 5, titleColor, true);
+
+        boolean missingMode = CCLiveUtilitiesConfig.HANDLER.instance().blueprintViewerMissingMode;
+        int blueprintY = 17;
+        int notFound = 0;
+        for (BlueprintKitFilter.Entry entry : entries) {
+            boolean isFound = entryFound(entry);
+            if (!isFound) {
+                notFound++;
+            }
+            if (missingMode && isFound) {
+                continue;
+            }
+            int textColor = BlueprintKitFilter.nameColor(entry.rarity(), isFound, true);
+            context.text(client.font, entry.label(), 5, blueprintY, textColor, true);
+            blueprintY += 12;
+        }
+        String placeholder = BlueprintKitFilter.placeholder(entries.size(), notFound, missingMode);
+        if (placeholder != null) {
+            context.text(client.font, placeholder, 5, blueprintY, 0xFFFFFFFF, true);
+        }
+        matrices.popMatrix();
+    }
+
+    private static int rarityTitleColor(String rarity) {
+        return switch (rarity == null ? "" : rarity.toLowerCase(java.util.Locale.ROOT)) {
+            case "common" -> 0xFFFFFFFF;
+            case "uncommon" -> 0xFF00FF00;
+            case "rare" -> BlueprintKitFilter.FOUND_RARE;
+            case "epic" -> 0xFFFF00FF;
+            case "legendary" -> 0xFFFFFF00;
+            default -> 0xFFFFFFFF;
+        };
     }
     
     
@@ -1280,26 +1650,11 @@ public class BPViewerUtility {
     }
     
     private void nextRarity() {
-        int currentIndex = getCurrentRarityIndex();
-        if (currentIndex < RARITY_ORDER.length - 1) {
-            currentRarity = RARITY_ORDER[currentIndex + 1];
-        }
+        currentRarity = BlueprintKitFilter.step(currentRarity, isKitFilterEffective(), 1);
     }
     
     private void previousRarity() {
-        int currentIndex = getCurrentRarityIndex();
-        if (currentIndex > 0) {
-            currentRarity = RARITY_ORDER[currentIndex - 1];
-        }
-    }
-    
-    private int getCurrentRarityIndex() {
-        for (int i = 0; i < RARITY_ORDER.length; i++) {
-            if (RARITY_ORDER[i].equals(currentRarity)) {
-                return i;
-            }
-        }
-        return 0;
+        currentRarity = BlueprintKitFilter.step(currentRarity, isKitFilterEffective(), -1);
     }
     
     public static void toggleVisibility() {
@@ -1656,6 +2011,9 @@ public class BPViewerUtility {
             // Fallback to hardcoded config
             initializeFallbackFloors();
         }
+        catalogGeneration++;
+        indexedGeneration = -1;
+        kitPageKey = "";
     }
     
     private void initializeFallbackFloors() {

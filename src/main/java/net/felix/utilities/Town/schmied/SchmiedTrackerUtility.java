@@ -193,7 +193,9 @@ public class SchmiedTrackerUtility {
 			framesKeyMigrationChecked = true;
 			applyFramesKeyMigration();
 		}
-		if (toggleFramesKeyMapping != null && toggleFramesKeyMapping.consumeClick()) {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleFramesKeyMapping);
+		} else if (toggleFramesKeyMapping != null && toggleFramesKeyMapping.consumeClick()) {
 			if (!editorBarOwnsThisKey()) {
 				framesVisible = !framesVisible;
 			}
@@ -1093,6 +1095,9 @@ public class SchmiedTrackerUtility {
 	 * @return true if the key was handled
 	 */
 	public static boolean handleKeyPress(int keyCode) {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			return false;
+		}
 		try {
 			// Check if F7 is pressed (default key for toggling frames)
 			// Note: This checks the default key, not the configured key binding

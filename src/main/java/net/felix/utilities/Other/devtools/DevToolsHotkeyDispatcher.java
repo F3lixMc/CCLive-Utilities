@@ -79,6 +79,9 @@ public final class DevToolsHotkeyDispatcher {
      * Screen-Hook (Inventar o. ä.). Gibt true zurück wenn der Druck verarbeitet wurde.
      */
     public static boolean handleScreenKeyPress(int keyCode, int scanCode, int modifiers) {
+        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+            return false;
+        }
         if (!DevToolsAccess.isAllowed()) {
             return false;
         }
@@ -100,6 +103,9 @@ public final class DevToolsHotkeyDispatcher {
     }
 
     private static void onClientTick(Minecraft client) {
+        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+            return;
+        }
         if (!DevToolsAccess.isAllowed() || client == null || client.getWindow() == null) {
             handledWhileDown.clear();
             return;

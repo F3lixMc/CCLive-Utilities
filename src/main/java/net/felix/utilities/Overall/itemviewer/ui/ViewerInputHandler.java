@@ -485,6 +485,7 @@ public final class ViewerInputHandler {
                     net.felix.utilities.Town.kits.filter.KitFilterUtility.getKitSelection(KIT_BUTTON_INDEX);
             if (kitSelection != null) {
                 kitFilterActive = !kitFilterActive;
+                net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility.notifyKitFilterChanged();
                 ViewerLayout.invalidateViewerPositionCache();
                 applyFilters(); // Aktualisiere Filter
             } else {

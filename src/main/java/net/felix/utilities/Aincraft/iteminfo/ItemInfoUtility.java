@@ -135,13 +135,15 @@ public class ItemInfoUtility {
 	}
 	
 	private static void onClientTick(Minecraft client) {
-		// Check hotkey even when inventory is open (backup check)
-		if (extractKeyMapping != null && extractKeyMapping.consumeClick()) {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(extractKeyMapping);
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(autoClickKeyMapping);
+		} else if (extractKeyMapping != null && extractKeyMapping.consumeClick()) {
 			extractItemInfo(client);
 		}
 		
 		// Check auto-click hotkey
-		if (autoClickKeyMapping != null && autoClickKeyMapping.consumeClick()) {
+		else if (autoClickKeyMapping != null && autoClickKeyMapping.consumeClick()) {
 			autoRightClickUnregisteredItems(client);
 		}
 		
@@ -188,6 +190,9 @@ public class ItemInfoUtility {
 	 * Called from SearchBarInputMixin
 	 */
 	public static boolean handleKeyPress(int keyCode) {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			return false;
+		}
 		if (extractKeyMapping == null) {
 			return false;
 		}
@@ -216,6 +221,9 @@ public class ItemInfoUtility {
 	 * @param screenY Y position of the screen (from mixin)
 	 */
 	public static boolean handleAutoClickKeyPress(int keyCode, int screenX, int screenY) {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			return false;
+		}
 		if (autoClickKeyMapping == null) {
 			return false;
 		}

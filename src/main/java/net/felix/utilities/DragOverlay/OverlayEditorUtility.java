@@ -3,6 +3,8 @@ package net.felix.utilities.DragOverlay;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.resources.Identifier;
 import net.felix.utilities.Other.keybinding.KeyCategories;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -31,6 +33,16 @@ public class OverlayEditorUtility {
             
             // Register client tick events
             ClientTickEvents.END_CLIENT_TICK.register(OverlayEditorUtility::onClientTick);
+            ClientTickEvents.START_CLIENT_TICK.register(client -> net.felix.utilities.DragOverlay.dock.OverlayDockLayout.expireUnseen());
+            HudElementRegistry.addFirst(
+                    Identifier.fromNamespaceAndPath("cclive-utilities", "overlay_layout"),
+                    (context, tickCounter) -> {
+                        if (net.felix.utilities.Other.hud.HudOverlayVisibility.shouldRenderWorldHudOverlays()) {
+                            net.felix.utilities.DragOverlay.dock.OverlayDockLayout.prepareFrame();
+                        }
+                    });
+            net.felix.utilities.DragOverlay.dock.OverlayDockBindings.register();
+            net.felix.utilities.DragOverlay.dock.OverlayDockLayout.initialize();
             
             isInitialized = true;
         } catch (Exception e) {
@@ -72,6 +84,12 @@ public class OverlayEditorUtility {
         }
         
         // Use the registered KeyMapping instead of hardcoded key detection
+        net.felix.utilities.DragOverlay.DetailKeybindActions.tick();
+        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(overlayEditorKeyMapping);
+            net.felix.utilities.DragOverlay.ModHotkeyGate.discard(editorBarKeyMapping);
+            return;
+        }
         if (overlayEditorKeyMapping != null && overlayEditorKeyMapping.consumeClick()) {
             // Overlay Editor is always enabled
                 toggleOverlayEditor();
@@ -118,6 +136,10 @@ public class OverlayEditorUtility {
     public static void setOverlayEditorOpen(boolean open) {
         isOverlayEditorOpen = open;
     }
+
+    public static boolean isOverlayEditorOpen() {
+        return isOverlayEditorOpen;
+    }
     
     /**
      * Get the overlay editor key binding (for use in screens)
@@ -133,6 +155,9 @@ public class OverlayEditorUtility {
      * @return true if the key was handled
      */
     public static boolean handleKeyPress(int keyCode) {
+        if (DetailKeybindCapture.blocksModHotkeys()) {
+            return false;
+        }
         try {
             // Check if the pressed key matches the configured key binding
             // This ensures the same key works in inventories as outside

@@ -53,6 +53,32 @@ public final class MkLevelOverlayRenderer {
 	/**
 	 * Renders MkLevel overlay
 	 */
+	public static void contributeLayout(Minecraft client, net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen) {
+		if (client == null || screen == null) {
+			return;
+		}
+		int inventoryWidth = 176;
+		int inventoryHeight = mkLevelLastKnownHeight > 0 ? mkLevelLastKnownHeight : 166;
+		int inventoryX = (client.getWindow().getGuiScaledWidth() - inventoryWidth) / 2;
+		int inventoryY = (client.getWindow().getGuiScaledHeight() - inventoryHeight) / 2;
+		try {
+			java.lang.reflect.Field xField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("leftPos");
+			java.lang.reflect.Field yField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("topPos");
+			java.lang.reflect.Field bgWidthField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageWidth");
+			java.lang.reflect.Field bgHeightField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("imageHeight");
+			xField.setAccessible(true);
+			yField.setAccessible(true);
+			bgWidthField.setAccessible(true);
+			bgHeightField.setAccessible(true);
+			inventoryX = xField.getInt(screen);
+			inventoryY = yField.getInt(screen);
+			inventoryWidth = bgWidthField.getInt(screen);
+			inventoryHeight = bgHeightField.getInt(screen);
+		} catch (ReflectiveOperationException ignored) {
+		}
+		renderMkLevelOverlay(null, client, inventoryX, inventoryY, inventoryWidth, inventoryHeight);
+	}
+
 	public static void renderMkLevelOverlay(GuiGraphicsExtractor context, Minecraft client, int inventoryX, int inventoryY, int inventoryWidth, int inventoryHeight) {
 		if (client == null || client.getWindow() == null || !isInMkLevelInventory) {
 			return;
@@ -98,6 +124,16 @@ public final class MkLevelOverlayRenderer {
 		// Y-Position: Wenn yOffset -1 ist (Standard), verwende die Inventar-Y-Position
 		// Ansonsten verwende die absolute Y-Position aus der Config
 		int overlayY = (yOffset == -1) ? inventoryY : yOffset;
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect mkDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MK_LEVEL,
+				overlayX, overlayY, overlayWidth, Math.round(unscaledHeight * scale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring() || context == null) {
+			return;
+		}
+		overlayX = mkDock.x();
+		overlayY = mkDock.y();
+		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MK_LEVEL, scale);
 		
 		// Button height (unscaled)
 		int buttonHeight = 20;

@@ -65,17 +65,23 @@ public final class MainOverlayRenderer {
 		int screenWidth = client.getWindow().getGuiScaledWidth();
 		int posX = OverlayLayout.computeOverlayX(config.npcAlertsMainOverlayX, overlayWidth, screenWidth);
 		int posY = config.npcAlertsMainOverlayY;
-
-		if (config.npcAlertsMainOverlayShowBackground) {
-			context.fill(posX, posY, posX + overlayWidth, posY + overlayHeight, 0x80000000);
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect npcDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.NPC_MAIN, posX, posY, overlayWidth, overlayHeight);
+		if (!net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			posX = npcDock.x();
+			posY = npcDock.y();
+			scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+					net.felix.utilities.DragOverlay.dock.OverlayDockIds.NPC_MAIN, scale);
+			if (config.npcAlertsMainOverlayShowBackground) {
+				context.fill(posX, posY, posX + npcDock.w(), posY + npcDock.h(), 0x80000000);
+			}
+			Matrix3x2fStack matrices = context.pose();
+			matrices.pushMatrix();
+			matrices.translate(posX, posY);
+			matrices.scale(scale, scale);
+			drawLines(context, client, lines, actualLineHeight, unscaledHeight);
+			matrices.popMatrix();
 		}
-
-		Matrix3x2fStack matrices = context.pose();
-		matrices.pushMatrix();
-		matrices.translate(posX, posY);
-		matrices.scale(scale, scale);
-		drawLines(context, client, lines, actualLineHeight, unscaledHeight);
-		matrices.popMatrix();
 
 		// Separate Overlays für Informationen, die diese Option aktiviert haben
 		renderSeparateOverlays(context, client);

@@ -597,13 +597,21 @@ public final class EssenceFarmTracker {
 
 	public static void render(GuiGraphicsExtractor context) {
 		Minecraft client = Minecraft.getInstance();
-		if (client == null || client.font == null || context == null) {
+		if (client == null || client.font == null) {
 			return;
 		}
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect essenceDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.ESSENCE,
+				x(), y(), Math.round(cachedWidth * scale()), Math.round(cachedHeight * scale()));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring() || context == null) {
+			return;
+		}
+		float drawScale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.ESSENCE, scale());
 		Matrix3x2fStack matrices = context.pose();
 		matrices.pushMatrix();
-		matrices.translate(x(), y());
-		matrices.scale(scale(), scale());
+		matrices.translate(essenceDock.x(), essenceDock.y());
+		matrices.scale(drawScale, drawScale);
 		if (CCLiveUtilitiesConfig.HANDLER.instance().essenceFarmShowBackground) {
 			context.fill(0, 0, cachedWidth, cachedHeight, 0x80000000);
 		}
@@ -620,11 +628,18 @@ public final class EssenceFarmTracker {
 		return config.essenceFarmEnabled && config.showEssenceFarm;
 	}
 
+	public static void contributeLayout(Minecraft client) {
+		if (client == null) {
+			return;
+		}
+		onHudRender(null, client.getDeltaTracker());
+	}
+
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		hudCalls++;
 		try {
 			Minecraft client = Minecraft.getInstance();
-			if (client == null || context == null) {
+			if (client == null) {
 				hudSkipReason = "kein Client";
 				return;
 			}

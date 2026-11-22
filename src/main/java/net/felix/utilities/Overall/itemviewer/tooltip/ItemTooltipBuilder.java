@@ -470,12 +470,55 @@ public final class ItemTooltipBuilder {
     }
 
     public static void renderItemTooltip(GuiGraphicsExtractor context, ItemData itemData, int mouseX, int mouseY) {
-        java.util.List<Component> lines = buildTooltipLinesForItem(itemData);
-        if (lines.isEmpty()) {
+        show(context, buildTooltipLinesForItem(itemData), mouseX, mouseY);
+    }
+
+    /**
+     * Zeigt die fertigen Item-Viewer-Zeilen. Passt die Box, bleibt der Vanilla-Tooltip.
+     * Ist sie größer als der Bildschirm abzüglich fünf Pixel, wird sie gleichmäßig verkleinert.
+     */
+    public static void show(GuiGraphicsExtractor context, List<Component> lines, int mouseX, int mouseY) {
+        if (context == null || lines == null || lines.isEmpty()) {
+            return;
+        }
+        if (net.felix.utilities.Overall.itemviewer.ui.FilterOverlayControls.isOverlayOpen()) {
             return;
         }
         Minecraft client = Minecraft.getInstance();
-        context.setComponentTooltipForNextFrame(client.font, lines, mouseX, mouseY);
+        if (client == null || client.font == null || client.getWindow() == null) {
+            return;
+        }
+        List<net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent> components =
+                new ArrayList<>(lines.size());
+        for (Component line : lines) {
+            if (line == null) {
+                continue;
+            }
+            components.add(net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent.create(
+                    line.getVisualOrderText()));
+        }
+        if (components.isEmpty()) {
+            return;
+        }
+        int contentWidth = 0;
+        int contentHeight = 0;
+        for (net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent component : components) {
+            contentWidth = Math.max(contentWidth, component.getWidth(client.font));
+            contentHeight += component.getHeight(client.font);
+        }
+        ItemTooltipFit.Placement placement = ItemTooltipFit.place(
+                contentWidth,
+                contentHeight,
+                client.getWindow().getGuiScaledWidth(),
+                client.getWindow().getGuiScaledHeight(),
+                mouseX,
+                mouseY,
+                client.getWindow().getGuiScale());
+        if (placement.vanilla()) {
+            context.setComponentTooltipForNextFrame(client.font, lines, mouseX, mouseY);
+            return;
+        }
+        ItemTooltipPresenter.schedule(components, placement);
     }
 
     public static void updateAspectOverlayForItem(ItemData itemData) {

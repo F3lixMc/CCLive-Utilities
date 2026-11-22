@@ -23,13 +23,28 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getX() {
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.COLLECTION;
+    }
+
+    @Override
+    public int undockedX() {
         return CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayX;
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayY;
+    }
+
+    @Override
+    public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+    
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
     }
     
     @Override
@@ -102,12 +117,11 @@ public class CollectionDraggableOverlay implements DraggableOverlay {
         int y = getY();
         
         // Get scale
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayScale;
-        if (scale <= 0) scale = 1.0f;
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayScale);
         
-        // Calculate scaled dimensions
-        int scaledWidth = (int) (unscaledWidth * scale);
-        int scaledHeight = (int) (unscaledHeight * scale);
+        int scaledWidth = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int scaledHeight = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Render border for edit mode (unscaled, so it's always visible)
         context.outline(x, y, scaledWidth, scaledHeight, 0xFFFF0000);
@@ -218,6 +232,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().showCollectionOverlay;
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayX = 10;
         CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayY = 10;
         CCLiveUtilitiesConfig.HANDLER.instance().collectionOverlayScale = 1.0f;

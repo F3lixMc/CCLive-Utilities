@@ -20,12 +20,27 @@ public class StarAspectDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.STAR_ASPECT;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         return CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayX;
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayY;
     }
     
@@ -49,8 +64,8 @@ public class StarAspectDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Render background if enabled
         if (CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayShowBackground) {
@@ -109,6 +124,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().aspectOverlayEnabled &&
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayX = 7;
         CCLiveUtilitiesConfig.HANDLER.instance().starAspectOverlayY = 15;
     }

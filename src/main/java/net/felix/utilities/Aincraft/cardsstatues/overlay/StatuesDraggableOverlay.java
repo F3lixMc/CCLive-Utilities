@@ -29,7 +29,22 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
@@ -41,7 +56,7 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
@@ -106,8 +121,8 @@ public class StatuesDraggableOverlay implements DraggableOverlay {
         int baseY = screenHeight - yOffset;
         
         // Get scale
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
-        if (scale <= 0) scale = 1.0f;
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale);
         
         // Use Matrix transformations for scaling (same as CardsStatuesUtility)
         Matrix3x2fStack matrices = context.pose();
@@ -190,6 +205,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().cardsStatuesEnabled &&
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().statueX = 151;
         CCLiveUtilitiesConfig.HANDLER.instance().statueY = 60;
         CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale = 1.0f;
