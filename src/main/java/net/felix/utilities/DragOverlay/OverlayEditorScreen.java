@@ -1138,6 +1138,9 @@ public class OverlayEditorScreen extends Screen {
             drawDockMark(context, snapOffer.dragIconX(), snapOffer.dragIconY(), 0xE036539E, 0xFFFFFFFF);
             drawDockMark(context, snapOffer.anchorIconX(), snapOffer.anchorIconY(), 0xE036539E, 0xFFFFFFFF);
         }
+        if (!OverlayDockStore.isMagnetEnabled()) {
+            return;
+        }
         for (OverlayDockLink link : OverlayDockStore.links()) {
             DraggableOverlay attached = overlayByDockId(link.attachedId);
             DraggableOverlay anchor = overlayByDockId(link.anchorId);
@@ -1201,6 +1204,7 @@ public class OverlayEditorScreen extends Screen {
 
     private void resetAllOverlays() {
         OverlayDockStore.clearAll();
+        OverlayDockLayout.invalidate();
         for (DraggableOverlay overlay : overlays) {
             if (overlay.isConfigEnabled()) {
                 overlay.resetToDefault();
@@ -1208,14 +1212,19 @@ public class OverlayEditorScreen extends Screen {
                 overlay.savePosition();
             }
         }
+        OverlayDockLayout.syncEditor(overlays, width, height);
     }
 
     private void clampOverlayToScreen(DraggableOverlay overlay) {
         int maxX = Math.max(0, width - overlay.getWidth());
         int maxY = Math.max(0, height - overlay.getHeight());
-        int clampedX = Math.max(0, Math.min(overlay.getX(), maxX));
-        int clampedY = Math.max(0, Math.min(overlay.getY(), maxY));
-        overlay.setPosition(clampedX, clampedY);
+        int x = overlay.undockedX();
+        int y = overlay.undockedY();
+        int clampedX = Math.max(0, Math.min(x, maxX));
+        int clampedY = Math.max(0, Math.min(y, maxY));
+        if (clampedX != x || clampedY != y) {
+            overlay.setPosition(clampedX, clampedY);
+        }
     }
     
     @Override
