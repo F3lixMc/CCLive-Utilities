@@ -62,72 +62,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         return price.Ressource != null ? price.Ressource : price.ressource;
     }
-    
-    private static void addPriceCostItemsToDisplayList(List<CostItemWithCategory> list, net.felix.utilities.Overall.itemviewer.data.PriceData price) {
-        if (price == null || list == null) {
-            return;
-        }
-        if (price.coin != null) list.add(new CostItemWithCategory(price.coin, 0));
-        if (price.material1 != null) list.add(new CostItemWithCategory(price.material1, 1));
-        if (price.material2 != null) list.add(new CostItemWithCategory(price.material2, 1));
-        if (price.material3 != null) list.add(new CostItemWithCategory(price.material3, 1));
-        if (price.material4 != null) list.add(new CostItemWithCategory(price.material4, 1));
-        if (price.material5 != null) list.add(new CostItemWithCategory(price.material5, 1));
-        CostItem ressource = resolveRessource(price);
-        if (ressource != null) list.add(new CostItemWithCategory(ressource, 3));
-        CostItem amboss = resolveAmboss(price);
-        if (amboss != null) list.add(new CostItemWithCategory(amboss, 2));
-    }
 
-    /**
-     * Wendet die Kostenanzeige-Filterung an (Ausblenden / Ans Ende setzen).
-     * Modus 1 entfernt fertige Items, Modus 2 sortiert sie ans Ende.
-     */
-    private static void filterCostItemsForDisplay(List<CostItemWithCategory> costItemsWithCategory, int quantity) {
-        if (costItemsWithCategory == null || costItemsWithCategory.isEmpty()) {
-            return;
-        }
-
-        boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
-        if (!costDisplayEnabled) {
-            return;
-        }
-
-        int costDisplayMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
-        if (costDisplayMode == 1) {
-            costItemsWithCategory.removeIf(item -> isCostItemComplete(item.costItem, quantity));
-        } else if (costDisplayMode == 2) {
-            List<CostItemWithCategory> notComplete = new ArrayList<>();
-            List<CostItemWithCategory> complete = new ArrayList<>();
-
-            for (CostItemWithCategory item : costItemsWithCategory) {
-                if (isCostItemComplete(item.costItem, quantity)) {
-                    complete.add(item);
-                } else {
-                    notComplete.add(item);
-                }
-            }
-
-            notComplete.sort((item1, item2) -> Integer.compare(costCategoryOrder(item1.category), costCategoryOrder(item2.category)));
-            complete.sort((item1, item2) -> Integer.compare(costCategoryOrder(item1.category), costCategoryOrder(item2.category)));
-
-            costItemsWithCategory.clear();
-            costItemsWithCategory.addAll(notComplete);
-            costItemsWithCategory.addAll(complete);
-        }
-    }
-
-    /** Anzeige: Coins, Materialien, Ressourcen, danach Amboss und Ofen. */
-    private static int costCategoryOrder(int category) {
-        return switch (category) {
-            case 0 -> 0;
-            case 1 -> 1;
-            case 3 -> 2;
-            case 2 -> 3;
-            default -> 4;
-        };
-    }
-    
     private static void addPriceCostItemsToTotal(Map<String, CostItemWithCategory> totalCostsMap, net.felix.utilities.Overall.itemviewer.data.PriceData price, int quantity) {
         if (price == null || totalCostsMap == null) {
             return;
@@ -210,7 +145,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         final int currentPage;
         final int displayQuantity;
         final List<PreparedCostLine> mainCostLines;
-        final List<PreparedCostLine> shopCostLines;
         final String statusMessage;
         final boolean scrollable;
         final boolean overflow;
@@ -230,7 +164,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             this.currentPage = currentPage;
             this.displayQuantity = displayQuantity;
             this.mainCostLines = mainCostLines;
-            this.shopCostLines = shopCostLines;
             this.statusMessage = statusMessage;
             this.scrollable = scrollable;
             this.overflow = overflow;
@@ -622,12 +555,10 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     private static final class PreparedEntry {
         final List<PreparedCostLine> normal;
         final List<PreparedCostLine> shop;
-        final boolean complete;
 
         PreparedEntry(List<PreparedCostLine> normal, List<PreparedCostLine> shop, boolean complete) {
             this.normal = normal;
             this.shop = shop;
-            this.complete = complete;
         }
     }
 
@@ -1766,31 +1697,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         }
         return sum;
     }
-    
-    private static void collectAmbossAndRessourceNames(List<ClipboardUtility.ClipboardEntry> entries,
-            Set<String> ambossNames, Set<String> ressourceNames) {
-        for (ClipboardUtility.ClipboardEntry entry : entries) {
-            if (entry.price == null) {
-                continue;
-            }
-            CostItem amboss = resolveAmboss(entry.price);
-            if (amboss != null && amboss.itemName != null) {
-                ambossNames.add(amboss.itemName);
-            }
-            CostItem ressource = resolveRessource(entry.price);
-            if (ressource != null && ressource.itemName != null) {
-                ressourceNames.add(ressource.itemName);
-            }
-        }
-    }
 
     private static final class TotalCostsBundle {
         final List<CostItemWithCategory> normal;
-        final List<CostItem> shop;
 
         TotalCostsBundle(List<CostItemWithCategory> normal, List<CostItem> shop) {
             this.normal = normal;
-            this.shop = shop;
         }
     }
 
@@ -2003,21 +1915,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         return lines;
     }
 
-    private static List<PreparedCostLine> prepareShopCostLines(Minecraft client, List<CostItem> items, int quantity) {
-        if (items == null || items.isEmpty()) {
-            return List.of();
-        }
-        List<PreparedCostLine> lines = new ArrayList<>(items.size());
-        for (CostItem item : items) {
-            int category = item != null && item.itemName != null && item.itemName.equalsIgnoreCase("Coins") ? 0 : 1;
-            PreparedCostLine line = prepareCostLine(client, item, quantity, category, true);
-            if (line != null) {
-                lines.add(line);
-            }
-        }
-        return lines;
-    }
-
     private static void drawPreparedCostLine(GuiGraphicsExtractor context, Minecraft client, PreparedCostLine line, int y,
             int unscaledWidth, boolean reserveScrollbar) {
         context.text(client.font, line.mainText, 5, y, line.mainColor, true);
@@ -2126,173 +2023,6 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
         return entry.quantity > 0 ? entry.quantity : 1;
     }
 
-    private static List<CostItem> categorizeTotalCostsMap(Map<String, CostItem> totalCostsMap,
-            Set<String> ambossNames, Set<String> ressourceNames, boolean forBlueprintShop, int filterQuantity) {
-        List<CostItem> result = new ArrayList<>();
-
-        for (Map.Entry<String, CostItem> entry : totalCostsMap.entrySet()) {
-            if (entry.getKey().equalsIgnoreCase("Coins")) {
-                result.add(entry.getValue());
-                break;
-            }
-        }
-
-        List<CostItem> materials = new ArrayList<>();
-        for (Map.Entry<String, CostItem> entry : totalCostsMap.entrySet()) {
-            String itemName = entry.getKey();
-            if (!itemName.equalsIgnoreCase("Coins")
-                    && !isAmbossOrRessource(itemName, ambossNames, ressourceNames)) {
-                materials.add(entry.getValue());
-            }
-        }
-        boolean materialSortEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortEnabled;
-        if (materialSortEnabled) {
-            boolean ascending = CCLiveUtilitiesConfig.HANDLER.instance().clipboardMaterialSortAscending;
-            materials.sort((item1, item2) -> {
-                MaterialFloorInfo info1 = MaterialDatabase.getMaterialFloorInfo(item1.itemName);
-                MaterialFloorInfo info2 = MaterialDatabase.getMaterialFloorInfo(item2.itemName);
-
-                int floor1 = (info1 != null) ? info1.floor : Integer.MAX_VALUE;
-                int floor2 = (info2 != null) ? info2.floor : Integer.MAX_VALUE;
-
-                if (ascending) {
-                    int floorCompare = Integer.compare(floor1, floor2);
-                    if (floorCompare != 0) {
-                        return floorCompare;
-                    }
-                } else {
-                    int floorCompare = Integer.compare(floor2, floor1);
-                    if (floorCompare != 0) {
-                        return floorCompare;
-                    }
-                }
-                return item1.itemName.compareTo(item2.itemName);
-            });
-        } else {
-            materials.sort(Comparator.comparing(item -> item.itemName));
-        }
-
-        List<CostItem> ambossItems = new ArrayList<>();
-        for (Map.Entry<String, CostItem> entry : totalCostsMap.entrySet()) {
-            CostItem item = entry.getValue();
-            if (item != null && ambossNames.contains(item.itemName)) {
-                ambossItems.add(item);
-            }
-        }
-        ambossItems.sort(Comparator.comparing(item -> item.itemName));
-
-        List<CostItem> ressourceItems = new ArrayList<>();
-        for (Map.Entry<String, CostItem> entry : totalCostsMap.entrySet()) {
-            CostItem item = entry.getValue();
-            if (item != null && ressourceNames.contains(item.itemName)) {
-                ressourceItems.add(item);
-            }
-        }
-        ressourceItems.sort(Comparator.comparing(item -> item.itemName));
-
-        if (!forBlueprintShop) {
-            boolean costDisplayEnabled = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayEnabled;
-            if (costDisplayEnabled) {
-                int costDisplayMode = CCLiveUtilitiesConfig.HANDLER.instance().clipboardCostDisplayMode;
-                int quantity = filterQuantity;
-
-                if (costDisplayMode == 1) {
-                    materials.removeIf(item -> isCostItemComplete(item, quantity));
-                    ambossItems.removeIf(item -> isCostItemComplete(item, quantity));
-                    ressourceItems.removeIf(item -> isCostItemComplete(item, quantity));
-                    result.addAll(materials);
-                    result.addAll(ressourceItems);
-                    result.addAll(ambossItems);
-                } else if (costDisplayMode == 2) {
-                    List<CostItem> materialsNotComplete = new ArrayList<>();
-                    List<CostItem> materialsComplete = new ArrayList<>();
-                    for (CostItem item : materials) {
-                        if (isCostItemComplete(item, quantity)) {
-                            materialsComplete.add(item);
-                        } else {
-                            materialsNotComplete.add(item);
-                        }
-                    }
-
-                    List<CostItem> ambossNotComplete = new ArrayList<>();
-                    List<CostItem> ambossComplete = new ArrayList<>();
-                    for (CostItem item : ambossItems) {
-                        if (isCostItemComplete(item, quantity)) {
-                            ambossComplete.add(item);
-                        } else {
-                            ambossNotComplete.add(item);
-                        }
-                    }
-
-                    List<CostItem> ressourceNotComplete = new ArrayList<>();
-                    List<CostItem> ressourceComplete = new ArrayList<>();
-                    for (CostItem item : ressourceItems) {
-                        if (isCostItemComplete(item, quantity)) {
-                            ressourceComplete.add(item);
-                        } else {
-                            ressourceNotComplete.add(item);
-                        }
-                    }
-
-                    result.addAll(materialsNotComplete);
-                    result.addAll(ressourceNotComplete);
-                    result.addAll(ambossNotComplete);
-                    result.addAll(materialsComplete);
-                    result.addAll(ressourceComplete);
-                    result.addAll(ambossComplete);
-                } else {
-                    result.addAll(materials);
-                    result.addAll(ressourceItems);
-                    result.addAll(ambossItems);
-                }
-            } else {
-                result.addAll(materials);
-                result.addAll(ressourceItems);
-                result.addAll(ambossItems);
-            }
-        } else {
-            result.addAll(materials);
-            result.addAll(ressourceItems);
-            result.addAll(ambossItems);
-        }
-
-        return result;
-    }
-    
-    private static boolean isAmbossOrRessource(String itemName, Set<String> ambossNames, Set<String> ressourceNames) {
-        return ambossNames.contains(itemName) || ressourceNames.contains(itemName);
-    }
-    
-    /**
-     * Fügt ein CostItem zu den Gesamtkosten hinzu (addiert bei gleichem itemName)
-     */
-    private static void addCostItemToTotal(Map<String, CostItem> totalCosts, CostItem costItem) {
-        if (costItem == null || costItem.itemName == null || costItem.amount == null) {
-            return;
-        }
-        
-        String itemName = costItem.itemName;
-        
-        // Verwende case-insensitive Vergleich für Coins
-        String keyToUse = itemName;
-        if (itemName.equalsIgnoreCase("Coins")) {
-            // Normalisiere zu "Coins" für konsistente Keys
-            keyToUse = "Coins";
-        }
-        
-        if (totalCosts.containsKey(keyToUse)) {
-            // Bereits vorhanden: addiere Amount
-            CostItem existing = totalCosts.get(keyToUse);
-            existing.amount = addAmounts(existing.amount, costItem.amount);
-        } else {
-            // Neu: erstelle Kopie
-            CostItem newItem = new CostItem();
-            newItem.itemName = keyToUse; // Verwende normalisierten Namen
-            newItem.amount = costItem.amount;
-            totalCosts.put(keyToUse, newItem);
-        }
-    }
-    
     @Override
     public void savePosition() {
         // Position is already saved in setPosition()

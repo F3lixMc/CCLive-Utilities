@@ -10,6 +10,7 @@ import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import net.felix.utilities.Aincraft.cointracker.CoinTrackerDisplayMode;
 import net.felix.utilities.Aincraft.materials.tracker.MaterialTrackerDisplayMode;
 import net.felix.utilities.DragOverlay.F6ButtonPlace;
@@ -2013,19 +2014,20 @@ public class CCLiveUtilitiesConfig {
     }
 
     private static OptionGroup buildF6MenuGroup() {
-        Option<Integer>[] transparency = new Option[1];
-        transparency[0] = Option.<Integer>createBuilder()
+        AtomicReference<Option<Integer>> transparency = new AtomicReference<>();
+        Option<Integer> option = Option.<Integer>createBuilder()
                 .name(net.felix.utilities.Overall.language.ModTexts.text("cclive.f6.transparency_option"))
                 .description(OptionDescription.createBuilder()
                         .text(net.felix.utilities.Overall.language.ModTexts.text("cclive.f6.transparency_description"))
-                        .customImage(new F6TransparencyPreview(() -> transparency[0].pendingValue()))
+                        .customImage(new F6TransparencyPreview(() -> transparency.get().pendingValue()))
                         .build())
                 .binding(87, () -> HANDLER.instance().f6MenuBackgroundTransparency, value -> HANDLER.instance().f6MenuBackgroundTransparency = value)
-                .controller(option -> IntegerSliderControllerBuilder.create(option).range(0, 100).step(1))
+                .controller(slider -> IntegerSliderControllerBuilder.create(slider).range(0, 100).step(1))
                 .build();
+        transparency.set(option);
         return OptionGroup.createBuilder()
                 .name(net.felix.utilities.Overall.language.ModTexts.text("cclive.f6.group"))
-                .option(transparency[0])
+                .option(option)
                 .build();
     }
 

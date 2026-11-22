@@ -748,7 +748,7 @@ public class CollectedMaterialsResourcesStorage {
     }
 
     /** Synchroner Prüfpfad für Tests. Eine fehlende Datei lässt die Bestände stehen. */
-    private static void refreshIfChanged() {
+    static void refreshIfChanged() {
         if (storageFile == null) {
             return;
         }

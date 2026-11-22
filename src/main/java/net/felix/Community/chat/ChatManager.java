@@ -120,27 +120,6 @@ public class ChatManager {
         });
     }
 
-    private void echoOwnMessage(String message, Long messageId, Long timestamp) {
-        Minecraft client = Minecraft.getInstance();
-        if (client == null || client.player == null) {
-            return;
-        }
-        JsonObject echo = new JsonObject();
-        echo.addProperty("player", client.player.getGameProfile().name());
-        echo.addProperty("message", message);
-        echo.addProperty("timestamp", timestamp != null ? timestamp : System.currentTimeMillis());
-        echo.addProperty("local_echo", true);
-        if (messageId != null) {
-            echo.addProperty("id", messageId);
-        }
-        int[] ownColors = ChatNameColorTracker.getInstance().getOwnNameColors();
-        if (ownColors.length > 0) {
-            echo.addProperty("name_color", ChatNameColors.toHex(ownColors[0]));
-            echo.add("name_colors", ChatNameColors.toJsonArray(ownColors));
-        }
-        onIncomingChatMessage(echo);
-    }
-
     private void onIncomingChatMessage(JsonObject msgObj) {
         if (!isEnabled || !showCCLiveChat) {
             return;
@@ -417,13 +396,6 @@ public class ChatManager {
         cfg.chatShowCCLive = showCCLiveChat;
         cfg.chatWriteMode = currentChatMode == ChatMode.CCLIVE ? "cclive" : "default";
         CCLiveUtilitiesConfig.HANDLER.save();
-    }
-
-    private static ChatMode parseWriteMode(String raw) {
-        if (raw != null && raw.equalsIgnoreCase("cclive")) {
-            return ChatMode.CCLIVE;
-        }
-        return ChatMode.DEFAULT;
     }
 
     /**

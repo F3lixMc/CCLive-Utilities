@@ -15,7 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.Identifier;
+
 
 /**
  * Utility zum Anzeigen von Player-Stats in Chat-Nachrichten-Hover-Events
@@ -299,7 +299,6 @@ public class PlayerHoverStatsUtility {
 
     // Glyphe als Marker für das Icon (Cyrillic letter fita - ѳ)
     // Font-Identifier für die Custom-Font
-    private static final Identifier CUSTOM_FONT = Identifier.fromNamespaceAndPath("cclive-utilities", "default");
     
     /**
      * Fügt das Mod-Icon zwischen Spielername und >> ein
@@ -707,33 +706,6 @@ public class PlayerHoverStatsUtility {
         for (Component sibling : text.getSiblings()) {
             collectShowTextHovers(sibling, found);
         }
-    }
-    
-    /**
-     * Konvertiert einen Text (inklusive aller Siblings) zu einem vollständigen String
-     */
-    private static String getFullTextString(Component text) {
-        if (text == null) {
-            return "";
-        }
-        
-        StringBuilder sb = new StringBuilder();
-        
-        // Füge den Haupttext hinzu
-        String mainText = text.getString();
-        if (mainText != null) {
-            sb.append(mainText);
-        }
-        
-        // Füge alle Siblings hinzu
-        for (Component sibling : text.getSiblings()) {
-            String siblingText = getFullTextString(sibling);
-            if (siblingText != null && !siblingText.isEmpty()) {
-                sb.append(siblingText);
-            }
-        }
-        
-        return sb.toString();
     }
     
     /**

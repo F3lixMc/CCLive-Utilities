@@ -91,7 +91,7 @@ class CollectedMaterialsResourcesStorageTest {
     void temporarilyMissingFileKeepsBalances() throws Exception {
         Files.delete(file);
         field("lastReloadCheck").setLong(null, 0);
-        invoke("refreshIfChanged", new Class<?>[0]);
+        CollectedMaterialsResourcesStorage.refreshIfChanged();
         assertBalances(1234, 56);
     }
 

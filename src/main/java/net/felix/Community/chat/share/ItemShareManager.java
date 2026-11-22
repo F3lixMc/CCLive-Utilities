@@ -35,7 +35,6 @@ import net.felix.Community.chat.buildshare.BuildShareViewScreen;
 import net.felix.Community.chat.ChatAllowedDomains;
 import net.felix.Community.chat.ChatLinkSpans;
 import net.felix.Community.chat.ChatTooltipLine;
-import net.felix.Community.profile.PlayerHoverStatsUtility;
 
 /**
  * Session-Cache + Server-Shares für CCLive-Chat Item-Links (!item / #ITEM:…).
