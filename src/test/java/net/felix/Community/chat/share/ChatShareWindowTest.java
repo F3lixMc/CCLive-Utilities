@@ -165,14 +165,6 @@ class ChatShareWindowTest {
         assertNull(cancelled.echo(attempt));
     }
 
-    private static ChatShareInbox inboxOf(Line... lines) {
-        ChatShareInbox inbox = new ChatShareInbox();
-        for (Line line : lines) {
-            inbox.accept(line);
-        }
-        return inbox;
-    }
-
     private static int attemptSeq;
 
     private static Line line(String sender, String body, long receivedAt) {

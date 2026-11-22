@@ -2,7 +2,6 @@ package net.felix.utilities.Overall.clipboard;
 
 import org.junit.jupiter.api.Test;
 
-import net.felix.utilities.Overall.clipboard.ClipboardLayout;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -1,7 +1,6 @@
 package net.felix.utilities.Overall.clipboard;
 import org.junit.jupiter.api.Test;
 
-import net.felix.utilities.Overall.clipboard.ClipboardTargetTime;
 
 import java.math.BigDecimal;
 import java.util.Map;

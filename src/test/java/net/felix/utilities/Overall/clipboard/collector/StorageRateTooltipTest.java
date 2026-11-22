@@ -3,8 +3,7 @@ package net.felix.utilities.Overall.clipboard.collector;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.felix.utilities.Overall.clipboard.collector.StorageAmountRate;
-import net.felix.utilities.Overall.clipboard.collector.StorageRateTooltip;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;

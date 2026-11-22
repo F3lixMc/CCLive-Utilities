@@ -4,9 +4,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-import net.felix.utilities.Overall.clipboard.collector.AnvilFurnaceLagerCollector;
-import net.felix.utilities.Overall.clipboard.collector.LegendPlusSammlerCollector;
-import net.felix.utilities.Overall.clipboard.collector.ResourcePickupGate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

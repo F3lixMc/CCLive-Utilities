@@ -3,7 +3,7 @@ package net.felix.utilities.Overall.clipboard.storage;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import net.felix.utilities.Overall.clipboard.storage.CollectedMaterialsResourcesStorage;
+
 
 import java.io.File;
 import java.lang.reflect.Field;
