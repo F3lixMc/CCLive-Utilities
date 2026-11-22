@@ -76,7 +76,7 @@ public final class ViewerButtonsRenderer {
         try {
             int iconSize = 16;
             int iconX = x + (HELP_BUTTON_SIZE - iconSize) / 2;
-            int iconY = y + (HELP_BUTTON_SIZE - iconSize) / 2;
+            int iconY = y + (HELP_BUTTON_SIZE - iconSize) / 2 + 1;
             context.blit(
                     RenderPipelines.GUI_TEXTURED,
                     HELP_ICON_TEXTURE,

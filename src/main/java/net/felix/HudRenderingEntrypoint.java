@@ -1,7 +1,9 @@
 package net.felix;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
+import net.felix.utilities.Overall.eventsound.chat.EventSoundChat;
 import net.felix.utilities.Overall.itemviewer.ItemViewerFeature;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
@@ -13,6 +15,8 @@ public class HudRenderingEntrypoint implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ClientReceiveMessageEvents.CHAT.register((message, signed, sender, bound, time) ->
+                EventSoundChat.handlePlayerMessage(message, sender == null ? null : sender.name()));
         // Zeichen aus Resourcepack (minecraft:font/default.json) – erster Versuch beim Client-Start
         net.felix.utilities.Other.glyphs.ZeichenUtility.reloadFromActiveResourcePack("client-init");
 
