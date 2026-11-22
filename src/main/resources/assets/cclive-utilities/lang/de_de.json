@@ -47,6 +47,8 @@
     "cclive.f6.npc_alerts": "NPC-Alarme",
     "cclive.f6.overlay": "Overlay",
     "cclive.f6.reset_all": "Alles zurücksetzen",
+    "cclive.f6.magnet": "Andocken an/aus.",
+    "cclive.f6.magnet_keep": "Bestehende Verbindungen bleiben erhalten.",
     "cclive.f6.instruction.move": "Linksklick + Ziehen: Overlay verschieben",
     "cclive.f6.instruction.resize": "Linksklick + Ziehen (Ecke): Größe ändern",
     "cclive.f6.instruction.nudge": "Linksklick + Pfeiltasten: Overlay 1 Pixel verschieben",

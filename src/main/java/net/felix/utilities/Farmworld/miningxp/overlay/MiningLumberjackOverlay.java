@@ -172,12 +172,19 @@ public final class MiningLumberjackOverlay {
 			x = rightEdge - overlayWidth;
 		}
 		
-		// Ensure overlay stays within screen bounds
-		x = Math.max(0, Math.min(x, screenWidth - overlayWidth));
-		
 		// Get scale
 		float scale = config.miningLumberjackOverlayScale;
 		if (scale <= 0) scale = 1.0f;
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect miningDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING,
+				x, y, Math.round(overlayWidth * scale), Math.round(overlayHeight * scale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			return;
+		}
+		x = miningDock.x();
+		y = miningDock.y();
+		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING, scale);
 		
 		// Apply matrix transformations for scaling
 		var matrices = context.pose();
@@ -263,12 +270,19 @@ public final class MiningLumberjackOverlay {
 			x = rightEdge - overlayWidth;
 		}
 		
-		// Ensure overlay stays within screen bounds
-		x = Math.max(0, Math.min(x, screenWidth - overlayWidth));
-		
 		// Get scale
 		float scale = config.miningLumberjackOverlayScale;
 		if (scale <= 0) scale = 1.0f;
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect miningDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING,
+				x, y, Math.round(overlayWidth * scale), Math.round(overlayHeight * scale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			return;
+		}
+		x = miningDock.x();
+		y = miningDock.y();
+		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.MINING, scale);
 		
 		// Apply matrix transformations for scaling
 		var matrices = context.pose();

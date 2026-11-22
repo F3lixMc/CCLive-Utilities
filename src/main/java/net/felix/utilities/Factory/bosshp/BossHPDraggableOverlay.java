@@ -22,7 +22,22 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.BOSS_HP;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         // Calculate X position using the same logic as Mining/Holzfäller overlays
         // baseX is the left edge position (like Mining overlays)
         Minecraft client = Minecraft.getInstance();
@@ -54,7 +69,7 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().bossHPY;
     }
     
@@ -274,12 +289,12 @@ public class BossHPDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX(); // This is now the left edge position
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Get scale
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale;
-        if (scale <= 0) scale = 1.0f;
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().bossHPScale);
         
         // Get unscaled dimensions
         int unscaledWidth = calculateUnscaledWidth();
@@ -365,6 +380,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().bossHPEnabled &&
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().bossHPX = 854;
         CCLiveUtilitiesConfig.HANDLER.instance().bossHPY = 261;
     }

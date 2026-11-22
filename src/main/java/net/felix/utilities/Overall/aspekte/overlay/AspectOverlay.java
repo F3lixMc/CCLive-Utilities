@@ -357,6 +357,14 @@ public class AspectOverlay {
         return null;
     }
     
+    public static void contributeLayout(Minecraft client) {
+        if (client == null) {
+            return;
+        }
+        renderForegroundForChat(null);
+        renderForeground(null);
+    }
+
     public static void render(GuiGraphicsExtractor context) {
         // Check if we have aspect information and shift is pressed
         if (currentAspectName.isEmpty() || currentItemName.isEmpty()) {
@@ -509,26 +517,21 @@ public class AspectOverlay {
         int overlayX = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayX;
         int overlayY = net.felix.CCLiveUtilitiesConfig.HANDLER.instance().chatAspectOverlayY;
         
-        // Ensure overlay doesn't go off-screen horizontally
-        if (overlayX < 0) {
-            overlayX = 0;
-        }
-        if (overlayX + overlayWidth > screenWidth) {
-            overlayX = screenWidth - overlayWidth;
-        }
-        // Ensure overlay doesn't go off-screen vertically
-        if (overlayY + overlayHeight > screenHeight) {
-            overlayY = screenHeight - overlayHeight;
-        }
-        if (overlayY < 0) {
-            overlayY = 0;
-        }
-        
-        // Calculate scaled dimensions and offsets for centered scaling
         int scaledWidth = (int) (overlayWidth * overlayScale);
         int scaledHeight = (int) (overlayHeight * overlayScale);
-        int offsetX = (scaledWidth - overlayWidth) / 2;
-        int offsetY = (scaledHeight - overlayHeight) / 2;
+        net.felix.utilities.DragOverlay.dock.OverlayDockRect chatDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CHAT_ASPECT, overlayX, overlayY, scaledWidth, scaledHeight);
+        if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+            return;
+        }
+        overlayX = chatDock.x();
+        overlayY = chatDock.y();
+        overlayScale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CHAT_ASPECT, overlayScale);
+        scaledWidth = chatDock.w();
+        scaledHeight = chatDock.h();
+        int offsetX = 0;
+        int offsetY = 0;
         
         // Draw background only if enabled in config (scaled)
         if (showBackground) {
@@ -706,26 +709,24 @@ public class AspectOverlay {
                 overlayX = screenWidth - overlayWidth - 10; // 10px margin from right edge
             }
         }
-        
-        // Ensure overlay doesn't go off-screen
-        if (overlayX < 0) {
-            overlayX = 0;
+        String aspectDockId = isStarItem
+                ? net.felix.utilities.DragOverlay.dock.OverlayDockIds.STAR_ASPECT
+                : net.felix.utilities.DragOverlay.dock.OverlayDockIds.ASPECT;
+        net.felix.utilities.DragOverlay.dock.OverlayDockRect aspectDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                aspectDockId,
+                overlayX, overlayY,
+                (int) (overlayWidth * overlayScale),
+                (int) (overlayHeight * overlayScale));
+        if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+            return;
         }
-        if (overlayX + overlayWidth > screenWidth) {
-            overlayX = screenWidth - overlayWidth;
-        }
-        if (overlayY < 0) {
-            overlayY = 0;
-        }
-        if (overlayY + overlayHeight > screenHeight) {
-            overlayY = screenHeight - overlayHeight;
-        }
-        
-        // Calculate scaled dimensions and offsets for centered scaling
-        int scaledWidth = (int) (overlayWidth * overlayScale);
-        int scaledHeight = (int) (overlayHeight * overlayScale);
-        int offsetX = (scaledWidth - overlayWidth) / 2;
-        int offsetY = (scaledHeight - overlayHeight) / 2;
+        overlayX = aspectDock.x();
+        overlayY = aspectDock.y();
+        overlayScale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(aspectDockId, overlayScale);
+        int scaledWidth = aspectDock.w();
+        int scaledHeight = aspectDock.h();
+        int offsetX = 0;
+        int offsetY = 0;
         
         // Draw background only if enabled in config (scaled)
         if (showBackground) {

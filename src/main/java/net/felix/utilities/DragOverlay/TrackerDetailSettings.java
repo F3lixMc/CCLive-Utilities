@@ -111,6 +111,11 @@ public final class TrackerDetailSettings {
                     () -> config.blueprintViewerMissingMode = !config.blueprintViewerMissingMode));
             buttons.add(toggle("Haken im Moblexicon: " + onOff(config.moblexiconBlueprintCheckmarksEnabled),
                     () -> config.moblexiconBlueprintCheckmarksEnabled = !config.moblexiconBlueprintCheckmarksEnabled));
+            buttons.add(toggle("Kitfilterung: " + (config.blueprintViewerKitFilterEnabled ? "AN" : "AUS"),
+                    () -> {
+                        config.blueprintViewerKitFilterEnabled = !config.blueprintViewerKitFilterEnabled;
+                        net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility.notifyKitFilterChanged();
+                    }));
         } else if (overlay instanceof BossHPDraggableOverlay) {
             buttons.add(toggle("Hintergrund: " + onOff(config.bossHPShowBackground),
                     () -> config.bossHPShowBackground = !config.bossHPShowBackground));

@@ -195,6 +195,7 @@ public final class ItemFilterPipeline {
                 }
             } else {
                 kitFilterActive = false;
+                net.felix.utilities.Aincraft.blueprints.viewer.BPViewerUtility.notifyKitFilterChanged();
             }
         }
 

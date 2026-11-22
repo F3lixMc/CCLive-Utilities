@@ -16,13 +16,28 @@ public class EssenceFarmDraggableOverlay implements DraggableOverlay {
 	}
 
 	@Override
-	public int getX() {
+	public String dockId() {
+		return net.felix.utilities.DragOverlay.dock.OverlayDockIds.ESSENCE;
+	}
+
+	@Override
+	public int undockedX() {
 		return EssenceFarmTracker.x();
 	}
 
 	@Override
-	public int getY() {
+	public int undockedY() {
 		return EssenceFarmTracker.y();
+	}
+
+	@Override
+	public int getX() {
+		return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+	}
+
+	@Override
+	public int getY() {
+		return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
 	}
 
 	@Override
@@ -55,7 +70,10 @@ public class EssenceFarmDraggableOverlay implements DraggableOverlay {
 
 	@Override
 	public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-		context.outline(getX(), getY(), getWidth(), getHeight(), 0xFFFF0000);
+		context.outline(getX(), getY(),
+				net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this),
+				net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this),
+				0xFFFF0000);
 		EssenceFarmTracker.render(context);
 	}
 
@@ -81,6 +99,7 @@ public class EssenceFarmDraggableOverlay implements DraggableOverlay {
 
 	@Override
 	public void resetToDefault() {
+		net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
 		config.essenceFarmX = 8;
 		config.essenceFarmY = 120;

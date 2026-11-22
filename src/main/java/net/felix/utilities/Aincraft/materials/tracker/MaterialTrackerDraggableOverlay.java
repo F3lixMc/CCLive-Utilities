@@ -25,7 +25,22 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.MATERIAL;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
@@ -55,7 +70,7 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         return CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY;
     }
     
@@ -127,16 +142,14 @@ public class MaterialTrackerDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale);
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Use Matrix transformations for scaling (like Blueprint Viewer)
         Matrix3x2fStack matrices = context.pose();
         matrices.pushMatrix();
-        
-        // Scale based on config
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale;
-        if (scale <= 0) scale = 1.0f; // Sicherheitscheck
         
         // Translate to position and scale from there
         matrices.translate(x, y);
@@ -213,6 +226,7 @@ return CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerEnabled &&
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerX = 0;
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerY = 43;
         CCLiveUtilitiesConfig.HANDLER.instance().materialTrackerScale = 1.0f;

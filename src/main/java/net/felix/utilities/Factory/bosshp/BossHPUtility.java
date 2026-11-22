@@ -585,6 +585,13 @@ public class BossHPUtility {
 		return shouldShow;
 	}
 	
+	public static void contributeLayout(Minecraft client) {
+		if (client == null) {
+			return;
+		}
+		onHudRender(null, client.getDeltaTracker());
+	}
+
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
@@ -801,9 +808,17 @@ public class BossHPUtility {
 			posX = baseX - overlayWidth;
 		}
 		
-		// Ensure overlay stays within screen bounds
-		posX = Math.max(0, Math.min(posX, screenWidth - overlayWidth));
 		int posY = y;
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect bossDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.BOSS_HP,
+				posX, posY, overlayWidth, Math.round(totalHeight * scale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			return;
+		}
+		posX = bossDock.x();
+		posY = bossDock.y();
+		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.BOSS_HP, scale);
 		
 		// Verwende Matrix-Transformationen für Skalierung
 		Matrix3x2fStack matrices = context.pose();

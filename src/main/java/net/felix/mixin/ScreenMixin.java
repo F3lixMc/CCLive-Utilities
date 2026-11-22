@@ -51,6 +51,9 @@ public class ScreenMixin {
      */
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void onKeyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
+        if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+            return;
+        }
         int keyCode = event.key();
         int scanCode = event.keycode();
         int modifiers = event.modifiers();

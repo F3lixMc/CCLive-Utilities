@@ -22,6 +22,24 @@ public interface DraggableOverlay {
      * Gibt die aktuelle Y-Position zurück
      */
     int getY();
+
+    /**
+     * Stabile Andock-ID. Leer heißt: dieses Overlay dockt nicht an.
+     */
+    default String dockId() {
+        return null;
+    }
+
+    /**
+     * Freie Position aus der Config, bevor eine Andockkante sie verschiebt.
+     */
+    default int undockedX() {
+        return getX();
+    }
+
+    default int undockedY() {
+        return getY();
+    }
     
     /**
      * Gibt die Breite des Overlays zurück
@@ -61,8 +79,8 @@ public interface DraggableOverlay {
      * Prüft, ob die Maus über dem Overlay ist
      */
     default boolean isHovered(int mouseX, int mouseY) {
-        return mouseX >= getX() && mouseX <= getX() + getWidth() &&
-               mouseY >= getY() && mouseY <= getY() + getHeight();
+        return mouseX >= getX() && mouseX <= getX() + net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this) &&
+               mouseY >= getY() && mouseY <= getY() + net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
     }
     
     /**
@@ -70,10 +88,12 @@ public interface DraggableOverlay {
      */
     default boolean isResizeArea(int mouseX, int mouseY) {
         int resizeSize = 8;
-        return mouseX >= getX() + getWidth() - resizeSize && 
-               mouseX <= getX() + getWidth() &&
-               mouseY >= getY() + getHeight() - resizeSize && 
-               mouseY <= getY() + getHeight();
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
+        return mouseX >= getX() + width - resizeSize &&
+               mouseX <= getX() + width &&
+               mouseY >= getY() + height - resizeSize &&
+               mouseY <= getY() + height;
     }
     
     /**
@@ -81,9 +101,10 @@ public interface DraggableOverlay {
      */
     default boolean isResetArea(int mouseX, int mouseY) {
         int resetSize = 10;
-        return mouseX >= getX() + getWidth() - resetSize && 
-               mouseX <= getX() + getWidth() &&
-               mouseY >= getY() && 
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        return mouseX >= getX() + width - resetSize &&
+               mouseX <= getX() + width &&
+               mouseY >= getY() &&
                mouseY <= getY() + resetSize;
     }
     

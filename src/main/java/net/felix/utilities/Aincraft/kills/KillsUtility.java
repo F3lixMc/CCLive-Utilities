@@ -185,7 +185,20 @@ public class KillsUtility {
 		}
 	}
 	
+	public static net.minecraft.client.KeyMapping toggleKey() {
+		return toggleKeyMapping;
+	}
+
+	public static net.minecraft.client.KeyMapping resetKey() {
+		return resetKeyMapping;
+	}
+
 	private static void handleHotkeys() {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(resetKeyMapping);
+			return;
+		}
 		// Handle toggle hotkey
 		if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
 			boolean newValue = !(CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityEnabled
@@ -512,6 +525,13 @@ public class KillsUtility {
 		return "Nächste Ebene: <1min";
 	}
 	
+	public static void contributeLayout(Minecraft client) {
+		if (client == null) {
+			return;
+		}
+		onHudRender(null, client.getDeltaTracker());
+	}
+
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		// Prüfe Konfiguration
 		if (!CCLiveUtilitiesConfig.isModRuntimeEnabled()) {
@@ -648,15 +668,23 @@ public class KillsUtility {
 		
 		int yPosition = yOffset;
 		
-		// Verwende Matrix-Transformationen für Skalierung
-		Matrix3x2fStack matrices = context.pose();
-		matrices.pushMatrix();
-		
 		// Skaliere basierend auf der Config
 		float scale = CCLiveUtilitiesConfig.HANDLER.instance().killsUtilityScale;
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect killsDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.KILLS,
+				xPosition, yPosition, Math.round(overlayWidth * scale), Math.round(overlayHeight * scale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			return;
+		}
+		xPosition = killsDock.x();
+		yPosition = killsDock.y();
+		scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.KILLS, scale);
 		
 		// Übersetze zur Position und skaliere von dort aus
+		Matrix3x2fStack matrices = context.pose();
+		matrices.pushMatrix();
 		matrices.translate(xPosition, yPosition);
 		matrices.scale(scale, scale);
 		

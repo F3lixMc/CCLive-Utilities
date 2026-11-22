@@ -64,6 +64,11 @@ public class DrawContextMixin {
      * Blockiert alle Tooltips außer bekannten Button-Tooltips (z.B. "Hilfs Übersicht", "Favoriten", etc.)
      * Funktioniert für alle Screens, einschließlich InventoryScreen (Spieler-Inventar)
      */
+    @Inject(method = "extractDeferredElements", at = @At("RETURN"))
+    private void cclive$drawFittedItemTooltip(int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
+        net.felix.utilities.Overall.itemviewer.tooltip.ItemTooltipPresenter.render((GuiGraphicsExtractor) (Object) this);
+    }
+
     @Inject(method = "setComponentTooltipForNextFrame(Lnet/minecraft/client/gui/Font;Ljava/util/List;II)V", at = @At("HEAD"), cancellable = true)
     private void blockItemTooltipsWhenHelpOverlayOpen(Font textRenderer, List<Component> lines, int x, int y, CallbackInfo ci) {
         // Blockiere nur wenn Hilfe-Overlay offen ist

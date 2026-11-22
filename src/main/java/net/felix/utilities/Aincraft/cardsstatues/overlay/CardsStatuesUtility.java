@@ -69,7 +69,9 @@ public class CardsStatuesUtility {
 		matrices.pushMatrix();
 		
 		// Skaliere das Overlay basierend auf der Config
-		float scale = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale;
+		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.CARDS,
+				CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		
 		// Übersetze zur Position und skaliere von dort aus
@@ -111,7 +113,9 @@ public class CardsStatuesUtility {
 		matrices.pushMatrix();
 		
 		// Skaliere das Overlay basierend auf der Config
-		float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
+		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES,
+				CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		
 		// Übersetze zur Position und skaliere von dort aus
@@ -260,7 +264,15 @@ public class CardsStatuesUtility {
 		}
 	}
 	
+	public static net.minecraft.client.KeyMapping toggleKey() {
+		return toggleKeyMapping;
+	}
+
 	private static void handleHotkey() {
+		if (net.felix.utilities.DragOverlay.DetailKeybindCapture.blocksModHotkeys()) {
+			net.felix.utilities.DragOverlay.ModHotkeyGate.discard(toggleKeyMapping);
+			return;
+		}
 		// Handle toggle hotkey
 		if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
 			boolean currentShow = CCLiveUtilitiesConfig.HANDLER.instance().showCard || CCLiveUtilitiesConfig.HANDLER.instance().showStatue;
@@ -1014,6 +1026,13 @@ public class CardsStatuesUtility {
 		buffer.setLength(0);
 	}
 	
+	public static void contributeLayout(Minecraft client) {
+		if (client == null) {
+			return;
+		}
+		onHudRender(null, client.getDeltaTracker());
+	}
+
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		CCLiveUtilitiesConfig config = CCLiveUtilitiesConfig.HANDLER.instance();
 		
@@ -1054,10 +1073,25 @@ public class CardsStatuesUtility {
 		// Karten-Position (unten rechts)
 		int cardX = screenWidth - config.cardX;
 		int cardY = screenHeight - config.cardY;
+		float cardScale = config.cardOverlayScale <= 0 ? 1.0f : config.cardOverlayScale;
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect cardDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.CARDS, cardX, cardY,
+				Math.round(162 * cardScale), Math.round(62 * cardScale));
 		
 		// Statuen-Position (unten rechts, über den Karten)
 		int statueX = screenWidth - config.statueX;
 		int statueY = screenHeight - config.statueY;
+		float statueScale = config.statueOverlayScale <= 0 ? 1.0f : config.statueOverlayScale;
+		net.felix.utilities.DragOverlay.dock.OverlayDockRect statueDock = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES, statueX, statueY,
+				Math.round(162 * statueScale), Math.round(62 * statueScale));
+		if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+			return;
+		}
+		cardX = cardDock.x();
+		cardY = cardDock.y();
+		statueX = statueDock.x();
+		statueY = statueDock.y();
 		
 		// Render nur wenn Overlays sichtbar sind und keine Equipment-Overlays aktiv sind
 		if (showOverlays && !EquipmentDisplayUtility.isEquipmentOverlayActive()) {
@@ -1088,7 +1122,9 @@ public class CardsStatuesUtility {
 		matrices.pushMatrix();
 		
 		// Skaliere den Text basierend auf der Config
-		float scale = CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale;
+		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.CARDS,
+				CCLiveUtilitiesConfig.HANDLER.instance().cardOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		
 		// Übersetze zur Position und skaliere von dort aus
@@ -1170,7 +1206,9 @@ public class CardsStatuesUtility {
 		matrices.pushMatrix();
 		
 		// Skaliere den Text basierend auf der Config
-		float scale = CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale;
+		float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+				net.felix.utilities.DragOverlay.dock.OverlayDockIds.STATUES,
+				CCLiveUtilitiesConfig.HANDLER.instance().statueOverlayScale);
 		if (scale <= 0) scale = 1.0f; // Sicherheitscheck
 		
 		// Übersetze zur Position und skaliere von dort aus

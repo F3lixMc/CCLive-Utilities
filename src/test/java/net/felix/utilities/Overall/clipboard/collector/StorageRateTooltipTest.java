@@ -68,7 +68,9 @@ class StorageRateTooltipTest {
         assertEquals(0.0, rate.observe("anvil\u0000Eisen", 100L, 0L));
         assertEquals(0.0, rate.observe("anvil\u0000Eisen", 100L, 30_000L));
         assertEquals(60.0, rate.observe("anvil\u0000Eisen", 160L, 60_000L));
-        assertEquals(60.0, rate.observe("anvil\u0000Eisen", 10L, 61_000L));
+        assertEquals(0.0, rate.observe("anvil\u0000Eisen", 10L, 61_000L));
+        assertEquals(20.0, rate.observe("anvil\u0000Eisen", 11L, 64_000L));
+        assertEquals(20.0, rate.observe("anvil\u0000Eisen", 12L, 67_000L));
         rate.observe("anvil\u0000Eisen", 100L, 0L);
         rate.observe("anvil\u0000Eisen", 160L, 60_000L);
         rate.replaceScope("anvil", java.util.Map.of("Gold", 40L), 70_000L);

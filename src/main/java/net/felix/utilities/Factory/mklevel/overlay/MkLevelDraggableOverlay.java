@@ -22,7 +22,22 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.MK_LEVEL;
+    }
+
+    @Override
     public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
+    }
+
+    @Override
+    public int getY() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
+    }
+
+    @Override
+    public int undockedX() {
         Minecraft client = Minecraft.getInstance();
         if (client.getWindow() == null) return 0;
         
@@ -40,7 +55,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getY() {
+    public int undockedY() {
         // Y-Position: -1 = am Inventar ausrichten, >= 0 = absolute Position
         // Buttons are rendered above the overlay, so we need to shift Y up by button height
         int yOffset = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY;
@@ -231,12 +246,12 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight(); // This now includes button height
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Get scale
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale;
-        if (scale <= 0) scale = 1.0f;
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().mkLevelScale);
         
         // Calculate button height (scaled)
         int buttonHeight = 20; // Unscaled button height
@@ -345,6 +360,7 @@ public class MkLevelDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().mkLevelX = 135;
         CCLiveUtilitiesConfig.HANDLER.instance().mkLevelY = 115;
         savePosition();

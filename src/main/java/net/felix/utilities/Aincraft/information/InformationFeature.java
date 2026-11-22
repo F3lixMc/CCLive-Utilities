@@ -109,6 +109,37 @@ public final class InformationFeature {
 	/**
 	 * HUD Render callback for mining and lumberjack overlays
 	 */
+	public static void contributeLayout(Minecraft client) {
+		if (client == null || client.level == null || client.player == null || client.gui == null || client.gui.hud == null) {
+			return;
+		}
+		if (client.gui.hud.isHidden() || !MiningLumberjackTracker.areOverlaysAllowed()) {
+			return;
+		}
+		boolean shouldHideOverlays = isInOwnOrFloorDimension(client);
+		if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
+			CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().miningOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().showMiningOverlay &&
+			MiningLumberjackTracker.isMiningOverlayActive() &&
+			!shouldHideOverlays) {
+			MiningLumberjackOverlay.renderMiningOverlay(null, client);
+		}
+		if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
+			CollectionTracker.isOverlayActive() &&
+			!shouldHideOverlays) {
+			CollectionOverlay.renderCollectionOverlay(null, client);
+		}
+		if (CCLiveUtilitiesConfig.isModRuntimeEnabled() &&
+			CCLiveUtilitiesConfig.HANDLER.instance().miningLumberjackOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().lumberjackOverlayEnabled &&
+			CCLiveUtilitiesConfig.HANDLER.instance().showLumberjackOverlay &&
+			MiningLumberjackTracker.isLumberjackOverlayActive() &&
+			!shouldHideOverlays) {
+			MiningLumberjackOverlay.renderLumberjackOverlay(null, client);
+		}
+	}
+
 	public static void onHudRender(GuiGraphicsExtractor context, DeltaTracker tickCounter) {
 		Minecraft client = Minecraft.getInstance();
 		if (client == null || client.level == null || client.player == null) {

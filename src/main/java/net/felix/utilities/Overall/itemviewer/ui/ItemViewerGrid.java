@@ -234,7 +234,7 @@ public class ItemViewerGrid {
                 if (tooltipLines == null || tooltipLines.isEmpty()) {
                     return;
                 }
-                context.setComponentTooltipForNextFrame(client.font, tooltipLines, mouseX, mouseY);
+                net.felix.utilities.Overall.itemviewer.tooltip.ItemTooltipBuilder.show(context, tooltipLines, mouseX, mouseY);
             } else {
                 lastTooltipItem = null;
                 cachedTooltipLines = null;

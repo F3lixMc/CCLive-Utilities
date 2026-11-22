@@ -673,13 +673,28 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     }
     
     @Override
-    public int getX() {
+    public String dockId() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockIds.CLIPBOARD;
+    }
+
+    @Override
+    public int undockedX() {
         return CCLiveUtilitiesConfig.HANDLER.instance().clipboardX;
+    }
+
+    @Override
+    public int undockedY() {
+        return CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
+    }
+
+    @Override
+    public int getX() {
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.x(this);
     }
     
     @Override
     public int getY() {
-        return CCLiveUtilitiesConfig.HANDLER.instance().clipboardY;
+        return net.felix.utilities.DragOverlay.dock.OverlayDockLayout.y(this);
     }
     
     @Override
@@ -787,12 +802,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     public void renderInEditMode(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         int x = getX();
         int y = getY();
-        int width = getWidth();
-        int height = getHeight();
+        int width = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownWidth(this);
+        int height = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.shownHeight(this);
         
         // Get scale
-        float scale = CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale;
-        if (scale <= 0) scale = 1.0f;
+        float scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                dockId(), CCLiveUtilitiesConfig.HANDLER.instance().clipboardScale);
         
         // Render border for edit mode (scaled)
         context.outline(x, y, width, height, 0xFFFF0000);
@@ -992,6 +1007,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
      * Rendert das Overlay im normalen Spiel (außerhalb des F6-Menüs)
      * Zeigt die tatsächlichen Clipboard-Daten an
      */
+    public static void contributeLayout(Minecraft client) {
+        if (client == null) {
+            return;
+        }
+        renderInGame(null, 0, 0, 0f);
+    }
+
     public static void renderInGame(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (!CCLiveUtilitiesConfig.HANDLER.instance().clipboardEnabled ||
             !CCLiveUtilitiesConfig.HANDLER.instance().showClipboard) {
@@ -1071,8 +1093,13 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
             footprintHeight += REMOVE_BUTTON_GAP + REMOVE_BUTTON_HEIGHT;
         }
         ClipboardLayout.Point origin = screenOrigin(client, scaledWidth, footprintHeight);
+        if (net.felix.utilities.DragOverlay.dock.OverlayDockLayout.isMeasuring()) {
+            return;
+        }
         int x = origin.x();
         int y = origin.y();
+        scale = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.effectiveScale(
+                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CLIPBOARD, scale);
         costOverlayMaxScaledHeight = footprintHeight;
         
         // Render content with scale using matrix transformation
@@ -2063,6 +2090,7 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     
     @Override
     public void resetToDefault() {
+        net.felix.utilities.DragOverlay.dock.OverlayDockStore.removeLinksInvolving(dockId());
         CCLiveUtilitiesConfig.HANDLER.instance().clipboardX = 10;
         CCLiveUtilitiesConfig.HANDLER.instance().clipboardY = 10;
     }
@@ -2105,10 +2133,12 @@ public class ClipboardDraggableOverlay implements DraggableOverlay {
     private static ClipboardLayout.Point screenOrigin(Minecraft client, int scaledWidth, int footprintHeight) {
         int screenWidth = client.getWindow().getGuiScaledWidth();
         int screenHeight = client.getWindow().getGuiScaledHeight();
-        return ClipboardLayout.clampOrigin(
+        net.felix.utilities.DragOverlay.dock.OverlayDockRect placed = net.felix.utilities.DragOverlay.dock.OverlayDockLayout.placeLive(
+                net.felix.utilities.DragOverlay.dock.OverlayDockIds.CLIPBOARD,
                 CCLiveUtilitiesConfig.HANDLER.instance().clipboardX,
                 CCLiveUtilitiesConfig.HANDLER.instance().clipboardY,
-                scaledWidth, footprintHeight, screenWidth, screenHeight);
+                scaledWidth, footprintHeight);
+        return new ClipboardLayout.Point(placed.x(), placed.y());
     }
 
     private static ClipboardLayout.Point currentScreenOrigin(Minecraft client) {
