@@ -654,11 +654,11 @@ public class CCLiveUtilitiesConfig {
 
     /** X/min im Amboss-Lager, im Sammler und in der Clipboard-Zeit. */
     @SerialEntry
-    public boolean ambossRateEnabled = true;
+    public boolean ambossRateEnabled = false;
 
     /** X/min im Schmelzofen-Lager, im Sammler und in der Clipboard-Zeit. */
     @SerialEntry
-    public boolean ofenRateEnabled = true;
+    public boolean ofenRateEnabled = false;
 
     // Schmied Tracker Settings
     @SerialEntry
@@ -2352,7 +2352,7 @@ public class CCLiveUtilitiesConfig {
                                         .name(Component.literal("Amboss"))
                                         .description(OptionDescription.of(Component.literal(
                                                 "X/min im Amboss anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
-                                        .binding(true,
+                                        .binding(false,
                                                 () -> HANDLER.instance().ambossRateEnabled,
                                                 newVal -> HANDLER.instance().ambossRateEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)
@@ -2361,7 +2361,7 @@ public class CCLiveUtilitiesConfig {
                                         .name(Component.literal("Ofen"))
                                         .description(OptionDescription.of(Component.literal(
                                                 "X/min im Schmelzofen anzeigen. Aus blendet die Rate auch im Clipboard aus.")))
-                                        .binding(true,
+                                        .binding(false,
                                                 () -> HANDLER.instance().ofenRateEnabled,
                                                 newVal -> HANDLER.instance().ofenRateEnabled = newVal)
                                         .controller(TickBoxControllerBuilder::create)

@@ -3,9 +3,11 @@ package net.felix.utilities.Factory.mklevel.overlay;
 import java.util.ArrayList;
 import java.util.List;
 import net.felix.CCLiveUtilitiesConfig;
+import net.felix.utilities.Aincraft.information.essences.EssenceWaveNames;
 import net.felix.utilities.Factory.mklevel.data.CombinedWaveInfo;
 import net.felix.utilities.Factory.mklevel.data.MkLevelInfo;
 import net.felix.utilities.Factory.mklevel.data.TotalEssenceInfo;
+import net.felix.utilities.Overall.clipboard.storage.CollectedMaterialsResourcesStorage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
@@ -233,7 +235,7 @@ public final class MkLevelOverlayRenderer {
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> {
 				List<MkLevelInfo> entries = filterMkLevelEntries(mkLevelSearchText);
-				int height = 4 * lineHeight;
+				int height = 5 * lineHeight;
 				totalHeight += entries.size() * height;
 				if (!entries.isEmpty()) {
 					lastEntryHeight = height;
@@ -252,7 +254,7 @@ public final class MkLevelOverlayRenderer {
 			}
 			case TOTAL_ESSENCES -> {
 				List<TotalEssenceInfo> entries = filterTotalEssenceEntries(mkLevelSearchText);
-				int height = 3 * lineHeight;
+				int height = 4 * lineHeight;
 				totalHeight += entries.size() * height;
 				if (!entries.isEmpty()) {
 					lastEntryHeight = height;
@@ -266,7 +268,7 @@ public final class MkLevelOverlayRenderer {
 	static int calculateMkLevelTotalLineHeight(int lineHeight) {
 		switch (mkLevelActiveTab) {
 			case INDIVIDUAL -> {
-				return filterMkLevelEntries(mkLevelSearchText).size() * 4 * lineHeight;
+				return filterMkLevelEntries(mkLevelSearchText).size() * 5 * lineHeight;
 			}
 			case COMBINED -> {
 				int totalContentHeight = 0;
@@ -283,7 +285,7 @@ public final class MkLevelOverlayRenderer {
 				return totalContentHeight;
 			}
 			case TOTAL_ESSENCES -> {
-				return filterTotalEssenceEntries(mkLevelSearchText).size() * 3 * lineHeight;
+				return filterTotalEssenceEntries(mkLevelSearchText).size() * 4 * lineHeight;
 			}
 			default -> {
 				return 0;
@@ -299,6 +301,7 @@ public final class MkLevelOverlayRenderer {
 				for (MkLevelInfo levelInfo : filterMkLevelEntries(mkLevelSearchText)) {
 					allLines.add(new MkLevelRenderLine("-Level " + levelInfo.level, 0xFFFFFF00));
 					allLines.add(new MkLevelRenderLine(" " + levelInfo.essence + ", x" + formatNumberWithSeparator(levelInfo.amount), 0xFFFFFFFF));
+					addBagLine(allLines, client, levelInfo.essence);
 					String waveDisplay = getWaveDisplayForMkLevelEssence(levelInfo.essence);
 					if (waveDisplay != null) {
 						String wavePrefix = "-> Welle: ";
@@ -351,6 +354,7 @@ public final class MkLevelOverlayRenderer {
 			case TOTAL_ESSENCES -> {
 				for (TotalEssenceInfo essenceInfo : filterTotalEssenceEntries(mkLevelSearchText)) {
 					allLines.add(new MkLevelRenderLine(" " + essenceInfo.essence + ", x" + formatNumberWithSeparator(essenceInfo.totalAmount), 0xFFFFFFFF));
+					addBagLine(allLines, client, essenceInfo.essence);
 					String waveDisplay = getWaveDisplayForMkLevelEssence(essenceInfo.essence);
 					if (waveDisplay != null) {
 						String wavePrefix = "-> Welle: ";
@@ -362,6 +366,21 @@ public final class MkLevelOverlayRenderer {
 		}
 		
 		return allLines;
+	}
+
+	/** Owned amount of one essence, between the essence line and the wave line. */
+	private static void addBagLine(List<MkLevelRenderLine> lines, Minecraft client, String essence) {
+		String prefix = "Tasche: ";
+		String amount = formatNumberWithSeparator(bagAmount(essence));
+		lines.add(new MkLevelRenderLine(prefix, 0xFFFFFFFF, 0, amount, 0xFF55FF55, client.font.width(prefix)));
+	}
+
+	private static long bagAmount(String mkLevelEssence) {
+		long found = 0L;
+		for (String key : EssenceWaveNames.storageKeysForMkLevelName(mkLevelEssence)) {
+			found = Math.max(found, CollectedMaterialsResourcesStorage.getEssenceAmount(key));
+		}
+		return found;
 	}
 
 	private static void renderMkLevelScrollableLines(GuiGraphicsExtractor context, Minecraft client, List<MkLevelRenderLine> allLines,

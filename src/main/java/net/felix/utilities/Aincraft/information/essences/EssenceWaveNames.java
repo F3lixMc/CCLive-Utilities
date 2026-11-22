@@ -91,28 +91,26 @@ public final class EssenceWaveNames {
 	}
 
 	/**
-	 * Finds essence data from MkLevel format (e.g., "Pferd T1", "Piglin Brute T9", "Pferde T8") via Essenz.json keys.
+	 * Bag keys for an MkLevel essence name (e.g. "Pferd T1" to "Pferde [Essenz] Tier 1").
+	 * Empty when the name has no tier suffix.
 	 */
-	private static EssenceInfo findEssenceInfoForMkLevelName(String mkLevelEssenceName) {
+	public static java.util.List<String> storageKeysForMkLevelName(String mkLevelEssenceName) {
 		if (mkLevelEssenceName == null || mkLevelEssenceName.isEmpty()) {
-			return null;
+			return java.util.List.of();
 		}
-		
 		String[] parts = mkLevelEssenceName.trim().split("\\s+");
 		if (parts.length < 2) {
-			return null;
+			return java.util.List.of();
 		}
-		
 		String last = parts[parts.length - 1];
 		if (!last.matches("(?i)T\\d+")) {
-			return null;
+			return java.util.List.of();
 		}
 		String tierStr = last.replaceFirst("(?i)T", "").trim();
 		String mobName = String.join(" ", java.util.Arrays.copyOfRange(parts, 0, parts.length - 1));
 		if (mobName.isEmpty()) {
-			return null;
+			return java.util.List.of();
 		}
-		
 		java.util.LinkedHashSet<String> candidateKeys = new java.util.LinkedHashSet<>();
 		String aliasBase = mkLevelMobNameToEssenzMobBase(mobName);
 		if (aliasBase != null) {
@@ -120,22 +118,23 @@ public final class EssenceWaveNames {
 		}
 		candidateKeys.add(mobName + " [Essenz] Tier " + tierStr);
 		candidateKeys.add(convertToPlural(mobName) + " [Essenz] Tier " + tierStr);
-		
-		for (String key : candidateKeys) {
+		if (mobName.equals("Piglin") || mobName.equals("Pigling")) {
+			String swap = mobName.equals("Piglin") ? "Pigling" : "Piglin";
+			candidateKeys.add(swap + " [Essenz] Tier " + tierStr);
+		}
+		return java.util.List.copyOf(candidateKeys);
+	}
+
+	/**
+	 * Finds essence data from MkLevel format (e.g., "Pferd T1", "Piglin Brute T9", "Pferde T8") via Essenz.json keys.
+	 */
+	private static EssenceInfo findEssenceInfoForMkLevelName(String mkLevelEssenceName) {
+		for (String key : storageKeysForMkLevelName(mkLevelEssenceName)) {
 			EssenceInfo essenceInfo = essencesDatabase.get(key);
 			if (essenceInfo != null) {
 				return essenceInfo;
 			}
 		}
-		
-		if (mobName.equals("Piglin") || mobName.equals("Pigling")) {
-			String swap = mobName.equals("Piglin") ? "Pigling" : "Piglin";
-			EssenceInfo altInfo = essencesDatabase.get(swap + " [Essenz] Tier " + tierStr);
-			if (altInfo != null) {
-				return altInfo;
-			}
-		}
-		
 		return null;
 	}
 
