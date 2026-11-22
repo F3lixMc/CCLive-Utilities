@@ -528,7 +528,7 @@ public final class EssenceFarmTracker {
 			String duration = EssenceFarmNeeds.formatDuration(EssenceFarmData.averageRunMs(step.wave()) * step.runs());
 			String head = (current ? "> " : "") + "Welle " + step.wave() + ": "
 					+ NumberFormatting.formatNumberWithSeparator(step.runs()) + "x"
-					+ (duration.isEmpty() ? "" : " (~" + duration + ")");
+					+ (duration.isEmpty() ? "" : " (≈" + duration + ")");
 			out.add(new Line(head, current ? ACTIVE_COLOR : TEXT_COLOR));
 			for (EssenceFarmPlanner.Covered covered : step.covered()) {
 				EssenceFarmNeeds.Requirement req = reqByKey.get(covered.type() + "#" + covered.tier());

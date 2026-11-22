@@ -79,6 +79,10 @@ public final class EssenceFarmCrystals {
 		return crystals.computeIfAbsent(name, n -> new Crystal());
 	}
 
+	static synchronized void forget(String name) {
+		crystals.remove(name);
+	}
+
 	/** Stores a level read from the game; returns true if it changed. */
 	public static synchronized boolean updateLevel(String name, int level) {
 		if (name == null || name.isBlank() || level <= 0) {
@@ -93,10 +97,12 @@ public final class EssenceFarmCrystals {
 		return true;
 	}
 
-	/** Sets the target level; values at or below the current level clear the target. */
+	/** Stores the target level the player typed. {@link Crystal#effectiveTarget()} ignores targets that are not above the current level. */
 	public static synchronized void setTarget(String name, int target) {
-		Crystal crystal = get(name);
-		crystal.target = crystal.level > 0 && target <= crystal.level ? 0 : Math.max(0, target);
+		if (name == null || name.isBlank()) {
+			return;
+		}
+		get(name).target = Math.max(0, target);
 	}
 
 	public static synchronized void save() {
