@@ -468,6 +468,10 @@ public class CCLiveUtilitiesConfig {
     // Debug Settings
     @SerialEntry
     public boolean updateCheckerEnabled = true;
+
+    // Cache the PlayLegend server resource pack as a normal pack (off by default)
+    @SerialEntry
+    public boolean serverPackCacheEnabled = false;
     
     @SerialEntry
     public int zeichenConfigVersion = 0; // Version der geladenen zeichen.json vom Server
@@ -2894,6 +2898,18 @@ public class CCLiveUtilitiesConfig {
                                 .build())
                         .group(buildDataTrackingGroup())
                         .group(buildLeaderboardsAndIconsGroup())
+                        .group(OptionGroup.createBuilder()
+                                .name(Component.literal("Server-Resourcepack"))
+                                .option(Option.<Boolean>createBuilder()
+                                        .name(Component.literal("Server-Resourcepack zwischenspeichern"))
+                                        .description(OptionDescription.of(Component.literal(
+                                                "Speichert das PlayLegend-Resourcepack als normales Resourcepack, damit es schon beim Start von Minecraft geladen wird. "
+                                                + "Beim Betreten des Servers muss es dann nicht erneut geladen werden. Eine neue Version wird beim Betreten normal geladen "
+                                                + "und ab dem nächsten Start verwendet.")))
+                                        .binding(false, () -> HANDLER.instance().serverPackCacheEnabled, newVal -> HANDLER.instance().serverPackCacheEnabled = newVal)
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Component.literal("Update Checker"))
                                 .option(Option.<Boolean>createBuilder()

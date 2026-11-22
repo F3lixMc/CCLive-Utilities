@@ -56,6 +56,9 @@ public class CCLiveUtilities implements ModInitializer {
 
 		// Server-Gate: Features/Uploads nur auf PlayLegend (Dev + Bypass-Spieler ausgenommen)
 		net.felix.utilities.Other.server.ServerConnectionGate.initialize();
+
+		// Cached PlayLegend server resource pack (skips the reload on join)
+		net.felix.utilities.Other.serverpack.ServerPackCache.initialize();
 		
 		// Initialisiere JSON-Config-Update-Utility (für automatische Updates vom Server)
 		net.felix.utilities.Other.config.JsonConfigUpdateUtility.initialize();
