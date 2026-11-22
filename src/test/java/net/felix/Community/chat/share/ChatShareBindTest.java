@@ -118,6 +118,7 @@ class ChatShareBindTest {
     void twoWaitingSharesAndALaterPlainCopyPublishNothing() {
         ChatShareAttempts attempts = new ChatShareAttempts();
         long now = 1_000L;
+        attempts.addShare("gleich", "BUILD", "BUILD-abc123", "Kit", 0, 3, now);
         attempts.addShare("gleich", "BUILD", "BUILD-abc123", "Kit", 0, 3, now + 1);
         assertNull(attempts.confirmEcho("gleich", now + 2));
         assertEquals(2, attempts.waitingCount());
